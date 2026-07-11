@@ -75,9 +75,6 @@ type ProjectIssueSearchUserOption = {
 
 const ISSUE_SEARCH_CURRENT_USER_SHORTCUT_PREFIX = "__currentUserShortcut__:";
 
-type LegacyStateButtonAttributes = HTMLAttributes<HTMLButtonElement> & {
-  state: "closed" | "open";
-};
 type LegacyIssueRowListAttributes = HTMLAttributes<HTMLLIElement> & {
   href: string;
 };
@@ -265,7 +262,9 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
   const projectMenuCounts = isStandardProjectOwnedShell
     ? {
-        board: numberField((projectQuery.data as Record<string, unknown>).postCount),
+        board:
+          numberField((projectQuery.data as Record<string, unknown>).boardCount) ||
+          numberField((projectQuery.data as Record<string, unknown>).postCount),
         issue: numberField((projectQuery.data as Record<string, unknown>).openIssueCount),
         pullRequest: numberField(
           (projectQuery.data as Record<string, unknown>).openPullRequestCount,
@@ -435,15 +434,6 @@ function ProjectIssuesBody({
         : nextIds;
     });
   }, [visibleMassUpdateIssueIds]);
-  const handleStateChange = (nextState: "closed" | "open") => {
-    void navigate({
-      to: projectIssuesRoutePath(ownerName, projectName, {
-        ...search,
-        pageNum: 1,
-        state: nextState,
-      }),
-    });
-  };
   const handleSortChange = (orderBy: string, orderDir: string) => {
     void navigate({
       to: projectIssuesRoutePath(ownerName, projectName, {
@@ -606,6 +596,7 @@ function ProjectIssuesBody({
                 activeProps={legacyRouteLocalActiveProps}
                 to="/$ownerName/$projectName/issueform"
                 params={{ ownerName, projectName }}
+                search={{ commentId: undefined, parentIssueId: undefined }}
                 className="ybtn ybtn-success"
               >
                 {t("issue.menu.new")}
@@ -616,15 +607,21 @@ function ProjectIssuesBody({
                 active={search.state === "open"}
                 count={countField(issues, "openIssueCount")}
                 label={t("issue.state.open")}
-                onStateChange={handleStateChange}
-                state="open"
+                to={projectIssuesRoutePath(ownerName, projectName, {
+                  ...search,
+                  pageNum: 1,
+                  state: "open",
+                })}
               />
               <StateTab
                 active={search.state === "closed"}
                 count={countField(issues, "closedIssueCount")}
                 label={t("issue.state.closed")}
-                onStateChange={handleStateChange}
-                state="closed"
+                to={projectIssuesRoutePath(ownerName, projectName, {
+                  ...search,
+                  pageNum: 1,
+                  state: "closed",
+                })}
               />
               <li>
                 <TwoColumnModeCheckbox
@@ -2799,7 +2796,25 @@ function IssueSearchLabelSelect({
   showLabelEdit: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const groupedLabels = groupProjectLabels(labels);
+  const labelOptions = groupedLabels.flatMap((category) => category.labels);
+  const selectedLabels = search.labelIds.flatMap((labelId) => {
+    const label = labelOptions.find((option) => option.id === labelId);
+    return label ? [label] : [];
+  });
+
+  const updateSelectedLabels = (labelIds: string[]) => {
+    setOpen(false);
+    void navigate({
+      to: projectIssuesRoutePath(ownerName, projectName, {
+        ...search,
+        labelIds,
+        pageNum: 1,
+      }),
+    });
+  };
 
   if (groupedLabels.length === 0) {
     return null;
@@ -2823,6 +2838,102 @@ function IssueSearchLabelSelect({
         ) : null}
       </dt>
       <dd>
+        <div
+          id="s2id_labelIds"
+          className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active select2-dropdown-open" : ""}`}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setOpen(false);
+            }
+          }}
+        >
+          <ul className="select2-choices">
+            {selectedLabels.map((label) => (
+              <li className="select2-search-choice" key={label.id}>
+                <div>
+                  <span className="issue-label active list-label">{label.name}</span>
+                </div>
+                <span
+                  className="select2-search-choice-close"
+                  title={t("button.delete")}
+                  aria-label={`${t("button.delete")} ${label.name}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    updateSelectedLabels(search.labelIds.filter((labelId) => labelId !== label.id))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      updateSelectedLabels(
+                        search.labelIds.filter((labelId) => labelId !== label.id),
+                      );
+                    }
+                  }}
+                ></span>
+              </li>
+            ))}
+            <li className="select2-search-field">
+              <input
+                id="labelIds-search"
+                type="text"
+                autoComplete="off"
+                role="combobox"
+                aria-controls="labelIds-options"
+                aria-expanded={open}
+                placeholder={t("label.select")}
+                onClick={() => setOpen(true)}
+                onFocus={() => setOpen(true)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setOpen(false);
+                  }
+                }}
+              />
+            </li>
+          </ul>
+          <div
+            className={`select2-drop select2-drop-multi issue-labels${open ? " select2-drop-active" : " select2-display-none"}`}
+          >
+            <ul id="labelIds-options" className="select2-results" role="listbox">
+              {groupedLabels.map((category) => (
+                <li className="select2-result-with-children" key={category.id}>
+                  <div className="select2-result-label">{category.name}</div>
+                  <ul className="select2-result-sub">
+                    {category.labels.map((label) => {
+                      const selected = search.labelIds.includes(label.id);
+                      return (
+                        <li
+                          className={`select2-results-dept-1 select2-result select2-result-selectable${selected ? " select2-disabled" : ""}`}
+                          key={label.id}
+                          role="option"
+                          aria-selected={selected}
+                          tabIndex={selected ? -1 : 0}
+                          onClick={() => {
+                            if (!selected) {
+                              updateSelectedLabels([...search.labelIds, label.id]);
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (!selected && (event.key === "Enter" || event.key === " ")) {
+                              event.preventDefault();
+                              updateSelectedLabels([...search.labelIds, label.id]);
+                            }
+                          }}
+                        >
+                          <div className="select2-result-label">
+                            <span className="issue-label active list-label">{label.name}</span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
         <select
           id="labelIds"
           name="labelIds"
@@ -2832,7 +2943,7 @@ function IssueSearchLabelSelect({
           data-dropdown-css-class="issue-labels"
           data-container-css-class="issue-labels bordered fullsize"
           data-placeholder={t("label.select")}
-          className="hide"
+          className="hide select2-offscreen"
           defaultValue={search.labelIds}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
         >
@@ -2866,30 +2977,23 @@ function StateTab({
   active,
   count,
   label,
-  onStateChange,
-  state,
+  to,
 }: {
   active: boolean;
   count: number;
   label: string;
-  onStateChange: (state: "closed" | "open") => void;
-  state: "closed" | "open";
+  to: string;
 }) {
-  const stateTabLegacyAttrs = { state } satisfies LegacyStateButtonAttributes;
-
   return (
     <li className={active ? "active" : undefined}>
-      <button
-        type="button"
-        {...stateTabLegacyAttrs}
-        onClick={(event) => {
-          event.preventDefault();
-          onStateChange(state);
-        }}
+      <Link
+        activeOptions={legacyRouteLocalActiveOptions}
+        activeProps={legacyRouteLocalActiveProps}
+        to={to}
       >
         {label}
         <span className="num-badge">{count}</span>
-      </button>
+      </Link>
     </li>
   );
 }

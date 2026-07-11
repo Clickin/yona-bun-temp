@@ -765,7 +765,7 @@ export function SiteLayoutShell({
   const shouldRenderAllProjectsSearchScope =
     (runtimeConfig.hideProjectListing !== true && !isGuest) || isSiteAdmin;
   const feedbackUrl =
-    runtimeConfig.feedbackUrl?.trim() || "https://github.com/nforge/yobi/issues?state=open";
+    runtimeConfig.feedbackUrl?.trim() || "https://github.com/yona-projects/yona/issues";
   const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
     initialSearchScope,

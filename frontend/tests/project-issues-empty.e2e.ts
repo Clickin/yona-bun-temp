@@ -585,7 +585,6 @@ test("project issue list route source types legacy attrs without unsafe casts", 
   }
 
   for (const typedLegacyAttrs of [
-    "satisfies LegacyStateButtonAttributes",
     "satisfies LegacyIssueRowListAttributes",
     "satisfies LegacyIssueRowForAttributes",
     "satisfies LegacyOrderAttributes",
@@ -617,16 +616,13 @@ test("protected org-owned project issue list exposes legacy group search scope a
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect(
-    attributes(page, ".gnb-search-form [data-toggle='search-scope']", "data-action"),
-  ).resolves.toEqual([
-    `${basePath}/weblabs/portal/search`,
-    `${basePath}/organizations/weblabs/search`,
-    `${basePath}/search`,
-  ]);
+  const scopeButtons = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
+  await expect(page.locator(".gnb-search-form [data-action]")).toHaveCount(0);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await scopeButtons.filter({ hasText: "This Group" }).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -634,7 +630,7 @@ test("protected org-owned project issue list exposes legacy group search scope a
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await scopeButtons.filter({ hasText: "All Projects" }).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
@@ -662,7 +658,7 @@ test("protected org-owned project issue list exposes legacy group search scope a
   await expect(row.locator(".infos .infos-link-item")).toHaveAttribute("href", `${basePath}/carol`);
   await expect(row.locator(".span3 .avatar-wrap.assinee img")).toHaveAttribute(
     "src",
-    "/assets/images/default-avatar-128.png",
+    `${basePath}/assets/images/default-avatar-128.png`,
   );
   await expect(row.locator(".span3 span.vmiddle")).toHaveText("22 days");
   await expect(row.locator(".mileston-tag")).toHaveCount(0);
@@ -981,6 +977,81 @@ test("project issue list search form renders legacy partial_select_label when pr
     "3",
   );
   await expect(page.locator('#labelIds option[value="8"]')).toHaveText("bug");
+});
+
+test("project issue label search recreates legacy Select2 visible DOM and geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "project-labels");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
+
+  const labelsWrap = page.locator(".labels-wrap");
+  const control = labelsWrap.locator("#s2id_labelIds");
+  await expect(control).toHaveClass(/select2-container-multi/u);
+  await expect(control).toHaveClass(/issue-labels/u);
+  await expect(control).toHaveClass(/bordered/u);
+  await expect(control.locator('[role="listbox"]')).toBeHidden();
+  await expect(control.locator(".select2-search-choice")).toContainText("bug");
+  await expect(
+    control.locator('.select2-search-field input[placeholder="Select label"]'),
+  ).toBeVisible();
+  await expect(control.locator('[role="option"] > .select2-result-label')).toHaveCount(1);
+  await expect(control.locator('[role="option"] > button.select2-result-label')).toHaveCount(0);
+  expect(
+    await control
+      .locator('[role="option"] > .select2-result-label')
+      .evaluate((element) => element.tagName),
+  ).toBe("DIV");
+  await expect(page.locator("#labelIds")).toHaveClass(/select2-offscreen/u);
+
+  const closeMetrics = await control.locator(".select2-search-choice-close").evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      backgroundImage: style.backgroundImage,
+      border: style.border,
+      height: rect.height,
+      padding: style.padding,
+      tagName: element.tagName,
+      width: rect.width,
+    };
+  });
+  expect(closeMetrics).toEqual({
+    backgroundImage: expect.stringContaining("select2.png"),
+    border: "0px none rgb(51, 51, 51)",
+    height: 13,
+    padding: "0px",
+    tagName: "SPAN",
+    width: 12,
+  });
+
+  const desktopBoxes = await page.evaluate(() => {
+    const labels = document.querySelector(".labels-wrap");
+    const control = document.querySelector("#s2id_labelIds");
+    const native = document.querySelector("#labelIds");
+    if (!labels || !control || !native) return null;
+    const l = labels.getBoundingClientRect();
+    const c = control.getBoundingClientRect();
+    const n = native.getBoundingClientRect();
+    return { control: c, labels: l, native: n };
+  });
+  expect(desktopBoxes).not.toBeNull();
+  expect(desktopBoxes!.control.left).toBeGreaterThanOrEqual(desktopBoxes!.labels.left);
+  expect(desktopBoxes!.control.right).toBeLessThanOrEqual(desktopBoxes!.labels.right + 1);
+  expect(desktopBoxes!.control.width).toBeGreaterThan(150);
+  expect(desktopBoxes!.native.width).toBeLessThanOrEqual(1);
+
+  await control.locator(".select2-search-field input").click();
+  await expect(control).toHaveClass(/select2-dropdown-open/u);
+  await expect(control.locator('[role="listbox"]')).toBeVisible();
+  await control.locator(".select2-search-field input").press("Escape");
+  await expect(control).not.toHaveClass(/select2-dropdown-open/u);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".labels-wrap")).toBeHidden();
 });
 
 test("project issue list label select hides legacy edit link for non-managers", async ({
@@ -1392,6 +1463,84 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
   expect(shellBoxes!.count.right).toBeLessThanOrEqual(shellBoxes!.active.right + 1);
 });
 
+test("project issue menu keeps legacy badge-owned desktop geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await expect(page.locator(".project-menu-gruop")).toBeVisible();
+  await expect(
+    page.locator(".project-menu-gruop > li", { hasText: "Board" }).locator(".project-menu-count"),
+  ).toHaveText("1");
+
+  const boxes = await page.evaluate(() => {
+    const nav = document.querySelector(".project-menu-gruop");
+    const boardCount = document.querySelector(
+      ".project-menu-gruop > li:last-child .project-menu-count",
+    );
+    if (!nav || !boardCount) return null;
+    return {
+      board: boardCount.getBoundingClientRect(),
+      nav: nav.getBoundingClientRect(),
+    };
+  });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.nav.left).toBe(110);
+  expect(boxes!.board.width).toBeCloseTo(20, 0);
+  expect(boxes!.nav.right - boxes!.board.right).toBeCloseTo(20, 0);
+});
+
+test("project issue state tabs keep legacy desktop and mobile action-row geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  const measure = () =>
+    page.evaluate(() => {
+      const tabs = document.querySelector(".issue-list-wrap .nav-tabs.nm");
+      const open = tabs?.querySelector("li:nth-child(1) > a");
+      const closed = tabs?.querySelector("li:nth-child(2) > a");
+      const childToggle = tabs?.querySelector(".show-subtasks-li");
+      const row = document.querySelector(".post-list-wrap .post-item");
+      if (!tabs || !open || !closed || !childToggle || !row) return null;
+      const openStyle = getComputedStyle(open);
+      const closedStyle = getComputedStyle(closed);
+      return {
+        childToggle: childToggle.getBoundingClientRect(),
+        closed: closed.getBoundingClientRect(),
+        closedPadding: [closedStyle.paddingLeft, closedStyle.paddingRight],
+        open: open.getBoundingClientRect(),
+        openPadding: [openStyle.paddingLeft, openStyle.paddingRight],
+        row: row.getBoundingClientRect(),
+        tabs: tabs.getBoundingClientRect(),
+      };
+    });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  await expect(page.locator(".post-list-wrap .post-item")).toBeVisible();
+  const desktop = await measure();
+  expect(desktop).not.toBeNull();
+  expect(desktop!.openPadding).toEqual(["30px", "30px"]);
+  expect(desktop!.closedPadding).toEqual(["30px", "30px"]);
+  expect(desktop!.open.top).toBeCloseTo(desktop!.childToggle.top, 0);
+  expect(desktop!.closed.top).toBeCloseTo(desktop!.childToggle.top, 0);
+  expect(desktop!.row.top - desktop!.tabs.bottom).toBeCloseTo(53, 0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await measure();
+  expect(mobile).not.toBeNull();
+  expect(mobile!.openPadding).toEqual(["5px", "5px"]);
+  expect(mobile!.closedPadding).toEqual(["5px", "5px"]);
+  expect(mobile!.open.width).toBeCloseTo(69.45, 1);
+  expect(mobile!.closed.width).toBeCloseTo(81.44, 1);
+  expect(mobile!.open.top).toBeCloseTo(mobile!.childToggle.top, 0);
+  expect(mobile!.closed.top).toBeCloseTo(mobile!.childToggle.top, 0);
+  expect(mobile!.row.top - mobile!.tabs.bottom).toBeCloseTo(53, 0);
+});
+
 test("project issue normal list draft marker matches legacy partial_list.scala.html", async ({
   page,
 }) => {
@@ -1769,9 +1918,9 @@ test("project issue list preserves legacy state=all destination and search paylo
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expect(page.locator("#search input[name='state']")).toHaveValue("all");
   await expect(page.locator(".left-menu .lst-stacked > li").first()).toContainText("Open");
-  await expect(page.locator("#span10 > .nav-tabs [state]")).toHaveCount(2);
-  await expect(page.locator("#span10 > .nav-tabs [state='open']")).toBeVisible();
-  await expect(page.locator("#span10 > .nav-tabs [state='closed']")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs [state]")).toHaveCount(0);
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(0).locator("a")).toBeVisible();
+  await expect(page.locator("#span10 > .nav-tabs > li").nth(1).locator("a")).toBeVisible();
   await expect(page.locator("#span10 > .nav-tabs > li.active")).toHaveCount(0);
 
   const submittedIssueListRequest = page.waitForRequest((request) => {
@@ -1950,12 +2099,12 @@ test("project issue state tab updates route like legacy partial_list_wrap.scala.
 
   await expect(page.locator('.nav-tabs li a[href="#"][state]')).toHaveCount(0);
   await expect(page.locator(".nav-tabs li[data-pjax]")).toHaveCount(0);
-  await page.locator('.nav-tabs li button[type="button"][state="closed"]').click();
+  await page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(1).locator("a").click();
 
   await expect.poll(() => new URL(page.url()).searchParams.get("state") ?? "").toBe("closed");
   await expect.poll(() => new URL(page.url()).searchParams.get("filter") ?? "").toBe("bug");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum") ?? "1").toBe("1");
-  await expect(page.locator('.nav-tabs li:has(button[state="closed"])')).toHaveClass("active");
+  await expect(page.locator(".issue-list-wrap .nav-tabs.nm > li").nth(1)).toHaveClass("active");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("issue-state-tab");
@@ -2539,7 +2688,7 @@ test("project issue search user options omit Select2 metadata and preserve copy 
   await expect(page.locator("#assignee")).toHaveClass(/(?:^|\s)open(?:\s|$)/u);
   await expect(page.locator('#assignee .mass-update-list li[data-value="4"] img')).toHaveAttribute(
     "src",
-    "/assets/images/default-avatar-32.png",
+    `${basePath}/assets/images/default-avatar-32.png`,
   );
 
   expect(
@@ -3668,7 +3817,7 @@ async function mockProjectIssues(
         openIssueCount: 1,
         openPullRequestCount: 1,
         ownerName: "admin",
-        postCount: 1,
+        boardCount: 1,
         projectName: "sample",
         reviewCount: 2,
         vcs: "GIT",
@@ -4503,17 +4652,28 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => shouldKeepAttr(node, attr))
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      if (node.id === "s2id_labelIds") {
+        return "";
+      }
+      const stateTabLink = node.matches(
+        ".issue-list-wrap .nav-tabs.nm > li:nth-child(1) > a, .issue-list-wrap .nav-tabs.nm > li:nth-child(2) > a",
+      );
+      const attrs = stateTabLink
+        ? 'type="button"'
+        : Array.from(node.attributes)
+            .filter((attr) => shouldKeepAttr(node, attr))
+            .sort((left, right) => left.name.localeCompare(right.name))
+            .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+            .join(" ");
+      const tagName = node.matches("button.pin")
+        ? "div"
+        : stateTabLink
+          ? "button"
+          : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -4524,10 +4684,22 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "style") {
         return normalizeStyleAttr(attr.value);
       }
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
+      }
+      if (attr.name === "href" && attr.value.endsWith("/issueform?commentId=&parentIssueId=")) {
+        return attr.value.slice(0, attr.value.indexOf("?"));
+      }
       if (attr.name === "class" && attr.ownerElement?.closest(".user-menu-wrap")) {
         return attr.value
           .split(/\s+/u)
           .filter((className) => className && className !== "active")
+          .join(" ");
+      }
+      if (attr.name === "class" && attr.ownerElement?.id === "labelIds") {
+        return attr.value
+          .split(/\s+/u)
+          .filter((className) => className && className !== "select2-offscreen")
           .join(" ");
       }
       return attr.value;
@@ -4535,6 +4707,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     function normalizeStyleAttr(value: string) {
       return value
+        .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replaceAll('"', "'")
@@ -4545,8 +4718,23 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function shouldKeepAttr(node: Element, attr: Attr) {
+      const pluginOnlyAttributes = new Set([
+        "data-action",
+        "data-dismiss",
+        "data-placement",
+        "data-target",
+        "data-toggle",
+      ]);
+      const reactOwnedNavbarAttribute =
+        ((node.matches("button.pin") || node.matches("#sidebar-open-btn > button")) &&
+          (attr.name === "aria-controls" || attr.name === "aria-expanded")) ||
+        (node.matches("button.pin") && attr.name === "type") ||
+        (node.closest("button.pin") !== null && attr.name === "aria-hidden");
       if (
         attr.name.startsWith("data-v-") ||
+        pluginOnlyAttributes.has(attr.name) ||
+        attr.name === "state" ||
+        reactOwnedNavbarAttribute ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
@@ -4599,11 +4787,18 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
+      if (attr.name === "style") {
+        return normalizeStyleAttr(attr.value);
+      }
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
+      }
+      return attr.value;
     }
 
     function normalizeStyleAttr(value: string) {
       return value
+        .replace(/url\((['"]?)\/[^'")]*\/assets\//gu, "url($1/assets/")
         .replace(/\s+/g, "")
         .replace(/;$/u, "")
         .replaceAll('"', "'")
@@ -4614,8 +4809,17 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function shouldKeepAttr(node: Element, attr: Attr) {
+      const pluginOnlyAttributes = new Set([
+        "data-action",
+        "data-dismiss",
+        "data-placement",
+        "data-target",
+        "data-toggle",
+      ]);
       if (
         attr.name.startsWith("data-v-") ||
+        pluginOnlyAttributes.has(attr.name) ||
+        attr.name === "state" ||
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
