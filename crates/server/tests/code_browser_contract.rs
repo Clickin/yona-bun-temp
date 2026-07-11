@@ -661,6 +661,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .find(|entry| entry["name"] == "src" && entry["kind"] == "folder")
         .expect("src entry");
     assert_eq!(src_entry["authorLabel"], "Author");
+    assert!(src_entry["commitDate"].as_str().unwrap().contains('T'));
     assert_eq!(src_entry["authorLoginId"], "author");
     assert!(src_entry["authorAvatarUrl"]
         .as_str()
@@ -691,7 +692,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["commitShortId"].as_str().unwrap().len(), 7);
     assert!(file["file"]["commitId"].as_str().unwrap().len() >= 7);
     assert_eq!(file["file"]["commentCount"], 0);
-    assert!(!file["file"]["commitDate"].as_str().unwrap().is_empty());
+    assert!(file["file"]["commitDate"].as_str().unwrap().contains('T'));
     assert_eq!(file["file"]["authorLabel"], "Author");
     assert!(!json_bool(&file["file"], "isBinary"));
 }

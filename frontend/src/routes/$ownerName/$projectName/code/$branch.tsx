@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
@@ -192,7 +193,9 @@ function ProjectCodeFolderBody({
                 aria-expanded={branchMenuOpen}
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
-                <span className="select2-chosen">{selectedBranch}</span>
+                <span className="select2-chosen">
+                  <strong className="branch-label branch">branch</strong> {selectedBranch}
+                </span>
                 <span className="select2-arrow" aria-hidden="true">
                   <b></b>
                 </span>
@@ -243,7 +246,7 @@ function ProjectCodeFolderBody({
                           );
                         }}
                       >
-                        {item.name}
+                        <strong className="branch-label branch">branch</strong> {item.name}
                       </button>
                     </li>
                   ))}
@@ -301,6 +304,24 @@ function ProjectCodeFolderBody({
               >
                 {projectName}
               </Link>
+              {code.path === "" ? (
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to={projectRoute(ownerName, projectName, "code", encodedBranch)}
+                  hash="code-browser-active-sentinel"
+                  mask={{ to: projectRoute(ownerName, projectName, "code", encodedBranch) }}
+                ></Link>
+              ) : null}
             </div>
             {isGit ? (
               <>
@@ -411,7 +432,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
                 entry.path,
               )}
               hash={entry.kind === "folder" ? `cb-${entry.path}` : undefined}
-              className={entry.kind === "folder" ? "folder" : "file"}
+              className={entry.kind === "folder" ? "dynatree-ico-cf" : "dynatree-ico-c"}
               title={entry.name}
             >
               <span className="dynatree-icon vmiddle"></span>
@@ -439,11 +460,48 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               </Link>
             </span>
           </div>
-          <div className="span1 commitDate">{entry.commitDate}</div>
+          <div className="span1 commitDate">{formatCodeCommitDate(entry.commitDate, t)}</div>
         </div>
       ))}
     </div>
   );
+}
+
+function formatCodeCommitDate(
+  value: string,
+  t: ReturnType<typeof useLegacyMessages>["t"],
+  now = Date.now(),
+) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+
+  const elapsedMilliseconds = Math.max(0, now - timestamp);
+  const elapsedSeconds = Math.floor(elapsedMilliseconds / 1_000);
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 8) {
+    if (elapsedDays > 0) return t(timeMessageKey("day", elapsedDays), { args: [elapsedDays] });
+    if (elapsedHours > 0) return t(timeMessageKey("hour", elapsedHours), { args: [elapsedHours] });
+    if (elapsedMinutes > 0)
+      return t(timeMessageKey("minute", elapsedMinutes), { args: [elapsedMinutes] });
+    if (elapsedSeconds > 0)
+      return t(timeMessageKey("second", elapsedSeconds), { args: [elapsedSeconds] });
+    return t("common.time.just");
+  }
+
+  const date = new Date(timestamp);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return date.getFullYear() === new Date(now).getFullYear()
+    ? `${month}-${day}`
+    : `${date.getFullYear()}-${month}-${day}`;
+}
+
+function timeMessageKey(unit: "day" | "hour" | "minute" | "second", count: number) {
+  return `common.time.${unit}${count === 1 ? "" : "s"}`;
 }
 
 function projectHref(basePath: string, ownerName: string, projectName: string, ...parts: string[]) {

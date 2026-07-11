@@ -265,7 +265,7 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     fs::create_dir_all(asset_root.join("images")).expect("images dir");
     fs::write(
         asset_root.join("index.html"),
-        "<!doctype html><html><head><title>Yona</title><link rel=\"stylesheet\" href=\"/assets/app.css\"></head><body><div id=\"root\"></div><img src=\"/images/logo.png\"><script type=\"module\" src=\"/assets/app.js\"></script></body></html>",
+        "<!doctype html><html><head><title>Yona</title><link rel=\"stylesheet\" href=\"./assets/app.css\"></head><body><div id=\"root\"></div><img src=\"./images/logo.png\"><script type=\"module\" src=\"./assets/app.js\"></script></body></html>",
     )
     .expect("write index");
     fs::write(

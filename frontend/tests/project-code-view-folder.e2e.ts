@@ -5,13 +5,17 @@ const ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/code/$branch.tsx", import.meta.url),
   "utf8",
 );
+const PROJECT_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+  "utf8",
+);
 const FILE_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx", import.meta.url),
   "utf8",
 );
 
 const EXPECTED_CODE_FOLDER_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">Jul 1, 2026</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">Jul 2, 2026</div></div></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="code-browse-wrap"><ul class="nav nav-tabs"><li class="active"><a href="__BASE_PATH__/admin/sample/code/main">Files</a></li><li><a href="__BASE_PATH__/admin/sample/commits/main">Commit</a></li><li><a href="__BASE_PATH__/admin/sample/branches">Branches</a></li></ul><div class="code-browse-header"><select id="branches" data-format="branch" data-dropdown-css-class="branches" class="pull-left"><option value="__BASE_PATH__/admin/sample/code/main" selected="">main</option><option value="__BASE_PATH__/admin/sample/code/feature%2Frelease">feature/release</option></select><div id="breadcrumbs" class="code-breadcrumb-wrap ml10 pull-left"><a href="__BASE_PATH__/admin/sample/code/main">sample</a><a href="__BASE_PATH__/admin/sample/code/main"></a></div><div class="pull-right"><a href="__BASE_PATH__/admin/sample/archive/main.zip" class="ybtn">Download as .zip file</a></div><div class="pull-right"><a id="new-file-link" href="__BASE_PATH__/admin/sample/postform?path=&amp;branch=main" class="ybtn">New file</a></div></div><div class="code-viewer-wrap"><div id="spin" style="position:fixed;top:50%;left:50%"></div><div class="list-wrap"><div class="row-fluid listhead"><div class="span6 filename"><strong>File name</strong></div><div class="span4 commitMsg"><strong>Commit message</strong></div><div class="span2 commitDate"><strong>Commit date</strong></div></div><div id="cb-src" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/src#cb-src" class="folder" title="src"><span class="dynatree-icon vmiddle"></span>src</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/abcdef1?branch=main">Add source</a></span></div><div class="span1 commitDate">2 hours ago</div></div><div id="cb-README.md" class="row-fluid listitem"><div class="span6 filename"><a href="__BASE_PATH__/admin/sample/code/main/README.md" class="file" title="README.md"><span class="dynatree-icon vmiddle"></span>README.md</a></div><div class="span5 commitMsg"><span class="ml5"><a href="__BASE_PATH__/admin/sample/commit/1234567?branch=main">Update README</a></span></div><div class="span1 commitDate">2 hours ago</div></div></div></div></div></div></div>
 `;
 
 const EXPECTED_SVN_CODE_FOLDER_BODY = `
@@ -52,13 +56,33 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
   await expect(page.locator(".code-browse-wrap a[data-status]")).toHaveCount(0);
   const activeFilesLink = page.locator(".code-browse-wrap > .nav.nav-tabs a").first();
-  const breadcrumbProjectLink = page.locator(".code-breadcrumb-wrap a");
+  const breadcrumbProjectLink = page.locator(".code-breadcrumb-wrap a").first();
   await expect(activeFilesLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
   await expect(activeFilesLink).not.toHaveAttribute("aria-current", /.+/u);
   await expect(activeFilesLink).not.toHaveAttribute("data-status", /.+/u);
   await expect(breadcrumbProjectLink).toHaveAttribute("href", `${basePath}/admin/sample/code/main`);
   await expect(breadcrumbProjectLink).not.toHaveAttribute("aria-current", /.+/u);
   await expect(breadcrumbProjectLink).not.toHaveAttribute("data-status", /.+/u);
+  await expect(page.locator("#breadcrumbs a")).toHaveCount(2);
+  await expect(page.locator("#breadcrumbs")).toHaveText("sample");
+  await expect(page.locator(".select2-chosen .branch-label.branch")).toHaveText("branch");
+  await expect(page.locator(".listitem .commitDate")).toHaveText(["2 hours ago", "2 hours ago"]);
+  await expect
+    .poll(() =>
+      page
+        .locator(".project-header-outer")
+        .evaluate((element) => getComputedStyle(element).backgroundImage),
+    )
+    .toContain(`${basePath}/legacy-assets/images/project_default.jpg`);
+  const canonicalProjectLogoUrl = `${basePath}/legacy-assets/images/project_default_logo.png`;
+  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
+    "src",
+    canonicalProjectLogoUrl,
+  );
+  const projectLogoResponse = await page.request.get(
+    new URL(canonicalProjectLogoUrl, page.url()).href,
+  );
+  expect(projectLogoResponse.status()).toBe(200);
   await expect(
     page.locator('.code-browse-header .pull-right a.ybtn:has-text("Download")'),
   ).toHaveAttribute("href", `${basePath}/admin/sample/archive/main.zip`);
@@ -66,7 +90,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
     "href",
     `${basePath}/admin/sample/postform?path=&branch=main`,
   );
-  await expect(page.locator("#cb-src .filename a.folder")).toHaveAttribute(
+  await expect(page.locator("#cb-src .filename a.dynatree-ico-cf")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src#cb-src`,
   );
@@ -74,9 +98,24 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
     "href",
     `${basePath}/admin/sample/commit/1234567?branch=main`,
   );
+  await expect(page.locator("#cb-README\\.md .filename a")).toHaveClass("dynatree-ico-c");
+  expect(await codeIconMetrics(page)).toEqual({
+    file: {
+      hasBackgroundImage: true,
+      backgroundPosition: "0px 0px",
+      height: 16,
+      width: 16,
+    },
+    folder: {
+      hasBackgroundImage: true,
+      backgroundPosition: "0px -16px",
+      height: 16,
+      width: 16,
+    },
+  });
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(page, expectedCodeFolderBody(EXPECTED_CODE_FOLDER_BODY, basePath)),
   );
   const shell = await shellMetrics(page);
   expect(shell).not.toBeNull();
@@ -128,12 +167,12 @@ test("project code root redirects non-empty repository to default branch folder"
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/main`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
-  await expect(page.locator("#cb-src .filename a.folder")).toHaveAttribute(
+  await expect(page.locator("#cb-src .filename a.dynatree-ico-cf")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/code/main/src#cb-src`,
   );
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(page, expectedCodeFolderBody(EXPECTED_CODE_FOLDER_BODY, basePath)),
   );
 });
 
@@ -156,7 +195,15 @@ test("project SVN code branch root folder matches legacy code/view.scala.html DO
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_SVN_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath),
+      EXPECTED_SVN_CODE_FOLDER_BODY.replaceAll("__BASE_PATH__", basePath)
+        .replace(
+          `<a href="${basePath}/admin/sample/code/trunk">sample</a>`,
+          `<a href="${basePath}/admin/sample/code/trunk">sample</a><a href="${basePath}/admin/sample/code/trunk"></a>`,
+        )
+        .replaceAll("Jul 1, 2026", "2 hours ago")
+        .replaceAll("Jul 2, 2026", "2 hours ago")
+        .replaceAll('class="folder"', 'class="dynatree-ico-cf"')
+        .replaceAll('class="file"', 'class="dynatree-ico-c"'),
     ),
   );
   expect(await folderViewMetrics(page)).toMatchObject({
@@ -184,7 +231,7 @@ test("project code branch folder links navigate with TanStack Router without doc
       (window as typeof window & { __yonaCodeFolderDocumentMarker: string })
         .__yonaCodeFolderDocumentMarker,
   );
-  await page.locator("#cb-src .filename a.folder").click();
+  await page.locator("#cb-src .filename a.dynatree-ico-cf").click();
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/main/src#cb-src`);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -304,12 +351,15 @@ test("project code branch renders React-owned legacy Select2 geometry and naviga
   const container = page.locator("#branches").locator("xpath=preceding-sibling::div[1]");
   await expect(container).toHaveClass(/select2-container/);
   await expect(container).toHaveCSS("width", "220px");
-  await expect(container.locator(".select2-chosen")).toHaveText("main");
+  await expect(container.locator(".select2-chosen")).toHaveText("branch main");
   await expect(page.locator("#branches")).toHaveClass("pull-left select2-offscreen");
   await container.locator("button.select2-choice").click();
   await expect(container).toHaveClass(/select2-container-active/);
   await expect(container.locator(".select2-drop-active")).toBeVisible();
-  await expect(container.locator(".select2-result-label")).toHaveText(["main", "feature/release"]);
+  await expect(container.locator(".select2-result-label")).toHaveText([
+    "branch main",
+    "branch feature/release",
+  ]);
   for (const viewport of [
     { height: 900, width: 1366 },
     { height: 844, width: 390 },
@@ -335,6 +385,20 @@ test("project code branch renders React-owned legacy Select2 geometry and naviga
     expect(geometry.fontSize).toBe("13px");
     expect(geometry.lineHeight).toBe("26px");
     expect(geometry.textAlign).toBe("left");
+    expect(await codeIconMetrics(page)).toEqual({
+      file: {
+        hasBackgroundImage: true,
+        backgroundPosition: "0px 0px",
+        height: 16,
+        width: 16,
+      },
+      folder: {
+        hasBackgroundImage: true,
+        backgroundPosition: "0px -16px",
+        height: 16,
+        width: 16,
+      },
+    });
   }
   await container.locator(".select2-result-label", { hasText: "feature/release" }).click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Frelease`);
@@ -372,6 +436,12 @@ test("project code branch route source converts internal raw anchors to Link", a
   expect(ROUTE_SOURCE).not.toContain("href={commitHref(");
   expect(ROUTE_SOURCE).not.toContain("href={`${projectHref(");
   expect(ROUTE_SOURCE).not.toContain('id="new-file-link"\n                      href=');
+  expect(PROJECT_ROUTE_SOURCE).toContain(
+    'prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg")',
+  );
+  expect(PROJECT_ROUTE_SOURCE).toContain(
+    'prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")',
+  );
 });
 
 test("project code file route source keeps nested folder view in React Link state", async () => {
@@ -390,6 +460,34 @@ test("project code file route source keeps nested folder view in React Link stat
   expect(FILE_ROUTE_SOURCE).not.toContain("tplFileListItem");
   expect(FILE_ROUTE_SOURCE).not.toContain("text/x-jquery-tmpl");
 });
+
+function expectedCodeFolderBody(template: string, basePath: string) {
+  return template
+    .replaceAll("__BASE_PATH__", basePath)
+    .replaceAll('class="folder"', 'class="dynatree-ico-cf"')
+    .replaceAll('class="file"', 'class="dynatree-ico-c"');
+}
+
+async function codeIconMetrics(page: Page) {
+  return page.evaluate(() => {
+    const readIcon = (selector: string) => {
+      const icon = document.querySelector<HTMLElement>(selector);
+      if (!icon) throw new Error(`Missing code browser icon: ${selector}`);
+      const style = getComputedStyle(icon);
+      const box = icon.getBoundingClientRect();
+      return {
+        backgroundPosition: style.backgroundPosition,
+        hasBackgroundImage: style.backgroundImage !== "none",
+        height: box.height,
+        width: box.width,
+      };
+    };
+    return {
+      file: readIcon("#cb-README\\.md .dynatree-icon"),
+      folder: readIcon("#cb-src .dynatree-icon"),
+    };
+  });
+}
 
 async function folderViewMetrics(page: Page) {
   return page.locator(".code-viewer-wrap .list-wrap").evaluate((list) => {
@@ -517,14 +615,14 @@ async function mockProjectCodeFolder(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        backgroundImageUrl: "",
         enrollmentRequestCount: 0,
         id: 7,
         isFavorite: false,
         isForkedFromOrigin: false,
         isPrivate: false,
         isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
+        logoUrl: "",
         menuSetting: {
           board: true,
           code: true,
@@ -551,7 +649,7 @@ async function mockProjectCodeFolder(
             breadcrumbs: [{ name: "src", path: "src" }],
             entries: [
               {
-                commitDate: "Jul 3, 2026",
+                commitDate: recentCommitTimestamp(),
                 commitMessage: "Add main module",
                 commitShortId: "fedcba9",
                 kind: "folder",
@@ -559,7 +657,7 @@ async function mockProjectCodeFolder(
                 path: "src/main",
               },
               {
-                commitDate: "Jul 4, 2026",
+                commitDate: recentCommitTimestamp(),
                 commitMessage: "Add library",
                 commitShortId: "7654321",
                 kind: "file",
@@ -573,7 +671,7 @@ async function mockProjectCodeFolder(
             breadcrumbs: [],
             entries: [
               {
-                commitDate: "Jul 1, 2026",
+                commitDate: recentCommitTimestamp(),
                 commitMessage: "Add source",
                 commitShortId: "abcdef1",
                 kind: "folder",
@@ -581,7 +679,7 @@ async function mockProjectCodeFolder(
                 path: "src",
               },
               {
-                commitDate: "Jul 2, 2026",
+                commitDate: recentCommitTimestamp(),
                 commitMessage: "Update README",
                 commitShortId: "1234567",
                 kind: "file",
@@ -606,6 +704,10 @@ async function mockProjectCodeFolder(
       }),
     });
   });
+}
+
+function recentCommitTimestamp() {
+  return new Date(Date.now() - (2 * 60 + 5) * 60 * 1_000).toISOString();
 }
 
 async function canonicalize(page: Page, selector: string) {

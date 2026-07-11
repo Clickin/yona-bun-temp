@@ -1294,7 +1294,7 @@ export function ProjectHeader({
   const backgroundImageUrl =
     stringField(recordField(project).backgroundImageUrl, "") ||
     stringField(recordField(project).backgroundUrl, "") ||
-    prefixBasePath(basePath, "/assets/images/bg-default-project.png");
+    prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg");
   const isForked =
     booleanField(recordField(project).isForkedFromOrigin) ||
     booleanField(recordField(project).isForked);
@@ -1851,7 +1851,7 @@ function projectId(project: ProjectContainer) {
 function projectLogoUrl(project: ProjectContainer, basePath: string) {
   return (
     stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/assets/images/project_default_logo.png")
+    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")
   );
 }
 

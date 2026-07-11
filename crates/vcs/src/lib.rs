@@ -3055,7 +3055,7 @@ fn latest_commit_for_path(
         &[
             "log",
             "-1",
-            "--format=%h%x1f%s%x1f%cs%x1f%an%x1f%ae",
+            "--format=%h%x1f%s%x1f%aI%x1f%an%x1f%ae",
             branch,
             "--",
             path,
@@ -3089,7 +3089,7 @@ fn latest_file_commit_for_path(
         &[
             "log",
             "-1",
-            "--format=%H%x1f%h%x1f%s%x1f%cs%x1f%an%x1f%ae",
+            "--format=%H%x1f%h%x1f%s%x1f%aI%x1f%an%x1f%ae",
             branch,
             "--",
             path,

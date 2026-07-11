@@ -541,23 +541,33 @@ fn html_with_runtime(index_html: String, browser_runtime: BrowserRuntimeConfig) 
 }
 
 fn html_with_base_path_assets(index_html: String, base_path: &str) -> String {
-    if base_path == "/" {
-        return index_html;
-    }
+    let mount = if base_path == "/" { "" } else { base_path };
 
     index_html
         .replace(
+            "src=\"./legacy-assets/",
+            &format!("src=\"{mount}/legacy-assets/"),
+        )
+        .replace(
+            "href=\"./legacy-assets/",
+            &format!("href=\"{mount}/legacy-assets/"),
+        )
+        .replace("src=\"./assets/", &format!("src=\"{mount}/assets/"))
+        .replace("href=\"./assets/", &format!("href=\"{mount}/assets/"))
+        .replace("src=\"./images/", &format!("src=\"{mount}/images/"))
+        .replace("href=\"./images/", &format!("href=\"{mount}/images/"))
+        .replace(
             "src=\"/legacy-assets/",
-            &format!("src=\"{base_path}/legacy-assets/"),
+            &format!("src=\"{mount}/legacy-assets/"),
         )
         .replace(
             "href=\"/legacy-assets/",
-            &format!("href=\"{base_path}/legacy-assets/"),
+            &format!("href=\"{mount}/legacy-assets/"),
         )
-        .replace("src=\"/assets/", &format!("src=\"{base_path}/assets/"))
-        .replace("href=\"/assets/", &format!("href=\"{base_path}/assets/"))
-        .replace("src=\"/images/", &format!("src=\"{base_path}/images/"))
-        .replace("href=\"/images/", &format!("href=\"{base_path}/images/"))
+        .replace("src=\"/assets/", &format!("src=\"{mount}/assets/"))
+        .replace("href=\"/assets/", &format!("href=\"{mount}/assets/"))
+        .replace("src=\"/images/", &format!("src=\"{mount}/images/"))
+        .replace("href=\"/images/", &format!("href=\"{mount}/images/"))
 }
 
 fn inject_legacy_yona_usage_script(index_html: String) -> String {
