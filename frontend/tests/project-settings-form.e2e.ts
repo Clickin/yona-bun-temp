@@ -42,15 +42,15 @@ test("project settings prefixes empty logo and background fallbacks with the con
 
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/assets/images/bg-default-project.png`),
+    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default.jpg`),
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/assets/images/project_default_logo.png`,
+    `${mountPrefix}/legacy-assets/images/project_default_logo.png`,
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/assets/images/project_default_logo.png`),
+    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default_logo.png`),
   );
   await test.info().attach("project-settings-fallback-desktop", {
     body: await page.screenshot({ fullPage: true }),
@@ -61,20 +61,186 @@ test("project settings prefixes empty logo and background fallbacks with the con
   await page.goto(`${mountPrefix}/admin/sample/settingform`);
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/assets/images/bg-default-project.png`),
+    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default.jpg`),
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/assets/images/project_default_logo.png`,
+    `${mountPrefix}/legacy-assets/images/project_default_logo.png`,
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/assets/images/project_default_logo.png`),
+    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default_logo.png`),
   );
   await test.info().attach("project-settings-fallback-mobile", {
     body: await page.screenshot({ fullPage: true }),
     contentType: "image/png",
   });
+});
+
+test("project settings uses the legacy project shell watcher and counting badges", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await mockProjectSettings(page, {
+    project: {
+      boardCount: 1,
+      isWatching: true,
+      openIssueCount: 1,
+      viewerCanWatch: true,
+      watchCount: 1,
+    },
+  });
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const projectUtil = page.locator(".project-util-wrap .project-util");
+  await expect(projectUtil.locator(".watch-btn")).toBeVisible();
+  await expect(projectUtil.locator(".watcher-count")).toHaveText("1");
+  await expect(projectUtil.locator(".down-arrow")).toHaveText("그만 지켜보기");
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
+
+  const shell = await page.evaluate(() => {
+    const breadcrumb = document.querySelector(".project-breadcrumb-wrap");
+    const util = document.querySelector(".project-util-wrap");
+    const menu = document.querySelector(".project-menu-gruop");
+    const shareDescription = document.querySelector(".box-wrap.middle .cu-desc");
+    if (!breadcrumb || !util || !menu || !shareDescription) return null;
+    const breadcrumbBox = breadcrumb.getBoundingClientRect();
+    const utilBox = util.getBoundingClientRect();
+    const menuBox = menu.getBoundingClientRect();
+    const shareDescriptionBox = shareDescription.getBoundingClientRect();
+    const headerWrapBox = document.querySelector(".project-header-wrap")!.getBoundingClientRect();
+    const watcherCountBox = document.querySelector(".watcher-count")!.getBoundingClientRect();
+    const watcherActionBox = document
+      .querySelector(".watch-btn .down-arrow")!
+      .getBoundingClientRect();
+    return {
+      menuRight: menuBox.right,
+      menuWidth: menuBox.width,
+      shareDescriptionLeft: Math.round(shareDescriptionBox.left),
+      shareDescriptionRight: Math.floor(shareDescriptionBox.right),
+      shareDescriptionWidth: Math.round(shareDescriptionBox.width),
+      headerRight: Math.round(headerWrapBox.right),
+      utilRight: Math.round(utilBox.right),
+      utilWidth: Math.round(utilBox.width),
+      watcherActionWidth: Math.round(watcherActionBox.width),
+      watcherCountWidth: Math.round(watcherCountBox.width),
+      utilAfterBreadcrumb: utilBox.left >= breadcrumbBox.right,
+      utilInsideHeader:
+        utilBox.right <=
+        document.querySelector(".project-header-wrap")!.getBoundingClientRect().right,
+    };
+  });
+  expect(shell).not.toBeNull();
+  expect(shell!.menuWidth).toBeCloseTo(573, 0);
+  expect(shell!.menuRight).toBeCloseTo(683, 0);
+  expect(shell!.shareDescriptionLeft).toBe(239);
+  expect(shell!.shareDescriptionRight).toBe(839);
+  expect(shell!.shareDescriptionWidth).toBe(601);
+  expect(shell!.utilWidth).toBe(147);
+  expect(shell!.utilRight).toBe(shell!.headerRight);
+  expect(shell!.watcherCountWidth).toBe(30);
+  expect(shell!.watcherActionWidth).toBe(102);
+  expect(shell!.utilAfterBreadcrumb).toBe(true);
+  expect(shell!.utilInsideHeader).toBe(true);
+});
+
+test("project settings mobile menu labels preserve legacy wrapping whitespace", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectSettings(page, { project: { isUsingReviewerCount: false } });
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+
+  const metrics = await page.evaluate(() => {
+    const bubble = document.querySelector(".bubble-wrap.gray")!;
+    const code = document.querySelector("#menuSettingCode")!.closest("label")!;
+    const board = document.querySelector("#menuSettingBoard")!.closest("label")!;
+    const right = document.querySelector(".setting-box.right")!;
+    const textarea = document.querySelector("#project-desc")!;
+    const bubbleBox = bubble.getBoundingClientRect();
+    const codeBox = code.getBoundingClientRect();
+    const boardBox = board.getBoundingClientRect();
+    const rightBox = right.getBoundingClientRect();
+    const textareaBox = textarea.getBoundingClientRect();
+    return {
+      boardWrapped: boardBox.top > codeBox.top,
+      bubbleHeight: Math.round(bubbleBox.height),
+      rightWidth: Math.round(rightBox.width),
+      textareaWidth: Math.round(textareaBox.width),
+      textareaWidthRule: getComputedStyle(textarea).width,
+    };
+  });
+  expect(metrics.boardWrapped).toBe(true);
+  expect(metrics.bubbleHeight).toBe(807);
+  test.info().annotations.push({
+    type: "mobile-width-evidence",
+    description: JSON.stringify({
+      rightWidth: metrics.rightWidth,
+      textareaWidth: metrics.textareaWidth,
+      textareaWidthRule: metrics.textareaWidthRule,
+    }),
+  });
+});
+
+test("project settings description translates legacy textarea autosize behavior", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectSettings(page, { project: { overview: "짧은 프로젝트 설명" } });
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  const textarea = page.locator("#project-desc");
+  await expect(textarea).toBeVisible();
+
+  const initial = await textarea.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      contentHeight: style.height,
+      overflow: style.overflow,
+      overflowWrap: style.overflowWrap,
+      rectHeight: Math.round(element.getBoundingClientRect().height),
+      resize: style.resize,
+    };
+  });
+  expect(initial).toEqual({
+    contentHeight: "80px",
+    overflow: "hidden",
+    overflowWrap: "break-word",
+    rectHeight: 90,
+    resize: "none",
+  });
+
+  await textarea.fill(
+    "긴 프로젝트 설명이 모바일 너비에서 여러 줄로 자연스럽게 감싸지도록 반복합니다. ".repeat(4),
+  );
+  await expect
+    .poll(() => textarea.evaluate((element) => Number.parseFloat(getComputedStyle(element).height)))
+    .toBeGreaterThan(80);
+  const expanded = await textarea.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      contentHeight: Number.parseFloat(style.height),
+      scrollContentHeight:
+        element.scrollHeight -
+        Number.parseFloat(style.paddingTop) -
+        Number.parseFloat(style.paddingBottom),
+    };
+  });
+  expect(expanded.contentHeight).toBeGreaterThanOrEqual(Math.ceil(expanded.scrollContentHeight));
 });
 
 test("project settings matches legacy project/setting.scala.html DOM", async ({ page }) => {
@@ -146,6 +312,9 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     logoWidth: 260,
     menuSettingName: "pullRequest",
     saveTextAlign: "center",
+    shareDescriptionLeft: 239,
+    shareDescriptionRight: 839,
+    shareDescriptionWidth: 601,
     textareaHeight: 80,
     watchingCount: "5",
   });
@@ -1056,6 +1225,74 @@ test("project settings reviewer count dropdown uses route-local open state", asy
     .toBe("kept");
 });
 
+test("project settings default branch uses the legacy Select2 shell and syncs its mutation", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const defaultBranchRequests: {
+    body: Record<string, unknown>;
+    hasCsrfToken: boolean;
+    method: string;
+  }[] = [];
+  await mockProjectSettings(page, { defaultBranchRequests });
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const nativeSelect = page.locator("#project-default-branch");
+  const select2 = page.locator("#s2id_project-default-branch.select2-container");
+  const choice = select2.locator("button.select2-choice");
+  await expect(select2).toBeVisible();
+  await expect(choice).toContainText("branch main");
+  await expect(choice.locator(".branch-label.branch")).toHaveText("branch");
+  await expect(choice.locator(".select2-arrow > b")).toHaveCount(1);
+  await expect(nativeSelect).toHaveClass("select2-offscreen");
+  await expect(nativeSelect).toHaveValue("main");
+
+  const geometry = await page.evaluate(() => {
+    const container = document.querySelector("#s2id_project-default-branch")!;
+    const choice = container.querySelector(".select2-choice")!;
+    const nativeSelect = document.querySelector("#project-default-branch")!;
+    const containerBox = container.getBoundingClientRect();
+    const choiceBox = choice.getBoundingClientRect();
+    const nativeSelectStyle = getComputedStyle(nativeSelect);
+    return {
+      choiceHeight: choiceBox.height,
+      choiceWidth: choiceBox.width,
+      containerHeight: containerBox.height,
+      containerWidth: containerBox.width,
+      nativeSelectClip: nativeSelectStyle.clip,
+      nativeSelectPosition: nativeSelectStyle.position,
+    };
+  });
+  expect(geometry.containerWidth).toBeCloseTo(220, 0);
+  expect(geometry.containerHeight).toBeCloseTo(30, 0);
+  expect(geometry.choiceWidth).toBeCloseTo(218, 0);
+  expect(geometry.choiceHeight).toBeCloseTo(28, 0);
+  expect(geometry.nativeSelectPosition).toBe("absolute");
+  expect(geometry.nativeSelectClip).not.toBe("auto");
+
+  await choice.click();
+  await expect(select2).toHaveClass(/select2-dropdown-open/);
+  await expect(choice).toHaveAttribute("aria-expanded", "true");
+  const options = select2.locator(".select2-results .select2-result-label");
+  await expect(options).toHaveText(["branch main", "branch develop"]);
+  await options.nth(1).click();
+  await expect(select2).not.toHaveClass(/select2-dropdown-open/);
+  await expect(choice).toContainText("branch develop");
+  await expect(nativeSelect).toHaveValue("develop");
+
+  const defaultBranchResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/projects/admin/sample/branches/default") &&
+      response.request().method() === "POST",
+  );
+  await page.locator("#save").click();
+  await defaultBranchResponse;
+  expect(defaultBranchRequests).toEqual([
+    { body: { branchName: "develop" }, hasCsrfToken: true, method: "POST" },
+  ]);
+});
+
 test("project settings menu checkboxes mirror legacy dependency behavior", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
@@ -1210,6 +1447,11 @@ async function mockProjectSettings(
     favoriteResponseFavorited: boolean;
     favoriteRequests: { hasCsrfToken: boolean; method: string }[];
     branchRequests: string[];
+    defaultBranchRequests: {
+      body: Record<string, unknown>;
+      hasCsrfToken: boolean;
+      method: string;
+    }[];
     ownerName: string;
     project: Record<string, unknown>;
     projectName: string;
@@ -1386,6 +1628,31 @@ async function mockProjectSettings(
       }),
     });
   });
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/branches/default`,
+    async (route) => {
+      const request = route.request();
+      overrides.defaultBranchRequests?.push({
+        body: request.postDataJSON() as Record<string, unknown>,
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-settings",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          branches: [
+            { isDefault: false, name: "main", shortName: "main" },
+            { isDefault: true, name: "develop", shortName: "develop" },
+          ],
+          defaultBranch: "develop",
+          noHead: false,
+          ownerName,
+          permissions: { canDelete: true, canUpdate: true },
+          projectName,
+        }),
+      });
+    },
+  );
 }
 
 function projectSettings(ownerName = "admin", projectName = "sample") {
@@ -1472,11 +1739,18 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
+      if (node.matches("#s2id_project-default-branch.select2-container")) {
+        return "";
+      }
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !(
+              node.matches("#project-default-branch.select2-offscreen") &&
+              (attr.name === "class" || attr.name === "tabindex")
+            ) &&
             (isProjectSettingsMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
@@ -1553,6 +1827,9 @@ async function projectSettingMetrics(page: Page) {
     const bubbleStyle = getComputedStyle(bubble);
     const textareaRect = textarea.getBoundingClientRect();
     const logoRect = logo.getBoundingClientRect();
+    const shareDescriptionRect = requireElement(
+      ".box-wrap.middle .cu-desc",
+    ).getBoundingClientRect();
 
     return {
       bubbleBackground: bubbleStyle.backgroundColor,
@@ -1566,6 +1843,9 @@ async function projectSettingMetrics(page: Page) {
       logoWidth: Math.round(logoRect.width),
       menuSettingName: requireElement<HTMLInputElement>("#menuSettingPullRequest").name,
       saveTextAlign: getComputedStyle(saveWrap).textAlign,
+      shareDescriptionLeft: Math.round(shareDescriptionRect.left),
+      shareDescriptionRight: Math.floor(shareDescriptionRect.right),
+      shareDescriptionWidth: Math.round(shareDescriptionRect.width),
       textareaHeight: Math.round(textareaRect.height),
       watchingCount: form.querySelector<HTMLInputElement>('input[name="watchingCount"]')?.value,
     };

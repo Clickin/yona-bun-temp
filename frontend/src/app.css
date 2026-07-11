@@ -349,6 +349,12 @@ select {
   border-radius: 3px;
 }
 
+input,
+textarea,
+.uneditable-input {
+  width: 206px;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
@@ -2697,7 +2703,6 @@ h1 {
 .nav-tabs {
   zoom: 1;
   padding-left: 0;
-  margin: 0 0 15px;
   border-bottom: 1px solid #ddd;
   list-style: none;
 }
