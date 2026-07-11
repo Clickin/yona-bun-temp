@@ -1086,7 +1086,7 @@ function IssueDetailBody({
                 ) : null}
                 <dl>
                   <dt>
-                    Due date
+                    {t("issue.dueDate")}
                     <span
                       className={
                         booleanField(issue.dueDateOverdue)
@@ -1121,7 +1121,7 @@ function IssueDetailBody({
                         </button>
                       </div>
                     ) : (
-                      dueDateLabel || "No due date"
+                      dueDateLabel || t("issue.noDuedate")
                     )}
                   </dd>
                 </dl>
@@ -1286,6 +1286,7 @@ function IssueVote({
   onIssueVote: () => void;
   voters: VoterLike[];
 }) {
+  const { t } = useLegacyMessages();
   const [votersOpen, setVotersOpen] = useState(false);
   const ownerName = stringField(issue.ownerName);
   const projectName = stringField(issue.projectName);
@@ -1316,7 +1317,7 @@ function IssueVote({
           <span
             className="ybtn-disabled"
             style={{ color: "#777" }}
-            title="Please log in."
+            title={t("user.login.alert")}
             data-login="required"
           >
             <span className="heart">
@@ -1657,7 +1658,7 @@ function IssueLabelSelect({
   return (
     <dl>
       <dt>
-        Label{" "}
+        {t("issue.label")}{" "}
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
@@ -1665,7 +1666,7 @@ function IssueLabelSelect({
             target="_blank"
             className="label-edit"
           >
-            [Edit]
+            [{t("button.edit")}]
           </Link>
         ) : null}
       </dt>
@@ -1734,6 +1735,7 @@ function IssueSelectedLabels({
   ownerName: string;
   projectName: string;
 }) {
+  const { t } = useLegacyMessages();
   if (!labels?.length) {
     return null;
   }
@@ -1742,7 +1744,7 @@ function IssueSelectedLabels({
 
   return (
     <dl>
-      <dt>Label</dt>
+      <dt>{t("issue.label")}</dt>
       <dd>
         {labels.map((label) => (
           <Link
@@ -2174,6 +2176,7 @@ function IssueMainTimeline({
   onCommentVote: (commentId: string, hasVoted: boolean) => void;
   runtimeConfig: RuntimeConfig;
 }) {
+  const { t } = useLegacyMessages();
   const comments = issue.comments ?? [];
   const topLevelComments = comments.filter(isTopLevelIssueComment);
   const timeline: IssueTimelineItem[] = issue.timeline?.length
@@ -2187,7 +2190,8 @@ function IssueMainTimeline({
         <div className="timeline-list">
           <div className="comment-header">
             <i></i>
-            <strong>Comment</strong> <strong className="num">{topLevelComments.length}</strong>
+            <strong>{t("common.comment")}</strong>{" "}
+            <strong className="num">{topLevelComments.length}</strong>
           </div>
           <hr className="nm" />
           {hasTimelineItems ? (
@@ -2239,11 +2243,7 @@ function IssueCommentForm({
 
   if (!booleanField(issue.viewerCanComment)) {
     return (
-      <div
-        className="write-comment-box mt20"
-        title="You need to log in to add comments."
-        data-login="required"
-      >
+      <div className="write-comment-box mt20" title={t("user.login.alert")} data-login="required">
         <div className="write-comment-wrap">
           <div className="textarea-box">
             <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
@@ -3427,6 +3427,7 @@ function IssueIndexTimeline({
   currentUserLoginId: string;
   issue: RestIssueDetailResponse;
 }) {
+  const { t } = useLegacyMessages();
   const comments = issue.comments ?? [];
   const topLevelComments = comments.filter(isTopLevelIssueComment);
   const hasTimelineItems = topLevelComments.length > 0 || (issue.timeline?.length ?? 0) > 0;
@@ -3436,7 +3437,8 @@ function IssueIndexTimeline({
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
-            <strong>Comment</strong> <strong className="num">{topLevelComments.length}</strong>
+            <strong>{t("common.comment")}</strong>{" "}
+            <strong className="num">{topLevelComments.length}</strong>
           </div>
           {hasTimelineItems ? (
             <ul className="comments">
