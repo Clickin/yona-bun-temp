@@ -1277,7 +1277,7 @@ input.white:-ms-input-placeholder {
 .gnb-inner .gnb-nav li.divider:after {
   content: "|";
   color: #a2a2a2;
-  opacity: 35 / 100;
+  opacity: 0.35;
 }
 .gnb-inner .gnb-nav li a {
   padding: 10px;
@@ -1326,7 +1326,7 @@ input.white:-ms-input-placeholder {
 .gnb-inner .gnb-usermenu > li.divider:after {
   content: "|";
   color: #788ba7;
-  opacity: 35 / 100;
+  opacity: 0.35;
 }
 .gnb-inner .gnb-usermenu > li:last-child {
   margin-left: 10px;
@@ -2962,7 +2962,7 @@ input.white:-ms-input-placeholder {
   cursor: pointer;
 }
 .page-title .gray {
-  opacity: 50 / 100;
+  opacity: 0.5;
   /* 아이디 */
 }
 .page-title .gray a {
@@ -4186,7 +4186,7 @@ label.inline-list:first-child {
   font-size: 20px;
   line-height: 20px;
   color: #000;
-  opacity: 20 / 100;
+  opacity: 0.2;
 }
 .board-comment-wrap .comments .comment .media-body .meta-info .act-row i.yobicon-edit-2 {
   margin-top: 2px;
@@ -4196,7 +4196,7 @@ label.inline-list:first-child {
 }
 .board-comment-wrap .comments .comment .media-body .meta-info .act-row i:hover {
   color: #51aacc;
-  opacity: 100 / 100;
+  opacity: 1;
 }
 .board-comment-wrap .comments .comment .media-body .meta-info .act-row i.vote-heart-disable-hover:hover {
   color: initial;
@@ -6003,7 +6003,7 @@ label.issue-item-row {
   margin: 0;
   bottom: 0px;
   background: #F36C22;
-  opacity: 80 / 100;
+  opacity: 0.8;
   -webkit-transition-duration: 1s;
 }
 .profile-frmwrap .avatar-frm .avatar-wrap .progress.loading {
@@ -6873,7 +6873,7 @@ label.issue-item-row {
   display: block;
   color: transparent;
   font-size: 0;
-  opacity: 0 / 100;
+  opacity: 0;
   height: 0;
 }
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code table {
@@ -6909,7 +6909,7 @@ label.issue-item-row {
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code table tr td.linenum .yobicon-comments {
   position: absolute;
   cursor: pointer;
-  opacity: 0 / 100;
+  opacity: 0;
   margin-left: -84px;
   width: 25px;
   margin-top: 2px;
@@ -6981,7 +6981,7 @@ label.issue-item-row {
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code tr.add:hover .yobicon-comments,
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code tr.remove:hover .yobicon-comments,
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code tr.context:hover .yobicon-comments {
-  opacity: 100 / 100;
+  opacity: 1;
 }
 .diff-body .diff-partial-outer .diff-partial-inner .diff-partial-code .linenum:hover .yobicon-comments {
   opacity: 1;
@@ -9917,7 +9917,7 @@ button.nbtn.large {
   /*-15px;*/
   min-width: 100px;
   width: 100%;
-  opacity: 0 / 100;
+  opacity: 0;
 }
 /** issue label **/
 .issue-label {
@@ -9959,13 +9959,13 @@ button.nbtn.large {
   color: #696969;
 }
 .issue-label:hover {
-  opacity: 70 / 100;
+  opacity: 0.7;
 }
 .issue-label.static.active {
   border-left: initial !important;
 }
 .issue-label.static:hover {
-  opacity: 100 / 100;
+  opacity: 1;
 }
 span.issue-label {
   display: inline-block;
@@ -9976,10 +9976,10 @@ span.issue-label {
 }
 span.issue-label:hover {
   background: #DFDFDF;
-  opacity: 100 / 100;
+  opacity: 1;
 }
 .dropdown-menu .issue-label:hover {
-  opacity: 100 / 100;
+  opacity: 1;
 }
 /** project label */
 .project-label {
@@ -10291,7 +10291,7 @@ span.issue-label:hover {
   background-color: #cddc39;
   -webkit-transition-duration: 0.3s;
   box-shadow: 1px 1px 3px black;
-  opacity: 90 / 100;
+  opacity: 0.9;
   -webkit-border-radius: 2px;
   -moz-border-radius: 2px;
   border-radius: 2px;
@@ -10755,7 +10755,7 @@ span.issue-label:hover {
   font-size: 12px;
   background-color: #FFF;
   overflow: visible;
-  opacity: 0 / 100;
+  opacity: 0;
   -webkit-transition: all 0.25s ease;
   -moz-transition: all 0.25s ease;
   -ms-transition: all 0.25s ease;
@@ -10933,7 +10933,7 @@ span.issue-label:hover {
   overflow-y: auto;
 }
 .open > .flat {
-  opacity: 100 / 100;
+  opacity: 1;
   visibility: visible;
   margin-top: 12px;
 }
@@ -11787,7 +11787,7 @@ code {
 /** override bootstrap.css **/
 .modal-backdrop,
 .modal-backdrop.fade.in {
-  opacity: 50 / 100;
+  opacity: 0.5;
   /** default backdrop opacity is 80% **/
 }
 /** override select2.css **/
@@ -11868,7 +11868,7 @@ code {
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
   box-shadow: none;
-  opacity: 35 / 100;
+  opacity: 0.35;
 }
 .select2-container.select2-container-disabled:hover {
   background-color: #e6e6e6;
@@ -12046,7 +12046,7 @@ code {
   top: 6px;
   right: 3px;
   left: auto;
-  opacity: 0 / 100;
+  opacity: 0;
 }
 .select2-container-multi.issue-labels:hover,
 .select2-container-multi.issue-labels.select2-container-active {
@@ -12059,14 +12059,14 @@ code {
 }
 .select2-container-multi.issue-labels:hover .select2-choices .select2-search-choice-close,
 .select2-container-multi.issue-labels.select2-container-active .select2-choices .select2-search-choice-close {
-  opacity: 100 / 100;
+  opacity: 1;
 }
 .select2-container-multi.issue-labels:hover .select2-search-choice:hover,
 .select2-container-multi.issue-labels.select2-container-active .select2-search-choice:hover {
   background: #e6e6e6;
 }
 .select2-container-multi.issue-labels .select2-search-choice-focus .select2-search-choice-close {
-  opacity: 100 / 100;
+  opacity: 1;
 }
 .select2-container-multi.select2-container-active .select2-choices {
   border: 1px solid #F36C22;

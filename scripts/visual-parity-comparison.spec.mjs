@@ -607,3 +607,25 @@ test("visual sweep waits for dynamic project label styles before measuring issue
   assert.match(source, /getComputedStyle\(element\)\.backgroundColor/u);
   assert.match(source, /expected\.style\.backgroundColor/u);
 });
+
+test("legacy CSS build preserves Less 1.x division semantics", () => {
+  const buildSource = readFileSync(
+    resolve(repoRoot, "frontend/scripts/build-legacy-css.mjs"),
+    "utf8",
+  );
+  const legacyCss = readFileSync(
+    resolve(repoRoot, "frontend/public/legacy-assets/stylesheets/yobi.css"),
+    "utf8",
+  );
+
+  assert.match(buildSource, /math: "always"/u);
+  assert.doesNotMatch(legacyCss, /opacity:\s*\d+\s*\/\s*100/u);
+  assert.match(
+    legacyCss,
+    /\.select2-container-multi\.issue-labels \.select2-choices \.select2-search-choice-close \{[^}]*opacity: 0;/su,
+  );
+  assert.match(
+    legacyCss,
+    /\.select2-container-multi\.issue-labels:hover \.select2-choices \.select2-search-choice-close,[^{]+\{[^}]*opacity: 1;/su,
+  );
+});

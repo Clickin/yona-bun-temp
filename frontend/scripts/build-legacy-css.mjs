@@ -23,6 +23,7 @@ for (const entry of entries) {
   const source = await fs.readFile(inputPath, "utf8");
   const rendered = await less.render(source, {
     filename: inputPath,
+    math: "always",
     paths: [path.dirname(inputPath)],
   });
 
