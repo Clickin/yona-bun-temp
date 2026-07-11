@@ -75,6 +75,102 @@ test("default issue create keeps legacy editor and uploader flow on desktop and 
   expect(await layout()).toEqual(expectedLayout);
 });
 
+test("parent subtask create keeps the two generated Select2 controls and legacy geometry", async ({
+  page,
+}) => {
+  const basePath = appBasePath();
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockIssueForm(page, {
+    parentOptions: [{ id: 1, issueNumber: 1, selected: true, title: "Review rail parity check" }],
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issueform?parentIssueId=1`);
+
+  await expect(page.locator(".subtask-wrap.show")).toHaveCSS("display", "block");
+  await expect(page.locator(".subtask-wrap.show")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.locator("#s2id_targetProjectId")).toBeVisible();
+  await expect(page.locator("#s2id_parentId")).toBeVisible();
+  const optionButton = page.getByRole("button", { name: "이슈 옵션" });
+  await expect(optionButton).toHaveClass(/^span1 subtask-message$/u);
+  await expect(optionButton).toHaveCSS("color", "rgb(158, 158, 158)");
+  await expect(optionButton).toHaveCSS("border-color", "rgb(221, 221, 221)");
+  await expect(page.locator("#editor-body-body")).toHaveValue("");
+  await expect(page.locator("#targetProjectId")).toHaveValue("7");
+  await expect(page.locator("#parentId")).toHaveValue("1");
+  await expect(page.locator("#s2id_targetProjectId .select2-chosen")).toContainText("sample");
+  await expect(page.locator("#s2id_parentId .select2-chosen")).toContainText(
+    "#1. Review rail parity check",
+  );
+  for (const id of ["targetProjectId", "parentId"]) {
+    await expect(
+      page.locator(`#s2id_${id} > .select2-choice + .select2-focusser + .select2-drop`),
+    ).toHaveCount(1);
+    await expect(page.locator(`#s2id_${id} + #${id}.select2-offscreen`)).toHaveCount(1);
+    await expect(page.locator(`#s2id_${id} > .select2-drop`)).toHaveClass(/select2-display-none/u);
+  }
+
+  const geometry = async () =>
+    page.evaluate(() => {
+      const box = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing subtask metric target: ${selector}`);
+        const rect = element.getBoundingClientRect();
+        return {
+          bottom: rect.bottom,
+          height: rect.height,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          width: rect.width,
+        };
+      };
+      return {
+        documentWidth: document.documentElement.scrollWidth,
+        editor: box(".textarea-box"),
+        parent: box("#s2id_parentId"),
+        parentChoice: box("#s2id_parentId > .select2-choice"),
+        parentSpan: box(".subtask-wrap > .span6"),
+        project: box("#s2id_targetProjectId"),
+        projectChoice: box("#s2id_targetProjectId > .select2-choice"),
+        projectSpan: box(".subtask-wrap > .span3"),
+      };
+    });
+
+  const desktop = await geometry();
+  expect(desktop.documentWidth).toBe(1280);
+  expect(desktop.project.height).toBeCloseTo(30, 0);
+  expect(desktop.projectChoice.height).toBeCloseTo(28, 0);
+  expect(desktop.parent.height).toBeCloseTo(30, 0);
+  expect(desktop.parentChoice.height).toBeCloseTo(28, 0);
+  expect(desktop.project.left).toBeCloseTo(desktop.projectSpan.left, 0);
+  expect(desktop.project.width).toBeCloseTo(desktop.projectSpan.width, 0);
+  expect(desktop.parent.left).toBeCloseTo(desktop.parentSpan.left, 0);
+  expect(desktop.parent.width).toBeCloseTo(desktop.parentSpan.width, 0);
+  expect(desktop.project.right).toBeLessThan(desktop.parent.left);
+  expect(desktop.parent.right).toBeLessThanOrEqual(desktop.editor.right);
+  expect(desktop.project.left).toBeCloseTo(10, 0);
+  expect(desktop.project.width).toBeCloseTo(294.89, 1);
+  expect(desktop.parent.left).toBeCloseTo(331.69, 1);
+  expect(desktop.parent.width).toBeCloseTo(616.59, 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await geometry();
+  expect(mobile.documentWidth).toBe(390);
+  expect(mobile.project.height).toBeCloseTo(30, 0);
+  expect(mobile.parent.height).toBeCloseTo(30, 0);
+  expect(mobile.project.width).toBeCloseTo(mobile.projectSpan.width, 0);
+  expect(mobile.parent.width).toBeCloseTo(mobile.parentSpan.width, 0);
+  expect(mobile.project.right).toBeLessThan(mobile.parent.left);
+  expect(mobile.parent.right).toBeLessThanOrEqual(390);
+  expect(mobile.project.left).toBeCloseTo(0, 0);
+  expect(mobile.project.width).toBeCloseTo(91.27, 1);
+  expect(mobile.parent.left).toBeCloseTo(99.56, 1);
+  expect(mobile.parent.width).toBeCloseTo(190.84, 1);
+});
+
 test("project issue form preserves legacy controls, subtask behavior, shell mutations, and desktop geometry", async ({
   page,
 }) => {
@@ -1264,8 +1360,7 @@ test("issue form matches observed 390px stacking and removes legacy implementati
   expect(metrics.titleRowHeight, JSON.stringify(metrics)).toBeCloseTo(59, 0);
   expect(metrics.formLeft).toBeCloseTo(0, 0);
   expect(metrics.formWidth).toBeCloseTo(390, 0);
-  expect(metrics.titleWidth).toBeGreaterThanOrEqual(345);
-  expect(metrics.titleWidth).toBeLessThanOrEqual(352);
+  expect(metrics.titleWidth).toBeCloseTo(350.953, 2);
   expect(metrics.optionWidth).toBeCloseTo(24.9, 0);
   expect(metrics.leftTop).toBeCloseTo(272, 0);
   expect(metrics.leftWidth).toBeCloseTo(390, 0);
@@ -1378,6 +1473,7 @@ type MockOptions = {
   };
   milestones?: Array<Record<string, unknown>>;
   pastedImageResponseName?: string;
+  parentOptions?: Array<{ id: number; issueNumber: number; selected: boolean; title: string }>;
   project?: Partial<ReturnType<typeof projectContainer>>;
   uploadDelayMs?: number;
 };
@@ -1500,7 +1596,9 @@ async function mockIssueForm(page: Page, options: MockOptions = {}) {
     return route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [{ id: 42, issueNumber: 11, selected: false, title: "Existing parent" }],
+        items: options.parentOptions ?? [
+          { id: 42, issueNumber: 11, selected: false, title: "Existing parent" },
+        ],
       }),
     });
   });
