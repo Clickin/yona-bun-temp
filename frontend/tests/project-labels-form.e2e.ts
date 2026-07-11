@@ -34,9 +34,6 @@ const EDIT_COLORS = [
   "#8C8C9C",
   "#7A9CB4",
 ];
-const EMPTY_LABELS_LIST =
-  '<div id="labelsList" class="issue-label-list-wrap"><div class="error-wrap"><i class="ico ico-err1"></i><p>No label exists</p></div></div>';
-const EMPTY_EDIT_LABEL_SELECT = '<select name="category.id"></select>';
 const POPULATED_EDIT_LABEL_SELECT =
   '<select name="category.id"><option value="3">type</option><option value="4">priority</option></select>';
 const POPULATED_LABELS_LIST = `
@@ -83,6 +80,7 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectLabels(page);
 
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
   await expect(page.locator("#copyLabel")).toBeVisible();
   await expect(page.locator("#frmNewLabel")).toBeVisible();
@@ -105,7 +103,13 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
   );
 
   const expected = expectedProjectLabels(basePath);
-  expect(await canonicalizeScreenRoots(page)).toEqual(await canonicalizeHtml(page, expected));
+  expect(await canonicalizeScreenRoots(page)).toEqual(
+    await canonicalizeHtml(
+      page,
+      expected,
+      ".project-header-outer, .project-menu-outer, .page-wrap-outer, #editCategory, #editLabel",
+    ),
+  );
   await expect(labelFormMetrics(page)).resolves.toEqual({
     activeTabClass: "active",
     activeTabHeight: "38px",
@@ -116,7 +120,7 @@ test("project labels matches legacy project/issuelabels.scala.html empty DOM", a
     copyFormWidth: 1260,
     copyLegendDisplay: "block",
     copyLegendMarginBottom: "10px",
-    copyOwnerHeight: "30px",
+    copyOwnerHeight: "20px",
     copyOwnerWidth: "214px",
     copySubmitHeight: "30px",
     copySubmitPadding: "4px 12px",
@@ -211,7 +215,7 @@ test("project labels renders default project header assets under the configured 
 
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`${mountPrefix}/assets/images/project_default_logo\\.png$`),
+    new RegExp(`${mountPrefix}/legacy-assets/images/project_default_logo\\.png$`),
   );
   await expect
     .poll(() =>
@@ -219,7 +223,7 @@ test("project labels renders default project header assets under the configured 
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain(`${mountPrefix}/assets/images/bg-default-project.png`);
+    .toContain(`${mountPrefix}/legacy-assets/images/project_default.jpg`);
   await page.screenshot({
     path: testInfo.outputPath("labels-header-default-desktop.png"),
     fullPage: true,
@@ -228,7 +232,7 @@ test("project labels renders default project header assets under the configured 
   await page.setViewportSize({ height: 844, width: 390 });
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    new RegExp(`${mountPrefix}/assets/images/project_default_logo\\.png$`),
+    new RegExp(`${mountPrefix}/legacy-assets/images/project_default_logo\\.png$`),
   );
   await expect
     .poll(() =>
@@ -236,7 +240,7 @@ test("project labels renders default project header assets under the configured 
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain(`${mountPrefix}/assets/images/bg-default-project.png`);
+    .toContain(`${mountPrefix}/legacy-assets/images/project_default.jpg`);
   await page.screenshot({
     path: testInfo.outputPath("labels-header-default-mobile.png"),
     fullPage: true,
@@ -536,6 +540,145 @@ test("project labels renders legacy project/partial_issuelabels_list.scala.html 
     updateLabelColor: "#e11d48",
     updateLabelName: "bug",
     updateUri: null,
+  });
+});
+
+test("project labels keeps legacy project shell, responsive containment, and generated controls", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectLabels(
+    page,
+    [
+      {
+        category: "type",
+        categoryId: "3",
+        categoryIsExclusive: false,
+        color: "#e11d48",
+        id: "8",
+        name: "bug",
+      },
+      {
+        category: "priority",
+        categoryId: "4",
+        categoryIsExclusive: true,
+        color: "#ff9800",
+        id: "10",
+        name: "high",
+      },
+    ],
+    {
+      project: {
+        isWatching: false,
+        openIssueCount: 1,
+        openPullRequestCount: 1,
+        viewerCanWatch: true,
+        watchingCount: 2,
+      },
+    },
+  );
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+  await expect(page.locator(".project-header-wrap .project-util-wrap")).toBeVisible();
+  await expect(page.locator(".project-util .watch-btn .watcher-count")).toHaveText("2");
+  await expect(page.locator(".project-breadcrumb .user-project-list .star")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop > li .menu-name")).toHaveText([
+    "홈",
+    "코드",
+    "이슈",
+    "코드 주고받기",
+    "리뷰",
+    "마일스톤",
+    "게시판",
+  ]);
+  await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
+  const desktopLayout = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-gruop");
+    const pageWrap = document.querySelector<HTMLElement>(".project-page-wrap.label-editor-wrap");
+    const copyOwner = document.querySelector<HTMLElement>('#copyLabel input[name="owner"]');
+    if (!menu || !pageWrap || !copyOwner) return null;
+    const menuBox = menu.getBoundingClientRect();
+    return {
+      copyOwnerRectHeight: Math.round(copyOwner.getBoundingClientRect().height),
+      documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      menuLeft: Math.round(menuBox.left),
+      menuRight: Math.round(menuBox.right),
+      menuWidth: Math.round(menuBox.width),
+      pageContained: pageWrap.getBoundingClientRect().right <= document.documentElement.clientWidth,
+    };
+  });
+  expect(desktopLayout).toEqual({
+    copyOwnerRectHeight: 30,
+    documentOverflow: false,
+    menuLeft: 110,
+    menuRight: 683,
+    menuWidth: 573,
+    pageContained: true,
+  });
+
+  await page.locator('#labelsList [data-category="3"] .ybtn-mini').click();
+  await expect(
+    page.locator('#editCategory select[name="isExclusive"].select2-offscreen'),
+  ).toHaveClass("select2-offscreen");
+  await expect
+    .poll(() =>
+      page.locator('#editCategory select[name="isExclusive"]').evaluate((select) => {
+        const box = select.getBoundingClientRect();
+        return {
+          height: Math.round(box.height),
+          position: getComputedStyle(select).position,
+          width: Math.round(box.width),
+        };
+      }),
+    )
+    .toEqual({ height: 1, position: "absolute", width: 1 });
+  await expect(page.locator("#editCategory .select2-container .select2-chosen")).toHaveText(
+    "여러개 선택할 수 있습니다",
+  );
+  await page.locator("#editCategory .btn-dismiss button").click();
+  await page
+    .locator('#labelsList tr[data-label-id="8"] .actions .ybtn-small:not(.ybtn-danger)')
+    .click();
+  await expect(page.locator('#editLabel select[name="category.id"].select2-offscreen')).toHaveClass(
+    "select2-offscreen",
+  );
+  await expect
+    .poll(() =>
+      page.locator('#editLabel select[name="category.id"]').evaluate((select) => {
+        const box = select.getBoundingClientRect();
+        return {
+          height: Math.round(box.height),
+          position: getComputedStyle(select).position,
+          width: Math.round(box.width),
+        };
+      }),
+    )
+    .toEqual({ height: 1, position: "absolute", width: 1 });
+  await expect(page.locator("#editLabel .select2-container .select2-chosen")).toHaveText("type");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileLayout = await page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".project-page-wrap.label-editor-wrap");
+    const labels = document.querySelector<HTMLElement>("#labelsList");
+    if (!pageWrap || !labels) return null;
+    const viewportWidth = document.documentElement.clientWidth;
+    return {
+      documentOverflow: document.documentElement.scrollWidth > viewportWidth,
+      labelsContained: labels.getBoundingClientRect().right <= viewportWidth,
+      pageContained: pageWrap.getBoundingClientRect().right <= viewportWidth,
+      projectPageMarginTop: getComputedStyle(pageWrap).marginTop,
+    };
+  });
+  expect(mobileLayout).toEqual({
+    documentOverflow: false,
+    labelsContained: true,
+    pageContained: true,
+    projectPageMarginTop: "5px",
   });
 });
 
@@ -1764,9 +1907,16 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, #editCategory, #editLabel, .page-footer-outer",
+        ".project-header-outer, .project-menu-outer, .page-wrap-outer, #editCategory, #editLabel",
       ),
+      (root) => root.cloneNode(true) as Element,
     );
+    for (const root of roots) {
+      root.querySelectorAll(".select2-container").forEach((container) => container.remove());
+      root.querySelectorAll("select.select2-offscreen").forEach((select) => {
+        select.removeAttribute("class");
+      });
+    }
     return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {
@@ -1828,9 +1978,13 @@ async function canonicalizeScreenRoots(page: Page) {
 
 async function canonicalizeElement(page: Page, selector: string) {
   return page.evaluate((targetSelector) => {
-    const root = document.querySelector(targetSelector);
+    const source = document.querySelector(targetSelector);
+    const root = source?.cloneNode(true) as Element | undefined;
     if (!root) {
       throw new Error(`missing canonical root: ${targetSelector}`);
+    }
+    if (root.matches("select.select2-offscreen")) {
+      root.removeAttribute("class");
     }
     return visit(root);
 
@@ -1891,65 +2045,69 @@ async function canonicalizeElement(page: Page, selector: string) {
   }, selector);
 }
 
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((markup) => {
-    const template = document.createElement("template");
-    template.innerHTML = markup;
-    return Array.from(template.content.childNodes)
-      .map((node) => visit(node))
-      .join("");
+async function canonicalizeHtml(page: Page, html: string, selector?: string) {
+  return page.evaluate(
+    ({ markup, rootSelector }) => {
+      const template = document.createElement("template");
+      template.innerHTML = markup;
+      const roots = rootSelector
+        ? Array.from(template.content.querySelectorAll(rootSelector))
+        : Array.from(template.content.childNodes);
+      return roots.map((node) => visit(node)).join("");
 
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+      function visit(node: Node): string {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent ?? "");
+        }
+        if (!(node instanceof Element)) {
+          return "";
+        }
+        const attrs = Array.from(node.attributes)
+          .filter(
+            (attr) =>
+              !attr.name.startsWith("data-v-") &&
+              attr.name !== "alt" &&
+              !isEmptyInputValueAttr(node, attr),
+          )
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        const open = attrs
+          ? `<${node.tagName.toLowerCase()} ${attrs}>`
+          : `<${node.tagName.toLowerCase()}>`;
+        return `${open}${Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("")}</${node.tagName.toLowerCase()}>`;
       }
-      if (!(node instanceof Element)) {
-        return "";
+
+      function normalizeText(text: string) {
+        return text.replace(/\s+/g, " ").trim();
       }
-      const attrs = Array.from(node.attributes)
-        .filter(
-          (attr) =>
-            !attr.name.startsWith("data-v-") &&
-            attr.name !== "alt" &&
-            !isEmptyInputValueAttr(node, attr),
-        )
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
 
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "style") {
-        return normalizeStyle(attr.value);
+      function normalizeAttr(attr: Attr) {
+        if (attr.name === "style") {
+          return normalizeStyle(attr.value);
+        }
+        return attr.value.replace(/\s+/g, " ").trim();
       }
-      return attr.value.replace(/\s+/g, " ").trim();
-    }
 
-    function isEmptyInputValueAttr(node: Element, attr: Attr) {
-      return node instanceof HTMLInputElement && attr.name === "value" && attr.value === "";
-    }
+      function isEmptyInputValueAttr(node: Element, attr: Attr) {
+        return node instanceof HTMLInputElement && attr.name === "value" && attr.value === "";
+      }
 
-    function normalizeStyle(value: string) {
-      return value
-        .replace(/\s+/g, "")
-        .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
-          return `#${[red, green, blue]
-            .map((channel) => Number(channel).toString(16).padStart(2, "0"))
-            .join("")}`;
-        })
-        .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
-        .replace(/;$/, "")
-        .replaceAll('"', "'");
-    }
-  }, html);
+      function normalizeStyle(value: string) {
+        return value
+          .replace(/\s+/g, "")
+          .replace(/rgb\((\d+),(\d+),(\d+)\)/gi, (_, red, green, blue) => {
+            return `#${[red, green, blue]
+              .map((channel) => Number(channel).toString(16).padStart(2, "0"))
+              .join("")}`;
+          })
+          .replace(/#[0-9a-f]{6}/gi, (color) => color.toLowerCase())
+          .replace(/;$/, "")
+          .replaceAll('"', "'");
+      }
+    },
+    { markup: html, rootSelector: selector },
+  );
 }

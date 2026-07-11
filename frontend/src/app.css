@@ -2998,10 +2998,6 @@ h1 {
   display: inline-block;
 }
 
-.page-wrap-outer > .project-page-wrap {
-  margin-top: 5px !important;
-}
-
 .all-projects {
   clear: both;
   margin: 0 0 20px;
