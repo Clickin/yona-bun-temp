@@ -29,7 +29,7 @@ const EXPECTED_CREATE_FORM_BODY = `
 function withLegacyEditor(html: string) {
   return html.replace(
     `<div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div>`,
-    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="__BASE_PATH__/admin/sample/postform?branch=&amp;edit=false&amp;issueTemplate=false&amp;path=&amp;readme=false#edit-body">Edit</a></li><li><a href="__BASE_PATH__/admin/sample/postform?branch=&amp;edit=false&amp;issueTemplate=false&amp;path=&amp;readme=false#preview-body">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="3"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
+    `<div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><a href="__BASE_PATH__/admin/sample/postform#edit-body">Edit</a></li><li><a href="__BASE_PATH__/admin/sample/postform#preview-body">Preview</a></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-body" class="tab-pane active"><div class="textarea-box"><textarea name="body" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-body-body" tabindex="3"></textarea></div></div><div id="preview-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div>`,
   );
 }
 
@@ -260,9 +260,7 @@ test("project board create form matches legacy board/create.scala.html core form
       "tab-kept";
   });
   await previewTab.click();
-  await expect(page).toHaveURL(
-    `${basePath}/admin/sample/postform?branch=&edit=false&issueTemplate=false&path=&readme=false#preview-body`,
-  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform#preview-body`);
   await expect(previewTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).not.toHaveClass(/active/);
@@ -283,9 +281,7 @@ test("project board create form matches legacy board/create.scala.html core form
     )
     .toBe("tab-kept");
   await editTab.click();
-  await expect(page).toHaveURL(
-    `${basePath}/admin/sample/postform?branch=&edit=false&issueTemplate=false&path=&readme=false#edit-body`,
-  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform#edit-body`);
   await expect(editTab.locator("xpath=..")).toHaveClass(/active/);
   await expect(page.locator("#edit-body")).toHaveClass(/active/);
   await expect(page.locator("#preview-body")).not.toHaveClass(/active/);
@@ -304,9 +300,7 @@ test("project board create form matches legacy board/create.scala.html core form
   }, `${basePath}/admin/sample/postform?cancel-test=1`);
   await expect(page).toHaveURL(`${basePath}/admin/sample/postform?cancel-test=1`);
   await cancelButton.click();
-  await expect(page).toHaveURL(
-    `${basePath}/admin/sample/postform?branch=&edit=false&issueTemplate=false&path=&readme=false#edit-body`,
-  );
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform#edit-body`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -376,6 +370,64 @@ test("project board create form preserves uploader and zero-gap actions on mobil
     )
     .toBe(100);
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+});
+
+test("project board create README state preserves legacy query-owned form and deep links", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const postRequests: unknown[] = [];
+  await mockProjectBoardCreateForm(page, postRequests);
+
+  await page.goto(`${basePath}/admin/sample/postform?readme=true`);
+
+  await expect(page.locator("#title")).toHaveValue("Update README.md");
+  await expect(page.locator("#editor-body-body")).toHaveValue("# Sample\n\nREADME draft\n");
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
+  await expect(page.locator("#notice")).not.toBeChecked();
+  await expect(page.locator("#readme")).toBeChecked();
+  await expect(page.locator("#issueTemplate")).toHaveValue("");
+  await expect(page.locator("#branch")).toHaveValue("");
+  await expect(page.locator("#path")).toHaveValue("");
+  await expect(page.locator("#lineEnding")).toHaveValue("LF");
+  await expect(
+    page.locator('.nav-tabs > li:nth-child(1) > a[href$="?readme=true#edit-body"]'),
+  ).toHaveCount(1);
+  const previewTab = page.locator(
+    '.nav-tabs > li:nth-child(2) > a[href$="?readme=true#preview-body"]',
+  );
+  await expect(previewTab).toHaveCount(1);
+  await previewTab.click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true#preview-body`);
+  await page.locator('.nav-tabs > li:nth-child(1) > a[href$="#edit-body"]').click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/postform?readme=true#edit-body`);
+  expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+
+  await page.fill("#editor-body-body", "# Revised README\n");
+  const postResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/projects/admin/sample/posts") &&
+      response.request().method() === "POST",
+  );
+  await page.click("form.nm .actions .ybtn-success");
+  await postResponsePromise;
+  expect(postRequests).toEqual([
+    {
+      attachmentIds: [],
+      bodyMarkdown: "# Revised README\n",
+      branch: "",
+      edit: false,
+      issueTemplate: false,
+      labelIds: [],
+      lineEnding: "LF",
+      newFileName: "",
+      notice: false,
+      path: "",
+      readme: true,
+      title: "Update README.md",
+    },
+  ]);
+  await expect(page).toHaveURL(`${basePath}/admin/sample/post/10`);
 });
 
 test("project board create issue-template state matches legacy query-owned visible form", async ({
@@ -532,8 +584,9 @@ async function mockProjectBoardCreateForm(
   await page.route(
     `**/api/v1/projects/${ownerName}/${projectName}/posts/form-options**`,
     async (route) => {
-      const issueTemplate =
-        new URL(route.request().url()).searchParams.get("issueTemplate") === "true";
+      const searchParams = new URL(route.request().url()).searchParams;
+      const issueTemplate = searchParams.get("issueTemplate") === "true";
+      const readme = searchParams.get("readme") === "true";
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -552,10 +605,18 @@ async function mockProjectBoardCreateForm(
             edit: false,
             issueTemplate,
             path: issueTemplate ? "ISSUE_TEMPLATE.md" : "",
-            preparedBodyMarkdown: issueTemplate ? "Template body draft" : "",
-            title: issueTemplate ? "ISSUE_TEMPLATE.md: Project Issue Template" : "",
+            preparedBodyMarkdown: issueTemplate
+              ? "Template body draft"
+              : readme
+                ? "# Sample\n\nREADME draft\n"
+                : "",
+            title: issueTemplate
+              ? "ISSUE_TEMPLATE.md: Project Issue Template"
+              : readme
+                ? "Update README.md"
+                : "",
           },
-          readme: false,
+          readme,
         }),
       });
     },

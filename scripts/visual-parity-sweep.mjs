@@ -261,6 +261,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/post/1/editform",
   "/admin/sample/postform",
   "/admin/sample/postform?issueTemplate=true",
+  "/admin/sample/postform?readme=true",
 ]);
 
 function localSettledSelectorForPath(path) {

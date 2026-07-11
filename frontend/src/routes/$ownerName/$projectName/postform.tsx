@@ -18,11 +18,11 @@ import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type BoardPostFormSearch = {
-  branch: string;
-  edit: boolean;
-  issueTemplate: boolean;
-  path: string;
-  readme: boolean;
+  branch?: string;
+  edit?: true;
+  issueTemplate?: true;
+  path?: string;
+  readme?: true;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/postform")({
@@ -83,12 +83,12 @@ function ProjectBoardCreateFormScreen({ runtimeConfig }: { runtimeConfig: Runtim
   const optionsQuery = useQuery(
     readProjectPostFormOptionsQueryOptions(runtimeConfig, {
       branch: search.branch,
-      edit: search.edit,
-      issueTemplate: search.issueTemplate,
+      edit: Boolean(search.edit),
+      issueTemplate: Boolean(search.issueTemplate),
       ownerName,
-      path: search.path,
+      path: search.path ?? "",
       projectName,
-      readme: search.readme,
+      readme: Boolean(search.readme),
     }),
   );
 
@@ -114,22 +114,22 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   const optionsQuery = useQuery(
     readProjectPostFormOptionsQueryOptions(runtimeConfig, {
       branch: search.branch,
-      edit: search.edit,
-      issueTemplate: search.issueTemplate,
+      edit: Boolean(search.edit),
+      issueTemplate: Boolean(search.issueTemplate),
       ownerName,
-      path: search.path,
+      path: search.path ?? "",
       projectName,
-      readme: search.readme,
+      readme: Boolean(search.readme),
     }),
   );
   const options = optionsQuery.data;
   const onlineCommit = options?.onlineCommit;
   const title = onlineCommit?.title ?? "";
   const body = onlineCommit?.preparedBodyMarkdown ?? "";
-  const path = onlineCommit?.path ?? search.path;
-  const branch = onlineCommit?.branch ?? search.branch;
-  const issueTemplate = onlineCommit?.issueTemplate ?? search.issueTemplate;
-  const isOnlineCommit = search.path !== "";
+  const path = onlineCommit?.path ?? search.path ?? "";
+  const branch = onlineCommit?.branch ?? search.branch ?? "";
+  const issueTemplate = Boolean(onlineCommit?.issueTemplate ?? search.issueTemplate);
+  const isOnlineCommit = search.path !== undefined;
   const canShowNotice = Boolean(options?.canMarkNotice) && !issueTemplate && !isOnlineCommit;
   const canShowUploader = Boolean(options?.canAttachFiles) && !issueTemplate && !isOnlineCommit;
   const canShowReadme = Boolean(options?.canMarkReadme) && search.readme && !issueTemplate;
@@ -143,7 +143,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
         attachmentIds: [],
         bodyMarkdown: stringFormValue(formData, "body"),
         branch: stringFormValue(formData, "branch"),
-        edit: search.edit,
+        edit: Boolean(search.edit),
         issueTemplate,
         lineEnding: stringFormValue(formData, "lineEnding"),
         newFileName: stringFormValue(formData, "new-file-name"),
@@ -238,7 +238,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                 ) : null}
               </dd>
               <dd style={{ position: "relative" }}>
-                <BoardPostMarkdownEditor focusRequest={bodyFocusRequest} value={body} />
+                <BoardPostMarkdownEditor
+                  focusRequest={bodyFocusRequest}
+                  search={search}
+                  value={body}
+                />
               </dd>
             </dl>
 
@@ -304,7 +308,15 @@ function HistoryBackLink({ children, onCancel }: { children: string; onCancel: (
   );
 }
 
-function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number; value: string }) {
+function BoardPostMarkdownEditor({
+  focusRequest,
+  search,
+  value,
+}: {
+  focusRequest: number;
+  search: BoardPostFormSearch;
+  value: string;
+}) {
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -319,7 +331,7 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
         <li className={activeTab === "edit" ? "active" : undefined}>
           <Link
             to="."
-            search={(previous) => previous}
+            search={compactBoardPostFormSearch(search)}
             hash="edit-body"
             activeProps={{}}
             onClick={() => setActiveTab("edit")}
@@ -330,7 +342,7 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
         <li className={activeTab === "preview" ? "active" : undefined}>
           <Link
             to="."
-            search={(previous) => previous}
+            search={compactBoardPostFormSearch(search)}
             hash="preview-body"
             activeProps={{}}
             onClick={() => setActiveTab("preview")}
@@ -438,11 +450,21 @@ function stringFormValue(formData: FormData, name: string) {
 }
 
 function stringSearch(value: unknown) {
-  return typeof value === "string" ? value : "";
+  return typeof value === "string" ? value : undefined;
 }
 
 function booleanSearch(value: unknown) {
-  return value === true || value === "true";
+  return value === true || value === "true" ? true : undefined;
+}
+
+function compactBoardPostFormSearch(search: BoardPostFormSearch) {
+  return {
+    ...(search.branch !== undefined ? { branch: search.branch } : {}),
+    ...(search.edit ? { edit: true } : {}),
+    ...(search.issueTemplate ? { issueTemplate: true } : {}),
+    ...(search.path !== undefined ? { path: search.path } : {}),
+    ...(search.readme ? { readme: true } : {}),
+  };
 }
 
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
