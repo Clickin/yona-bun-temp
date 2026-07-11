@@ -257,6 +257,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/newFork",
   "/admin/sample/newMilestoneForm",
   "/admin/sample/newPullRequestForm",
+  "/admin/sample/post/1",
 ]);
 
 function localSettledSelectorForPath(path) {
@@ -269,6 +270,9 @@ function localSettledSelectorForPath(path) {
   }
   if (pathname.endsWith("/newPullRequestForm")) {
     return "#status.alert-success";
+  }
+  if (/\/post\/\d+$/u.test(pathname)) {
+    return "#comment-form .upload-wrap";
   }
   if (/\/code(?:\/|$)/u.test(pathname)) {
     return ".project-header-outer";

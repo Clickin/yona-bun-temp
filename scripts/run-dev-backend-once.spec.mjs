@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -9,6 +9,11 @@ import {
   reconcileDefaultDevParitySeed,
   reconcileDefaultDevSiteAdmin,
 } from "./run-dev-backend-once.mjs";
+
+test("parity posting reconciliation resets both legacy timestamps", () => {
+  const source = readFileSync(new URL("./run-dev-backend-once.mjs", import.meta.url), "utf8");
+  assert.match(source, /set title = \?, created_date = \?, updated_date = \?/u);
+});
 
 function withTempDatabase(setup) {
   const directory = mkdtempSync(join(tmpdir(), "run-dev-backend-once-"));

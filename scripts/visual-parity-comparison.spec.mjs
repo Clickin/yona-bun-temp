@@ -602,6 +602,8 @@ test("visual sweep waits for form routes with query state", () => {
   assert.match(source, /pathname\.endsWith\("\/newFork"\)/u);
   assert.match(source, /pathname\.endsWith\("\/newPullRequestForm"\)/u);
   assert.match(source, /return "#status\.alert-success"/u);
+  assert.match(source, /\/\\\/post\\\/\\d\+\$\/u\.test\(pathname\)/u);
+  assert.match(source, /return "#comment-form \.upload-wrap"/u);
   assert.match(source, /Number\(item\.issueNumber\) === 1/u);
   assert.match(
     source,
@@ -617,6 +619,7 @@ test("visual sweep captures queued route states with query strings", () => {
   assert.match(source, /"\/admin\/sample\/newFork"/u);
   assert.match(source, /"\/admin\/sample\/newMilestoneForm"/u);
   assert.match(source, /"\/admin\/sample\/newPullRequestForm"/u);
+  assert.match(source, /"\/admin\/sample\/post\/1"/u);
 });
 
 test("focused pull request sweep aligns the compared repository refs", () => {

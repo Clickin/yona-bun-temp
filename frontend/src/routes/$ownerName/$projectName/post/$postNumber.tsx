@@ -144,7 +144,7 @@ function ProjectPostDetailBody({
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
-  const { t } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [openPostModal, setOpenPostModal] = useState<PostDetailModalId | null>(null);
@@ -272,18 +272,25 @@ function ProjectPostDetailBody({
 
   return (
     <div className="page-wrap-outer">
+      <link
+        rel="stylesheet"
+        href={prefixBasePath(
+          basePath,
+          "/legacy-assets/javascripts/lib/elevator/jquery.elevator.css",
+        )}
+      />
       <div className="project-page-wrap board-view">
         <div className="board-header issue">
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={post.createdLabel}>
-              {post.createdLabel}
+              {legacyRelativeDateLabel(post.createdLabel, language)}
             </div>
           </div>
           <div className="title">
             <strong className="board-id">#{postNumber}</strong> {post.title}
             <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
               <span className="date" title={post.createdLabel}>
-                {post.createdLabel}
+                {legacyRelativeDateLabel(post.createdLabel, language)}
               </span>
             </div>
           </div>
@@ -301,7 +308,10 @@ function ProjectPostDetailBody({
               >
                 <span className="avatar-wrap smaller">
                   <img
-                    src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"}
+                    src={prefixBasePath(
+                      basePath,
+                      post.authorAvatarUrl || "/legacy-assets/images/default-avatar-128.png",
+                    )}
                     width="20"
                     height="20"
                     alt=""
@@ -522,6 +532,45 @@ function ProjectPostDetailBody({
         commentId={commentDeleteCommentId}
         title={t("common.comment.delete")}
       />
+      <PostElevator />
+    </div>
+  );
+}
+
+function PostElevator() {
+  const [atTop, setAtTop] = useState(true);
+  const scrollTo = (top: number) => {
+    window.scrollTo({ behavior: "smooth", top });
+    setAtTop(top === 0);
+  };
+  const activate = (event: ReactKeyboardEvent<HTMLElement>, top: number) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      scrollTo(top);
+    }
+  };
+  return (
+    <div className="jq-elevator align-bottom align-right rounded glass">
+      <span
+        className={`jq-top ${atTop ? "jq-sml" : "jq-big"}`}
+        role="button"
+        tabIndex={0}
+        title="Move to Top"
+        onClick={() => scrollTo(0)}
+        onKeyDown={(event) => activate(event, 0)}
+      >
+        ▲
+      </span>
+      <span
+        className={`jq-bottom ${atTop ? "jq-big" : "jq-sml"}`}
+        role="button"
+        tabIndex={0}
+        title="Move to Bottom"
+        onClick={() => scrollTo(Number.MAX_SAFE_INTEGER)}
+        onKeyDown={(event) => activate(event, Number.MAX_SAFE_INTEGER)}
+      >
+        ▼
+      </span>
     </div>
   );
 }
@@ -713,6 +762,16 @@ function PostEditableLabels({
         </Link>
       </dt>
       <dd>
+        <div
+          id="s2id_labelIds"
+          className="select2-container select2-container-multi issue-labels bordered fullsize"
+        >
+          <ul className="select2-choices">
+            <li className="select2-search-field">
+              <input type="text" placeholder={t("label.select")} readOnly />
+            </li>
+          </ul>
+        </div>
         <select
           id="labelIds"
           name="labelIds"
@@ -1095,11 +1154,11 @@ function PostCommentRow({
   postNumber: string;
   projectName: string;
 }) {
-  const { t } = useLegacyMessages();
+  const { language, t } = useLegacyMessages();
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
-  const avatarUrl = "/assets/images/default-avatar-32.png";
+  const avatarUrl = prefixBasePath(basePath, "/legacy-assets/images/default-avatar-128.png");
   const isEditing = editingCommentId === commentId;
   const viaEmail = booleanField(comment.viaEmail);
   const hasRouteOwnedOriginalMessage =
@@ -1156,7 +1215,7 @@ function PostCommentRow({
               className="ago"
               title={comment.createdLabel}
             >
-              {comment.createdLabel}
+              {legacyRelativeDateLabel(comment.createdLabel, language)}
             </Link>
             <Link
               to="."
@@ -1571,7 +1630,7 @@ function MarkdownEditor({
   const [activeMode, setActiveMode] = useState<"edit" | "preview">("edit");
   const [editorValue, setEditorValue] = useState(value);
 
-  const selectMode = (mode: "edit" | "preview", event: ReactMouseEvent<HTMLButtonElement>) => {
+  const selectMode = (mode: "edit" | "preview", event: ReactMouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setActiveMode(mode);
@@ -1581,14 +1640,14 @@ function MarkdownEditor({
     <div className="mt10">
       <ul className="nav nav-tabs nm small">
         <li className={activeMode === "edit" ? "active" : undefined}>
-          <button type="button" onClick={(event) => selectMode("edit", event)}>
+          <Link to="." hash={`edit-${wrapId}`} onClick={(event) => selectMode("edit", event)}>
             {t("common.editor.edit")}
-          </button>
+          </Link>
         </li>
         <li className={activeMode === "preview" ? "active" : undefined}>
-          <button type="button" onClick={(event) => selectMode("preview", event)}>
+          <Link to="." hash={`preview-${wrapId}`} onClick={(event) => selectMode("preview", event)}>
             {t("common.editor.preview")}
-          </button>
+          </Link>
         </li>
         <li>
           <div className="task-list-button">
@@ -1852,6 +1911,19 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
     return organizationName;
   }
   return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
+  if (language !== "ko-KR" || rawLabel === "") return rawLabel;
+  const timestamp = Date.parse(rawLabel);
+  if (Number.isNaN(timestamp)) return rawLabel;
+  const elapsedSeconds = Math.floor((now - timestamp) / 1000);
+  if (elapsedSeconds < 0) return rawLabel;
+  if (elapsedSeconds < 60) return "방금 전";
+  if (elapsedSeconds < 3600) return `${Math.floor(elapsedSeconds / 60)}분 전`;
+  if (elapsedSeconds < 86400) return `${Math.floor(elapsedSeconds / 3600)}시간 전`;
+  if (elapsedSeconds < 2592000) return `${Math.floor(elapsedSeconds / 86400)}일 전`;
+  return rawLabel;
 }
 
 function stringField(value: unknown, fallback = "") {

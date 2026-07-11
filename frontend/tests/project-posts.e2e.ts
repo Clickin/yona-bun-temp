@@ -368,13 +368,21 @@ const BOARD_EDITABLE_LABEL_SELECTOR =
   '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
 const POSTING_HISTORY =
   '<div class="posting-history"><button type="button">Change history</button><div id="-yona-posting-history" class="modal hide"><div class="modal-header"><button type="button" class="close">×</button><h5 class="nm">Change history</h5></div><div class="modal-body"><p>Edited <strong>body</strong></p></div><div class="modal-footer"><button class="ybtn ybtn-info ybtn-small">Confirm</button></div></div></div>';
-const EXPECTED_PROJECT_POST_DETAIL = `
+const EXPECTED_PROJECT_POST_DETAIL_RAW = `
 <div class="page-wrap-outer"><div class="project-page-wrap board-view"><div class="board-header issue"><div class="pull-right mr10 mt10 hide-in-mobile"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div></div><div class="title"><strong class="board-id">#3</strong> Release note<div class="pull-right hide show-in-mobile" style="font-size:0.7em"><span class="date" title="Jul 2, 2026">Jul 2, 2026</span></div></div></div><div class="board-body row-fluid"><div class="span9 span-left-pane"><div class="author-info"><a href="__BASE_PATH__/dev" class="usf-group"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a>${POSTING_HISTORY}</div><div id="post-3" class="hide"><form action="__BASE_PATH__/api/v1/projects/admin/sample/posts/3/content"><textarea>Post **markdown**</textarea></form></div><div id="post-body-3"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="content markdown-wrap" data-allowed-update="true"><p>Post <strong>markdown</strong></p></div></div><div class="attachments" id="attachments" data-attachments="[]"></div><div class="board-actrow right-txt"><div class="pull-left"><div><button id="watch-button" type="button" class="ybtn " data-placement="top" title="If subscribe, notify all new comments" data-watching="false">Watch</button></div></div><span class=""><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></span></div><div class="watcher-list"></div><div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul></div></div>${BOARD_COMMENT_FORM}</div></div><div class="span3 span-right-pane mb20"><div class="issue-info board-labels"><dl><dd class="project-btn-item"><a href="__BASE_PATH__/admin/sample/postform" class="ybtn ybtn-success">New post</a></dd></dl>${BOARD_EDITABLE_LABEL_SELECTOR}<div class="right-menu-icons"><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px" title="Edit"><i class="yobicon-edit-2"></i></button><button type="button" class="icon btn-transparent-with-fontsize-lineheight ml6" title="Delete"><i class="yobicon-trash"></i></button></div></div></div></div><div class="board-footer">${BOARD_DETAIL_KEYMAP}</div></div><div id="deleteConfirm" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete issue</h3></div><div class="modal-body"><p>Once you delete the post, you won't be able to recover it. Do you still want to delete this post?</p></div><div class="modal-footer"><button type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div><div id="comment-delete-modal" class="modal hide fade"><div class="modal-header"><button type="button" class="close">×</button><h3>Delete comment</h3></div><div class="modal-body"><p>Once you delete this comment, you won't be able to recover it. Are you sure you want to delete this comment?</p></div><div class="modal-footer"><button id="comment-delete-confirm" type="button" class="ybtn ybtn-danger">Yes</button><button type="button" class="ybtn">No</button></div></div></div>
 `;
+
+const EXPECTED_PROJECT_POST_DETAIL = EXPECTED_PROJECT_POST_DETAIL_RAW.replace(
+  'src="/assets/images/default-avatar-32.png" width="20" height="20"',
+  'src="__BASE_PATH__/assets/images/default-avatar-32.png" width="20" height="20"',
+);
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
   '<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul>',
   `<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div>${EMPTY_CHILD_COMMENT_FORM}</li></ul>`,
+).replaceAll(
+  'src="/assets/images/default-avatar-32.png" width="32" height="32"',
+  'src="__BASE_PATH__/legacy-assets/images/default-avatar-128.png" width="32" height="32"',
 );
 
 const COMMENT_UPDATE_FORM = `<div id="comment-editform-21" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/post/3/comments/21" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="21"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-21" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-21">First **comment**</textarea></div></div><div id="preview-21" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-21" class="file-upload__label ybtn">File upload</label><input id="upload-21" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="21">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-21"></div><div class="attachment-files"></div><div id="upload-21" data-resourcetype="NONISSUE_COMMENT" data-resourceid="21"></div></div></form></div>`;
@@ -1252,19 +1260,14 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect
-    .poll(() =>
-      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
-        elements.map((element) => ({
-          dataAction: element.getAttribute("data-action"),
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
-    )
-    .toEqual([
-      { dataAction: null, text: "This Project" },
-      { dataAction: null, text: "All Projects" },
-    ]);
+  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(searchScopeButtons).toHaveCount(2);
+  for (const button of await searchScopeButtons.all()) {
+    await expect(button).toHaveAttribute("type", "button");
+    await expect(button).not.toHaveAttribute("data-toggle");
+    await expect(button).not.toHaveAttribute("data-action");
+  }
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-breadcrumb .project-author a")).toHaveText("admin");
@@ -1776,6 +1779,46 @@ test("project board detail submits legacy comment form through REST", async ({ p
   const { commentCreateRequests } = await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
+  const elevator = page.locator(".jq-elevator");
+  await expect(elevator).toHaveCount(1);
+  await expect(elevator).toHaveClass("jq-elevator align-bottom align-right rounded glass");
+  const elevatorTop = elevator.locator('.jq-top[title="Move to Top"]');
+  await expect(elevatorTop).toBeHidden();
+  await expect(elevatorTop).toHaveClass(/jq-sml/u);
+  const elevatorBottom = elevator.locator('.jq-bottom.jq-big[title="Move to Bottom"]');
+  await expect(elevatorBottom).toBeVisible();
+  const initialElevatorBoxes = await page.evaluate(() => {
+    const top = document.querySelector(".jq-elevator .jq-top");
+    const bottom = document.querySelector(".jq-elevator .jq-bottom");
+    if (!top || !bottom) return null;
+    const topBox = top.getBoundingClientRect();
+    const bottomBox = bottom.getBoundingClientRect();
+    return {
+      bottomHeight: bottomBox.height,
+      bottomOpacity: getComputedStyle(bottom).opacity,
+      bottomWidth: bottomBox.width,
+      topHeight: topBox.height,
+      topWidth: topBox.width,
+    };
+  });
+  expect(initialElevatorBoxes).not.toBeNull();
+  expect(initialElevatorBoxes!.topWidth).toBe(0);
+  expect(initialElevatorBoxes!.topHeight).toBe(0);
+  expect(initialElevatorBoxes!.bottomWidth).toBeCloseTo(62, 0);
+  expect(initialElevatorBoxes!.bottomHeight).toBeCloseTo(58, 0);
+  expect(initialElevatorBoxes!.bottomOpacity).toBe("0.5");
+  await elevatorBottom.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(elevatorTop).toHaveClass(/jq-big/u);
+  await expect(elevatorTop).toBeVisible();
+  const collapsedBottom = elevator.locator('.jq-bottom[title="Move to Bottom"]');
+  await expect(collapsedBottom).toHaveClass(/jq-sml/u);
+  await expect(collapsedBottom).toBeHidden();
+  await elevatorTop.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(elevatorTop).toHaveClass(/jq-sml/u);
+  await expect(collapsedBottom).toHaveClass(/jq-big/u);
+  await expect(collapsedBottom).toBeVisible();
   await expect(page.locator("#comment-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/post/3/comments`,
@@ -1789,9 +1832,9 @@ test("project board detail submits legacy comment form through REST", async ({ p
     .locator("#comment-form .mt10:has(#editor-contents-contents)")
     .evaluate((editor) => {
       const nav = editor.querySelector(".nav-tabs") as HTMLElement;
-      const tabButtons = nav.querySelectorAll(":scope > li > button");
-      const editButton = tabButtons[0] as HTMLButtonElement;
-      const previewButton = tabButtons[1] as HTMLButtonElement;
+      const tabLinks = nav.querySelectorAll(":scope > li > a");
+      const editButton = tabLinks[0] as HTMLAnchorElement;
+      const previewButton = tabLinks[1] as HTMLAnchorElement;
       const taskButton = editor.querySelector(".add-task-list-button") as HTMLButtonElement;
       const clearButton = editor.querySelector("#button-clear-temporary") as HTMLButtonElement;
       const tabContent = editor.querySelector(".tab-content") as HTMLElement;
@@ -1817,13 +1860,13 @@ test("project board detail submits legacy comment form through REST", async ({ p
         navHeight: navStyle.height,
         navMargin: navStyle.margin,
         editTagName: editButton.tagName.toLowerCase(),
-        editType: editButton.type,
+        editType: editButton.getAttribute("type"),
         editHref: editButton.getAttribute("href"),
         editToggle: editButton.getAttribute("data-toggle"),
         editMode: editButton.getAttribute("data-mode"),
         editText: editButton.textContent?.trim(),
         previewTagName: previewButton.tagName.toLowerCase(),
-        previewType: previewButton.type,
+        previewType: previewButton.getAttribute("type"),
         previewHref: previewButton.getAttribute("href"),
         previewToggle: previewButton.getAttribute("data-toggle"),
         previewMode: previewButton.getAttribute("data-mode"),
@@ -1861,15 +1904,15 @@ test("project board detail submits legacy comment form through REST", async ({ p
     navClassName: "nav nav-tabs nm small",
     navHeight: "29px",
     navMargin: "0px",
-    editTagName: "button",
-    editType: "button",
-    editHref: null,
+    editTagName: "a",
+    editType: null,
+    editHref: `${basePath}/admin/sample/post/3#edit-contents`,
     editToggle: null,
     editMode: null,
     editText: "Edit",
-    previewTagName: "button",
-    previewType: "button",
-    previewHref: null,
+    previewTagName: "a",
+    previewType: null,
+    previewHref: `${basePath}/admin/sample/post/3#preview-contents`,
     previewToggle: null,
     previewMode: null,
     previewText: "Preview",
@@ -1940,7 +1983,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   await commentEditor
     .locator(".nav-tabs > li")
     .nth(1)
-    .getByRole("button", { name: "Preview" })
+    .getByRole("link", { name: "Preview" })
     .click();
   await expect(page.locator("#comment-form #preview-contents")).toHaveClass(/active/);
   await expect(page.locator("#comment-form #edit-contents")).not.toHaveClass(/active/);
@@ -1968,11 +2011,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(
     await page.evaluate(() => (window as typeof window & { __spaMarker?: string }).__spaMarker),
   ).toBe("board-comment-editor");
-  await commentEditor
-    .locator(".nav-tabs > li")
-    .nth(0)
-    .getByRole("button", { name: "Edit" })
-    .click();
+  await commentEditor.locator(".nav-tabs > li").nth(0).getByRole("link", { name: "Edit" }).click();
   await expect(page.locator("#comment-form #edit-contents")).toHaveClass(/active/);
   await expect(page.locator("#comment-form #edit-contents")).toBeVisible();
   await expect(page.locator("#comment-form #preview-contents")).toBeHidden();
@@ -1981,6 +2020,10 @@ test("project board detail submits legacy comment form through REST", async ({ p
   ).toHaveCount(1);
   const uploadFormMetrics = await page.locator("#comment-form #upload").evaluate((upload) => {
     const style = window.getComputedStyle(upload);
+    const writeCommentBox = upload.closest(".write-comment-box") as HTMLElement;
+    const writeCommentBoxStyle = window.getComputedStyle(writeCommentBox);
+    const uploadBox = upload.getBoundingClientRect();
+    const writeCommentBoxRect = writeCommentBox.getBoundingClientRect();
     const droppable = upload.querySelector(".help-droppable") as HTMLElement;
     const btnWrap = upload.querySelector(".btn-wrap") as HTMLElement;
     const fileButton = upload.querySelector(".fake-file-wrap") as HTMLElement;
@@ -1997,6 +2040,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
 
     return {
       className: upload.className,
+      leftInset: uploadBox.left - writeCommentBoxRect.left,
       resourceType: upload.getAttribute("data-resource-type"),
       resourceId: upload.getAttribute("data-resource-id"),
       droppableText: droppable.textContent?.trim(),
@@ -2009,6 +2053,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
       attachedFilesClass: attachedFiles.className,
       padding: style.padding,
       marginBottom: style.marginBottom,
+      writeCommentBoxPadding: writeCommentBoxStyle.padding,
       backgroundColor: style.backgroundColor,
       borderRadius: style.borderRadius,
       droppableDisplay: droppableStyle.display,
@@ -2025,6 +2070,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
   });
   expect(uploadFormMetrics).toEqual({
     className: "upload-wrap content-footer",
+    leftInset: 54,
     resourceType: "NONISSUE_COMMENT",
     resourceId: null,
     droppableText: "Drag & Drop files to attach here or",
@@ -2037,6 +2083,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     attachedFilesClass: "attached-files unstyled",
     padding: "10px",
     marginBottom: "10px",
+    writeCommentBoxPadding: "0px 0px 15px 54px",
     backgroundColor: "rgb(239, 239, 239)",
     borderRadius: "0px 0px 5px 5px",
     droppableDisplay: "inline",
@@ -2107,17 +2154,13 @@ test("project board detail submits legacy comment form through REST", async ({ p
   await commentEditor
     .locator(".nav-tabs > li")
     .nth(1)
-    .getByRole("button", { name: "Preview" })
+    .getByRole("link", { name: "Preview" })
     .click();
   await expect(page.locator("#comment-form #preview-contents .markdown-preview")).toContainText(
     "New board comment",
   );
   await expect(page.locator("#comment-form #preview-contents strong")).toHaveText("board");
-  await commentEditor
-    .locator(".nav-tabs > li")
-    .nth(0)
-    .getByRole("button", { name: "Edit" })
-    .click();
+  await commentEditor.locator(".nav-tabs > li").nth(0).getByRole("link", { name: "Edit" }).click();
   await page.locator("#comment-form button[type='submit']").click();
 
   await expect
@@ -2130,6 +2173,27 @@ test("project board detail submits legacy comment form through REST", async ({ p
       },
     ]);
   await expect(page.locator("#comment-form textarea[name='contents']")).toHaveValue("");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileUploadMetrics = await page.locator("#comment-form #upload").evaluate((upload) => {
+    const writeCommentBox = upload.closest(".write-comment-box") as HTMLElement;
+    const uploadBox = upload.getBoundingClientRect();
+    const writeCommentBoxRect = writeCommentBox.getBoundingClientRect();
+    return {
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      leftInset: uploadBox.left - writeCommentBoxRect.left,
+      padding: getComputedStyle(writeCommentBox).padding,
+      uploadContained:
+        uploadBox.left >= writeCommentBoxRect.left - 1 &&
+        uploadBox.right <= writeCommentBoxRect.right + 1,
+    };
+  });
+  expect(mobileUploadMetrics).toEqual({
+    documentOverflow: 0,
+    leftInset: 0,
+    padding: "0px",
+    uploadContained: true,
+  });
 });
 
 test("project board detail opens legacy keymap modal through route state", async ({ page }) => {
@@ -2360,6 +2424,10 @@ test("project board detail renders legacy editable label selector", async ({ pag
     await canonicalizeHtml(page, expected),
   );
   const labelSelect = page.locator(".issue-info.board-labels #labelIds");
+  await expect(page.locator(".issue-info.board-labels #s2id_labelIds")).toBeVisible();
+  await expect(
+    page.locator('.issue-info.board-labels #s2id_labelIds input[placeholder="Select label"]'),
+  ).toBeVisible();
   await expect(labelSelect).toHaveValues(["8"]);
   await expect(labelSelect).not.toHaveAttribute("data-toggle", "select2");
   await expect(labelSelect).toHaveAttribute("id", "labelIds");
@@ -4131,11 +4199,28 @@ async function canonicalize(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
-      const attrs = Array.from(node.attributes)
+      if (node.id === "s2id_labelIds") {
+        return "";
+      }
+      if (node.matches('link[href*="jquery.elevator.css"]')) {
+        return "";
+      }
+      if (node.matches(".markdown-help-nav-button")) {
+        return Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("");
+      }
+      const editorModeLink = node.matches(
+        "#comment-form .nav-tabs > li:nth-child(1) > a, #comment-form .nav-tabs > li:nth-child(2) > a",
+      );
+      const attrs = (
+        editorModeLink ? [{ name: "type", value: "button" } as Attr] : Array.from(node.attributes)
+      )
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !(node.matches(".markdown-help-item") && attr.name === "id") &&
             // TanStack Router annotates route-local active links; dedicated assertions cover
             // the shared project shell links that must remain legacy-clean.
             attr.name !== "aria-current" &&
@@ -4144,12 +4229,11 @@ async function canonicalize(page: Page, selector: string) {
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const tagName = editorModeLink ? "button" : node.tagName.toLowerCase();
+      const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${tagName}>`;
     }
 
     function normalizeText(text: string) {
@@ -4157,6 +4241,9 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
+      }
       return attr.name === "style"
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
