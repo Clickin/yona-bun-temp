@@ -546,6 +546,19 @@ test("visual sweep waits for local session resolution before measuring the root"
   assert.match(source, /requestAnimationFrame\(\(\) => requestAnimationFrame\(resolveFrame\)\)/u);
 });
 
+test("visual sweep waits for loaded assets and a committed paint before screenshots", () => {
+  const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
+
+  assert.match(source, /async function waitForRenderedPaint\(page\)/u);
+  assert.match(source, /page\.waitForLoadState\("load"/u);
+  assert.match(source, /await document\.fonts\?\.ready/u);
+  assert.match(source, /image\.decode\?\.\(\)\.catch/u);
+  assert.match(source, /void sheet\.cssRules\.length/u);
+  assert.match(source, /document\s*\.getAnimations\(\{ subtree: true \}\)/u);
+  assert.match(source, /animation\.finished\.catch/u);
+  assert.match(source, /await waitForRenderedPaint\(page\)/u);
+});
+
 test("visual sweep records P2 and P3 template verifier metrics", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
@@ -597,6 +610,7 @@ test("visual sweep captures queued route states with query strings", () => {
   const source = readFileSync(resolve(repoRoot, "scripts/visual-parity-sweep.mjs"), "utf8");
 
   assert.match(source, /alwaysScreenshotPaths\.has\(path\.split\("\?", 1\)\[0\]\)/u);
+  assert.match(source, /"\/admin\/sample\/milestone\/1\/editform"/u);
 });
 
 test("visual sweep waits for dynamic project label styles before measuring issue lists", () => {

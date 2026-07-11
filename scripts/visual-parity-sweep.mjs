@@ -252,6 +252,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/issueform",
   "/admin/sample/issue/1/editform",
   "/admin/sample/issue/1",
+  "/admin/sample/milestone/1/editform",
 ]);
 
 function localSettledSelectorForPath(path) {
@@ -1094,6 +1095,8 @@ async function inspectPage(page, baseUrl, path, label) {
       .catch(() => {});
   }
 
+  await waitForRenderedPaint(page);
+
   const metrics = await page.evaluate(() => {
     const cloneChromeWithoutUserMarkdown = () => {
       const clone = document.body.cloneNode(true);
@@ -1394,6 +1397,40 @@ async function inspectPage(page, baseUrl, path, label) {
       isErrorPage: metrics.isErrorPage,
     },
   };
+}
+
+async function waitForRenderedPaint(page) {
+  await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => {});
+  await page
+    .evaluate(async () => {
+      await document.fonts?.ready;
+      await Promise.all(
+        [...document.images].map((image) =>
+          image.complete ? image.decode?.().catch(() => {}) : Promise.resolve(),
+        ),
+      );
+      for (const sheet of document.styleSheets) {
+        try {
+          void sheet.cssRules.length;
+        } catch {
+          // Cross-origin sheets can be painted even though their rules are not readable.
+        }
+      }
+      for (let pass = 0; pass < 2; pass += 1) {
+        const activeAnimations = document
+          .getAnimations({ subtree: true })
+          .filter(
+            (animation) =>
+              animation.playState === "running" &&
+              animation.effect?.getTiming().iterations !== Infinity,
+          );
+        await Promise.all(activeAnimations.map((animation) => animation.finished.catch(() => {})));
+      }
+      await new Promise((resolveFrame) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
+      });
+    })
+    .catch(() => {});
 }
 
 function isViteDevModuleAbort(failure) {
