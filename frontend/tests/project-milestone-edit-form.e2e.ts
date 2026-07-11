@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/milestone/5" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="v1.0" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2">Release scope</textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE" data-resource-id="5"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__/admin/sample/milestones" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" value="2026-08-31"></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
+<div class="content-wrap frm-wrap"><form action="__BASE_PATH__/admin/sample/milestone/5" id="milestone-form" enctype="multipart/form-data"><div class="row-fluid"><div class="span12"><dl><dd><input type="text" id="title" name="title" value="v1.0" class="zen-mode text title " maxlength="250" tabindex="1" placeholder="Title"></dd></dl></div><div class="row-fluid"><div class="span9 span-left-pane"><dl><dd style="position:relative"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow: visible"><div class="markdown-help"></div><div id="edit-content-body" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="content-body" markdown="true" id="editor-contents-content-body" tabindex="2">Release scope</textarea></div></div><div id="preview-content-body" class="tab-pane"><div class="markdown-preview markdown-wrap content-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div></dd></dl><div id="upload" class="upload-wrap content-footer" data-resource-type="MILESTONE" data-resource-id="5"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class=" actrow right-txt"><button type="submit" class="ybtn ybtn-info">Save</button><a href="__BASE_PATH__/admin/sample/milestones" class="ybtn">Cancel</a></div></div><div class="span3 span-hard-wrap"><dl class="issue-option"><dt>Milestone status</dt><dd><div><input type="radio" name="state" value="OPEN" id="milestone-open" class="radio-btn" checked=""><label for="milestone-open" class="bold">Open</label>&nbsp;<input type="radio" name="state" value="CLOSED" id="milestone-close" class="radio-btn"><label for="milestone-close" class="bold">Closed</label></div></dd></dl><dl class="issue-option"><dt>Choose due date</dt><dd><div><label for="dueDate"><input type="text" name="dueDate" id="dueDate" class="validate due-date" value="2026-08-31"></label><div id="datepicker" class="date-picker"></div></div></dd></dl></div></div></div></form></div>
 `;
 
 test("project milestone edit form matches legacy milestone/edit.scala.html core form DOM", async ({
@@ -14,6 +14,10 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
 
   await page.goto(`${basePath}/admin/sample/milestone/5/editform`);
   await expect(page.locator("#milestone-form")).toBeVisible();
+  await page.waitForFunction(
+    () =>
+      getComputedStyle(document.querySelector("#title")!).borderBottomColor === "rgb(243, 108, 34)",
+  );
   await expect(page).toHaveTitle("Edit milestone - admin/sample");
   expect(await page.evaluate(() => document.head.querySelector("title")?.textContent)).toBe(
     "Edit milestone - admin/sample",
@@ -55,14 +59,22 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   expect(editorTabMetrics).toMatchObject({
     buttonOrder: ["Edit", "Preview", "Add checklist", "Clear Temporary", ""],
     editButtonHref: null,
+    editButtonHeight: 30,
     editButtonMode: null,
+    editButtonPadding: "4px 15px",
     editButtonToggle: null,
     editButtonType: "button",
+    editButtonWeight: "700",
+    editButtonWidth: 57,
     editPaneDisplay: "block",
     previewButtonHref: null,
+    previewButtonHeight: 30,
     previewButtonMode: null,
+    previewButtonPadding: "4px 15px",
     previewButtonToggle: null,
     previewButtonType: "button",
+    previewButtonWeight: "700",
+    previewButtonWidth: 83,
     previewPaneDisplay: "none",
   });
   expect(editorTabMetrics.tabContentTop).toBeGreaterThanOrEqual(editorTabMetrics.navBottom);
@@ -73,15 +85,102 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
   await expect(page.locator(".markdown-help .label")).toHaveText("Markdown help");
   await expect(page.locator(".markdown-help-wrap > .markdown-help-item")).toHaveCount(10);
   await expect(page.locator(".markdown-help-item.markdownShortLinks")).toContainText("Issue no:");
+  expect(
+    await page.locator(".markdown-help-nav").evaluate((nav) => {
+      const firstItem = nav.querySelector<HTMLElement>(":scope > li:first-child");
+      const helpButton = nav.querySelector<HTMLElement>(".markdown-help-nav-button");
+      if (!firstItem || !helpButton) throw new Error("markdown help nav parity targets missing");
+      return {
+        firstItemPadding: getComputedStyle(firstItem).padding,
+        firstItemWidth: Math.round(firstItem.getBoundingClientRect().width),
+        helpButtonVerticalAlign: getComputedStyle(helpButton).verticalAlign,
+        navHeight: Math.round(nav.getBoundingClientRect().height),
+      };
+    }),
+  ).toEqual({
+    firstItemPadding: "5px 8px",
+    firstItemWidth: 115,
+    helpButtonVerticalAlign: "baseline",
+    navHeight: 31,
+  });
+  expect(
+    await page.evaluate(() => {
+      const nav = document.querySelector<HTMLElement>(".markdown-help-nav");
+      const textarea = document.querySelector<HTMLElement>("#editor-contents-content-body");
+      const upload = document.querySelector<HTMLElement>("#upload");
+      if (!nav || !textarea || !upload) throw new Error("editor vertical parity targets missing");
+      const navBox = nav.getBoundingClientRect();
+      const textareaBox = textarea.getBoundingClientRect();
+      const uploadBox = upload.getBoundingClientRect();
+      return {
+        navBottom: Math.round(navBox.bottom),
+        textareaBottom: Math.round(textareaBox.bottom),
+        textareaTop: Math.round(textareaBox.top),
+        uploadTop: Math.round(uploadBox.top),
+      };
+    }),
+  ).toMatchObject({
+    navBottom: 348,
+    textareaBottom: 658,
+    textareaTop: 348,
+    uploadTop: 658,
+  });
   await expect(page.locator("#upload")).toBeVisible();
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-type", "MILESTONE");
   await expect(page.locator("#upload")).toHaveAttribute("data-resource-id", "5");
   await expect(page.locator("#upload .attach-wrap")).toHaveCount(1);
+  await expect(page.locator("#upload .help-pastable")).toBeVisible();
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
   await expect(page.locator("#upload .right-txt.help")).toContainText(
     "Selected file will be attached when your comment is saved.",
   );
+  await expect(page.locator("#datepicker > .pika-single")).toBeVisible();
+  await expect(page.locator("#datepicker .pika-label").nth(0)).toContainText("August");
+  await expect(page.locator("#datepicker .pika-label").nth(1)).toContainText("2026");
+  await expect(page.locator('#datepicker .is-selected [data-pika-day="31"]')).toBeVisible();
+  const uploaderAndCalendar = await page.evaluate(() => {
+    const upload = document.querySelector<HTMLElement>("#upload");
+    const pastable = document.querySelector<HTMLElement>("#upload .help-pastable");
+    const picker = document.querySelector<HTMLElement>("#datepicker > .pika-single");
+    const table = picker?.querySelector<HTMLElement>(".pika-table");
+    const dayButton = picker?.querySelector<HTMLElement>('.pika-button[data-pika-day="1"]');
+    if (!upload || !pastable || !picker || !table || !dayButton) {
+      throw new Error("milestone parity targets missing");
+    }
+    const uploadBox = upload.getBoundingClientRect();
+    const pastableBox = pastable.getBoundingClientRect();
+    const pickerBox = picker.getBoundingClientRect();
+    return {
+      pastableBottom: Math.round(pastableBox.bottom),
+      pastableDisplay: getComputedStyle(pastable).display,
+      pastableTop: Math.round(pastableBox.top),
+      dayBackground: getComputedStyle(dayButton).backgroundColor,
+      dayColor: getComputedStyle(dayButton).color,
+      dayCount: picker.querySelectorAll(".pika-button.pika-day").length,
+      pickerBackground: getComputedStyle(picker).backgroundColor,
+      pickerHeight: Math.round(pickerBox.height),
+      pickerWidth: Math.round(pickerBox.width),
+      tableHeight: Math.round(table.getBoundingClientRect().height),
+      tableWidth: Math.round(table.getBoundingClientRect().width),
+      uploadBottom: Math.round(uploadBox.bottom),
+      uploadHeight: Math.round(uploadBox.height),
+      uploadTop: Math.round(uploadBox.top),
+    };
+  });
+  expect(uploaderAndCalendar).toMatchObject({
+    dayBackground: "rgb(245, 245, 245)",
+    dayColor: "rgb(102, 102, 102)",
+    dayCount: 31,
+    pastableDisplay: "block",
+    pickerBackground: "rgb(255, 255, 255)",
+    pickerHeight: 223,
+    pickerWidth: 258,
+    tableHeight: 175,
+    tableWidth: 240,
+  });
+  expect(uploaderAndCalendar.pastableTop).toBeGreaterThan(uploaderAndCalendar.uploadTop);
+  expect(uploaderAndCalendar.pastableBottom).toBeLessThanOrEqual(uploaderAndCalendar.uploadBottom);
   await expect(
     page.locator('.content-wrap.frm-wrap script[type="text/x-jquery-tmpl"]'),
   ).toHaveCount(0);
@@ -98,9 +197,9 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     actionRowDisplay: "block",
     actionRowMarginTop: "20px",
     contentFooterBackground: "rgb(245, 245, 245)",
-    contentFooterPadding: "10px 20px",
+    contentFooterPadding: "10px",
     contentWrapWidth: 1260,
-    dueDateMinHeight: "30px",
+    dueDateMinHeight: "0px",
     issueOptionDdMargin: "0px",
     issueOptionDtMarginBottom: "5px",
     issueOptionMarginBottom: "16px",
@@ -112,8 +211,11 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     titleFontSize: "18px",
     titleMarginBottom: "15px",
     titleMarginTop: "15px",
-    titleWidth: 1222,
+    titleWidth: 1234,
   });
+  await page.locator('#datepicker [data-pika-day="15"]').click();
+  await expect(page.locator("#dueDate")).toHaveValue("2026-08-15");
+  await expect(page.locator('#datepicker .is-selected [data-pika-day="15"]')).toBeVisible();
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "edit-editor-tabs";
@@ -155,7 +257,7 @@ test("project milestone edit form matches legacy milestone/edit.scala.html core 
     {
       attachmentIds: [],
       contentsMarkdown: "Release scope",
-      dueDate: "2026-08-31",
+      dueDate: "2026-08-15",
       state: "CLOSED",
       title: "v1.0 patched",
     },
@@ -181,13 +283,14 @@ test("project milestone edit form uses legacy project-scoped GNB search shell", 
   await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
 
-  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu > li > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
-  await expect(scopeButtons.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeButtons.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+  await expect(scopeButtons.nth(0)).toHaveAttribute("type", "button");
+  await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-toggle", /.+/u);
   const urlBeforeScopeChange = page.url();
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -231,12 +334,11 @@ test("project milestone edit form exposes group search scope when project org da
   await page.goto(editFormUrl);
   await expect(page.locator("#milestone-form")).toBeVisible();
   const shell = milestoneEditScopedShell(page);
-  const scopeButtons = shell.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu > li > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect(scopeButtons.nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/admin/search`,
-  );
+  await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);
+  await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-toggle", /.+/u);
   const urlBeforeScopeChange = page.url();
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -308,7 +410,7 @@ test("project milestone edit form route uses typed Link and no uploader jquery t
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('className: "ybtn"');
   expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).not.toContain("<a");
+  expect(routeSource).not.toMatch(/<a(?:\s|>)/u);
   expect(routeSource).not.toContain("<a\n                      href={prefixBasePath");
   expect(routeSource).not.toContain("help/markdown.scala.html");
   expect(routeSource).not.toContain("legacyMarkdownHelpTemplate");
@@ -548,23 +650,35 @@ async function readMilestoneEditorTabMetrics(page: Page) {
     const tabBox = tabContent.getBoundingClientRect();
     const textareaBox = textarea.getBoundingClientRect();
     const editPaneStyle = getComputedStyle(editPane);
+    const editButtonStyle = getComputedStyle(editButton);
+    const editButtonBox = editButton.getBoundingClientRect();
+    const previewButtonStyle = getComputedStyle(previewButton);
+    const previewButtonBox = previewButton.getBoundingClientRect();
     const previewPaneStyle = getComputedStyle(previewPane);
     return {
       buttonOrder: Array.from(nav.querySelectorAll(":scope > li")).map((item) =>
         (item.textContent ?? "").trim(),
       ),
       editButtonHref: editButton.getAttribute("href"),
+      editButtonHeight: Math.round(editButtonBox.height),
       editButtonMode: editButton.getAttribute("data-mode"),
+      editButtonPadding: editButtonStyle.padding,
       editButtonToggle: editButton.getAttribute("data-toggle"),
       editButtonType: editButton.type,
+      editButtonWeight: editButtonStyle.fontWeight,
+      editButtonWidth: Math.round(editButtonBox.width),
       editPaneDisplay: editPaneStyle.display,
       navBottom: Math.round(navBox.bottom),
       navLeft: Math.round(navBox.left),
       navRight: Math.round(navBox.right),
       previewButtonHref: previewButton.getAttribute("href"),
+      previewButtonHeight: Math.round(previewButtonBox.height),
       previewButtonMode: previewButton.getAttribute("data-mode"),
+      previewButtonPadding: previewButtonStyle.padding,
       previewButtonToggle: previewButton.getAttribute("data-toggle"),
       previewButtonType: previewButton.type,
+      previewButtonWeight: previewButtonStyle.fontWeight,
+      previewButtonWidth: Math.round(previewButtonBox.width),
       previewPaneDisplay: previewPaneStyle.display,
       tabContentLeft: Math.round(tabBox.left),
       tabContentRight: Math.round(tabBox.right),
@@ -617,6 +731,7 @@ async function canonicalize(page: Page, selector: string) {
   return page.locator(selector).evaluate((root) => {
     const clone = root.cloneNode(true);
     scrubMarkdownHelp(clone);
+    scrubPikaday(clone);
     return visit(clone);
 
     function visit(node: Node): string {
@@ -655,6 +770,11 @@ async function canonicalize(page: Page, selector: string) {
         markdownHelp.replaceChildren();
       }
     }
+
+    function scrubPikaday(rootNode: Node) {
+      if (!(rootNode instanceof Element)) return;
+      rootNode.querySelector("#datepicker")?.replaceChildren();
+    }
   });
 }
 
@@ -663,6 +783,7 @@ async function canonicalizeHtml(page: Page, html: string) {
     const template = document.createElement("template");
     template.innerHTML = input;
     scrubMarkdownHelp(template.content);
+    scrubPikaday(template.content);
     return Array.from(template.content.children)
       .map((root) => visit(root))
       .join("");
@@ -699,6 +820,10 @@ async function canonicalizeHtml(page: Page, html: string) {
       for (const markdownHelp of rootNode.querySelectorAll(".markdown-help")) {
         markdownHelp.replaceChildren();
       }
+    }
+
+    function scrubPikaday(rootNode: ParentNode) {
+      rootNode.querySelector("#datepicker")?.replaceChildren();
     }
   }, html);
 }

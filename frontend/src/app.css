@@ -1454,22 +1454,6 @@ pre code {
   margin-left: -4px;
 }
 
-.frm-wrap dl,
-.frm-wrap dt,
-.frm-wrap dd {
-  padding: 0;
-  margin: 0;
-}
-
-.frm-wrap dt {
-  margin: 3px 0 1px;
-}
-
-.frm-wrap dt label {
-  margin-right: 5px;
-  font-weight: bold;
-}
-
 .inner-bubble {
   position: relative;
   margin-bottom: 10px;
@@ -2756,6 +2740,11 @@ h1 {
   cursor: pointer;
   appearance: none;
   background: transparent;
+}
+
+.content-wrap.frm-wrap .mt10 > .nav-tabs.small > li > button {
+  padding: 4px 15px;
+  font-weight: bold;
 }
 
 .pullrequeset-tab-menu > li > button {
@@ -4189,122 +4178,14 @@ h1 {
   font-weight: 700;
 }
 
-.markdown-help {
-  margin: 5px 0 0;
-}
-
-.markdown-help .markdown-help-nav {
-  list-style: none;
-  background-color: #f7f7f7;
-  border: 1px solid #ddd;
-  border-bottom: none;
-}
-
-.markdown-help .markdown-help-nav li {
-  display: inline-block;
-  padding: 5px 7px;
-  line-height: 20px;
-}
-
-.markdown-help .markdown-help-nav li .label {
-  background-color: #c7c9c9;
-  text-shadow: none;
-}
-
-.markdown-help .markdown-help-nav li.help-nav {
-  position: relative;
-  color: #9e9e9e;
-  cursor: pointer;
-}
-
 .markdown-help .markdown-help-nav .markdown-help-nav-button {
   padding: 0;
   color: inherit;
   font: inherit;
+  vertical-align: baseline;
   cursor: pointer;
   background: transparent;
   border: 0;
-}
-
-.markdown-help .markdown-help-nav li.help-nav:hover,
-.markdown-help .markdown-help-nav li.help-nav.active {
-  color: #333;
-}
-
-.markdown-help .markdown-help-nav li.help-nav.active {
-  font-weight: 700;
-}
-
-.markdown-help .markdown-help-nav li.help-nav.active::before,
-.markdown-help .markdown-help-nav li.help-nav.active::after {
-  position: absolute;
-  left: 50%;
-  width: 0;
-  height: 0;
-  margin-left: -7px;
-  overflow: hidden;
-  content: " ";
-  border: 7px solid transparent;
-  border-style: outset outset solid;
-}
-
-.markdown-help .markdown-help-nav li.help-nav.active::before {
-  bottom: 0;
-  border-bottom-color: #ddd;
-}
-
-.markdown-help .markdown-help-nav li.help-nav.active::after {
-  bottom: -1px;
-  border-bottom-color: #fff;
-}
-
-.markdown-help .markdown-help-wrap {
-  list-style: none;
-  background-color: #fff;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item {
-  height: 0;
-  overflow: hidden;
-  border-top: none;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item.active {
-  height: auto;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-top: none;
-  border-bottom: none;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item .thead {
-  background-color: #f7f7f7;
-  border: 1px solid #ddd;
-  border-bottom: none;
-  border-radius: 6px 6px 0 0;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item .thead div {
-  padding: 0 10px;
-  font-weight: 700;
-  line-height: 30px;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item .markdwon-syntax-wrap {
-  border: 1px solid #ddd;
-}
-
-.markdown-help .markdown-help-wrap .markdown-help-item .markdwon-syntax-wrap .markdwon-syntax {
-  padding: 10px;
-}
-
-.markdown-help .markdwon-syntax pre {
-  max-width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: auto;
-  background-color: transparent;
-  border: none;
 }
 
 .keymap-help {
