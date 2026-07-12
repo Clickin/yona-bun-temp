@@ -19,8 +19,6 @@ import {
   ProjectMenu as SharedProjectMenu,
 } from "../$projectName";
 
-type ProjectChangeVcsScreenData = ProjectContainer & Partial<ProjectChangeVcsResponse>;
-
 const legacyLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
@@ -76,16 +74,19 @@ function ProjectChangeVcsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   const changeVcsQuery = useQuery(
     readProjectChangeVcsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const project = mergeProjectChangeVcsData(containerQuery.data, changeVcsQuery.data);
 
-  if (!project) {
+  if (!containerQuery.data || !changeVcsQuery.data) {
     return <ProjectChangeVcsTitle ownerName={ownerName} projectName={projectName} />;
   }
 
   return (
     <>
       <ProjectChangeVcsTitle ownerName={ownerName} projectName={projectName} />
-      <ProjectChangeVcsBody project={project} runtimeConfig={runtimeConfig} />
+      <ProjectChangeVcsBody
+        project={changeVcsQuery.data}
+        shellProject={containerQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
@@ -104,9 +105,11 @@ function ProjectChangeVcsTitle({
 
 function ProjectChangeVcsBody({
   project,
+  shellProject,
   runtimeConfig,
 }: {
-  project: ProjectChangeVcsScreenData;
+  project: ProjectChangeVcsResponse;
+  shellProject: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
@@ -168,11 +171,19 @@ function ProjectChangeVcsBody({
 
   return (
     <>
-      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <SharedProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
+      <SharedProjectMenu
+        active="setting"
+        basePath={runtimeConfig.basePath}
+        project={shellProject}
+      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
+          <ProjectSettingMenu
+            ownerName={ownerName}
+            project={shellProject}
+            projectName={projectName}
+          />
           <div className="bubble-wrap gray wp">
             <div className="row-fluid">
               <h3>
@@ -262,7 +273,7 @@ function ProjectSettingMenu({
   projectName,
 }: {
   ownerName: string;
-  project: ProjectChangeVcsScreenData;
+  project: ProjectContainer;
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
@@ -370,20 +381,16 @@ function recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-function enrolledUserCount(project: ProjectChangeVcsScreenData) {
+function enrolledUserCount(project: ProjectContainer) {
   const enrolledUsers = recordField(project).enrolledUsers;
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
 }
 
-function projectMemberCount(project: ProjectChangeVcsScreenData) {
+function projectMemberCount(project: ProjectContainer) {
   return enrolledUserCount(project);
 }
 
-function projectMenuEnabled(
-  project: ProjectChangeVcsScreenData,
-  menuKey: string,
-  fallbackKey: string,
-) {
+function projectMenuEnabled(project: ProjectContainer, menuKey: string, fallbackKey: string) {
   const menuSettingValue = recordField(recordField(project).menuSetting)[menuKey];
   if (typeof menuSettingValue === "boolean") {
     return menuSettingValue;
@@ -399,23 +406,6 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
     return organizationName;
   }
   return project.isProtected === true ? ownerName : undefined;
-}
-
-function mergeProjectChangeVcsData(
-  container: ProjectContainer | undefined,
-  changeVcs: ProjectChangeVcsResponse | undefined,
-): ProjectChangeVcsScreenData | undefined {
-  if (!container && !changeVcs) {
-    return undefined;
-  }
-
-  if (!container) {
-    return { ...changeVcs };
-  }
-  if (!changeVcs) {
-    return { ...container };
-  }
-  return { ...container, ...changeVcs };
 }
 
 function stringField(value: unknown, fallback: string) {
