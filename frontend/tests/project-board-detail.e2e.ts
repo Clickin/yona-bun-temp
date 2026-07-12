@@ -52,6 +52,49 @@ test("project board detail missing post preserves the legacy project error shell
   expect(mobile.menuBottom).toBeLessThanOrEqual(mobile.errorTop);
 });
 
+test("project board edit missing post renders the legacy site error shell on desktop and mobile", async ({
+  page,
+}) => {
+  expect(ROUTE_SOURCE).toContain("function ProjectPostEditNotFoundTitle");
+  expect(ROUTE_SOURCE).toContain("function ProjectPostEditNotFoundBody");
+  expect(ROUTE_SOURCE).toContain('t("error.internalServerError")');
+  expect(ROUTE_SOURCE).toContain('<i className="ico-404"></i>');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockMissingProjectPost(page);
+  await page.goto(`${basePath}/weblabs/portal/post/1/editform`);
+
+  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
+  await expect(page.locator(".error-wrap > .ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveText("Home");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-primary")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
+  await expect(page).toHaveTitle("Server error occurred; service is not available");
+  await expect(page.locator(".board-view")).toHaveCount(0);
+  await expect(page.locator("form.nm")).toHaveCount(0);
+
+  const desktop = await siteErrorMetrics(page);
+  expect(desktop.errorPaddingBlock).toBe(200);
+  expect(desktop.errorMessageFontSize).toBe("16px");
+  expect(desktop.errorMessageFontWeight).toBe("700");
+  expect(desktop.navBottom).toBeLessThanOrEqual(desktop.errorTop);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await siteErrorMetrics(page);
+  expect(mobile.documentScrollWidth).toBe(390);
+  expect(mobile.navRight).toBeLessThanOrEqual(390);
+  expect(mobile.errorRight).toBeLessThanOrEqual(390);
+  expect(mobile.navBottom).toBeLessThanOrEqual(mobile.errorTop);
+});
+
 async function mockMissingProjectPost(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -123,6 +166,33 @@ async function shellMetrics(page: Page) {
       menuBottom: Math.round(menu.bottom),
       menuRight: Math.round(menu.right),
       menuTop: Math.round(menu.top),
+    };
+
+    function required(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element;
+    }
+  });
+}
+
+async function siteErrorMetrics(page: Page) {
+  return page.evaluate(() => {
+    const nav = required(".gnb-outer").getBoundingClientRect();
+    const error = required(".project-page-wrap > .error-wrap").getBoundingClientRect();
+    const errorStyle = getComputedStyle(required(".project-page-wrap > .error-wrap"));
+    const messageStyle = getComputedStyle(required(".error-wrap p"));
+    return {
+      documentScrollWidth: document.documentElement.scrollWidth,
+      errorMessageFontSize: messageStyle.fontSize,
+      errorMessageFontWeight: messageStyle.fontWeight,
+      errorPaddingBlock:
+        Math.round(Number.parseFloat(errorStyle.paddingTop)) +
+        Math.round(Number.parseFloat(errorStyle.paddingBottom)),
+      errorRight: Math.round(error.right),
+      errorTop: Math.round(error.top),
+      navBottom: Math.round(nav.bottom),
+      navRight: Math.round(nav.right),
     };
 
     function required(selector: string) {
