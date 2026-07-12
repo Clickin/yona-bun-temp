@@ -220,6 +220,10 @@ function seedParityFoundationFixture(database) {
       (3, 'portal', 'Group portal', 'GIT', 'weblabs', '2026-07-06 00:00:00.000', 1, 0, 'protected');
     insert into milestone (id, title, due_date, state, project_id, contents)
     values (1, 'Parity launch', '2026-07-31 23:59:59.999', 0, 2, 'Milestone for local legacy parity verification screens.');
+    insert into issue_label_category (id, project_id, name, is_exclusive)
+    values (1, 2, 'legacy', 0);
+    insert into issue_label (id, category_id, color, name, project_id)
+    values (1, 1, '#51aacc', '버그', 2);
     insert into issue
       (id, title, created_date, updated_date, author_id, author_login_id, author_name, project_id,
        number, num_of_comments, state, due_date, milestone_id, assignee_id, updated_by_author_id,
@@ -363,6 +367,17 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         .prepare("select name from issue_label order by name")
         .all()
         .map((row) => row.name);
+      const legacyBugLabel = database
+        .prepare("select id, name from issue_label where project_id = 2 and name = 'bug'")
+        .get();
+      const issueBugLabelIds = database
+        .prepare(
+          `select issue_label_id from issue_issue_label
+            where issue_id = 2
+            order by issue_label_id`,
+        )
+        .all()
+        .map((row) => Number(row.issue_label_id));
       const watcherLogins = database
         .prepare(
           `select n4user.login_id
@@ -424,6 +439,8 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
         contents: "Board seed confirmed from the fork contributor side.",
       });
       assert.deepEqual(labelNames, ["bug", "parity"]);
+      assert.deepEqual({ ...legacyBugLabel }, { id: 1, name: "bug" });
+      assert.deepEqual(issueBugLabelIds, [1, 3]);
       assert.deepEqual(watcherLogins, ["admin", "carol"]);
       assert.deepEqual(sampleWatcherLogins, ["admin"]);
       assert.deepEqual(notifications, [
