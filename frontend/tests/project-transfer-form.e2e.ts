@@ -513,7 +513,7 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
     "utf8",
   );
   const transferStateSlice = source.match(
-    /function ProjectTransferBody[\s\S]+?\nfunction ProjectMenu/u,
+    /function ProjectTransferBody[\s\S]+?\nfunction ProjectSettingMenu/u,
   )?.[0];
 
   expect(source).not.toContain("createLink");
@@ -557,19 +557,12 @@ test("project transfer settings tabs use direct TanStack Link targets", () => {
   expect(source).toContain(
     '<title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>',
   );
-  expect(source).toContain(
-    'import { ProjectHeader as SharedProjectHeader } from "../$projectName";',
-  );
-  expect(source).toContain(
-    "<SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />",
-  );
-  expect(source).toContain('to="/$ownerName/$projectName"');
-  expect(source).toContain('to="/$ownerName/$projectName/code"');
-  expect(source).toContain('to="/$ownerName/$projectName/issues"');
-  expect(source).toContain('to="/$ownerName/$projectName/pullRequests"');
-  expect(source).toContain('to="/$ownerName/$projectName/reviews"');
-  expect(source).toContain('to="/$ownerName/$projectName/milestones"');
-  expect(source).toContain('to="/$ownerName/$projectName/posts"');
+  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../$projectName";');
+  expect(source).toContain("<ProjectHeader basePath={runtimeConfig.basePath} project={project} />");
+  expect(source).toContain('<ProjectMenu active="setting"');
+  expect(source).not.toContain("function ProjectMenu(");
+  expect(source).not.toContain("function ProjectMenuItem(");
+  expect(source).not.toContain("...transferQuery.data");
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/$ownerName/$projectName/transfer"');
