@@ -17,7 +17,7 @@ test("direct issue create route renders the legacy New issue title for the selec
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("sample");
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/issues`,
+    `${basePath}/admin/sample/issues/latest`,
   );
 });
 
@@ -35,8 +35,48 @@ test("direct mine issue create route renders the legacy New issue title for the 
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("inbox");
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/inbox/issues`,
+    `${basePath}/admin/inbox/issues/latest`,
   );
+});
+
+test("direct issue create preserves project header inline spacing from legacy project/header.scala.html", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockDirectIssueForm(page, { ownerName: "weblabs", projectName: "portal" });
+  await page.setViewportSize({ width: 1366, height: 900 });
+
+  await page.goto(`${basePath}/user/issues/new`);
+
+  await expect(page.locator(".project-breadcrumb")).toHaveText("weblabs / portal starG");
+  const desktop = await page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const breadcrumb = required(".project-breadcrumb-wrap");
+    const util = required(".project-util-wrap");
+    const watcher = required(".watcher-count");
+    const watchAction = required(".down-arrow");
+    return { breadcrumb, util, watchAction, watcher };
+  });
+  expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
+  expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
+  expect(desktop.util.right).toBeCloseTo(1345.5, 0);
+  expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
+  expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
+  expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    header: document.querySelector(".project-header-outer")?.getBoundingClientRect(),
+    watchVisible: getComputedStyle(document.querySelector(".watch-btn")!).display,
+  }));
+  expect(mobile.documentWidth).toBe(390);
+  expect(mobile.header?.right).toBeLessThanOrEqual(390);
+  expect(mobile.watchVisible).toBe("none");
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {
@@ -109,6 +149,29 @@ async function mockDirectIssueForm(
       body: JSON.stringify(projectContainer(ownerName, projectName)),
     });
   });
+  await page.route("**/api/v1/projects/*/*/issues/form-options", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const match = path.match(/\/projects\/([^/]+)\/([^/]+)\/issues\/form-options$/u);
+    const ownerName = match?.[1] ?? selectedProject.ownerName;
+    const projectName = match?.[2] ?? selectedProject.projectName;
+    const project = projectContainer(ownerName, projectName);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        canCreateIssueAssignee: true,
+        canCreateIssueMilestone: true,
+        canManageIssueLabels: true,
+        currentProject: {
+          logoUrl: project.logoUrl,
+          ownerName,
+          projectId: project.id,
+          projectName,
+        },
+        issueTemplateMarkdown: "",
+        movableIssueProjects: [],
+      }),
+    });
+  });
   await page.route("**/api/v1/owners/*/projects/*/labels", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -169,7 +232,8 @@ function projectContainer(ownerName: string, projectName: string) {
     isFavorite: false,
     isForkedFromOrigin: false,
     isPrivate: projectName === "inbox",
-    isProtected: false,
+    isProtected: projectName === "portal",
+    isWatching: projectName === "portal",
     logoUrl: "/assets/images/project_default_logo.png",
     menuSetting: {
       board: true,
@@ -183,5 +247,7 @@ function projectContainer(ownerName: string, projectName: string) {
     projectName,
     vcs: "GIT",
     viewerCanUpdate: true,
+    viewerCanWatch: projectName === "portal",
+    watchCount: projectName === "portal" ? 2 : 0,
   };
 }

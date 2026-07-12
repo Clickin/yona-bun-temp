@@ -1424,8 +1424,8 @@ function ProjectHeaderContent({
                 >
                   {ownerName}
                 </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
+              </span>{" "}
+              <span className="project-separator hide-in-mobile">/</span>{" "}
               <span className="project-name">
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
@@ -1434,7 +1434,7 @@ function ProjectHeaderContent({
                 >
                   {projectName}
                 </Link>
-              </span>
+              </span>{" "}
               {/* oxlint-disable jsx-a11y/prefer-tag-over-role -- legacy project/header.scala.html renders this favorite toggle as a span. */}
               <span
                 className="user-project-list"
