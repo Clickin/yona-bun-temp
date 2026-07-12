@@ -12,6 +12,69 @@ test("project change-VCS shell keeps legacy watcher and menu counts", async ({ p
   await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
 });
 
+test("Alice change-VCS keeps the legacy container shell when the form projection is partial", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    ownerName: "alice",
+    projectName: "sample",
+    changeVcsProject: {
+      enrolledUsers: [],
+      isForkedFromOrigin: true,
+      menuSetting: { code: false },
+      originOwnerName: "admin",
+      originProjectName: "sample",
+      viewerCanUpdate: true,
+      viewerCanWatch: false,
+      watchCount: 0,
+    },
+    project: {
+      enrolledUsers: [{ id: 1 }, { id: 2 }],
+      isForkedFromOrigin: false,
+      menuSetting: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pullRequest: true,
+        review: true,
+      },
+      viewerCanUpdate: false,
+      viewerCanWatch: true,
+      watchCount: 7,
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/alice/sample/changeVCS`);
+  await expect(page.locator(".project-breadcrumb-wrap")).not.toHaveClass("fork");
+  await expect(page.locator(".project-origin")).toHaveCount(0);
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("7");
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveCount(1);
+  await expect(page.locator(".project-setting")).toHaveCount(0);
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    if (!menu || !pageWrap) throw new Error("Missing legacy change-VCS shell");
+    return {
+      menuClientWidth: menu.clientWidth,
+      menuScrollWidth: menu.scrollWidth,
+      pageScrollWidth: document.documentElement.scrollWidth,
+      pageWrapWidth: Math.round(pageWrap.getBoundingClientRect().width),
+    };
+  });
+  expect(mobile).toEqual({
+    menuClientWidth: 390,
+    menuScrollWidth: 390,
+    pageScrollWidth: 390,
+    pageWrapWidth: 390,
+  });
+});
+
 test("project change-VCS mobile menu ignores ordinary members for enrollment badges", async ({
   page,
 }) => {
@@ -841,11 +904,15 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).toContain("ProjectHeader as SharedProjectHeader");
   expect(source).toContain("ProjectMenu as SharedProjectMenu");
   expect(source).toContain(
-    "<SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />",
+    "<SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />",
   );
-  expect(source).toContain(
-    '<SharedProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />',
-  );
+  expect(source).toContain("<SharedProjectMenu");
+  expect(source).toContain('active="setting"');
+  expect(source).toContain("basePath={runtimeConfig.basePath}");
+  expect(source).toContain("project={shellProject}");
+  expect(source).toContain("project={changeVcsQuery.data}");
+  expect(source).toContain("shellProject={containerQuery.data}");
+  expect(source).not.toContain("mergeProjectChangeVcsData");
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).not.toContain("mask={{ to:");
@@ -1083,6 +1150,7 @@ async function mockProjectAdmin(
   page: Page,
   options: {
     changeVcsPostStatus?: number;
+    changeVcsProject?: Record<string, unknown>;
     changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
@@ -1152,7 +1220,7 @@ async function mockProjectAdmin(
       }
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify(project),
+        body: JSON.stringify({ ...project, ...options.changeVcsProject }),
       });
     },
   );
