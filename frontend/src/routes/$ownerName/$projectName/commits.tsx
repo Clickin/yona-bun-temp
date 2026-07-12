@@ -134,7 +134,9 @@ function ProjectCodeHistoryScreen({
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeHistoryBody
         history={historyQuery.data}
+        ownerName={ownerName}
         project={project}
+        projectName={projectName}
         runtimeConfig={runtimeConfig}
       />
     </>
@@ -148,18 +150,84 @@ function ProjectCodeHistoryTitle() {
   return <title>{`${t("title.commitHistory")} - ${ownerName}/${projectName}`}</title>;
 }
 
-function ProjectCodeHistoryBody({
+export function ProjectCodeBranchHistoryRouteFrame({
+  page,
+  routeParams,
+  runtimeConfig,
+}: {
+  page: number;
+  routeParams: { branch: string; ownerName: string; projectName: string };
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <YonaQueryProvider>
+      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
+        <ProjectCodeBranchHistoryRouteShell
+          page={page}
+          routeParams={routeParams}
+          runtimeConfig={runtimeConfig}
+        />
+      </LegacyI18nProvider>
+    </YonaQueryProvider>
+  );
+}
+
+function ProjectCodeBranchHistoryRouteShell({
+  page,
+  routeParams,
+  runtimeConfig,
+}: {
+  page: number;
+  routeParams: { branch: string; ownerName: string; projectName: string };
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { branch, ownerName, projectName } = routeParams;
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const historyQuery = useQuery(
+    codeHistoryQueryOptions(runtimeConfig, { branch, ownerName, page, projectName }),
+  );
+  const project = projectQuery.data;
+  if (!project || !historyQuery.data) return null;
+  const organizationName = projectSearchScopeOrganizationName(project, ownerName);
+  return (
+    <SiteLayoutShell
+      projectSearchScope={{ organizationName, ownerName, projectName }}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={!organizationName}
+    >
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+      <ProjectCodeHistoryBody
+        history={historyQuery.data}
+        ownerName={ownerName}
+        project={project}
+        projectName={projectName}
+        requestedBranch={branch}
+        runtimeConfig={runtimeConfig}
+      />
+    </SiteLayoutShell>
+  );
+}
+
+export function ProjectCodeHistoryBody({
   history,
+  ownerName,
   project,
+  projectName,
+  requestedBranch,
   runtimeConfig,
 }: {
   history: CodeHistoryResponse;
+  ownerName: string;
   project: ProjectContainer;
+  projectName: string;
+  requestedBranch?: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const { ownerName, projectName } = Route.useParams();
   const isGit = project.vcs === "GIT";
   const selectedBranch = history.selectedBranch;
   const displayedBranch =
@@ -293,7 +361,7 @@ function ProjectCodeHistoryBody({
               <li>
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
-                  params={{ branch: "HEAD", ownerName, projectName }}
+                  params={{ branch: requestedBranch || "HEAD", ownerName, projectName }}
                   activeOptions={legacyCodeHistoryLinkActiveOptions}
                   activeProps={legacyCodeHistoryLinkActiveProps}
                 >
@@ -301,15 +369,27 @@ function ProjectCodeHistoryBody({
                 </Link>
               </li>
               <li className="active">
-                <Link
-                  to="/$ownerName/$projectName/commits"
-                  params={{ ownerName, projectName }}
-                  search={{}}
-                  activeOptions={legacyCodeHistoryLinkActiveOptions}
-                  activeProps={legacyCodeHistoryLinkActiveProps}
-                >
-                  {t("code.commits")}
-                </Link>
+                {requestedBranch ? (
+                  <Link
+                    to="/$ownerName/$projectName/commits/$branch/$"
+                    params={{ _splat: "/", branch: requestedBranch, ownerName, projectName }}
+                    search={{ page: undefined as never }}
+                    activeOptions={legacyCodeHistoryLinkActiveOptions}
+                    activeProps={legacyCodeHistoryLinkActiveProps}
+                  >
+                    {t("code.commits")}
+                  </Link>
+                ) : (
+                  <Link
+                    to="/$ownerName/$projectName/commits"
+                    params={{ ownerName, projectName }}
+                    search={{}}
+                    activeOptions={legacyCodeHistoryLinkActiveOptions}
+                    activeProps={legacyCodeHistoryLinkActiveProps}
+                  >
+                    {t("code.commits")}
+                  </Link>
+                )}
               </li>
               {isGit ? (
                 <li>
