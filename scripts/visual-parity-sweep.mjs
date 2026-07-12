@@ -290,7 +290,7 @@ function localSettledSelectorForPath(path) {
     return "#comment-form .upload-wrap";
   }
   if (/\/code(?:\/|$)/u.test(pathname)) {
-    return ".project-header-outer";
+    return ".code-browse-wrap .listitem, .project-page-wrap .alert";
   }
   const issueDetailMatch = pathname.match(/\/issue\/(\d+)$/u);
   if (issueDetailMatch) {

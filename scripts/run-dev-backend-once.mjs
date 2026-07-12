@@ -59,27 +59,8 @@ const parityProjectSeed = Object.freeze({
       projectName: "sample",
     },
     {
-      branches: [
-        {
-          files: {
-            "README.md": "# Portal parity repository\n\nProtected project parity fixture.\n",
-            "docs/onboarding.md":
-              "## Portal\n\nThis repository exists to verify protected project code views.\n",
-            "src/main.rs": "fn main() {\n    println!(\"portal parity\");\n}\n",
-          },
-          message: "Seed portal parity repository",
-          name: "main",
-        },
-        {
-          files: {
-            "docs/onboarding.md":
-              "## Portal\n\nThis repository exists to verify protected project code views.\n\n- group member visibility\n",
-            "src/feature.rs": "pub const FEATURE: &str = \"portal\";\n",
-          },
-          message: "Add portal feature branch parity fixture",
-          name: "feature/ui",
-        },
-      ],
+      // Legacy localhost portal is intentionally an empty Git repository.
+      branches: [],
       owner: "weblabs",
       projectName: "portal",
     },
@@ -171,6 +152,24 @@ function seedRepositoryBranch(repoPath, branchSeed) {
 function ensureProjectRepositorySeed(runtimeDirectory, projectId, branchSeeds) {
   const repoPath = path.join(runtimeDirectory, "repo", `${projectId}.git`);
   const events = [];
+
+  if (branchSeeds.length === 0) {
+    const repoStatus = ensureBareRepository(repoPath);
+    if (repoStatus === "created") {
+      return { projectId, repoPath, status: "created-empty" };
+    }
+    const hasRefs =
+      spawnSync("git", ["--git-dir", repoPath, "show-ref", "--head", "--quiet"], {
+        cwd: repoRoot,
+      }).status === 0;
+    if (!hasRefs) {
+      return { projectId, repoPath, status: "unchanged" };
+    }
+    fs.rmSync(repoPath, { force: true, recursive: true });
+    ensureBareRepository(repoPath);
+    return { projectId, repoPath, status: "cleared" };
+  }
+
   const repoStatus = ensureBareRepository(repoPath);
   if (repoStatus === "created") {
     events.push("created");
@@ -750,7 +749,7 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       );
       database
         .prepare("update project set last_pushed_date = ? where id = ?")
-        .run(timestamp, project.id);
+        .run(repositorySeed.branches.length === 0 ? null : timestamp, project.id);
     }
 
     if (

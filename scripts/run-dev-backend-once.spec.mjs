@@ -461,7 +461,6 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
     const sampleRepo = join(fixture.runtimeDirectory, "repo", "2.git");
     const portalRepo = join(fixture.runtimeDirectory, "repo", "3.git");
     const sampleRefs = readGit(sampleRepo, "show-ref");
-    const portalRefs = readGit(portalRepo, "show-ref");
     const sampleMainFiles = readGit(sampleRepo, "ls-tree", "--name-only", "-r", "main").split("\n");
     const sampleFeatureFiles = readGit(sampleRepo, "ls-tree", "--name-only", "-r", "feature/ui").split(
       "\n",
@@ -469,8 +468,7 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
 
     assert.match(sampleRefs, /refs\/heads\/main/);
     assert.match(sampleRefs, /refs\/heads\/feature\/ui/);
-    assert.match(portalRefs, /refs\/heads\/main/);
-    assert.match(portalRefs, /refs\/heads\/feature\/ui/);
+    assert.throws(() => readGit(portalRepo, "show-ref", "--head", "--quiet"));
     assert.deepEqual(sampleMainFiles, ["README.md", "docs/parity-checklist.md", "src/main.rs"]);
     assert.deepEqual(sampleFeatureFiles, [
       "README.md",
