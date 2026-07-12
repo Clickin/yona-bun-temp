@@ -14,8 +14,6 @@ import {
   deleteProjectMemberRest,
   readProjectContainerQueryOptions,
   readProjectMembersQueryOptions,
-  toggleFavoriteProjectRest,
-  toggleProjectWatchRest,
   updateProjectMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
@@ -31,6 +29,8 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -127,8 +127,8 @@ function ProjectMembersScreen({
           projectName={projectName}
           titleKey={documentTitleKey}
         />
-        <ProjectHeader project={projectData} />
-        <ProjectMenu active="setting" project={projectData} />
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
+        <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectData} />
         <ProjectMembersErrorBody messageKey="error.badrequest" />
       </>
     );
@@ -142,8 +142,8 @@ function ProjectMembersScreen({
           projectName={projectName}
           titleKey={documentTitleKey}
         />
-        <ProjectHeader project={projectData} />
-        <ProjectMenu active="home" project={projectData} />
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
+        <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={projectData} />
         <ProjectMembersErrorBody
           loginRedirectPath={
             membersErrorStatus === 401 ? `/${ownerName}/${projectName}/members` : undefined
@@ -165,8 +165,8 @@ function ProjectMembersScreen({
         projectName={projectName}
         titleKey={documentTitleKey}
       />
-      <ProjectHeader project={projectData} />
-      <ProjectMenu active="setting" project={projectData} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectData} />
       <ProjectMembersBody
         members={membersQuery.data}
         project={projectData}
@@ -246,10 +246,6 @@ function ProjectMembersBody({
     userId: number;
   }>(null);
   const normalizedLoginQuery = loginIdValue.trim();
-  const mentionStylesheetHref = prefixBasePath(
-    runtimeConfig.basePath,
-    "/assets/javascripts/lib/mentionjs/mention.css",
-  );
   const memberSearchQuery = useQuery({
     enabled: booleanField(members.viewerCanUpdate) && normalizedLoginQuery.length > 0,
     queryFn: () => searchLegacyMemberUsers(runtimeConfig, normalizedLoginQuery),
@@ -257,7 +253,7 @@ function ProjectMembersBody({
     staleTime: 30_000,
   });
   const memberSuggestions = (memberSearchQuery.data?.items ?? []).map((item) =>
-    parseLegacyMemberSearchItem(item, runtimeConfig.basePath),
+    parseLegacyMemberSearchItem(item),
   );
   const showTypeaheadSuggestions =
     isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
@@ -492,7 +488,6 @@ function ProjectMembersBody({
               <div className="row-fluid">
                 {members.enrollmentRequests.map((user) => (
                   <EnrollmentRequest
-                    basePath={runtimeConfig.basePath}
                     key={stringField(user.userId, user.loginId)}
                     onAccept={acceptEnrollment}
                     user={user}
@@ -549,7 +544,6 @@ function ProjectMembersBody({
           ) : null}
         </div>
       </div>
-      <link rel="stylesheet" type="text/css" media="screen" href={mentionStylesheetHref} />
     </>
   );
 }
@@ -615,10 +609,7 @@ function ProjectMemberListItem({
         className="avatar-wrap mlarge pull-left mr10"
       >
         <img
-          src={
-            stringField(member.avatarUrl, "") ||
-            prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-          }
+          src={stringField(member.avatarUrl, "") || defaultAvatarUrl}
           width="64"
           height="64"
           alt=""
@@ -680,11 +671,9 @@ function ProjectMemberListItem({
 }
 
 function EnrollmentRequest({
-  basePath,
   onAccept,
   user,
 }: {
-  basePath: string;
   onAccept: (loginId: string) => void;
   user: ProjectEnrollmentRequestEntry;
 }) {
@@ -701,10 +690,7 @@ function EnrollmentRequest({
           params={{ user: loginId }}
         >
           <img
-            src={
-              stringField(user.avatarUrl, "") ||
-              prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
-            }
+            src={stringField(user.avatarUrl, "") || defaultAvatarUrl}
             height="65"
             width="65"
             className="img-circle"
@@ -750,22 +736,17 @@ type LegacyMemberSuggestionView = {
   userLabel: string;
 };
 
-function parseLegacyMemberSearchItem(
-  item: {
-    info: string;
-    loginId: string;
-  },
-  basePath: string,
-): LegacyMemberSuggestionView {
+function parseLegacyMemberSearchItem(item: {
+  info: string;
+  loginId: string;
+}): LegacyMemberSuggestionView {
   const info = stringField(item.info, "");
   const loginId = stringField(item.loginId, "");
   // ponytail: legacy UserApp.java builds item.info as
   //   <img class='mention_image' src='...'><b class='mention_name'>NAME</b><span class='mention_username'> @LOGINID</span>
   // Native DOMParser+querySelector replaces the hand-rolled regex HTML parser.
   const doc = new DOMParser().parseFromString(info, "text/html");
-  const imageSrc =
-    doc.querySelector(".mention_image")?.getAttribute("src") ||
-    prefixBasePath(basePath, "/assets/images/default-avatar-32.png");
+  const imageSrc = doc.querySelector(".mention_image")?.getAttribute("src") || defaultAvatarUrl;
   const userLabel = doc.querySelector(".mention_name")?.textContent?.trim() || loginId;
   const mentionUsername =
     doc.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
@@ -799,395 +780,6 @@ function projectMemberDeleteErrorMessage(t: (key: string) => string, error: unkn
     }
   }
   return t("error.badrequest");
-}
-
-function ProjectHeader({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const projectRecord = recordField(project);
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const projectId = stringField(project.id, "");
-  const [isFavoritedProject, setIsFavoritedProject] = useState(
-    () => booleanField(project.isFavorite) || booleanField(project.isFavorited),
-  );
-  const [projectUtilDropdown, setProjectUtilDropdown] = useState<"watch" | null>(null);
-  const canWatchProject = projectCanWatch(project);
-  const [watchState, setWatchState] = useState({
-    count: projectWatchingCount(project),
-    isWatching: projectIsWatching(project),
-  });
-  const logoUrl =
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/project_default_logo.png");
-  const backgroundImageUrl =
-    stringField(projectRecord.backgroundImageUrl, "") ||
-    stringField(projectRecord.backgroundUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/bg-default-project.png");
-  const isForked =
-    booleanField(projectRecord.isForkedFromOrigin) || booleanField(projectRecord.isForked);
-  const originalOwnerName =
-    stringField(projectRecord.originalOwnerName, "") ||
-    stringField(projectRecord.originOwnerName, "");
-  const originalProjectName =
-    stringField(projectRecord.originalProjectName, "") ||
-    stringField(projectRecord.originProjectName, "");
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavoritedProject((current) =>
-        typeof response.favorited === "boolean" ? response.favorited : !current,
-      );
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.container(ownerName, projectName),
-      });
-    },
-  });
-  const watchMutation = useMutation({
-    mutationFn: async (nextWatching: boolean) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleProjectWatchRest(runtimeConfig, csrfToken, ownerName, projectName, nextWatching);
-    },
-    onSuccess(response, nextWatching) {
-      setWatchState((current) => ({
-        count:
-          projectWatchingCountValue(response) ??
-          Math.max(0, current.count + (nextWatching ? 1 : -1)),
-        isWatching: nextWatching,
-      }));
-      queryClient.invalidateQueries({
-        queryKey: apiQueryKeys.project.container(ownerName, projectName),
-      });
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy project/header.scala.html renders this favorite toggle as a span. */}
-              <span
-                className="user-project-list"
-                data-project-id={projectId}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  favoriteMutation.mutate();
-                }}
-              >
-                <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
-                >
-                  star
-                </i>
-              </span>
-              {/* oxlint-enable jsx-a11y/click-events-have-key-events */}
-              {booleanField(project.isPrivate) ? (
-                <span className="project-private">
-                  <i className="yobicon-lock"></i>
-                </span>
-              ) : null}
-              {booleanField(project.isProtected) ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName: originalOwnerName, projectName: originalProjectName }}
-                  className="project-origin-name"
-                >
-                  {originalOwnerName} / {originalProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util">
-              {canWatchProject ? (
-                <li className={projectUtilDropdown === "watch" ? "open" : undefined}>
-                  <div
-                    className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
-                  >
-                    <Link
-                      activeOptions={legacyLinkActiveOptions}
-                      activeProps={legacyLinkActiveProps}
-                      className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
-                      title={t("project.watcher.number")}
-                      to="/$ownerName/$projectName/watchers"
-                      params={{ ownerName, projectName }}
-                    >
-                      {watchState.count}
-                    </Link>
-                    <div className="dropdown-menu flat right title">
-                      <div className="pop-title">
-                        {t(
-                          watchState.isWatching
-                            ? "project.you.are.watching"
-                            : "project.you.are.not.watching",
-                          { args: [projectName] },
-                        )}
-                      </div>
-                      <div className="pop-content">
-                        <p>{t("notification.help")}</p>
-                        <ul className="icons-ul">
-                          <li>
-                            <i className="yobicon-li yobicon-ok"></i>
-                            {t("notification.help.new")}
-                          </li>
-                          <li>
-                            <i className="yobicon-li yobicon-ok"></i>
-                            {t("notification.help.new.comment")}
-                          </li>
-                          <li>
-                            <i className="yobicon-li yobicon-ok"></i>
-                            {t("notification.help.update.issue")}
-                          </li>
-                          <li>
-                            <i className="yobicon-li yobicon-ok"></i>
-                            {t("notification.help.update.pullrequest")}
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="pop-content btn-wrap">
-                        <Link
-                          activeOptions={{
-                            exact: true,
-                            explicitUndefined: true,
-                            includeHash: true,
-                            includeSearch: true,
-                          }}
-                          activeProps={legacyLinkActiveProps}
-                          className="ybtn"
-                          to="/user/editform/notifications"
-                          hash={projectId}
-                        >
-                          <i className="yobicon-alert2"></i> {t("userinfo.changeNotifications")}
-                        </Link>
-                        <button
-                          type="button"
-                          className="ybtn ybtn-watching watchBtn"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setProjectUtilDropdown(null);
-                            watchMutation.mutate(!watchState.isWatching);
-                          }}
-                        >
-                          <i
-                            className={watchState.isWatching ? "yobicon-eye-off" : "yobicon-eye"}
-                          ></i>{" "}
-                          {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      className="btn nofocus no-border down-arrow"
-                      type="button"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setProjectUtilDropdown((current) => (current === "watch" ? null : "watch"));
-                      }}
-                    >
-                      {t(watchState.isWatching ? "project.unwatch" : "project.watch")}
-                    </button>
-                  </div>
-                </li>
-              ) : null}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenu({
-  active,
-  project,
-}: {
-  active: "home" | "setting";
-  project: ProjectContainer;
-}) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = projectMenuSetting(project);
-  const projectMenuCounts = {
-    board: projectMenuCount(project, "postCount", "boardCount"),
-    issue: projectMenuCount(project, "openIssueCount"),
-    pullRequest: projectMenuCount(project, "openPullRequestCount"),
-    review: projectMenuCount(project, "reviewCount"),
-  };
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            active={active === "home"}
-            label={t("title.projectHome")}
-            params={{ ownerName, projectName }}
-            short="H"
-            to="/$ownerName/$projectName"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              params={{ ownerName, projectName }}
-              short="C"
-              to="/$ownerName/$projectName/code"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              count={projectMenuCounts.issue}
-              label={t("menu.issue")}
-              params={{ ownerName, projectName }}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              count={projectMenuCounts.pullRequest}
-              label={t("menu.pullRequest")}
-              params={{ ownerName, projectName }}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              count={projectMenuCounts.review}
-              label={t("menu.review")}
-              params={{ ownerName, projectName }}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              params={{ ownerName, projectName }}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              count={projectMenuCounts.board}
-              label={t("menu.board")}
-              params={{ ownerName, projectName }}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className={active === "setting" ? "active" : ""}>
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName/setting"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={enrolledUserCount(project)} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  active = false,
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  active?: boolean;
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to:
-    | "/$ownerName/$projectName"
-    | "/$ownerName/$projectName/code"
-    | "/$ownerName/$projectName/issues"
-    | "/$ownerName/$projectName/pullRequests"
-    | "/$ownerName/$projectName/reviews"
-    | "/$ownerName/$projectName/milestones"
-    | "/$ownerName/$projectName/posts";
-}) {
-  return (
-    <li className={`${active ? "active" : ""}${className ? ` ${className}` : ""}`}>
-      <Link
-        activeOptions={legacyLinkActiveOptions}
-        activeProps={legacyLinkActiveProps}
-        to={to}
-        params={params}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-        <CountBadge count={count} />
-      </Link>
-    </li>
-  );
 }
 
 function ProjectSettingMenu({
@@ -1324,51 +916,10 @@ function projectMenuSetting(project: ProjectContainer) {
   };
 }
 
-function projectMenuCount(project: ProjectContainer, field: string, fallbackField?: string) {
-  const record = recordField(project);
-  const direct = finiteNumberField(record[field]);
-  if (direct !== undefined) {
-    return direct;
-  }
-  return fallbackField ? (finiteNumberField(record[fallbackField]) ?? 0) : 0;
-}
-
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
   const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
+  if (organizationName) return organizationName;
   return booleanField(project.isProtected) ? ownerName : undefined;
-}
-
-function projectCanWatch(project: ProjectContainer) {
-  const record = recordField(project);
-  return booleanField(record.viewerCanWatch) || booleanField(record.canWatch);
-}
-
-function projectIsWatching(project: ProjectContainer) {
-  const record = recordField(project);
-  return booleanField(record.isWatching) || booleanField(record.viewerIsWatching);
-}
-
-function projectWatchingCount(project: ProjectContainer) {
-  return projectWatchingCountValue(project) ?? 0;
-}
-
-function projectWatchingCountValue(project: ProjectContainer) {
-  const record = recordField(project);
-  for (const value of [record.watchingCount, record.watchCount, record.watcherCount]) {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-    if (typeof value === "string") {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) {
-        return parsed;
-      }
-    }
-  }
-  return undefined;
 }
 
 function stringField(value: unknown, fallback: string) {
@@ -1379,19 +930,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function finiteNumberField(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-  return undefined;
 }
 
 function numberField(value: unknown) {

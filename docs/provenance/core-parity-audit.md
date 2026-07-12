@@ -13,6 +13,7 @@
 
 - The `Current route/contract` column below is a historical label. Legacy parity evidence must come from `yona-original/`; `reference/mixed-code/**` paths are obsolete pre-Rust residuals and are not reference material.
 - The canonical implementation path is [repo root](/G:/programming/yona).
+- Project-member avatars follow `User.avatarUrl` and `GravatarUtil`: email hashing remains normalized, but a missing Gravatar uses Yona's fixed gray default image rather than an identicon. Focused guards: `frontend/tests/project-members-svn.e2e.ts` and the server `gravatar_uses_the_legacy_yona_default_avatar` contract.
 - PR detail empty-event rendering follows `git/view.scala.html`: keep `.board-comment-wrap`, omit `ul#comments`, and do not add placeholder text.
 - PR detail event rendering follows `git/partial_pull_request_event.scala.html`: conflict/resolved `PULL_REQUEST_STATE_CHANGED` rows keep the legacy state classes/copy and senderless message shape. Focused guard: `frontend/tests/project-pullrequest-overview.e2e.ts`.
 - PR detail tabs follow `git/partial_info.scala.html`: the Changes tab renders `span.num-badge` only when open review-thread count is greater than zero. Focused guard: `frontend/tests/project-pullrequest-overview.e2e.ts`.
