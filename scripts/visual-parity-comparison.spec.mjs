@@ -459,8 +459,14 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
   );
   assert.match(source, /function sessionPrimerPathForPath\(path\)/u);
   assert.match(source, /pathname === "\/user\/issues\/new" \? "\/alice\/sample" : null/u);
-  assert.match(source, /async function primeSessionProjectVisit\(page, baseUrl, projectPath, label\)/u);
-  assert.match(source, /await page\.goto\(urlFor\(baseUrl, projectPath\), \{ waitUntil: "domcontentloaded" \}\)/u);
+  assert.match(
+    source,
+    /async function primeSessionProjectVisit\(page, baseUrl, projectPath, label\)/u,
+  );
+  assert.match(
+    source,
+    /await page\.goto\(urlFor\(baseUrl, projectPath\), \{ waitUntil: "domcontentloaded" \}\)/u,
+  );
   assert.match(source, /if \(label === "legacy"\) \{[\s\S]+?await page\.waitForTimeout\(500\);/u);
   assert.match(
     source,
@@ -516,6 +522,8 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /return "\.code-browse-wrap \.listitem, \.project-page-wrap \.alert";/u);
   assert.match(source, /if \(\/\\\/commits\\\/\?\$\/u\.test\(pathname\)\)/u);
   assert.match(source, /return "\.page-wrap-outer \.project-page-wrap #history";/u);
+  assert.match(source, /if \(pathname\.endsWith\("\/branches"\)\)/u);
+  assert.match(source, /return "\.page-wrap-outer \.branch-list-wrap tbody tr";/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
   assert.match(
