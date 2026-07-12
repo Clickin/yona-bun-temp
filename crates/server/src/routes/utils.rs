@@ -1941,7 +1941,7 @@ pub(crate) fn gravatar_url(email_address: &str) -> String {
     let mut hasher = Md5::new();
     hasher.update(normalized.as_bytes());
     format!(
-        "https://www.gravatar.com/avatar/{:x}?s=256&d=identicon",
+        "https://www.gravatar.com/avatar/{:x}?s=256&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png",
         hasher.finalize()
     )
 }
@@ -2492,6 +2492,14 @@ pub(crate) fn accepts_legacy_json(headers: &HeaderMap) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gravatar_uses_the_legacy_yona_default_avatar() {
+        assert_eq!(
+            gravatar_url(" Admin@Example.com "),
+            "https://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?s=256&d=https%3A%2F%2Fko.gravatar.com%2Fuserimage%2F53495145%2F0eaeeb47c620542ad089f17377298af6.png"
+        );
+    }
 
     #[test]
     fn max_uploaded_file_size_uses_legacy_default_and_env_override() {
