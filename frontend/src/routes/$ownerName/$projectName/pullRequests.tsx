@@ -129,7 +129,7 @@ function ProjectOpenPullRequestsRouteShell({
   );
 }
 
-function ProjectPullRequestsBadRequestRouteShell({
+export function ProjectPullRequestsBadRequestRouteShell({
   ownerName,
   projectName,
   runtimeConfig,
