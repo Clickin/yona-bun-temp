@@ -3635,10 +3635,17 @@ test("project issue detail matches live legacy Korean milestone event and mobile
     if (!upload || !userMenu) return null;
     const uploadBox = upload.getBoundingClientRect();
     const userMenuBox = userMenu.getBoundingClientRect();
-    return { uploadHeight: uploadBox.height, userMenuTop: userMenuBox.top };
+    return {
+      uploadHeight: uploadBox.height,
+      uploadWidth: uploadBox.width,
+      uploadX: uploadBox.x,
+      userMenuTop: userMenuBox.top,
+    };
   });
   expect(mobileMetrics).not.toBeNull();
   expect(mobileMetrics!.uploadHeight).toBeCloseTo(100, 0);
+  expect(mobileMetrics!.uploadWidth).toBeCloseTo(386, 0);
+  expect(mobileMetrics!.uploadX).toBeCloseTo(2, 0);
   expect(mobileMetrics!.userMenuTop).toBe(83);
 
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -3670,6 +3677,20 @@ test("project issue detail matches live legacy Korean milestone event and mobile
   await expect(page.locator(".comment-header")).toHaveCount(2);
   await expect(page.locator(".comment-header").first()).toContainText("댓글");
   await expect(page.locator(".comment-header").last()).toContainText("댓글");
+});
+
+test("project issue detail mobile uploader follows the frozen responsive cascade", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectIssueDetail(page, { commentCount: 0, comments: [], timeline: [] });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const geometry = await page.locator("#comment-form .upload-wrap").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { height: box.height, width: box.width, x: box.x };
+  });
+  expect(geometry).toEqual({ height: 100, width: 386, x: 2 });
 });
 
 test("project issue detail renders legacy null milestone timeline event", async ({ page }) => {
