@@ -46,13 +46,7 @@ import type {
   ProjectIssueReferenceItem,
   ProjectTitleHeadItem,
 } from "../../../api/issue-meta";
-import {
-  cancelEnrollProjectRest,
-  enrollProjectRest,
-  readProjectContainerQueryOptions,
-  toggleFavoriteProjectRest,
-  toggleProjectWatchRest,
-} from "../../../api/org-project";
+import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { apiQueryKeys } from "../../../api/query-keys";
 import { RestApiError } from "../../../api/rest-client";
@@ -75,6 +69,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { useRootToast } from "../../__root";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 const CHECKLIST_TEMPLATE = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const DRAFT_SAVE_DELAY_MS = 5_000;
@@ -457,36 +452,65 @@ export function ProjectIssueFormProjectScreen({
   });
 
   if (formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 401) {
-    return <IssueFormLoginRedirect redirectUrl={initialPathname} />;
+    if (!projectQuery.data) {
+      return <IssueFormLoginRedirect redirectUrl={initialPathname} />;
+    }
   }
 
-  const firstError = [
-    projectQuery.error,
-    formOptionsQuery.error,
-    labelsQuery.error,
-    parentOptionsQuery.error,
-    openMilestonesQuery.error,
-  ].find(Boolean);
-  if (firstError) {
-    return (
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="issue-form-load-error" role="alert">
-            {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
+  const firstError = [projectQuery.error, formOptionsQuery.error].find(Boolean);
+  if (!projectQuery.data) {
+    if (firstError) {
+      return (
+        <div className="page-wrap-outer">
+          <div className="project-page-wrap">
+            <div className="issue-form-load-error" role="alert">
+              {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
+            </div>
           </div>
         </div>
-      </div>
+      );
+    }
+    return <div className="issue-form-loading" role="status" aria-label={t("common.loading")} />;
+  }
+
+  const projectShell = (
+    <>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+    </>
+  );
+
+  if (formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 401) {
+    return (
+      <>
+        {projectShell}
+        <IssueFormLoginRedirect redirectUrl={initialPathname} />
+      </>
     );
   }
 
-  if (
-    !projectQuery.data ||
-    !formOptionsQuery.data ||
-    !labelsQuery.data ||
-    !parentOptionsQuery.data ||
-    !openMilestonesQuery.data
-  ) {
-    return <div className="issue-form-loading" role="status" aria-label={t("common.loading")} />;
+  if (firstError) {
+    return (
+      <>
+        {projectShell}
+        <div className="page-wrap-outer">
+          <div className="project-page-wrap">
+            <div className="issue-form-load-error" role="alert">
+              {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!formOptionsQuery.data) {
+    return (
+      <>
+        {projectShell}
+        <div className="issue-form-loading" role="status" aria-label={t("common.loading")} />
+      </>
+    );
   }
 
   const initialBody = parentIssueId
@@ -495,8 +519,7 @@ export function ProjectIssueFormProjectScreen({
 
   return (
     <>
-      <IssueFormProjectHeader project={projectQuery.data} runtimeConfig={runtimeConfig} />
-      <IssueFormProjectMenu project={projectQuery.data} />
+      {projectShell}
       <ProjectIssueFormBody
         canCreateIssueAssignee={formOptionsQuery.data.canCreateIssueAssignee}
         canCreateIssueMilestone={formOptionsQuery.data.canCreateIssueMilestone}
@@ -508,11 +531,11 @@ export function ProjectIssueFormProjectScreen({
           ),
         ]}
         initialBodyMarkdown={initialBody}
-        labels={labelsQuery.data.labels}
-        milestones={openMilestonesQuery.data.milestones}
+        labels={labelsQuery.data?.labels ?? []}
+        milestones={openMilestonesQuery.data?.milestones ?? []}
         ownerName={ownerName}
         parentIssueId={parentIssueId}
-        parentOptions={parentOptionsQuery.data.items}
+        parentOptions={parentOptionsQuery.data?.items ?? []}
         project={projectQuery.data}
         projectName={projectName}
         referCommentId={referCommentId}
@@ -538,397 +561,6 @@ function IssueFormLoginRedirect({ redirectUrl }: { redirectUrl: string }) {
   return (
     <div className="issue-form-login-redirect" role="status">
       {t("error.auth.unauthorized.waringMessage")}
-    </div>
-  );
-}
-
-function IssueFormProjectHeader({
-  project,
-  runtimeConfig,
-}: {
-  project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const { t } = useLegacyMessages();
-  const queryClient = useQueryClient();
-  const ownerName = project.ownerName;
-  const projectName = project.projectName;
-  const [isFavorited, setIsFavorited] = useState(project.isFavorited);
-  const [isWatching, setIsWatching] = useState(project.isWatching);
-  const [watchCount, setWatchCount] = useState(project.watchCount);
-  const [enrollmentRequested, setEnrollmentRequested] = useState(project.enrollmentRequested);
-  const [openUtility, setOpenUtility] = useState<"enrollment" | "watch" | null>(null);
-  const privateProject = project.projectScope.toUpperCase() === "PRIVATE";
-  const protectedProject = project.projectScope.toUpperCase() === "PROTECTED";
-  const backgroundImageUrl = prefixBasePath(
-    runtimeConfig.basePath,
-    project.backgroundUrl || "/legacy-assets/images/project_default.jpg",
-  );
-
-  useEffect(() => setIsFavorited(project.isFavorited), [project.isFavorited]);
-  useEffect(() => setIsWatching(project.isWatching), [project.isWatching]);
-  useEffect(() => setWatchCount(project.watchCount), [project.watchCount]);
-  useEffect(
-    () => setEnrollmentRequested(project.enrollmentRequested),
-    [project.enrollmentRequested],
-  );
-
-  const invalidateProject = () =>
-    queryClient.invalidateQueries({
-      queryKey: apiQueryKeys.project.container(ownerName, projectName),
-    });
-  const favoriteMutation = useMutation({
-    mutationFn: async () => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response) {
-      setIsFavorited(response.favorited);
-      void invalidateProject();
-    },
-  });
-  const watchMutation = useMutation({
-    mutationFn: async (nextWatching: boolean) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return toggleProjectWatchRest(runtimeConfig, csrfToken, ownerName, projectName, nextWatching);
-    },
-    onSuccess(response, nextWatching) {
-      setIsWatching(response.isWatching ?? nextWatching);
-      setWatchCount(
-        typeof response.watchCount === "number"
-          ? response.watchCount
-          : Math.max(0, watchCount + (nextWatching ? 1 : -1)),
-      );
-      setOpenUtility(null);
-      void invalidateProject();
-    },
-  });
-  const enrollmentMutation = useMutation({
-    mutationFn: async (nextRequested: boolean) => {
-      const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-      return nextRequested
-        ? enrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName)
-        : cancelEnrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName);
-    },
-    onSuccess(response, nextRequested) {
-      setEnrollmentRequested(
-        typeof response.enrollmentRequested === "boolean"
-          ? response.enrollmentRequested
-          : nextRequested,
-      );
-      setOpenUtility(null);
-      void invalidateProject();
-    },
-  });
-
-  return (
-    <div
-      className="project-header-outer issue-form-project-header"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-    >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={projectLogoUrl(project, runtimeConfig.basePath)} alt="" />
-          </div>
-          <div className={`project-breadcrumb-wrap${project.isForked ? " fork" : ""}`}>
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
-                <Link
-                  activeOptions={plainLinkActiveOptions}
-                  activeProps={plainLinkActiveProps}
-                  to="/$user"
-                  params={{ user: ownerName }}
-                  search={{ daysAgo: 14, selected: "issues" }}
-                >
-                  {ownerName}
-                </Link>
-              </span>
-              <span className="project-separator hide-in-mobile">/</span>
-              <span className="project-name">
-                <Link
-                  activeOptions={plainLinkActiveOptions}
-                  activeProps={plainLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{ ownerName, projectName }}
-                >
-                  {projectName}
-                </Link>
-              </span>
-              <span className="user-project-list">
-                <button
-                  type="button"
-                  className="star-project"
-                  aria-label={t("title.favorite")}
-                  disabled={favoriteMutation.isPending}
-                  onClick={() => favoriteMutation.mutate()}
-                >
-                  <i className={`${isFavorited ? "starred " : ""}star material-icons va-text-top`}>
-                    star
-                  </i>
-                </button>
-              </span>
-              {privateProject ? (
-                <span className="project-private">
-                  <i className="yobicon-lock" />
-                </span>
-              ) : null}
-              {protectedProject ? (
-                <span className="project-protected" title="Group Project">
-                  G
-                </span>
-              ) : null}
-            </div>
-            {project.isForked && project.originOwnerName && project.originProjectName ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
-                <Link
-                  activeOptions={plainLinkActiveOptions}
-                  activeProps={plainLinkActiveProps}
-                  to="/$ownerName/$projectName"
-                  params={{
-                    ownerName: project.originOwnerName,
-                    projectName: project.originProjectName,
-                  }}
-                  className="project-origin-name"
-                >
-                  {project.originOwnerName} / {project.originProjectName}
-                </Link>
-              </div>
-            ) : null}
-          </div>
-          <div className="project-util-wrap">
-            <ul className="project-util">
-              {project.viewerCanEnroll ? (
-                <li className={openUtility === "enrollment" ? "open" : undefined}>
-                  <button
-                    type="button"
-                    className={`ybtn ybtn-small${enrollmentRequested ? " ybtn-info" : ""}`}
-                    aria-expanded={openUtility === "enrollment"}
-                    disabled={enrollmentMutation.isPending}
-                    onClick={() =>
-                      setOpenUtility((current) => (current === "enrollment" ? null : "enrollment"))
-                    }
-                  >
-                    <i className="yobicon-addfriend" /> {t("organization.member.enrollment.title")}
-                  </button>
-                  {openUtility === "enrollment" ? (
-                    <div className="dropdown-menu flat right title issue-project-utility-menu">
-                      <div className="pop-content btn-wrap">
-                        <button
-                          type="button"
-                          className="ybtn enrollBtn"
-                          onClick={() => enrollmentMutation.mutate(!enrollmentRequested)}
-                        >
-                          {t(
-                            enrollmentRequested
-                              ? "button.cancel.enrollment"
-                              : "button.new.enrollment",
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </li>
-              ) : null}
-              {project.viewerCanWatch || project.viewerCanLeave ? (
-                <li className={openUtility === "watch" ? "open" : undefined}>
-                  <div
-                    className={`btn-group dropdown watch-btn${openUtility === "watch" ? " open" : ""}`}
-                  >
-                    <Link
-                      activeOptions={plainLinkActiveOptions}
-                      activeProps={plainLinkActiveProps}
-                      className={`btn watcher-count no-border${isWatching ? " watch-on" : ""}`}
-                      title={t("project.watcher.number")}
-                      to="/$ownerName/$projectName/watchers"
-                      params={{ ownerName, projectName }}
-                    >
-                      {watchCount}
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn nofocus no-border down-arrow"
-                      aria-expanded={openUtility === "watch"}
-                      onClick={() =>
-                        setOpenUtility((current) => (current === "watch" ? null : "watch"))
-                      }
-                    >
-                      {t(isWatching ? "project.unwatch" : "project.watch")}
-                    </button>
-                    {openUtility === "watch" ? (
-                      <div className="dropdown-menu flat right title issue-project-utility-menu">
-                        <div className="pop-title">
-                          {t(
-                            isWatching
-                              ? "project.you.are.watching"
-                              : "project.you.are.not.watching",
-                            { args: [projectName] },
-                          )}
-                        </div>
-                        <div className="pop-content btn-wrap">
-                          <button
-                            type="button"
-                            className="ybtn ybtn-watching watchBtn"
-                            disabled={watchMutation.isPending}
-                            onClick={() => watchMutation.mutate(!isWatching)}
-                          >
-                            <i className={isWatching ? "yobicon-eye-off" : "yobicon-eye"} />{" "}
-                            {t(isWatching ? "project.unwatch" : "project.watch")}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                </li>
-              ) : null}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function IssueFormProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const { ownerName, projectName } = project;
-  const count = (value: number) =>
-    value > 0 ? <span className="project-menu-count">{value}</span> : null;
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <li>
-            <Link to="/$ownerName/$projectName" params={{ ownerName, projectName }}>
-              <span className="menu-name">{t("title.projectHome")}</span>
-              <span className="short-menu">H</span>
-            </Link>
-          </li>
-          {project.showCode ? (
-            <li className="code-menu">
-              <Link to="/$ownerName/$projectName/code" params={{ ownerName, projectName }}>
-                <span className="menu-name">{t("menu.code")}</span>
-                <span className="short-menu">C</span>
-              </Link>
-            </li>
-          ) : null}
-          {project.showIssue ? (
-            <li className="active">
-              <Link
-                to="/$ownerName/$projectName/issues"
-                params={{ ownerName, projectName }}
-                search={{
-                  assigneeId: "",
-                  authorId: "",
-                  commenterId: "",
-                  dueDate: "",
-                  filter: "",
-                  labelIds: [],
-                  milestoneId: "",
-                  orderBy: "createdDate",
-                  orderDir: "desc",
-                  pageNum: 1,
-                  state: "open",
-                }}
-              >
-                <span className="menu-name">{t("menu.issue")}</span>
-                <span className="short-menu">I</span>
-                {count(project.openIssueCount)}
-              </Link>
-            </li>
-          ) : null}
-          {project.showPullRequest && project.vcs.toUpperCase() === "GIT" ? (
-            <li>
-              {project.isForked ? (
-                <Link
-                  to="/$ownerName/$projectName/sentPullRequests"
-                  params={{ ownerName, projectName }}
-                  search={{ contributorId: 0, filter: "", pageNum: 1 }}
-                >
-                  <span className="menu-name">{t("menu.pullRequest")}</span>
-                  <span className="short-menu">P</span>
-                  {count(project.openPullRequestCount)}
-                </Link>
-              ) : (
-                <Link
-                  to="/$ownerName/$projectName/pullRequests"
-                  params={{ ownerName, projectName }}
-                  search={{ contributorId: 0, filter: "", pageNum: 1 }}
-                >
-                  <span className="menu-name">{t("menu.pullRequest")}</span>
-                  <span className="short-menu">P</span>
-                  {count(project.openPullRequestCount)}
-                </Link>
-              )}
-            </li>
-          ) : null}
-          {project.showReview ? (
-            <li>
-              <Link
-                to="/$ownerName/$projectName/reviews"
-                params={{ ownerName, projectName }}
-                search={{
-                  authorId: 0,
-                  filter: "",
-                  orderBy: "",
-                  orderDir: "",
-                  pageNum: 1,
-                  participantId: 0,
-                  state: "open",
-                }}
-              >
-                <span className="menu-name">{t("menu.review")}</span>
-                <span className="short-menu">R</span>
-                {count(project.reviewCount)}
-              </Link>
-            </li>
-          ) : null}
-          {project.showMilestone ? (
-            <li>
-              <Link to="/$ownerName/$projectName/milestones" params={{ ownerName, projectName }}>
-                <span className="menu-name">{t("milestone")}</span>
-                <span className="short-menu">M</span>
-              </Link>
-            </li>
-          ) : null}
-          {project.showBoard ? (
-            <li>
-              <Link
-                to="/$ownerName/$projectName/posts"
-                params={{ ownerName, projectName }}
-                search={{
-                  filter: "",
-                  labelIds: [],
-                  orderBy: "updatedDate",
-                  orderDir: "desc",
-                  pageNum: 1,
-                }}
-              >
-                <span className="menu-name">{t("menu.board")}</span>
-                <span className="short-menu">B</span>
-                {count(project.boardCount)}
-              </Link>
-            </li>
-          ) : null}
-        </ul>
-        {project.showAdmin ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li>
-                <Link to="/$ownerName/$projectName/settingform" params={{ ownerName, projectName }}>
-                  <i className="yobicon-cog" />
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  {count(project.enrollmentRequestCount)}
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
@@ -3895,13 +3527,6 @@ function escapeHtmlAttribute(value: string) {
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
-}
-
-function projectLogoUrl(project: ProjectContainer, basePath: string) {
-  return prefixBasePath(
-    basePath,
-    project.logoUrl || "/legacy-assets/images/project_default_logo.png",
-  );
 }
 
 function projectIdNumber(project: ProjectContainer) {
