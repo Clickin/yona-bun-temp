@@ -463,6 +463,34 @@ function normalizePath(baseUrl, href) {
   }
 }
 
+function sessionPrimerPathForPath(path) {
+  const pathname = path.split(/[?#]/u, 1)[0];
+  return pathname === "/user/issues/new" ? "/alice/sample" : null;
+}
+
+async function primeSessionProjectVisit(page, baseUrl, projectPath, label) {
+  // IssueApp.newDirectIssueForm uses the signed-in user's most recently visited
+  // project. Visit the same project in both browser sessions immediately before
+  // inspecting that route so a mutable legacy instance cannot change the frame.
+  await page.goto(urlFor(baseUrl, projectPath), { waitUntil: "domcontentloaded" });
+  // Legacy persists the visit through Play's asynchronous RecentProject task.
+  // Wait for that server-side write before opening the direct issue form.
+  if (label === "legacy") {
+    await page.waitForTimeout(500);
+    return;
+  }
+
+  // The SPA navigation above preserves browser parity; persist the same visit
+  // explicitly because this fixture route is also used against production builds.
+  const response = await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+    ownerName: "alice",
+    projectName: "sample",
+  });
+  if (!response?.ok()) {
+    throw new Error("could not prime local recent project for /user/issues/new");
+  }
+}
+
 async function login(page, baseUrl) {
   await page.goto(urlFor(baseUrl, "/users/loginform"), { waitUntil: "domcontentloaded" });
   const loginField = page.locator('input[name="loginIdOrEmail"], input#loginIdOrEmail').first();
@@ -821,8 +849,8 @@ async function bootstrapLocalAccount(page, baseUrl) {
     const signedInAdminAgain = await ensureLocalAccountSession(page, baseUrl, adminAccount);
     if (signedInAdminAgain) {
       await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
-        ownerName: "weblabs",
-        projectName: "portal",
+        ownerName: "alice",
+        projectName: "sample",
       });
     }
     return signedInAdminAgain;
@@ -1611,6 +1639,10 @@ async function runTarget(label, baseUrl) {
         ];
     const results = [];
     for (const path of paths) {
+      const primerPath = sessionPrimerPathForPath(path);
+      if (primerPath) {
+        await primeSessionProjectVisit(page, baseUrl, primerPath, label);
+      }
       const routePage = await context.newPage();
       try {
         results.push(await inspectPage(routePage, baseUrl, path, label));

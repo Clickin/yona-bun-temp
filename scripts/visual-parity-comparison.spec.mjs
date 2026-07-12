@@ -453,6 +453,20 @@ test("visual sweep bootstraps local parity data before browser-form login", () =
     source,
     /await postLocalJson\(page, baseUrl, "\/api\/v1\/owners\/weblabs\/projects\/portal\/watch"/u,
   );
+  assert.match(
+    source,
+    /const signedInAdminAgain[\s\S]+?"\/api\/v1\/workspace\/recent-projects"[\s\S]+?ownerName: "alice"[\s\S]+?projectName: "sample"/u,
+  );
+  assert.match(source, /function sessionPrimerPathForPath\(path\)/u);
+  assert.match(source, /pathname === "\/user\/issues\/new" \? "\/alice\/sample" : null/u);
+  assert.match(source, /async function primeSessionProjectVisit\(page, baseUrl, projectPath, label\)/u);
+  assert.match(source, /await page\.goto\(urlFor\(baseUrl, projectPath\), \{ waitUntil: "domcontentloaded" \}\)/u);
+  assert.match(source, /if \(label === "legacy"\) \{[\s\S]+?await page\.waitForTimeout\(500\);/u);
+  assert.match(
+    source,
+    /await postLocalJson\(page, baseUrl, "\/api\/v1\/workspace\/recent-projects", \{[\s\S]+?ownerName: "alice",[\s\S]+?projectName: "sample"/u,
+  );
+  assert.match(source, /await primeSessionProjectVisit\(page, baseUrl, primerPath, label\)/u);
   assert.match(source, /projectName: "svnplayground"/u);
   assert.match(source, /"\/admin\/svnplayground"/u);
   assert.match(source, /vcs: "svn"/u);
