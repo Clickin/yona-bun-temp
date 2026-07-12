@@ -168,7 +168,7 @@ test("user direct mine issue form keeps /user/issues/new/mine while selecting th
 
   await expect.poll(() => directOptionRequests.length).toBe(1);
   expect(directOptionRequests[0]?.pathname).toBe(`${basePath}/api/v1/user/issues/new-options`);
-  expect(["true", null]).toContain(readSearchParam(directOptionRequests[0]?.search ?? "", "mine"));
+  expect(readSearchParam(directOptionRequests[0]?.search ?? "", "mine")).toBe("true");
   await expect
     .poll(() => currentLocationState(page))
     .toEqual({
@@ -207,6 +207,10 @@ test("user direct issue routes are declared as route files and keep the shared w
     new URL("../src/routes/user/issues_/new/mine.tsx", import.meta.url),
     "utf8",
   );
+  const indexRouteSource = readFileSync(
+    new URL("../src/routes/user/issues_/new/index.tsx", import.meta.url),
+    "utf8",
+  );
   const helperSource = readFileSync(
     new URL("../src/routes/user/issues/-direct-issue-form-screen.tsx", import.meta.url),
     "utf8",
@@ -221,6 +225,10 @@ test("user direct issue routes are declared as route files and keep the shared w
   );
 
   expect(newRouteSource).toContain('createFileRoute("/user/issues_/new")');
+  expect(newRouteSource).toContain("component: Outlet");
+  expect(newRouteSource).not.toContain("DirectIssueFormRouteScreen");
+  expect(indexRouteSource).toContain('createFileRoute("/user/issues_/new/")');
+  expect(indexRouteSource).toContain("DirectIssueFormRouteScreen");
   expect(mineRouteSource).toContain('createFileRoute("/user/issues_/new/mine")');
   expect(mineRouteSource).toContain("mine={true}");
   expect(helperSource).toContain("readDirectIssueFormOptions");
