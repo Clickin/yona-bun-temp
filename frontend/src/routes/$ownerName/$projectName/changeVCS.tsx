@@ -14,7 +14,10 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader as SharedProjectHeader } from "../$projectName";
+import {
+  ProjectHeader as SharedProjectHeader,
+  ProjectMenu as SharedProjectMenu,
+} from "../$projectName";
 
 type ProjectChangeVcsScreenData = ProjectContainer & Partial<ProjectChangeVcsResponse>;
 
@@ -23,8 +26,6 @@ const legacyLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-const legacyLinkActiveOptions = { exact: true };
-
 export const Route = createFileRoute("/$ownerName/$projectName/changeVCS")({
   component: ProjectChangeVcsRoute,
 });
@@ -168,7 +169,7 @@ function ProjectChangeVcsBody({
   return (
     <>
       <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu project={project} />
+      <SharedProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
@@ -252,141 +253,6 @@ function ProjectChangeVcsBody({
       </div>
       {changeVcsModalOpen ? <div className="modal-backdrop in"></div> : null}
     </>
-  );
-}
-
-function ProjectMenu({ project }: { project: ProjectChangeVcsScreenData }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const canSeeCodeMenu = projectCodeMenuVisible(project);
-  const memberCount = projectMemberCount(project);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            label={t("title.projectHome")}
-            params={{ ownerName, projectName }}
-            short="H"
-            to="/$ownerName/$projectName"
-          />
-          {canSeeCodeMenu ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              params={{ ownerName, projectName }}
-              short="C"
-              to="/$ownerName/$projectName/code"
-            />
-          ) : null}
-          {projectMenuEnabled(project, "issue", "showIssue") ? (
-            <ProjectMenuItem
-              count={numberField(project.openIssueCount)}
-              label={t("menu.issue")}
-              params={{ ownerName, projectName }}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-            />
-          ) : null}
-          {canSeeCodeMenu &&
-          projectMenuEnabled(project, "pullRequest", "showPullRequest") &&
-          stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              label={t("menu.pullRequest")}
-              params={{ ownerName, projectName }}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-            />
-          ) : null}
-          {canSeeCodeMenu && projectMenuEnabled(project, "review", "showReview") ? (
-            <ProjectMenuItem
-              label={t("menu.review")}
-              params={{ ownerName, projectName }}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-            />
-          ) : null}
-          {projectMenuEnabled(project, "milestone", "showMilestone") ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              params={{ ownerName, projectName }}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-            />
-          ) : null}
-          {projectMenuEnabled(project, "board", "showBoard") ? (
-            <ProjectMenuItem
-              count={numberField(project.boardCount) || numberField(project.postCount)}
-              label={t("menu.board")}
-              params={{ ownerName, projectName }}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-            />
-          ) : null}
-        </ul>
-        {projectAdminMenuVisible(project) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName/setting"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={memberCount} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function projectCodeMenuVisible(project: ProjectChangeVcsScreenData) {
-  const record = recordField(project);
-  return (
-    projectMenuEnabled(project, "code", "showCode") &&
-    (!booleanField(record.codeMemberOnly) || booleanField(record.viewerIsProjectMember))
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to: string;
-}) {
-  return (
-    <li className={className}>
-      <Link
-        activeOptions={legacyLinkActiveOptions}
-        activeProps={legacyLinkActiveProps}
-        to={to}
-        params={params}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-        <CountBadge count={count} />
-      </Link>
-    </li>
   );
 }
 
@@ -526,15 +392,6 @@ function projectMenuEnabled(
   return booleanField(recordField(project)[fallbackKey]);
 }
 
-function projectAdminMenuVisible(project: ProjectChangeVcsScreenData) {
-  const record = recordField(project);
-  if (typeof record.showAdmin === "boolean") {
-    return booleanField(record.showAdmin);
-  }
-
-  return booleanField(record.viewerCanUpdate);
-}
-
 function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
   const organizationName =
     typeof project.organizationName === "string" ? project.organizationName : "";
@@ -569,10 +426,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
 }
 
 function booleanField(value: unknown) {

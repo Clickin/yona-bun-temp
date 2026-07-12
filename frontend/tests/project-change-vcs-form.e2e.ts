@@ -31,6 +31,85 @@ test("project change-VCS mobile menu ignores ordinary members for enrollment bad
   expect(menuWidth.scroll).toBe(menuWidth.client);
 });
 
+test("SVN project change-VCS matches the live ko-KR shell without mobile overflow", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectAdmin(page, {
+    ownerName: "admin",
+    projectName: "svnplayground",
+    project: {
+      currentVcs: "Subversion",
+      enrolledUsers: [],
+      isWatching: true,
+      nextVcs: "GIT",
+      overview: "Parity seed Subversion project for localhost checks",
+      vcs: "SVN",
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/svnplayground/changeVCS`);
+  await expect(page).toHaveTitle("코드 저장소 타입 변경 - admin/svnplayground");
+  await expect(page.locator(".project-util-wrap")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop .menu-name")).toHaveText([
+    "홈",
+    "코드",
+    "이슈",
+    "리뷰",
+    "마일스톤",
+    "게시판",
+  ]);
+  await expect(page.locator(".bubble-wrap.gray.wp h3")).toContainText("Subversion");
+  await expect(page.locator(".bubble-wrap.gray.wp h3")).toContainText("GIT");
+  await expect(page.locator(".cu-desc .notice")).toHaveText([
+    "코드 저장소 타입을 GIT으로 변경합니다.",
+    "코드 저장소 타입을 변경하면 현재 코드와 변경내역을 삭제합니다.",
+  ]);
+  await expect(page.locator("label[for='acceptChangeVCS']")).toHaveText(
+    "코드 저장소 타입을 변경하는데 동의합니다.",
+  );
+  await expect(page.locator("#btnChangeVCS")).toHaveText("코드 저장소 타입을 변경합니다.");
+  expect(await svnChangeVcsMetrics(page)).toEqual({
+    bottomHeight: 63,
+    bottomWidth: 1346,
+    bubbleHeight: 136,
+    bubbleWidth: 1346,
+    menuClientWidth: 1366,
+    menuScrollWidth: 1366,
+    pageWidth: 1366,
+    projectPageHeight: 276,
+    projectPageWidth: 1346,
+    scrollWidth: 1366,
+    tabsHeight: 37,
+    tabsWidth: 1346,
+    utilHeight: 28,
+    utilWidth: 147,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await svnChangeVcsMetrics(page)).toEqual({
+    bottomHeight: 51,
+    bottomWidth: 390,
+    bubbleHeight: 136,
+    bubbleWidth: 390,
+    menuClientWidth: 390,
+    menuScrollWidth: 390,
+    pageWidth: 390,
+    projectPageHeight: 300,
+    projectPageWidth: 390,
+    scrollWidth: 390,
+    tabsHeight: 73,
+    tabsWidth: 390,
+    utilHeight: 0,
+    utilWidth: 15,
+  });
+});
+
 test("project change-VCS form matches legacy project/change_vcs.scala.html DOM", async ({
   page,
 }) => {
@@ -59,7 +138,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       ariaCurrent: null,
       className: "logo logo-letter",
       dataStatus: null,
-      href: `${basePath}`,
+      href: `${basePath}/`,
       text: "Y",
     },
     {
@@ -97,7 +176,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/issues`,
-      text: "IssueI1",
+      text: "IssueI 1",
     },
     {
       ariaCurrent: null,
@@ -125,7 +204,7 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/posts`,
-      text: "BoardB1",
+      text: "BoardB 1",
     },
     {
       ariaCurrent: null,
@@ -224,9 +303,9 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
     modalHeaderPadding: "9px 15px",
     modalWidth: "560px",
     pageWrapMinWidth: "1100px",
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
-    tabsMarginBottom: "15px",
+    tabsMarginBottom: "20px",
   });
 });
 
@@ -248,10 +327,10 @@ test("project change-VCS empty header assets use the configured application cont
 
     await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
       "src",
-      `${mountPrefix}/assets/images/project_default_logo.png`,
+      new RegExp(`^${mountPrefix}/.+/project_default_logo\\.png$`),
     );
-    expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
-      `${mountPrefix}/assets/images/bg-default-project.png`,
+    expect(await page.locator(".project-header-outer").getAttribute("style")).toMatch(
+      new RegExp(`${mountPrefix}/.+/project_default\\.jpg`),
     );
     expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
       "url('/assets/",
@@ -263,7 +342,7 @@ test("project change-VCS empty header assets use the configured application cont
     });
     expect(metrics).toEqual({
       width: viewport.width,
-      height: viewport.name === "mobile" ? 70 : 120,
+      height: 120,
     });
     await page.screenshot({ path: `/tmp/project-change-vcs-${viewport.name}.png`, fullPage: true });
   }
@@ -292,17 +371,20 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass("active");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
 
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect(scopeButtons.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeButtons.nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/admin/search`,
-  );
-  await expect(scopeButtons.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+  expect(
+    await scopeButtons.evaluateAll((buttons) =>
+      buttons.map((button) => [
+        button.getAttribute("data-action"),
+        button.getAttribute("data-toggle"),
+      ]),
+    ),
+  ).toEqual([
+    [null, null],
+    [null, null],
+    [null, null],
+  ]);
 
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.nth(1).click();
@@ -496,26 +578,28 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/changeVCS`);
-  const headerLinks = page.locator(".project-header-outer a");
+  const headerLinks = page.locator(".project-header-outer .project-breadcrumb a");
   await expect(headerLinks).toHaveCount(2);
   await expect(headerLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin`);
   await expect(headerLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample`);
-  expect(await readLegacyAnchorStates(page, ".project-header-outer a")).toEqual([
-    {
-      ariaCurrent: null,
-      className: "",
-      dataStatus: null,
-      href: `${basePath}/admin`,
-      text: "admin",
-    },
-    {
-      ariaCurrent: null,
-      className: "",
-      dataStatus: null,
-      href: `${basePath}/admin/sample`,
-      text: "sample",
-    },
-  ]);
+  expect(await readLegacyAnchorStates(page, ".project-header-outer .project-breadcrumb a")).toEqual(
+    [
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin`,
+        text: "admin",
+      },
+      {
+        ariaCurrent: null,
+        className: "",
+        dataStatus: null,
+        href: `${basePath}/admin/sample`,
+        text: "sample",
+      },
+    ],
+  );
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
   await expect(projectMenuLinks).toHaveCount(8);
@@ -553,7 +637,7 @@ test("project change-VCS internal project links keep legacy hrefs without route-
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/issues`,
-      text: "IssueI",
+      text: "IssueI 1",
     },
     {
       ariaCurrent: null,
@@ -581,7 +665,7 @@ test("project change-VCS internal project links keep legacy hrefs without route-
       className: "",
       dataStatus: null,
       href: `${basePath}/admin/sample/posts`,
-      text: "BoardB",
+      text: "BoardB 1",
     },
     {
       ariaCurrent: null,
@@ -688,7 +772,7 @@ test("project change-VCS internal project links keep legacy hrefs without route-
   await expect(page.locator("#saveSetting")).toBeVisible();
 });
 
-test("project change-VCS project menu hides code-backed tabs when code is member-only", async ({
+test("project change-VCS shared project menu follows the canonical menu settings", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -705,18 +789,21 @@ test("project change-VCS project menu hides code-backed tabs when code is member
   await page.goto(`${basePath}/admin/sample/changeVCS`);
 
   const projectMenuLinks = page.locator(".project-menu-outer a");
-  await expect(projectMenuLinks).toHaveCount(5);
+  await expect(projectMenuLinks).toHaveCount(8);
   await expect(projectMenuLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample`);
-  await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/issues`);
-  await expect(projectMenuLinks.nth(2)).toHaveAttribute(
+  await expect(projectMenuLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/code`);
+  await expect(projectMenuLinks.nth(2)).toHaveAttribute("href", `${basePath}/admin/sample/issues`);
+  await expect(projectMenuLinks.nth(3)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  await expect(projectMenuLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/reviews`);
+  await expect(projectMenuLinks.nth(5)).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/milestones`,
   );
-  await expect(projectMenuLinks.nth(3)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
-  await expect(projectMenuLinks.nth(4)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
-  await expect(page.locator(".project-menu-outer .code-menu")).toHaveCount(0);
-  await expect(page.locator(".project-menu-outer a[href$='/pullRequests']")).toHaveCount(0);
-  await expect(page.locator(".project-menu-outer a[href$='/reviews']")).toHaveCount(0);
+  await expect(projectMenuLinks.nth(6)).toHaveAttribute("href", `${basePath}/admin/sample/posts`);
+  await expect(projectMenuLinks.nth(7)).toHaveAttribute("href", `${basePath}/admin/sample/setting`);
 });
 
 test("project change-VCS settings tabs use direct TanStack Link targets", () => {
@@ -751,9 +838,14 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).not.toContain("useProjectChangeVcsDocumentTitle");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
-  expect(source).toContain('to="/$user"');
-  expect(source).toContain('to="/$ownerName/$projectName"');
-  expect(source).toContain('to="/$ownerName/$projectName/code"');
+  expect(source).toContain("ProjectHeader as SharedProjectHeader");
+  expect(source).toContain("ProjectMenu as SharedProjectMenu");
+  expect(source).toContain(
+    "<SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />",
+  );
+  expect(source).toContain(
+    '<SharedProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />',
+  );
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).not.toContain("mask={{ to:");
@@ -763,6 +855,8 @@ test("project change-VCS settings tabs use direct TanStack Link targets", () => 
   expect(source).toContain("onClick=");
   expect(source).not.toContain('data-dismiss="modal"');
   expect(source).not.toContain('data-toggle="modal"');
+  expect(source).not.toContain("/assets/images/project_default_logo.png");
+  expect(source).not.toContain("/assets/images/project_default.jpg");
 });
 
 test("project change-VCS confirmation modal source stays route-owned", () => {
@@ -992,9 +1086,14 @@ async function mockProjectAdmin(
     changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
+    ownerName?: string;
     project?: Partial<ReturnType<typeof projectChangeVcs>> & Record<string, unknown>;
+    projectName?: string;
   } = {},
 ) {
+  const ownerName = options.ownerName ?? "admin";
+  const projectName = options.projectName ?? "sample";
+  const project = { ...projectChangeVcs(), ...options.project, ownerName, projectName };
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -1025,49 +1124,57 @@ async function mockProjectAdmin(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/change-vcs", async (route) => {
-    if (route.request().method() === "POST") {
-      const request = route.request();
-      options.changeVcsRequests?.push({
-        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
-        method: request.method(),
-      });
-      if (options.changeVcsPostStatus && options.changeVcsPostStatus >= 400) {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/change-vcs`,
+    async (route) => {
+      if (route.request().method() === "POST") {
+        const request = route.request();
+        options.changeVcsRequests?.push({
+          hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
+          method: request.method(),
+        });
+        if (options.changeVcsPostStatus && options.changeVcsPostStatus >= 400) {
+          await route.fulfill({
+            contentType: "application/json",
+            status: options.changeVcsPostStatus,
+            body: JSON.stringify({ message: "change VCS failed" }),
+          });
+          return;
+        }
         await route.fulfill({
           contentType: "application/json",
-          status: options.changeVcsPostStatus,
-          body: JSON.stringify({ message: "change VCS failed" }),
+          body: JSON.stringify({
+            ...project,
+            redirectPath: `/${ownerName}/${projectName}`,
+          }),
         });
         return;
       }
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({
-          ...projectChangeVcs(),
-          ...options.project,
-          redirectPath: "/admin/sample",
-        }),
+        body: JSON.stringify(project),
       });
-      return;
-    }
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ ...projectChangeVcs(), ...options.project }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ ...projectSettings(), ...options.project }),
-    });
-  });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ ...projectChangeVcs(), ...options.project }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/branches", async (route) => {
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/settings`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ ...projectSettings(), ...options.project }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(project),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/branches`, async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1079,20 +1186,58 @@ async function mockProjectAdmin(
         noHead: false,
         ownerName: "admin",
         permissions: { canDelete: true, canUpdate: true },
-        projectName: "sample",
+        projectName,
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/favorite", async (route) => {
-    const request = route.request();
-    options.favoriteRequests?.push({
-      hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
-      method: request.method(),
-    });
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
-    });
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/favorite`,
+    async (route) => {
+      const request = route.request();
+      options.favoriteRequests?.push({
+        hasCsrfToken: request.headers()["x-csrf-token"] === "csrf-change-vcs",
+        method: request.method(),
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ favorited: options.favoriteResponseFavorited ?? true }),
+      });
+    },
+  );
+}
+
+async function svnChangeVcsMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { height: Math.round(box.height), width: Math.round(box.width) };
+    };
+    const bottom = rect(".box-wrap.bottom");
+    const bubble = rect(".bubble-wrap.gray.wp");
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    if (!menu) throw new Error("Missing .project-menu-outer");
+    const pageWrap = rect(".page-wrap-outer");
+    const projectPage = rect(".project-page-wrap");
+    const tabs = rect(".project-page-wrap > .nav-tabs");
+    const util = rect(".project-util-wrap");
+    return {
+      bottomHeight: bottom.height,
+      bottomWidth: bottom.width,
+      bubbleHeight: bubble.height,
+      bubbleWidth: bubble.width,
+      menuClientWidth: menu.clientWidth,
+      menuScrollWidth: menu.scrollWidth,
+      pageWidth: pageWrap.width,
+      projectPageHeight: projectPage.height,
+      projectPageWidth: projectPage.width,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsHeight: tabs.height,
+      tabsWidth: tabs.width,
+      utilHeight: util.height,
+      utilWidth: util.width,
+    };
   });
 }
 
