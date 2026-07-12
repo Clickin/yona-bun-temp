@@ -246,6 +246,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/watchers",
   "/admin/sample/webhooks",
   "/admin/svnplayground",
+  "/admin/svnplayground/changeVCS",
   "/admin/sample/transfer",
   "/admin/sample/deleteform",
   "/admin/sample/changeVCS",
