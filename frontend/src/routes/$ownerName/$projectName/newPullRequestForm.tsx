@@ -18,22 +18,27 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
 
 type PullRequestFormSearch = {
-  fromBranch: string;
-  fromProjectId: number;
-  toBranch: string;
-  toProjectId: number;
+  fromBranch?: string;
+  fromProjectId?: number;
+  toBranch?: string;
+  toProjectId?: number;
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/newPullRequestForm")({
   component: ProjectNewPullRequestRoute,
   validateSearch(search: Record<string, unknown>): PullRequestFormSearch {
+    const fromBranch = stringSearch(search.fromBranch);
+    const fromProjectId = numberSearch(search.fromProjectId);
+    const toBranch = stringSearch(search.toBranch);
+    const toProjectId = numberSearch(search.toProjectId);
     return {
-      fromBranch: stringSearch(search.fromBranch),
-      fromProjectId: numberSearch(search.fromProjectId),
-      toBranch: stringSearch(search.toBranch),
-      toProjectId: numberSearch(search.toProjectId),
+      ...(fromBranch ? { fromBranch } : {}),
+      ...(fromProjectId > 0 ? { fromProjectId } : {}),
+      ...(toBranch ? { toBranch } : {}),
+      ...(toProjectId > 0 ? { toProjectId } : {}),
     };
   },
 });
@@ -56,6 +61,18 @@ function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: Run
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  if (!projectQuery.data) {
+    return null;
+  }
+  if (stringField(projectQuery.data.vcs, "GIT").toUpperCase() !== "GIT") {
+    return (
+      <ProjectPullRequestsBadRequestRouteShell
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
   const projectSearchScope = projectQuery.data
     ? {
         organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
