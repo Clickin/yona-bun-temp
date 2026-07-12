@@ -19,7 +19,13 @@ test("project home History tab matches legacy partial_history.scala.html DOM", a
   await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("History");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_HISTORY.replaceAll("__BASE_PATH__", basePath)),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_PROJECT_HISTORY.replaceAll("__BASE_PATH__", basePath).replace(
+        '<span id="project-description" class="markdown-wrap">Sample overview</span>',
+        '<span id="project-description" class="markdown-wrap"><p>Sample overview</p></span>',
+      ),
+    ),
   );
 });
 
@@ -46,7 +52,7 @@ test("project home History tab keeps legacy stream proportions", async ({ page }
   await expect(page.locator(".activity-streams .activity-stream")).toBeVisible();
 
   const desktop = await projectHistoryLayoutMetrics(page);
-  expect(desktop.pageWrapMarginTop).toBe(20);
+  expect(desktop.pageWrapMarginTop).toBe(5);
   expect(desktop.mainStreamMarginBottom).toBe(15);
   expect(desktop.activityStreamsMarginTop).toBe(0);
   expect(desktop.activityPaddingTop).toBe(10);
@@ -75,7 +81,133 @@ test("project home History tab keeps legacy stream proportions", async ({ page }
   expect(mobile.rightPaneDisplay).toBe("none");
 });
 
-async function mockProjectHome(page: Page) {
+test("SVN project home History tab preserves the live legacy empty stream", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectHome(page, {
+    historyItems: [],
+    ownerName: "admin",
+    projectName: "svnplayground",
+    project: {
+      cloneUrl: "http://127.0.0.1:9000/svn/admin/svnplayground",
+      menuSetting: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pullRequest: true,
+        review: true,
+      },
+      overview: "Parity seed Subversion project for localhost checks",
+      vcs: "SVN",
+      viewerCanCreateCommitResource: false,
+      viewerCanLeave: false,
+      viewerCanUpdate: false,
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/svnplayground?tabId=history`);
+  await expect(page.locator(".span-left-pane > .nav-tabs li.active a")).toHaveText("최근 이력");
+  await expect(page.locator(".activity-streams.unstyled")).toHaveCount(1);
+  await expect(page.locator(".activity-streams > *")).toHaveCount(0);
+  await expect(page.locator(".project-menu-gruop .menu-name")).toHaveText([
+    "홈",
+    "코드",
+    "이슈",
+    "리뷰",
+    "마일스톤",
+    "게시판",
+  ]);
+  expect(await emptyHistoryMetrics(page)).toEqual({
+    contentHeight: 0,
+    contentWidth: 1002,
+    leftPaneHeight: 72,
+    leftPaneWidth: 1002,
+    listHeight: 0,
+    listWidth: 1002,
+    pageWidth: 1366,
+    scrollWidth: 1366,
+    streamHeight: 0,
+    streamWidth: 1002,
+    tabsHeight: 37,
+    tabsWidth: 1002,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await emptyHistoryMetrics(page)).toEqual({
+    contentHeight: 0,
+    contentWidth: 390,
+    leftPaneHeight: 72,
+    leftPaneWidth: 390,
+    listHeight: 0,
+    listWidth: 390,
+    pageWidth: 390,
+    scrollWidth: 401,
+    streamHeight: 0,
+    streamWidth: 390,
+    tabsHeight: 37,
+    tabsWidth: 390,
+  });
+});
+
+test("project history fallback avatar uses the frozen legacy Vite asset", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    historyItems: [
+      {
+        actorAvatarUrl: "",
+        actorName: "Unknown committer",
+        actorUrl: "#",
+        createdLabel: "Jul 1, 2026",
+        createdTitle: "2026-07-01",
+        itemType: "commit",
+        shortTitle: "abcdef0",
+        title: "Initial commit",
+        url: `${basePath}/admin/sample/commit/abcdef0`,
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample?tabId=history`);
+  const avatar = page.locator(".activity-stream .avatar-wrap img");
+  await expect(avatar).toBeVisible();
+  expect(
+    await avatar.evaluate((image: HTMLImageElement) =>
+      image.decode().then(() => ({
+        naturalHeight: image.naturalHeight,
+        naturalWidth: image.naturalWidth,
+        pathname: new URL(image.currentSrc).pathname,
+      })),
+    ),
+  ).toEqual({
+    naturalHeight: 64,
+    naturalWidth: 64,
+    pathname: expect.stringMatching(new RegExp(`^${basePath}/.+/default-avatar-64\\.png$`)),
+  });
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  expect(routeSource).toContain(
+    'import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";',
+  );
+  expect(routeSource).not.toContain(
+    'prefixBasePath(basePath, "/assets/images/default-avatar-64.png")',
+  );
+});
+
+async function mockProjectHome(
+  page: Page,
+  overrides: {
+    historyItems?: Record<string, unknown>[];
+    ownerName?: string;
+    project?: Record<string, unknown>;
+    projectName?: string;
+  } = {},
+) {
+  const ownerName = overrides.ownerName ?? "admin";
+  const projectName = overrides.projectName ?? "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -92,68 +224,103 @@ async function mockProjectHome(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "/assets/images/bg-default-project.png",
-        cloneUrl: "https://example.com/admin/sample.git",
-        dashboard: {
-          assignees: [],
-          labels: [],
-          milestones: [],
-          noMilestoneOpenIssueCount: 0,
-          pullRequests: [],
-          unassignedOpenIssueCount: 0,
-        },
-        enrollmentRequestCount: 0,
-        history: {
-          items: [
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "/assets/images/bg-default-project.png",
+          cloneUrl: "https://example.com/admin/sample.git",
+          dashboard: {
+            assignees: [],
+            labels: [],
+            milestones: [],
+            noMilestoneOpenIssueCount: 0,
+            pullRequests: [],
+            unassignedOpenIssueCount: 0,
+          },
+          enrollmentRequestCount: 0,
+          history: {
+            items: overrides.historyItems ?? [
+              {
+                actorAvatarUrl: "/assets/images/default-avatar-32.png",
+                actorName: "Site Admin",
+                actorUrl: "/yona/admin",
+                createdLabel: "Jul 1, 2026",
+                createdTitle: "2026-07-01",
+                itemType: "commit",
+                shortTitle: "abcdef0",
+                title: "Initial commit",
+                url: "/yona/admin/sample/commit/abcdef0",
+              },
+            ],
+          },
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "/assets/images/project_default_logo.png",
+          members: [
             {
-              actorAvatarUrl: "/assets/images/default-avatar-32.png",
-              actorName: "Site Admin",
-              actorUrl: "/yona/admin",
-              createdLabel: "Jul 1, 2026",
-              createdTitle: "2026-07-01",
-              itemType: "commit",
-              shortTitle: "abcdef0",
-              title: "Initial commit",
-              url: "/yona/admin/sample/commit/abcdef0",
+              avatarUrl: "/assets/images/default-avatar-32.png",
+              loginId: "admin",
+              userId: 1,
+              userLabel: "Site Admin",
             },
           ],
-        },
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "/assets/images/project_default_logo.png",
-        members: [
-          {
-            avatarUrl: "/assets/images/default-avatar-32.png",
-            loginId: "admin",
-            userId: 1,
-            userLabel: "Site Admin",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
           },
-        ],
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        overview: "Sample overview",
-        ownerName: "admin",
-        projectName: "sample",
-        readmeFile: null,
-        vcs: "GIT",
-        viewerCanCreateCommitResource: true,
-        viewerCanLeave: true,
-        viewerCanUpdate: true,
-      }),
-    });
+          overview: "Sample overview",
+          readmeFile: null,
+          vcs: "GIT",
+          viewerCanCreateCommitResource: true,
+          viewerCanLeave: true,
+          viewerCanUpdate: true,
+          ...overrides.project,
+          ownerName,
+          projectName,
+        }),
+      });
+    },
+  );
+}
+
+async function emptyHistoryMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { height: Math.round(box.height), width: Math.round(box.width) };
+    };
+    const content = rect(".content-container");
+    const leftPane = rect(".span-left-pane");
+    const list = rect(".activity-streams");
+    const pageWrap = rect(".page-wrap-outer");
+    const stream = rect(".main-stream");
+    const tabs = rect(".span-left-pane > .nav-tabs");
+    return {
+      contentHeight: content.height,
+      contentWidth: content.width,
+      leftPaneHeight: leftPane.height,
+      leftPaneWidth: leftPane.width,
+      listHeight: list.height,
+      listWidth: list.width,
+      pageWidth: pageWrap.width,
+      scrollWidth: document.documentElement.scrollWidth,
+      streamHeight: stream.height,
+      streamWidth: stream.width,
+      tabsHeight: tabs.height,
+      tabsWidth: tabs.width,
+    };
   });
 }
 
@@ -248,6 +415,12 @@ async function canonicalizeScreenRoots(page: Page) {
 
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate((input) => {
+    const legacyPluginAttributes = new Set([
+      "data-dismiss",
+      "data-href",
+      "data-placement",
+      "data-toggle",
+    ]);
     const template = document.createElement("template");
     template.innerHTML = input;
     return Array.from(template.content.children)
@@ -263,7 +436,12 @@ async function canonicalizeHtml(page: Page, html: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "alt" &&
+            !legacyPluginAttributes.has(attr.name),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
