@@ -370,6 +370,9 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       const legacyBugLabel = database
         .prepare("select id, name from issue_label where project_id = 2 and name = 'bug'")
         .get();
+      const legacyParityLabel = database
+        .prepare("select id, name from issue_label where project_id = 2 and name = 'parity'")
+        .get();
       const issueBugLabelIds = database
         .prepare(
           `select issue_label_id from issue_issue_label
@@ -424,23 +427,33 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
       assert.ok(Number(issue.assignee_id) > 0);
       assert.equal(issue.created_date, issueComment.created_date);
       assert.equal(post.title, "Seed notes");
-      assert.equal(post.body, "This board post exists to seed the legacy board list and detail flows.");
+      assert.equal(
+        post.body,
+        "This board post exists to seed the legacy board list and detail flows.",
+      );
       assert.equal(Number(post.notice), 1);
       assert.equal(Number(post.num_of_comments), 1);
-      assert.deepEqual({ ...issueComment }, {
-        author_login_id: "bob",
-        author_name: "Bob Park",
-        contents: "I can reproduce the legacy issue view from this seed.",
-        created_date: issue.created_date,
-      });
-      assert.deepEqual({ ...postComment }, {
-        author_login_id: "alice",
-        author_name: "Alice Kim",
-        contents: "Board seed confirmed from the fork contributor side.",
-      });
+      assert.deepEqual(
+        { ...issueComment },
+        {
+          author_login_id: "bob",
+          author_name: "Bob Park",
+          contents: "I can reproduce the legacy issue view from this seed.",
+          created_date: issue.created_date,
+        },
+      );
+      assert.deepEqual(
+        { ...postComment },
+        {
+          author_login_id: "alice",
+          author_name: "Alice Kim",
+          contents: "Board seed confirmed from the fork contributor side.",
+        },
+      );
       assert.deepEqual(labelNames, ["bug", "parity"]);
       assert.deepEqual({ ...legacyBugLabel }, { id: 1, name: "bug" });
-      assert.deepEqual(issueBugLabelIds, [1, 3]);
+      assert.deepEqual({ ...legacyParityLabel }, { id: 2, name: "parity" });
+      assert.deepEqual(issueBugLabelIds, [1, 2]);
       assert.deepEqual(watcherLogins, ["admin", "carol"]);
       assert.deepEqual(sampleWatcherLogins, ["admin"]);
       assert.deepEqual(notifications, [
@@ -479,9 +492,13 @@ test("reconcileDefaultDevParitySeed seeds localhost parity content and repositor
     const portalRepo = join(fixture.runtimeDirectory, "repo", "3.git");
     const sampleRefs = readGit(sampleRepo, "show-ref");
     const sampleMainFiles = readGit(sampleRepo, "ls-tree", "--name-only", "-r", "main").split("\n");
-    const sampleFeatureFiles = readGit(sampleRepo, "ls-tree", "--name-only", "-r", "feature/ui").split(
-      "\n",
-    );
+    const sampleFeatureFiles = readGit(
+      sampleRepo,
+      "ls-tree",
+      "--name-only",
+      "-r",
+      "feature/ui",
+    ).split("\n");
 
     assert.match(sampleRefs, /refs\/heads\/main/);
     assert.match(sampleRefs, /refs\/heads\/feature\/ui/);
