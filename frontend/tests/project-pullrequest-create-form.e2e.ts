@@ -20,6 +20,7 @@ type MockProjectRoute = {
   ownerName: string;
   projectId: number;
   projectName: string;
+  vcs?: string;
 };
 
 const DEFAULT_PROJECT_ROUTE: MockProjectRoute = {
@@ -29,7 +30,106 @@ const DEFAULT_PROJECT_ROUTE: MockProjectRoute = {
   ownerName: "admin",
   projectId: 7,
   projectName: "sample",
+  vcs: "GIT",
 };
+
+test("SVN pull request create route renders the legacy Git-only bad request", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.addInitScript((configuredBasePath) => {
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: configuredBasePath,
+      feedbackUrl: "",
+      hideProjectListing: false,
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  await mockProjectPullRequestCreateForm(page, [], {
+    project: {
+      ownerName: "admin",
+      projectName: "svnplayground",
+      projectId: 9,
+      vcs: "Subversion",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/svnplayground/newPullRequestForm`);
+
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/newPullRequestForm`);
+  await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
+  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".content-wrap.frm-wrap")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > i.ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p")).toHaveText(
+    "GIT 프로젝트에서만 지원하는 요청입니다.",
+  );
+  await expect(page.locator(".error-wrap > a.ybtn.ybtn-info")).toHaveText("홈");
+  await expect(page.locator(".error-wrap > a.ybtn.ybtn-info")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
+  const geometry = await page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer")!;
+    const projectPage = document.querySelector<HTMLElement>(".project-page-wrap")!;
+    const error = document.querySelector<HTMLElement>(".error-wrap")!;
+    const box = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        height: Math.round(rect.height),
+        width: Math.round(rect.width),
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+      };
+    };
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      error: box(error),
+      page: box(pageWrap),
+      projectPage: box(projectPage),
+    };
+  });
+  expect(geometry).toEqual({
+    documentWidth: 1366,
+    error: { height: 310, width: 1346, x: 10, y: 93 },
+    page: { height: 450, width: 1366, x: 0, y: 93 },
+    projectPage: { height: 310, width: 1346, x: 10, y: 93 },
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.locator(".error-wrap > p")).toHaveText(
+    "GIT 프로젝트에서만 지원하는 요청입니다.",
+  );
+  const mobileGeometry = await page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer")!;
+    const projectPage = document.querySelector<HTMLElement>(".project-page-wrap")!;
+    const error = document.querySelector<HTMLElement>(".error-wrap")!;
+    const box = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        height: Math.round(rect.height),
+        width: Math.round(rect.width),
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+      };
+    };
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      error: box(error),
+      page: box(pageWrap),
+      projectPage: box(projectPage),
+    };
+  });
+  expect(mobileGeometry).toEqual({
+    documentWidth: 390,
+    error: { height: 310, width: 390, x: 0, y: 93 },
+    page: { height: 450, width: 390, x: 0, y: 93 },
+    projectPage: { height: 310, width: 390, x: 0, y: 93 },
+  });
+});
 
 test("project pull request create form resolves legacy defaults without query parameters", async ({
   page,
@@ -40,6 +140,7 @@ test("project pull request create form resolves legacy defaults without query pa
 
   await page.goto(`${basePath}/admin/sample/newPullRequestForm`);
 
+  await expect(page).toHaveURL(`${basePath}/admin/sample/newPullRequestForm`);
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".content-wrap.frm-wrap form.nm")).toBeVisible();
@@ -1049,7 +1150,7 @@ async function mockProjectPullRequestCreateForm(
         ownerName: project.ownerName,
         projectName: project.projectName,
         projectScope: project.isProtected ? "protected" : "public",
-        vcs: "GIT",
+        vcs: project.vcs,
         viewerCanUpdate: true,
       }),
     });
