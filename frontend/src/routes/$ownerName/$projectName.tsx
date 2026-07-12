@@ -1298,9 +1298,7 @@ export function ProjectHeader({
     stringField(recordField(project).backgroundImageUrl, "") ||
     stringField(recordField(project).backgroundUrl, "") ||
     prefixBasePath(basePath, defaultProjectBackgroundUrl);
-  const isForked =
-    booleanField(recordField(project).isForkedFromOrigin) ||
-    booleanField(recordField(project).isForked);
+  const isForked = booleanField(recordField(project).isForkedFromOrigin);
   const originalOwnerName =
     stringField(recordField(project).originalOwnerName, "") ||
     stringField(recordField(project).originOwnerName, "");
