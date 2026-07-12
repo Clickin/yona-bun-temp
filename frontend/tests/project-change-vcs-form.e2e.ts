@@ -12,6 +12,76 @@ test("project change-VCS shell keeps legacy watcher and menu counts", async ({ p
   await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText(["1", "1"]);
 });
 
+test("protected weblabs portal change-VCS keeps the legacy group shell from its container projection", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectAdmin(page, {
+    changeVcsResponse: {
+      currentVcs: "GIT",
+      nextVcs: "Subversion",
+      ownerName: "weblabs",
+      projectName: "portal",
+      viewerCanChange: true,
+    },
+    ownerName: "weblabs",
+    project: {
+      enrolledUsers: [],
+      id: 2,
+      isProtected: undefined,
+      isWatching: true,
+      organizationName: "",
+      projectScope: "protected",
+      viewerCanWatch: true,
+      watchCount: 2,
+    },
+    projectName: "portal",
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/weblabs/portal/changeVCS`);
+
+  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await page.locator("#gnb-search-scope-title").click();
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
+    "This Project",
+    "This Group",
+    "All Projects",
+  ]);
+  await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("2");
+  await expect(page.locator(".project-util-wrap .down-arrow")).toHaveText("Unwatch");
+  await expect(page.locator(".project-page-wrap > .nav.nav-tabs")).toBeVisible();
+  await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass("active");
+  await expect(page.locator(".bubble-wrap.gray.wp h3")).toContainText("GIT");
+  await expect(page.locator(".bubble-wrap.gray.wp h3")).toContainText("Subversion");
+
+  await page.locator("#acceptChangeVCS").check();
+  await page.locator("#btnChangeVCS").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide in");
+  await page.locator("#alertChangeVCS .close").click();
+  await expect(page.locator("#alertChangeVCS")).toHaveClass("modal hide");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    if (!menu || !pageWrap) throw new Error("Missing protected Change-VCS shell");
+    return {
+      menuClientWidth: menu.clientWidth,
+      menuScrollWidth: menu.scrollWidth,
+      pageScrollWidth: document.documentElement.scrollWidth,
+      pageWrapWidth: Math.round(pageWrap.getBoundingClientRect().width),
+    };
+  });
+  expect(mobile).toEqual({
+    menuClientWidth: 390,
+    menuScrollWidth: 390,
+    pageScrollWidth: 390,
+    pageWrapWidth: 390,
+  });
+});
+
 test("Alice change-VCS keeps the legacy container shell when the form projection is partial", async ({
   page,
 }) => {
@@ -1149,6 +1219,7 @@ async function readLegacyAnchorStates(page: Page, selector: string) {
 async function mockProjectAdmin(
   page: Page,
   options: {
+    changeVcsResponse?: Record<string, unknown>;
     changeVcsPostStatus?: number;
     changeVcsProject?: Record<string, unknown>;
     changeVcsRequests?: { hasCsrfToken: boolean; method: string }[];
@@ -1220,7 +1291,9 @@ async function mockProjectAdmin(
       }
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ ...project, ...options.changeVcsProject }),
+        body: JSON.stringify(
+          options.changeVcsResponse ?? { ...project, ...options.changeVcsProject },
+        ),
       });
     },
   );
