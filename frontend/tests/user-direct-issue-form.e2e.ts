@@ -11,7 +11,7 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
     directOptions: {
       bodyMarkdown: "",
       referCommentId: "",
-      selectedProject: { ownerName: "admin", projectName: "sample" },
+      selectedProject: { ownerName: "alice", projectName: "sample" },
     },
   });
 
@@ -29,18 +29,18 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/search`,
+    `${basePath}/alice/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toBeVisible();
   await expect(
     page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
   ).toHaveCount(0);
-  await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
+  await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("alice");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("sample");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Issue");
   await expect(page.locator("#issue-form")).toHaveAttribute(
     "action",
-    `${basePath}/admin/sample/issues/latest`,
+    `${basePath}/alice/sample/issues/latest`,
   );
   await expect(page.locator(".subtask-wrap")).toHaveClass(/show/);
   await expect(page.locator(".subtask-message")).toHaveClass(/option-on/);
@@ -81,6 +81,31 @@ test("user direct issue form keeps /user/issues/new while rendering the selected
       commentId: "",
       pathname: `${basePath}/user/issues/new`,
     });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const header = required(".project-header-outer");
+    const menu = required(".project-menu-outer");
+    const form = required(".content-wrap.frm-wrap");
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      form: { left: Math.round(form.left), right: Math.round(form.right) },
+      header: { left: Math.round(header.left), right: Math.round(header.right) },
+      menu: { left: Math.round(menu.left), right: Math.round(menu.right) },
+    };
+  });
+  expect(mobile.documentWidth).toBe(390);
+  expect(mobile.header.left).toBeGreaterThanOrEqual(0);
+  expect(mobile.header.right).toBeLessThanOrEqual(390);
+  expect(mobile.menu.left).toBeGreaterThanOrEqual(0);
+  expect(mobile.menu.right).toBeLessThanOrEqual(390);
+  expect(mobile.form.left).toBeGreaterThanOrEqual(0);
+  expect(mobile.form.right).toBeLessThanOrEqual(390);
 });
 
 test("user direct issue form keeps the comment reference body on /user/issues/new", async ({
@@ -186,6 +211,14 @@ test("user direct issue routes are declared as route files and keep the shared w
     new URL("../src/routes/user/issues/-direct-issue-form-screen.tsx", import.meta.url),
     "utf8",
   );
+  const issueFormSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
+    "utf8",
+  );
+  const projectRouteSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url),
+    "utf8",
+  );
 
   expect(newRouteSource).toContain('createFileRoute("/user/issues_/new")');
   expect(mineRouteSource).toContain('createFileRoute("/user/issues_/new/mine")');
@@ -193,6 +226,11 @@ test("user direct issue routes are declared as route files and keep the shared w
   expect(helperSource).toContain("readDirectIssueFormOptions");
   expect(helperSource).toContain("ProjectIssueFormProjectScreen");
   expect(helperSource).toContain("projectSearchScope={selectedProject}");
+  expect(helperSource).toContain("projectHeaderRuntimeConfig={runtimeConfig}");
+  expect(issueFormSource).toContain("projectHeaderRuntimeConfig?: RuntimeConfig;");
+  expect(issueFormSource).toContain("runtimeConfig={projectHeaderRuntimeConfig}");
+  expect(projectRouteSource).toContain("runtimeConfig?: RuntimeConfig;");
+  expect(projectRouteSource).toContain("function ProjectHeaderRouteContext");
   expect(helperSource).not.toContain("window.location");
   expect(helperSource).not.toContain("document.");
   expect(helperSource).not.toMatch(/<a\b/u);

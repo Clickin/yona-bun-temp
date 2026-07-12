@@ -411,6 +411,7 @@ export function ProjectIssueFormProjectScreen({
   initialBodyMarkdown = "",
   ownerName,
   parentIssueId = "",
+  projectHeaderRuntimeConfig,
   referCommentId = "",
   runtimeConfig,
   projectName,
@@ -419,6 +420,7 @@ export function ProjectIssueFormProjectScreen({
   initialBodyMarkdown?: string;
   ownerName: string;
   parentIssueId?: string;
+  projectHeaderRuntimeConfig?: RuntimeConfig;
   referCommentId?: string;
   runtimeConfig: RuntimeConfig;
   projectName: string;
@@ -475,7 +477,11 @@ export function ProjectIssueFormProjectScreen({
 
   const projectShell = (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader
+        basePath={runtimeConfig.basePath}
+        project={projectQuery.data}
+        runtimeConfig={projectHeaderRuntimeConfig}
+      />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
     </>
   );

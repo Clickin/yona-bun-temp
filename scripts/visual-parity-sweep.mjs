@@ -270,6 +270,9 @@ const alwaysScreenshotPaths = new Set([
 
 function localSettledSelectorForPath(path) {
   const pathname = path.split("?", 1)[0];
+  if (pathname === "/user/issues/new" || pathname === "/user/issues/new/mine") {
+    return ".content-wrap.frm-wrap";
+  }
   if (
     pathname.endsWith("/issueform") ||
     pathname.endsWith("/editform") ||
@@ -796,6 +799,15 @@ async function bootstrapLocalAccount(page, baseUrl) {
       ownerName: "alice",
       projectName: "sample",
     });
+    const aliceWatchersResponse = await page.request.get(
+      `${baseUrl}/api/v1/owners/alice/projects/sample/watchers`,
+    );
+    const aliceWatchers = aliceWatchersResponse.ok()
+      ? await aliceWatchersResponse.json().catch(() => null)
+      : null;
+    if (!aliceWatchers?.watchers?.some((watcher) => watcher.loginId === "alice")) {
+      await postLocalJson(page, baseUrl, "/api/v1/owners/alice/projects/sample/watch", {});
+    }
     await signOutLocalAccount(page, baseUrl).catch(() => {});
   };
   const adminReady = await ensureLocalAccountSession(page, baseUrl, adminAccount);
@@ -803,7 +815,14 @@ async function bootstrapLocalAccount(page, baseUrl) {
     await patchLocalWorkspaceProfile(page, baseUrl, adminAccount);
     await ensureAdminFixtures();
     await ensureAliceSampleFork();
-    return ensureLocalAccountSession(page, baseUrl, adminAccount);
+    const signedInAdminAgain = await ensureLocalAccountSession(page, baseUrl, adminAccount);
+    if (signedInAdminAgain) {
+      await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
+        ownerName: "alice",
+        projectName: "sample",
+      });
+    }
+    return signedInAdminAgain;
   }
   const suffix = Date.now().toString(36);
   const registeredSweepUser = await registerLocalAccount(page, baseUrl, {
