@@ -89,6 +89,20 @@ test("scala html goal history audit accepts documented manual evidence-only exce
   assert.equal(result.blocked, false);
 });
 
+test("scala html goal history audit accepts table-form manual evidence-only exceptions", () => {
+  const result = evaluateCommit({
+    changedFiles: [
+      "frontend/src/app.css",
+      "frontend/tests/project-issue-detail.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+| 2026-07-13 | `/admin/sample/issue/1` (manual evidence-only exception) | `issue/view.scala.html` | frozen cascade cleanup | `frontend/tests/project-issue-detail.e2e.ts` focused E2E |\n",
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("scala html goal history audit rejects memo rows naming E2E files not changed in the commit", () => {
   const result = evaluateCommit({
     changedFiles: [
