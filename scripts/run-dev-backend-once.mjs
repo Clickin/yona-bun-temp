@@ -14,8 +14,7 @@ const parityDueDate = "2026-07-24 23:59:59.999";
 const parityMilestoneDueDate = "2026-07-31 23:59:59.999";
 const parityProjectSeed = Object.freeze({
   issue: {
-    body:
-      "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
+    body: "Use this issue to verify labels, assignee, milestone, and timeline rendering in the converted frontend.",
     commentBody: "I can reproduce the legacy issue view from this seed.",
     title: "Review rail parity check",
   },
@@ -37,10 +36,11 @@ const parityProjectSeed = Object.freeze({
       branches: [
         {
           files: {
-            "README.md": "# Sample parity repository\n\nThis repository powers localhost parity checks.\n",
+            "README.md":
+              "# Sample parity repository\n\nThis repository powers localhost parity checks.\n",
             "docs/parity-checklist.md":
               "- verify project header and menu\n- verify issue, board, and code shells\n",
-            "src/main.rs": "fn main() {\n    println!(\"sample parity\");\n}\n",
+            "src/main.rs": 'fn main() {\n    println!("sample parity");\n}\n',
           },
           message: "Seed sample parity repository",
           name: "main",
@@ -49,7 +49,7 @@ const parityProjectSeed = Object.freeze({
           files: {
             "docs/parity-checklist.md":
               "- verify project header and menu\n- verify issue, board, and code shells\n- verify pull request compare state\n",
-            "src/ui.rs": "pub fn feature_flag() -> &'static str {\n    \"feature/ui\"\n}\n",
+            "src/ui.rs": 'pub fn feature_flag() -> &\'static str {\n    "feature/ui"\n}\n',
           },
           message: "Add feature branch parity fixture",
           name: "feature/ui",
@@ -321,7 +321,9 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
     database.exec("begin");
     try {
       let milestone = database
-        .prepare("select id, title, contents, due_date, state from milestone where project_id = ? limit 1")
+        .prepare(
+          "select id, title, contents, due_date, state from milestone where project_id = ? limit 1",
+        )
         .get(sampleProject.id);
       if (milestone?.id) {
         if (
@@ -331,7 +333,9 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           Number(milestone.state ?? 0) !== 0
         ) {
           database
-            .prepare("update milestone set title = ?, contents = ?, due_date = ?, state = ? where id = ?")
+            .prepare(
+              "update milestone set title = ?, contents = ?, due_date = ?, state = ? where id = ?",
+            )
             .run(
               parityProjectSeed.milestone.title,
               parityProjectSeed.milestone.contents,
@@ -370,7 +374,9 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
       const labelIds = [];
       for (const labelSeed of parityProjectSeed.labels) {
         let category = database
-          .prepare("select id, is_exclusive from issue_label_category where project_id = ? and name = ? limit 1")
+          .prepare(
+            "select id, is_exclusive from issue_label_category where project_id = ? and name = ? limit 1",
+          )
           .get(sampleProject.id, labelSeed.categoryName);
         if (!category?.id) {
           const inserted = database
@@ -401,50 +407,58 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
           label = { color: labelSeed.color, id: Number(inserted.lastInsertRowid) };
           report.labels.push(`${labelSeed.categoryName}/${labelSeed.name}:inserted`);
         } else if ((label.color ?? "") !== labelSeed.color) {
-          database.prepare("update issue_label set color = ? where id = ?").run(labelSeed.color, label.id);
+          database
+            .prepare("update issue_label set color = ? where id = ?")
+            .run(labelSeed.color, label.id);
           report.labels.push(`${labelSeed.categoryName}/${labelSeed.name}:updated`);
         }
         labelIds.push(Number(label.id));
       }
 
-      const bugLabelId = labelIds[0];
-      if (bugLabelId !== 1) {
-        const bugLabel = database
-          .prepare("select category_id, color, project_id from issue_label where id = ? limit 1")
-          .get(bugLabelId);
-        const legacyBugLabel = database
-          .prepare("select project_id from issue_label where id = 1 limit 1")
-          .get();
-        if (bugLabel?.project_id === sampleProject.id && (!legacyBugLabel || legacyBugLabel.project_id === sampleProject.id)) {
-          if (legacyBugLabel) {
-            database
-              .prepare(
-                `delete from issue_issue_label
-                 where issue_label_id = ?
-                   and issue_id in (select issue_id from issue_issue_label where issue_label_id = ?)`,
-              )
-              .run(bugLabelId, 1);
-            database
-              .prepare("update issue_issue_label set issue_label_id = ? where issue_label_id = ?")
-              .run(1, bugLabelId);
-            database.prepare("delete from issue_label where id = ?").run(bugLabelId);
-          }
-          if (legacyBugLabel) {
-            database
-              .prepare(
-                "update issue_label set category_id = ?, color = ?, name = ?, project_id = ? where id = ?",
-              )
-              .run(bugLabel.category_id, bugLabel.color, "bug", sampleProject.id, 1);
-          } else {
-            database
-              .prepare(
-                "insert into issue_label (id, category_id, color, name, project_id) values (?, ?, ?, ?, ?)",
-              )
-              .run(1, bugLabel.category_id, bugLabel.color, "bug", sampleProject.id);
-          }
-          labelIds[0] = 1;
-          report.labels.push("type/bug:legacy-id-1");
+      for (const [index, sourceId] of labelIds.entries()) {
+        const legacyId = index + 1;
+        if (sourceId === legacyId) continue;
+        const source = database
+          .prepare(
+            "select category_id, color, name, project_id from issue_label where id = ? limit 1",
+          )
+          .get(sourceId);
+        const target = database
+          .prepare("select project_id from issue_label where id = ? limit 1")
+          .get(legacyId);
+        if (
+          source?.project_id !== sampleProject.id ||
+          (target && target.project_id !== sampleProject.id)
+        ) {
+          continue;
         }
+        if (!target) {
+          database
+            .prepare(
+              "insert into issue_label (id, category_id, color, name, project_id) values (?, ?, ?, ?, ?)",
+            )
+            .run(legacyId, source.category_id, source.color, source.name, sampleProject.id);
+        }
+        database
+          .prepare(
+            `delete from issue_issue_label
+             where issue_label_id = ?
+               and issue_id in (select issue_id from issue_issue_label where issue_label_id = ?)`,
+          )
+          .run(sourceId, legacyId);
+        database
+          .prepare("update issue_issue_label set issue_label_id = ? where issue_label_id = ?")
+          .run(legacyId, sourceId);
+        database.prepare("delete from issue_label where id = ?").run(sourceId);
+        database
+          .prepare(
+            "update issue_label set category_id = ?, color = ?, name = ?, project_id = ? where id = ?",
+          )
+          .run(source.category_id, source.color, source.name, sampleProject.id, legacyId);
+        labelIds[index] = legacyId;
+        report.labels.push(
+          `${parityProjectSeed.labels[index].categoryName}/${source.name}:legacy-id-${legacyId}`,
+        );
       }
 
       let issue = database
@@ -476,7 +490,8 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
             issue.id,
           );
         report.issue =
-          issue.title !== parityProjectSeed.issue.title || issue.body !== parityProjectSeed.issue.body
+          issue.title !== parityProjectSeed.issue.title ||
+          issue.body !== parityProjectSeed.issue.body
             ? "updated"
             : "unchanged";
       } else {
