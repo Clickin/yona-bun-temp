@@ -66,6 +66,60 @@ test("protected org-owned project home restores the legacy browser title", async
   expect(routeSource).not.toContain("document.title");
 });
 
+test("project-scope protected project home renders the legacy group breadcrumb marker", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page, {
+    ownerName: "weblabs",
+    projectName: "portal",
+    project: {
+      isProtected: false,
+      projectScope: "protected",
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/weblabs/portal`);
+  const protectedMarker = page.locator(".project-breadcrumb > .project-protected");
+  await expect(protectedMarker).toHaveCount(1);
+  await expect(protectedMarker).toHaveAttribute("title", "Group Project");
+  await expect(protectedMarker).toHaveText("G");
+  await expect(page.locator(".user-project-list + .project-protected")).toHaveCount(1);
+
+  const desktop = await protectedProjectBreadcrumbMetrics(page);
+  expect(desktop.markerLeft).toBeGreaterThanOrEqual(desktop.breadcrumbLeft);
+  expect(desktop.markerRight).toBeLessThanOrEqual(desktop.breadcrumbRight);
+  expect(desktop.markerTop).toBeGreaterThanOrEqual(desktop.breadcrumbTop);
+  expect(desktop.markerBottom).toBeLessThanOrEqual(desktop.breadcrumbBottom);
+  expect(desktop.markerLeft).toBeGreaterThanOrEqual(desktop.breadcrumbWrapLeft);
+  expect(desktop.markerRight).toBeLessThanOrEqual(desktop.breadcrumbWrapRight);
+  expect(desktop.breadcrumbRight).toBeGreaterThan(desktop.projectNameRight);
+  expect(desktop.breadcrumbWrapRight).toBeLessThanOrEqual(desktop.viewportWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await protectedProjectBreadcrumbMetrics(page);
+  expect(mobile.markerLeft).toBeGreaterThanOrEqual(mobile.breadcrumbLeft);
+  expect(mobile.markerRight).toBeLessThanOrEqual(mobile.breadcrumbRight);
+  expect(mobile.markerTop).toBeGreaterThanOrEqual(mobile.breadcrumbTop);
+  expect(mobile.markerBottom).toBeLessThanOrEqual(mobile.breadcrumbBottom);
+  expect(mobile.markerLeft).toBeGreaterThanOrEqual(mobile.breadcrumbWrapLeft);
+  expect(mobile.markerRight).toBeLessThanOrEqual(mobile.breadcrumbWrapRight);
+  expect(mobile.breadcrumbRight).toBeGreaterThan(mobile.projectNameRight);
+  expect(mobile.breadcrumbWrapRight).toBeLessThanOrEqual(mobile.viewportWidth);
+
+  await mockProjectHome(page, {
+    ownerName: "weblabs",
+    projectName: "public",
+    project: {
+      isProtected: false,
+      projectScope: "public",
+    },
+  });
+  await page.goto(`${basePath}/weblabs/public`);
+  await expect(page.locator(".project-breadcrumb > .project-protected")).toHaveCount(0);
+});
+
 test("protected org-owned project home uses legacy project and group search scopes", async ({
   page,
 }) => {
@@ -1512,6 +1566,37 @@ async function projectHomeLayoutMetrics(page: Page) {
       rightPaneDisplay: style(".span-right-pane").display,
       rightPanePercent: (rightPane.width / pageWrap.width) * 100,
       mobileMediaMatches: window.matchMedia("(max-width: 900px)").matches,
+      viewportWidth: window.innerWidth,
+    };
+  });
+}
+
+async function protectedProjectBreadcrumbMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element.getBoundingClientRect();
+    };
+    const breadcrumb = rect(".project-breadcrumb");
+    const breadcrumbWrap = rect(".project-breadcrumb-wrap");
+    const marker = rect(".project-breadcrumb > .project-protected");
+    const projectName = rect(".project-breadcrumb > .project-name");
+
+    return {
+      breadcrumbBottom: breadcrumb.bottom,
+      breadcrumbLeft: breadcrumb.left,
+      breadcrumbRight: breadcrumb.right,
+      breadcrumbTop: breadcrumb.top,
+      breadcrumbWrapLeft: breadcrumbWrap.left,
+      breadcrumbWrapRight: breadcrumbWrap.right,
+      markerBottom: marker.bottom,
+      markerLeft: marker.left,
+      markerRight: marker.right,
+      markerTop: marker.top,
+      projectNameRight: projectName.right,
       viewportWidth: window.innerWidth,
     };
   });
