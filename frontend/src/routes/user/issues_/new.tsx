@@ -1,25 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DirectIssueFormRouteScreen } from "../issues/-direct-issue-form-screen";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 type UserDirectIssueSearch = {
   commentId: string;
 };
 
 export const Route = createFileRoute("/user/issues_/new")({
-  component: UserDirectIssueFormRoute,
+  component: Outlet,
   validateSearch(search: Record<string, unknown>): UserDirectIssueSearch {
     return {
       commentId: stringSearch(search.commentId),
     };
   },
 });
-
-function UserDirectIssueFormRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { commentId } = Route.useSearch();
-
-  return <DirectIssueFormRouteScreen commentId={commentId} runtimeConfig={runtimeConfig} />;
-}
 
 function stringSearch(value: unknown) {
   return typeof value === "string"
