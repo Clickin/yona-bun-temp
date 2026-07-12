@@ -8,8 +8,55 @@ const PROJECT_REVIEWS_ROUTE = `${PROJECT_ROUTE}/reviews`;
 const PROJECT_GROUP_SEARCH_ROUTE = `/organizations/${PROJECT_OWNER_NAME}/search`;
 
 const EXPECTED_PROJECT_REVIEWS_PAGE_WRAP = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" class="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?state=open&filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination"></div></div></div></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid issue-list-wrap"><div class="span2 search-wrap span-hard-wrap"><div class="inner advanced"><ul class="lst-stacked unstyled"><li class="active"><button type="button">All reviews<span class="num-badge pull-right">2</span></button></li><li class=""><button type="button">Participated.<span class="num-badge pull-right">1</span></button></li><li class=""><button type="button">Created<span class="num-badge pull-right">1</span></button></li></ul><form id="search" name="search" action="__PROJECT_REVIEWS_PATH__" method="get"><input type="hidden" name="authorId" value=""><input type="hidden" name="participantId" value=""><input type="hidden" name="orderDir" value="desc"><input type="hidden" name="orderBy" value="createdDate"><input type="hidden" name="state" value="open"><hr class="hide-in-mobile"><div class="search-bar span-hard-wrap"><input name="filter" class="textbox full" type="text" value="comment"><button type="submit" class="search-btn"><i class="yobicon-search"></i></button></div></form></div></div><div class="span10 span-hard-wrap"><div class="pull-right filters"><button type="button" class="filter" style="background:none;border:0px;color:inherit;cursor:pointer;display:inline;font:inherit;margin:0px;padding:0px;text-align:inherit;width:auto"><i class="ico btn-gray-arrow down"></i>Created</button></div><ul class="nav nav-tabs nm"><li class="active"><button type="button">Open<span class="num-badge">2</span></button></li><li class=""><button type="button">Closed<span class="num-badge">1</span></button></li></ul><div class="review-list-wrap"><ul class="post-list-wrap"><li class="post-item"><a href="__BASE_PATH__/dev" class="avatar-wrap mlarge hide-in-mobile" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">31</span><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="title">Please check this change</a></div><div class="infos"><a href="__BASE_PATH__/dev" class="infos-item infos-link-item" title="dev">Dev Member</a><span class="infos-item" title="Jul 1, 2026">Jul 1, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/3/changes#thread-31" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li><li class="post-item"><a href="__BASE_PATH__/ghost" class="avatar-wrap mlarge hide-in-mobile" title="ghost"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a><div class="title-wrap"><span class="post-id">32</span><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="title">Commit-specific pull request thread</a></div><div class="infos"><span class="infos-item">No author</span><span class="infos-item" title="Jul 2, 2026">Jul 2, 2026</span><span class="infos-item item-count-groups"><a href="__PROJECT_BASE_PATH__/pullRequest/4/changes/fedcba987654#thread-32" class="comments-count"><span class="count-groups item-icon"><i class="yobicon-comment2"></i></span><span class="count-groups item-count">1</span></a></span></div></li></ul></div><div class="pull-left" style="padding:10px"><a href="__PROJECT_REVIEWS_PATH__?filter=comment&format=xls" class="ybtn small"><i class="yobicon-file-excel"></i> Download as Excel file</a></div><div id="pagination" class="page-navigation-wrap"><ul class="page-nums"><li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li><li class="page-num"><input type="number" pattern="[0-9]*" class="input-mini nospinner" name="pageNum" max="1" min="1" value="1"></li><li class="page-num delimiter">/</li><li class="page-num">1</li><li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li></ul></div></div></div></div></div>
 `;
+test("SVN reviews keep the clean legacy URL and direct project-page geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.addInitScript((configuredBasePath) => {
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: configuredBasePath,
+      feedbackUrl: "",
+      hideProjectListing: false,
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  await mockProjectReviews(page, {
+    empty: true,
+    ownerName: "admin",
+    projectName: "svnplayground",
+    vcs: "Subversion",
+  });
+
+  await page.goto(`${basePath}/admin/svnplayground/reviews`);
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/reviews`);
+  await expect(page.locator(".page-wrap-outer")).toHaveCount(0);
+  await expect(page.locator(".project-page-wrap")).toHaveCount(1);
+  await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
+  await expect(page.locator("#pagination.page-navigation-wrap")).toHaveCount(1);
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "1");
+  await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
+  expect(await emptyReviewGeometry(page)).toEqual({
+    documentWidth: 1366,
+    height: 500,
+    width: 1366,
+    x: 0,
+    y: 208,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/reviews`);
+  expect(await emptyReviewGeometry(page)).toEqual({
+    documentWidth: 390,
+    height: 668,
+    width: 390,
+    x: 0,
+    y: 208,
+  });
+});
 
 test("project reviews list matches legacy reviewthread/list.scala.html shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -39,9 +86,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     searchScopeContainedInHeader: true,
   });
   await page.locator("#gnb-search-scope-title").click();
-  const searchScopeItems = page.locator(
-    '.gnb-search-form .dropdown-menu button[data-toggle="search-scope"]',
-  );
+  const searchScopeItems = page.locator(".gnb-search-form .dropdown-menu button");
   await expect(searchScopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
   await searchScopeItems.nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -75,7 +120,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await expect(exportLink).toHaveText("Download as Excel file");
   await expect(exportLink).toHaveAttribute(
     "href",
-    `${projectReviewsPath}?state=open&filter=comment&format=xls`,
+    `${projectReviewsPath}?filter=comment&format=xls`,
   );
 
   await page.goto(
@@ -83,16 +128,18 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   );
   await expect(page.locator('.pull-left a.ybtn.small[href$="format=xls"]')).toHaveAttribute(
     "href",
-    `${projectReviewsPath}?orderDir=asc&orderBy=createdDate&state=open&filter=comment&format=xls`,
+    `${projectReviewsPath}?orderDir=asc&filter=comment&format=xls`,
   );
   await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+  expect(await canonicalize(page, ".project-page-wrap")).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_PROJECT_REVIEWS_PAGE_WRAP.replaceAll("__BASE_PATH__", basePath)
         .replaceAll("__PROJECT_BASE_PATH__", projectBasePath)
-        .replaceAll("__PROJECT_REVIEWS_PATH__", projectReviewsPath),
+        .replaceAll("__PROJECT_REVIEWS_PATH__", projectReviewsPath)
+        .replace(/^\s*<div class="page-wrap-outer">/u, "")
+        .replace(/<\/div>\s*$/u, ""),
     ),
   );
   expect(await reviewListMetrics(page)).toEqual({
@@ -100,7 +147,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     contentStartsAfterSidebar: true,
     exportTopAfterList: true,
     filterRightAligned: true,
-    leftColumnWidth: 188,
+    leftColumnWidth: 191,
     listStartsBelowTabs: true,
     paginationAfterExport: true,
     rowCount: 2,
@@ -108,7 +155,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     searchAction: projectReviewsPath,
     searchBarStartsInSidebar: true,
     searchInputContainedInSearchBar: true,
-    searchInputWidth: 156,
+    searchInputWidth: 169,
     stateTabBorderBottomColor: "rgba(0, 0, 0, 0)",
     stateTabDisplay: "block",
     stateTabLineHeight: "20px",
@@ -252,8 +299,9 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   }, spaMarker);
   await page.locator(".lst-stacked button").filter({ hasText: "Participated." }).click();
   await expect(page).toHaveURL(/participantId=1/u);
-  await expect(page).toHaveURL(/orderBy=createdDate/u);
-  await expect(page).toHaveURL(/orderDir=desc/u);
+  await expect(page).not.toHaveURL(/orderBy=/u);
+  await expect(page).not.toHaveURL(/orderDir=/u);
+  await expect(page).not.toHaveURL(/state=/u);
   await expect(page).not.toHaveURL(/pageNum=/u);
   expect(
     await page.evaluate(
@@ -263,24 +311,27 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
 
   await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
   await page.locator(".filters button.filter").click();
-  await expect(page).toHaveURL(/orderBy=createdDate/u);
+  await expect(page).not.toHaveURL(/orderBy=/u);
   await expect(page).toHaveURL(/orderDir=asc/u);
+  await expect(page).not.toHaveURL(/state=/u);
   await expect(page).not.toHaveURL(/pageNum=/u);
 
   await page.goto(
     `${projectReviewsPath}?state=open&filter=comment&orderBy=createdDate&orderDir=asc`,
   );
   await page.locator(".filters button.filter").click();
-  await expect(page).toHaveURL(/orderBy=createdDate/u);
-  await expect(page).toHaveURL(/orderDir=desc/u);
+  await expect(page).not.toHaveURL(/orderBy=/u);
+  await expect(page).not.toHaveURL(/orderDir=/u);
+  await expect(page).not.toHaveURL(/state=/u);
   await expect(page).not.toHaveURL(/pageNum=/u);
 
   await page.goto(
     `${projectReviewsPath}?state=open&filter=comment&orderBy=createdDate&orderDir=desc`,
   );
   await page.locator(".filters button.filter").click();
-  await expect(page).toHaveURL(/orderBy=createdDate/u);
+  await expect(page).not.toHaveURL(/orderBy=/u);
   await expect(page).toHaveURL(/orderDir=asc/u);
+  await expect(page).not.toHaveURL(/state=/u);
   await expect(page).not.toHaveURL(/pageNum=/u);
 
   await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
@@ -392,7 +443,25 @@ test("project reviews filter/order source omits legacy delegated-handler hooks",
   expect(source).not.toContain("dataset.value");
 });
 
-async function mockProjectReviews(page: Page) {
+async function emptyReviewGeometry(page: Page) {
+  return page.locator(".project-page-wrap").evaluate((projectPage) => {
+    const rect = projectPage.getBoundingClientRect();
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      height: Math.round(rect.height),
+      width: Math.round(rect.width),
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+    };
+  });
+}
+
+async function mockProjectReviews(
+  page: Page,
+  options: { empty?: boolean; ownerName?: string; projectName?: string; vcs?: string } = {},
+) {
+  const ownerName = options.ownerName ?? PROJECT_OWNER_NAME;
+  const projectName = options.projectName ?? PROJECT_NAME;
   const requests: URL[] = [];
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -411,7 +480,7 @@ async function mockProjectReviews(page: Page) {
     });
   });
   await page.route(
-    `**/api/v1/owners/${PROJECT_OWNER_NAME}/projects/${PROJECT_NAME}/container`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
     async (route) => {
       await route.fulfill({
         contentType: "application/json",
@@ -431,10 +500,10 @@ async function mockProjectReviews(page: Page) {
             pullRequest: true,
             review: true,
           },
-          organizationName: PROJECT_OWNER_NAME,
-          ownerName: PROJECT_OWNER_NAME,
-          projectName: PROJECT_NAME,
-          vcs: "GIT",
+          organizationName: ownerName,
+          ownerName,
+          projectName,
+          vcs: options.vcs ?? "GIT",
           viewerCanUpdate: true,
           viewerUserId: 1,
         }),
@@ -442,91 +511,93 @@ async function mockProjectReviews(page: Page) {
     },
   );
   await page.route(
-    `**/api/v1/owners/${PROJECT_OWNER_NAME}/projects/${PROJECT_NAME}/reviews**`,
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/reviews**`,
     async (route) => {
       requests.push(new URL(route.request().url()));
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
-          allCount: 2,
-          authorCount: 1,
-          closedCount: 1,
-          items: [
-            {
-              authorAvatarUrl: "/assets/images/default-avatar-32.png",
-              authorId: 2,
-              authorLabel: "Dev Member",
-              authorLoginId: "dev",
-              comments: [
+          allCount: options.empty ? 0 : 2,
+          authorCount: options.empty ? 0 : 1,
+          closedCount: options.empty ? 0 : 1,
+          items: options.empty
+            ? []
+            : [
                 {
                   authorAvatarUrl: "/assets/images/default-avatar-32.png",
                   authorId: 2,
                   authorLabel: "Dev Member",
                   authorLoginId: "dev",
-                  contentsMarkdown: "Please check this change",
+                  comments: [
+                    {
+                      authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                      authorId: 2,
+                      authorLabel: "Dev Member",
+                      authorLoginId: "dev",
+                      contentsMarkdown: "Please check this change",
+                      createdLabel: "Jul 1, 2026",
+                      id: 1001,
+                      threadId: 31,
+                    },
+                    {
+                      authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                      authorId: 1,
+                      authorLabel: "Site Admin",
+                      authorLoginId: "admin",
+                      contentsMarkdown: "Follow-up",
+                      createdLabel: "Jul 1, 2026",
+                      id: 1002,
+                      threadId: 31,
+                    },
+                  ],
+                  commitId: "",
                   createdLabel: "Jul 1, 2026",
-                  id: 1001,
-                  threadId: 31,
+                  id: 31,
+                  path: "",
+                  pullRequestNumber: 3,
+                  state: "open",
                 },
-                {
-                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                  authorId: 1,
-                  authorLabel: "Site Admin",
-                  authorLoginId: "admin",
-                  contentsMarkdown: "Follow-up",
-                  createdLabel: "Jul 1, 2026",
-                  id: 1002,
-                  threadId: 31,
-                },
-              ],
-              commitId: "",
-              createdLabel: "Jul 1, 2026",
-              id: 31,
-              path: "",
-              pullRequestNumber: 3,
-              state: "open",
-            },
-            {
-              authorAvatarUrl: "/assets/images/default-avatar-32.png",
-              authorId: 9,
-              authorLabel: "",
-              authorLoginId: "ghost",
-              comments: [
                 {
                   authorAvatarUrl: "/assets/images/default-avatar-32.png",
                   authorId: 9,
                   authorLabel: "",
                   authorLoginId: "ghost",
-                  contentsMarkdown: "Commit-specific pull request thread",
+                  comments: [
+                    {
+                      authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                      authorId: 9,
+                      authorLabel: "",
+                      authorLoginId: "ghost",
+                      contentsMarkdown: "Commit-specific pull request thread",
+                      createdLabel: "Jul 2, 2026",
+                      id: 2001,
+                      threadId: 32,
+                    },
+                    {
+                      authorAvatarUrl: "/assets/images/default-avatar-32.png",
+                      authorId: 1,
+                      authorLabel: "Site Admin",
+                      authorLoginId: "admin",
+                      contentsMarkdown: "Ack",
+                      createdLabel: "Jul 2, 2026",
+                      id: 2002,
+                      threadId: 32,
+                    },
+                  ],
+                  commitId: "fedcba987654",
                   createdLabel: "Jul 2, 2026",
-                  id: 2001,
-                  threadId: 32,
-                },
-                {
-                  authorAvatarUrl: "/assets/images/default-avatar-32.png",
-                  authorId: 1,
-                  authorLabel: "Site Admin",
-                  authorLoginId: "admin",
-                  contentsMarkdown: "Ack",
-                  createdLabel: "Jul 2, 2026",
-                  id: 2002,
-                  threadId: 32,
+                  id: 32,
+                  path: "src/commit-specific-thread.rs",
+                  pullRequestNumber: 4,
+                  startLine: 9,
+                  startSide: "B",
+                  state: "open",
                 },
               ],
-              commitId: "fedcba987654",
-              createdLabel: "Jul 2, 2026",
-              id: 32,
-              path: "src/commit-specific-thread.rs",
-              pullRequestNumber: 4,
-              startLine: 9,
-              startSide: "B",
-              state: "open",
-            },
-          ],
-          openCount: 2,
+          openCount: options.empty ? 0 : 2,
           pageNum: 1,
           pageSize: 15,
-          participantCount: 1,
+          participantCount: options.empty ? 0 : 1,
           state: "open",
           totalCount: 2,
         }),
