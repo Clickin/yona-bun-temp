@@ -7,16 +7,13 @@ import {
   requestProjectTransferRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import type { ProjectTransferResponse } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader as SharedProjectHeader } from "../$projectName";
-
-type ProjectTransferScreenData = ProjectTransferResponse & ProjectContainer;
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 const legacyLinkActiveOptions = {
   exact: true,
@@ -83,15 +80,10 @@ function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     return null;
   }
 
-  const project = {
-    ...projectQuery.data,
-    ...transferQuery.data,
-  } satisfies ProjectTransferScreenData;
-
   return (
     <>
       <title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>
-      <ProjectTransferBody project={project} runtimeConfig={runtimeConfig} />
+      <ProjectTransferBody project={projectQuery.data} runtimeConfig={runtimeConfig} />
     </>
   );
 }
@@ -100,7 +92,7 @@ function ProjectTransferBody({
   project,
   runtimeConfig,
 }: {
-  project: ProjectTransferScreenData;
+  project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
@@ -163,8 +155,8 @@ function ProjectTransferBody({
 
   return (
     <>
-      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu project={project} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
@@ -279,159 +271,13 @@ function ProjectTransferBody({
   );
 }
 
-function ProjectMenu({ project }: { project: ProjectTransferScreenData }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = projectMenuSetting(project);
-  const memberEnrollmentCount = projectMemberCount(project);
-  const menuCounts = {
-    board:
-      numberField(recordField(project).boardCount) || numberField(recordField(project).postCount),
-    issue: numberField(recordField(project).openIssueCount),
-    pullRequest: numberField(recordField(project).openPullRequestCount),
-    review: numberField(recordField(project).reviewCount),
-  };
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            label={t("title.projectHome")}
-            params={{ ownerName, projectName }}
-            short="H"
-            to="/$ownerName/$projectName"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              params={{ ownerName, projectName }}
-              short="C"
-              to="/$ownerName/$projectName/code"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              count={menuCounts.issue}
-              label={t("menu.issue")}
-              params={{ ownerName, projectName }}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              count={menuCounts.pullRequest}
-              label={t("menu.pullRequest")}
-              params={{ ownerName, projectName }}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              count={menuCounts.review}
-              label={t("menu.review")}
-              params={{ ownerName, projectName }}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              params={{ ownerName, projectName }}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              count={menuCounts.board}
-              label={t("menu.board")}
-              params={{ ownerName, projectName }}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  activeOptions={legacyLinkActiveOptions}
-                  activeProps={legacyLinkActiveProps}
-                  to="/$ownerName/$projectName/setting"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={memberEnrollmentCount} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to:
-    | "/$ownerName/$projectName"
-    | "/$ownerName/$projectName/code"
-    | "/$ownerName/$projectName/issues"
-    | "/$ownerName/$projectName/pullRequests"
-    | "/$ownerName/$projectName/reviews"
-    | "/$ownerName/$projectName/milestones"
-    | "/$ownerName/$projectName/posts";
-}) {
-  return (
-    <li className={className}>
-      <Link
-        activeOptions={legacyLinkActiveOptions}
-        activeProps={legacyLinkActiveProps}
-        to={to}
-        params={params}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-        {count > 0 ? (
-          <>
-            {" "}
-            <CountBadge count={count} />
-          </>
-        ) : null}
-      </Link>
-    </li>
-  );
-}
-
 function ProjectSettingMenu({
   ownerName,
   project,
   projectName,
 }: {
   ownerName: string;
-  project: ProjectTransferScreenData;
+  project: ProjectContainer;
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
@@ -549,10 +395,6 @@ function stringField(value: unknown, fallback: string) {
   return fallback;
 }
 
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
-}
-
 function countField(value: unknown) {
   return Array.isArray(value) ? value.length : 0;
 }
@@ -569,7 +411,7 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
   return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
-function projectMenuSetting(project: ProjectTransferScreenData) {
+function projectMenuSetting(project: ProjectContainer) {
   const record = recordField(project);
   const nested = recordField(record.menuSetting);
   return {
@@ -582,7 +424,7 @@ function projectMenuSetting(project: ProjectTransferScreenData) {
   };
 }
 
-function projectMemberCount(project: ProjectTransferScreenData) {
+function projectMemberCount(project: ProjectContainer) {
   const record = recordField(project);
   return countField(record.enrolledUsers);
 }
