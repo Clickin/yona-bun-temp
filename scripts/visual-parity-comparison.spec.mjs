@@ -499,7 +499,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /const screenshotLabel =/u);
   assert.match(source, /function localSettledSelectorForPath/u);
   assert.match(source, /if \(\/\\\/code\(\?:\\\/\|\$\)\/u\.test\(pathname\)\)/u);
-  assert.match(source, /return "\.project-header-outer";/u);
+  assert.match(source, /return "\.code-browse-wrap \.listitem, \.project-page-wrap \.alert";/u);
   assert.match(source, /label === "local" && loggedIn && !useRequestedPaths/u);
   assert.match(source, /waitUntil: "domcontentloaded"/u);
   assert.match(
