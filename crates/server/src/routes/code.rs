@@ -1192,12 +1192,15 @@ async fn rest_read_code_browser(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
-    let snapshot = yoram_vcs::read_code_browser(
-        &repo_path,
-        Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
-        &query.path,
-    )
+    let branch = Some(query.branch.as_str()).filter(|value| !value.trim().is_empty());
+    let snapshot = if authorization.project.vcs == "Subversion" {
+        let repo_path =
+            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_svn_code_browser(&repo_path, branch, &query.path)
+    } else {
+        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_code_browser(&repo_path, branch, &query.path)
+    }
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
 

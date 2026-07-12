@@ -106,6 +106,10 @@ function ProjectCodeFolderBody({
   const router = useRouter();
   const { branch, ownerName, projectName } = Route.useParams();
   const selectedBranch = code.selectedBranch || branch;
+  const displayedBranch =
+    code.branches.find((item) => item.name === selectedBranch)?.name ??
+    code.branches[0]?.name ??
+    selectedBranch;
   const encodedBranch = encodeBranch(selectedBranch);
   const isGit = project.vcs === "GIT";
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
@@ -136,43 +140,24 @@ function ProjectCodeFolderBody({
               </Link>
             </li>
             <li>
-              {selectedBranch === "HEAD" ? (
-                <Link
-                  activeOptions={{
-                    exact: true,
-                    explicitUndefined: true,
-                    includeHash: true,
-                    includeSearch: true,
-                  }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to="/$ownerName/$projectName/commits/$branch/$"
-                  params={{ _splat: "/", branch: selectedBranch, ownerName, projectName }}
-                  search={{ page: undefined as never }}
-                >
-                  {t("code.commits")}
-                </Link>
-              ) : (
-                <Link
-                  activeOptions={{
-                    exact: true,
-                    explicitUndefined: true,
-                    includeHash: true,
-                    includeSearch: true,
-                  }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
-                >
-                  {t("code.commits")}
-                </Link>
-              )}
+              <Link
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: undefined,
+                  "data-status": undefined,
+                }}
+                to="/$ownerName/$projectName/commits/$branch/$"
+                params={{ _splat: "/", branch: selectedBranch, ownerName, projectName }}
+                search={{ page: undefined as never }}
+              >
+                {t("code.commits")}
+              </Link>
             </li>
             {isGit ? (
               <li>
@@ -217,7 +202,7 @@ function ProjectCodeFolderBody({
                 <span className="select2-chosen">
                   {isGit ? <strong className="branch-label branch">branch</strong> : null}
                   {isGit ? " " : null}
-                  {selectedBranch}
+                  {displayedBranch}
                 </span>
                 <span className="select2-arrow" aria-hidden="true">
                   <b></b>
@@ -244,7 +229,7 @@ function ProjectCodeFolderBody({
                   {code.branches.map((item) => (
                     <li
                       key={item.name}
-                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === selectedBranch ? " select2-selected" : ""}`}
+                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === displayedBranch ? " select2-selected" : ""}`}
                     >
                       <button
                         type="button"

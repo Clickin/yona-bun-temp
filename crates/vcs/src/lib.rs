@@ -2094,6 +2094,57 @@ pub fn read_code_browser(
     }
 }
 
+pub fn read_svn_code_browser(
+    repo_path: &Path,
+    branch: Option<&str>,
+    path: &str,
+) -> Result<CodeBrowserSnapshot, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Ok(no_head_snapshot());
+    }
+    let selected_branch = branch
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("HEAD")
+        .to_string();
+    if branch.is_none() && svn_youngest_revision(repo_path)? == 0 {
+        return Ok(no_head_snapshot());
+    }
+    let clean_path = normalize_repo_path(path)?;
+    let tree = svn_list_tree(repo_path, None, &clean_path)?;
+    let entries = tree
+        .entries
+        .into_iter()
+        .map(|entry| CodeEntryRecord {
+            author_email: String::new(),
+            author_label: String::new(),
+            commit_date: String::new(),
+            commit_message: String::new(),
+            commit_short_id: String::new(),
+            kind: if entry.is_dir { "folder" } else { "file" }.to_string(),
+            name: entry
+                .path
+                .rsplit('/')
+                .next()
+                .unwrap_or(entry.path.as_str())
+                .to_string(),
+            path: entry.path,
+            size: 0,
+        })
+        .collect();
+    Ok(CodeBrowserSnapshot {
+        branches: vec![CodeBranchRecord {
+            name: "HEAD".to_string(),
+        }],
+        breadcrumbs: breadcrumbs_for_path(&clean_path),
+        entries,
+        file: None,
+        no_head: false,
+        path: clean_path,
+        selected_branch,
+    })
+}
+
 pub fn read_file_bytes(
     repo_path: &Path,
     revision: &str,
@@ -3769,6 +3820,38 @@ fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn empty_svn_browser_distinguishes_the_root_from_an_explicit_revision() {
+        if ensure_svnadmin_available().is_err()
+            || Command::new(svn_executable("svnlook"))
+                .arg("--version")
+                .output()
+                .map_or(true, |output| !output.status.success())
+        {
+            return;
+        }
+        let data_dir = tempdir().expect("svn browser tempdir");
+        let repo_path = data_dir.path().join("empty.svn");
+        create_svn_repository(&repo_path).expect("create empty svn repository");
+
+        assert!(
+            read_svn_code_browser(&repo_path, None, "")
+                .expect("read svn root")
+                .no_head
+        );
+        let explicit = read_svn_code_browser(&repo_path, Some("main"), "")
+            .expect("read explicit svn revision");
+        assert!(!explicit.no_head);
+        assert_eq!(explicit.selected_branch, "main");
+        assert_eq!(
+            explicit.branches,
+            vec![CodeBranchRecord {
+                name: "HEAD".into()
+            }]
+        );
+        assert!(explicit.entries.is_empty());
+    }
 
     #[test]
     fn read_file_bytes_drains_git_output_larger_than_a_pipe_buffer() {
