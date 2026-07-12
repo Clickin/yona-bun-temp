@@ -886,6 +886,7 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
     assert_eq!(payload["showPullRequest"], false);
     assert_eq!(payload["showReview"], false);
     assert_eq!(payload["showMilestone"], false);
+    assert_eq!(payload["viewerCanLeave"], true);
 }
 
 #[tokio::test]

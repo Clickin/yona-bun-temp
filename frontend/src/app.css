@@ -3147,8 +3147,7 @@ h1 {
   position: absolute;
   right: 86px;
   float: left;
-  width: 175px !important;
-  max-width: none !important;
+  width: 175px;
   margin-bottom: 0;
   text-align: right;
   cursor: pointer;
@@ -3172,6 +3171,16 @@ h1 {
   padding: 4px 0 !important;
   margin-left: 0;
   border-radius: 0 3px 3px 0;
+}
+
+.project-home-header .project-clone-wrap .project-clone-url {
+  width: 100px;
+  max-width: 125px;
+}
+
+.project-home-header .project-clone-wrap:hover .project-clone-url {
+  width: 100%;
+  max-width: 250px;
 }
 
 .readme {
@@ -4404,16 +4413,6 @@ h1 {
 
   .page-wrap-outer > .project-page-wrap {
     margin-top: 5px !important;
-  }
-
-  .project-home-header .project-clone-wrap .project-clone-url {
-    width: 100px !important;
-    max-width: 125px;
-  }
-
-  .project-home-header .project-clone-wrap:hover .project-clone-url {
-    width: 100% !important;
-    max-width: 250px;
   }
 
   .project-header-avatar {

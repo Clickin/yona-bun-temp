@@ -245,6 +245,7 @@ const alwaysScreenshotPaths = new Set([
   "/admin/sample/members",
   "/admin/sample/watchers",
   "/admin/sample/webhooks",
+  "/admin/svnplayground",
   "/admin/sample/transfer",
   "/admin/sample/deleteform",
   "/admin/sample/changeVCS",
@@ -759,6 +760,10 @@ async function bootstrapLocalAccount(page, baseUrl) {
       review: true,
       vcs: "svn",
     });
+    await patchLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/svnplayground/overview", {
+      overview: "Parity seed Subversion project for localhost checks",
+    });
+    await postLocalJson(page, baseUrl, "/api/v1/owners/admin/projects/svnplayground/watch", {});
     await ensureProtectedPortalWatchers();
     await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
       ownerName: "admin",

@@ -242,6 +242,7 @@ Interpretation:
 - [x] Project home watch/unwatch failure fallback preserves the legacy `yobi.project.Global.js` raw `Server Error` notification scalar
 - [x] Project home favorite failure fallback preserves the legacy `yona.Usermenu.js` `Update failed: ` alert prefix
 - [x] Project home enroll/cancel failure fallback preserves the legacy `yobi.project.Global.js` status-key mapping (`user.enroll.failed.*` and `error.forbidden`)
+- [x] Project home container preserves legacy `AccessControl.isAllowed`'s site-manager-first `Operation.LEAVE` projection, including the owner-named SVN fixture's visible leave action and right-pane geometry
 - [x] Organization home enroll/cancel failure fallback preserves the legacy `yobi.organization.Global.js` raw `Server Error` notification scalar
 - [x] Organization home and workspace/profile project cards preserve legacy `project.onmember` / `project.onwatching` scalar shells from `organization/view.scala.html` and `user/partial_projectlist.scala.html`, including the friends/eye icons and numeric `<strong>` output instead of temporary `project.onmember N` / `project.onwatching N` text.
 - [x] Public `/projects` directory cards preserve legacy `project/list.scala.html` logo anchor, private lock scalar, owner/date/code-update, and public stats shell, backed by `/api/v1/projects` created/member/watch metadata while keeping `proto/` as a historical snapshot.
