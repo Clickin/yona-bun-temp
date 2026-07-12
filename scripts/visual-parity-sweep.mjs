@@ -295,6 +295,9 @@ function localSettledSelectorForPath(path) {
   if (/\/commits\/?$/u.test(pathname)) {
     return ".page-wrap-outer .project-page-wrap #history";
   }
+  if (pathname.endsWith("/branches")) {
+    return ".page-wrap-outer .branch-list-wrap tbody tr";
+  }
   const issueDetailMatch = pathname.match(/\/issue\/(\d+)$/u);
   if (issueDetailMatch) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
