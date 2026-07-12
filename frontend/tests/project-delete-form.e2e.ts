@@ -217,6 +217,78 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   });
 });
 
+test("Alice delete form keeps the legacy container shell when the settings form is partial", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const source = await readFile("src/routes/$ownerName/$projectName/deleteform.tsx", "utf8");
+  expect(source).toContain("readProjectContainerQueryOptions");
+  expect(source).toContain("shellProject={containerQuery.data}");
+  expect(source).toContain(
+    "<ProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />",
+  );
+  expect(source).toContain(
+    '<ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={shellProject} />',
+  );
+  await mockProjectAdmin(page, {
+    ownerName: "alice",
+    projectName: "sample",
+    containerProject: {
+      enrolledUsers: [{ id: 1 }, { id: 2 }],
+      isForkedFromOrigin: false,
+      menuSetting: {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pullRequest: true,
+        review: true,
+      },
+      viewerCanUpdate: false,
+      viewerCanWatch: true,
+      watchCount: 7,
+    },
+    project: {
+      enrolledUsers: [],
+      isForkedFromOrigin: true,
+      menuSetting: { code: false },
+      originalOwnerName: "admin",
+      originalProjectName: "sample",
+      viewerCanUpdate: true,
+      viewerCanWatch: false,
+      watchCount: 0,
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/alice/sample/deleteform`);
+  await expect(page.locator(".project-breadcrumb-wrap")).not.toHaveClass("fork");
+  await expect(page.locator(".project-origin")).toHaveCount(0);
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("7");
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveCount(1);
+  await expect(page.locator(".project-setting")).toHaveCount(0);
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => {
+    const menu = document.querySelector<HTMLElement>(".project-menu-outer");
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    if (!menu || !pageWrap) throw new Error("Missing legacy delete form shell");
+    return {
+      menuClientWidth: menu.clientWidth,
+      menuScrollWidth: menu.scrollWidth,
+      pageScrollWidth: document.documentElement.scrollWidth,
+      pageWrapWidth: Math.round(pageWrap.getBoundingClientRect().width),
+    };
+  });
+  expect(mobile).toEqual({
+    menuClientWidth: 390,
+    menuScrollWidth: 390,
+    pageScrollWidth: 390,
+    pageWrapWidth: 390,
+  });
+});
+
 test("project delete form localhost legacy portal shell is restored", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page, {
@@ -968,6 +1040,7 @@ async function mockProjectAdmin(
   options: {
     deleteFails?: boolean;
     deleteRequests?: { hasCsrfToken: boolean; method: string }[];
+    containerProject?: Partial<ReturnType<typeof projectSettings>>;
     favoriteRequests?: { hasCsrfToken: boolean; method: string }[];
     favoriteResponseFavorited?: boolean;
     ownerName?: string;
@@ -1015,6 +1088,19 @@ async function mockProjectAdmin(
         body: JSON.stringify({
           ...projectSettings({ ownerName, projectName }),
           ...options.project,
+        }),
+      });
+    },
+  );
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...projectSettings({ ownerName, projectName }),
+          ...options.project,
+          ...options.containerProject,
         }),
       });
     },
