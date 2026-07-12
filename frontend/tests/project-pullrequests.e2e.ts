@@ -1028,7 +1028,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
   await expect(page.locator("#search, .pullrequeset-tab-menu")).toHaveCount(0);
   await expect.poll(() => pullRequestListRequestCount()).toBe(0);
-  expect(await svnClosedPullRequestErrorMetrics(page)).toEqual({
+  expect(await svnPullRequestErrorMetrics(page)).toEqual({
     buttonHeight: 30,
     buttonWidth: 38,
     errorWidth: 1346,
@@ -1046,7 +1046,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await svnClosedPullRequestErrorMetrics(page)).toEqual({
+  expect(await svnPullRequestErrorMetrics(page)).toEqual({
     buttonHeight: 30,
     buttonWidth: 38,
     errorWidth: 390,
@@ -1064,7 +1064,67 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   });
 });
 
-async function svnClosedPullRequestErrorMetrics(page: Page) {
+test("svn sent pull request route reuses the ko-KR legacy badrequest site shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  const { pullRequestListRequestCount } = await mockSvnProjectPullRequests(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/svnplayground/sentPullRequests`);
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/sentPullRequests`);
+  await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
+  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
+  await expect(page.locator(".error-wrap p")).toHaveText("GIT 프로젝트에서만 지원하는 요청입니다.");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveText("홈");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
+  await expect(page.locator("#search, .pullrequeset-tab-menu")).toHaveCount(0);
+  await expect.poll(() => pullRequestListRequestCount()).toBe(0);
+  expect(await svnPullRequestErrorMetrics(page)).toEqual({
+    buttonHeight: 30,
+    buttonWidth: 38,
+    errorWidth: 1346,
+    gnbHeight: 40,
+    gnbWidth: 1366,
+    gnbY: 43,
+    illustrationHeight: 0,
+    illustrationWidth: 0,
+    messageHeight: 20,
+    messageWidth: 1346,
+    pageHeight: 450,
+    pageWidth: 1366,
+    pageY: 93,
+    scrollWidth: 1366,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await svnPullRequestErrorMetrics(page)).toEqual({
+    buttonHeight: 30,
+    buttonWidth: 38,
+    errorWidth: 390,
+    gnbHeight: 40,
+    gnbWidth: 390,
+    gnbY: 43,
+    illustrationHeight: 0,
+    illustrationWidth: 0,
+    messageHeight: 20,
+    messageWidth: 390,
+    pageHeight: 450,
+    pageWidth: 390,
+    pageY: 93,
+    scrollWidth: 390,
+  });
+});
+
+async function svnPullRequestErrorMetrics(page: Page) {
   return page.evaluate(() => {
     const rect = (selector: string) => {
       const element = document.querySelector<HTMLElement>(selector);
