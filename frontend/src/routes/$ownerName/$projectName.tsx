@@ -1465,7 +1465,7 @@ function ProjectHeaderContent({
                   <i className="yobicon-lock"></i>
                 </span>
               ) : null}
-              {booleanField(recordField(project).isProtected) ? (
+              {projectIsProtected(project) ? (
                 <span className="project-protected" title="Group Project">
                   G
                 </span>
