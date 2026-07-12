@@ -818,8 +818,8 @@ async function bootstrapLocalAccount(page, baseUrl) {
     const signedInAdminAgain = await ensureLocalAccountSession(page, baseUrl, adminAccount);
     if (signedInAdminAgain) {
       await postLocalJson(page, baseUrl, "/api/v1/workspace/recent-projects", {
-        ownerName: "alice",
-        projectName: "sample",
+        ownerName: "weblabs",
+        projectName: "portal",
       });
     }
     return signedInAdminAgain;
