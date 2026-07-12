@@ -71,6 +71,24 @@ test("scala html goal history audit accepts documented manual multi-screen excep
   assert.equal(result.blocked, false);
 });
 
+test("scala html goal history audit accepts documented manual evidence-only exceptions", () => {
+  const result = evaluateCommit({
+    changedFiles: [
+      "frontend/src/app.css",
+      "frontend/tests/project-code-commit-detail.e2e.ts",
+      "docs/provenance/frontend-scala-html-goal-violation-audit.md",
+    ],
+    auditPatch:
+      "+Manual evidence-only exception note, 2026-07-12:\n" +
+      "+\n" +
+      "+- Route: `/admin/sample/commit/HEAD`.\n" +
+      "+- Reason: supervised frozen legacy CSS cascade cleanup.\n" +
+      "+- Follow-up: rerun the focused commit-detail E2E and visual sweep.\n",
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("scala html goal history audit rejects memo rows naming E2E files not changed in the commit", () => {
   const result = evaluateCommit({
     changedFiles: [
