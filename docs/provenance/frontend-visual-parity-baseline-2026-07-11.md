@@ -120,7 +120,7 @@ Union of failing paths: **147**. Order is stable by path; status changes from OP
 | `/info/leave/alice/sample` | Focused RED/GREEN leave mutation passes; its legacy redirect destination `/alice?daysAgo=14&selected=projects` has no visual-sweep diff/local failure (`2026-07-12T08:15:57.235Z`, production bundle) | Focused RED/GREEN leave mutation passes; redirect destination has no visual-sweep diff/local failure (`2026-07-12T08:16:03.836Z`, 390x844 production bundle) | CLOSED |
 | `/info/leave/weblabs/portal` | legacy renders a normal page but local renders an error page | legacy renders a normal page but local renders an error page | OPEN |
 | `/notification?from=0&limit=20` | major visible text loss: 506->13 (97% loss) | major visible text loss: 506->13 (97% loss) | OPEN |
-| `/notifications` | major visible text loss: 880->373 (58% loss) | major visible text loss: 867->362 (58% loss) | OPEN |
+| `/notifications` | No visual-sweep diff/local failure (`2026-07-12T08:18:07.811Z`, production bundle): legacy notifications list and shell match | No visual-sweep diff/local failure (`2026-07-12T08:18:14.395Z`, 390x844 production bundle): responsive notifications list matches with no horizontal overflow | CLOSED |
 | `/organizations/new` | visible selector has new horizontal overflow: pageWrap<br>visible selector has new horizontal overflow: projectPageWrap | — | OPEN |
 | `/projectform` | visible selector has new horizontal overflow: pageWrap<br>visible selector has new horizontal overflow: projectPageWrap | — | OPEN |
 | `/projectform?owner=` | visible selector has new horizontal overflow: pageWrap<br>visible selector has new horizontal overflow: projectPageWrap | — | OPEN |
