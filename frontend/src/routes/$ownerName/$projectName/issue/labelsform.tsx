@@ -25,7 +25,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader } from "../../$projectName";
+import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -123,7 +123,7 @@ function ProjectLabelsScreen({
     <>
       <title>{legacyTitle}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu project={project} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
       <ProjectLabelsBody
         labels={labelsQuery.data.labels}
         project={project}
@@ -1424,128 +1424,6 @@ function ColorButton({
       style={{ backgroundColor: color }}
       onClick={onSelect}
     ></button>
-  );
-}
-
-function ProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = projectMenuSetting(project);
-  const memberCount = enrolledUserCount(project);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            label={t("title.projectHome")}
-            params={{ ownerName, projectName }}
-            short="H"
-            to="/$ownerName/$projectName"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              params={{ ownerName, projectName }}
-              short="C"
-              to="/$ownerName/$projectName/code"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              count={Number(project.openIssueCount) || 0}
-              label={t("menu.issue")}
-              params={{ ownerName, projectName }}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              count={Number(project.openPullRequestCount) || 0}
-              label={t("menu.pullRequest")}
-              params={{ ownerName, projectName }}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              count={Number(project.reviewCount) || 0}
-              label={t("menu.review")}
-              params={{ ownerName, projectName }}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              params={{ ownerName, projectName }}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              count={Number(project.boardCount) || Number(project.postCount) || 0}
-              label={t("menu.board")}
-              params={{ ownerName, projectName }}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  {...LEGACY_LINK_PROPS}
-                  to="/$ownerName/$projectName/setting"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={memberCount} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to: string;
-}) {
-  return (
-    <li className={className}>
-      <Link {...LEGACY_LINK_PROPS} to={to} params={params}>
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-        {count > 0 ? " " : null}
-        <CountBadge count={count} />
-      </Link>
-    </li>
   );
 }
 
