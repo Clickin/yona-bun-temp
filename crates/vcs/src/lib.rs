@@ -2253,6 +2253,65 @@ pub fn read_code_history(
     })
 }
 
+pub fn read_svn_code_history(
+    repo_path: &Path,
+    branch: Option<&str>,
+    path: &str,
+    page: u32,
+) -> Result<CodeHistorySnapshot, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Ok(no_head_history_snapshot(page));
+    }
+    let clean_path = normalize_repo_path(path)?;
+    let youngest = svn_youngest_revision(repo_path)?;
+    let skip = usize::try_from(page).unwrap_or_default() * HISTORY_ITEM_LIMIT;
+    let mut commits = Vec::new();
+    for revision in (1..=youngest).rev() {
+        if !clean_path.is_empty()
+            && !svn_changed_paths(repo_path, revision)?
+                .iter()
+                .any(|changed| {
+                    changed.path == clean_path
+                        || changed.path.starts_with(&format!("{clean_path}/"))
+                })
+        {
+            continue;
+        }
+        let entry = svn_log_entries(repo_path, revision, revision, 1)?
+            .pop()
+            .ok_or(VcsError::NotFound)?;
+        commits.push(CodeCommitRecord {
+            author_date: entry.date.trim().to_string(),
+            author_email: String::new(),
+            author_name: entry.author,
+            comment_count: 0,
+            commit_id: revision.to_string(),
+            commit_short_id: revision.to_string(),
+            short_message: first_line(&entry.message).to_string(),
+            message: entry.message,
+        });
+    }
+    let commits = commits.into_iter().skip(skip).collect::<Vec<_>>();
+    let has_older = commits.len() > HISTORY_ITEM_LIMIT;
+    Ok(CodeHistorySnapshot {
+        branches: vec![CodeBranchRecord {
+            name: "HEAD".to_string(),
+        }],
+        breadcrumbs: breadcrumbs_for_path(&clean_path),
+        commits: commits.into_iter().take(HISTORY_ITEM_LIMIT).collect(),
+        has_newer: page > 0,
+        has_older,
+        no_head: false,
+        page,
+        path: clean_path,
+        selected_branch: branch
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or_default()
+            .to_string(),
+    })
+}
+
 pub fn read_project_history_commits(
     repo_path: &Path,
     limit: usize,
@@ -3851,6 +3910,33 @@ mod tests {
             }]
         );
         assert!(explicit.entries.is_empty());
+    }
+
+    #[test]
+    fn empty_svn_history_is_an_empty_history_screen() {
+        if ensure_svnadmin_available().is_err()
+            || Command::new(svn_executable("svnlook"))
+                .arg("--version")
+                .output()
+                .map_or(true, |output| !output.status.success())
+        {
+            return;
+        }
+        let data_dir = tempdir().expect("svn history tempdir");
+        let repo_path = data_dir.path().join("empty.svn");
+        create_svn_repository(&repo_path).expect("create empty svn repository");
+
+        let history =
+            read_svn_code_history(&repo_path, None, "", 0).expect("read empty svn history");
+        assert!(!history.no_head);
+        assert_eq!(history.selected_branch, "");
+        assert_eq!(
+            history.branches,
+            vec![CodeBranchRecord {
+                name: "HEAD".into()
+            }]
+        );
+        assert!(history.commits.is_empty());
     }
 
     #[test]

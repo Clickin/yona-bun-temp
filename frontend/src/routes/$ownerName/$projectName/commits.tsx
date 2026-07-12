@@ -130,7 +130,11 @@ function ProjectCodeHistoryScreen({
       <ProjectCodeHistoryTitle />
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-      <ProjectCodeHistoryBody history={historyQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectCodeHistoryBody
+        history={historyQuery.data}
+        project={project}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
@@ -144,14 +148,17 @@ function ProjectCodeHistoryTitle() {
 
 function ProjectCodeHistoryBody({
   history,
+  project,
   runtimeConfig,
 }: {
   history: CodeHistoryResponse;
+  project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
   const { ownerName, projectName } = Route.useParams();
+  const isGit = project.vcs === "GIT";
   const selectedBranch = history.selectedBranch;
   const selectedBranchHref = selectedBranch
     ? projectHref(
@@ -181,13 +188,13 @@ function ProjectCodeHistoryBody({
               {history.branches.map((item) => (
                 <option
                   key={item.name}
-                  value={projectHref(
+                  value={`${projectHref(
                     runtimeConfig.basePath,
                     ownerName,
                     projectName,
                     "commits",
                     encodeBranch(item.name),
-                  )}
+                  )}/`}
                 >
                   {item.name}
                 </option>
@@ -216,16 +223,18 @@ function ProjectCodeHistoryBody({
                   {t("code.commits")}
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/$ownerName/$projectName/branches"
-                  params={{ ownerName, projectName }}
-                  activeOptions={legacyCodeHistoryLinkActiveOptions}
-                  activeProps={legacyCodeHistoryLinkActiveProps}
-                >
-                  {t("title.branches")}
-                </Link>
-              </li>
+              {isGit ? (
+                <li>
+                  <Link
+                    to="/$ownerName/$projectName/branches"
+                    params={{ ownerName, projectName }}
+                    activeOptions={legacyCodeHistoryLinkActiveOptions}
+                    activeProps={legacyCodeHistoryLinkActiveProps}
+                  >
+                    {t("title.branches")}
+                  </Link>
+                </li>
+              ) : null}
             </ul>
 
             <div id="history" className="commit-wrap">
@@ -239,7 +248,7 @@ function ProjectCodeHistoryBody({
                       <strong>{t("code.commitMsg")}</strong>
                     </td>
                     <td className="date">
-                      <strong>{t("code.authorDate")}</strong>
+                      <strong>{t(isGit ? "code.authorDate" : "code.commitDate")}</strong>
                     </td>
                     <td className="author">
                       <strong>{t("code.author")}</strong>

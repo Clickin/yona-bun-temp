@@ -1387,13 +1387,15 @@ async fn rest_read_code_history(
         };
     }
 
-    let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
-    let mut snapshot = yoram_vcs::read_code_history(
-        &repo_path,
-        Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
-        &query.path,
-        query.page,
-    )
+    let branch = Some(query.branch.as_str()).filter(|value| !value.trim().is_empty());
+    let mut snapshot = if authorization.project.vcs == "Subversion" {
+        let repo_path =
+            yoram_vcs::svn_repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_svn_code_history(&repo_path, branch, &query.path, query.page)
+    } else {
+        let repo_path = yoram_vcs::repository_path(&service.data_root, authorization.project.id);
+        yoram_vcs::read_code_history(&repo_path, branch, &query.path, query.page)
+    }
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
     let commit_ids = snapshot
