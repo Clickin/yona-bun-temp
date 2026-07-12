@@ -41,7 +41,9 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits")({
           ownerName: params.ownerName,
           projectName: params.projectName,
         },
+        hash: location.hash,
         replace: true,
+        search: {},
         statusCode: 303,
         to: "/$ownerName/$projectName/commits",
       });
@@ -160,6 +162,11 @@ function ProjectCodeHistoryBody({
   const { ownerName, projectName } = Route.useParams();
   const isGit = project.vcs === "GIT";
   const selectedBranch = history.selectedBranch;
+  const displayedBranch =
+    history.branches.find((item) => item.name === selectedBranch)?.name ??
+    history.branches[0]?.name ??
+    selectedBranch;
+  const [branchMenuOpen, setBranchMenuOpen] = useState(false);
   const selectedBranchHref = selectedBranch
     ? projectHref(
         runtimeConfig.basePath,
@@ -175,11 +182,92 @@ function ProjectCodeHistoryBody({
       <div className="project-page-wrap">
         <div className="bubble-wrap dark-gray repo-wrap">
           <div className="code-browse-wrap">
+            <div
+              className={`select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+              style={{ width: 220 }}
+            >
+              <button
+                type="button"
+                className="select2-choice"
+                style={{
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                  fontWeight: "inherit",
+                  textAlign: "left",
+                  width: "100%",
+                }}
+                aria-expanded={branchMenuOpen}
+                onClick={() => setBranchMenuOpen((open) => !open)}
+              >
+                <span className="select2-chosen">
+                  {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                  {isGit ? " " : null}
+                  {displayedBranch}
+                </span>
+                <span className="select2-arrow" aria-hidden="true">
+                  <b></b>
+                </span>
+              </button>
+              <input
+                className="select2-focusser select2-offscreen"
+                type="text"
+                disabled={branchMenuOpen}
+                aria-label={t("title.branches")}
+              />
+              <div
+                className={`select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
+                style={branchMenuOpen ? { display: "block", width: 220 } : undefined}
+              >
+                <div className="select2-search">
+                  <input
+                    type="text"
+                    className={`select2-input${branchMenuOpen ? " select2-focused" : ""}`}
+                    aria-label={t("title.branches")}
+                  />
+                </div>
+                <ul className="select2-results">
+                  {history.branches.map((item) => (
+                    <li
+                      key={item.name}
+                      className={`select2-results-dept-0 select2-result select2-result-selectable${item.name === displayedBranch ? " select2-selected" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="select2-result-label"
+                        style={{
+                          fontFamily: "inherit",
+                          fontSize: "inherit",
+                          fontWeight: "inherit",
+                          textAlign: "left",
+                          width: "100%",
+                        }}
+                        onClick={() => {
+                          setBranchMenuOpen(false);
+                          router.history.push(
+                            `${projectHref(
+                              runtimeConfig.basePath,
+                              ownerName,
+                              projectName,
+                              "commits",
+                              encodeBranch(item.name),
+                            )}/`,
+                          );
+                        }}
+                      >
+                        {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                        {isGit ? " " : null}
+                        {item.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
             <select
               id="branches"
               data-format="branch"
               data-dropdown-css-class="branches"
-              className="pull-right"
+              className="pull-right select2-offscreen"
               defaultValue={selectedBranchHref}
               onChange={(event) => {
                 router.history.push(event.currentTarget.value);
