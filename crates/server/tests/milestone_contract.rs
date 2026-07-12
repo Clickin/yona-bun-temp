@@ -498,6 +498,112 @@ async fn milestone_rpc_validates_due_date_and_project_permissions() {
 }
 
 #[tokio::test]
+async fn milestone_read_preserves_the_legacy_global_id_projection() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_public_project(app.clone(), &cookie, &csrf).await;
+
+    let created = response_json(
+        rpc(
+            app.clone(),
+            "CreateProjectMilestone",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Global legacy milestone",
+                "dueDate": "2026-07-31",
+                "state": "open"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let milestone_id = created["milestone"]["id"].as_i64().unwrap();
+
+    let second_project = rpc(
+        app.clone(),
+        "CreateProject",
+        Some(&cookie),
+        Some(&csrf),
+        json!({
+            "ownerName": "owner",
+            "projectName": "secondProject",
+            "overview": "legacy milestone route context",
+            "projectScope": "public"
+        }),
+    )
+    .await;
+    assert_eq!(second_project.status(), StatusCode::OK);
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Source project issue",
+                "bodyMarkdown": "legacy global milestone projection",
+                "dueDate": "2026-07-24",
+                "milestoneId": milestone_id
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let projected = response_json(
+        rpc(
+            app,
+            "ReadProjectMilestone",
+            Some(&cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "secondProject",
+                "milestoneId": milestone_id
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(projected["milestone"]["title"], "Global legacy milestone");
+    assert_eq!(projected["milestone"]["openIssueCount"], 0);
+    assert_eq!(projected["milestone"]["closedIssueCount"], 0);
+    assert_eq!(
+        projected["milestone"]["openIssues"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        projected["milestone"]["openIssues"][0]["title"],
+        "Source project issue"
+    );
+    assert_eq!(
+        projected["milestone"]["openIssues"][0]["authorLoginId"],
+        "owner"
+    );
+    assert_eq!(
+        projected["milestone"]["openIssues"][0]["authorLabel"],
+        "owner"
+    );
+    assert_eq!(
+        projected["milestone"]["openIssues"][0]["dueDateLabel"],
+        "2026-07-24"
+    );
+    assert!(!projected["milestone"]["openIssues"][0]["dueDateText"]
+        .as_str()
+        .unwrap()
+        .is_empty());
+}
+
+#[tokio::test]
 async fn milestone_legacy_mutation_routes_preserve_redirects() {
     // Guards projects/milestones.rs direct and legacy external milestone routes
     // through the service-snapshot project update guard.

@@ -326,6 +326,7 @@ pub struct ProjectIssueListItemRecord {
     pub milestone_title: String,
     pub due_date_label: String,
     pub due_date_overdue: bool,
+    pub due_date_text: String,
     pub voter_count: u32,
     pub watcher_count: u32,
     pub weight: i16,

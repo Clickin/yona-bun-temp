@@ -52,13 +52,40 @@ impl AppRepositoryImpl<'_> {
         project_name: &str,
         milestone_id: i64,
     ) -> Result<Option<IssueMilestoneRecord>, DbErr> {
-        let Some((project, row)) = self
-            .read_project_milestone_model(owner_name, project_name, milestone_id)
+        let Some(requested_project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
             .await?
         else {
             return Ok(None);
         };
-        self.issue_milestone_record(row, &project).await.map(Some)
+        let Some(row) = milestone::Entity::find_by_id(milestone_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_id) = row.project_id else {
+            return Ok(None);
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        let mut record = self.issue_milestone_record(row, &project).await?;
+        if requested_project.id != project.id {
+            record.open_issue_count = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(requested_project.id)))
+                .filter(issue::Column::MilestoneId.eq(Some(milestone_id)))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+                .count(&self.db)
+                .await? as u32;
+            record.closed_issue_count = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(requested_project.id)))
+                .filter(issue::Column::MilestoneId.eq(Some(milestone_id)))
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+                .count(&self.db)
+                .await? as u32;
+        }
+        Ok(Some(record))
     }
 
     pub async fn project_milestone_title_exists(

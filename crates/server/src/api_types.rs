@@ -571,6 +571,8 @@ pub struct ProjectDetail {
 #[serde(rename_all = "camelCase")]
 pub struct ProjectIssueListItem {
     #[serde(default)]
+    pub id: i64,
+    #[serde(default)]
     pub issue_number: i64,
     #[serde(default)]
     pub title: String,
@@ -579,15 +581,33 @@ pub struct ProjectIssueListItem {
     #[serde(default)]
     pub author_label: String,
     #[serde(default)]
+    pub author_login_id: String,
+    #[serde(default)]
+    pub author_avatar_url: String,
+    #[serde(default)]
+    pub created_label: String,
+    #[serde(default)]
+    pub created_title: String,
+    #[serde(default)]
     pub updated_label: String,
     #[serde(default)]
     pub comment_count: u32,
     #[serde(default)]
     pub assignee_label: String,
     #[serde(default)]
+    pub assignee_login_id: String,
+    #[serde(default)]
+    pub assignee_avatar_url: String,
+    #[serde(default)]
     pub milestone_id: i64,
     #[serde(default)]
     pub milestone_title: String,
+    #[serde(default)]
+    pub due_date_label: String,
+    #[serde(default)]
+    pub due_date_overdue: bool,
+    #[serde(default)]
+    pub due_date_text: String,
     #[serde(default)]
     pub voter_count: u32,
     #[serde(default)]
@@ -598,6 +618,8 @@ pub struct ProjectIssueListItem {
     pub owner_name: String,
     #[serde(default)]
     pub project_name: String,
+    #[serde(default)]
+    pub weight: i16,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]

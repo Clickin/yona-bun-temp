@@ -4,6 +4,7 @@ import type { HTMLAttributes } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type {
@@ -39,6 +40,7 @@ const LEGACY_MILESTONE_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
+type LegacyTranslate = ReturnType<typeof useLegacyMessages>["t"];
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId")({
   component: ProjectMilestoneDetailRoute,
@@ -251,18 +253,11 @@ function MilestoneDetailAssets({
 }) {
   const projectPath = `/${ownerName}/${projectName}`;
   return (
-    <>
-      <link
-        rel="stylesheet"
-        type="text/css"
-        href={prefixBasePath(basePath, "/assets/javascripts/lib/highlight/styles/default.css")}
-      />
-      <link
-        rel="stylesheet"
-        type="text/css"
-        href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
-      />
-    </>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href={prefixBasePath(basePath, `${projectPath}/issue/labels.css`)}
+    />
   );
 }
 
@@ -292,6 +287,8 @@ function ProjectMilestoneDetailBody({
   const openIssues = milestone.openIssues ?? [];
   const closedIssues = milestone.closedIssues ?? [];
   const allIssues = [...openIssues, ...closedIssues];
+  const openIssueCount = numberField(milestone.openIssueCount);
+  const closedIssueCount = numberField(milestone.closedIssueCount);
   const visibleIssues =
     search.state === "closed" ? closedIssues : search.state === "all" ? allIssues : openIssues;
   const [checkedIssueIds, setCheckedIssueIds] = useState<string[]>([]);
@@ -348,7 +345,7 @@ function ProjectMilestoneDetailBody({
               className="title"
             >
               {stringField(milestone.title)}
-            </Link>
+            </Link>{" "}
             <small className="ml10">
               {stringField(milestone.dueDateLabel) ? (
                 <>
@@ -356,7 +353,9 @@ function ProjectMilestoneDetailBody({
                     {t("label.dueDate")} <strong>{stringField(milestone.dueDateLabel)}</strong>
                   </span>
                   {!isClosed ? (
-                    <span className="date">({stringField(milestone.untilLabel)})</span>
+                    <span className="date">
+                      ({localizedMilestoneUntilLabel(stringField(milestone.untilLabel), t)})
+                    </span>
                   ) : null}
                 </>
               ) : null}
@@ -452,10 +451,10 @@ function ProjectMilestoneDetailBody({
                     {t(`issue.state.${state}`)}
                     <span className="num-badge">
                       {state === "open"
-                        ? openIssues.length
+                        ? openIssueCount
                         : state === "closed"
-                          ? closedIssues.length
-                          : allIssues.length}
+                          ? closedIssueCount
+                          : openIssueCount + closedIssueCount}
                     </span>
                   </Link>
                 </li>
@@ -614,13 +613,9 @@ function MassUpdateShell({
   const allChecked = issueIds.length > 0 && effectiveCheckedIssueIds.length === issueIds.length;
   const hasCheckedIssues = effectiveCheckedIssueIds.length > 0;
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), allIssues);
+  const labels = projectIssueLabelOptions(recordArray(milestone.projectLabels), []);
   const openMilestones = projectMilestoneOptions(
-    recordArray(milestone.openMilestones).length
-      ? (recordArray(milestone.openMilestones) as ProjectMilestone[])
-      : stringField(milestone.state) === "open"
-        ? [milestone]
-        : [],
+    recordArray(milestone.openMilestones) as ProjectMilestone[],
   );
   const users = projectAssignableUserOptions(
     recordArray(milestone.assignableUsers),
@@ -1055,6 +1050,8 @@ function MilestoneIssueRow({
   const authorLabel = stringField(issue.authorLabel);
   const assigneeLoginId = stringField(issue.assigneeLoginId);
   const createdLabel = stringField(issue.createdLabel, stringField(issue.updatedLabel));
+  const createdTitle = stringField(issue.createdTitle, createdLabel);
+  const createdDisplayLabel = localizedIssueCreatedLabel(createdLabel, t);
   const issueWeight = numberField(issue.weight);
   const titleParts = splitHeaderWordsInBrackets(title);
   const normalizedFilter = filter.toLowerCase().trim();
@@ -1156,8 +1153,8 @@ function MilestoneIssueRow({
             ) : (
               <span className="infos-item">{t("issue.noAuthor")}</span>
             )}
-            <span className="infos-item" title={createdLabel}>
-              {createdLabel}
+            <span className="infos-item" title={createdTitle}>
+              {createdDisplayLabel}
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {stringField(issue.milestoneId) ? (
@@ -1262,7 +1259,7 @@ function MilestoneIssueRow({
               <img
                 src={mountedAppLocalUrl(
                   runtimeConfig.basePath,
-                  stringField(issue.assigneeAvatarUrl, "/assets/images/default-avatar-32.png"),
+                  normalizedAvatarUrl(issue.assigneeAvatarUrl),
                 )}
                 width="32"
                 height="32"
@@ -1289,7 +1286,10 @@ function MilestoneIssueRow({
               {state === "open" && booleanField(issue.dueDateOverdue)
                 ? t("issue.dueDate.overdue")
                 : state === "open"
-                  ? stringField(issue.dueDateText, stringField(issue.dueDateLabel))
+                  ? localizedIssueDueDateText(
+                      stringField(issue.dueDateText, stringField(issue.dueDateLabel)),
+                      t,
+                    )
                   : stringField(issue.dueDateLabel)}
             </span>
           </div>
@@ -1717,7 +1717,7 @@ function addUser(
 ) {
   if (user.id && user.loginId && !users.has(user.id)) {
     users.set(user.id, {
-      avatarUrl: user.avatarUrl || "/assets/images/default-avatar-32.png",
+      avatarUrl: user.avatarUrl || defaultAvatarUrl,
       id: user.id,
       label: user.label || user.loginId,
       loginId: user.loginId,
@@ -1727,7 +1727,36 @@ function addUser(
 
 function normalizedAvatarUrl(value: unknown) {
   const avatarUrl = stringField(value).trim();
-  return avatarUrl || "/assets/images/default-avatar-32.png";
+  return avatarUrl || defaultAvatarUrl;
+}
+
+function localizedMilestoneUntilLabel(value: string, t: LegacyTranslate) {
+  const match = /^(\d+)\s+days?\s+(left|past)$/iu.exec(value.trim());
+  if (!match) {
+    return value;
+  }
+  return t(match[2]?.toLowerCase() === "past" ? "common.time.overday" : "common.time.leftday", {
+    args: [match[1] ?? "0"],
+  });
+}
+
+function localizedIssueCreatedLabel(value: string, t: LegacyTranslate, now = Date.now()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
+    return value;
+  }
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp) || timestamp > now) {
+    return value;
+  }
+  const elapsedDays = Math.floor((now - timestamp) / (24 * 60 * 60 * 1000));
+  return elapsedDays === 0
+    ? t("common.time.today")
+    : t(elapsedDays === 1 ? "common.time.day" : "common.time.days", { args: [elapsedDays] });
+}
+
+function localizedIssueDueDateText(value: string, t: LegacyTranslate) {
+  const match = /^(\d+)\s+days?$/iu.exec(value.trim());
+  return match ? t("common.time.default.day", { args: [match[1] ?? "0"] }) : value;
 }
 
 function mountedAppLocalUrl(basePath: string, url: string) {

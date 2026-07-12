@@ -4230,11 +4230,6 @@ h1 {
   text-align: center;
 }
 
-.milesion-wrap #issues .filter-wrap {
-  height: auto;
-  min-height: 30px;
-}
-
 .error-wrap {
   padding: 100px 0;
   text-align: center;
@@ -4589,12 +4584,6 @@ h1 {
 .ybtn.danger {
   color: #b13427;
   border-color: #d98c82;
-}
-
-.post-list-wrap,
-.notice-wrap,
-.board-comment-wrap {
-  margin-top: 18px;
 }
 
 .post-list-wrap {
