@@ -10,6 +10,7 @@ import {
   type PullRequestFormSelected,
 } from "../../../api/pull-requests";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
+import { RestApiError } from "../../../api/rest-client";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
@@ -99,6 +100,7 @@ function ProjectNewPullRequestScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
   const search = Route.useSearch();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const legacySearch = legacyUrlSearch(locationHref);
@@ -117,6 +119,19 @@ function ProjectNewPullRequestScreen({
     return null;
   }
 
+  if (formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 400) {
+    return (
+      <>
+        <title>{`${t("error.pullRequest.empty.from.repository")} - ${ownerName}/${projectName}`}</title>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+        <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+        <ProjectPullRequestCreateBadRequest
+          message={t("error.pullRequest.empty.from.repository")}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
@@ -128,6 +143,19 @@ function ProjectNewPullRequestScreen({
         />
       ) : null}
     </>
+  );
+}
+
+function ProjectPullRequestCreateBadRequest({ message }: { message: string }) {
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2" />
+          <p>{message}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

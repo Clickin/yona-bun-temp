@@ -131,6 +131,51 @@ test("SVN pull request create route renders the legacy Git-only bad request", as
   });
 });
 
+test("Alice empty pull-request source renders the legacy project-layout bad request", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectPullRequestCreateForm(page, [], {
+    formOptionsStatus: 400,
+    project: {
+      forkProjectName: "sample",
+      forkProjectOwnerName: "admin",
+      ownerName: "alice",
+      projectId: 3,
+      projectName: "sample",
+      vcs: "GIT",
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/alice/sample/newPullRequestForm`);
+  await expect(page).toHaveTitle("코드를 보내는 프로젝트의 저장소가 없습니다. - alice/sample");
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".content-wrap.frm-wrap")).toHaveCount(0);
+  await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > i.ico.ico-err2")).toHaveCount(1);
+  await expect(page.locator(".error-wrap > p")).toHaveText(
+    "코드를 보내는 프로젝트의 저장소가 없습니다.",
+  );
+  const desktop = await pullRequestCreateErrorGeometry(page);
+  expect(desktop.documentWidth).toBe(1366);
+  expect(desktop.error.left).toBeGreaterThanOrEqual(desktop.projectPage.left);
+  expect(desktop.error.right).toBeLessThanOrEqual(desktop.projectPage.right);
+  expect(desktop.projectPage.top).toBeGreaterThanOrEqual(desktop.projectMenu.bottom - 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await pullRequestCreateErrorGeometry(page);
+  expect(mobile.documentWidth).toBe(390);
+  expect(mobile.error.left).toBeGreaterThanOrEqual(mobile.projectPage.left);
+  expect(mobile.error.right).toBeLessThanOrEqual(390);
+  expect(mobile.projectPage.width).toBe(390);
+});
+
 test("project pull request create form resolves legacy defaults without query parameters", async ({
   page,
 }) => {
@@ -1085,11 +1130,39 @@ async function projectShellMetrics(page: Page) {
   });
 }
 
+async function pullRequestCreateErrorGeometry(page: Page) {
+  return page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const projectMenu = required(".project-menu-outer");
+    const projectPage = required(".project-page-wrap");
+    const error = required(".error-wrap");
+    return {
+      documentWidth: document.documentElement.scrollWidth,
+      error: {
+        left: Math.round(error.left),
+        right: Math.round(error.right),
+      },
+      projectMenu: { bottom: Math.round(projectMenu.bottom) },
+      projectPage: {
+        left: Math.round(projectPage.left),
+        right: Math.round(projectPage.right),
+        top: Math.round(projectPage.top),
+        width: Math.round(projectPage.width),
+      },
+    };
+  });
+}
+
 async function mockProjectPullRequestCreateForm(
   page: Page,
   postRequests: unknown[],
   options: {
     authorDateLabel?: string;
+    formOptionsStatus?: number;
     formOptionRequests?: string[];
     mergeMode?: "conflict" | "empty" | "normal";
     mergeResultRequests?: string[];
@@ -1158,6 +1231,14 @@ async function mockProjectPullRequestCreateForm(
   await page.route(formOptionsPath, async (route) => {
     const url = new URL(route.request().url());
     options.formOptionRequests?.push(url.toString());
+    if (options.formOptionsStatus) {
+      await route.fulfill({
+        body: JSON.stringify({ message: "source repository is empty" }),
+        contentType: "application/json",
+        status: options.formOptionsStatus,
+      });
+      return;
+    }
     const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
     const fromProjectId = Number(url.searchParams.get("fromProjectId")) || project.projectId;
     const toProjectId = Number(url.searchParams.get("toProjectId")) || project.projectId;
