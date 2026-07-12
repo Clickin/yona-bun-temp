@@ -262,6 +262,31 @@ test("anonymous login form matches legacy user/login.scala.html screen DOM", asy
   );
 });
 
+test("authenticated login form request redirects to the legacy root without rendering login DOM", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {});
+  await mockAuthenticatedSession(page);
+
+  await page.goto(`${basePath}/users/loginform?redirectUrl=%2Fme`);
+
+  await expect(page).toHaveURL(`${basePath}/`);
+  await expect(page.locator(".page.full .login-form-wrap")).toHaveCount(0);
+});
+
+test("anonymous login form still renders after its session check", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {});
+  await mockAnonymousSession(page);
+
+  await page.goto(`${basePath}/users/loginform?redirectUrl=%2Fme`);
+
+  await expect(page).toHaveURL(`${basePath}/users/loginform?redirectUrl=%2Fme`);
+  await expect(page.locator(".page.full .login-form-wrap form")).toBeVisible();
+  await expect(page.locator("#loginIdOrEmailD")).toBeVisible();
+});
+
 test("anonymous login form renders legacy browser title without imperative mutation", () => {
   const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
 
@@ -1017,6 +1042,25 @@ async function mockAnonymousSession(page: Page) {
         isSiteAdmin: false,
         loginId: "",
         userLabel: "",
+      },
+    });
+  });
+}
+
+async function mockAuthenticatedSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        actorId: 1,
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+        userLabel: "Site Admin",
       },
     });
   });
