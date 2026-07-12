@@ -295,7 +295,6 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         )}
         type="text/css"
       />
-      <IssueListAssets basePath={runtimeConfig.basePath} />
       <ProjectIssuesBody
         assignableUsers={assignableUsersQuery.data.items}
         currentUserId={stringField(sessionQuery.data.actorId, "0")}
@@ -330,25 +329,6 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
     return organizationName;
   }
   return booleanField(project.isProtected) ? ownerName : undefined;
-}
-
-function IssueListAssets({ basePath }: { basePath: string }) {
-  return (
-    <>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/moment-with-langs.min.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/lib/pikaday/pikaday.js")}
-      ></script>
-      <script
-        defer
-        src={prefixBasePath(basePath, "/assets/javascripts/common/yobi.ui.Calendar.js")}
-      ></script>
-    </>
-  );
 }
 
 function ProjectIssuesBody({
