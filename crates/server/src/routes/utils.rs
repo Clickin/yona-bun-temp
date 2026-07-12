@@ -1633,19 +1633,20 @@ pub(crate) async fn build_project_container_response(
         .iter()
         .map(project_member_summary_from_record)
         .collect();
-    let viewer_can_leave = actor_id
-        .and_then(|user_id| {
-            project_directory
-                .members
-                .iter()
-                .find(|member| member.user_id == user_id)
-        })
-        .map(|member| {
-            authorization.project.organization_id.is_some()
-                || normalize_identifier(&authorization.project.owner_name)
-                    != normalize_identifier(&member.login_id)
-        })
-        .unwrap_or(false);
+    let viewer_can_leave = authorization.viewer.is_site_admin
+        || actor_id
+            .and_then(|user_id| {
+                project_directory
+                    .members
+                    .iter()
+                    .find(|member| member.user_id == user_id)
+            })
+            .map(|member| {
+                authorization.project.organization_id.is_some()
+                    || normalize_identifier(&authorization.project.owner_name)
+                        != normalize_identifier(&member.login_id)
+            })
+            .unwrap_or(false);
     let current_milestone = if show_milestone {
         repository
             .read_current_milestone_for_project(authorization.project.id)

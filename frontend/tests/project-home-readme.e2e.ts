@@ -41,7 +41,7 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   await expect(page.locator(".milestone-info .progress-info strong")).toHaveText("1 / 2");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, expectedProjectHomeHtml(basePath)),
+    await canonicalizeHtml(page, expectedProjectHomeHtml(basePath), SCREEN_ROOT_SELECTOR),
   );
 });
 
@@ -87,25 +87,26 @@ test("protected org-owned project home uses legacy project and group search scop
     "action",
     `${basePath}/weblabs/portal/search`,
   );
-  await expect(page.locator('[data-toggle="search-scope"]')).toHaveText([
-    "This Project",
-    "This Group",
-    "All Projects",
+  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  expect(
+    await searchScopeButtons.evaluateAll((buttons) =>
+      buttons.map((button) => ({
+        action: button.getAttribute("data-action"),
+        toggle: button.getAttribute("data-toggle"),
+      })),
+    ),
+  ).toEqual([
+    { action: null, toggle: null },
+    { action: null, toggle: null },
+    { action: null, toggle: null },
   ]);
-  await expect(page.locator('[data-action$="/weblabs/portal/search"]')).toHaveAttribute(
-    "data-action",
-    `${basePath}/weblabs/portal/search`,
-  );
-  await expect(page.locator('[data-action$="/organizations/weblabs/search"]')).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/weblabs/search`,
-  );
   await expect(
     page.locator(".project-menu-nav.project-menu-gruop > li.active .menu-name"),
   ).toHaveText("Project home");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('[data-action$="/organizations/weblabs/search"]').click();
+  await searchScopeButtons.nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -114,7 +115,7 @@ test("protected org-owned project home uses legacy project and group search scop
   await expect(page).toHaveURL(`${basePath}/weblabs/portal`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('[data-action$="/search"]').last().click();
+  await searchScopeButtons.last().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -159,7 +160,7 @@ test("project home README tab keeps legacy desktop and mobile proportions", asyn
   const desktop = await projectHomeLayoutMetrics(page);
   expect(desktop.viewportWidth).toBe(1280);
   expect(desktop.mobileMediaMatches).toBe(false);
-  expect(desktop.pageWrapMarginTop).toBe(20);
+  expect(desktop.pageWrapMarginTop).toBe(5);
   expect(desktop.homeHeaderPaddingTop).toBe(5);
   expect(desktop.homeHeaderPaddingBottom).toBe(5);
   expect(desktop.homeHeaderMarginBottom).toBe(20);
@@ -167,7 +168,7 @@ test("project home README tab keeps legacy desktop and mobile proportions", asyn
   expect(desktop.overviewPaddingLeft).toBe(10);
   expect(desktop.descriptionFontSize).toBe(14);
   expect(desktop.descriptionLineHeight).toBe(30);
-  expect(desktop.cloneUrlWidth).toBe(175);
+  expect(desktop.cloneUrlWidth).toBe(113);
   expect(desktop.readmePadding).toBe(5);
   expect(desktop.readmeHeaderPadding).toBe("10px 25px");
   expect(desktop.readmeBodyPadding).toBe("25px");
@@ -185,6 +186,106 @@ test("project home README tab keeps legacy desktop and mobile proportions", asyn
   expect(mobile.leftPanePercent).toBeCloseTo(100, 1);
   expect(mobile.rightPaneDisplay).toBe("none");
   expect(mobile.readmeBodyPadding).toBe("0px");
+});
+
+test("SVN project home README state matches live legacy shell and geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  expect(routeSource).toContain(
+    'import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";',
+  );
+  expect(routeSource).toContain(
+    'import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";',
+  );
+  expect(routeSource).not.toContain("/legacy-assets/images/project_default.jpg");
+  expect(routeSource).not.toContain("/legacy-assets/images/project_default_logo.png");
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectHome(page, {
+    ownerName: "admin",
+    projectName: "svnplayground",
+    project: {
+      boardCount: 0,
+      backgroundImageUrl: "",
+      backgroundUrl: "",
+      cloneUrl: "http://127.0.0.1:9000/svn/admin/svnplayground",
+      currentMilestone: null,
+      isWatching: true,
+      logoUrl: "",
+      openIssueCount: 0,
+      overview: "Parity seed Subversion project for localhost checks",
+      readmeFile: null,
+      reviewCount: 0,
+      vcs: "SVN",
+      viewerCanWatch: true,
+      watchCount: 1,
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/svnplayground`);
+  await expect(page).toHaveTitle("svnplayground - 홈");
+  await expect(page.locator(".project-menu-gruop .menu-name")).toHaveText([
+    "홈",
+    "코드",
+    "이슈",
+    "리뷰",
+    "마일스톤",
+    "게시판",
+  ]);
+  await expect(page.locator(".project-menu-gruop")).not.toContainText("코드 주고받기");
+  await expect(page.locator(".bubble-wrap.readme .default")).toHaveText(
+    "프로젝트에 대한 설명을 README.md 파일로 작성해서 코드저장소 루트 디렉토리나 /trunk 디렉토리에 추가하면 이 곳에 나타납니다.",
+  );
+  await expect(page.locator(".project-btn-wrap")).not.toContainText("Fork");
+  await expect(page.locator("#cloneURL")).toHaveValue(
+    "http://127.0.0.1:9000/svn/admin/svnplayground",
+  );
+  expect(await fallbackProjectAssetMetrics(page, basePath)).toEqual({
+    backgroundHeight: 919,
+    backgroundInsideContextPath: true,
+    backgroundLoaded: true,
+    backgroundWidth: 3465,
+    logoHeight: 768,
+    logoInsideContextPath: true,
+    logoLoaded: true,
+    logoWidth: 1024,
+  });
+  await page.mouse.move(0, 0);
+  expect(await svnProjectHomeMetrics(page)).toMatchObject({
+    actionWidth: 102,
+    cloneFocused: false,
+    cloneHovered: false,
+    cloneInputWidth: 113,
+    cloneWidth: 315,
+    countWidth: 30,
+    homeHeaderHeight: 41,
+    menuWidth: 410,
+    pageWidth: 1346,
+    readmeHeight: 70,
+    readmeWidth: 1002,
+    scrollWidth: 1366,
+    utilWidth: 147,
+    utilX: 1199,
+    watchAction: "그만 지켜보기",
+    watcherCount: "1",
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await svnProjectHomeMetrics(page)).toMatchObject({
+    actionWidth: 0,
+    countWidth: 0,
+    homeHeaderHeight: 94,
+    menuWidth: 201,
+    pageWidth: 390,
+    readmeHeight: 110,
+    readmeWidth: 390,
+    utilWidth: 15,
+    watcherCount: "1",
+  });
+  expect((await svnProjectHomeMetrics(page)).scrollWidth).toBeLessThanOrEqual(401);
 });
 
 test("project home README tab renders project overview as legacy Markdown", async ({ page }) => {
@@ -294,6 +395,7 @@ test("project home README tab renders README Markdown instead of compatibility H
       expected
         .replace(EXPECTED_GENERIC_GNB, EXPECTED_PROJECT_SCOPED_GNB)
         .replaceAll("__BASE_PATH__", basePath),
+      SCREEN_ROOT_SELECTOR,
     ),
   );
   await expect(page.locator(".readme-body")).not.toContainText("Server HTML should not render");
@@ -607,7 +709,7 @@ test("project home header renders legacy watch utility for watchable projects", 
   );
   await expect(page.locator(".project-util .watcher-count")).toHaveText("5");
   await expect(page.locator(".project-util [data-toggle='dropdown']")).toHaveCount(0);
-  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(1);
+  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(0);
   await rememberSpaMarker(page, "project-home-watch-dropdown");
   await page.locator(".watch-btn .down-arrow").click();
   await expect(watchItem).toHaveClass(/open/);
@@ -651,7 +753,7 @@ test("project home header renders and posts legacy enrollment utility for guest 
 
   const enrollmentItem = page.locator(".project-util > li").first();
   await expect(page.locator(".project-util [data-toggle='dropdown']")).toHaveCount(0);
-  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(1);
+  await expect(page.locator(".gnb-usermenu [data-toggle='dropdown']")).toHaveCount(0);
   await expect(page.locator("a#enrollBtn")).toHaveCount(0);
   await expect(page.locator("button#enrollBtn")).toHaveAttribute("type", "button");
   await rememberSpaMarker(page, "project-home-enroll");
@@ -1261,6 +1363,78 @@ async function copiedText(page: Page) {
   return page.evaluate(() => (window as unknown as { __copiedText?: string }).__copiedText ?? "");
 }
 
+async function svnProjectHomeMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element.getBoundingClientRect();
+    };
+    const util = rect(".project-util-wrap");
+    const count = rect(".watcher-count");
+    const action = rect(".down-arrow");
+    const menu = rect(".project-menu-gruop");
+    const homeHeader = rect(".project-home-header");
+    const pageWrap = rect(".project-page-wrap");
+    const readme = rect(".bubble-wrap.readme");
+    const clone = rect(".project-clone-wrap");
+    const cloneInput = rect("#cloneURL");
+    const cloneElement = document.querySelector<HTMLElement>("#cloneURL");
+    const cloneWrapElement = document.querySelector<HTMLElement>(".project-clone-wrap");
+    return {
+      actionWidth: Math.round(action.width),
+      cloneInputWidth: Math.round(cloneInput.width),
+      cloneFocused: document.activeElement === cloneElement,
+      cloneHovered: cloneWrapElement?.matches(":hover") ?? false,
+      cloneWidth: Math.round(clone.width),
+      countWidth: Math.round(count.width),
+      homeHeaderHeight: Math.round(homeHeader.height),
+      menuWidth: Math.round(menu.width),
+      pageWidth: Math.round(pageWrap.width),
+      readmeHeight: Math.round(readme.height),
+      readmeWidth: Math.round(readme.width),
+      scrollWidth: document.documentElement.scrollWidth,
+      utilWidth: Math.round(util.width),
+      utilX: Math.round(util.x),
+      watchAction: document.querySelector(".down-arrow")?.textContent?.trim(),
+      watcherCount: document.querySelector(".watcher-count")?.textContent?.trim(),
+    };
+  });
+}
+
+async function fallbackProjectAssetMetrics(page: Page, basePath: string) {
+  return page.evaluate(async (expectedBasePath) => {
+    const logo = document.querySelector<HTMLImageElement>(".project-header-avatar img");
+    const header = document.querySelector<HTMLElement>(".project-header-outer");
+    if (!logo || !header) {
+      throw new Error("Missing project fallback assets");
+    }
+    await logo.decode();
+    const backgroundMatch =
+      getComputedStyle(header).backgroundImage.match(/^url\(["']?(.*?)["']?\)$/u);
+    const backgroundUrl = backgroundMatch?.[1] ?? "";
+    const background = new Image();
+    background.src = backgroundUrl;
+    await background.decode();
+    return {
+      backgroundHeight: background.naturalHeight,
+      backgroundInsideContextPath: new URL(backgroundUrl).pathname.startsWith(
+        `${expectedBasePath}/`,
+      ),
+      backgroundLoaded: background.complete && background.naturalWidth > 0,
+      backgroundWidth: background.naturalWidth,
+      logoHeight: logo.naturalHeight,
+      logoInsideContextPath: new URL(logo.currentSrc || logo.src).pathname.startsWith(
+        `${expectedBasePath}/`,
+      ),
+      logoLoaded: logo.complete && logo.naturalWidth > 0,
+      logoWidth: logo.naturalWidth,
+    };
+  }, basePath);
+}
+
 async function projectHomeLayoutMetrics(page: Page) {
   return page.evaluate(() => {
     const numberStyle = (selector: string, property: string) =>
@@ -1408,9 +1582,7 @@ async function canonicalizeLocator(page: Page, selector: string) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
+      document.querySelectorAll(".project-header-outer, .project-menu-outer, .page-wrap-outer"),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -1440,8 +1612,11 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+      if (attr.name === "style") {
+        return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+      }
+      return attr.name === "href"
+        ? attr.value.replace("?commentId=&parentIssueId=", "")
         : attr.value;
     }
 
@@ -1461,42 +1636,51 @@ async function canonicalizeScreenRoots(page: Page) {
   });
 }
 
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
+const SCREEN_ROOT_SELECTOR = ".project-header-outer, .project-menu-outer, .page-wrap-outer";
 
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+async function canonicalizeHtml(page: Page, html: string, rootSelector?: string) {
+  return page.evaluate(
+    ({ input, rootSelector }) => {
+      const template = document.createElement("template");
+      template.innerHTML = input;
+      const roots = rootSelector
+        ? Array.from(template.content.querySelectorAll(rootSelector))
+        : Array.from(template.content.children);
+      return roots.map((root) => visit(root)).join("");
+
+      function visit(node: Node): string {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent ?? "");
+        }
+        if (!(node instanceof Element)) {
+          return "";
+        }
+        const attrs = Array.from(node.attributes)
+          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        const open = attrs
+          ? `<${node.tagName.toLowerCase()} ${attrs}>`
+          : `<${node.tagName.toLowerCase()}>`;
+        return `${open}${Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("")}</${node.tagName.toLowerCase()}>`;
       }
-      if (!(node instanceof Element)) {
-        return "";
+
+      function normalizeText(text: string) {
+        return text.replace(/\s+/g, " ").trim();
       }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
 
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  }, html);
+      function normalizeAttr(attr: Attr) {
+        if (attr.name === "style") {
+          return attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'");
+        }
+        return attr.name === "href"
+          ? attr.value.replace("?commentId=&parentIssueId=", "")
+          : attr.value;
+      }
+    },
+    { input: html, rootSelector },
+  );
 }

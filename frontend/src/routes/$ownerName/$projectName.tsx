@@ -4,6 +4,8 @@ import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
+import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 import {
   cancelEnrollProjectRest,
   deleteProjectMemberRest,
@@ -1294,7 +1296,7 @@ export function ProjectHeader({
   const backgroundImageUrl =
     stringField(recordField(project).backgroundImageUrl, "") ||
     stringField(recordField(project).backgroundUrl, "") ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg");
+    prefixBasePath(basePath, defaultProjectBackgroundUrl);
   const isForked =
     booleanField(recordField(project).isForkedFromOrigin) ||
     booleanField(recordField(project).isForked);
@@ -1854,10 +1856,7 @@ function projectId(project: ProjectContainer) {
 }
 
 function projectLogoUrl(project: ProjectContainer, basePath: string) {
-  return (
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")
-  );
+  return stringField(project.logoUrl, "") || prefixBasePath(basePath, defaultProjectLogoUrl);
 }
 
 function projectFavorited(project: ProjectContainer) {
