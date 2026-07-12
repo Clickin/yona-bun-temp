@@ -228,8 +228,8 @@ const LEGACY_EMOJIS = [
 ] as const;
 
 type IssueFormSearch = {
-  commentId: number | string;
-  parentIssueId: number | string;
+  commentId?: number | string;
+  parentIssueId?: number | string;
 };
 
 type IssueLabelOption = {
@@ -324,18 +324,23 @@ export const Route = createFileRoute("/$ownerName/$projectName/issueform")({
     middlewares: [
       ({ next, search }) => {
         const result = next(search);
+        const { commentId: rawCommentId, parentIssueId: rawParentIssueId, ...rest } = result;
+        const commentId = issueFormSearchId(rawCommentId);
+        const parentIssueId = issueFormSearchId(rawParentIssueId);
         return {
-          ...result,
-          commentId: issueFormSearchId(result.commentId),
-          parentIssueId: issueFormSearchId(result.parentIssueId),
+          ...rest,
+          ...(commentId === "" ? {} : { commentId }),
+          ...(parentIssueId === "" ? {} : { parentIssueId }),
         } as typeof result;
       },
     ],
   },
   validateSearch(search: Record<string, unknown>): IssueFormSearch {
+    const commentId = issueFormSearchId(search.commentId);
+    const parentIssueId = issueFormSearchId(search.parentIssueId);
     return {
-      commentId: issueFormSearchId(search.commentId),
-      parentIssueId: issueFormSearchId(search.parentIssueId),
+      ...(commentId === "" ? {} : { commentId }),
+      ...(parentIssueId === "" ? {} : { parentIssueId }),
     };
   },
 });
