@@ -1,8 +1,9 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
+import { currentSessionQueryOptions } from "../../api/session";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
@@ -54,6 +55,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [submitError, setSubmitError] = React.useState("");
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
     queryKey: apiQueryKeys.auth.capabilities(),
@@ -93,6 +95,14 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       await navigate({ href: destination });
     },
   });
+
+  if (sessionQuery.data?.isAnonymous === false) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (sessionQuery.isPending) {
+    return null;
+  }
 
   return (
     <>
