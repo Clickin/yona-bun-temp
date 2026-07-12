@@ -288,6 +288,53 @@ test("SVN project home README state matches live legacy shell and geometry", asy
   expect((await svnProjectHomeMetrics(page)).scrollWidth).toBeLessThanOrEqual(401);
 });
 
+test("project home ignores generic fork metadata when legacy isForkedFromOrigin is false", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
+  expect(routeSource).toContain(
+    "const isForked = booleanField(recordField(project).isForkedFromOrigin);",
+  );
+  expect(routeSource).not.toContain("booleanField(recordField(project).isForked);");
+  await mockProjectHome(page, {
+    ownerName: "alice",
+    projectName: "sample",
+    project: {
+      isForked: true,
+      isForkedFromOrigin: false,
+      originOwnerName: "admin",
+      originProjectName: "sample",
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/alice/sample`);
+  await expect(page.locator(".project-breadcrumb-wrap")).not.toHaveClass("fork");
+  await expect(page.locator(".project-breadcrumb-wrap .project-origin")).toHaveCount(0);
+  await expect(page.locator(".project-breadcrumb-wrap > .project-breadcrumb")).toHaveCount(1);
+
+  const desktopBox = await page.locator(".project-breadcrumb-wrap").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { height: Math.round(box.height), y: Math.round(box.y), bottom: Math.round(box.bottom) };
+  });
+  expect(desktopBox).toEqual({ height: 34, y: 111, bottom: 145 });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".project-breadcrumb-wrap")).not.toHaveClass("fork");
+  await expect(page.locator(".project-breadcrumb-wrap .project-origin")).toHaveCount(0);
+  const mobileBox = await page.locator(".project-breadcrumb-wrap").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+    };
+  });
+  expect(mobileBox).toMatchObject({ x: 58, height: 36 });
+});
+
 test("project home README tab renders project overview as legacy Markdown", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectHome(page, {
