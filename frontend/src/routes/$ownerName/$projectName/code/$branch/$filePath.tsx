@@ -63,7 +63,6 @@ function ProjectCodeFileRouteShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = routeParams;
-  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -77,20 +76,17 @@ function ProjectCodeFileRouteShell({
   const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
 
   return (
-    <>
-      <title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell
-        projectSearchScope={projectSearchScope}
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
+    >
+      <ProjectCodeFileScreen
+        project={projectQuery.data}
+        routeParams={routeParams}
         runtimeConfig={runtimeConfig}
-        showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
-      >
-        <ProjectCodeFileScreen
-          project={projectQuery.data}
-          routeParams={routeParams}
-          runtimeConfig={runtimeConfig}
-        />
-      </SiteLayoutShell>
-    </>
+      />
+    </SiteLayoutShell>
   );
 }
 
@@ -108,13 +104,30 @@ function ProjectCodeFileScreen({
     codeBrowserQueryOptions(runtimeConfig, { branch, ownerName, path: filePath, projectName }),
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
+  const { t } = useLegacyMessages();
 
-  if (!project || !codeQuery.data || !sessionQuery.data) {
+  if (!project || !sessionQuery.data) {
+    return null;
+  }
+
+  if (codeQuery.isError) {
+    return (
+      <>
+        <title>{`${branch} - ${ownerName}/${projectName}`}</title>
+        <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+        <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+        <ProjectCodeNotFound branch={branch} ownerName={ownerName} projectName={projectName} />
+      </>
+    );
+  }
+
+  if (!codeQuery.data) {
     return null;
   }
 
   return (
     <>
+      <title>{`${t("menu.code")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectCodeFileBody
@@ -126,6 +139,34 @@ function ProjectCodeFileScreen({
         runtimeConfig={runtimeConfig}
       />
     </>
+  );
+}
+
+function ProjectCodeNotFound({
+  branch,
+  ownerName,
+  projectName,
+}: {
+  branch: string;
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.notfound.code", { args: [branch] })}</p>
+          <Link
+            to={projectPath(ownerName, projectName, "settingform")}
+            className="ybtn ybtn-primary"
+          >
+            {t("button.list")}
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
