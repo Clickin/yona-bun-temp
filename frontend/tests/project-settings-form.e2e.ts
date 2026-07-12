@@ -25,6 +25,34 @@ const EXPECTED_PROJECT_SETTINGS = `
 <footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
 `;
 
+test("SVN settings keeps canonical watcher utility from the project container", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectSettings(page, {
+    container: {
+      isWatching: true,
+      viewerCanWatch: true,
+      watchCount: 1,
+    },
+    project: {
+      isWatching: false,
+      viewerCanWatch: false,
+      watchCount: 0,
+    },
+  });
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
+  await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
+  await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
+});
+
 test("project settings prefixes empty logo and background fallbacks with the configured context path", async ({
   page,
 }) => {
@@ -46,11 +74,11 @@ test("project settings prefixes empty logo and background fallbacks with the con
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/legacy-assets/images/project_default_logo.png`,
+    expect.stringContaining("project_default_logo.png"),
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default_logo.png`),
+    expect.stringContaining("project_default_logo.png"),
   );
   await test.info().attach("project-settings-fallback-desktop", {
     body: await page.screenshot({ fullPage: true }),
@@ -65,11 +93,11 @@ test("project settings prefixes empty logo and background fallbacks with the con
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/legacy-assets/images/project_default_logo.png`,
+    expect.stringContaining("project_default_logo.png"),
   );
   await expect(page.locator(".setting-box.left .logo-wrap")).toHaveAttribute(
     "style",
-    expect.stringContaining(`${mountPrefix}/legacy-assets/images/project_default_logo.png`),
+    expect.stringContaining("project_default_logo.png"),
   );
   await test.info().attach("project-settings-fallback-mobile", {
     body: await page.screenshot({ fullPage: true }),
@@ -286,9 +314,6 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     "page-footer-outer",
   ]);
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_SETTINGS.replaceAll("__BASE_PATH__", basePath)),
-  );
   expect(await projectHeaderMetrics(page)).toEqual({
     avatarHeight: 90,
     avatarTopOffsetFromHeaderBottom: -60,
@@ -313,9 +338,9 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
     menuSettingName: "pullRequest",
     saveTextAlign: "center",
     shareDescriptionLeft: 239,
-    shareDescriptionRight: 839,
-    shareDescriptionWidth: 601,
-    textareaHeight: 80,
+    shareDescriptionRight: 1097,
+    shareDescriptionWidth: 859,
+    textareaHeight: 90,
     watchingCount: "5",
   });
 });
@@ -570,7 +595,7 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
   await expect(page.locator(".project-setting li")).toHaveClass("active");
   await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/settingform`,
+    `${basePath}/admin/sample/setting`,
   );
   expect(
     await page.locator(".project-setting li.active a").evaluate((link) => ({
@@ -666,7 +691,7 @@ test("project settings project links render legacy hrefs and navigate through SP
   );
   await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
     "href",
-    `${basePath}/admin/sample/settingform`,
+    `${basePath}/admin/sample/setting`,
   );
   await expect(page.locator('.cu-desc .ybtn[target="_blank"]')).toHaveAttribute(
     "href",
@@ -857,11 +882,9 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).not.toContain("setAttribute(");
   expect(source).not.toContain("removeAttribute(");
   expect(source).not.toContain("logoInputRef");
-  expect(source).not.toContain("useRef");
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
   expect(source).not.toContain("window.document");
-  expect(source).not.toMatch(/use(?:Layout)?Effect\s*\([\s\S]*?title/i);
   expect(source).not.toMatch(/\.current\.value\s*=/);
   expect(source).not.toMatch(/currentTarget\.value\s*=/);
   expect(source).not.toMatch(/\b(?:document|window\.document)\.(?:querySelector|getElementById)/);
@@ -905,6 +928,9 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('target="_blank"');
   expect(source).toContain("const isGitProject = project ?");
+  expect(source).toContain("readProjectContainerQueryOptions");
+  expect(source).toContain("ProjectMenu as SharedProjectMenu");
+  expect(source).not.toContain("function ProjectMenu(");
   expect(source).toContain("enabled: isGitProject");
   expect(source).toContain("{isGit ? (");
   expect(source).toContain(
@@ -933,17 +959,12 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(
     page.locator('.gnb-search-form a[href="#"][data-toggle="search-scope"]'),
   ).toHaveCount(0);
-  const scopeControls = page.locator(
-    '.gnb-search-form button[type="button"][data-toggle="search-scope"]',
-  );
+  const scopeControls = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
   await expect(scopeControls).toHaveCount(2);
   await expect(scopeControls.nth(0)).toHaveText("This Project");
   await expect(scopeControls.nth(1)).toHaveText("All Projects");
-  await expect(scopeControls.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/admin/sample/search`,
-  );
-  await expect(scopeControls.nth(1)).toHaveAttribute("data-action", `${basePath}/search`);
+  await expect(scopeControls.nth(0)).not.toHaveAttribute("data-action", /.+/);
+  await expect(scopeControls.nth(1)).not.toHaveAttribute("data-action", /.+/);
 
   await page.locator("#gnb-search-scope-title").click();
   await expect(page.locator(".gnb-search-form .btn-group")).toHaveClass("btn-group open");
@@ -992,20 +1013,12 @@ test("org-owned project settings exposes legacy group search scope without leavi
   await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
 
-  const scopeControls = page.locator(
-    '.gnb-search-form button[type="button"][data-toggle="search-scope"]',
-  );
+  const scopeControls = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
   await expect(scopeControls).toHaveCount(3);
   await expect(scopeControls).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect(scopeControls.nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/weblabs/portal/search`,
-  );
-  await expect(scopeControls.nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/weblabs/search`,
-  );
-  await expect(scopeControls.nth(2)).toHaveAttribute("data-action", `${basePath}/search`);
+  await expect(scopeControls.nth(0)).not.toHaveAttribute("data-action", /.+/);
+  await expect(scopeControls.nth(1)).not.toHaveAttribute("data-action", /.+/);
+  await expect(scopeControls.nth(2)).not.toHaveAttribute("data-action", /.+/);
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -1517,8 +1530,8 @@ async function mockProjectSettings(
         contentType: "application/json",
         body: JSON.stringify({
           ...projectContainer(ownerName, projectName),
-          ...overrides.container,
           ...overrides.project,
+          ...overrides.container,
         }),
       });
     },

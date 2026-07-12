@@ -3,7 +3,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
-import { readProjectSettingsQueryOptions, updateProjectRest } from "../../../api/org-project";
+import {
+  readProjectContainerQueryOptions,
+  readProjectSettingsQueryOptions,
+  updateProjectRest,
+} from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
@@ -11,7 +15,11 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader as SharedProjectHeader } from "../$projectName";
+import defaultProjectLogoUrl from "../../../assets/legacy/project_default_logo.png";
+import {
+  ProjectHeader as SharedProjectHeader,
+  ProjectMenu as SharedProjectMenu,
+} from "../$projectName";
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
@@ -79,28 +87,36 @@ function ProjectSettingRouteShell({
   runtimeConfig,
   selfRoutePath,
 }: ProjectSettingRouteScreenProps) {
-  const projectQuery = useQuery(
+  const settingsQuery = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const project = projectQuery.data;
+  const projectShellQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const project = settingsQuery.data;
+  const shellProject = projectShellQuery.data;
   const isGitProject = project ? stringField(project.vcs, "GIT") === "GIT" : false;
   const branchesQuery = useQuery({
     ...codeBranchesQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: isGitProject,
   });
 
-  if (!project || (isGitProject && !branchesQuery.data)) {
+  if (!project || !shellProject || (isGitProject && !branchesQuery.data)) {
     return null;
   }
 
   const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(project, ownerName),
+    organizationName: projectSearchScopeOrganizationName(shellProject, ownerName),
     ownerName,
     projectName,
   };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={!projectSearchScope.organizationName}
+    >
       <ProjectSettingScreen
         branches={
           isGitProject ? (branchesQuery.data?.branches.map((branch) => branch.name) ?? []) : []
@@ -108,6 +124,7 @@ function ProjectSettingRouteShell({
         defaultBranch={isGitProject ? (branchesQuery.data?.defaultBranch ?? "") : ""}
         ownerName={ownerName}
         project={project}
+        shellProject={shellProject}
         projectName={projectName}
         runtimeConfig={runtimeConfig}
         selfRoutePath={selfRoutePath}
@@ -121,6 +138,7 @@ function ProjectSettingScreen({
   defaultBranch,
   ownerName,
   project,
+  shellProject,
   projectName,
   runtimeConfig,
   selfRoutePath,
@@ -129,6 +147,7 @@ function ProjectSettingScreen({
   defaultBranch: string;
   ownerName: string;
   project: ProjectContainer;
+  shellProject: ProjectContainer;
   projectName: string;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
@@ -138,8 +157,12 @@ function ProjectSettingScreen({
   return (
     <>
       <title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>
-      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu project={project} selfRoutePath={selfRoutePath} />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
+      <SharedProjectMenu
+        active="setting"
+        basePath={runtimeConfig.basePath}
+        project={shellProject}
+      />
       <ProjectSettingBody
         branches={branches}
         defaultBranch={defaultBranch}
@@ -827,152 +850,6 @@ function MenuCheckbox({
   );
 }
 
-function ProjectMenu({
-  project,
-  selfRoutePath,
-}: {
-  project: ProjectContainer;
-  selfRoutePath: string;
-}) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = projectMenuSetting(project);
-  const enrolledMemberCount = enrolledUserCount(project);
-  const menuCounts = {
-    board:
-      numberField(recordField(project).boardCount) || numberField(recordField(project).postCount),
-    issue: numberField(recordField(project).openIssueCount),
-    pullRequest: numberField(recordField(project).openPullRequestCount),
-    review: numberField(recordField(project).reviewCount),
-  };
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            label={t("title.projectHome")}
-            short="H"
-            to="/$ownerName/$projectName"
-            params={{ ownerName, projectName }}
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              short="C"
-              to="/$ownerName/$projectName/code"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              count={menuCounts.issue}
-              label={t("menu.issue")}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              count={menuCounts.pullRequest}
-              label={t("menu.pullRequest")}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              count={menuCounts.review}
-              label={t("menu.review")}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              count={menuCounts.board}
-              label={t("menu.board")}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-              params={{ ownerName, projectName }}
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  activeOptions={legacyProjectSettingsLinkActiveOptions}
-                  activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-                  to={selfRoutePath}
-                  search={legacyProjectSettingsCogSearch}
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={enrolledMemberCount} />
-                </Link>
-              </li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ProjectMenuItem({
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to: string;
-}) {
-  return (
-    <li className={className}>
-      <Link
-        activeOptions={legacyProjectSettingsLinkActiveOptions}
-        activeProps={legacyProjectSettingsLinkSuppressActiveProps}
-        to={to}
-        params={params}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
-        {count > 0 ? (
-          <>
-            {" "}
-            <CountBadge count={count} />
-          </>
-        ) : null}
-      </Link>
-    </li>
-  );
-}
-
 function ProjectSettingMenu({
   active,
   ownerName,
@@ -1109,10 +986,7 @@ function projectId(project: ProjectContainer) {
 }
 
 function projectLogoUrl(project: ProjectContainer, basePath: string) {
-  return (
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png")
-  );
+  return stringField(project.logoUrl, "") || prefixBasePath(basePath, defaultProjectLogoUrl);
 }
 
 function projectOldPlace(project: ProjectContainer) {
