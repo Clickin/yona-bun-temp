@@ -176,6 +176,36 @@ test("project code root redirects non-empty repository to default branch folder"
   );
 });
 
+test("Alice code root reaches the default branch before the folder screen paints", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeFolder(page, { ownerName: "alice", projectName: "sample" });
+
+  const routeSource = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/code.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(routeSource).toContain('import { useLayoutEffect } from "react";');
+  expect(routeSource).not.toContain('import { useEffect } from "react";');
+  expect(routeSource).toContain("useLayoutEffect(() => {");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/alice/sample/code`);
+  await expect(page).toHaveURL(`${basePath}/alice/sample/code/main`);
+  await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);
+  await expect(page.locator(".project-page-wrap:empty")).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await page.evaluate(() => ({
+    pageScrollWidth: document.documentElement.scrollWidth,
+    pageWrapWidth: Math.round(
+      document.querySelector<HTMLElement>(".page-wrap-outer")!.getBoundingClientRect().width,
+    ),
+  }));
+  expect(mobile).toEqual({ pageScrollWidth: 390, pageWrapWidth: 390 });
+});
+
 test("project SVN code branch root folder matches legacy code/view.scala.html DOM", async ({
   page,
 }) => {
@@ -595,6 +625,10 @@ async function mockProjectCodeFolder(
   branches: Array<{ name: string }> = [{ name: "main" }, { name: "feature/release" }],
   selectedBranch = "main",
 ) {
+  const ownerName =
+    typeof projectOverrides.ownerName === "string" ? projectOverrides.ownerName : "admin";
+  const projectName =
+    typeof projectOverrides.projectName === "string" ? projectOverrides.projectName : "sample";
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -611,35 +645,38 @@ async function mockProjectCodeFolder(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        backgroundImageUrl: "",
-        enrollmentRequestCount: 0,
-        id: 7,
-        isFavorite: false,
-        isForkedFromOrigin: false,
-        isPrivate: false,
-        isProtected: false,
-        logoUrl: "",
-        menuSetting: {
-          board: true,
-          code: true,
-          issue: true,
-          milestone: true,
-          pullRequest: true,
-          review: true,
-        },
-        ownerName: "admin",
-        projectName: "sample",
-        vcs: "GIT",
-        viewerCanUpdate: true,
-        ...projectOverrides,
-      }),
-    });
-  });
-  await page.route("**/api/v1/projects/admin/sample/code**", async (route) => {
+  await page.route(
+    `**/api/v1/owners/${ownerName}/projects/${projectName}/container`,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          backgroundImageUrl: "",
+          enrollmentRequestCount: 0,
+          id: 7,
+          isFavorite: false,
+          isForkedFromOrigin: false,
+          isPrivate: false,
+          isProtected: false,
+          logoUrl: "",
+          menuSetting: {
+            board: true,
+            code: true,
+            issue: true,
+            milestone: true,
+            pullRequest: true,
+            review: true,
+          },
+          ownerName,
+          projectName,
+          vcs: "GIT",
+          viewerCanUpdate: true,
+          ...projectOverrides,
+        }),
+      });
+    },
+  );
+  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/code**`, async (route) => {
     const url = new URL(route.request().url());
     const path = url.searchParams.get("path") ?? "";
     const branch = url.searchParams.get("branch") ?? selectedBranch;
@@ -697,9 +734,9 @@ async function mockProjectCodeFolder(
         entries: folderResponse.entries,
         file: null,
         noHead: false,
-        ownerName: "admin",
+        ownerName,
         path: folderResponse.path,
-        projectName: "sample",
+        projectName,
         selectedBranch: branch,
       }),
     });

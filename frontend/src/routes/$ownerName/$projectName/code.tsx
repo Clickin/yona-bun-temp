@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -90,7 +90,7 @@ function ProjectCodeScreen({
     codeBrowserQueryOptions(runtimeConfig, { ownerName, projectName, branch: "", path: "" }),
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const selectedBranch = codeQuery.data?.selectedBranch;
     if (codeQuery.data && !codeQuery.data.noHead && selectedBranch) {
       void navigate({
