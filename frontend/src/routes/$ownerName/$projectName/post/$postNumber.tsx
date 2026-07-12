@@ -71,10 +71,27 @@ function ProjectPostDetailRoute() {
 }
 
 function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
+  const { ownerName, postNumber, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const postQuery = useQuery({
+    ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+  });
+
+  if (isEditChildRoute && restApiErrorStatus(postQuery.error) === 404) {
+    return (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+        <ProjectPostEditNotFoundTitle />
+        <ProjectPostEditNotFoundBody />
+      </SiteLayoutShell>
+    );
+  }
 
   if (!projectQuery.data) {
     return null;
@@ -182,6 +199,30 @@ function ProjectPostNotFoundBody({
             className="ybtn ybtn-primary"
           >
             {t("button.list")}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectPostEditNotFoundTitle() {
+  const { t } = useLegacyMessages();
+
+  return <title>{t("error.internalServerError")}</title>;
+}
+
+function ProjectPostEditNotFoundBody() {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico-404"></i>
+          <p>{t("error.internalServerError")}</p>
+          <Link to="/" className="ybtn ybtn-primary">
+            {t("menu.home")}
           </Link>
         </div>
       </div>
