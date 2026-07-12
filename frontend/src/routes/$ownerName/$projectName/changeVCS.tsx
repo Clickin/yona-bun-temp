@@ -405,7 +405,17 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
   if (organizationName) {
     return organizationName;
   }
-  return project.isProtected === true ? ownerName : undefined;
+  return projectIsProtected(project) ? ownerName : undefined;
+}
+
+function projectIsProtected(project: ProjectContainer) {
+  return (
+    project.isProtected === true ||
+    project.isProtected === "true" ||
+    project.isProtected === 1 ||
+    project.isProtected === "1" ||
+    stringField(project.projectScope, "").toUpperCase() === "PROTECTED"
+  );
 }
 
 function stringField(value: unknown, fallback: string) {
