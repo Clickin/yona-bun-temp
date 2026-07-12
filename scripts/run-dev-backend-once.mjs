@@ -407,6 +407,46 @@ export function reconcileDefaultDevParitySeed(databasePath, runtimeDirectory) {
         labelIds.push(Number(label.id));
       }
 
+      const bugLabelId = labelIds[0];
+      if (bugLabelId !== 1) {
+        const bugLabel = database
+          .prepare("select category_id, color, project_id from issue_label where id = ? limit 1")
+          .get(bugLabelId);
+        const legacyBugLabel = database
+          .prepare("select project_id from issue_label where id = 1 limit 1")
+          .get();
+        if (bugLabel?.project_id === sampleProject.id && (!legacyBugLabel || legacyBugLabel.project_id === sampleProject.id)) {
+          if (legacyBugLabel) {
+            database
+              .prepare(
+                `delete from issue_issue_label
+                 where issue_label_id = ?
+                   and issue_id in (select issue_id from issue_issue_label where issue_label_id = ?)`,
+              )
+              .run(bugLabelId, 1);
+            database
+              .prepare("update issue_issue_label set issue_label_id = ? where issue_label_id = ?")
+              .run(1, bugLabelId);
+            database.prepare("delete from issue_label where id = ?").run(bugLabelId);
+          }
+          if (legacyBugLabel) {
+            database
+              .prepare(
+                "update issue_label set category_id = ?, color = ?, name = ?, project_id = ? where id = ?",
+              )
+              .run(bugLabel.category_id, bugLabel.color, "bug", sampleProject.id, 1);
+          } else {
+            database
+              .prepare(
+                "insert into issue_label (id, category_id, color, name, project_id) values (?, ?, ?, ?, ?)",
+              )
+              .run(1, bugLabel.category_id, bugLabel.color, "bug", sampleProject.id);
+          }
+          labelIds[0] = 1;
+          report.labels.push("type/bug:legacy-id-1");
+        }
+      }
+
       let issue = database
         .prepare("select id, title, body from issue where project_id = ? and number = ? limit 1")
         .get(sampleProject.id, 1);
