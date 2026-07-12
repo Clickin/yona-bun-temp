@@ -1,7 +1,11 @@
 import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { deleteProjectRest, readProjectSettingsQueryOptions } from "../../../api/org-project";
+import {
+  deleteProjectRest,
+  readProjectContainerQueryOptions,
+  readProjectSettingsQueryOptions,
+} from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
@@ -40,12 +44,12 @@ function ProjectDeleteFormRoute() {
 
 function ProjectDeleteFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const projectQuery = useQuery(
-    readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
+  const containerQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const projectSearchScope = projectQuery.data
+  const projectSearchScope = containerQuery.data
     ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+        organizationName: projectSearchScopeOrganizationName(containerQuery.data, ownerName),
         ownerName,
         projectName,
       }
@@ -69,25 +73,34 @@ function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const query = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const containerQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
 
-  if (!query.data) {
+  if (!query.data || !containerQuery.data) {
     return <title>{legacyTitle}</title>;
   }
 
   return (
     <>
       <title>{legacyTitle}</title>
-      <ProjectDeleteFormBody project={query.data} runtimeConfig={runtimeConfig} />
+      <ProjectDeleteFormBody
+        formProject={query.data}
+        runtimeConfig={runtimeConfig}
+        shellProject={containerQuery.data}
+      />
     </>
   );
 }
 
 function ProjectDeleteFormBody({
-  project,
+  formProject,
   runtimeConfig,
+  shellProject,
 }: {
-  project: ProjectContainer;
+  formProject: ProjectContainer;
   runtimeConfig: RuntimeConfig;
+  shellProject: ProjectContainer;
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
@@ -97,8 +110,8 @@ function ProjectDeleteFormBody({
     "initial",
   );
   const deletionModalOpen = deletionModalState === "open";
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
+  const ownerName = stringField(formProject.ownerName, "owner");
+  const projectName = stringField(formProject.projectName, "project");
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -137,11 +150,15 @@ function ProjectDeleteFormBody({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={shellProject} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
+          <ProjectSettingMenu
+            ownerName={ownerName}
+            project={shellProject}
+            projectName={projectName}
+          />
           <div className="bubble-wrap gray wp">
             <div className="cu-label">{t("project.delete")}</div>
             <div className="cu-desc">
