@@ -1004,9 +1004,27 @@ pub(crate) fn project_issue_list_item_to_api(
     item: persistence::ProjectIssueListItemRecord,
 ) -> ProjectIssueListItem {
     ProjectIssueListItem {
+        assignee_avatar_url: if item.assignee_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.assignee_email_address)
+        },
         assignee_label: item.assignee_label,
+        assignee_login_id: item.assignee_login_id,
+        author_avatar_url: if item.author_email_address.trim().is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&item.author_email_address)
+        },
         author_label: item.author_label,
+        author_login_id: item.author_login_id,
         comment_count: item.comment_count,
+        created_label: item.created_label,
+        created_title: item.created_title,
+        due_date_label: item.due_date_label,
+        due_date_overdue: item.due_date_overdue,
+        due_date_text: item.due_date_text,
+        id: item.id,
         issue_number: item.issue_number,
         labels: item.labels.iter().map(issue_label_from_record).collect(),
         milestone_id: item.milestone_id.unwrap_or_default(),
@@ -1018,6 +1036,7 @@ pub(crate) fn project_issue_list_item_to_api(
         updated_label: item.updated_label,
         voter_count: item.voter_count,
         watcher_count: item.watcher_count,
+        weight: item.weight,
         ..Default::default()
     }
 }
