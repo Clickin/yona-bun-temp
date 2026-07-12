@@ -1340,7 +1340,7 @@ async function inspectPage(page, baseUrl, path, label) {
     };
   });
   const isProjectPage = /^\/[^/?#]+\/[^/?#]+/u.test(path) && !rootNames.has(path.split("/")[1]);
-  const isLegacyFragment = label === "legacy" && path.startsWith("/notification?");
+  const isNotificationFragment = path.startsWith("/notification?");
   const isFramedShell = path === "/sidebar" || path.startsWith("/sidebar?");
   const effectiveRequestFailures = requestFailures.filter(
     (failure) => !(isFramedShell && isViteDevModuleAbort(failure)),
@@ -1350,12 +1350,12 @@ async function inspectPage(page, baseUrl, path, label) {
   if (status >= 500) {
     errors.push(`HTTP ${status}`);
   }
-  if (!isLegacyFragment && (metrics.stylesheetCount === 0 || metrics.stylesheetRules < 20)) {
+  if (!isNotificationFragment && (metrics.stylesheetCount === 0 || metrics.stylesheetRules < 20)) {
     errors.push(
       `stylesheet not applied: ${metrics.stylesheetCount} sheets, ${metrics.stylesheetRules} rules`,
     );
   }
-  if (!isLegacyFragment && metrics.bodyTextLength < 20 && status === 200) {
+  if (!isNotificationFragment && metrics.bodyTextLength < 20 && status === 200) {
     errors.push("nearly blank page");
   }
   if (metrics.scrollWidth > metrics.viewportWidth * 1.8) {
@@ -1373,16 +1373,16 @@ async function inspectPage(page, baseUrl, path, label) {
   }
   if (
     !isFramedShell &&
-    !isLegacyFragment &&
+    !isNotificationFragment &&
     !metrics.isErrorPage &&
     (!metrics.gnb || metrics.gnb.width < metrics.viewportWidth * 0.8)
   ) {
     errors.push("missing global navigation");
   }
-  if (!isFramedShell && !isLegacyFragment && !metrics.isErrorPage && !metrics.gnbInner) {
+  if (!isFramedShell && !isNotificationFragment && !metrics.isErrorPage && !metrics.gnbInner) {
     errors.push("missing global navigation inner container");
   }
-  if (!isFramedShell && !isLegacyFragment && !metrics.isErrorPage && !metrics.gnbUsermenu) {
+  if (!isFramedShell && !isNotificationFragment && !metrics.isErrorPage && !metrics.gnbUsermenu) {
     errors.push("missing global user menu container");
   }
   if (
