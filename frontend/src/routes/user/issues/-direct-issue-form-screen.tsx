@@ -64,6 +64,7 @@ function DirectIssueFormProjectScreen({
           initialBodyMarkdown={bodyMarkdown}
           ownerName={selectedProject.ownerName}
           projectName={selectedProject.projectName}
+          projectHeaderRuntimeConfig={runtimeConfig}
           referCommentId={referCommentId || commentId}
           runtimeConfig={runtimeConfig}
           showSubtaskOptionOnMount

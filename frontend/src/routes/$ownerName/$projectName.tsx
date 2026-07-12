@@ -1282,11 +1282,44 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
 export function ProjectHeader({
   basePath,
   project,
+  runtimeConfig,
+}: {
+  basePath: string;
+  project: ProjectContainer;
+  runtimeConfig?: RuntimeConfig;
+}) {
+  if (runtimeConfig) {
+    return (
+      <ProjectHeaderContent basePath={basePath} project={project} runtimeConfig={runtimeConfig} />
+    );
+  }
+
+  return <ProjectHeaderRouteContext basePath={basePath} project={project} />;
+}
+
+function ProjectHeaderRouteContext({
+  basePath,
+  project,
 }: {
   basePath: string;
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
+
+  return (
+    <ProjectHeaderContent basePath={basePath} project={project} runtimeConfig={runtimeConfig} />
+  );
+}
+
+function ProjectHeaderContent({
+  basePath,
+  project,
+  runtimeConfig,
+}: {
+  basePath: string;
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const ownerName = stringField(project.ownerName, "owner");
