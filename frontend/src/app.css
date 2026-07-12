@@ -7683,21 +7683,6 @@ div.markdown-preview {
   display: block;
 }
 
-.commitAuthor,
-.commitId-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.commitId-wrap {
-  margin-top: 8px;
-  color: #555;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
-  font-size: 12px;
-}
-
 .diff-body {
   min-width: 0;
 }

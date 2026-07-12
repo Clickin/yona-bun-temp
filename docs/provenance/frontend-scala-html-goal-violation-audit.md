@@ -61,6 +61,14 @@ the goal directive; coordinated exceptions must set
 
 Manual multi-screen exception note, 2026-07-04:
 
+Manual evidence-only exception note, 2026-07-12:
+
+- Route: `/admin/sample/commit/HEAD`.
+- Reason: this is a supervised single-screen parity correction authorized by the user’s frozen-legacy-CSS rule. `code/diff.scala.html` already matches the React route DOM; the only change deletes a later non-legacy global `.commitId-wrap` flex/font/margin override that displaced the legacy uploader by 12px. No route TSX reconstruction is appropriate because it would not address the cascade defect.
+- Follow-up: retain `project-code-commit-detail.e2e.ts` computed-style/flow assertions and re-run the Korean desktop/mobile target sweep whenever global commit-detail CSS is touched.
+
+Manual multi-screen exception note, 2026-07-04:
+
 - Routes: `/organizations/weblabs/issues`, `/organizations/weblabs/pullrequests?filter=fix`, `/organizations/weblabs/boards`.
 - Reason: user explicitly requested parallel subagent execution for independent legacy Scala HTML page translation work; the three organization aggregate row-link cleanups have disjoint route and E2E write scopes and share the same legacy organization shell.
 - Follow-up: keep future unattended goal commits to one screen state unless the user again requests a coordinated parallel slice; rerun the combined focused organization E2E suite when any of these shared organization shell expectations change.
