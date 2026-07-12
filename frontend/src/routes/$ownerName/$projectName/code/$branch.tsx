@@ -136,22 +136,43 @@ function ProjectCodeFolderBody({
               </Link>
             </li>
             <li>
-              <Link
-                activeOptions={{
-                  exact: true,
-                  explicitUndefined: true,
-                  includeHash: true,
-                  includeSearch: true,
-                }}
-                activeProps={{
-                  "aria-current": undefined,
-                  className: undefined,
-                  "data-status": undefined,
-                }}
-                to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
-              >
-                {t("code.commits")}
-              </Link>
+              {selectedBranch === "HEAD" ? (
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to="/$ownerName/$projectName/commits/$branch/$"
+                  params={{ _splat: "/", branch: selectedBranch, ownerName, projectName }}
+                  search={{ page: undefined as never }}
+                >
+                  {t("code.commits")}
+                </Link>
+              ) : (
+                <Link
+                  activeOptions={{
+                    exact: true,
+                    explicitUndefined: true,
+                    includeHash: true,
+                    includeSearch: true,
+                  }}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: undefined,
+                    "data-status": undefined,
+                  }}
+                  to={projectRoute(ownerName, projectName, "commits", encodedBranch)}
+                >
+                  {t("code.commits")}
+                </Link>
+              )}
             </li>
             {isGit ? (
               <li>
@@ -194,7 +215,9 @@ function ProjectCodeFolderBody({
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
                 <span className="select2-chosen">
-                  <strong className="branch-label branch">branch</strong> {selectedBranch}
+                  {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                  {isGit ? " " : null}
+                  {selectedBranch}
                 </span>
                 <span className="select2-arrow" aria-hidden="true">
                   <b></b>
@@ -246,7 +269,9 @@ function ProjectCodeFolderBody({
                           );
                         }}
                       >
-                        <strong className="branch-label branch">branch</strong> {item.name}
+                        {isGit ? <strong className="branch-label branch">branch</strong> : null}
+                        {isGit ? " " : null}
+                        {item.name}
                       </button>
                     </li>
                   ))}
