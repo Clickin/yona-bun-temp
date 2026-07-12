@@ -292,6 +292,9 @@ function localSettledSelectorForPath(path) {
   if (/\/code(?:\/|$)/u.test(pathname)) {
     return ".code-browse-wrap .listitem, .project-page-wrap .alert";
   }
+  if (/\/commits\/?$/u.test(pathname)) {
+    return ".page-wrap-outer .project-page-wrap #history";
+  }
   const issueDetailMatch = pathname.match(/\/issue\/(\d+)$/u);
   if (issueDetailMatch) {
     return `#issue-body-${issueDetailMatch[1]} .content.markdown-wrap`;
