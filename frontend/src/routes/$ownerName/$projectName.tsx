@@ -4,6 +4,7 @@ import type { MouseEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 import {
@@ -769,7 +770,7 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                   <img
                     src={
                       stringField(itemRecord.actorAvatarUrl) ||
-                      prefixBasePath(basePath, "/assets/images/default-avatar-64.png")
+                      prefixBasePath(basePath, defaultHistoryAvatarUrl)
                     }
                     width="32"
                     height="32"
