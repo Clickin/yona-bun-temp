@@ -2410,11 +2410,9 @@ h1 {
 }
 
 .warning-none {
-  padding: 18px 20px;
-  color: #666;
-  background: #fafafa;
-  border: 1px solid #ddd;
-  border-radius: 3px;
+  font-size: 16px;
+  text-align: center;
+  background-color: #d4d4d4;
 }
 
 .tasklist {
