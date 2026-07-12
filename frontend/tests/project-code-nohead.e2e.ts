@@ -87,9 +87,8 @@ test("project trailing-slash code root replaces to the canonical legacy code URL
 test("project empty git repository title is rendered by the nohead route", () => {
   const source = readFileSync(CODE_ROUTE_SOURCE, "utf8");
 
-  expect(source).toContain(
-    'const browserTitle = `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;',
-  );
+  expect(source).toContain('? `${t("title.commitHistory")} - ${ownerName}/${projectName}`');
+  expect(source).toContain(': `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;');
   expect(source).toContain("<title>{browserTitle}</title>");
   expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
   expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);

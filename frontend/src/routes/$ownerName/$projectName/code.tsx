@@ -12,7 +12,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
-import { type RuntimeConfig } from "../../../runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
@@ -108,7 +108,7 @@ function ProjectCodeScreen({
     <>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-      <ProjectCodeBody code={codeQuery.data} project={project} />
+      <ProjectCodeBody code={codeQuery.data} project={project} runtimeConfig={runtimeConfig} />
     </>
   );
 }
@@ -116,9 +116,11 @@ function ProjectCodeScreen({
 function ProjectCodeBody({
   code,
   project,
+  runtimeConfig,
 }: {
   code: CodeBrowserResponse;
   project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
 }) {
   if (!code.noHead) {
     return (
@@ -128,27 +130,38 @@ function ProjectCodeBody({
     );
   }
 
-  return <ProjectCodeNoHead project={project} />;
+  return <ProjectCodeNoHead project={project} runtimeConfig={runtimeConfig} />;
 }
 
-function ProjectCodeNoHead({ project }: { project: ProjectContainer }) {
+function ProjectCodeNoHead({
+  project,
+  runtimeConfig,
+}: {
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
-  const browserTitle = `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;
   const siteName = "Yona";
   const vcs = stringField(project.vcs, "").toUpperCase();
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
+  const browserTitle = isSvn
+    ? `${t("title.commitHistory")} - ${ownerName}/${projectName}`
+    : `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;
   const loginId =
     stringField(project.viewerLoginId, "") ||
     stringField(project.currentUserLoginId, "") ||
     stringField(project.loginId, "");
   const svnUsernameSuffix = loginId ? ` --username ${loginId}` : "";
-  const codeUrl =
+  const repositoryUrl =
     stringField(project.codeUrl, "") ||
     stringField(project.cloneUrlWithLoginId, "") ||
     stringField(project.cloneUrl, "") ||
     stringField(project.repositoryUrl, "") ||
     `/${ownerName}/${projectName}`;
+  const codeUrl = isSvn
+    ? svnCheckoutUrl(repositoryUrl, runtimeConfig.basePath, ownerName, projectName)
+    : repositoryUrl;
 
   return (
     <>
@@ -211,6 +224,28 @@ git push origin master`}</code>
       </div>
     </>
   );
+}
+
+function svnCheckoutUrl(
+  repositoryUrl: string,
+  basePath: string,
+  ownerName: string,
+  projectName: string,
+) {
+  let origin = typeof location === "undefined" ? "" : location.origin;
+  try {
+    const candidate = new URL(repositoryUrl);
+    if (candidate.protocol === "http:" || candidate.protocol === "https:") {
+      origin = candidate.origin;
+    }
+  } catch {
+    // A relative API value has no origin to preserve; use the current browser origin.
+  }
+  const pathname = prefixBasePath(
+    basePath,
+    `/svn/${encodeURIComponent(ownerName)}/${encodeURIComponent(projectName)}`,
+  );
+  return origin ? new URL(pathname, origin).href : pathname;
 }
 
 function NoHeadAlert({ message }: { message: string }) {

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPECTED_NO_HEAD_SVN_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid"><div class="span12"><div class="alert alert-block"><h4>The repository is empty!</h4></div><h5>You can commit your code to this repository.</h5><pre><code>svn co http://example.com/svn/admin/sample --username admin
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid"><div class="span12"><div class="alert alert-block"><h4>The repository is empty!</h4></div><h5>You can commit your code to this repository.</h5><pre><code>svn co http://example.com__BASE_PATH__/svn/admin/sample --username admin
 cd sample/
 echo "# sample" > README.md
 svn add README.md
@@ -18,11 +18,18 @@ test("project empty svn repository matches legacy code/nohead_svn.scala.html DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".alert.alert-block h4")).toHaveText("The repository is empty!");
   await expect(page.locator("pre code")).toHaveCount(1);
+  await expect(page.locator("pre code")).toContainText(
+    `svn co http://example.com${basePath === "/" ? "" : basePath}/svn/admin/sample --username admin`,
+  );
+  await expect(page.locator("pre code")).not.toContainText(".git");
   await expect(page.locator("body")).not.toContainText("git clone");
   await expect(page.locator("body")).not.toContainText("git init");
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(page, EXPECTED_NO_HEAD_SVN_BODY),
+    await canonicalizeHtml(
+      page,
+      EXPECTED_NO_HEAD_SVN_BODY.replace("__BASE_PATH__", basePath === "/" ? "" : basePath),
+    ),
   );
   expect(await readNoHeadSvnMetrics(page)).toEqual({
     alertPaddingBottom: "14px",
@@ -48,7 +55,64 @@ test("project empty svn repository matches legacy code/nohead_svn.scala.html DOM
   });
 });
 
-async function mockProjectCodeNoHeadSvn(page: Page) {
+test("live ko-KR empty svn code root keeps the legacy title and responsive shell geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  await mockProjectCodeNoHeadSvn(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/code`);
+  await expect(page).toHaveTitle("커밋 히스토리 - admin/sample");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("코드");
+  await expect(page.locator(".alert.alert-block h4")).toHaveText("저장소가 비어있습니다!");
+  await expect(page.locator(".project-util-wrap")).toContainText("그만 지켜보기");
+  expect(await readNoHeadSvnShellMetrics(page)).toEqual({
+    alertHeight: 80,
+    alertWidth: 1346,
+    pageHeight: 450,
+    pageWidth: 1366,
+    pageY: 213,
+    projectWidth: 1346,
+    utilWidth: 147,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await readNoHeadSvnShellMetrics(page)).toEqual({
+    alertHeight: 80,
+    alertWidth: 390,
+    pageHeight: 450,
+    pageWidth: 390,
+    pageY: 213,
+    projectWidth: 390,
+    utilWidth: 15,
+  });
+});
+
+test("empty svn checkout falls back to the browser origin for a relative API clone URL", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeNoHeadSvn(page, "/admin/sample.git?transport=git#clone");
+
+  await page.goto(`${basePath}/admin/sample/code`);
+  const expectedCheckoutUrl = `${new URL(page.url()).origin}${basePath === "/" ? "" : basePath}/svn/admin/sample`;
+  await expect(page.locator("pre code")).toContainText(
+    `svn co ${expectedCheckoutUrl} --username admin`,
+  );
+  await expect(page.locator("pre code")).not.toContainText(".git");
+  await expect(page.locator("pre code")).not.toContainText("transport=git");
+  await expect(page.locator("pre code")).not.toContainText("#clone");
+});
+
+async function mockProjectCodeNoHeadSvn(
+  page: Page,
+  cloneUrl = "http://example.com/admin/sample.git?transport=git#clone",
+) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -70,13 +134,14 @@ async function mockProjectCodeNoHeadSvn(page: Page) {
       contentType: "application/json",
       body: JSON.stringify({
         backgroundImageUrl: "/assets/images/bg-default-project.png",
-        codeUrl: "http://example.com/svn/admin/sample",
+        cloneUrl,
         enrollmentRequestCount: 0,
         id: 7,
         isFavorite: false,
         isForkedFromOrigin: false,
         isPrivate: false,
         isProtected: false,
+        isWatching: true,
         logoUrl: "/assets/images/project_default_logo.png",
         menuSetting: {
           board: true,
@@ -89,8 +154,10 @@ async function mockProjectCodeNoHeadSvn(page: Page) {
         ownerName: "admin",
         projectName: "sample",
         vcs: "SVN",
+        viewerCanWatch: true,
         viewerCanUpdate: true,
         viewerLoginId: "admin",
+        watcherCount: 1,
       }),
     });
   });
@@ -109,6 +176,34 @@ async function mockProjectCodeNoHeadSvn(page: Page) {
         selectedBranch: "",
       }),
     });
+  });
+}
+
+async function readNoHeadSvnShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const box = element.getBoundingClientRect();
+      return {
+        height: Math.round(box.height),
+        width: Math.round(box.width),
+        y: Math.round(box.y),
+      };
+    };
+    const alert = rect(".alert.alert-block");
+    const pageWrap = rect(".page-wrap-outer");
+    const projectWrap = rect(".project-page-wrap");
+    const util = rect(".project-util-wrap");
+    return {
+      alertHeight: alert.height,
+      alertWidth: alert.width,
+      pageHeight: pageWrap.height,
+      pageWidth: pageWrap.width,
+      pageY: pageWrap.y,
+      projectWidth: projectWrap.width,
+      utilWidth: util.width,
+    };
   });
 }
 
