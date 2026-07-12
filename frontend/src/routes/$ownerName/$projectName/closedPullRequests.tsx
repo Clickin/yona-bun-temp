@@ -8,6 +8,7 @@ import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
   ProjectPullRequestsScreen,
+  ProjectPullRequestsBadRequestRouteShell,
   type ProjectPullRequestsSearch,
   validateProjectPullRequestsSearch,
 } from "./pullRequests";
@@ -53,6 +54,16 @@ function ProjectClosedPullRequestsRouteShell({
 
   if (!projectQuery.data) {
     return null;
+  }
+
+  if (projectQuery.data.vcs !== "GIT") {
+    return (
+      <ProjectPullRequestsBadRequestRouteShell
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    );
   }
 
   const projectSearchScope = {

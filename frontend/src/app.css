@@ -4242,8 +4242,7 @@ h1 {
   text-align: center;
 }
 
-.error-wrap .ico,
-.error-wrap .ico-404 {
+.error-wrap .ico {
   display: inline-block;
   background-image: url("/legacy-assets/images/sprite.png");
   background-repeat: no-repeat;
@@ -4256,8 +4255,7 @@ h1 {
   background-position: -5px -160px;
 }
 
-.error-wrap .ico-err2,
-.error-wrap .ico-404 {
+.error-wrap .ico-err2 {
   width: 50px;
   height: 80px;
   background-position: -80px -160px;

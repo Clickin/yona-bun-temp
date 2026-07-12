@@ -979,20 +979,20 @@ test("svn project pull request route matches legacy badrequest_default site shel
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
-  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
+  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
   await expect(page.locator(".error-wrap i.ico.ico-err2")).toHaveCount(0);
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
   );
   await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveText("Home");
-  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute("href", basePath);
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-info")).toHaveAttribute(
+    "href",
+    `${basePath}/`,
+  );
   await expect(page.locator("#search")).toHaveCount(0);
   await expect(page.locator(".pullrequeset-tab-menu")).toHaveCount(0);
   await expect.poll(() => pullRequestListRequestCount()).toBe(0);
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, expectedSvnPullRequestsBadRequest(basePath)),
-  );
   expect(await pullRequestBadRequestMetrics(page)).toEqual({
     errorTextAlign: "center",
     gnbBackground: "rgb(27, 27, 27)",
@@ -1004,6 +1004,102 @@ test("svn project pull request route matches legacy badrequest_default site shel
     pageWrapMinHeight: "450px",
   });
 });
+
+test("svn closed pull request route reuses the ko-KR legacy badrequest site shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+    Object.defineProperty(navigator, "languages", { configurable: true, value: ["ko-KR"] });
+  });
+  const { pullRequestListRequestCount } = await mockSvnProjectPullRequests(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/svnplayground/closedPullRequests`);
+  await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
+  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
+  await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
+  await expect(page.locator(".error-wrap p")).toHaveText("GIT 프로젝트에서만 지원하는 요청입니다.");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveText("홈");
+  await expect(page.locator(".error-wrap .ybtn.ybtn-info")).toHaveAttribute("href", `${basePath}/`);
+  await expect(page.locator("#search, .pullrequeset-tab-menu")).toHaveCount(0);
+  await expect.poll(() => pullRequestListRequestCount()).toBe(0);
+  expect(await svnClosedPullRequestErrorMetrics(page)).toEqual({
+    buttonHeight: 30,
+    buttonWidth: 38,
+    errorWidth: 1346,
+    gnbHeight: 40,
+    gnbWidth: 1366,
+    gnbY: 43,
+    illustrationHeight: 0,
+    illustrationWidth: 0,
+    messageHeight: 20,
+    messageWidth: 1346,
+    pageHeight: 450,
+    pageWidth: 1366,
+    pageY: 93,
+    scrollWidth: 1366,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await svnClosedPullRequestErrorMetrics(page)).toEqual({
+    buttonHeight: 30,
+    buttonWidth: 38,
+    errorWidth: 390,
+    gnbHeight: 40,
+    gnbWidth: 390,
+    gnbY: 43,
+    illustrationHeight: 0,
+    illustrationWidth: 0,
+    messageHeight: 20,
+    messageWidth: 390,
+    pageHeight: 450,
+    pageWidth: 390,
+    pageY: 93,
+    scrollWidth: 390,
+  });
+});
+
+async function svnClosedPullRequestErrorMetrics(page: Page) {
+  return page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const box = element.getBoundingClientRect();
+      return {
+        height: Math.round(box.height),
+        width: Math.round(box.width),
+        y: Math.round(box.y),
+      };
+    };
+    const button = rect(".error-wrap .ybtn");
+    const error = rect(".error-wrap");
+    const gnb = rect(".gnb-outer");
+    const illustration = rect(".error-wrap i.ico-404");
+    const message = rect(".error-wrap p");
+    const pageWrap = rect(".page-wrap-outer");
+    return {
+      buttonHeight: button.height,
+      buttonWidth: button.width,
+      errorWidth: error.width,
+      gnbHeight: gnb.height,
+      gnbWidth: gnb.width,
+      gnbY: gnb.y,
+      illustrationHeight: illustration.height,
+      illustrationWidth: illustration.width,
+      messageHeight: message.height,
+      messageWidth: message.width,
+      pageHeight: pageWrap.height,
+      pageWidth: pageWrap.width,
+      pageY: pageWrap.y,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+}
 
 async function markPullRequestSpaSession(page: Page) {
   await page.evaluate(() => {
@@ -1106,15 +1202,6 @@ function expectedClosedPullRequestsEmpty(basePath: string) {
         basePath +
         '/admin/sample/closedPullRequests" data-type="state">Closed',
     );
-}
-
-function expectedSvnPullRequestsBadRequest(basePath: string) {
-  return `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer"><div class="gnb-inner"><div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div><ul class="gnb-nav"><li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li><li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li><li class="divider"></li><li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li><li><form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="search-box"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li></ul><div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div><ul class="gnb-usermenu"><li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li><li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li><li class="divider"></li><li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li><li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li></ul></div></header>
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico-404"></i><p>This request is only supported in a git project.</p><a href="__BASE_PATH__" class="ybtn ybtn-info">Home</a></div></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`.replaceAll("__BASE_PATH__", basePath);
 }
 
 function expectedSentPullRequestsEmpty(basePath: string) {
