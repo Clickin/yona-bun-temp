@@ -239,6 +239,43 @@ test("project commit detail watch buttons are route-owned React controls", async
   );
 });
 
+test("project commit detail keeps the frozen legacy commit-id flow geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCommitDetail(page, [], {
+    commit: {
+      authorAvatarUrl: "",
+      authorDate: "Jul 1, 2026",
+      authorEmail: "dev@example.com",
+      authorLoginId: "",
+      authorName: "Dev Author",
+      commentCount: 0,
+      commitId: "abcdef1234567890",
+      commitShortId: "abcdef1",
+      message: "Initial commit",
+      shortMessage: "Initial commit",
+    },
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890`);
+  await expect(page.locator(".upload-wrap.content-footer").first()).toBeVisible();
+  expect(await commitIdFlowGeometry(page)).toEqual({
+    display: "block",
+    fontSize: "13px",
+    margin: "0px",
+    uploadFollowsEditor: true,
+    wrapHeight: 41,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await commitIdFlowGeometry(page)).toMatchObject({
+    display: "block",
+    fontSize: "13px",
+    margin: "0px",
+    uploadFollowsEditor: true,
+  });
+});
+
 test("project commit detail markdown help uses shared React helper", async () => {
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("LegacyMarkdownHelp");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("help/markdown.scala.html?raw");
@@ -728,6 +765,9 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     codediffPosition: "relative",
     commitAuthorFloat: "right",
     commitAuthorMarginTop: "5px",
+    commitIdWrapDisplay: "block",
+    commitIdWrapFontSize: "13px",
+    commitIdWrapMargin: "0px",
     commitIdWrapPadding: "10px 5px",
     commitInfoBackground: "rgba(0, 0, 0, 0)",
     commitInfoBorderTopWidth: "0px",
@@ -2143,6 +2183,9 @@ async function readCommitDiffShellMetrics(page: Page) {
       codediffPosition: codediffStyle.position,
       commitAuthorFloat: commitAuthorStyle.cssFloat,
       commitAuthorMarginTop: commitAuthorStyle.marginTop,
+      commitIdWrapDisplay: commitIdWrapStyle.display,
+      commitIdWrapFontSize: commitIdWrapStyle.fontSize,
+      commitIdWrapMargin: commitIdWrapStyle.margin,
       commitIdWrapPadding: commitIdWrapStyle.padding,
       commitInfoBackground: commitInfoStyle.backgroundColor,
       commitInfoBorderTopWidth: commitInfoStyle.borderTopWidth,
@@ -2161,6 +2204,26 @@ async function readCommitDiffShellMetrics(page: Page) {
       reviewRight: reviewStyle.right,
       reviewTop: reviewStyle.top,
       reviewWidth: reviewStyle.width,
+    };
+  });
+}
+
+async function commitIdFlowGeometry(page: Page) {
+  return page.evaluate(() => {
+    const wrap = document.querySelector<HTMLElement>(".commitId-wrap")!;
+    const editor = document.querySelector<HTMLElement>("#comment-form .textarea-box")!;
+    const upload = document.querySelector<HTMLElement>(
+      "#comment-form .upload-wrap.content-footer",
+    )!;
+    const style = getComputedStyle(wrap);
+    const editorBox = editor.getBoundingClientRect();
+    const uploadBox = upload.getBoundingClientRect();
+    return {
+      display: style.display,
+      fontSize: style.fontSize,
+      margin: style.margin,
+      uploadFollowsEditor: Math.abs(editorBox.bottom - uploadBox.top) < 0.01,
+      wrapHeight: Math.round(wrap.getBoundingClientRect().height),
     };
   });
 }
