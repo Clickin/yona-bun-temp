@@ -4517,25 +4517,6 @@ h1 {
   overflow-wrap: anywhere;
 }
 
-#pagination {
-  margin-top: 14px;
-}
-
-#pagination a {
-  display: inline-block;
-  min-width: 28px;
-  margin-right: 4px;
-  padding: 4px 8px;
-  text-align: center;
-  border: 1px solid #ddd;
-}
-
-#pagination a.active {
-  color: #fff;
-  background: #f36c22;
-  border-color: #f36c22;
-}
-
 @media (max-width: 900px) {
   .attachment-files .row {
     grid-template-columns: 1fr;
@@ -4743,11 +4724,6 @@ h1 {
 .board-comment-wrap .comments .event .commit-list .commitMsg.desc {
   margin-left: 80px;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
-.post-list {
-  margin: 0;
-  border-top: 1px solid #ddd;
 }
 
 .post-row {
@@ -8039,13 +8015,6 @@ div.markdown-preview {
 .hljs-type,
 .hljs-variable {
   color: inherit;
-}
-
-#pagination {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-top: 16px;
 }
 
 .posting-history > button[data-toggle="modal"],

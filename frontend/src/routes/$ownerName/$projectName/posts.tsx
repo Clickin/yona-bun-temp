@@ -26,6 +26,14 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
 
+type ProjectPostsRouteSearch = {
+  filter?: string;
+  labelIds?: string[];
+  orderBy?: string;
+  orderDir?: string;
+  pageNum?: number;
+};
+
 type ProjectPostsSearch = {
   filter: string;
   labelIds: string[];
@@ -55,13 +63,18 @@ const legacyRouteLocalActiveProps = {
 
 export const Route = createFileRoute("/$ownerName/$projectName/posts")({
   component: ProjectPostsRoute,
-  validateSearch(search: Record<string, unknown>): ProjectPostsSearch {
+  validateSearch(search: Record<string, unknown>): ProjectPostsRouteSearch {
+    const filter = stringSearch(search.filter);
+    const labelIds = arraySearch(search.labelIds);
+    const orderBy = stringSearch(search.orderBy);
+    const orderDir = stringSearch(search.orderDir);
+    const pageNum = Number(search.pageNum) || 0;
     return {
-      filter: stringSearch(search.filter),
-      labelIds: arraySearch(search.labelIds),
-      orderBy: stringSearch(search.orderBy, "updatedDate"),
-      orderDir: stringSearch(search.orderDir, "desc"),
-      pageNum: Number(search.pageNum) || 1,
+      ...(filter ? { filter } : {}),
+      ...(labelIds.length > 0 ? { labelIds } : {}),
+      ...(orderBy && orderBy !== "updatedDate" ? { orderBy } : {}),
+      ...(orderDir && orderDir !== "desc" ? { orderDir } : {}),
+      ...(pageNum > 1 ? { pageNum } : {}),
     };
   },
 });
@@ -81,7 +94,14 @@ function ProjectPostsRoute() {
 function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
-  const search = Route.useSearch();
+  const routeSearch = Route.useSearch();
+  const search: ProjectPostsSearch = {
+    filter: routeSearch.filter ?? "",
+    labelIds: routeSearch.labelIds ?? [],
+    orderBy: routeSearch.orderBy ?? "updatedDate",
+    orderDir: routeSearch.orderDir ?? "desc",
+    pageNum: routeSearch.pageNum ?? 1,
+  };
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );

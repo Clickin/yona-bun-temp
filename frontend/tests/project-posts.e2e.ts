@@ -969,6 +969,61 @@ test("project board list empty state matches legacy board/list.scala.html DOM", 
   );
 });
 
+test("SVN board list keeps the clean legacy URL and empty pagination geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.addInitScript((configuredBasePath) => {
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: configuredBasePath,
+      feedbackUrl: "",
+      hideProjectListing: false,
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  await mockProjectPosts(page, "empty", {
+    __ownerName: "admin",
+    __projectName: "svnplayground",
+    __labelOptions: [],
+    __projectOverrides: {
+      menuSetting: null,
+      showBoard: true,
+      showCode: true,
+      showIssue: true,
+      showMilestone: true,
+      showPullRequest: false,
+      showReview: true,
+      vcs: "Subversion",
+    },
+  });
+
+  await page.goto(`${basePath}/admin/svnplayground/posts`);
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/posts`);
+  await expect(page.locator(".error-wrap")).toBeVisible();
+  await expect(page.locator("#pagination")).toBeEmpty();
+  expect(await emptyBoardGeometry(page)).toEqual({
+    borderTopWidth: "0px",
+    documentWidth: 1366,
+    paginationDisplay: "block",
+    paginationMargin: "0px",
+    projectPageHeight: 413,
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page).toHaveURL(`${basePath}/admin/svnplayground/posts`);
+  expect(await emptyBoardGeometry(page)).toEqual({
+    borderTopWidth: "0px",
+    documentWidth: 390,
+    paginationDisplay: "block",
+    paginationMargin: "0px",
+    projectPageHeight: 382,
+  });
+});
+
 test("project board list bracketed title prefix matches legacy title helpers", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "prefix");
@@ -3526,6 +3581,22 @@ async function postingHistoryMetrics(page: Page) {
   });
 }
 
+async function emptyBoardGeometry(page: Page) {
+  return page.evaluate(() => {
+    const pagination = document.querySelector<HTMLElement>("#pagination")!;
+    const projectPage = document.querySelector<HTMLElement>(".post-list.project-page-wrap")!;
+    const paginationStyle = getComputedStyle(pagination);
+    const projectPageStyle = getComputedStyle(projectPage);
+    return {
+      borderTopWidth: projectPageStyle.borderTopWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      paginationDisplay: paginationStyle.display,
+      paginationMargin: paginationStyle.margin,
+      projectPageHeight: Math.round(projectPage.getBoundingClientRect().height),
+    };
+  });
+}
+
 async function mockProjectPosts(
   page: Page,
   state:
@@ -3544,7 +3615,7 @@ async function mockProjectPosts(
 ) {
   const ownerName = String(overrides.__ownerName ?? "admin");
   const projectName = String(overrides.__projectName ?? "sample");
-  const labelOptions = [
+  const defaultLabelOptions = [
     {
       categoryId: "3",
       categoryIsExclusive: false,
@@ -3578,6 +3649,9 @@ async function mockProjectPosts(
       name: "low",
     },
   ];
+  const labelOptions = Array.isArray(overrides.__labelOptions)
+    ? overrides.__labelOptions
+    : defaultLabelOptions;
   const projectOverrides =
     overrides.__projectOverrides && typeof overrides.__projectOverrides === "object"
       ? (overrides.__projectOverrides as Record<string, unknown>)
