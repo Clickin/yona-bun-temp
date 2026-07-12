@@ -9,7 +9,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader as SharedProjectHeader } from "../$projectName";
+import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 const legacyProjectDeleteLinkActiveOptions = {
   exact: true,
@@ -137,11 +137,8 @@ function ProjectDeleteFormBody({
 
   return (
     <>
-      <SharedProjectHeader
-        basePath={runtimeConfig.basePath}
-        project={projectWithLegacyHeaderAssets(project, runtimeConfig.basePath)}
-      />
-      <ProjectMenu project={project} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
@@ -220,142 +217,6 @@ function ProjectDeleteFormBody({
   );
 }
 
-function ProjectMenu({ project }: { project: ProjectContainer }) {
-  const { t } = useLegacyMessages();
-  const ownerName = stringField(project.ownerName, "owner");
-  const projectName = stringField(project.projectName, "project");
-  const menuSetting = projectMenuSetting(project);
-  const enrolledMemberCount = countField(project.enrolledUsers);
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <ProjectMenuItem
-            to="/$ownerName/$projectName"
-            label={t("title.projectHome")}
-            params={{ ownerName, projectName }}
-            short="H"
-          />
-          {booleanField(menuSetting.code) ? (
-            <ProjectMenuItem
-              className="code-menu "
-              label={t("menu.code")}
-              params={{ ownerName, projectName }}
-              short="C"
-              to="/$ownerName/$projectName/code"
-            />
-          ) : null}
-          {booleanField(menuSetting.issue) ? (
-            <ProjectMenuItem
-              count={numberField(project.openIssueCount)}
-              label={t("menu.issue")}
-              params={{ ownerName, projectName }}
-              short="I"
-              to="/$ownerName/$projectName/issues"
-            />
-          ) : null}
-          {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
-            <ProjectMenuItem
-              count={numberField(project.openPullRequestCount)}
-              label={t("menu.pullRequest")}
-              params={{ ownerName, projectName }}
-              short="P"
-              to="/$ownerName/$projectName/pullRequests"
-            />
-          ) : null}
-          {booleanField(menuSetting.review) ? (
-            <ProjectMenuItem
-              count={numberField(project.reviewCount)}
-              label={t("menu.review")}
-              params={{ ownerName, projectName }}
-              short="R"
-              to="/$ownerName/$projectName/reviews"
-            />
-          ) : null}
-          {booleanField(menuSetting.milestone) ? (
-            <ProjectMenuItem
-              label={t("milestone")}
-              params={{ ownerName, projectName }}
-              short="M"
-              to="/$ownerName/$projectName/milestones"
-            />
-          ) : null}
-          {booleanField(menuSetting.board) ? (
-            <ProjectMenuItem
-              count={numberField(project.boardCount) || numberField(project.postCount)}
-              label={t("menu.board")}
-              params={{ ownerName, projectName }}
-              short="B"
-              to="/$ownerName/$projectName/posts"
-            />
-          ) : null}
-        </ul>
-        {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
-            <ul className="project-menu-nav">
-              <li className="active">
-                <Link
-                  activeOptions={legacyProjectDeleteLinkActiveOptions}
-                  activeProps={legacyProjectDeleteLinkActiveProps}
-                  to="/$ownerName/$projectName/settingform"
-                  params={{ ownerName, projectName }}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
-                  </span>
-                  <CountBadge count={enrolledMemberCount} />
-                </Link>
-              </li>
-              <li></li>
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-type ProjectMenuRoute =
-  | "/$ownerName/$projectName"
-  | "/$ownerName/$projectName/code"
-  | "/$ownerName/$projectName/issues"
-  | "/$ownerName/$projectName/pullRequests"
-  | "/$ownerName/$projectName/reviews"
-  | "/$ownerName/$projectName/milestones"
-  | "/$ownerName/$projectName/posts";
-
-function ProjectMenuItem({
-  className = "",
-  count = 0,
-  label,
-  params,
-  short,
-  to,
-}: {
-  className?: string;
-  count?: number;
-  label: string;
-  params: { ownerName: string; projectName: string };
-  short: string;
-  to: ProjectMenuRoute;
-}) {
-  return (
-    <li className={className}>
-      <Link
-        activeOptions={legacyProjectDeleteLinkActiveOptions}
-        activeProps={legacyProjectDeleteLinkActiveProps}
-        to={to}
-        params={params}
-      >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span> <CountBadge count={count} />
-      </Link>
-    </li>
-  );
-}
-
 function ProjectSettingMenu({
   ownerName,
   project,
@@ -367,6 +228,7 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const menuSetting = recordField(project.menuSetting);
+  const showCode = booleanField(menuSetting.code ?? project.showCode);
   const memberEnrollmentCount = countField(project.enrolledUsers);
 
   return (
@@ -441,7 +303,7 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        style={showCode ? undefined : { display: "none" }}
       >
         <Link
           activeOptions={legacyProjectDeleteLinkActiveOptions}
@@ -471,30 +333,6 @@ function recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-function projectMenuSetting(project: ProjectContainer) {
-  const record = recordField(project);
-  const nested = recordField(record.menuSetting);
-  return {
-    board: nested.board ?? record.showBoard,
-    code: nested.code ?? record.showCode,
-    issue: nested.issue ?? record.showIssue,
-    milestone: nested.milestone ?? record.showMilestone,
-    pullRequest: nested.pullRequest ?? record.showPullRequest,
-    review: nested.review ?? record.showReview,
-  };
-}
-
-function projectWithLegacyHeaderAssets(project: ProjectContainer, basePath: string) {
-  const logoUrl =
-    stringField(project.logoUrl, "") ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png");
-  const backgroundUrl =
-    stringField(project.backgroundImageUrl, "") ||
-    stringField(project.backgroundUrl, "") ||
-    prefixBasePath(basePath, "/legacy-assets/images/bg-default-project.jpg");
-  return { ...project, backgroundImageUrl: backgroundUrl, logoUrl };
-}
-
 function stringField(value: unknown, fallback: string) {
   if (typeof value === "string") {
     return value;
@@ -503,10 +341,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function numberField(value: unknown) {
-  return typeof value === "number" ? value : 0;
 }
 
 function countField(value: unknown) {
