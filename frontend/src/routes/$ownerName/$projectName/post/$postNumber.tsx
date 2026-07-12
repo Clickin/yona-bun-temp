@@ -103,9 +103,23 @@ function ProjectPostDetailScreen({
   const { ownerName, postNumber, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
-  const postQuery = useQuery(
-    readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
-  );
+  const postQuery = useQuery({
+    ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+  });
+
+  if (!isEditChildRoute && restApiErrorStatus(postQuery.error) === 404) {
+    return (
+      <>
+        <ProjectPostNotFoundTitle ownerName={ownerName} projectName={projectName} />
+        <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+        <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
+        <ProjectPostNotFoundBody ownerName={ownerName} projectName={projectName} />
+      </>
+    );
+  }
 
   if (!postQuery.data) {
     return null;
@@ -133,6 +147,46 @@ function ProjectPostDetailScreen({
 
 function ProjectPostDetailTitle({ postTitle }: { postTitle: string }) {
   return postTitle ? <title>{postTitle}</title> : null;
+}
+
+function ProjectPostNotFoundTitle({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
+}
+
+function ProjectPostNotFoundBody({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.notfound.board_post")}</p>
+          <Link
+            to="/$ownerName/$projectName/posts"
+            params={{ ownerName, projectName }}
+            className="ybtn ybtn-primary"
+          >
+            {t("button.list")}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ProjectPostDetailBody({
@@ -1911,6 +1965,15 @@ function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName
     return organizationName;
   }
   return booleanField(project.isProtected) ? ownerName : undefined;
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
 }
 
 function legacyRelativeDateLabel(rawLabel: string, language: string, now = Date.now()) {
