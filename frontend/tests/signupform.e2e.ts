@@ -130,6 +130,29 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   expect(mobile.loginId.right).toBeLessThanOrEqual(mobile.form.right);
 });
 
+test("authenticated signup request redirects to the legacy root without rendering signup DOM", async ({
+  page,
+}) => {
+  await mockCapabilities(page);
+  await mockAuthenticatedSession(page);
+
+  await page.goto(appPath("/users/signupform"));
+
+  await expect(page).toHaveURL(appPath("/"));
+  await expect(page.locator(".page.full .signup-form-wrap")).toHaveCount(0);
+});
+
+test("anonymous signup form still renders after its session check", async ({ page }) => {
+  await mockCapabilities(page);
+  await mockSession(page);
+
+  await page.goto(appPath("/users/signupform"));
+
+  await expect(page).toHaveURL(appPath("/users/signupform"));
+  await expect(page.locator(".page.full .signup-form-wrap form")).toBeVisible();
+  await expect(page.locator("#loginId")).toBeVisible();
+});
+
 test("signup confirmation and social-only branches preserve legacy visible copy and order", async ({
   page,
 }) => {
@@ -328,6 +351,20 @@ async function mockSession(page: Page) {
     await route.fulfill({
       contentType: "application/json",
       json: { defaultLandingPath: "/", isAnonymous: true, isGuest: false },
+    });
+  });
+}
+
+async function mockAuthenticatedSession(page: Page) {
+  await page.route("**/api/v1/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        defaultLandingPath: "/",
+        isAnonymous: false,
+        isGuest: false,
+        loginId: "admin",
+      },
     });
   });
 }

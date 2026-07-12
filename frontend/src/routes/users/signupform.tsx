@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
+import { currentSessionQueryOptions } from "../../api/session";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
@@ -40,6 +41,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const loginIdRef = React.useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<SignupField, string>>>({});
   const [submitError, setSubmitError] = React.useState("");
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const capabilitiesQuery = useQuery({
     queryFn: () => readAuthUiCapabilitiesRest(runtimeConfig),
     queryKey: apiQueryKeys.auth.capabilities(),
@@ -49,6 +51,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const signupRequireConfirm = capabilities?.signupRequireConfirm === true;
   const siteName = runtimeConfig.siteName ?? "Yona";
   const title = lookupLegacyMessage(language, "title.signupFor", { args: [siteName] });
+
   React.useEffect(() => {
     if (!socialLoginOnly) {
       loginIdRef.current?.focus();
@@ -85,6 +88,14 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       await navigate({ href: localPath });
     },
   });
+
+  if (sessionQuery.data?.isAnonymous === false) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (sessionQuery.isPending) {
+    return null;
+  }
 
   return (
     <>
