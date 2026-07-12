@@ -11,7 +11,7 @@ const AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md"
 const ADDED_MANUAL_MULTI_SCREEN_EXCEPTION_PATTERN =
   /^\+Manual multi-screen exception note\b/mu;
 const ADDED_MANUAL_EVIDENCE_ONLY_EXCEPTION_PATTERN =
-  /^\+Manual evidence-only exception note\b/mu;
+  /(?:^\+Manual evidence-only exception note\b|manual evidence-only exception)/imu;
 
 function parseArgs(argv) {
   const options = {
