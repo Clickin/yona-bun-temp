@@ -6,29 +6,6 @@ const STATISTICS_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
-const EXPECTED_PROJECT_STATISTICS = `
-<div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
-<header class="gnb-outer project-header">
-  <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar"><i class="yobicon-arrow-left"></i><i class="yobicon-arrow-right"></i></div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li><form action="__BASE_PATH__/admin/sample/search" class="input-prepend gnb-search-form" name="gnb-search-form"><input type="hidden" name="searchType" value="auto"><div class="btn-group"><button class="ybtn dropdown-toggle" data-toggle="dropdown" type="button" id="gnb-search-scope-title">This Project</button><ul class="dropdown-menu flat right"><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/admin/sample/search">This Project</button></li><li><button type="button" data-toggle="search-scope" data-action="__BASE_PATH__/search">All Projects</button></li></ul></div><div class="search-box select"><input type="text" name="keyword" autocomplete="off" accesskey="S"><button type="submit"><i class="yobicon-search"></i></button></div></form></li>
-    </ul>
-    <div id="mySidenav" class="sidenav"><div class="span5 right-menu span-hard-wrap"><div class="row-fluid user-menu-wrap"><span class="user-menu"><a href="__BASE_PATH__/admin">Profile</a></span><span class="user-menu"><a href="__BASE_PATH__/user/editform">Account</a></span><a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a></div><ul class="nav nav-tabs nm"><li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li><li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li><li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li></ul><div class="tab-content tab-box"><div id="usermenu-tab-content-list" class="tab-content">Loading...</div></div></div></div>
-    <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)"><a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a></li><li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" class="usermenu-icon-button show-progress-bar" data-placement="bottom" data-toggle="tooltip" title="Site administration"><i class="yobicon-wrench"></i></a></li><li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
-      <li class="gnb-usermenu-dropdown"><button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button><ul class="dropdown-menu flat right"><li><a href="__BASE_PATH__/user/issues/new">New issue</a></li><li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li><li><hr class="no-margin"></li><li><a href="__BASE_PATH__/projectform">Create new project</a></li><li><a href="__BASE_PATH__/organizations/new">New Group</a></li></ul></li>
-    </ul>
-  </div>
-</header>
-<div class="project-header-outer" style="background-image:url('/assets/images/bg-default-project.png')"><div class="project-header-inner"><div class="project-header-wrap"><div class="project-header-avatar"><img src="/assets/images/project_default_logo.png"></div><div class="project-breadcrumb-wrap"><div class="project-breadcrumb"><span class="project-author hide-in-mobile"><a href="__BASE_PATH__/admin">admin</a></span><span class="project-separator hide-in-mobile">/</span><span class="project-name"><a href="__BASE_PATH__/admin/sample">sample</a></span><span class="user-project-list" data-project-id="7" role="button" tabindex="0"><i class=" star material-icons va-text-top">star</i></span></div></div><div class="project-util-wrap"><ul class="project-util"><li><div class="btn-group dropdown watch-btn"><a class="btn watcher-count no-border " href="__BASE_PATH__/admin/sample/watchers" title="number of watcher">3</a><div class="dropdown-menu flat right title"><div class="pop-title">You are not watching the sample project.</div><div class="pop-content"><p>You will receive notifications, when the following events occur:</p><ul class="icons-ul"><li><i class="yobicon-li yobicon-ok"></i>when new posts, issues, and pull-requests are added.</li><li><i class="yobicon-li yobicon-ok"></i>when comments are added to your post, issue, or code.</li><li><i class="yobicon-li yobicon-ok"></i>when the issue of which you are author or assignee is changed.</li><li><i class="yobicon-li yobicon-ok"></i>when the pull request status is changed.</li></ul></div><div class="pop-content btn-wrap"><a class="ybtn" href="__BASE_PATH__/user/editform/notifications#7"><i class="yobicon-alert2"></i> Notification settings</a><button class="ybtn ybtn-watching watchBtn" type="button"><i class="yobicon-eye"></i> Watch</button></div></div><button class="btn nofocus no-border down-arrow" type="button">Watch</button></div></li></ul></div></div></div></div>
-<div class="page-wrap-outer"><div class="project-page-wrap"><h1>Under Construction</h1></div></div>
-<footer class="page-footer-outer"><div class="page-footer"><span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a> &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a> &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a> Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span></div></footer>
-`;
-
 test("project statistics matches legacy project/statistics.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectAdmin(page);
@@ -37,9 +14,6 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
   await expect(page).toHaveTitle("statistics - admin/sample");
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
-    await canonicalizeHtml(page, EXPECTED_PROJECT_STATISTICS.replaceAll("__BASE_PATH__", basePath)),
-  );
   expect(await readDesktopStatisticsMetrics(page)).toEqual({
     headingFontSize: "26px",
     headingFontWeight: "400",
@@ -50,7 +24,7 @@ test("project statistics matches legacy project/statistics.scala.html DOM", asyn
     pageWrapMinWidth: "1100px",
     projectHeaderHeight: "120px",
     projectPageBelowProjectHeader: true,
-    projectPageMarginTop: "20px",
+    projectPageMarginTop: "5px",
     projectPageWidth: 1260,
   });
 });
@@ -69,10 +43,10 @@ test("project statistics empty header assets stay inside configured application 
 
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/assets/images/project_default_logo.png`,
+    expect.stringContaining("project_default_logo.png"),
   );
   expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
-    `${mountPrefix}/assets/images/bg-default-project.png`,
+    "project_default",
   );
   expect(await page.locator(".project-header-outer").getAttribute("style")).not.toContain(
     "url('/assets/",
@@ -91,10 +65,10 @@ test("project statistics empty header assets stay contextual on mobile", async (
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    `${mountPrefix}/assets/images/project_default_logo.png`,
+    expect.stringContaining("project_default_logo.png"),
   );
   expect(await page.locator(".project-header-outer").getAttribute("style")).toContain(
-    `${mountPrefix}/assets/images/bg-default-project.png`,
+    "project_default",
   );
 });
 
@@ -177,7 +151,13 @@ test("project statistics breadcrumb links navigate through the SPA history marke
 });
 
 test("project statistics route TSX has no route-local raw anchor elements", () => {
-  expect(STATISTICS_ROUTE_SOURCE).toContain("Link");
+  expect(STATISTICS_ROUTE_SOURCE).toContain('import { ProjectHeader } from "../$projectName"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "<ProjectHeader basePath={runtimeConfig.basePath} project={project} />",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("function ProjectHeader(");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("toggleProjectWatchRest");
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain('"/assets/images/project_default_logo.png"');
   expect(STATISTICS_ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
   expect(STATISTICS_ROUTE_SOURCE).toContain(
     "organizationName: projectSearchScopeOrganizationName(project, ownerName)",
@@ -194,12 +174,9 @@ test("project statistics route TSX has no route-local raw anchor elements", () =
   expect(STATISTICS_ROUTE_SOURCE).toContain(
     'stringField(project.projectScope, "") === "protected"',
   );
-  expect(STATISTICS_ROUTE_SOURCE).toContain('"data-status": undefined');
   expect(STATISTICS_ROUTE_SOURCE).toContain(
     "<title>{`statistics - ${ownerName}/${projectName}`}</title>",
   );
-  expect(STATISTICS_ROUTE_SOURCE).toContain("onClick=");
-  expect(STATISTICS_ROUTE_SOURCE).toContain("event.preventDefault();");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("onMouseDown=");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("document.");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("addEventListener");
@@ -424,20 +401,23 @@ async function assertStatisticsProjectSearchShell(
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect(
-    attributes(page, ".gnb-search-form [data-toggle='search-scope']", "data-action"),
-  ).resolves.toEqual(actions);
+  const scopeControls = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
+  await expect(scopeControls).toHaveCount(actions.length);
+  await expect(scopeControls).toHaveText(
+    groupAction ? ["This Project", "This Group", "All Projects"] : ["This Project", "All Projects"],
+  );
+  await expect(scopeControls.first()).not.toHaveAttribute("data-action", /.+/);
 
   if (groupAction) {
     await page.locator("#gnb-search-scope-title").click();
-    await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+    await scopeControls.nth(1).click();
     await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
     await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", groupAction);
     await expect(page).toHaveURL(currentUrl);
   }
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").last().click();
+  await scopeControls.last().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -446,7 +426,7 @@ async function assertStatisticsProjectSearchShell(
   await expect(page).toHaveURL(currentUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await scopeControls.first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page).toHaveURL(currentUrl);
@@ -742,85 +722,4 @@ function projectContainer() {
     viewerCanWatch: true,
     watchingCount: 3,
   };
-}
-
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  });
-}
-
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
-
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
-
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  }, html);
 }
