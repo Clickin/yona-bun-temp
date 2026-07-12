@@ -8,19 +8,38 @@ import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
   ProjectPullRequestsScreen,
+  ProjectPullRequestsBadRequestRouteShell,
   type ProjectPullRequestsSearch,
-  validateProjectPullRequestsSearch,
 } from "./pullRequests";
 
 export const Route = createFileRoute("/$ownerName/$projectName/sentPullRequests")({
   component: ProjectSentPullRequestsRoute,
-  validateSearch: validateProjectPullRequestsSearch,
+  validateSearch: validateSentPullRequestsSearch,
 });
+
+type SentPullRequestsSearch = Partial<ProjectPullRequestsSearch>;
+
+function validateSentPullRequestsSearch(search: Record<string, unknown>): SentPullRequestsSearch {
+  const filter = typeof search.filter === "string" ? search.filter : "";
+  const contributorId = Number(search.contributorId) || 0;
+  const pageNum = Number(search.pageNum) || 1;
+
+  return {
+    ...(filter ? { filter } : {}),
+    ...(contributorId ? { contributorId } : {}),
+    ...(pageNum > 1 ? { pageNum } : {}),
+  };
+}
 
 function ProjectSentPullRequestsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
-  const search = Route.useSearch();
+  const routeSearch = Route.useSearch();
+  const search: ProjectPullRequestsSearch = {
+    contributorId: routeSearch.contributorId ?? 0,
+    filter: routeSearch.filter ?? "",
+    pageNum: routeSearch.pageNum ?? 1,
+  };
 
   return (
     <YonaQueryProvider>
@@ -53,6 +72,16 @@ function ProjectSentPullRequestsRouteShell({
 
   if (!projectQuery.data) {
     return null;
+  }
+
+  if (projectQuery.data.vcs !== "GIT") {
+    return (
+      <ProjectPullRequestsBadRequestRouteShell
+        ownerName={ownerName}
+        projectName={projectName}
+        runtimeConfig={runtimeConfig}
+      />
+    );
   }
 
   const projectSearchScope = {
