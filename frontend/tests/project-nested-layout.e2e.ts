@@ -53,6 +53,39 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await expectProjectBranchesGeometry(page);
 });
 
+test("project issues to new issue form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/issueform")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/issueform(?:\?|$)/);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#editor-body-body")).toBeVisible();
+  await expect(
+    page.locator(".project-menu-gruop li", {
+      has: page.locator("a[href$='/admin/sample/issues']"),
+    }),
+  ).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueFormGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueFormGeometry(page);
+});
+
 test("project branches to milestones keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -724,6 +757,56 @@ async function expectProjectPostFormGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectIssueFormGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const body = rect(".project-page-wrap");
+    const form = rect("#issue-form");
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const title = rect("#title");
+    const editor = rect("#editor-body-body");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      editorBottom: editor.bottom,
+      editorTop: editor.top,
+      formBottom: form.bottom,
+      formTop: form.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      titleBottom: title.bottom,
+      titleLeft: title.left,
+      titleRight: title.right,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.formTop);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.titleLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.titleRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.editorTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.editorBottom).toBeGreaterThan(metrics.editorTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectPostsGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -1247,6 +1330,21 @@ async function mockProjectHomeAndIssues(
         totalCount: 0,
       });
     if (path.endsWith("/labels")) return json({ labels: [] });
+    if (path.endsWith("/issues/form-options"))
+      return json({
+        canCreateIssueAssignee: true,
+        canCreateIssueMilestone: true,
+        canManageIssueLabels: true,
+        currentProject: {
+          logoUrl: "/assets/images/project_default_logo.png",
+          ownerName: "admin",
+          projectId: 7,
+          projectName: "sample",
+        },
+        issueTemplateMarkdown: "",
+        movableIssueProjects: [],
+      });
+    if (path.endsWith("/issues/parent-options")) return json({ items: [] });
     if (path.endsWith("/assignable-users") || path.endsWith("/issue-search-users"))
       return json({ items: [], total: 0, truncated: false });
     if (path.endsWith("/projects/admin/sample/issues"))
