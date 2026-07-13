@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, three user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, four user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -284,6 +284,14 @@ semantic shadow live in the canonical global theme entry; no dark values or togg
 Scrollbar pseudo-elements, the inner right-menu width, account row, tabs, dynamic content, and
 mobile inner-width correction remain frozen fallback and later owners. This is not Wave 1
 completion.
+
+The fourth verified slice migrates only the authenticated sidenav account-action row. StyleX owns
+the row box model/alignment/muted color, the three menu-span spacing/font/black color, and the
+logout hover violet through the global theme entry. The legacy logout white color and normal
+weight remain fallback because their frozen declarations are `!important`; adding StyleX
+`!important` or claiming normal StyleX ownership would violate the migration rules. Bootstrap
+`.label`, anchor, inner shell, tabs/content, and scrollbar declarations remain later owners. This
+is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

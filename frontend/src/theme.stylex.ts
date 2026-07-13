@@ -5,6 +5,10 @@ export const globalColors = stylex.defineVars({
   sidenavSurface: "#ffffff",
   // _usermenu.less: .sidenav color
   sidenavText: "#000000",
+  // app.css: .sidenav .user-menu-wrap color (legacy _page.less: .sidebar counterpart)
+  sidenavAccountText: "#808080",
+  // _usermenu.less: @violet used by .logout:hover
+  sidenavLogoutHover: "#9c27b0",
   // yona.Usermenu.js: openSidebar border
   sidenavBorder: "#cccccc",
   // _usermenu.less: #mySidenav box-shadow

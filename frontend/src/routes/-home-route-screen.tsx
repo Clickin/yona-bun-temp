@@ -1078,6 +1078,27 @@ function LegacyFramedSidebar({
   );
 }
 
+const authenticatedSidenavAccountActionStyles = stylex.create({
+  row: {
+    boxSizing: "border-box",
+    color: globalColors.sidenavAccountText,
+    padding: "10px",
+    textAlign: "right",
+  },
+  menu: {
+    color: globalColors.sidenavText,
+    fontSize: "12px",
+    marginLeft: "5px",
+    marginRight: "5px",
+    padding: "3px",
+  },
+  logout: {
+    ":hover": {
+      backgroundColor: globalColors.sidenavLogoutHover,
+    },
+  },
+});
+
 const authenticatedSidenavShellStyles = stylex.create({
   shell: {
     backgroundColor: globalColors.sidenavSurface,
@@ -1251,8 +1272,13 @@ function AuthenticatedSiteUserMenu({
         data-stylex-owner="authenticated-site-sidenav-shell"
       >
         <div className="span5 right-menu span-hard-wrap">
-          <div className="row-fluid user-menu-wrap">
-            <span className="user-menu">
+          <div
+            className={`row-fluid user-menu-wrap ${stylex.props(authenticatedSidenavAccountActionStyles.row).className}`}
+            data-stylex-owner="authenticated-sidenav-account-actions"
+          >
+            <span
+              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
+            >
               <Link
                 activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                 activeProps={{
@@ -1267,7 +1293,9 @@ function AuthenticatedSiteUserMenu({
                 {t("userinfo.profile")}
               </Link>
             </span>
-            <span className="user-menu">
+            <span
+              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
+            >
               <Link
                 activeProps={{
                   "aria-current": undefined,
@@ -1280,7 +1308,11 @@ function AuthenticatedSiteUserMenu({
               </Link>
             </span>
             <Link to={LEGACY_AUTHENTICATED_LOGOUT_PATH} reloadDocument>
-              <span className="user-menu logout label">{t("title.logout")}</span>
+              <span
+                className={`user-menu logout label ${stylex.props(authenticatedSidenavAccountActionStyles.menu, authenticatedSidenavAccountActionStyles.logout).className}`}
+              >
+                {t("title.logout")}
+              </span>
             </Link>
           </div>
           <ul className="nav nav-tabs nm">
