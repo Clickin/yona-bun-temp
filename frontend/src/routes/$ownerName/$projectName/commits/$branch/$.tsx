@@ -27,7 +27,6 @@ function ProjectCodeNestedFileHistoryRoute() {
 
   return (
     <ProjectCodeFileHistoryRouteFrame
-      nestedProjectShell
       page={page}
       routeParams={{
         branch,
