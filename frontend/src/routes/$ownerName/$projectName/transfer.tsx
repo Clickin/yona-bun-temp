@@ -33,16 +33,43 @@ export const Route = createFileRoute("/$ownerName/$projectName/transfer")({
 function ProjectTransferRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectTransferRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectTransferRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectTransferRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectTransferRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectTransferRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectTransferRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -55,18 +82,32 @@ function ProjectTransferRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
       }
     : { ownerName, projectName };
 
+  const screen = (
+    <ProjectTransferScreen renderProjectShell={renderProjectShell} runtimeConfig={runtimeConfig} />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
+
   return (
     <SiteLayoutShell
       projectSearchScope={projectSearchScope}
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
-      <ProjectTransferScreen runtimeConfig={runtimeConfig} />
+      {screen}
     </SiteLayoutShell>
   );
 }
 
-function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectTransferScreen({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const projectQuery = useQuery(
@@ -83,16 +124,22 @@ function ProjectTransferScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   return (
     <>
       <title>{`${t("title.projectTransfer")} - ${ownerName}/${projectName}`}</title>
-      <ProjectTransferBody project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectTransferBody
+        project={projectQuery.data}
+        renderProjectShell={renderProjectShell}
+        runtimeConfig={runtimeConfig}
+      />
     </>
   );
 }
 
 function ProjectTransferBody({
   project,
+  renderProjectShell,
   runtimeConfig,
 }: {
   project: ProjectContainer;
+  renderProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
@@ -155,8 +202,12 @@ function ProjectTransferBody({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+      {renderProjectShell ? (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      ) : null}
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />

@@ -98,6 +98,7 @@ function ProjectHomeRoute() {
   const settingPath = `${homePath}/setting`;
   const membersPath = `${homePath}/members`;
   const webhooksPath = `${homePath}/webhooks`;
+  const transferPath = `${homePath}/transfer`;
   const active =
     pathname === homePath
       ? "home"
@@ -119,7 +120,9 @@ function ProjectHomeRoute() {
                       ? "members"
                       : pathname === webhooksPath
                         ? "webhooks"
-                        : null;
+                        : pathname === transferPath
+                          ? "transfer"
+                          : null;
 
   if (!active) {
     return <Outlet />;
@@ -148,6 +151,7 @@ function ProjectHomeRouteShell({
     | "pullRequest"
     | "review"
     | "setting"
+    | "transfer"
     | "webhooks";
   runtimeConfig: RuntimeConfig;
 }) {
@@ -279,6 +283,7 @@ function ProjectLayoutScreen({
     | "pullRequest"
     | "review"
     | "setting"
+    | "transfer"
     | "webhooks";
   project: ProjectContainer;
 }) {
@@ -310,7 +315,11 @@ function ProjectLayoutScreen({
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
-        active={active === "members" || active === "webhooks" ? "setting" : active}
+        active={
+          active === "members" || active === "transfer" || active === "webhooks"
+            ? "setting"
+            : active
+        }
         basePath={runtimeConfig.basePath}
         project={project}
       />
