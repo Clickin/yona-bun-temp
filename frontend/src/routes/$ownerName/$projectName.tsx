@@ -119,6 +119,7 @@ function ProjectHomeRoute() {
   const labelsPath = `${homePath}/issue/labelsform`;
   const issueFormPath = `${homePath}/issueform`;
   const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
+  const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -169,7 +170,12 @@ function ProjectHomeRoute() {
                                             : pathname === labelsPath
                                               ? "labels"
                                               : null;
-  const active = issueDetailNumber !== null ? "issueDetail" : standardActive;
+  const active =
+    issueEditNumber !== null
+      ? "issueEdit"
+      : issueDetailNumber !== null
+        ? "issueDetail"
+        : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -196,6 +202,7 @@ function ProjectHomeRouteShell({
     | "home"
     | "issue"
     | "issueDetail"
+    | "issueEdit"
     | "issueform"
     | "labels"
     | "members"
@@ -239,6 +246,19 @@ function ProjectHomeRouteShell({
     },
     retryOnMount: false,
   });
+  const issueEditNumber = exactProjectIssueEditNumber(
+    useRouterState({ select: (state) => state.location.pathname }),
+    `/${ownerName}/${projectName}`,
+  );
+  const issueEditQuery = useQuery({
+    enabled: active === "issueEdit" && issueEditNumber !== null,
+    queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, issueEditNumber ?? 0),
+    queryKey: ["project", ownerName, projectName, "issues", issueEditNumber ?? 0],
+    retry(failureCount, error) {
+      return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
+  });
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const projectSearch = projectSearchRouteSearch(locationHref);
   const searchQuery = useQuery({
@@ -276,6 +296,7 @@ function ProjectHomeRouteShell({
   const preserveWatchersShellRef = useRef(false);
   const preserveSearchShellRef = useRef(false);
   const preserveIssueDetailShellRef = useRef(false);
+  const preserveIssueEditShellRef = useRef(false);
   const previousSearchHrefRef = useRef(locationHref);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
@@ -307,6 +328,14 @@ function ProjectHomeRouteShell({
   ) {
     preserveIssueDetailShellRef.current = false;
   }
+  if (active === "issueEdit" && previousActiveRef.current !== "issueEdit") {
+    preserveIssueEditShellRef.current = true;
+  } else if (
+    active !== "issueEdit" ||
+    (issueEditQuery.error && projectRouteErrorStatus(issueEditQuery.error) !== 404)
+  ) {
+    preserveIssueEditShellRef.current = false;
+  }
   previousActiveRef.current = active;
   previousSearchHrefRef.current = locationHref;
 
@@ -323,6 +352,16 @@ function ProjectHomeRouteShell({
       (!issueDetailQuery.data &&
         projectRouteErrorStatus(issueDetailQuery.error) !== 404 &&
         !preserveIssueDetailShellRef.current))
+  ) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "issueEdit" &&
+    (!query.data ||
+      (!issueEditQuery.data &&
+        projectRouteErrorStatus(issueEditQuery.error) !== 404 &&
+        !preserveIssueEditShellRef.current))
   ) {
     return <Outlet />;
   }
@@ -491,6 +530,7 @@ function ProjectLayoutScreen({
     | "home"
     | "issue"
     | "issueDetail"
+    | "issueEdit"
     | "issueform"
     | "labels"
     | "members"
@@ -517,7 +557,7 @@ function ProjectLayoutScreen({
 
   return (
     <>
-      {active === "issueDetail" ? null : (
+      {active === "issueDetail" || active === "issueEdit" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -581,14 +621,16 @@ function ProjectLayoutScreen({
                         ? "issue"
                         : active === "issueDetail"
                           ? "issue"
-                          : active === "delete" ||
-                              active === "changeVcs" ||
-                              active === "labels" ||
-                              active === "members" ||
-                              active === "transfer" ||
-                              active === "webhooks"
-                            ? "setting"
-                            : active
+                          : active === "issueEdit"
+                            ? "issue"
+                            : active === "delete" ||
+                                active === "changeVcs" ||
+                                active === "labels" ||
+                                active === "members" ||
+                                active === "transfer" ||
+                                active === "webhooks"
+                              ? "setting"
+                              : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -613,6 +655,7 @@ function ProjectLayoutScreen({
         <ProjectNestedShellContext
           value={
             active === "issueDetail" ||
+            active === "issueEdit" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -628,6 +671,13 @@ function ProjectLayoutScreen({
 function exactProjectIssueNumber(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/issue/(\\d+)$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectIssueEditNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/issue/(\\d+)/editform$`,
   ).exec(pathname);
   return match ? Number(match[1]) : null;
 }

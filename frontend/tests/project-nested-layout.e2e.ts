@@ -148,6 +148,37 @@ test("project issues to issue detail keeps the legacy project shell DOM nodes mo
   await expectProjectIssueDetailGeometry(page);
 });
 
+test("project issue detail to edit form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname}/editform`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/issue\/11\/editform(?:\?|$)/);
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expect(page.locator("#editor-body-body")).toBeVisible();
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueEditGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#issue-form")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueEditGeometry(page);
+});
+
 test("project branches to milestones keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1188,6 +1219,34 @@ async function expectProjectIssueDetailGeometry(page: Page) {
   expect(metrics.boardHeaderBottom).toBeGreaterThan(metrics.boardHeaderTop);
   expect(metrics.boardBodyTop).toBeGreaterThanOrEqual(metrics.boardHeaderBottom);
   expect(metrics.boardBodyBottom).toBeGreaterThan(metrics.boardBodyTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectIssueEditGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const form = rect("#issue-form");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formTop: form.top,
+      menuBottom: menu.bottom,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
