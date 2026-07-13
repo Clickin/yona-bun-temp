@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, seven user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, eight user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -316,6 +316,17 @@ React state and the existing workspace query still own selection and content. Th
 color declaration, so the global theme entry is unchanged. Inner search, list, star, row,
 scrollbar, left-sidebar, and anonymous-sidebar declarations remain fallback and later owners.
 This is not Wave 1 completion.
+
+The eighth verified slice migrates only the authenticated Favorite pane search/list shell in its
+populated and empty states. StyleX owns the group position, search input base/focus/box model, bar
+base, list reset/scroll bounds, and `No results` presentation. Its only color is the exact frozen
+`mediumvioletred`, exposed as `globalColors.sidenavNoResultText` in the canonical global theme
+entry; no route-local raw color, dark value, or toggle was added. The max-720 global text-input
+`16px !important` rule remains the final mobile computed font size, and CSS overflow-axis
+coupling makes authored `overflow-x: visible` compute to `auto` beside `overflow-y: auto`.
+Focus-bar pseudo-elements, scrollbar pseudo-elements, organization rows/stars/links/toggles,
+the Project/Recent History panes, and other consumers remain fallback and later owners. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -25,6 +25,8 @@ export const globalColors = stylex.defineVars({
   sidenavTabActiveText: "#555555",
   // Bootstrap 2.3.1 bootstrap.css: inactive/active-bottom tab borders and button background
   transparent: "transparent",
+  // _usermenu.less: .user-project-list .no-result color
+  sidenavNoResultText: "mediumvioletred",
   // _variables.less: @blue
   navigationAccent: "#5dbbe0",
   // _variables.less: @primary -> @orange

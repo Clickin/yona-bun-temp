@@ -1175,6 +1175,48 @@ const authenticatedSidenavTabStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavFavoriteShellStyles = stylex.create({
+  group: {
+    position: "relative",
+  },
+  input: {
+    borderRadius: "unset",
+    borderStyle: {
+      default: "none",
+      ":focus": "none",
+    },
+    boxSizing: "content-box",
+    display: "block",
+    fontSize: "14px",
+    height: "34px",
+    marginBottom: 0,
+    outlineStyle: {
+      default: null,
+      ":focus": "none",
+    },
+    width: "99%",
+  },
+  bar: {
+    display: "block",
+    position: "relative",
+  },
+  result: {
+    listStyle: "none",
+    margin: "0 0 10px",
+    maxHeight: "80vh",
+    overflowX: "visible",
+    overflowY: "auto",
+    padding: 0,
+  },
+  noResult: {
+    color: globalColors.sidenavNoResultText,
+    fontSize: "16px",
+    marginBottom: "25px",
+    marginTop: "10px",
+    textAlign: "center",
+  },
+});
+
 const authenticatedSidenavTabPanelStyles = stylex.create({
   panel: {
     borderRadius: "0 0 4px 4px",
@@ -1511,7 +1553,7 @@ function AuthenticatedSiteUserMenu({
               {workspace ? (
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
-                  ownsAuthenticatedSidenavTabPanel
+                  isAuthenticatedSidenav
                   runtimeConfig={runtimeConfig}
                   sessionLoginId={loginId}
                   workspace={workspace}
@@ -1789,14 +1831,14 @@ function AnonymousSiteUserMenu() {
 function SidebarTabContent({
   activeTab,
   idPrefix,
-  ownsAuthenticatedSidenavTabPanel = false,
+  isAuthenticatedSidenav = false,
   runtimeConfig,
   sessionLoginId,
   workspace,
 }: {
   activeTab: SidebarTab;
   idPrefix?: string;
-  ownsAuthenticatedSidenavTabPanel?: boolean;
+  isAuthenticatedSidenav?: boolean;
   runtimeConfig: RuntimeConfig;
   sessionLoginId: string;
   workspace: YoramRecord;
@@ -1806,7 +1848,7 @@ function SidebarTabContent({
     <>
       <div
         className={`tab-pane user-project-list${activeTab === "favorite" ? " active" : ""}${
-          ownsAuthenticatedSidenavTabPanel
+          isAuthenticatedSidenav
             ? ` ${
                 stylex.props(
                   authenticatedSidenavTabPanelStyles.pane,
@@ -1820,6 +1862,7 @@ function SidebarTabContent({
         {hasSidebarFavoriteData(workspace) ? (
           <SidebarOrganizationList
             idPrefix={idPrefix}
+            isAuthenticatedSidenav={isAuthenticatedSidenav}
             onSearchQueryChange={setSearchQuery}
             runtimeConfig={runtimeConfig}
             searchQuery={searchQuery}
@@ -1832,7 +1875,7 @@ function SidebarTabContent({
       </div>
       <div
         className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}${
-          ownsAuthenticatedSidenavTabPanel
+          isAuthenticatedSidenav
             ? ` ${
                 stylex.props(
                   authenticatedSidenavTabPanelStyles.pane,
@@ -1853,7 +1896,7 @@ function SidebarTabContent({
       </div>
       <div
         className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}${
-          ownsAuthenticatedSidenavTabPanel
+          isAuthenticatedSidenav
             ? ` ${
                 stylex.props(
                   authenticatedSidenavTabPanelStyles.pane,
@@ -1952,6 +1995,7 @@ function SidebarFavoriteButton({
 
 function SidebarOrganizationList({
   idPrefix,
+  isAuthenticatedSidenav = false,
   onSearchQueryChange,
   runtimeConfig,
   searchQuery,
@@ -1959,6 +2003,7 @@ function SidebarOrganizationList({
   workspace,
 }: {
   idPrefix?: string;
+  isAuthenticatedSidenav?: boolean;
   onSearchQueryChange: (query: string) => void;
   runtimeConfig: RuntimeConfig;
   searchQuery: string;
@@ -2021,6 +2066,29 @@ function SidebarOrganizationList({
   const visibleDirectFavorites = directFavoriteProjects.filter((project) =>
     sidebarProjectMatches(project, normalizedQuery),
   );
+  const favoriteShellOwner = isAuthenticatedSidenav
+    ? "authenticated-sidenav-favorite-shell"
+    : undefined;
+  const favoriteShellGroupClass = isAuthenticatedSidenav
+    ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.group).className}`
+    : "";
+  const favoriteShellInputClass = isAuthenticatedSidenav
+    ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.input).className}`
+    : "";
+  const favoriteShellBarClass = isAuthenticatedSidenav
+    ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.bar).className}`
+    : "";
+  const favoriteShellResultClass = isAuthenticatedSidenav
+    ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.result).className}`
+    : "";
+  const favoriteShellNoResultClass = isAuthenticatedSidenav
+    ? ` ${
+        stylex.props(
+          authenticatedSidenavFavoriteShellStyles.result,
+          authenticatedSidenavFavoriteShellStyles.noResult,
+        ).className
+      }`
+    : "";
 
   if (
     ownProjects.length === 0 &&
@@ -2029,19 +2097,22 @@ function SidebarOrganizationList({
     directFavoriteProjects.length === 0
   ) {
     return (
-      <div className="search-result">
-        <div className="group">
+      <div className="search-result" data-stylex-owner={favoriteShellOwner}>
+        <div className={`group${favoriteShellGroupClass}`}>
           <input
-            className="search-input org-search"
+            className={`search-input org-search${favoriteShellInputClass}`}
             type="text"
             autoComplete="off"
             onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
             placeholder={t("title.type.name")}
             value={searchQuery}
           />
-          <span className="bar"></span>
+          <span className={`bar${favoriteShellBarClass}`}></span>
         </div>
-        <div id={sidebarDomId(idPrefix, "organizations")} className="no-result tab-pane user-ul">
+        <div
+          id={sidebarDomId(idPrefix, "organizations")}
+          className={`no-result tab-pane user-ul${favoriteShellNoResultClass}`}
+        >
           {t("title.no.results")}
         </div>
       </div>
@@ -2049,19 +2120,22 @@ function SidebarOrganizationList({
   }
 
   return (
-    <div className="search-result">
-      <div className="group">
+    <div className="search-result" data-stylex-owner={favoriteShellOwner}>
+      <div className={`group${favoriteShellGroupClass}`}>
         <input
-          className="search-input org-search"
+          className={`search-input org-search${favoriteShellInputClass}`}
           type="text"
           autoComplete="off"
           onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
           placeholder={t("title.type.name")}
           value={searchQuery}
         />
-        <span className="bar"></span>
+        <span className={`bar${favoriteShellBarClass}`}></span>
       </div>
-      <ul className="tab-pane user-ul " id={sidebarDomId(idPrefix, "organizations")}>
+      <ul
+        className={`tab-pane user-ul${favoriteShellResultClass}`}
+        id={sidebarDomId(idPrefix, "organizations")}
+      >
         {ownProjects.length > 0 && showOwnProjects ? (
           <li className="org-li">
             <div className="org-list project-flex-container all-orgs">
