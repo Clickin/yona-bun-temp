@@ -106,6 +106,7 @@ function ProjectHomeRoute() {
   const sentPullRequestsPath = `${homePath}/sentPullRequests`;
   const reviewsPath = `${homePath}/reviews`;
   const settingPath = `${homePath}/setting`;
+  const settingFormPath = `${homePath}/settingform`;
   const membersPath = `${homePath}/members`;
   const webhooksPath = `${homePath}/webhooks`;
   const transferPath = `${homePath}/transfer`;
@@ -148,7 +149,7 @@ function ProjectHomeRoute() {
                               ? "search"
                               : pathname === reviewsPath
                                 ? "review"
-                                : pathname === settingPath
+                                : pathname === settingPath || pathname === settingFormPath
                                   ? "setting"
                                   : pathname === membersPath
                                     ? "members"
