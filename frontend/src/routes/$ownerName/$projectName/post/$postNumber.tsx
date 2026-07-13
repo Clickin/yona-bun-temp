@@ -5,6 +5,7 @@ import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  use,
   useState,
 } from "react";
 import ReactMarkdown from "react-markdown";
@@ -33,7 +34,7 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
 
@@ -60,17 +61,28 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 
 function ProjectPostDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectPostDetailShell nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPostDetailShell runtimeConfig={runtimeConfig} />
+        <ProjectPostDetailShell nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectPostDetailShell({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, postNumber, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
@@ -79,6 +91,7 @@ function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   );
   const postQuery = useQuery({
     ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
+    enabled: !nestedProjectShell,
     retry(failureCount, error) {
       return restApiErrorStatus(error) !== 404 && failureCount < 3;
     },
@@ -97,6 +110,16 @@ function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfi
     return null;
   }
 
+  if (nestedProjectShell) {
+    return (
+      <ProjectPostDetailScreen
+        nestedProjectShell
+        project={projectQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   const projectSearchScope = {
     organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
     ownerName,
@@ -105,15 +128,21 @@ function ProjectPostDetailShell({ runtimeConfig }: { runtimeConfig: RuntimeConfi
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectPostDetailScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectPostDetailScreen
+        nestedProjectShell={false}
+        project={projectQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
     </SiteLayoutShell>
   );
 }
 
 function ProjectPostDetailScreen({
+  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
+  nestedProjectShell: boolean;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -131,8 +160,12 @@ function ProjectPostDetailScreen({
     return (
       <>
         <ProjectPostNotFoundTitle ownerName={ownerName} projectName={projectName} />
-        <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-        <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
+        {nestedProjectShell ? null : (
+          <>
+            <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+            <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
+          </>
+        )}
         <ProjectPostNotFoundBody ownerName={ownerName} projectName={projectName} />
       </>
     );
@@ -147,8 +180,12 @@ function ProjectPostDetailScreen({
       {!isEditChildRoute ? (
         <ProjectPostDetailTitle postTitle={stringField(postQuery.data.title)} />
       ) : null}
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
+      {nestedProjectShell ? null : (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      )}
       {isEditChildRoute ? (
         <Outlet />
       ) : (

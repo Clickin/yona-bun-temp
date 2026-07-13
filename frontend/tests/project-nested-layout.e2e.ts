@@ -290,6 +290,50 @@ test("project milestones to posts keeps the legacy project shell DOM nodes mount
   await expectProjectPostsGeometry(page);
 });
 
+test("project posts to post detail and missing post keep the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/posts`);
+  await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/posts$/, "/post/3")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/post\/3(?:\?|$)/);
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await expect(page.locator(".board-header .title")).toContainText("Sample post");
+  await expect(page.locator("#post-body-3 .markdown-wrap")).toContainText("Sample post body");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostDetailGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostDetailGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", location.pathname.replace(/\/post\/3$/, "/post/404"));
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/post\/404(?:\?|$)/);
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "Post does not exist",
+  );
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+});
+
 test("project posts to new post form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1450,6 +1494,51 @@ async function expectProjectPostsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPostDetailGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap.board-view");
+    const title = rect(".board-header .title");
+    const content = rect("#post-body-3 .markdown-wrap");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      contentBottom: content.bottom,
+      contentLeft: content.left,
+      contentRight: content.right,
+      contentTop: content.top,
+      headerBottom: header.bottom,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      titleBottom: title.bottom,
+      titleLeft: title.left,
+      titleRight: title.right,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.menuTop).toBeGreaterThanOrEqual(metrics.headerBottom);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.contentTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.contentBottom).toBeGreaterThan(metrics.contentTop);
+  expect(metrics.titleLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.titleRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.contentLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.contentRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectPullRequestsGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -1986,6 +2075,48 @@ async function mockProjectHomeAndIssues(
       });
     if (path.endsWith("/milestones")) return json({ milestones: [] });
     if (path.endsWith("/projects/admin/sample/posts/form-options")) return json({ labels: [] });
+    if (path.endsWith("/projects/admin/sample/posts/3"))
+      return json({
+        attachments: [],
+        authorId: "1",
+        authorLabel: "Site Admin",
+        authorLoginId: "admin",
+        bodyHtml: "<p>Sample post body</p>",
+        bodyMarkdown: "Sample post body",
+        commentCount: 0,
+        comments: [],
+        createdLabel: "Jul 13, 2026",
+        historyHtml: "",
+        historyMarkdown: "",
+        id: "3",
+        isWatching: false,
+        labels: [],
+        notice: false,
+        ownerName: "admin",
+        permissions: {
+          canComment: true,
+          canCreate: true,
+          canDelete: true,
+          canRead: true,
+          canSetNotice: true,
+          canWatch: true,
+          canUpdate: true,
+        },
+        postNumber: "3",
+        projectName: "sample",
+        readme: false,
+        title: "Sample post",
+        updatedLabel: "Jul 13, 2026",
+        watcherCount: 0,
+      });
+    if (path.endsWith("/projects/admin/sample/posts/404"))
+      return route.fulfill({
+        body: JSON.stringify({
+          error: { code: "not_found", message: "Post does not exist", status: 404 },
+        }),
+        contentType: "application/json",
+        status: 404,
+      });
     if (path.endsWith("/projects/admin/sample/posts"))
       return json({
         items: [],
