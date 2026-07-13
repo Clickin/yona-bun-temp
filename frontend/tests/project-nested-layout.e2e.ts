@@ -644,6 +644,66 @@ test("project pull request overview to default changes keeps the legacy project 
   await expectProjectPullRequestChangesGeometry(page);
 });
 
+test("project pull request default changes to a specific commit keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname}/abcdef1234567890`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(
+    /\/admin\/sample\/pullRequest\/9\/changes\/abcdef1234567890(?:\?|$)/,
+  );
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestChangesGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestChangesGeometry(page);
+});
+
+test("project pull request specific changes keeps the project shell for project-scoped 403 and 404", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  for (const [commitId, status, copy] of [
+    ["forbidden123", 403, "You are not authorized"],
+    ["notfound123", 404, "Page not found"],
+  ] as const) {
+    await mockProjectHomeAndIssues(page, { pullRequestChangesErrorStatus: status });
+    await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+    await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+    await captureProjectShellNodes(page);
+
+    await page.evaluate((nextPath) => {
+      history.pushState({}, "", nextPath);
+      dispatchEvent(new PopStateEvent("popstate"));
+    }, `${basePath}/admin/sample/pullRequest/9/changes/${commitId}`);
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(copy);
+    await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
+      "Pull request",
+    );
+    await expect(page.locator(".gnb-outer")).toHaveCount(1);
+    await expect(page.locator(".project-header-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+    await expectProjectShellNodesToPersist(page);
+  }
+});
+
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -2212,7 +2272,10 @@ async function expectProjectLabelsGeometry(page: Page) {
 
 async function mockProjectHomeAndIssues(
   page: Page,
-  { isForkedFromOrigin = false }: { isForkedFromOrigin?: boolean } = {},
+  {
+    isForkedFromOrigin = false,
+    pullRequestChangesErrorStatus,
+  }: { isForkedFromOrigin?: boolean; pullRequestChangesErrorStatus?: 403 | 404 } = {},
 ) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -2537,7 +2600,14 @@ async function mockProjectHomeAndIssues(
         title: "Initial title",
         toBranch: "main",
       });
-    if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/changes"))
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/changes")) {
+      if (pullRequestChangesErrorStatus) {
+        return route.fulfill({
+          body: JSON.stringify({ error: { status: pullRequestChangesErrorStatus } }),
+          contentType: "application/json",
+          status: pullRequestChangesErrorStatus,
+        });
+      }
       return json({
         cardThreads: [],
         commits: [],
@@ -2593,6 +2663,7 @@ async function mockProjectHomeAndIssues(
         },
         threads: [],
       });
+    }
     if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/form-options"))
       return json({
         fromBranches: [{ name: "feature/ui", selected: true }],

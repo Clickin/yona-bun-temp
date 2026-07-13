@@ -123,7 +123,9 @@ function ProjectHomeRoute() {
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
   const pullRequestDetailNumber = exactProjectPullRequestNumber(pathname, homePath);
   const pullRequestEditNumber = exactProjectPullRequestEditNumber(pathname, homePath);
-  const pullRequestChangesNumber = exactProjectPullRequestChangesNumber(pathname, homePath);
+  const pullRequestChangesNumber =
+    exactProjectPullRequestChangesNumber(pathname, homePath) ??
+    exactProjectPullRequestSpecificChangesNumber(pathname, homePath);
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
@@ -813,6 +815,13 @@ function exactProjectPullRequestEditNumber(pathname: string, homePath: string) {
 function exactProjectPullRequestChangesNumber(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pullRequest/(\\d+)/changes$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectPullRequestSpecificChangesNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pullRequest/(\\d+)/changes/[^/]+$`,
   ).exec(pathname);
   return match ? Number(match[1]) : null;
 }
