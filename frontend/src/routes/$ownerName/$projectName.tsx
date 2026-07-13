@@ -21,7 +21,10 @@ import {
 } from "../../api/org-project";
 import { readProjectPostQueryOptions } from "../../api/boards";
 import { apiQueryKeys } from "../../api/query-keys";
-import { pullRequestCreateFormOptionsQueryOptions } from "../../api/pull-requests";
+import {
+  pullRequestCreateFormOptionsQueryOptions,
+  pullRequestDetailQueryOptions,
+} from "../../api/pull-requests";
 import { isSearchType, projectSearchQueryOptions } from "../../api/search";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
@@ -319,6 +322,23 @@ function ProjectHomeRouteShell({
     },
     retryOnMount: false,
   });
+  const pullRequestDetailNumber = exactProjectPullRequestNumber(
+    pathname,
+    `/${ownerName}/${projectName}`,
+  );
+  const pullRequestDetailQuery = useQuery({
+    ...pullRequestDetailQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      pullRequestNumber: pullRequestDetailNumber ?? 0,
+    }),
+    enabled: active === "pullRequestDetail" && pullRequestDetailNumber !== null,
+    retry(failureCount, error) {
+      const status = projectRouteErrorStatus(error);
+      return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
+  });
   const milestoneDetailId = exactProjectMilestoneDetailId(
     useRouterState({ select: (state) => state.location.pathname }),
     `/${ownerName}/${projectName}`,
@@ -575,6 +595,10 @@ function ProjectHomeRouteShell({
       <ProjectLayoutScreen
         active={active}
         project={query.data}
+        pullRequestDetailForbidden={
+          active === "pullRequestDetail" &&
+          projectRouteErrorStatus(pullRequestDetailQuery.error) === 403
+        }
         pullRequestFormBadRequest={
           pullRequestFormQuery.error instanceof RestApiError &&
           pullRequestFormQuery.error.status === 400
@@ -676,6 +700,7 @@ function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig:
 function ProjectLayoutScreen({
   active,
   project,
+  pullRequestDetailForbidden,
   pullRequestFormBadRequest,
   searchForbidden,
 }: {
@@ -715,6 +740,7 @@ function ProjectLayoutScreen({
     | "watchers"
     | "webhooks";
   project: ProjectContainer;
+  pullRequestDetailForbidden: boolean;
   pullRequestFormBadRequest: boolean;
   searchForbidden: boolean;
 }) {
@@ -816,7 +842,9 @@ function ProjectLayoutScreen({
                                       : active === "issueEdit"
                                         ? "issue"
                                         : active === "pullRequestDetail"
-                                          ? "pullRequest"
+                                          ? pullRequestDetailForbidden
+                                            ? "home"
+                                            : "pullRequest"
                                           : active === "pullRequestEdit"
                                             ? "pullRequest"
                                             : active === "pullRequestChanges"
