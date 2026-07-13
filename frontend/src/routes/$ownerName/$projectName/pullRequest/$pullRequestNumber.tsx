@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Fragment, use, useState, type MouseEvent, type ReactNode } from "react";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -23,11 +23,8 @@ import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -46,37 +43,11 @@ function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
 }
 
 function ProjectPullRequestOverviewRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (nestedProjectShell) {
-    return <ProjectPullRequestOverviewScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
-  }
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestOverviewScreen
-          nestedProjectShell={false}
-          runtimeConfig={runtimeConfig}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <Outlet />;
 }
 
-function ProjectPullRequestOverviewScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+export function ProjectPullRequestOverviewIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isChildRoute = !pathname.endsWith(
-    `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`,
-  );
   const prNumber = Number(pullRequestNumber) || 0;
   const projectQuery = useQuery({
     ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -87,7 +58,6 @@ function ProjectPullRequestOverviewScreen({
       projectName,
       pullRequestNumber: prNumber,
     }),
-    enabled: !isChildRoute,
     retry(failureCount, error) {
       const status = restApiErrorStatus(error);
       return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
@@ -96,28 +66,10 @@ function ProjectPullRequestOverviewScreen({
   });
   const sessionQuery = useQuery({
     ...currentSessionQueryOptions(runtimeConfig),
-    enabled: !isChildRoute,
   });
 
   if (!projectQuery.data) {
     return null;
-  }
-
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
-  if (isChildRoute) {
-    if (nestedProjectShell) {
-      return <Outlet />;
-    }
-    return (
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <Outlet />
-      </SiteLayoutShell>
-    );
   }
 
   const errorStatus = restApiErrorStatus(pullRequestQuery.error);
@@ -147,21 +99,7 @@ function ProjectPullRequestOverviewScreen({
       </>
     ) : null;
 
-  if (nestedProjectShell) {
-    return content;
-  }
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-      {content}
-    </SiteLayoutShell>
-  );
+  return content;
 }
 
 function PullRequestOverviewTitle({
@@ -1183,14 +1121,6 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
 
 function isOpenState(state: PullRequestState) {
   return state.toLowerCase() === "open";
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function stringField(value: unknown, fallback = "") {
