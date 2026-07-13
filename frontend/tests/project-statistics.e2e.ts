@@ -151,10 +151,16 @@ test("project statistics breadcrumb links navigate through the SPA history marke
 });
 
 test("project statistics route TSX has no route-local raw anchor elements", () => {
-  expect(STATISTICS_ROUTE_SOURCE).toContain('import { ProjectHeader } from "../$projectName"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    'import { ProjectHeader, ProjectNestedShellContext } from "../$projectName"',
+  );
   expect(STATISTICS_ROUTE_SOURCE).toContain(
     "<ProjectHeader basePath={runtimeConfig.basePath} project={project} />",
   );
+  expect(STATISTICS_ROUTE_SOURCE).toContain(
+    "const nestedProjectShell = use(ProjectNestedShellContext);",
+  );
+  expect(STATISTICS_ROUTE_SOURCE).toContain("if (nestedProjectShell) {");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("function ProjectHeader(");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain("toggleProjectWatchRest");
   expect(STATISTICS_ROUTE_SOURCE).not.toContain('"/assets/images/project_default_logo.png"');

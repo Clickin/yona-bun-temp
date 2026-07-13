@@ -63,6 +63,34 @@ test("project issues to watchers keeps the legacy project shell DOM nodes mounte
   await expectProjectWatchersGeometry(page);
 });
 
+test("project issues to statistics keeps the legacy menu-less shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectHeaderOnlyShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", location.pathname.replace(/\/issues$/, "/statistics"));
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/statistics(?:\?|$)/);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expectProjectHeaderOnlyShellNodesToPersist(page);
+  await expectProjectStatisticsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expectProjectHeaderOnlyShellNodesToPersist(page);
+  await expectProjectStatisticsGeometry(page);
+});
+
 test("project issues to branches keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1053,6 +1081,35 @@ async function captureProjectShellNodes(page: Page) {
   });
 }
 
+async function captureProjectHeaderOnlyShellNodes(page: Page) {
+  await page.evaluate(() => {
+    const shell = {
+      gnb: document.querySelector(".gnb-outer"),
+      header: document.querySelector(".project-header-outer"),
+    };
+    if (!shell.gnb || !shell.header) throw new Error("Missing project header-only layout shell");
+    (window as Window & { __projectHeaderOnlyShell?: typeof shell }).__projectHeaderOnlyShell =
+      shell;
+  });
+}
+
+async function expectProjectHeaderOnlyShellNodesToPersist(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const previous = (
+          window as Window & { __projectHeaderOnlyShell?: Record<string, Element | null> }
+        ).__projectHeaderOnlyShell;
+        return Boolean(
+          previous &&
+          previous.gnb === document.querySelector(".gnb-outer") &&
+          previous.header === document.querySelector(".project-header-outer"),
+        );
+      }),
+    )
+    .toBe(true);
+}
+
 async function expectProjectShellNodesToPersist(page: Page) {
   await expect
     .poll(() =>
@@ -1214,6 +1271,45 @@ async function expectProjectWatchersGeometry(page: Page) {
   expect(metrics.firstMemberBottom).toBeLessThanOrEqual(metrics.pageBottom + 1);
   expect(metrics.firstMemberLeft).toBeGreaterThanOrEqual(metrics.pageLeft);
   expect(metrics.firstMemberRight).toBeLessThanOrEqual(metrics.pageRight + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectStatisticsGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const pageWrap = rect(".project-page-wrap");
+    const heading = rect(".project-page-wrap h1");
+    return {
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      headingBottom: heading.bottom,
+      headingLeft: heading.left,
+      headingRight: heading.right,
+      headingTop: heading.top,
+      pageBottom: pageWrap.bottom,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      pageTop: pageWrap.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.pageTop).toBeGreaterThanOrEqual(metrics.headerBottom);
+  expect(metrics.headingTop).toBeGreaterThanOrEqual(metrics.pageTop);
+  expect(metrics.headingBottom).toBeLessThanOrEqual(metrics.pageBottom + 1);
+  expect(metrics.headingLeft).toBeGreaterThanOrEqual(metrics.pageLeft);
+  expect(metrics.headingRight).toBeLessThanOrEqual(metrics.pageRight + 1);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 

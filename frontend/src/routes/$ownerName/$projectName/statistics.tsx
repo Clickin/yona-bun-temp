@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { use } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader } from "../$projectName";
+import { ProjectHeader, ProjectNestedShellContext } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/statistics")({
   component: ProjectStatisticsRoute,
@@ -14,17 +15,28 @@ export const Route = createFileRoute("/$ownerName/$projectName/statistics")({
 
 function ProjectStatisticsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectStatisticsRouteShell nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectStatisticsRouteShell runtimeConfig={runtimeConfig} />
+        <ProjectStatisticsRouteShell nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectStatisticsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectStatisticsRouteShell({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -41,26 +53,26 @@ function ProjectStatisticsRouteShell({ runtimeConfig }: { runtimeConfig: Runtime
     projectName,
   };
 
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <title>{`statistics - ${ownerName}/${projectName}`}</title>
-      <ProjectStatisticsScreen project={project} />
-    </SiteLayoutShell>
-  );
-}
-
-function ProjectStatisticsScreen({ project }: { project: ProjectContainer }) {
-  const { runtimeConfig } = Route.useRouteContext();
-
-  return (
+  const body = (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <title>{`statistics - ${ownerName}/${projectName}`}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h1>Under Construction</h1>
         </div>
       </div>
     </>
+  );
+
+  if (nestedProjectShell) {
+    return body;
+  }
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      {body}
+    </SiteLayoutShell>
   );
 }
 
