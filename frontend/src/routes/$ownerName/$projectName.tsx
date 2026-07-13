@@ -21,6 +21,7 @@ import {
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import { pullRequestCreateFormOptionsQueryOptions } from "../../api/pull-requests";
+import { isSearchType, projectSearchQueryOptions } from "../../api/search";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
 import { readProjectIssueFormOptions, readSessionBootstrap } from "../../auth-workspace-client";
@@ -115,6 +116,7 @@ function ProjectHomeRoute() {
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
+  const searchPath = `${homePath}/search`;
   const active =
     pathname === homePath
       ? "home"
@@ -142,23 +144,25 @@ function ProjectHomeRoute() {
                           ? "newFork"
                           : pathname === watchersPath
                             ? "watchers"
-                            : pathname === reviewsPath
-                              ? "review"
-                              : pathname === settingPath
-                                ? "setting"
-                                : pathname === membersPath
-                                  ? "members"
-                                  : pathname === webhooksPath
-                                    ? "webhooks"
-                                    : pathname === transferPath
-                                      ? "transfer"
-                                      : pathname === deletePath
-                                        ? "delete"
-                                        : pathname === changeVcsPath
-                                          ? "changeVcs"
-                                          : pathname === labelsPath
-                                            ? "labels"
-                                            : null;
+                            : pathname === searchPath
+                              ? "search"
+                              : pathname === reviewsPath
+                                ? "review"
+                                : pathname === settingPath
+                                  ? "setting"
+                                  : pathname === membersPath
+                                    ? "members"
+                                    : pathname === webhooksPath
+                                      ? "webhooks"
+                                      : pathname === transferPath
+                                        ? "transfer"
+                                        : pathname === deletePath
+                                          ? "delete"
+                                          : pathname === changeVcsPath
+                                            ? "changeVcs"
+                                            : pathname === labelsPath
+                                              ? "labels"
+                                              : null;
 
   if (!active) {
     return <Outlet />;
@@ -194,6 +198,7 @@ function ProjectHomeRouteShell({
     | "postform"
     | "pullRequest"
     | "review"
+    | "search"
     | "setting"
     | "transfer"
     | "watchers"
@@ -214,6 +219,18 @@ function ProjectHomeRouteShell({
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
   });
   const locationHref = useRouterState({ select: (state) => state.location.href });
+  const projectSearch = projectSearchRouteSearch(locationHref);
+  const searchQuery = useQuery({
+    ...projectSearchQueryOptions(runtimeConfig, {
+      keyword: projectSearch.keyword,
+      ownerName,
+      pageNum: projectSearch.pageNum,
+      projectName,
+      searchType: projectSearch.searchType,
+    }),
+    enabled: active === "search" && projectSearch.valid && Boolean(query.data),
+    retry: false,
+  });
   const pullRequestFormQuery = useQuery({
     ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, {
       ownerName,
@@ -235,6 +252,7 @@ function ProjectHomeRouteShell({
   const previousActiveRef = useRef(active);
   const preserveForkShellRef = useRef(false);
   const preserveWatchersShellRef = useRef(false);
+  const preserveSearchShellRef = useRef(false);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
   } else if (active !== "newFork") {
@@ -244,6 +262,11 @@ function ProjectHomeRouteShell({
     preserveWatchersShellRef.current = true;
   } else if (active !== "watchers" || watchersQuery.error) {
     preserveWatchersShellRef.current = false;
+  }
+  if (active === "search" && previousActiveRef.current !== "search") {
+    preserveSearchShellRef.current = true;
+  } else if (active !== "search" || !projectSearch.valid || searchQuery.error) {
+    preserveSearchShellRef.current = false;
   }
   previousActiveRef.current = active;
 
@@ -273,6 +296,16 @@ function ProjectHomeRouteShell({
       (forkOptionsQuery.data &&
         stringField(recordField(forkOptionsQuery.data.source).vcs, "").toUpperCase() !== "GIT") ||
       (!forkOptionsQuery.data && !preserveForkShellRef.current))
+  ) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "search" &&
+    (!query.data ||
+      !projectSearch.valid ||
+      searchQuery.error ||
+      (!searchQuery.data && !preserveSearchShellRef.current))
   ) {
     return <Outlet />;
   }
@@ -309,7 +342,11 @@ function ProjectHomeRouteShell({
   };
 
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks={active === "search"}
+    >
       <ProjectLayoutScreen
         active={active}
         project={query.data}
@@ -411,6 +448,7 @@ function ProjectLayoutScreen({
     | "postform"
     | "pullRequest"
     | "review"
+    | "search"
     | "setting"
     | "transfer"
     | "watchers"
@@ -446,30 +484,32 @@ function ProjectLayoutScreen({
                       ? `${t("fork")} - ${ownerName}/${projectName}`
                       : active === "watchers"
                         ? `${t("title.projectWatchers")} - ${ownerName}/${projectName}`
-                        : active === "postform"
-                          ? `${t("post.new")} - ${ownerName}/${projectName}`
-                          : active === "board"
-                            ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                            : active === "pullRequest"
-                              ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                              : active === "review"
-                                ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                                : active === "setting"
-                                  ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                                  : active === "labels"
-                                    ? `${t("label")} - ${ownerName}/${projectName}`
-                                    : active === "members"
-                                      ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                                      : active === "delete"
-                                        ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                        : active === "changeVcs"
-                                          ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                          : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                        : active === "search"
+                          ? `${t("title.search")} - ${ownerName}/${projectName}`
+                          : active === "postform"
+                            ? `${t("post.new")} - ${ownerName}/${projectName}`
+                            : active === "board"
+                              ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                              : active === "pullRequest"
+                                ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                                : active === "review"
+                                  ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                                  : active === "setting"
+                                    ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                                    : active === "labels"
+                                      ? `${t("label")} - ${ownerName}/${projectName}`
+                                      : active === "members"
+                                        ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                        : active === "delete"
+                                          ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                          : active === "changeVcs"
+                                            ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                            : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
-          active === "watchers"
+          active === "watchers" || active === "search"
             ? undefined
             : active === "newMilestone"
               ? "milestone"
@@ -510,7 +550,9 @@ function ProjectLayoutScreen({
           tabId={tabId || "readme"}
         />
       ) : (
-        <ProjectNestedShellContext value={active === "newFork" || active === "watchers"}>
+        <ProjectNestedShellContext
+          value={active === "newFork" || active === "watchers" || active === "search"}
+        >
           <Outlet />
         </ProjectNestedShellContext>
       )}
@@ -525,6 +567,21 @@ function projectPullRequestFormSearch(locationHref: string) {
     fromProjectId: Number(search.get("fromProjectId")) || 0,
     toBranch: search.get("toBranch") || "",
     toProjectId: Number(search.get("toProjectId")) || 0,
+  };
+}
+
+function projectSearchRouteSearch(locationHref: string) {
+  const search = new URL(locationHref, "http://localhost").searchParams;
+  const keyword = search.get("keyword") || "";
+  const rawSearchType = search.get("searchType") || "";
+  const rawPageNum = search.get("pageNum");
+  const parsedPageNum = rawPageNum ? Number.parseInt(rawPageNum, 10) : 1;
+  const searchType = isSearchType(rawSearchType) ? rawSearchType : "auto";
+  return {
+    keyword,
+    pageNum: Number.isFinite(parsedPageNum) && parsedPageNum > 0 ? parsedPageNum : 1,
+    searchType,
+    valid: keyword.length > 0 && isSearchType(rawSearchType) && rawSearchType !== "project",
   };
 }
 

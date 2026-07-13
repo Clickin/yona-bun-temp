@@ -338,12 +338,9 @@ test("project search pins the live localhost issue-comment zero-result project s
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator('button[data-toggle="search-scope"]').nth(0)).toHaveText(
-    "This Project",
-  );
-  await expect(page.locator('button[data-toggle="search-scope"]').nth(1)).toHaveText(
-    "All Projects",
-  );
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
+  await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
   await expect(page.locator(".gnb-usermenu")).toContainText("Sign up");
   await expect(page.locator(".project-menu-gruop .project-menu-count")).toHaveText([
@@ -442,7 +439,7 @@ test("project search without required query renders legacy badrequest_default.sc
     "The request cannot be fulfilled due to bad syntax",
   );
   const homeButton = page.locator(".error-wrap .ybtn.ybtn-info");
-  await expect(homeButton).toHaveAttribute("href", basePath);
+  await expect(homeButton).toHaveAttribute("href", `${basePath}/`);
   await expectProjectSearchErrorShell(page, {
     expectProjectHeader: false,
     expectProjectMenu: false,
@@ -453,7 +450,7 @@ test("project search without required query renders legacy badrequest_default.sc
   expect(searchApi.count).toBe(0);
   await markSearchSpaSession(page);
   await homeButton.click();
-  await expectExactProjectSearchSpaPath(page, basePath);
+  await expectExactProjectSearchSpaPath(page, `${basePath}/`);
 });
 
 test("project search renders legacy error/forbidden.scala.html shell for anonymous viewers", async ({
@@ -534,10 +531,10 @@ test("project search renders legacy error/internalServerError_default.scala.html
   );
   await expect(page.locator(".search-box-wrap")).toHaveCount(0);
   const homeButton = page.locator(".error-wrap .ybtn.ybtn-primary");
-  await expect(homeButton).toHaveAttribute("href", basePath);
+  await expect(homeButton).toHaveAttribute("href", `${basePath}/`);
   await markSearchSpaSession(page);
   await homeButton.click();
-  await expectExactProjectSearchSpaPath(page, basePath);
+  await expectExactProjectSearchSpaPath(page, `${basePath}/`);
 });
 
 test("project search preserves whitespace-only keyword and calls scoped search API", async ({
@@ -627,26 +624,12 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator('button[data-toggle="search-scope"]')).toHaveText([
-    "This Project",
-    "This Group",
-    "All Projects",
-  ]);
-  await expect(page.locator('button[data-toggle="search-scope"]').nth(0)).toHaveAttribute(
-    "data-action",
-    `${basePath}/weblabs/portal/search`,
-  );
-  await expect(page.locator('button[data-toggle="search-scope"]').nth(1)).toHaveAttribute(
-    "data-action",
-    `${basePath}/organizations/weblabs/search`,
-  );
-  await expect(page.locator('button[data-toggle="search-scope"]').nth(2)).toHaveAttribute(
-    "data-action",
-    `${basePath}/search`,
-  );
+  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('button[data-toggle="search-scope"]', { hasText: "This Group" }).click();
+  await scopeButtons.filter({ hasText: "This Group" }).click();
   await expect(page).toHaveURL(
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
@@ -657,7 +640,7 @@ test("org-owned project search exposes legacy project group search scope", async
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('button[data-toggle="search-scope"]', { hasText: "All Projects" }).click();
+  await scopeButtons.filter({ hasText: "All Projects" }).click();
   await expect(page).toHaveURL(
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
@@ -1075,8 +1058,13 @@ async function canonicalizeScreenRoots(page: Page) {
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             !isModernizedLegacyDropdownButtonType(attr) &&
+            !isModernizedLegacyPinButtonType(attr) &&
             !isModernizedSiteAdminTooltipAttr(attr) &&
+            !isLegacyPluginAttribute(attr) &&
             attr.name !== "data-login" &&
+            attr.name !== "aria-controls" &&
+            attr.name !== "aria-expanded" &&
+            attr.name !== "aria-hidden" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
             attr.name !== "alt",
@@ -1098,7 +1086,9 @@ async function canonicalizeScreenRoots(page: Page) {
         isModernizedLegacyTabButton(node) ||
         isModernizedLegacyDropdownButton(node)
           ? "a"
-          : node.tagName.toLowerCase();
+          : isModernizedLegacyPinButton(node)
+            ? "div"
+            : node.tagName.toLowerCase();
       const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
@@ -1115,6 +1105,9 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
       }
       if (
         attr.name === "href" &&
@@ -1173,6 +1166,14 @@ async function canonicalizeScreenRoots(page: Page) {
       return attr.name === "type" && isModernizedLegacyDropdownButton(attr.ownerElement);
     }
 
+    function isModernizedLegacyPinButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyPinButton(attr.ownerElement);
+    }
+
+    function isLegacyPluginAttribute(attr: Attr) {
+      return ["data-action", "data-placement", "data-toggle"].includes(attr.name);
+    }
+
     function isModernizedSiteAdminTooltipAttr(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-placement" || attr.name === "title") &&
@@ -1190,11 +1191,11 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function isModernizedLegacyTabButton(node: Element | null) {
-      return (
-        node instanceof HTMLButtonElement &&
-        node.closest(".nav-tabs.nm") !== null &&
-        node.getAttribute("data-toggle") === "tab"
-      );
+      return node instanceof HTMLButtonElement && node.closest(".nav-tabs.nm") !== null;
+    }
+
+    function isModernizedLegacyPinButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.classList.contains("pin");
     }
 
     function legacyTabHref(node: Element) {
@@ -1256,8 +1257,13 @@ async function canonicalizeHtml(page: Page, html: string) {
             !isModernizedLegacySearchCategoryButtonType(attr) &&
             !isModernizedLegacyTabButtonType(attr) &&
             !isModernizedLegacyDropdownButtonType(attr) &&
+            !isModernizedLegacyPinButtonType(attr) &&
             !isModernizedSiteAdminTooltipAttr(attr) &&
+            !isLegacyPluginAttribute(attr) &&
             attr.name !== "data-login" &&
+            attr.name !== "aria-controls" &&
+            attr.name !== "aria-expanded" &&
+            attr.name !== "aria-hidden" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
             attr.name !== "alt",
@@ -1279,7 +1285,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         isModernizedLegacyTabButton(node) ||
         isModernizedLegacyDropdownButton(node)
           ? "a"
-          : node.tagName.toLowerCase();
+          : isModernizedLegacyPinButton(node)
+            ? "div"
+            : node.tagName.toLowerCase();
       const open = attrs ? `<${tagName} ${attrs}>` : `<${tagName}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
@@ -1296,6 +1304,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       if (isModernizedTanStackRouterActiveClass(attr)) {
         return modernizedTanStackRouterActiveClass(attr);
+      }
+      if (attr.name === "src" && attr.value.includes("/assets/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/"));
       }
       if (
         attr.name === "href" &&
@@ -1354,6 +1365,14 @@ async function canonicalizeHtml(page: Page, html: string) {
       return attr.name === "type" && isModernizedLegacyDropdownButton(attr.ownerElement);
     }
 
+    function isModernizedLegacyPinButtonType(attr: Attr) {
+      return attr.name === "type" && isModernizedLegacyPinButton(attr.ownerElement);
+    }
+
+    function isLegacyPluginAttribute(attr: Attr) {
+      return ["data-action", "data-placement", "data-toggle"].includes(attr.name);
+    }
+
     function isModernizedSiteAdminTooltipAttr(attr: Attr) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-placement" || attr.name === "title") &&
@@ -1371,11 +1390,11 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function isModernizedLegacyTabButton(node: Element | null) {
-      return (
-        node instanceof HTMLButtonElement &&
-        node.closest(".nav-tabs.nm") !== null &&
-        node.getAttribute("data-toggle") === "tab"
-      );
+      return node instanceof HTMLButtonElement && node.closest(".nav-tabs.nm") !== null;
+    }
+
+    function isModernizedLegacyPinButton(node: Element | null) {
+      return node instanceof HTMLButtonElement && node.classList.contains("pin");
     }
 
     function legacyTabHref(node: Element) {

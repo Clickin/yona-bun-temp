@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
+  use,
   useEffect,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -29,7 +30,7 @@ import {
   isRequestTextTooLargeError,
   RequestTextTooLargeErrorBody,
 } from "../../-search-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
 type ProjectSearchRouteSearch = {
   keyword: string;
@@ -98,17 +99,28 @@ export const Route = createFileRoute("/$ownerName/$projectName/search")({
 
 function ProjectSearchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectSearchScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectSearchScreen runtimeConfig={runtimeConfig} />
+        <ProjectSearchScreen nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectSearchScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const search = Route.useSearch();
   const projectQuery = useQuery({
@@ -134,6 +146,10 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
       pageNum,
       scope: "project",
     });
+
+  if (nestedProjectShell && !searchQuery.data) {
+    return null;
+  }
 
   if (isRequestTextTooLargeError(searchQuery.error)) {
     if (!projectQuery.data) {
@@ -214,6 +230,19 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     );
   }
 
+  const body = (
+    <ProjectSearchSuccessBody
+      ownerName={ownerName}
+      projectName={projectName}
+      result={result}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (nestedProjectShell) {
+    return body;
+  }
+
   return (
     <ProjectSearchRouteShell
       ownerName={ownerName}
@@ -227,12 +256,7 @@ function ProjectSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         counts={projectSearchProjectMenuCounts(projectQuery.data)}
         project={projectQuery.data}
       />
-      <ProjectSearchSuccessBody
-        ownerName={ownerName}
-        projectName={projectName}
-        result={result}
-        runtimeConfig={runtimeConfig}
-      />
+      {body}
     </ProjectSearchRouteShell>
   );
 }
