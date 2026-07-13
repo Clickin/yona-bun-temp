@@ -25,6 +25,33 @@ test("project home to issues keeps the legacy project shell DOM nodes mounted", 
   await expectProjectShellGeometry(page);
 });
 
+test("project issues to watchers keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.locator(".project-util .watcher-count").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/watchers(?:\?|$)/);
+  await expect(page.locator(".members.project .member")).toHaveCount(2);
+  await expect(page.locator(".project-menu-gruop > li.active")).toHaveCount(0);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectWatchersGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".members.project .member")).toHaveCount(2);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectWatchersGeometry(page);
+});
+
 test("project issues to branches keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -650,6 +677,36 @@ async function expectProjectShellGeometry(page: Page) {
   expect(metrics.menuRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
   expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectWatchersGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const pageWrap = rect(".project-page-wrap");
+    const firstMember = rect(".members.project .member");
+    return {
+      firstMemberBottom: firstMember.bottom,
+      firstMemberLeft: firstMember.left,
+      firstMemberRight: firstMember.right,
+      firstMemberTop: firstMember.top,
+      pageBottom: pageWrap.bottom,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      pageTop: pageWrap.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.firstMemberTop).toBeGreaterThanOrEqual(metrics.pageTop);
+  expect(metrics.firstMemberBottom).toBeLessThanOrEqual(metrics.pageBottom + 1);
+  expect(metrics.firstMemberLeft).toBeGreaterThanOrEqual(metrics.pageLeft);
+  expect(metrics.firstMemberRight).toBeLessThanOrEqual(metrics.pageRight + 1);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
@@ -1471,8 +1528,10 @@ async function mockProjectHomeAndIssues(
         projectName: "sample",
         readmeFile: null,
         vcs: "GIT",
+        viewerCanWatch: true,
         viewerCanUpdate: true,
         viewerIsProjectMember: true,
+        watchingCount: 2,
       });
     if (path.endsWith("/milestones")) return json({ milestones: [] });
     if (path.endsWith("/projects/admin/sample/posts/form-options")) return json({ labels: [] });
@@ -1517,6 +1576,26 @@ async function mockProjectHomeAndIssues(
         projectName: "sample",
         totalCount: 0,
         totalPages: 0,
+      });
+    if (path.endsWith("/owners/admin/projects/sample/watchers"))
+      return json({
+        ownerName: "admin",
+        projectName: "sample",
+        totalCount: 2,
+        watchers: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "alice",
+            userId: 2,
+            userLabel: "Alice Doe",
+          },
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "bob",
+            userId: 3,
+            userLabel: "Bob Smith",
+          },
+        ],
       });
     if (path.endsWith("/projects/admin/sample/branches"))
       return json({
