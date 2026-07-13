@@ -86,6 +86,7 @@ import { Route as OwnerNameProjectNameClosedPullRequestsRouteImport } from './ro
 import { Route as OwnerNameProjectNameChangeVCSRouteImport } from './routes/$ownerName/$projectName/changeVCS'
 import { Route as OwnerNameProjectNameBranchesRouteImport } from './routes/$ownerName/$projectName/branches'
 import { Route as UserIssuesNewIndexRouteImport } from './routes/user/issues_/new/index'
+import { Route as OwnerNameProjectNameNewForkIndexRouteImport } from './routes/$ownerName/$projectName/newFork/index'
 import { Route as OwnerNameProjectNameCommitsIndexRouteImport } from './routes/$ownerName/$projectName/commits/index'
 import { Route as OwnerNameProjectNameCodeIndexRouteImport } from './routes/$ownerName/$projectName/code/index'
 import { Route as UserIssuesNewMineRouteImport } from './routes/user/issues_/new/mine'
@@ -541,6 +542,12 @@ const UserIssuesNewIndexRoute = UserIssuesNewIndexRouteImport.update({
   path: '/',
   getParentRoute: () => UserIssuesNewRoute,
 } as any)
+const OwnerNameProjectNameNewForkIndexRoute =
+  OwnerNameProjectNameNewForkIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => OwnerNameProjectNameNewForkRoute,
+  } as any)
 const OwnerNameProjectNameCommitsIndexRoute =
   OwnerNameProjectNameCommitsIndexRouteImport.update({
     id: '/',
@@ -824,6 +831,7 @@ export interface FileRoutesByFullPath {
   '/user/issues/new/mine': typeof UserIssuesNewMineRoute
   '/$ownerName/$projectName/code/': typeof OwnerNameProjectNameCodeIndexRoute
   '/$ownerName/$projectName/commits/': typeof OwnerNameProjectNameCommitsIndexRoute
+  '/$ownerName/$projectName/newFork/': typeof OwnerNameProjectNameNewForkIndexRoute
   '/user/issues/new/': typeof UserIssuesNewIndexRoute
   '/$ownerName/$projectName/code/$branch/$': typeof OwnerNameProjectNameCodeBranchSplatRoute
   '/$ownerName/$projectName/code/$branch/$filePath': typeof OwnerNameProjectNameCodeBranchFilePathRoute
@@ -885,7 +893,6 @@ export interface FileRoutesByTo {
   '/$ownerName/$projectName/issues': typeof OwnerNameProjectNameIssuesRoute
   '/$ownerName/$projectName/members': typeof OwnerNameProjectNameMembersRoute
   '/$ownerName/$projectName/milestones': typeof OwnerNameProjectNameMilestonesRoute
-  '/$ownerName/$projectName/newFork': typeof OwnerNameProjectNameNewForkRouteWithChildren
   '/$ownerName/$projectName/newMilestoneForm': typeof OwnerNameProjectNameNewMilestoneFormRoute
   '/$ownerName/$projectName/newPullRequestForm': typeof OwnerNameProjectNameNewPullRequestFormRoute
   '/$ownerName/$projectName/postform': typeof OwnerNameProjectNamePostformRoute
@@ -923,6 +930,7 @@ export interface FileRoutesByTo {
   '/user/issues/new/mine': typeof UserIssuesNewMineRoute
   '/$ownerName/$projectName/code': typeof OwnerNameProjectNameCodeIndexRoute
   '/$ownerName/$projectName/commits': typeof OwnerNameProjectNameCommitsIndexRoute
+  '/$ownerName/$projectName/newFork': typeof OwnerNameProjectNameNewForkIndexRoute
   '/user/issues/new': typeof UserIssuesNewIndexRoute
   '/$ownerName/$projectName/code/$branch/$': typeof OwnerNameProjectNameCodeBranchSplatRoute
   '/$ownerName/$projectName/code/$branch/$filePath': typeof OwnerNameProjectNameCodeBranchFilePathRoute
@@ -1033,6 +1041,7 @@ export interface FileRoutesById {
   '/user/issues_/new/mine': typeof UserIssuesNewMineRoute
   '/$ownerName/$projectName/code/': typeof OwnerNameProjectNameCodeIndexRoute
   '/$ownerName/$projectName/commits/': typeof OwnerNameProjectNameCommitsIndexRoute
+  '/$ownerName/$projectName/newFork/': typeof OwnerNameProjectNameNewForkIndexRoute
   '/user/issues_/new/': typeof UserIssuesNewIndexRoute
   '/$ownerName/$projectName/code/$branch/$': typeof OwnerNameProjectNameCodeBranchSplatRoute
   '/$ownerName/$projectName/code/$branch/$filePath': typeof OwnerNameProjectNameCodeBranchFilePathRoute
@@ -1145,6 +1154,7 @@ export interface FileRouteTypes {
     | '/user/issues/new/mine'
     | '/$ownerName/$projectName/code/'
     | '/$ownerName/$projectName/commits/'
+    | '/$ownerName/$projectName/newFork/'
     | '/user/issues/new/'
     | '/$ownerName/$projectName/code/$branch/$'
     | '/$ownerName/$projectName/code/$branch/$filePath'
@@ -1206,7 +1216,6 @@ export interface FileRouteTypes {
     | '/$ownerName/$projectName/issues'
     | '/$ownerName/$projectName/members'
     | '/$ownerName/$projectName/milestones'
-    | '/$ownerName/$projectName/newFork'
     | '/$ownerName/$projectName/newMilestoneForm'
     | '/$ownerName/$projectName/newPullRequestForm'
     | '/$ownerName/$projectName/postform'
@@ -1244,6 +1253,7 @@ export interface FileRouteTypes {
     | '/user/issues/new/mine'
     | '/$ownerName/$projectName/code'
     | '/$ownerName/$projectName/commits'
+    | '/$ownerName/$projectName/newFork'
     | '/user/issues/new'
     | '/$ownerName/$projectName/code/$branch/$'
     | '/$ownerName/$projectName/code/$branch/$filePath'
@@ -1353,6 +1363,7 @@ export interface FileRouteTypes {
     | '/user/issues_/new/mine'
     | '/$ownerName/$projectName/code/'
     | '/$ownerName/$projectName/commits/'
+    | '/$ownerName/$projectName/newFork/'
     | '/user/issues_/new/'
     | '/$ownerName/$projectName/code/$branch/$'
     | '/$ownerName/$projectName/code/$branch/$filePath'
@@ -1955,6 +1966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserIssuesNewIndexRouteImport
       parentRoute: typeof UserIssuesNewRoute
     }
+    '/$ownerName/$projectName/newFork/': {
+      id: '/$ownerName/$projectName/newFork/'
+      path: '/'
+      fullPath: '/$ownerName/$projectName/newFork/'
+      preLoaderRoute: typeof OwnerNameProjectNameNewForkIndexRouteImport
+      parentRoute: typeof OwnerNameProjectNameNewForkRoute
+    }
     '/$ownerName/$projectName/commits/': {
       id: '/$ownerName/$projectName/commits/'
       path: '/'
@@ -2254,12 +2272,15 @@ const OwnerNameProjectNameCommitsRouteWithChildren =
 
 interface OwnerNameProjectNameNewForkRouteChildren {
   OwnerNameProjectNameNewForkForkOwnerNameRoute: typeof OwnerNameProjectNameNewForkForkOwnerNameRoute
+  OwnerNameProjectNameNewForkIndexRoute: typeof OwnerNameProjectNameNewForkIndexRoute
 }
 
 const OwnerNameProjectNameNewForkRouteChildren: OwnerNameProjectNameNewForkRouteChildren =
   {
     OwnerNameProjectNameNewForkForkOwnerNameRoute:
       OwnerNameProjectNameNewForkForkOwnerNameRoute,
+    OwnerNameProjectNameNewForkIndexRoute:
+      OwnerNameProjectNameNewForkIndexRoute,
   }
 
 const OwnerNameProjectNameNewForkRouteWithChildren =
