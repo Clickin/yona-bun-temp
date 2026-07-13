@@ -175,6 +175,34 @@ test("project issues to exact code branch root keeps the legacy project shell DO
   await expectProjectShellGeometry(page);
 });
 
+test("project issues to exact code path keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/code/main/src")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/code\/main\/src(?:\?|$)/);
+  await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+});
+
 test("project issues to new issue form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {

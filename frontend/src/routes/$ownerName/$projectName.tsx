@@ -131,6 +131,7 @@ function ProjectHomeRoute() {
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
   const codeBranch = exactProjectCodeBranch(pathname, homePath);
+  const codeFilePath = exactProjectCodeFilePath(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -203,7 +204,7 @@ function ProjectHomeRoute() {
                   ? "issueDetail"
                   : postDetailNumber !== null
                     ? "postDetail"
-                    : codeBranch !== null
+                    : codeBranch !== null || codeFilePath !== null
                       ? "code"
                       : standardActive;
 
@@ -824,6 +825,13 @@ function exactProjectCodeBranch(pathname: string, homePath: string) {
   const match = new RegExp(`^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/code/[^/]+$`).exec(
     pathname,
   );
+  return match ? match[0] : null;
+}
+
+function exactProjectCodeFilePath(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/code/[^/]+/.+$`,
+  ).exec(pathname);
   return match ? match[0] : null;
 }
 
