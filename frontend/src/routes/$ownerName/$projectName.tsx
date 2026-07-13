@@ -23,6 +23,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { DefaultSearchErrorBody } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
 
 const legacyProjectShellLinkActiveOptions = {
@@ -87,7 +88,15 @@ function ProjectHomeRoute() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const homePath = `/${ownerName}/${projectName}`;
   const issuesPath = `${homePath}/issues`;
-  const active = pathname === homePath ? "home" : pathname === issuesPath ? "issue" : null;
+  const branchesPath = `${homePath}/branches`;
+  const active =
+    pathname === homePath
+      ? "home"
+      : pathname === issuesPath
+        ? "issue"
+        : pathname === branchesPath
+          ? "code"
+          : null;
 
   if (!active) {
     return <Outlet />;
@@ -106,7 +115,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "home" | "issue";
+  active: "code" | "home" | "issue";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -116,6 +125,12 @@ function ProjectHomeRouteShell({
 
   if (!query.data) {
     return null;
+  }
+
+  // BranchApp only renders the project layout for Git projects. Preserve its
+  // site-level bad-request output for other VCS types.
+  if (active === "code" && query.data.vcs !== "GIT") {
+    return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }
 
   const projectSearchScope = {
@@ -131,11 +146,27 @@ function ProjectHomeRouteShell({
   );
 }
 
+function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
+      <title>{t("error.badrequest.only.available.for.git")}</title>
+      <DefaultSearchErrorBody
+        iconClassName="ico-404"
+        messageKey="error.badrequest.only.available.for.git"
+        runtimeConfig={runtimeConfig}
+        ybtnClassName="ybtn ybtn-info"
+      />
+    </SiteLayoutShell>
+  );
+}
+
 function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "home" | "issue";
+  active: "code" | "home" | "issue";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -148,7 +179,9 @@ function ProjectLayoutScreen({
       <title>
         {active === "home"
           ? `${projectName} - ${t("menu.home")}`
-          : `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}
+          : active === "issue"
+            ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
+            : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />

@@ -25,6 +25,34 @@ test("project home to issues keeps the legacy project shell DOM nodes mounted", 
   await expectProjectShellGeometry(page);
 });
 
+test("project issues to branches keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/branches")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/branches(?:\?|$)/);
+  await expect(page.locator(".branch-list-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectBranchesGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".branch-list-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectBranchesGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -100,6 +128,53 @@ async function expectProjectShellGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectBranchesGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const table = rect(".branch-list-wrap");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      gnbBottom: gnb.bottom,
+      gnbLeft: gnb.left,
+      gnbRight: gnb.right,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerLeft: header.left,
+      headerRight: header.right,
+      headerTop: header.top,
+      menuLeft: menu.left,
+      menuRight: menu.right,
+      menuTop: menu.top,
+      tableLeft: table.left,
+      tableRight: table.right,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbTop).toBeGreaterThanOrEqual(0);
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuTop).toBeGreaterThanOrEqual(metrics.headerTop);
+  expect(metrics.gnbLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.headerLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.menuLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.gnbRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.headerRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.menuRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.tableLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.tableRight).toBeGreaterThan(metrics.tableLeft);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -164,6 +239,25 @@ async function mockProjectHomeAndIssues(page: Page) {
         projectName: "sample",
         totalCount: 0,
         totalPages: 0,
+      });
+    if (path.endsWith("/projects/admin/sample/branches"))
+      return json({
+        branches: [
+          {
+            commitDate: "2026-07-13",
+            commitId: "1234567890abcdef",
+            commitShortId: "1234567",
+            isDefault: true,
+            name: "main",
+            pullRequest: null,
+            shortName: "main",
+          },
+        ],
+        defaultBranch: "main",
+        noHead: false,
+        ownerName: "admin",
+        permissions: { canDelete: true, canUpdate: true },
+        projectName: "sample",
       });
     return json({});
   });
