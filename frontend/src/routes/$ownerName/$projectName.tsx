@@ -133,6 +133,7 @@ function ProjectHomeRoute() {
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
   const codeBranch = exactProjectCodeBranch(pathname, homePath);
   const codeFilePath = exactProjectCodeFilePath(pathname, homePath);
+  const commitsBranch = exactProjectCommitsBranch(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -149,47 +150,49 @@ function ProjectHomeRoute() {
             ? "code"
             : pathname === commitsPath
               ? "codeHistory"
-              : pathname === branchesPath
-                ? "code"
-                : pathname === milestonesPath
-                  ? "milestone"
-                  : pathname === newMilestonePath
-                    ? "newMilestone"
-                    : pathname === postsPath
-                      ? "board"
-                      : pathname === postFormPath
-                        ? "postform"
-                        : pathname === pullRequestsPath ||
-                            pathname === closedPullRequestsPath ||
-                            pathname === sentPullRequestsPath
-                          ? "pullRequest"
-                          : pathname === newPullRequestPath
-                            ? "newPullRequest"
-                            : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
-                              ? "newFork"
-                              : pathname === watchersPath
-                                ? "watchers"
-                                : pathname === searchPath
-                                  ? "search"
-                                  : pathname === statisticsPath
-                                    ? "statistics"
-                                    : pathname === reviewsPath
-                                      ? "review"
-                                      : pathname === settingPath || pathname === settingFormPath
-                                        ? "setting"
-                                        : pathname === membersPath
-                                          ? "members"
-                                          : pathname === webhooksPath
-                                            ? "webhooks"
-                                            : pathname === transferPath
-                                              ? "transfer"
-                                              : pathname === deletePath
-                                                ? "delete"
-                                                : pathname === changeVcsPath
-                                                  ? "changeVcs"
-                                                  : pathname === labelsPath
-                                                    ? "labels"
-                                                    : null;
+              : commitsBranch !== null
+                ? "codeHistory"
+                : pathname === branchesPath
+                  ? "code"
+                  : pathname === milestonesPath
+                    ? "milestone"
+                    : pathname === newMilestonePath
+                      ? "newMilestone"
+                      : pathname === postsPath
+                        ? "board"
+                        : pathname === postFormPath
+                          ? "postform"
+                          : pathname === pullRequestsPath ||
+                              pathname === closedPullRequestsPath ||
+                              pathname === sentPullRequestsPath
+                            ? "pullRequest"
+                            : pathname === newPullRequestPath
+                              ? "newPullRequest"
+                              : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
+                                ? "newFork"
+                                : pathname === watchersPath
+                                  ? "watchers"
+                                  : pathname === searchPath
+                                    ? "search"
+                                    : pathname === statisticsPath
+                                      ? "statistics"
+                                      : pathname === reviewsPath
+                                        ? "review"
+                                        : pathname === settingPath || pathname === settingFormPath
+                                          ? "setting"
+                                          : pathname === membersPath
+                                            ? "members"
+                                            : pathname === webhooksPath
+                                              ? "webhooks"
+                                              : pathname === transferPath
+                                                ? "transfer"
+                                                : pathname === deletePath
+                                                  ? "delete"
+                                                  : pathname === changeVcsPath
+                                                    ? "changeVcs"
+                                                    : pathname === labelsPath
+                                                      ? "labels"
+                                                      : null;
   const active =
     pullRequestChangesNumber !== null
       ? "pullRequestChanges"
@@ -840,6 +843,13 @@ function exactProjectCodeBranch(pathname: string, homePath: string) {
 function exactProjectCodeFilePath(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/code/[^/]+/.+$`,
+  ).exec(pathname);
+  return match ? match[0] : null;
+}
+
+function exactProjectCommitsBranch(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commits/[^/]+/?$`,
   ).exec(pathname);
   return match ? match[0] : null;
 }

@@ -175,6 +175,34 @@ test("project issues to exact no-head code root keeps the legacy project shell D
   await expectProjectShellGeometry(page);
 });
 
+test("project issues to exact branch commit history keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/commits/main")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/commits\/main(?:\?|$)/);
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitHistoryGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitHistoryGeometry(page);
+});
+
 test("project issues to exact code branch root keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
