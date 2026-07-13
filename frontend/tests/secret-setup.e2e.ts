@@ -525,11 +525,13 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).not.toContain("handleHomeClick");
   expect(SECRET_ROUTE_SOURCE).not.toContain("useLinkProps");
   expect(SECRET_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(SECRET_ROUTE_SOURCE).not.toContain('search={{ filter: "", labelIds: "" }}');
   expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toContain("runtimeConfig.feedbackUrl ? (");
-  expect(SECRET_ROUTE_SOURCE).toContain("href={runtimeConfig.feedbackUrl}");
+  expect(SECRET_ROUTE_SOURCE).toContain("to={runtimeConfig.feedbackUrl}");
+  expect(SECRET_ROUTE_SOURCE).not.toContain('to="/"\n                  target="_blank"');
   expect(SECRET_ROUTE_SOURCE).toContain('className="provider">Yoram authors</span>');
   expect(SECRET_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
   expect(SECRET_ROUTE_SOURCE).not.toContain("navercorp.com");

@@ -120,6 +120,7 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const siteName = runtimeConfig.siteName ?? "Yoram";
+  const logoutPath: string = "/logout";
   const [activeUsermenuTab, setActiveUsermenuTab] =
     React.useState<UsermenuTab>("myOrganizationList");
 
@@ -132,7 +133,11 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link {...LEGACY_LINK_PROPS} to="/projects" search={{ filter: "", labelIds: "" }}>
+              <Link
+                {...LEGACY_LINK_PROPS}
+                to="/projects"
+                search={{ filter: undefined!, labelIds: undefined! }}
+              >
                 {t("title.projectList")}
               </Link>
             </li>
@@ -143,7 +148,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
             </li>
             {runtimeConfig.feedbackUrl ? (
               <li>
-                <Link to="/" href={runtimeConfig.feedbackUrl} target="_blank">
+                <Link to={runtimeConfig.feedbackUrl} target="_blank">
                   {t("title.yobi.feedback")}
                 </Link>
               </li>
@@ -153,7 +158,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
             <div className="span5 right-menu span-hard-wrap">
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
-                  <Link to="/" href="/user/anonymous" reloadDocument>
+                  <Link to="/$user" params={{ user: "anonymous" }}>
                     {t("userinfo.profile")}
                   </Link>
                 </span>
@@ -162,7 +167,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
                     {t("userinfo.accountSetting")}
                   </Link>
                 </span>
-                <Link to="/" href="/logout" reloadDocument>
+                <Link to={logoutPath} reloadDocument>
                   <span className="user-menu logout label">{t("title.logout")}</span>
                 </Link>
               </div>
@@ -1001,6 +1006,7 @@ function ProfileProjectRow({
 }) {
   const { t } = useLegacyMessages();
   const projectPath = `/${project.ownerName}/${project.projectName}`;
+  const watchPath: string = `${projectPath}/${project.isWatching ? "unwatch" : "watch"}`;
   const ownerPath = `/${project.ownerName}`;
 
   return (
@@ -1058,12 +1064,7 @@ function ProfileProjectRow({
       <div className="stats-wrap pull-right">
         <div className="stats">
           {project.viewerCanWatch ? (
-            <Link
-              to="/"
-              href={`${projectPath}/${project.isWatching ? "unwatch" : "watch"}`}
-              reloadDocument
-              className="ybtn watchBtn"
-            >
+            <Link to={watchPath} reloadDocument className="ybtn watchBtn">
               <i
                 className={`yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-middle yobicon-white`}
               ></i>
@@ -1073,9 +1074,8 @@ function ProfileProjectRow({
           ) : null}
           {project.viewerCanLeave ? (
             <Link
-              to="/"
-              href={`/info/leave/${project.ownerName}/${project.projectName}`}
-              reloadDocument
+              to="/info/leave/$ownerName/$projectName"
+              params={{ ownerName: project.ownerName, projectName: project.projectName }}
               data-projectname={project.projectName}
               className="nbtn black medium last leaveProject"
             >

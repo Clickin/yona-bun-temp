@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
@@ -53,7 +53,8 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { password = "", redirectUrl = "" } = Route.useSearch();
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const router = useRouter();
+  const redirectingRef = React.useRef(false);
   const [submitError, setSubmitError] = React.useState("");
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const capabilitiesQuery = useQuery({
@@ -85,18 +86,23 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       setSubmitError(error instanceof Error ? error.message : t("user.login.failed"));
     },
     async onSuccess(session) {
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
       const defaultLandingPath =
         typeof session.defaultLandingPath === "string" ? session.defaultLandingPath : "";
-      const destination =
+      const localDestination =
         safeLocalPath(redirectUrl, runtimeConfig.basePath) ??
         safeLocalPath(defaultLandingPath, runtimeConfig.basePath) ??
         "/";
-      await navigate({ href: destination });
+      const destination =
+        localDestination === "/" && runtimeConfig.basePath !== "/"
+          ? `${runtimeConfig.basePath}/`
+          : prefixBasePath(runtimeConfig.basePath, localDestination);
+      redirectingRef.current = true;
+      router.history.push(destination);
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.session() });
     },
   });
 
-  if (sessionQuery.data?.isAnonymous === false) {
+  if (sessionQuery.data?.isAnonymous === false && !redirectingRef.current) {
     return <Navigate to="/" replace />;
   }
 

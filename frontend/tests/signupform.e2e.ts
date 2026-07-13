@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -100,6 +101,8 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   await expect(form.locator(".act-row")).toHaveText("Already signed up? Log in");
   await expect(form.locator(".go-login")).toHaveAttribute("href", appPath("/users/loginform"));
   await expect(page.locator("#loginId")).toBeFocused();
+  const source = readFileSync("src/routes/users/signupform.tsx", "utf8");
+  expect(source).toContain("[sessionQuery.isPending, socialLoginOnly]");
   await assertNoPluginHooks(routeRoot);
 
   const desktop = await readSignupMetrics(page);
@@ -240,6 +243,11 @@ test("signup form translates legacy client validation without plugin hooks", asy
 test("authenticated signup follows the safe default landing without context duplication or reload", async ({
   page,
 }) => {
+  const source = readFileSync("src/routes/users/signupform.tsx", "utf8");
+  expect(source).toContain(
+    "router.history.push(prefixBasePath(runtimeConfig.basePath, localPath))",
+  );
+  expect(source).not.toContain("navigate({ href: localPath })");
   await mockCapabilities(page);
   const auth = await mockSuccessfulSignup(page, {
     defaultLandingPath: DEFAULT_LANDING_PATH,

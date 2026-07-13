@@ -617,12 +617,9 @@ test("project import form navigation links use TanStack Router Link in route sou
   expect(routeSource).toContain('<title>{t("title.newProject")}</title>');
   expect(routeSource).toContain("const legacyImportActionLinkActiveOptions =");
   expect(routeSource).toContain("const legacyImportActionLinkActiveProps =");
-  expect(routeSource).toContain(
-    'const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;',
-  );
-  expect(routeSource).toContain(
-    '<Link\n                  to="/"\n                  href={cancelHref}',
-  );
+  expect(routeSource).not.toContain("const cancelHref =");
+  expect(routeSource).toContain('<Link\n                  to="/"');
+  expect(routeSource).not.toContain("href={cancelHref}");
   expect(routeSource).toContain("activeOptions={legacyImportActionLinkActiveOptions}");
   expect(routeSource).toContain("activeProps={legacyImportActionLinkActiveProps}");
   expect(routeSource).toContain("explicitUndefined: true");

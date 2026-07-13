@@ -168,7 +168,6 @@ function ProjectCodeFileBody({
   const newFilePath = isFolder ? `${filePath}/` : directoryPath(filePath);
   const isGit = project.vcs === "GIT";
   const archivePath = projectPath(ownerName, projectName, "archive", `${encodedBranch}.zip`);
-  const archiveHref = prefixBasePath(runtimeConfig.basePath, archivePath);
   const newFilePathWithSearch = `${projectPath(
     ownerName,
     projectName,
@@ -323,7 +322,7 @@ function ProjectCodeFileBody({
             {isGit ? (
               <>
                 <div className="pull-right">
-                  <Link to="/" href={archiveHref} reloadDocument className="ybtn">
+                  <Link to={archivePath} reloadDocument className="ybtn">
                     {t("code.download")}
                   </Link>
                 </div>
@@ -537,7 +536,6 @@ function FileView({
   const rawPath = projectPath(ownerName, projectName, "rawcode", rawRevision, filePath);
   const rawHref = prefixBasePath(runtimeConfig.basePath, rawPath);
   const openPath = projectPath(ownerName, projectName, "files", rawRevision, filePath);
-  const openHref = prefixBasePath(runtimeConfig.basePath, openPath);
   const editPathWithSearch = `${projectPath(
     ownerName,
     projectName,
@@ -631,7 +629,7 @@ function FileView({
         <div className="pull-right">
           {!isBinary ? (
             <>
-              <Link to="/" href={rawHref} className="ybtn" target="_blank">
+              <Link to={rawPath} reloadDocument className="ybtn" target="_blank">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </Link>
               {!currentUserIsAnonymous ? (
@@ -665,8 +663,8 @@ function FileView({
           >
             <Link
               id="open-in-browser"
-              href={openHref}
               to={openPath}
+              reloadDocument
               className="ybtn"
               target="_blank"
             >
@@ -721,7 +719,7 @@ function FileView({
               <br />
               <span className="filesize">{stringField(file.size, "")}</span>
               <br />
-              <Link to="/" href={rawHref} reloadDocument className="filehref ybtn">
+              <Link to={rawPath} reloadDocument className="filehref ybtn">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
                 {t("button.download")}
               </Link>
@@ -738,7 +736,7 @@ function FileView({
             </>
           ) : null}
           <br />
-          <Link to="/" href={rawHref} target="_blank" className="filehref ybtn">
+          <Link to={rawPath} reloadDocument target="_blank" className="filehref ybtn">
             {t("code.viewRaw")}
           </Link>
         </p>

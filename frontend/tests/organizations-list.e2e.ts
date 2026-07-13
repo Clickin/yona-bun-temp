@@ -249,6 +249,7 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   const orgTab = page.locator(".title_area .nav-tabs > li").nth(1);
   const projectLink = projectTab.locator("a");
   const orgLink = orgTab.locator("a");
+  const navbarProjectLink = page.locator(".gnb-nav a.show-progress-bar");
 
   await expect(projectTab).not.toHaveClass(/active/u);
   await expect(orgTab).toHaveClass("active");
@@ -258,6 +259,9 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   await expect(projectLink).not.toHaveAttribute("data-status");
   await expect(orgLink).not.toHaveAttribute("aria-current");
   await expect(orgLink).not.toHaveAttribute("data-status");
+  await expect(navbarProjectLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(navbarProjectLink).not.toHaveAttribute("aria-current");
+  await expect(navbarProjectLink).not.toHaveAttribute("data-status");
 });
 
 test("organization directory renders legacy multi-page pagination with query-preserving SPA links", async ({

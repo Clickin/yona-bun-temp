@@ -217,9 +217,10 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).toContain("router.history.push(homeHref)");
   expect(HELP_ROUTE_SOURCE).toContain('to="/"');
   expect(HELP_ROUTE_SOURCE).not.toContain("legacyHomeHref={homeHref}");
-  expect(HELP_ROUTE_SOURCE).toContain('to="/info"');
-  expect(HELP_ROUTE_SOURCE).not.toContain("href={infoHref}");
-  expect(HELP_ROUTE_SOURCE).not.toContain('reloadDocument to="/info"');
+  expect(HELP_ROUTE_SOURCE).toContain('const infoPath: string = "/info";');
+  expect(HELP_ROUTE_SOURCE).toContain("to={infoPath}");
+  expect(HELP_ROUTE_SOURCE).toContain("reloadDocument");
+  expect(HELP_ROUTE_SOURCE).not.toContain("href={infoPath}");
   expect(HELP_ROUTE_SOURCE).not.toContain("useLinkProps");
   expect(HELP_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
   expect(HELP_ROUTE_SOURCE).not.toContain("React.createElement");

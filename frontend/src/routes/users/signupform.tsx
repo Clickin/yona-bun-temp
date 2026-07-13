@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate, useRouter } from "@tanstack/react-router";
 import * as React from "react";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
@@ -38,6 +38,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const router = useRouter();
   const loginIdRef = React.useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<SignupField, string>>>({});
   const [submitError, setSubmitError] = React.useState("");
@@ -56,7 +57,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     if (!socialLoginOnly) {
       loginIdRef.current?.focus();
     }
-  }, [socialLoginOnly]);
+  }, [sessionQuery.isPending, socialLoginOnly]);
   const registerMutation = useMutation({
     mutationFn: async (input: {
       emailAddress: string;
@@ -85,7 +86,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       const defaultLandingPath =
         typeof response.defaultLandingPath === "string" ? response.defaultLandingPath : "/";
       const localPath = safeLocalPath(defaultLandingPath) ?? "/";
-      await navigate({ href: localPath });
+      router.history.push(prefixBasePath(runtimeConfig.basePath, localPath));
     },
   });
 

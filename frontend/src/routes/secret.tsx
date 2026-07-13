@@ -281,11 +281,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link
-                to="/projects"
-                search={{ filter: "", labelIds: "" }}
-                activeProps={legacyLinkActiveProps}
-              >
+              <Link to="/projects" activeProps={legacyLinkActiveProps}>
                 {t("title.projectList")}
               </Link>
             </li>
@@ -297,8 +293,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             {runtimeConfig.feedbackUrl ? (
               <li>
                 <Link
-                  href={runtimeConfig.feedbackUrl}
-                  to="/"
+                  to={runtimeConfig.feedbackUrl}
                   target="_blank"
                   activeProps={legacyLinkActiveProps}
                 >

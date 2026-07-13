@@ -333,6 +333,10 @@ test("standalone login keeps explicit local redirect inside the SPA base path", 
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const source = readFileSync("src/routes/users/loginform.tsx", "utf8");
+  expect(source).toContain("router.history.push(destination)");
+  expect(source).not.toContain("navigate({ href: destination })");
+  expect(source).toContain("sessionQuery.data?.isAnonymous === false && !redirectingRef.current");
   const login = await mockStandalonePasswordLogin(page, { defaultLandingPath: "/" });
   await page.goto(`${basePath}/users/loginform?redirectUrl=%2Fme`);
 
@@ -359,7 +363,7 @@ test("standalone login keeps explicit local redirect inside the SPA base path", 
       ),
     )
     .toBe("alive");
-  await expect.poll(() => login.sessionRequestPaths.length).toBe(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBe(2);
   expect(login.signInRequests).toEqual([
     {
       body: { identifier: "admin", password: "password", rememberMe: true },
@@ -384,7 +388,7 @@ test("standalone login returns to a same-origin absolute legacy Referer", async 
     .toBe(`${basePath === "/" ? "" : basePath}/admin/sample/issues`);
   await expect.poll(() => new URL(page.url()).search).toMatch(/^\?state=open(?:&|$)/u);
   await expect.poll(() => new URL(page.url()).hash).toBe("#issue-list");
-  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(2);
 });
 
 test("standalone login strips an exact configured base from an absolute redirect", async ({
@@ -401,7 +405,7 @@ test("standalone login strips an exact configured base from an absolute redirect
   await page.locator(".page.full button[type='submit']").click();
 
   await expect(page).toHaveURL(`${basePath === "/" ? "" : basePath}/?x=1#h`);
-  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(2);
 });
 
 test("standalone login rejects a cross-origin absolute redirect", async ({ page }) => {
@@ -420,7 +424,7 @@ test("standalone login rejects a cross-origin absolute redirect", async ({ page 
   await expect
     .poll(() => new URL(page.url()).pathname)
     .toBe(`${basePath === "/" ? "" : basePath}/me`);
-  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(2);
 });
 
 test("standalone login rejects a protocol-relative redirect", async ({ page }) => {
@@ -439,7 +443,7 @@ test("standalone login rejects a protocol-relative redirect", async ({ page }) =
   await expect
     .poll(() => new URL(page.url()).pathname)
     .toBe(`${basePath === "/" ? "" : basePath}/me`);
-  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(2);
 });
 
 for (const [label, unsafePath] of [
@@ -462,7 +466,7 @@ for (const [label, unsafePath] of [
     await expect
       .poll(() => new URL(page.url()).pathname)
       .toBe(`${basePath === "/" ? "" : basePath}/me`);
-    await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(3);
+    await expect.poll(() => login.sessionRequestPaths.length).toBeGreaterThanOrEqual(2);
   });
 }
 
@@ -491,7 +495,7 @@ test("standalone login without a landing preference uses the legacy root", async
       ),
     )
     .toBe("alive");
-  await expect.poll(() => login.sessionRequestPaths.length).toBe(3);
+  await expect.poll(() => login.sessionRequestPaths.length).toBe(2);
 });
 
 test("standalone login does not duplicate an already-prefixed landing path", async ({ page }) => {

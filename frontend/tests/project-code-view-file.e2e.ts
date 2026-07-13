@@ -539,7 +539,7 @@ test("project code file normalizes refs branch names like legacy branchItemName"
   expect(codeRequests).toEqual(["branch=refs%2Fheads%2Fmain&path=src%2Fmain.rs"]);
 });
 
-test("project code file route source keeps backend links as hrefs without route casts", () => {
+test("project code file route source keeps backend links as reload-document Link targets", () => {
   const routeSource = readFileSync(
     fileURLToPath(
       new URL("../src/routes/$ownerName/$projectName/code/$branch/$filePath.tsx", import.meta.url),
@@ -565,7 +565,7 @@ test("project code file route source keeps backend links as hrefs without route 
 
   expect(rawAnchorBlocks).toEqual([]);
   expect(backendAnchorHrefs).toEqual([]);
-  expect(linkHrefs).toHaveLength(5);
+  expect(linkHrefs).toHaveLength(0);
   expect(routeSource).toContain("import { Link, createFileRoute, useRouter }");
   expect(routeSource).not.toContain("createLink");
   expect(routeSource).not.toContain("reactJsx");
@@ -587,9 +587,12 @@ test("project code file route source keeps backend links as hrefs without route 
   expect(routeSource).not.toContain("to={archivePath as never}");
   expect(routeSource).not.toContain("to={rawPath as never}");
   expect(routeSource).not.toContain("to={openPath as never}");
-  expect(routeSource).toContain("<Link href={archiveHref} to={archivePath} reloadDocument");
-  expect(routeSource).toContain("<Link href={rawHref} to={rawPath}");
-  expect(routeSource).toContain("href={openHref}");
+  expect(routeSource).toContain("<Link to={archivePath} reloadDocument");
+  expect(routeSource).toContain("<Link to={rawPath} reloadDocument");
+  expect(routeSource).toContain("to={openPath}");
+  expect(routeSource).not.toContain("href={archiveHref}");
+  expect(routeSource).not.toContain("href={rawHref}");
+  expect(routeSource).not.toContain("href={openHref}");
   expect(routeSource).toContain("isOpenInBrowserPopoverVisible");
   expect(routeSource).toContain('className="popover top in"');
   expect(routeSource).toContain('className="popover-content"');

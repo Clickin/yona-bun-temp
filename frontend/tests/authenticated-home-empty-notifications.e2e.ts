@@ -572,14 +572,11 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
   expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
   expect(routeSource).toContain("href={navbarCustomLinkUrl}");
-  expect(routeSource).toContain(
+  expect(routeSource).toContain("to={LEGACY_AUTHENTICATED_LOGOUT_PATH}");
+  expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}");
+  expect(routeSource).toContain("to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}");
+  expect(routeSource).not.toContain(
     "href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}",
-  );
-  expect(routeSource).toContain(
-    "href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}",
-  );
-  expect(routeSource).toContain(
-    "href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}",
   );
   expect(routeSource).toContain('to="/projectform"');
 
@@ -616,6 +613,11 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
   const signupMenuLink = page.locator(".gnb-usermenu a.ybtn.ybtn-success");
   const landingSignupLink = page.locator(".signup-btn a.ybtn.ybtn-success.ybtn-padding");
+  const projectListLink = page.locator(".gnb-nav a.show-progress-bar");
+  const profileLink = page.locator("#mySidenav .user-menu a").first();
+  const logoutLink = page.locator("#mySidenav a:has(.logout)");
+  const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
+  const dialogSignupLink = page.locator("#loginDialog .act-row a").nth(1);
 
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
@@ -629,6 +631,16 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).toHaveAttribute("class", "ybtn ybtn-success ybtn-padding");
+  await expect(projectListLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(projectListLink).not.toHaveAttribute("aria-current");
+  await expect(projectListLink).not.toHaveAttribute("data-status");
+  await expect(profileLink).toHaveAttribute("href", `${basePath}/anonymous`);
+  await expect(profileLink).not.toHaveAttribute("aria-current");
+  await expect(profileLink).not.toHaveAttribute("data-status");
+  await expect(logoutLink).toHaveAttribute("href", `${basePath}/logout`);
+  await loginLink.click();
+  await expect(resetPasswordLink).toHaveAttribute("href", `${basePath}/lostPassword`);
+  await expect(dialogSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
 });
 
 test("root login submit refreshes the authenticated home shell without a document reload", async ({
@@ -1005,6 +1017,10 @@ test("authenticated shell renders legacy custom navbar link before my issues", a
     "https://docs.example.test/yona",
   );
   await expect(menuItems.nth(1).locator("a.user-item-btn.loggged-in")).toHaveText("My Issues");
+  await expect(page.locator("#mySidenav a:has(.logout)")).toHaveAttribute(
+    "href",
+    `${basePath}/users/logout`,
+  );
   await expect(menuItems.nth(1)).not.toHaveAttribute("data-toggle");
   await expect(menuItems.nth(1)).not.toHaveAttribute("data-placement");
   await expect(menuItems.nth(1)).toHaveAttribute("title", "Shortcut (A)");

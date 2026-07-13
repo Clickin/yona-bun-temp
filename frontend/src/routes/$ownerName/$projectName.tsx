@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
-import { createContext, use, useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
@@ -1712,9 +1712,17 @@ function HistoryLink({
   className: string;
   href: string;
 }) {
-  if (href === "#" || href.startsWith("http://") || href.startsWith("https://")) {
+  if (href === "#") {
     return (
-      <Link to="/" href={href} className={className}>
+      <Link to="." className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  if (href.startsWith("http://") || href.startsWith("https://")) {
+    return (
+      <Link to={href} className={className}>
         {children}
       </Link>
     );

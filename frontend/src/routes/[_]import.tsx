@@ -97,7 +97,6 @@ function ProjectImportScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(true);
   const [urlError, setUrlError] = React.useState<string | null>(null);
   const [projectNameError, setProjectNameError] = React.useState<string | null>(null);
-  const cancelHref = runtimeConfig.basePath === "/" ? "/" : runtimeConfig.basePath;
   const authIdRef = React.useRef<HTMLInputElement>(null);
   const didFocusInitialFieldRef = React.useRef(false);
   const urlRef = React.useRef<HTMLInputElement>(null);
@@ -656,7 +655,6 @@ function ProjectImportScreen({
                 </button>
                 <Link
                   to="/"
-                  href={cancelHref}
                   className="ybtn"
                   activeOptions={legacyImportActionLinkActiveOptions}
                   activeProps={legacyImportActionLinkActiveProps}

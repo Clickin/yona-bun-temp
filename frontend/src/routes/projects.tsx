@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/no-autofocus -- legacy project/list.scala.html sets autofocus on the directory filter input. */
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
@@ -14,6 +14,13 @@ type ProjectsSearch = {
   filter: string;
   labelIds: number | string;
   pageNum?: number;
+};
+type ProjectsSearchInput = Partial<ProjectsSearch> & SearchSchemaInput;
+
+const LEGACY_PROJECTS_LINK_SEARCH = {
+  filter: undefined,
+  labelIds: undefined,
+  pageNum: undefined,
 };
 
 type ProjectDirectoryItem = YoramRecord & {
@@ -37,7 +44,7 @@ type ProjectDirectoryLabel = {
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
-  validateSearch: (search: Record<string, unknown>): ProjectsSearch => {
+  validateSearch: (search: ProjectsSearchInput): ProjectsSearch => {
     const pageNum = positiveInteger(search.pageNum);
     return {
       filter: typeof search.filter === "string" ? search.filter : "",
@@ -88,7 +95,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  search={{ filter: "", labelIds: "" }}
+                  search={LEGACY_PROJECTS_LINK_SEARCH}
                   to="/projects"
                 >
                   {t("project.public")} {t("title.projectList")}
@@ -101,7 +108,6 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  search={{ filter: "" }}
                   to="/orgs"
                 >
                   {t("title.organization.list")}
@@ -182,8 +188,8 @@ function ProjectsPagination({
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
   const pageSearch = (pageNum: number) => ({
-    filter,
-    labelIds: labelIds ? labelIdSearchValue(labelIds) : "",
+    ...(filter ? { filter } : {}),
+    ...(labelIds ? { labelIds: labelIdSearchValue(labelIds) } : {}),
     pageNum,
   });
   const navigateToPage = (pageNum: number) => {
@@ -364,7 +370,7 @@ function ProjectListItem({
                       ),
                     );
                   }}
-                  search={{ filter: "", labelIds: labelIdSearchValue(label.id) }}
+                  search={{ labelIds: labelIdSearchValue(label.id) }}
                   to="/projects"
                 >
                   {label.name}

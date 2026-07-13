@@ -577,9 +577,8 @@ function SearchPagination({ result, searchPath }: { result: SearchResponse; sear
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
               activeProps={legacySearchPaginationLinkActiveProps}
-              to="/"
-              href={`${searchPath}?pageNum=${currentPage - 1}`}
-              reloadDocument
+              to="."
+              search={pageSearch(currentPage - 1)}
             >
               <i className="ico btn-pg-prev"></i>
               <span>{t("button.prevPage")}</span>
@@ -614,9 +613,8 @@ function SearchPagination({ result, searchPath }: { result: SearchResponse; sear
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
               activeProps={legacySearchPaginationLinkActiveProps}
-              to="/"
-              href={`${searchPath}?pageNum=${currentPage + 1}`}
-              reloadDocument
+              to="."
+              search={pageSearch(currentPage + 1)}
             >
               <span>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>

@@ -59,6 +59,7 @@ function HelpTocTitle() {
 
 function HelpTocScreen({ appName }: { appName: string }) {
   const { t } = useLegacyMessages();
+  const infoPath: string = "/info";
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
@@ -168,8 +169,7 @@ function HelpTocScreen({ appName }: { appName: string }) {
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
                   <Link
-                    to="/"
-                    href="/info"
+                    to={infoPath}
                     reloadDocument
                     activeOptions={legacyAnswerLinkActiveOptions}
                     activeProps={legacyAnswerLinkActiveProps}
@@ -197,8 +197,7 @@ function HelpTocScreen({ appName }: { appName: string }) {
                 <Answer>
                   자신의{" "}
                   <Link
-                    to="/"
-                    href="/info"
+                    to={infoPath}
                     reloadDocument
                     activeOptions={legacyAnswerLinkActiveOptions}
                     activeProps={legacyAnswerLinkActiveProps}

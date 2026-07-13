@@ -454,8 +454,6 @@ function RootLoginDialog({
   }, [runtimeConfig]);
 
   const basePath = runtimeConfig.basePath;
-  const lostPasswordPath: string = "/lostPassword";
-  const signupPath: string = "/users/signupform";
   const socialLoginOnly = capabilities?.socialLoginOnly === true;
   const socialProviders = Array.isArray(capabilities?.enabledSocialProviders)
     ? capabilities.enabledSocialProviders
@@ -555,13 +553,9 @@ function RootLoginDialog({
                   {t("title.rememberMe")}
                 </label>
               </div>
-              <Link to="/" href={prefixBasePath(basePath, "/lostPassword")}>
-                {t("title.resetPassword")}
-              </Link>
+              <Link to="/lostPassword">{t("title.resetPassword")}</Link>
               <span className="gray-txt ml10 mr10">|</span>
-              <Link to="/" href={prefixBasePath(basePath, "/users/signupform")}>
-                {t("title.signup")}
-              </Link>
+              <Link to="/users/signupform">{t("title.signup")}</Link>
             </div>
           ) : null}
         </form>
@@ -578,12 +572,7 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
   const providerLoginPath: string = `/authenticate/${normalized}`;
 
   return (
-    <Link
-      to={providerLoginPath}
-      href={prefixBasePath(basePath, providerLoginPath)}
-      className="ybtn oauth-login-btn"
-      reloadDocument
-    >
+    <Link to={providerLoginPath} className="ybtn oauth-login-btn" reloadDocument>
       {normalized === "github" ? (
         <span className="auth-provider-logo">
           <span className="github">
@@ -634,7 +623,6 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const pathname = rootAliasLocation.pathname;
   const resetPasswordSearch = rootAliasLocation.search;
   const feedbackUrl = runtimeConfig.feedbackUrl?.trim();
-  const projectListPath: string = "/projects";
   const loginFormPath: string = "/users/loginform";
   const signupFormPath: string = "/users/signupform";
   const logoutPath: string = "/logout";
@@ -658,19 +646,25 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           <ul className="gnb-nav">
             <li>
               <Link
+                activeOptions={legacyPlainLinkActiveOptions}
+                activeProps={legacyPlainLinkActiveProps}
                 to="/projects"
-                search={{ filter: "", labelIds: "" }}
-                href={prefixBasePath(runtimeConfig.basePath, "/projects")}
               >
                 {t("title.projectList")}
               </Link>
             </li>
             <li>
-              <Link to="/_help">{t("title.help")}</Link>
+              <Link
+                activeOptions={legacyPlainLinkActiveOptions}
+                activeProps={legacyPlainLinkActiveProps}
+                to="/_help"
+              >
+                {t("title.help")}
+              </Link>
             </li>
             {feedbackUrl ? (
               <li>
-                <Link to="/" href={feedbackUrl} target="_blank">
+                <Link to={feedbackUrl} target="_blank">
                   {t("title.yobi.feedback")}
                 </Link>
               </li>
@@ -681,9 +675,11 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
                   <Link
-                    to="/"
-                    href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}
-                    reloadDocument
+                    activeOptions={legacyPlainLinkActiveOptions}
+                    activeProps={legacyPlainLinkActiveProps}
+                    params={{ user: "anonymous" }}
+                    search={{ daysAgo: undefined!, selected: undefined! }}
+                    to="/$user"
                   >
                     {t("userinfo.profile")}
                   </Link>
@@ -693,11 +689,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     {t("userinfo.accountSetting")}
                   </Link>
                 </span>
-                <Link
-                  to={logoutPath}
-                  href={prefixBasePath(runtimeConfig.basePath, "/logout")}
-                  reloadDocument
-                >
+                <Link to={logoutPath} reloadDocument>
                   <span className="user-menu logout label">{t("title.logout")}</span>
                 </Link>
               </div>
@@ -733,22 +725,13 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </div>
           <ul className="gnb-usermenu">
             <li className="gnb-usermenu-item" id="required-logged-in">
-              <Link
-                to={loginFormPath}
-                href={prefixBasePath(runtimeConfig.basePath, "/users/loginform")}
-                className="user-item-btn"
-                data-login="required"
-              >
+              <Link to={loginFormPath} className="user-item-btn" data-login="required">
                 {t("title.login")}
               </Link>
             </li>
             <li className="divider"></li>
             <li>
-              <Link
-                to={signupFormPath}
-                href={prefixBasePath(runtimeConfig.basePath, "/users/signupform")}
-                className="ybtn ybtn-success"
-              >
+              <Link to={signupFormPath} className="ybtn ybtn-success">
                 {t("title.signup")}
               </Link>
             </li>

@@ -20,7 +20,7 @@ const EXPECTED_PROJECTS_LIST = `
     </div>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
-      <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar active" data-status="active" aria-current="page">List All</a></li>
+      <li class="active"><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
@@ -254,6 +254,7 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   const organizationTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(1);
   const projectTabLink = projectTabItem.locator("a");
   const organizationTabLink = organizationTabItem.locator("a");
+  const navbarProjectLink = page.locator(".gnb-nav a.show-progress-bar");
 
   await expect(projectTabItem).toHaveAttribute("class", "active");
   await expect(organizationTabItem).not.toHaveAttribute("class", /active/);
@@ -265,6 +266,10 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await expect(organizationTabLink).not.toHaveAttribute("class", /active/);
   await expect(organizationTabLink).not.toHaveAttribute("data-status", /./);
   await expect(organizationTabLink).not.toHaveAttribute("aria-current", /./);
+  await expect(navbarProjectLink).toHaveAttribute("href", `${basePath}/projects`);
+  await expect(navbarProjectLink).toHaveAttribute("class", "show-progress-bar");
+  await expect(navbarProjectLink).not.toHaveAttribute("data-status");
+  await expect(navbarProjectLink).not.toHaveAttribute("aria-current");
 });
 
 test("project directory card links keep legacy hrefs while using SPA navigation", async ({

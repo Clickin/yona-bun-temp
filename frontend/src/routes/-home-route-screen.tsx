@@ -17,7 +17,7 @@ type LegacyUserLinkSearch = {
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
 };
-type LegacyProjectsLinkSearch = { filter: string; labelIds: string };
+type LegacyProjectsLinkSearch = { filter?: string; labelIds?: string };
 type LegacyProjectFormLinkSearch = { owner?: string };
 type LegacyUserIssuesLinkSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -42,7 +42,10 @@ const LEGACY_USER_LINK_SEARCH = {
   daysAgo: undefined!,
   selected: undefined!,
 } satisfies LegacyUserLinkSearch;
-const LEGACY_PROJECTS_LINK_SEARCH = { filter: "", labelIds: "" } satisfies LegacyProjectsLinkSearch;
+const LEGACY_PROJECTS_LINK_SEARCH = {
+  filter: undefined,
+  labelIds: undefined,
+} satisfies LegacyProjectsLinkSearch;
 const LEGACY_PROJECT_FORM_LINK_SEARCH = {
   owner: undefined,
 } satisfies LegacyProjectFormLinkSearch;
@@ -296,11 +299,7 @@ function HomeScreen({
           </div>
         ) : (
           notificationItems.map((notification) => (
-            <NotificationStreamItem
-              key={notification.id}
-              notification={notification}
-              runtimeConfig={runtimeConfig}
-            />
+            <NotificationStreamItem key={notification.id} notification={notification} />
           ))
         )}
         {notificationHasMore ? (
@@ -342,7 +341,6 @@ function HomeScreen({
                     <td>
                       <Link
                         to={LEGACY_GUIDE_NEW_PROJECT_PATH}
-                        href={prefixBasePath(runtimeConfig.basePath, LEGACY_GUIDE_NEW_PROJECT_PATH)}
                         reloadDocument
                         className="ybtn ybtn-success"
                       >
@@ -363,7 +361,7 @@ function HomeScreen({
                     <td>
                       <Link
                         to="/projects"
-                        search={LEGACY_PROJECTS_LINK_SEARCH}
+                        activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
                         className="ybtn ybtn-success"
                       >
                         {t("title.projectList")}
@@ -450,11 +448,7 @@ function HomeScreen({
                       </div>
                     ) : (
                       notificationItems.map((notification) => (
-                        <NotificationStreamItem
-                          key={notification.id}
-                          notification={notification}
-                          runtimeConfig={runtimeConfig}
-                        />
+                        <NotificationStreamItem key={notification.id} notification={notification} />
                       ))
                     )}
                     {notificationHasMore ? (
@@ -552,13 +546,7 @@ function HomeFlashToast({ message }: { message: string }) {
   return null;
 }
 
-function NotificationStreamItem({
-  notification,
-  runtimeConfig,
-}: {
-  notification: NotificationItem;
-  runtimeConfig: RuntimeConfig;
-}) {
+function NotificationStreamItem({ notification }: { notification: NotificationItem }) {
   const messageWrapRef = React.useRef<HTMLDivElement>(null);
   const messageRef = React.useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = React.useState(false);
@@ -614,11 +602,7 @@ function NotificationStreamItem({
         <div className="stream-info">
           <div className="title">
             {notification.targetHref ? (
-              <Link
-                to={notification.targetHref}
-                href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}
-                {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
-              >
+              <Link to={notification.targetHref} {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}>
                 {notification.targetTitle}
               </Link>
             ) : (
@@ -869,6 +853,8 @@ export function SiteLayoutShell({
                 <>
                   <li className={activeMenu === "projects" ? "active" : undefined}>
                     <Link
+                      activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                      activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
                       to="/projects"
                       search={LEGACY_PROJECTS_LINK_SEARCH}
                       className="show-progress-bar"
@@ -881,7 +867,7 @@ export function SiteLayoutShell({
               ) : null}
               {feedbackUrl ? (
                 <li>
-                  <Link to="/" href={feedbackUrl} target="_blank">
+                  <Link to={feedbackUrl} target="_blank">
                     {t("title.yobi.feedback")}
                   </Link>
                 </li>
@@ -942,7 +928,7 @@ export function SiteLayoutShell({
               </li>
             </ul>
             {shouldRenderAnonymousUserMenu ? (
-              <AnonymousSiteUserMenu basePath={runtimeConfig.basePath} />
+              <AnonymousSiteUserMenu />
             ) : (
               <AuthenticatedSiteUserMenu
                 basePath={runtimeConfig.basePath}
@@ -1025,11 +1011,7 @@ function LegacyFramedSidebar({
         <span className="user-menu">
           <Link to="/user/editform">{t("userinfo.accountSetting")}</Link>
         </span>
-        <Link
-          href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}
-          reloadDocument
-          to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
-        >
+        <Link reloadDocument to={LEGACY_AUTHENTICATED_LOGOUT_PATH}>
           <span className="user-menu logout label">{t("title.logout")}</span>
         </Link>
         <button
@@ -1174,11 +1156,7 @@ function AuthenticatedSiteUserMenu({
                 {t("userinfo.accountSetting")}
               </Link>
             </span>
-            <Link
-              to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
-              href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}
-              reloadDocument
-            >
+            <Link to={LEGACY_AUTHENTICATED_LOGOUT_PATH} reloadDocument>
               <span className="user-menu logout label">{t("title.logout")}</span>
             </Link>
           </div>
@@ -1218,12 +1196,7 @@ function AuthenticatedSiteUserMenu({
       <ul className="gnb-usermenu">
         {navbarCustomLinkName ? (
           <li className="gnb-usermenu-item">
-            <Link
-              to={navbarCustomLinkUrl}
-              href={navbarCustomLinkUrl}
-              reloadDocument
-              className="user-item-btn loggged-in"
-            >
+            <Link to={navbarCustomLinkUrl} reloadDocument className="user-item-btn loggged-in">
               {navbarCustomLinkName}
             </Link>
           </li>
@@ -1282,20 +1255,10 @@ function AuthenticatedSiteUserMenu({
           </button>
           <ul className="dropdown-menu flat right">
             <li>
-              <Link
-                to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_ISSUE_PATH)}
-              >
-                {t("issue.menu.new")}
-              </Link>
+              <Link to={LEGACY_NOTIFICATION_NEW_ISSUE_PATH}>{t("issue.menu.new")}</Link>
             </li>
             <li>
-              <Link
-                to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}
-                href={prefixBasePath(basePath, LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH)}
-              >
-                {t("issue.menu.new.mine")}
-              </Link>
+              <Link to={LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH}>{t("issue.menu.new.mine")}</Link>
             </li>
             <li>
               <hr className="no-margin" />
@@ -1317,7 +1280,7 @@ function AuthenticatedSiteUserMenu({
   );
 }
 
-function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
+function AnonymousSiteUserMenu() {
   const { t } = useLegacyMessages();
   const openRootLoginDialog = useRootLoginDialog();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
@@ -1336,9 +1299,10 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
                   className: undefined,
                   "data-status": undefined,
                 }}
-                to="/"
-                href={prefixBasePath(basePath, "/user/anonymous")}
-                reloadDocument
+                activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
+                params={{ user: "anonymous" }}
+                search={LEGACY_USER_LINK_SEARCH}
+                to="/$user"
               >
                 {t("userinfo.profile")}
               </Link>
@@ -1355,11 +1319,7 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
                 {t("userinfo.accountSetting")}
               </Link>
             </span>
-            <Link
-              to={LEGACY_ANONYMOUS_LOGOUT_PATH}
-              href={prefixBasePath(basePath, LEGACY_ANONYMOUS_LOGOUT_PATH)}
-              reloadDocument
-            >
+            <Link to={LEGACY_ANONYMOUS_LOGOUT_PATH} reloadDocument>
               <span className="user-menu logout label">{t("title.logout")}</span>
             </Link>
           </div>

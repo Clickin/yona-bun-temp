@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -1553,9 +1553,13 @@ function CommitDropdown({
           commit.state === "CURRENT" ? (
             <li key={commit.commitId}>
               <Link
-                to="/"
-                href={`${changesPath}/${encodeURIComponent(commit.commitId)}`}
-                reloadDocument
+                to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId"
+                params={{
+                  ownerName: pullRequest.ownerName,
+                  projectName: pullRequest.projectName,
+                  pullRequestNumber: String(pullRequest.pullRequestNumber),
+                  commitId: commit.commitId,
+                }}
                 activeOptions={legacyLinkActiveOptions}
                 activeProps={legacyLinkActiveProps}
                 onClick={closeDropdown}

@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/no-autofocus -- legacy organization/list.scala.html sets autofocus on the directory filter input. */
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
@@ -13,6 +13,17 @@ type OrgsSearch = {
   filter: string;
   pageNum?: number;
 };
+type OrgsSearchInput = Partial<OrgsSearch> & SearchSchemaInput;
+
+const LEGACY_ORGS_LINK_SEARCH = {
+  filter: undefined,
+  pageNum: undefined,
+};
+const LEGACY_PROJECTS_LINK_SEARCH = {
+  filter: undefined,
+  labelIds: undefined,
+  pageNum: undefined,
+} as const;
 
 type OrganizationDirectoryItem = YoramRecord & {
   createdLabel?: string;
@@ -26,7 +37,7 @@ type OrganizationDirectoryItem = YoramRecord & {
 
 export const Route = createFileRoute("/orgs")({
   component: OrgsRoute,
-  validateSearch: (search: Record<string, unknown>): OrgsSearch => {
+  validateSearch: (search: OrgsSearchInput): OrgsSearch => {
     const pageNum = positiveInteger(search.pageNum);
     return {
       filter: typeof search.filter === "string" ? search.filter : "",
@@ -77,8 +88,8 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       className: undefined,
                       "data-status": undefined,
                     }}
+                    search={LEGACY_PROJECTS_LINK_SEARCH}
                     to="/projects"
-                    search={{ filter: "", labelIds: "" }}
                   >
                     {t("project.public")} {t("title.projectList")}
                   </Link>
@@ -91,8 +102,8 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       className: undefined,
                       "data-status": undefined,
                     }}
+                    search={LEGACY_ORGS_LINK_SEARCH}
                     to="/orgs"
-                    search={{ filter: "" }}
                   >
                     {t("title.organization.list")}
                   </Link>
@@ -170,7 +181,7 @@ function OrganizationsPagination({
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
   const pageSearch = (pageNum: number) => ({
-    filter,
+    ...(filter ? { filter } : {}),
     pageNum,
   });
   const navigateToPage = (pageNum: number) => {
