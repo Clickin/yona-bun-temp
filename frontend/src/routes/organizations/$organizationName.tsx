@@ -32,8 +32,9 @@ function OrganizationHomeRoute() {
   const exactPath = `/organizations/${organizationName}`;
   const isHome = pathname === exactPath || pathname === `${exactPath}/`;
   const isBoards = pathname === `${exactPath}/boards`;
+  const isIssues = pathname === `${exactPath}/issues`;
 
-  if (!isHome && !isBoards) {
+  if (!isHome && !isBoards && !isIssues) {
     return <Outlet />;
   }
 
@@ -78,7 +79,13 @@ function OrganizationNestedLayout({
             viewerCanEnroll={booleanField(organization.viewerCanEnroll)}
           />
           <OrganizationMenu
-            active={pathname.endsWith("/boards") ? "boards" : "home"}
+            active={
+              pathname.endsWith("/issues")
+                ? "issues"
+                : pathname.endsWith("/boards")
+                  ? "boards"
+                  : "home"
+            }
             organizationName={organizationName}
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
           />
@@ -671,7 +678,7 @@ export function OrganizationMenu({
   organizationName,
   viewerCanUpdate,
 }: {
-  active: "home" | "boards";
+  active: "home" | "issues" | "boards";
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
@@ -705,7 +712,7 @@ export function OrganizationMenu({
               {t("title.organizationHome")}
             </Link>
           </li>
-          <li className="">
+          <li className={active === "issues" ? "active" : ""}>
             <Link
               activeOptions={{
                 exact: true,

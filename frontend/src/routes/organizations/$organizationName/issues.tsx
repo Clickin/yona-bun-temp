@@ -11,18 +11,14 @@ import {
   useState,
 } from "react";
 import { currentSessionQueryOptions } from "../../../api/session";
-import type { OrganizationContainer } from "../../../api/types";
 import {
   listOrganizationIssues,
   type OrganizationIssueListRestResponse,
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
-import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 
 type OrganizationIssuesSearch = {
   assigneeId: string;
@@ -63,24 +59,13 @@ export const Route = createFileRoute("/organizations/$organizationName/issues")(
 
 function OrganizationIssuesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <OrganizationIssuesScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <OrganizationIssuesScreen runtimeConfig={runtimeConfig} />;
 }
 
 function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
   const location = useLocation();
   const search = organizationIssuesSearchFromString(location.searchStr);
-  const organizationQuery = useQuery({
-    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
-    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
-  });
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const issuesQuery = useQuery({
     queryFn: () =>
@@ -110,25 +95,19 @@ function OrganizationIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     ],
   });
 
-  if (!organizationQuery.data || !issuesQuery.data || !sessionQuery.data) {
+  if (!issuesQuery.data || !sessionQuery.data) {
     return null;
   }
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={{ organizationName }}
+    <OrganizationIssuesBody
+      currentUserId={stringField(sessionQuery.data.actorId, "")}
+      isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
+      issues={issuesQuery.data}
+      organizationName={organizationName}
       runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
-      <OrganizationIssuesBody
-        currentUserId={stringField(sessionQuery.data.actorId, "")}
-        isAnonymous={Boolean(sessionQuery.data.isAnonymous)}
-        issues={issuesQuery.data}
-        organization={organizationQuery.data}
-        runtimeConfig={runtimeConfig}
-        search={search}
-      />
-    </SiteLayoutShell>
+      search={search}
+    />
   );
 }
 
@@ -136,21 +115,20 @@ function OrganizationIssuesBody({
   currentUserId,
   isAnonymous,
   issues,
-  organization,
+  organizationName: routeOrganizationName,
   runtimeConfig,
   search,
 }: {
   currentUserId: string;
   isAnonymous: boolean;
   issues: OrganizationIssueListRestResponse;
-  organization: OrganizationContainer;
+  organizationName: string;
   runtimeConfig: RuntimeConfig;
   search: OrganizationIssuesSearch;
 }) {
   const { t } = useLegacyMessages();
   const navigate = useNavigate();
-  const organizationName = stringField(organization.organizationName, issues.organizationName);
-  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const organizationName = stringField(issues.organizationName, routeOrganizationName);
   const hasIssues = issues.items.length > 0;
 
   const navigateToSearch = (
@@ -242,12 +220,6 @@ function OrganizationIssuesBody({
   return (
     <>
       <title>{organizationName}</title>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-      <OrganizationMenu
-        active="issues"
-        organizationName={organizationName}
-        viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
-      />
       <div className="page-wrap-outer">
         <div className="page-wrap">
           <div className="row-fluid issue-list-wrap">
@@ -1078,8 +1050,4 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function booleanField(value: unknown) {
-  return value === true;
 }

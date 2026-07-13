@@ -7,16 +7,10 @@ import {
   type CodeBranchListItem,
   type CodeBranchListResponse,
 } from "../../../api/code-branches";
-import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
-import { DefaultSearchErrorBody } from "../../-search-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/branches")({
   component: ProjectBranchesRoute,
@@ -24,74 +18,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/branches")({
 
 function ProjectBranchesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectBranchesRouteShell runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectBranchesScreen runtimeConfig={runtimeConfig} />;
 }
 
-function ProjectBranchesRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
-  const project = projectQuery.data;
-
-  if (!project) {
-    return null;
-  }
-
-  if (project.vcs !== "GIT") {
-    return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
-  }
-
-  return (
-    <SiteLayoutShell
-      projectSearchScope={{
-        organizationName: projectSearchScopeOrganizationName(project, ownerName),
-        ownerName,
-        projectName,
-      }}
-      runtimeConfig={runtimeConfig}
-    >
-      <ProjectBranchesScreen project={project} runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
-  );
-}
-
-function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
-      <title>{t("error.badrequest.only.available.for.git")}</title>
-      <ProjectBranchesBadRequestBody runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
-  );
-}
-
-function ProjectBranchesBadRequestBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  return (
-    <DefaultSearchErrorBody
-      iconClassName="ico-404"
-      messageKey="error.badrequest.only.available.for.git"
-      runtimeConfig={runtimeConfig}
-      ybtnClassName="ybtn ybtn-info"
-    />
-  );
-}
-
-function ProjectBranchesScreen({
-  project,
-  runtimeConfig,
-}: {
-  project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ProjectBranchesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const branchesQuery = useQuery(
@@ -105,8 +35,6 @@ function ProjectBranchesScreen({
   return (
     <>
       <title>{`${t("title.branches")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
       <ProjectBranchesBody branches={branchesQuery.data} runtimeConfig={runtimeConfig} />
     </>
   );
@@ -397,13 +325,4 @@ function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
     branch.name === defaultBranchName ||
     branch.shortName === defaultBranchName
   );
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName =
-    typeof project.organizationName === "string" ? project.organizationName : "";
-  if (organizationName) {
-    return organizationName;
-  }
-  return project.isProtected === true ? ownerName : undefined;
 }
