@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, four user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, five user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -292,6 +292,13 @@ weight remain fallback because their frozen declarations are `!important`; addin
 `!important` or claiming normal StyleX ownership would violate the migration rules. Bootstrap
 `.label`, anchor, inner shell, tabs/content, and scrollbar declarations remain later owners. This
 is not Wave 1 completion.
+
+The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
+the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720
+`#mySidenav .span-hard-wrap` min-width/100% correction from the lower React parity sheet. It adds
+no color and does not change the global theme entry. Bootstrap span/grid behavior, the global
+mobile `.span-hard-wrap`, account actions, tabs/content, scrollbars, anonymous frame, and other
+`.right-menu` consumers remain fallback. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

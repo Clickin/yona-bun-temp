@@ -1078,6 +1078,21 @@ function LegacyFramedSidebar({
   );
 }
 
+const authenticatedSidenavContentFrameStyles = stylex.create({
+  frame: {
+    marginLeft: "10px",
+    marginTop: "10px",
+    minWidth: {
+      default: null,
+      "@media (max-width: 720px)": 0,
+    },
+    width: {
+      default: "350px",
+      "@media (max-width: 720px)": "100%",
+    },
+  },
+});
+
 const authenticatedSidenavAccountActionStyles = stylex.create({
   row: {
     boxSizing: "border-box",
@@ -1271,7 +1286,10 @@ function AuthenticatedSiteUserMenu({
         className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
         data-stylex-owner="authenticated-site-sidenav-shell"
       >
-        <div className="span5 right-menu span-hard-wrap">
+        <div
+          className={`span5 right-menu span-hard-wrap ${stylex.props(authenticatedSidenavContentFrameStyles.frame).className}`}
+          data-stylex-owner="authenticated-sidenav-content-frame"
+        >
           <div
             className={`row-fluid user-menu-wrap ${stylex.props(authenticatedSidenavAccountActionStyles.row).className}`}
             data-stylex-owner="authenticated-sidenav-account-actions"
