@@ -94,6 +94,8 @@ function ProjectHomeRoute() {
   const milestonesPath = `${homePath}/milestones`;
   const postsPath = `${homePath}/posts`;
   const pullRequestsPath = `${homePath}/pullRequests`;
+  const closedPullRequestsPath = `${homePath}/closedPullRequests`;
+  const sentPullRequestsPath = `${homePath}/sentPullRequests`;
   const reviewsPath = `${homePath}/reviews`;
   const settingPath = `${homePath}/setting`;
   const membersPath = `${homePath}/members`;
@@ -113,7 +115,9 @@ function ProjectHomeRoute() {
             ? "milestone"
             : pathname === postsPath
               ? "board"
-              : pathname === pullRequestsPath
+              : pathname === pullRequestsPath ||
+                  pathname === closedPullRequestsPath ||
+                  pathname === sentPullRequestsPath
                 ? "pullRequest"
                 : pathname === reviewsPath
                   ? "review"
