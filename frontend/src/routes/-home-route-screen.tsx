@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { listNotificationsQueryOptions, type NotificationItem } from "../api/notifications";
@@ -10,6 +11,7 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 import { useRootLoginDialog, useRootToast } from "./__root";
 import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 
@@ -1280,6 +1282,49 @@ function AuthenticatedSiteUserMenu({
   );
 }
 
+const anonymousSiteUserMenuStyles = stylex.create({
+  menu: {
+    float: "right",
+    listStyle: "none",
+    padding: 0,
+  },
+  item: {
+    float: "left",
+    margin: "5px 0",
+    position: "relative",
+  },
+  loginItem: {
+    color: {
+      default: globalColors.textMuted,
+      "@media (max-width: 720px)": globalColors.navigationAccent,
+    },
+    fontSize: "14px",
+  },
+  loginLink: {
+    color: {
+      default: globalColors.textMuted,
+      "@media (max-width: 720px)": globalColors.navigationAccent,
+    },
+    lineHeight: "30px",
+    padding: "5px 10px",
+    textDecoration: "none",
+    ":hover": {
+      color: globalColors.textOnDarkHover,
+    },
+  },
+  divider: {
+    lineHeight: "30px",
+    "::after": {
+      color: globalColors.navigationDivider,
+      content: '"|"',
+      opacity: 0.35,
+    },
+  },
+  signupItem: {
+    marginLeft: "10px",
+  },
+});
+
 function AnonymousSiteUserMenu() {
   const { t } = useLegacyMessages();
   const openRootLoginDialog = useRootLoginDialog();
@@ -1347,12 +1392,18 @@ function AnonymousSiteUserMenu() {
           </div>
         </div>
       </div>
-      <ul className="gnb-usermenu">
-        <li className="gnb-usermenu-item" id="required-logged-in">
+      <ul
+        className={`gnb-usermenu ${stylex.props(anonymousSiteUserMenuStyles.menu).className}`}
+        data-stylex-owner="anonymous-site-user-menu"
+      >
+        <li
+          className={`gnb-usermenu-item ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.loginItem).className}`}
+          id="required-logged-in"
+        >
           <Link
             to="/users/loginform"
             search={LEGACY_LOGIN_FORM_LINK_SEARCH}
-            className="user-item-btn"
+            className={`user-item-btn ${stylex.props(anonymousSiteUserMenuStyles.loginLink).className}`}
             aria-controls="loginDialog"
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -1364,8 +1415,15 @@ function AnonymousSiteUserMenu() {
             {t("title.login")}
           </Link>
         </li>
-        <li className="divider"></li>
-        <li>
+        <li
+          className={`divider ${stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.divider).className}`}
+        ></li>
+        <li
+          className={
+            stylex.props(anonymousSiteUserMenuStyles.item, anonymousSiteUserMenuStyles.signupItem)
+              .className
+          }
+        >
           <Link to="/users/signupform" className="ybtn ybtn-success">
             {t("title.signup")}
           </Link>

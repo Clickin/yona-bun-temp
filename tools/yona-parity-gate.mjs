@@ -78,6 +78,7 @@ const PARITY_SLICES = [
     label: "Public landing and global navigation",
     status: "parity",
     implementationPatterns: [
+      /^frontend\/src\/theme\.stylex\.ts$/i,
       /^frontend\/src\/routes\/-home-route-screen\.tsx$/i,
       /^frontend\/src\/routes\/-last-outlet-transition\.tsx$/i,
       /^frontend\/src\/routes\/index\.tsx$/i,

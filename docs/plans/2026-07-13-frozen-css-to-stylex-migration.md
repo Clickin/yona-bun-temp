@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 not started
+Status: Wave 0 implemented; Wave 1 started, first slice complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -144,9 +144,11 @@ consumers. Do not create a speculative design-system layer.
 
 ### 4.2 Tokens
 
-Create typed variables only for legacy LESS variables that are actually reused by migrated
-rules. `stylex.defineVars` values must cite the source variable and exact value. Token work does
-not authorize palette, typography, spacing, or naming changes.
+`frontend/src/theme.stylex.ts` is the canonical global StyleX variable entry and future theme
+override boundary. Add typed variables only for exact legacy values used by migrated rules;
+`stylex.defineVars` values must cite the source declaration or variable. Dark-mode values and a
+toggle remain out of scope until legacy-equivalent requirements exist. Token work does not
+authorize palette, typography, spacing, or naming changes.
 
 Suggested minimal groups:
 
@@ -257,6 +259,14 @@ retained as evidence of the unlayered defect, not as corrected pixel-parity evid
 
 Exit: landing, login, signup, setup, not-found, and authenticated shell tests pass on desktop and
 390 px using semantic selectors.
+
+Implementation started. The first verified slice migrates only `AnonymousSiteUserMenu` on the
+anonymous `/` shell: its `_page.less` container/item/login/divider/last-item declarations and the
+max-720 `_responsive.less` color now have colocated StyleX ownership. The frozen fallback remains
+active, including the shared Bootstrap/`_yobiUI.less` `ybtn ybtn-success` primitive and untouched
+hidden/authenticated menus. Its four legacy colors use the global variables in
+`frontend/src/theme.stylex.ts`, establishing the override boundary without inventing dark-mode
+values or behavior. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
