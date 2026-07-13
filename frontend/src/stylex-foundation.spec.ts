@@ -9,6 +9,12 @@ const manifest = JSON.parse(
   ),
 ) as {
   artifactSha256: string;
+  layeredViteInputs: Array<{
+    id: string;
+    input: string;
+    layer: string;
+    sourceFiles: Array<{ path: string; sha256: string }>;
+  }>;
   sources: Array<{ cascadeIndex: number; id: string }>;
 };
 const fallback = readFileSync(
@@ -39,4 +45,36 @@ test("the frontend loads only the generated legacy fallback entry", () => {
   expect(indexHtml).not.toMatch(
     /(?:bootstrap\/css\/bootstrap|stylesheets\/(?:usermenu|yobi))\.css/u,
   );
+});
+
+test("all non-StyleX Vite CSS inputs explicitly join the legacy layer", () => {
+  const appCss = readFileSync(new URL("./app.css", import.meta.url), "utf8");
+  const dynatreeBridge = readFileSync(
+    new URL("./routes/$ownerName/$projectName/code/legacy-dynatree.css", import.meta.url),
+    "utf8",
+  );
+  const codeRoute = readFileSync(
+    new URL("./routes/$ownerName/$projectName/code/$branch.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(appCss.trimStart()).toMatch(/^@layer legacy\s*\{/u);
+  expect(dynatreeBridge).toContain('ui.dynatree.css" layer(legacy)');
+  expect(codeRoute).toContain('import "./legacy-dynatree.css";');
+  expect(codeRoute).not.toContain(
+    'import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";',
+  );
+  expect(manifest.layeredViteInputs.map(({ id, input, layer }) => [id, input, layer])).toEqual([
+    ["react-app", "frontend/src/app.css", "legacy"],
+    ["dynatree", "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css", "legacy"],
+  ]);
+  for (const entry of manifest.layeredViteInputs) {
+    for (const source of entry.sourceFiles) {
+      expect(
+        createHash("sha256")
+          .update(readFileSync(new URL(`../../${source.path}`, import.meta.url)))
+          .digest("hex"),
+      ).toBe(source.sha256);
+    }
+  }
 });

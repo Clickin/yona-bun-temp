@@ -16,6 +16,36 @@
     "viewer",
     "magnific-popup"
   ],
+  "layeredViteInputs": [
+    {
+      "id": "react-app",
+      "input": "frontend/src/app.css",
+      "layer": "legacy",
+      "role": "react-parity",
+      "sourceFiles": [
+        {
+          "path": "frontend/src/app.css",
+          "sha256": "2af6fdeb1fae2574c02df1bd8c10aa5c9bddf51d0f13e8907d64e096198b8771"
+        }
+      ]
+    },
+    {
+      "id": "dynatree",
+      "input": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
+      "layer": "legacy",
+      "role": "plugin",
+      "sourceFiles": [
+        {
+          "path": "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
+          "sha256": "3021579fe5b158720a46bca736b54aa768c88dbac2738b82be08c643e34b8558"
+        },
+        {
+          "path": "yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css",
+          "sha256": "5448638e232bc7b1c8f9f536434e85d02d588a07248ee0adc668285498f915d8"
+        }
+      ]
+    }
+  ],
   "referenceOnly": [
     {
       "id": "bootstrap-responsive",

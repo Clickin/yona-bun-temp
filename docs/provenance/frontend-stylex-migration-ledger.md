@@ -10,23 +10,27 @@ selectors.
 
 ## Runtime fallback inventory
 
-| Cascade              | Owner                                              | Status                  | Evidence                                                                    | Next target                                                |
-| -------------------- | -------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Bootstrap 2.3.1 base | `yona-original/public/bootstrap/css/bootstrap.css` | active frozen fallback  | manifest source hash; bundled first as legacy layout does                   | Wave 2, one primitive family with real consumers at a time |
-| Yobicon              | legacy plugin asset                                | plugin passthrough      | manifest index 1 preserves layout order and relative font URLs              | Wave 5 with final icon strategy                            |
-| Select2 3.4.5        | legacy plugin asset                                | plugin passthrough      | manifest index 2 preserves layout order and image URLs                      | Wave 5 with React-owned Select2 replacement                |
-| Pikaday              | legacy plugin asset                                | plugin passthrough      | manifest index 3 preserves layout order                                     | Wave 5 with date-control owner                             |
-| User menu            | `usermenu.less` → `_usermenu.less`                 | active frozen fallback  | manifest hashes entry/import; bundled at legacy index 4                     | Wave 1 root/user-menu shell                                |
-| Yobi application     | `yobi.less` full 13-import graph                   | active frozen fallback  | manifest hashes entry and every import; bundled at legacy index 5           | Wave 1 shell, then Wave 3 module slices                    |
-| NProgress            | legacy plugin asset                                | plugin passthrough      | manifest index 6 preserves layout order                                     | Wave 5 progress owner                                      |
-| Viewer.js            | legacy plugin asset                                | plugin passthrough      | manifest index 7 preserves layout order and data URL                        | Wave 5 image viewer owner                                  |
-| Magnific Popup       | legacy plugin asset                                | plugin passthrough      | manifest index 8 preserves layout order                                     | Wave 5 popup owner                                         |
-| Bootstrap responsive | `bootstrap-responsive.css`                         | reference-only/inactive | source hash in manifest; absent from `layout.scala.html` and runtime bundle | migrate only with an evidenced responsive owner            |
+| Cascade              | Owner                                                           | Status                  | Evidence                                                                                   | Next target                                                |
+| -------------------- | --------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Bootstrap 2.3.1 base | `yona-original/public/bootstrap/css/bootstrap.css`              | active frozen fallback  | manifest source hash; bundled first as legacy layout does                                  | Wave 2, one primitive family with real consumers at a time |
+| Yobicon              | legacy plugin asset                                             | plugin passthrough      | manifest index 1 preserves layout order and relative font URLs                             | Wave 5 with final icon strategy                            |
+| Select2 3.4.5        | legacy plugin asset                                             | plugin passthrough      | manifest index 2 preserves layout order and image URLs                                     | Wave 5 with React-owned Select2 replacement                |
+| Pikaday              | legacy plugin asset                                             | plugin passthrough      | manifest index 3 preserves layout order                                                    | Wave 5 with date-control owner                             |
+| User menu            | `usermenu.less` → `_usermenu.less`                              | active frozen fallback  | manifest hashes entry/import; bundled at legacy index 4                                    | Wave 1 root/user-menu shell                                |
+| Yobi application     | `yobi.less` full 13-import graph                                | active frozen fallback  | manifest hashes entry and every import; bundled at legacy index 5                          | Wave 1 shell, then Wave 3 module slices                    |
+| NProgress            | legacy plugin asset                                             | plugin passthrough      | manifest index 6 preserves layout order                                                    | Wave 5 progress owner                                      |
+| Viewer.js            | legacy plugin asset                                             | plugin passthrough      | manifest index 7 preserves layout order and data URL                                       | Wave 5 image viewer owner                                  |
+| Magnific Popup       | legacy plugin asset                                             | plugin passthrough      | manifest index 8 preserves layout order                                                    | Wave 5 popup owner                                         |
+| React parity CSS     | `frontend/src/app.css`                                          | layered Vite input      | manifest source hash; all existing declarations remain in source order inside `legacy`     | migrate only with each evidenced React owner               |
+| Dynatree             | `ui.dynatree.css` via `frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css` | plugin passthrough      | manifest hashes the colocated wrapper and frozen plugin source; route-local load remains in `legacy` | Wave 5 with the code-tree owner                            |
+| Bootstrap responsive | `bootstrap-responsive.css`                                      | reference-only/inactive | source hash in manifest; absent from `layout.scala.html` and runtime bundle                | migrate only with an evidenced responsive owner            |
 
-All nine active runtime sheets are inlined in their exact former `<link>` order inside one
+All nine layout runtime sheets are inlined in their exact former `<link>` order inside one
 `@layer legacy` artifact. Combining only Bootstrap, usermenu, and Yobi at one link position would
 reorder plugin declarations. Relative `url(...)` references are rewritten against the fallback
-location without changing the resolved base-path-relative asset.
+location without changing the resolved base-path-relative asset. The existing React parity sheet
+and route-local Dynatree plugin remain separate Vite inputs so their load positions do not move,
+but both explicitly join the same lower `legacy` layer and are hash-inventoried in the manifest.
 
 ## Selector ownership
 

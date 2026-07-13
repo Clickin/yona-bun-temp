@@ -112,6 +112,15 @@ for (const [cascadeIndex, entry] of runtimeCascade.entries()) {
 
 const artifact = `@charset "UTF-8";\n@layer legacy {\n${renderedSources.join("\n")}\n/* Wave 0 nonvisual precedence probe; both layers preserve display: contents. */\n#main [data-stylex-root-boundary] {\n  --yoram-stylex-root-boundary: legacy;\n  display: contents;\n}\n}\n`;
 const artifactSha256 = sha256(artifact);
+const layeredViteInputs = await Promise.all([
+  layeredViteInput("react-app", "frontend/src/app.css", "react-parity"),
+  layeredViteInput(
+    "dynatree",
+    "frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css",
+    "plugin",
+    ["yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css"],
+  ),
+]);
 const manifest = {
   schemaVersion: 1,
   artifact: outputRuntimePath,
@@ -119,6 +128,7 @@ const manifest = {
   layer: "legacy",
   activeFrozen: ["bootstrap", "usermenu", "yobi"],
   pluginPassthrough: ["yobicon", "select2", "pikaday", "nprogress", "viewer", "magnific-popup"],
+  layeredViteInputs,
   referenceOnly: [
     {
       id: "bootstrap-responsive",
@@ -146,6 +156,21 @@ function css(id, input, runtimePath, role) {
 
 function lessCss(id, input, runtimePath) {
   return { id, input, kind: "less", role: "frozen", runtimePath };
+}
+
+async function layeredViteInput(id, input, role, dependencies = []) {
+  return {
+    id,
+    input,
+    layer: "legacy",
+    role,
+    sourceFiles: await Promise.all(
+      [input, ...dependencies].map(async (sourcePath) => ({
+        path: sourcePath,
+        sha256: sha256(await fs.readFile(path.join(repoRoot, sourcePath))),
+      })),
+    ),
+  };
 }
 
 function sha256(value) {

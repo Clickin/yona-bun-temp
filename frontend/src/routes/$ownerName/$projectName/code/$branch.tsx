@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
-import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";
+import "./legacy-dynatree.css";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";

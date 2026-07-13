@@ -47,6 +47,7 @@ const cssFiles = (await fs.readdir(cssDirectory)).filter((file) => file.endsWith
 const stylexAssets = [];
 for (const file of cssFiles) {
   const cssText = await fs.readFile(path.join(cssDirectory, file), "utf8");
+  assertOnlyLayeredTopLevelRules(cssText, file);
   if (cssText.includes("@layer stylex.priority")) {
     stylexAssets.push({ cssText, file });
   }
@@ -72,4 +73,45 @@ function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function assertOnlyLayeredTopLevelRules(cssText, file) {
+  let depth = 0;
+  let statementStart = 0;
+  let quote = "";
+  let comment = false;
+  for (let index = 0; index < cssText.length; index += 1) {
+    const character = cssText[index];
+    const next = cssText[index + 1];
+    if (comment) {
+      if (character === "*" && next === "/") {
+        comment = false;
+        index += 1;
+      }
+      continue;
+    }
+    if (quote) {
+      if (character === "\\") index += 1;
+      else if (character === quote) quote = "";
+      continue;
+    }
+    if (character === "/" && next === "*") {
+      comment = true;
+      index += 1;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === "{") {
+      if (depth === 0) {
+        const prelude = cssText.slice(statementStart, index).trim();
+        assert(/^@layer\b/u.test(prelude), `${file} has an unlayered top-level rule: ${prelude}`);
+      }
+      depth += 1;
+    } else if (character === "}") {
+      depth -= 1;
+      if (depth === 0) statementStart = index + 1;
+    } else if (character === ";" && depth === 0) {
+      statementStart = index + 1;
+    }
+  }
+  assert(depth === 0, `${file} has unbalanced CSS blocks`);
 }

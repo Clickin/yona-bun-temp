@@ -1,3 +1,4 @@
+@layer legacy {
 :root {
   color: #333;
   background: #fff;
@@ -8616,4 +8617,5 @@ div.markdown-preview {
   .issue-form-page-wrap .editor-mention-options {
     max-width: calc(100vw - 16px);
   }
+}
 }

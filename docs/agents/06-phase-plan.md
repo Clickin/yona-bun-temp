@@ -540,6 +540,7 @@
 - Phase 2 completion audit also covers VCS-generated identities: empty-author README commits and server-created PR merge/preview commits use `Yoram <yoram@example.invalid>`, while explicitly configured authors and legacy test/data identifiers remain unchanged.
 - The default developer-contact item stays absent until a real public Yoram repository exists; configured operator feedback URLs continue to work.
 - Phase 3 Wave 0 is complete: the exact active stylesheet chain is generated into a deterministic lower `legacy` layer, structured StyleX priority layers are verified in production, and the transparent root boundary proves StyleX precedence plus legacy fallback without geometry change. The frozen legacy LESS/Bootstrap sources remain unchanged.
+- The Wave 0 completion audit also places the existing React parity sheet and the project-code Dynatree bridge in `legacy`; their hashes are inventoried and production verification rejects unlayered top-level style rules.
 - Active plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`. Wave 1 and later move one React owner and its E2E selectors per slice; they do not authorize edits to frozen sources or bypass parity gates.
 
 ## Phase Gate 규칙

@@ -434,6 +434,10 @@ test("project code branch renders React-owned legacy Select2 geometry and naviga
 });
 
 test("project code branch route source converts internal raw anchors to Link", async () => {
+  expect(ROUTE_SOURCE).toContain('import "./legacy-dynatree.css";');
+  expect(ROUTE_SOURCE).not.toContain(
+    'import "../../../../../../yona-original/public/stylesheets/dynatree/skin/ui.dynatree.css";',
+  );
   expect(ROUTE_SOURCE).toContain(
     "import { Link, createFileRoute, Outlet, useRouter, useRouterState }",
   );

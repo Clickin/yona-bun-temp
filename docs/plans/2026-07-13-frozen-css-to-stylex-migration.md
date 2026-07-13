@@ -27,12 +27,12 @@ The end state is:
 
 ### 2.1 Frozen baseline in scope
 
-| Runtime family          | Canonical source                                                             | Current generated/runtime form                           | Treatment                                                        |
-| ----------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
-| Yobi application styles | `yona-original/app/assets/stylesheets/yobi.less` and its 13 imported modules | module inside generated `legacy-fallback.css`             | Migrate module-by-module to colocated StyleX definitions         |
-| User menu               | `yona-original/app/assets/stylesheets/usermenu.less` and `_usermenu.less`    | module inside generated `legacy-fallback.css`             | Migrate with the root/user-menu shell wave                       |
-| Bootstrap base          | `yona-original/public/bootstrap/css/bootstrap.css`                           | module inside generated `legacy-fallback.css`             | Migrate by component families, then remove the complete fallback |
-| Bootstrap responsive    | `yona-original/public/bootstrap/css/bootstrap-responsive.css`                | inactive, hash-recorded reference only                    | Migrate only with an evidenced responsive owner                  |
+| Runtime family          | Canonical source                                                             | Current generated/runtime form                | Treatment                                                        |
+| ----------------------- | ---------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
+| Yobi application styles | `yona-original/app/assets/stylesheets/yobi.less` and its 13 imported modules | module inside generated `legacy-fallback.css` | Migrate module-by-module to colocated StyleX definitions         |
+| User menu               | `yona-original/app/assets/stylesheets/usermenu.less` and `_usermenu.less`    | module inside generated `legacy-fallback.css` | Migrate with the root/user-menu shell wave                       |
+| Bootstrap base          | `yona-original/public/bootstrap/css/bootstrap.css`                           | module inside generated `legacy-fallback.css` | Migrate by component families, then remove the complete fallback |
+| Bootstrap responsive    | `yona-original/public/bootstrap/css/bootstrap-responsive.css`                | inactive, hash-recorded reference only        | Migrate only with an evidenced responsive owner                  |
 
 The frozen sources are evidence only and must never be edited. At present the LESS tree contains
 20 files and about 14,193 lines; the generated Yobi/user-menu output is about 12,971 lines, while
@@ -237,7 +237,15 @@ Implementation: complete. `@stylexjs/unplugin` uses
 `@layer legacy;` before `stylex.priority*`, requires the relative fallback link before the StyleX
 asset, and checks the copied artifact hash. The root pilot keeps `display: contents` in both layers
 and changes only a custom-property probe when its generated StyleX class is removed, preserving
-child geometry.
+child geometry. A completion audit found that the existing `frontend/src/app.css` and route-local
+Dynatree import were still unlayered and therefore outranked every named layer. Wave 0 now wraps
+the unchanged app declarations in `legacy`, loads the unchanged Dynatree source through the
+route-owned `frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css`
+`layer(legacy)` import, hashes both Vite inputs in the manifest, and rejects any
+production CSS asset with a top-level style block outside a named layer. The corrected root,
+project-folder, and exact SVN no-head desktop/390 focused metrics pass. A fresh six-screenshot
+public/login/SVN control recapture remains a final integration check; the earlier control audit is
+retained as evidence of the unlayered defect, not as corrected pixel-parity evidence.
 
 ### Wave 1 — Foundations and root shell
 

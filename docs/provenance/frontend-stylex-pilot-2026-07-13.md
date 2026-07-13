@@ -2,17 +2,23 @@
 
 Status: Phase 3 pilot, 2026-07-13
 
+Wave 0 completion correction: the initial layered fallback left `frontend/src/app.css` and the
+code-folder Dynatree import unlayered, which made those rules outrank all named layers. Their
+unchanged declarations now join `legacy` at their existing load positions; the Dynatree bridge is
+colocated at `frontend/src/routes/$ownerName/$projectName/code/legacy-dynatree.css`, the manifest
+records both source hashes, and the production verifier rejects unlayered top-level style rules.
+
 ## Scope
 
 This pilot establishes the official `@stylexjs/unplugin` Vite integration and
 migrates one React-owned state boundary. It does not migrate or replace the
 frozen legacy CSS/LESS baseline.
 
-| Evidence | Current implementation | Decision |
-| --- | --- | --- |
+| Evidence                                                                                                               | Current implementation                                                                                                                   | Decision                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `yona-original/app/views/layout.scala.html` renders the page body and legacy scripts without an event-capture wrapper. | `frontend/src/routes/__root.tsx` adds a transparent wrapper solely to own React click and key capture for the root login/modal behavior. | Keep the wrapper element, DOM order, and React event handlers; move only its `display: contents` declaration to StyleX. |
-| The wrapper previously used inline `style={{ display: "contents" }}`. | `stylex.create` and `stylex.props` now provide the same computed display. | This is React-owned behavior evidence, not a translation of legacy visual styling. |
-| `@stylexjs/unplugin` supports Vite through `stylex.vite()` and defaults development mode to full HTML injection. | `frontend/vite.config.ts` places `stylex.vite()` before the route, React, and Babel transforms. | Use the plugin default; no manual HTML injection or extra runtime shim. |
+| The wrapper previously used inline `style={{ display: "contents" }}`.                                                  | `stylex.create` and `stylex.props` now provide the same computed display.                                                                | This is React-owned behavior evidence, not a translation of legacy visual styling.                                      |
+| `@stylexjs/unplugin` supports Vite through `stylex.vite()` and defaults development mode to full HTML injection.       | `frontend/vite.config.ts` places `stylex.vite()` before the route, React, and Babel transforms.                                          | Use the plugin default; no manual HTML injection or extra runtime shim.                                                 |
 
 ## Parity boundary
 
