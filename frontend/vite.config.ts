@@ -80,7 +80,12 @@ export default defineConfig(({ mode }) => {
   return {
     base: mode === "production" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
     plugins: [
-      stylex.vite(),
+      stylex.vite({
+        useCSSLayers: {
+          before: ["legacy"],
+          prefix: "stylex",
+        },
+      }),
       tanstackRouter({
         generatedRouteTree: "src/routeTree.gen.ts",
         routesDirectory: "src/routes",

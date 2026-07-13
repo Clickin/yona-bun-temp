@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 3101",
+    "predev": "pnpm build:legacy-css",
     "build:legacy-css": "node scripts/build-legacy-css.mjs",
-    "build": "vite build",
+    "prebuild": "pnpm build:legacy-css",
+    "build": "vite build && node scripts/verify-stylex-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 3101",
     "check": "tsc --noEmit",
     "test": "vitest run",

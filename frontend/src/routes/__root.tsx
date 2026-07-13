@@ -74,6 +74,7 @@ const GITHUB_OAUTH_LOGO_PATH =
 const ROOT_LOGIN_DIALOG_INPUT_STYLE = { boxSizing: "content-box", minHeight: 0 } as const;
 const styles = stylex.create({
   rootEventBoundary: {
+    "--yoram-stylex-root-boundary": "stylex",
     display: "contents",
   },
 });
@@ -274,6 +275,7 @@ function RootResetShell() {
         ) : (
           <div
             {...stylex.props(styles.rootEventBoundary)}
+            data-stylex-root-boundary=""
             onClickCapture={handleRootShellClick}
             onKeyDownCapture={handleRootShellKeyDown}
           >

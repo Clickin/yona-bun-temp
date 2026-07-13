@@ -72,6 +72,13 @@ Pixel parity의 styling source는 `yona-original/app/assets/stylesheets/yobi.les
 수치로 덮지 않고 legacy element/DOM/class/cascade/asset/font/box-model 구성을
 복원하여 해결한다. React가 legacy plugin을 대체하는 경계에만 원본 rule을 값 변경
 없이 좁혀 옮길 수 있고, 원본 file/selector/rule 근거를 provenance에 남겨야 한다.
+점진적 StyleX 변환 중에는 현재 활성 stylesheet chain을 생성형 `legacy` cascade
+layer에 원래 순서대로 유지하고 StyleX priority layer를 그 위에 둔다. 각 slice는
+동일한 React owner의 style과 E2E selector를 함께 옮기며, desktop/390px geometry와
+fallback 동작을 통과하기 전에는 legacy module을 runtime manifest에서 제거하지 않는다.
+세부 실행 기준과 selector ledger는
+`docs/plans/2026-07-13-frozen-css-to-stylex-migration.md` 및
+`docs/provenance/frontend-stylex-migration-ledger.md`를 따른다.
 
 ---
 

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Proposed execution plan
+Status: Wave 0 implemented; Wave 1 not started
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -27,12 +27,12 @@ The end state is:
 
 ### 2.1 Frozen baseline in scope
 
-| Runtime family | Canonical source | Current generated/runtime form | Treatment |
-| --- | --- | --- | --- |
-| Yobi application styles | `yona-original/app/assets/stylesheets/yobi.less` and its 13 imported modules | `frontend/public/legacy-assets/stylesheets/yobi.css` | Migrate module-by-module to colocated StyleX definitions |
-| User menu | `yona-original/app/assets/stylesheets/usermenu.less` and `_usermenu.less` | `frontend/public/legacy-assets/stylesheets/usermenu.css` | Migrate with the root/user-menu shell wave |
-| Bootstrap base | `yona-original/public/bootstrap/css/bootstrap.css` | copied runtime CSS | Migrate by component families, then remove the complete fallback |
-| Bootstrap responsive | `yona-original/public/bootstrap/css/bootstrap-responsive.css` | copied runtime CSS | Migrate in the same slice as the owning desktop rule |
+| Runtime family          | Canonical source                                                             | Current generated/runtime form                           | Treatment                                                        |
+| ----------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| Yobi application styles | `yona-original/app/assets/stylesheets/yobi.less` and its 13 imported modules | module inside generated `legacy-fallback.css`             | Migrate module-by-module to colocated StyleX definitions         |
+| User menu               | `yona-original/app/assets/stylesheets/usermenu.less` and `_usermenu.less`    | module inside generated `legacy-fallback.css`             | Migrate with the root/user-menu shell wave                       |
+| Bootstrap base          | `yona-original/public/bootstrap/css/bootstrap.css`                           | module inside generated `legacy-fallback.css`             | Migrate by component families, then remove the complete fallback |
+| Bootstrap responsive    | `yona-original/public/bootstrap/css/bootstrap-responsive.css`                | inactive, hash-recorded reference only                    | Migrate only with an evidenced responsive owner                  |
 
 The frozen sources are evidence only and must never be edited. At present the LESS tree contains
 20 files and about 14,193 lines; the generated Yobi/user-menu output is about 12,971 lines, while
@@ -76,7 +76,7 @@ stylex.vite({
     before: ["legacy"],
     prefix: "stylex",
   },
-})
+});
 ```
 
 The migration must not rely only on `<link>` order. Legacy selectors often have greater
@@ -92,9 +92,9 @@ Replace the direct legacy links in `frontend/index.html` with one generated arti
 The build script must:
 
 1. read but never alter the canonical legacy sources;
-2. compile a generated LESS entry containing only active fallback modules;
+2. compile active LESS entries and concatenate the exact runtime stylesheet chain;
 3. wrap the emitted component rules in `@layer legacy { ... }`;
-4. preserve source order, media queries, asset URLs, and source maps;
+4. preserve source order, media queries, and resolved asset URLs;
 5. fail on an unknown, duplicated, or already-retired module;
 6. emit a deterministic manifest and hash for E2E/build verification.
 
@@ -113,6 +113,14 @@ emitting module can be removed from the generated entry once all its visible sur
 migrated. Bootstrap remains as one fallback unit unless a later, evidence-backed split can be
 performed without adding a parser dependency. StyleX still overrides individual Bootstrap rules
 during migration; the Bootstrap fallback link is removed only after all Bootstrap families pass.
+
+Wave 0 implementation bundles the full active `layout.scala.html` stylesheet chain—not only the
+three frozen families—inside `@layer legacy`, preserving the exact Bootstrap →
+Yobicon/Select2/Pikaday → usermenu/Yobi → NProgress/Viewer/Magnific order. The manifest classifies
+the six plugin sheets as passthrough rather than migrated ownership. This avoids the plugin
+interleaving change that replacing three separated links at one position would cause. Asset URLs
+are rewritten relative to the generated artifact; `bootstrap-responsive.css` is hashed as
+inactive reference-only evidence. Standard `predev` and `prebuild` hooks regenerate the artifact.
 
 ### 3.3 Precedence proof
 
@@ -205,10 +213,10 @@ Rules:
 - Screenshot/geometry tests locate a semantic container first, then measure its child structure;
   they do not locate by the style class being replaced.
 
-Maintain `docs/provenance/stylex-selector-ledger.md` with one row per surface:
+Maintain `docs/provenance/frontend-stylex-migration-ledger.md` with one row per surface:
 
 | Surface | Legacy selector source | React owner | New test locator | Desktop | 390 px | Fallback module | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+| ------- | ---------------------- | ----------- | ---------------- | ------- | ------ | --------------- | ------ |
 
 ## 7. Execution waves
 
@@ -223,6 +231,13 @@ Maintain `docs/provenance/stylex-selector-ledger.md` with one row per surface:
 
 Exit: screenshots and computed geometry are unchanged with StyleX disabled except for the existing
 root pilot; StyleX precedence is proven when enabled.
+
+Implementation: complete. `@stylexjs/unplugin` uses
+`useCSSLayers: { before: ["legacy"], prefix: "stylex" }`; the production verifier requires emitted
+`@layer legacy;` before `stylex.priority*`, requires the relative fallback link before the StyleX
+asset, and checks the copied artifact hash. The root pilot keeps `display: contents` in both layers
+and changes only a custom-property probe when its generated StyleX class is removed, preserving
+child geometry.
 
 ### Wave 1 — Foundations and root shell
 
@@ -305,17 +320,17 @@ supported viewport/state matrix.
 
 ## 8. Verification matrix per slice
 
-| Gate | Required check |
-| --- | --- |
-| Static | `pnpm --dir frontend check`, lint/source guards, `git diff --check` |
-| Build | production Vite build and generated CSS layer inspection |
-| Functional | focused Playwright interaction tests for the migrated states |
-| Selector | no test selector references the removed presentation class or StyleX hash |
-| Visual | desktop and 390 px geometry/computed-style parity against the pre-slice baseline |
-| Cascade | migrated StyleX declaration wins with fallback enabled |
-| Fallback | disabling the migrated StyleX declaration reveals the legacy value until retirement |
-| Delivery | `/`, configured base path, and Rust embedded assets resolve identical CSS/assets |
-| Provenance | ledger row names legacy file, selector, values, React owner, and tests |
+| Gate       | Required check                                                                      |
+| ---------- | ----------------------------------------------------------------------------------- |
+| Static     | `pnpm --dir frontend check`, lint/source guards, `git diff --check`                 |
+| Build      | production Vite build and generated CSS layer inspection                            |
+| Functional | focused Playwright interaction tests for the migrated states                        |
+| Selector   | no test selector references the removed presentation class or StyleX hash           |
+| Visual     | desktop and 390 px geometry/computed-style parity against the pre-slice baseline    |
+| Cascade    | migrated StyleX declaration wins with fallback enabled                              |
+| Fallback   | disabling the migrated StyleX declaration reveals the legacy value until retirement |
+| Delivery   | `/`, configured base path, and Rust embedded assets resolve identical CSS/assets    |
+| Provenance | ledger row names legacy file, selector, values, React owner, and tests              |
 
 A slice is reverted if it requires unexplained numeric compensation, weakens a visible assertion,
 or cannot identify the legacy source of a declaration.

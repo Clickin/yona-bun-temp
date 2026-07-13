@@ -27,6 +27,13 @@ Do not edit them, and do not compensate for screenshot differences with new
 route-specific spacing, positioning, transforms, fixed dimensions, or
 viewport-specific numeric offsets.
 
+During the incremental StyleX migration, runtime copies of the active legacy
+and plugin stylesheet chain are generated into one lower-priority `legacy`
+cascade layer. StyleX may own only a recorded React surface and must preserve
+the exact legacy values and visible geometry. The generated fallback and its
+hash manifest are transitional runtime artifacts; the frozen files remain the
+styling source of truth.
+
 Pixel parity must come from the same visible element roles, DOM nesting and
 order, legacy class composition, assets/fonts, cascade, and box model. When a
 legacy jQuery plugin is replaced by React, reproduce its user-visible generated

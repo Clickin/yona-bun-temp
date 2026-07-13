@@ -538,8 +538,8 @@
 - Phase 2 adopts the approved `Yoram` product identity in the React frontend. It replaces product-facing Yona/NAVER copy and assets, keeps Apache-2.0/upstream attribution in README/NOTICE, leaves compatibility identifiers intact, and records the intentional parity deviation in `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`.
 - Phase 2 is complete: frontend and Rust runtime defaults, mail/auth/update identifiers, release assets, and default-off upstream usage telemetry now follow the approved identity boundary. Focused frontend/Rust contracts, typecheck, production build, and Korean desktop/mobile evidence are recorded in the provenance document; legacy DB seed, migration wording, env/API keys, selectors, and deep links remain compatibility identifiers.
 - The default developer-contact item stays absent until a real public Yoram repository exists; configured operator feedback URLs continue to work.
-- Phase 3 may start only after the Phase 2 typecheck, build, focused desktop/mobile E2E, and updated screenshot baseline are green. StyleX begins with compiler/runtime integration that has no visible change, then one isolated React-owned pilot; the frozen legacy LESS/Bootstrap baseline remains unchanged.
-- Proposed follow-up: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md` defines the gated, incremental migration from the immutable legacy source baseline to a lower-layer generated fallback plus StyleX-owned component styling. It is a plan, not authorization to edit the frozen sources or skip the current parity gates.
+- Phase 3 Wave 0 is complete: the exact active stylesheet chain is generated into a deterministic lower `legacy` layer, structured StyleX priority layers are verified in production, and the transparent root boundary proves StyleX precedence plus legacy fallback without geometry change. The frozen legacy LESS/Bootstrap sources remain unchanged.
+- Active plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`. Wave 1 and later move one React owner and its E2E selectors per slice; they do not authorize edits to frozen sources or bypass parity gates.
 
 ## Phase Gate 규칙
 

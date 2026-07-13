@@ -13,6 +13,7 @@
 - canonical implementation path: `frontend/`
 - component design 기준선: repo root `DESIGN.md` + `yona-original/app/views/**` + legacy LESS
 - pixel parity styling 기준선: 수정 불가로 동결한 `yona-original/app/assets/stylesheets/yobi.less` 전체 import graph + legacy `bootstrap.css`/`bootstrap-responsive.css`. 화면 보정에는 이 CSS/LESS만 사용한다.
+- StyleX 점진 변환: 활성 legacy/plugin stylesheet는 생성형 lower `legacy` layer에서 fallback으로 유지하고, StyleX는 ledger에 기록한 React owner만 상위 priority layer로 소유한다. 같은 slice에서 E2E locator를 semantic/stable locator로 옮기고 desktop/390px 및 fallback 검증을 통과해야 한다.
 
 ## 데이터 경계
 
