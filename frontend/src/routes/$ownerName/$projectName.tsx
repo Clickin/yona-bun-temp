@@ -122,6 +122,7 @@ function ProjectHomeRoute() {
   const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
+  const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -173,13 +174,15 @@ function ProjectHomeRoute() {
                                               ? "labels"
                                               : null;
   const active =
-    milestoneDetailId !== null
-      ? "milestoneDetail"
-      : issueEditNumber !== null
-        ? "issueEdit"
-        : issueDetailNumber !== null
-          ? "issueDetail"
-          : standardActive;
+    milestoneEditId !== null
+      ? "milestoneEdit"
+      : milestoneDetailId !== null
+        ? "milestoneDetail"
+        : issueEditNumber !== null
+          ? "issueEdit"
+          : issueDetailNumber !== null
+            ? "issueDetail"
+            : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -212,6 +215,7 @@ function ProjectHomeRouteShell({
     | "members"
     | "milestone"
     | "milestoneDetail"
+    | "milestoneEdit"
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
@@ -268,11 +272,17 @@ function ProjectHomeRouteShell({
     useRouterState({ select: (state) => state.location.pathname }),
     `/${ownerName}/${projectName}`,
   );
+  const milestoneEditId = exactProjectMilestoneEditId(
+    useRouterState({ select: (state) => state.location.pathname }),
+    `/${ownerName}/${projectName}`,
+  );
+  const milestoneRouteId = milestoneEditId ?? milestoneDetailId;
   const milestoneDetailQuery = useQuery({
-    enabled: active === "milestoneDetail" && milestoneDetailId !== null,
+    enabled:
+      (active === "milestoneDetail" || active === "milestoneEdit") && milestoneRouteId !== null,
     queryFn: () =>
-      readProjectMilestone(runtimeConfig, ownerName, projectName, milestoneDetailId ?? 0),
-    queryKey: ["project", ownerName, projectName, "milestones", milestoneDetailId ?? 0],
+      readProjectMilestone(runtimeConfig, ownerName, projectName, milestoneRouteId ?? 0),
+    queryKey: ["project", ownerName, projectName, "milestones", milestoneRouteId ?? 0],
     retry(failureCount, error) {
       return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
     },
@@ -389,6 +399,15 @@ function ProjectHomeRouteShell({
     active === "milestoneDetail" &&
     milestoneDetailQuery.error &&
     projectRouteErrorStatus(milestoneDetailQuery.error) !== 404
+  ) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "milestoneEdit" &&
+    (!query.data ||
+      (!milestoneDetailQuery.data?.milestone &&
+        projectRouteErrorStatus(milestoneDetailQuery.error) !== 404))
   ) {
     return <Outlet />;
   }
@@ -563,6 +582,7 @@ function ProjectLayoutScreen({
     | "members"
     | "milestone"
     | "milestoneDetail"
+    | "milestoneEdit"
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
@@ -585,7 +605,10 @@ function ProjectLayoutScreen({
 
   return (
     <>
-      {active === "issueDetail" || active === "issueEdit" || active === "milestoneDetail" ? null : (
+      {active === "issueDetail" ||
+      active === "issueEdit" ||
+      active === "milestoneDetail" ||
+      active === "milestoneEdit" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -641,26 +664,28 @@ function ProjectLayoutScreen({
                 ? "milestone"
                 : active === "milestoneDetail"
                   ? "milestone"
-                  : active === "newPullRequest"
-                    ? "pullRequest"
-                    : active === "newFork"
+                  : active === "milestoneEdit"
+                    ? "milestone"
+                    : active === "newPullRequest"
                       ? "pullRequest"
-                      : active === "postform"
-                        ? "board"
-                        : active === "issueform"
-                          ? "issue"
-                          : active === "issueDetail"
+                      : active === "newFork"
+                        ? "pullRequest"
+                        : active === "postform"
+                          ? "board"
+                          : active === "issueform"
                             ? "issue"
-                            : active === "issueEdit"
+                            : active === "issueDetail"
                               ? "issue"
-                              : active === "delete" ||
-                                  active === "changeVcs" ||
-                                  active === "labels" ||
-                                  active === "members" ||
-                                  active === "transfer" ||
-                                  active === "webhooks"
-                                ? "setting"
-                                : active
+                              : active === "issueEdit"
+                                ? "issue"
+                                : active === "delete" ||
+                                    active === "changeVcs" ||
+                                    active === "labels" ||
+                                    active === "members" ||
+                                    active === "transfer" ||
+                                    active === "webhooks"
+                                  ? "setting"
+                                  : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -687,6 +712,7 @@ function ProjectLayoutScreen({
             active === "issueDetail" ||
             active === "issueEdit" ||
             active === "milestoneDetail" ||
+            active === "milestoneEdit" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -716,6 +742,13 @@ function exactProjectIssueEditNumber(pathname: string, homePath: string) {
 function exactProjectMilestoneDetailId(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/milestone/(\\d+)$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectMilestoneEditId(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/milestone/(\\d+)/editform$`,
   ).exec(pathname);
   return match ? Number(match[1]) : null;
 }

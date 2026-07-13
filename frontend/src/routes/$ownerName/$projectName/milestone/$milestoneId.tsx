@@ -236,7 +236,7 @@ function ProjectMilestoneDetailTitle({
   return milestoneTitle ? <title>{`${milestoneTitle} - ${ownerName}/${projectName}`}</title> : null;
 }
 
-function ProjectMilestoneNotFoundTitle({
+export function ProjectMilestoneNotFoundTitle({
   ownerName,
   projectName,
 }: {
@@ -248,7 +248,7 @@ function ProjectMilestoneNotFoundTitle({
   return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
 }
 
-function ProjectMilestoneNotFoundBody() {
+export function ProjectMilestoneNotFoundBody() {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
 

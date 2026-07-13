@@ -351,6 +351,24 @@ test("project milestone edit form exposes group search scope when project org da
   );
 });
 
+test("project milestone edit form 404 keeps the legacy project-scoped not-found shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMilestoneEditForm(page, [], { milestoneNotFound: true });
+
+  await page.goto(`${basePath}/admin/sample/milestone/404/editform`);
+
+  await expect(page).toHaveTitle("Page not found - admin/sample");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator(".error-wrap > p")).toHaveText("Milestone does not exist");
+  await expect(page.locator('.error-wrap a[href$="/admin/sample/milestones"]')).toHaveText("List");
+  await expect(page.locator("#milestone-form")).toHaveCount(0);
+});
+
 test("project milestone edit form preserves legacy write validation and focus behavior", async ({
   page,
 }) => {
@@ -453,6 +471,7 @@ async function mockProjectMilestoneEditForm(
   page: Page,
   patchRequests: unknown[],
   overrides: {
+    milestoneNotFound?: boolean;
     project?: Partial<{
       backgroundImageUrl: string;
       enrollmentRequestCount: number;
@@ -514,9 +533,19 @@ async function mockProjectMilestoneEditForm(
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones/5", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones/*", async (route) => {
     if (route.request().method() === "PATCH") {
       patchRequests.push(route.request().postDataJSON());
+    }
+    if (overrides.milestoneNotFound) {
+      await route.fulfill({
+        body: JSON.stringify({
+          error: { code: "milestone_not_found", message: "Milestone does not exist", status: 404 },
+        }),
+        contentType: "application/json",
+        status: 404,
+      });
+      return;
     }
     await route.fulfill({
       contentType: "application/json",
