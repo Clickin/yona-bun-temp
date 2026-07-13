@@ -1972,7 +1972,7 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await expect(issueRow).not.toHaveAttribute("data-trigger");
   await expect(issueRow).not.toHaveAttribute("data-placement");
   await expect(issueRow).not.toHaveAttribute("data-content");
-  await assertSidebarRightPopover(page, issueRow, "42");
+  await assertSidebarRightPopover(page, issueRow, "sample #42");
 });
 
 test("direct notifications route matches legacy Application.notifications empty state DOM", async ({

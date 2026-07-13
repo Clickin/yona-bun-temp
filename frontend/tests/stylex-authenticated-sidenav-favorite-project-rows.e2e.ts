@@ -335,9 +335,12 @@ for (const viewport of [
     await page.getByRole("button", { name: "Recent History" }).click({ force: true });
     const recentIssue = page.getByRole("link", { name: "Recent issue title" });
     await recentIssue.hover();
-    const recentTooltip = page.getByRole("tooltip", { name: "7" });
+    const recentTooltip = page.getByRole("tooltip", { name: "web-project #7" });
     await expect(recentTooltip).toBeVisible();
-    await expect(recentTooltip).not.toHaveAttribute("data-stylex-owner", /.+/);
+    await expect(recentTooltip).toHaveAttribute(
+      "data-stylex-owner",
+      "authenticated-sidenav-recent-issue-popover",
+    );
     await page.getByRole("button", { name: "Project" }).click({ force: true });
     const projectTabRow = page
       .getByRole("link", { name: /project-tab-project/ })

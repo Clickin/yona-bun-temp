@@ -1661,6 +1661,129 @@ const authenticatedSidenavFavoriteProjectRowStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavRecentIssueRowStyles = stylex.create({
+  row: {
+    cursor: "pointer",
+    lineHeight: "normal",
+  },
+  list: {
+    alignItems: "center",
+    backgroundColor: {
+      default: null,
+      ":hover": globalColors.sidenavOrganizationHoverSurface,
+    },
+    cursor: {
+      default: null,
+      ":hover": "pointer",
+    },
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "4px 0",
+    position: "relative",
+  },
+  link: {
+    alignItems: "center",
+    backgroundColor: globalColors.transparent,
+    color: globalColors.sidenavText,
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontSize: "14px",
+    fontWeight: 400,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    textDecoration: {
+      default: "none",
+      ":focus": "none",
+      ":hover": "none",
+    },
+  },
+  issue: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    overflow: "hidden",
+    paddingBottom: "1px",
+    paddingRight: 0,
+    paddingTop: "1px",
+  },
+  marker: {
+    color: globalColors.sidenavIssueTitleMarker,
+    display: "inline-block",
+    verticalAlign: "top",
+    width: "10px",
+  },
+  title: {
+    display: "inline-block",
+    fontSize: "13px",
+    maxWidth: "240px",
+    whiteSpace: "break-spaces",
+    wordBreak: "break-all",
+  },
+  popover: {
+    backgroundClip: "padding-box",
+    backgroundColor: globalColors.sidenavPopoverSurface,
+    borderColor: globalColors.sidenavPopoverBorder,
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: globalColors.sidenavPopoverShadow,
+    color: globalColors.textOnAccent,
+    display: "block",
+    fontSize: "13px",
+    left: "100%",
+    lineHeight: 1,
+    marginLeft: "10px",
+    maxWidth: "276px",
+    minWidth: "200px",
+    overflowWrap: "break-word",
+    padding: "1px",
+    position: "absolute",
+    textAlign: "left",
+    top: "50%",
+    transform: "translateY(-50%)",
+    whiteSpace: "normal",
+    zIndex: 1010,
+  },
+  popoverArrow: {
+    borderColor: globalColors.transparent,
+    borderLeftWidth: 0,
+    borderRightColor: globalColors.sidenavPopoverArrowBorder,
+    borderStyle: "solid",
+    borderWidth: "11px",
+    display: "block",
+    height: 0,
+    left: "-11px",
+    marginTop: "-11px",
+    position: "absolute",
+    top: "50%",
+    width: 0,
+    "::after": {
+      borderColor: globalColors.transparent,
+      borderLeftWidth: 0,
+      borderRightColor: globalColors.sidenavPopoverSurface,
+      borderStyle: "solid",
+      borderWidth: "10px",
+      bottom: "-10px",
+      content: '""',
+      display: "block",
+      height: 0,
+      left: "1px",
+      position: "absolute",
+      width: 0,
+    },
+  },
+  popoverContent: {
+    lineHeight: "120%",
+    padding: "9px 10px",
+  },
+});
+
 const authenticatedSidenavTabPanelStyles = stylex.create({
   panel: {
     borderRadius: "0 0 4px 4px",
@@ -3616,7 +3739,11 @@ function SidebarRecentIssueList({
                 id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}
               >
                 {visibleIssues.map((issue) => (
-                  <SidebarRecentIssueItem issue={issue} key={recentIssueKey(issue)} />
+                  <SidebarRecentIssueItem
+                    isAuthenticatedSidenav={isAuthenticatedSidenav}
+                    issue={issue}
+                    key={recentIssueKey(issue)}
+                  />
                 ))}
               </ul>
             )}
@@ -3627,23 +3754,65 @@ function SidebarRecentIssueList({
   );
 }
 
-function SidebarRecentIssueItem({ issue }: { issue: YoramRecord }) {
+function SidebarRecentIssueItem({
+  isAuthenticatedSidenav,
+  issue,
+}: {
+  isAuthenticatedSidenav: boolean;
+  issue: YoramRecord;
+}) {
   const ownerName = valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "");
   const projectName = valueString(issue.projectName ?? issue.project_name ?? issue.project, "");
   const issueNumber = valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "");
+  const issueNumberLabel = issueNumber ? `${projectName} #${issueNumber}` : "";
   const title = valueString(issue.title, "");
 
   return (
-    <li className="user-li">
-      <SidebarHoverPopover content={issueNumber}>
+    <li
+      className={`user-li ${
+        stylex.props(isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.row)
+          .className
+      }`.trimEnd()}
+      data-stylex-owner={
+        isAuthenticatedSidenav ? "authenticated-sidenav-recent-issue-rows" : undefined
+      }
+    >
+      <SidebarHoverPopover
+        content={issueNumberLabel}
+        isAuthenticatedRecentIssueRow={isAuthenticatedSidenav}
+      >
         <Link
-          className="project-item project-item-container sidebar-row-link"
+          className={`project-item project-item-container sidebar-row-link ${
+            stylex.props(isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.link)
+              .className
+          }`.trimEnd()}
           params={{ issueNumber, ownerName, projectName }}
           to="/$ownerName/$projectName/issue/$issueNumber"
         >
-          <div className="issue-item projectName-owner flex-item">
-            <div className="issue-title-start">-</div>
-            <div className="issue-title flex-item">{title}</div>
+          <div
+            className={`issue-item projectName-owner flex-item ${
+              stylex.props(isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.issue)
+                .className
+            }`.trimEnd()}
+          >
+            <div
+              className={`issue-title-start ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.marker,
+                ).className
+              }`.trimEnd()}
+            >
+              -
+            </div>
+            <div
+              className={`issue-title flex-item ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavRecentIssueRowStyles.title,
+                ).className
+              }`.trimEnd()}
+            >
+              {title}
+            </div>
           </div>
         </Link>
       </SidebarHoverPopover>
@@ -3655,10 +3824,12 @@ function SidebarHoverPopover({
   children,
   content,
   isAuthenticatedFavoriteProjectRow = false,
+  isAuthenticatedRecentIssueRow = false,
 }: {
   children: React.ReactNode;
   content: string;
   isAuthenticatedFavoriteProjectRow?: boolean;
+  isAuthenticatedRecentIssueRow?: boolean;
 }) {
   const [isVisible, setIsVisible] = React.useState(false);
   const showPopover = () => setIsVisible(Boolean(content));
@@ -3669,11 +3840,16 @@ function SidebarHoverPopover({
       className={`project-list project-flex-container ${
         stylex.props(
           isAuthenticatedFavoriteProjectRow && authenticatedSidenavFavoriteProjectRowStyles.list,
+          isAuthenticatedRecentIssueRow && authenticatedSidenavRecentIssueRowStyles.list,
         ).className
       }`.trimEnd()}
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
-      style={isVisible && !isAuthenticatedFavoriteProjectRow ? { position: "relative" } : undefined}
+      style={
+        isVisible && !isAuthenticatedFavoriteProjectRow && !isAuthenticatedRecentIssueRow
+          ? { position: "relative" }
+          : undefined
+      }
     >
       {children}
       {isVisible ? (
@@ -3682,21 +3858,30 @@ function SidebarHoverPopover({
             stylex.props(
               isAuthenticatedFavoriteProjectRow &&
                 authenticatedSidenavFavoriteProjectRowStyles.popover,
+              isAuthenticatedRecentIssueRow && authenticatedSidenavRecentIssueRowStyles.popover,
             ).className
           }`.trimEnd()}
           data-stylex-owner={
             isAuthenticatedFavoriteProjectRow
               ? "authenticated-sidenav-favorite-project-popover"
-              : undefined
+              : isAuthenticatedRecentIssueRow
+                ? "authenticated-sidenav-recent-issue-popover"
+                : undefined
           }
           role="tooltip"
-          style={isAuthenticatedFavoriteProjectRow ? undefined : HOME_SIDEBAR_POPOVER_STYLE}
+          style={
+            isAuthenticatedFavoriteProjectRow || isAuthenticatedRecentIssueRow
+              ? undefined
+              : HOME_SIDEBAR_POPOVER_STYLE
+          }
         >
           <div
             className={`arrow ${
               stylex.props(
                 isAuthenticatedFavoriteProjectRow &&
                   authenticatedSidenavFavoriteProjectRowStyles.popoverArrow,
+                isAuthenticatedRecentIssueRow &&
+                  authenticatedSidenavRecentIssueRowStyles.popoverArrow,
               ).className
             }`.trimEnd()}
           />
@@ -3705,6 +3890,8 @@ function SidebarHoverPopover({
               stylex.props(
                 isAuthenticatedFavoriteProjectRow &&
                   authenticatedSidenavFavoriteProjectRowStyles.popoverContent,
+                isAuthenticatedRecentIssueRow &&
+                  authenticatedSidenavRecentIssueRowStyles.popoverContent,
               ).className
             }`.trimEnd()}
           >

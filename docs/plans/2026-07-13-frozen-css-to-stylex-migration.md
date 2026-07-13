@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, seventeen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -426,6 +426,22 @@ legacy and local desktop/390 evidence agrees on the 350px/390px shell widths, 42
 compensated here. Recent issue rows, links, title typography, hover popover, the shared mobile
 input primitive, and global scrollbar primitives remain separate owners. This is not Wave 1
 completion.
+
+The seventeenth verified slice migrates the authenticated Recent History issue rows and their
+React-owned hover popover. StyleX owns the row/list/link flex and hover surface, marker/title
+typography, and the complete visible popover placement, surface, border, shadow, arrow, and
+content cascade. Every concrete color and the shadow use the canonical global theme entry; the
+new issue-marker variable is cited to `_usermenu.less`, with no dark value or toggle. The legacy
+`RecentIssue.getNumber()` copy contract is restored as `projectName #issueNumber`, while TanStack
+Router continues to receive the raw issue number. The `.popover`, `.right`, `.arrow`, and
+`.popover-content` classes remain DOM evidence only: removing them retains the complete owned
+popover surface, so no migrated `.popover` declaration remains in fallback. Exactly two
+`.issue-item` declarations remain unavoidable fallback because the frozen source marks
+`display:block` and `padding-left:5px` as `!important`, which StyleX cannot represent. Fresh live
+legacy and local desktop/390 evidence agrees on the 350px/390px row widths, 27px row height,
+13px title, and 204×37.59375 right popover with exact arrow/content metrics. Other Bootstrap/Yobi
+popover consumers and the non-authenticated left-sidebar inline popover remain separate owners.
+This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

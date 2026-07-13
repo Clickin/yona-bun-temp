@@ -43,6 +43,8 @@ export const globalColors = stylex.defineVars({
   sidenavSubtabActiveText: "#fcfcfc",
   // _usermenu.less: .user-project-list .org-list:hover background-color
   sidenavOrganizationHoverSurface: "#f1f1f1",
+  // _usermenu.less: .issue-title-start color
+  sidenavIssueTitleMarker: "darkgray",
   // _usermenu.less: .user-project-list .project-name.org-name color
   sidenavOrganizationName: "#00bcd4",
   // _usermenu.less: .star-project/.star-org base color
