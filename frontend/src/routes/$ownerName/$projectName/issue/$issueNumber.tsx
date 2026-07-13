@@ -1,10 +1,9 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   type ChangeEvent,
-  use,
   useEffect,
   useRef,
   useState,
@@ -40,10 +39,8 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
-import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { useRootToast } from "../../../__root";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -131,30 +128,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 });
 
 function ProjectIssueDetailRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { issueNumber } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (pathname.endsWith(`/issue/${issueNumber}/editform`)) {
-    return <Outlet />;
-  }
-
-  return (
-    <ProjectIssueDetailScreen
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <Outlet />;
 }
 
-function ProjectIssueDetailScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
   const projectQuery = useQuery(
@@ -195,33 +172,12 @@ function ProjectIssueDetailScreen({
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-  const projectWithHeaderAssets = projectWithLegacyHeaderAssets(
-    projectQuery.data,
-    runtimeConfig.basePath,
-  );
-
   if (restApiErrorStatus(issueQuery.error) === 404) {
-    if (nestedProjectShell) {
-      return (
-        <>
-          <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
-          <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
-        </>
-      );
-    }
-
     return (
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <>
         <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
-        <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
-      </SiteLayoutShell>
+      </>
     );
   }
 
@@ -264,17 +220,7 @@ function ProjectIssueDetailScreen({
     </>
   );
 
-  if (nestedProjectShell) {
-    return detailContent;
-  }
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      {detailContent}
-    </SiteLayoutShell>
-  );
+  return detailContent;
 }
 
 function ProjectIssueDetailTitle({
@@ -323,14 +269,6 @@ function ProjectIssueNotFoundTitle({
   const { t } = useLegacyMessages();
 
   return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function restApiErrorStatus(error: unknown) {
@@ -4289,17 +4227,6 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
-}
-
-function projectWithLegacyHeaderAssets(project: ProjectContainer, basePath: string) {
-  const logoUrl =
-    stringField(project.logoUrl) ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png");
-  const backgroundImageUrl =
-    stringField(project.backgroundImageUrl) ||
-    stringField(project.backgroundUrl) ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg");
-  return { ...project, backgroundImageUrl, logoUrl };
 }
 
 function isValidIssueDueDate(value: string) {

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
-  use,
   useEffect,
   useRef,
   useState,
@@ -22,9 +21,7 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 
 const legacyRouteLocalActiveProps = {
   "aria-current": undefined,
@@ -38,23 +35,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 
 function ProjectIssueEditFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  return (
-    <ProjectIssueEditFormScreen
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <ProjectIssueEditFormScreen runtimeConfig={runtimeConfig} />;
 }
 
-function ProjectIssueEditFormScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const { t } = useLegacyMessages();
   const numericIssueNumber = Number(issueNumber) || 0;
@@ -79,14 +63,6 @@ function ProjectIssueEditFormScreen({
       }),
     queryKey: ["project", ownerName, projectName, "issues", "parent-options", numericIssueNumber],
   });
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
-
   const editTitle = <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>;
 
   if (restApiErrorStatus(issueQuery.error) === 404) {
@@ -97,27 +73,11 @@ function ProjectIssueEditFormScreen({
       </>
     );
 
-    if (nestedProjectShell) return notFoundContent;
-    if (!projectQuery.data) {
-      return <SiteLayoutShell runtimeConfig={runtimeConfig}>{notFoundContent}</SiteLayoutShell>;
-    }
-
-    return (
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        {notFoundContent}
-      </SiteLayoutShell>
-    );
+    return notFoundContent;
   }
 
   if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
-    if (nestedProjectShell) return editTitle;
-    return (
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        {editTitle}
-      </SiteLayoutShell>
-    );
+    return editTitle;
   }
 
   const editContent = (
@@ -133,15 +93,7 @@ function ProjectIssueEditFormScreen({
     </>
   );
 
-  if (nestedProjectShell) return editContent;
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      {editContent}
-    </SiteLayoutShell>
-  );
+  return editContent;
 }
 
 function ProjectIssueEditNotFoundBody({
@@ -1159,17 +1111,6 @@ function issueMovableProjects(project: ProjectContainer) {
     });
   }
   return projects;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const record = project as YonaRecord;
-  const organizationName = stringField(record.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected"
-    ? ownerName
-    : undefined;
 }
 
 function stringFormValue(formData: FormData, name: string) {
