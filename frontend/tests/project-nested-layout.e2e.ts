@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test("project home to issues keeps the legacy project shell DOM nodes mounted", async ({
+test("project home to issues and forbidden pull request keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -19,19 +19,28 @@ test("project home to issues keeps the legacy project shell DOM nodes mounted", 
   await expectProjectShellNodesToPersist(page);
   await expectProjectShellGeometry(page);
 
+  await page.locator(".project-menu-gruop a[href$='/admin/sample/pullRequests']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequests(?:\?|$)/);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+
   await page.evaluate(() => {
-    history.pushState({}, "", location.pathname.replace(/\/pullRequest\/404$/, "/pullRequest/403"));
+    history.pushState({}, "", location.pathname.replace(/\/pullRequests$/, "/pullRequest/403"));
     dispatchEvent(new PopStateEvent("popstate"));
   });
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/403(?:\?|$)/);
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
     "You are not authorized",
   );
-  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Project home");
   await expectProjectShellNodesToPersist(page);
   await expectProjectShellGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "You are not authorized",
+  );
   await expectProjectShellNodesToPersist(page);
   await expectProjectShellGeometry(page);
 });
