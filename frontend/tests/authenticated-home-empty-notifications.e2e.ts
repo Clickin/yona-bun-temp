@@ -1249,9 +1249,12 @@ test("authenticated sidebar translates legacy favorite search and organization b
   ).toEqual(directOrderBefore);
 
   const rightWeblabsFavorite = weblabsOrganization.locator(":scope > .org-list button.star-org");
-  const leftWeblabsFavorite = page.locator(
-    "#left-sidebar-myOrganizationList .org-li:has-text('weblabs') > .org-list button.star-org",
-  );
+  const leftWeblabsFavorite = page
+    .locator(
+      '#left-sidebar-organizations > [data-stylex-owner="left-sidebar-favorite-organization-rows"]',
+    )
+    .filter({ hasText: "weblabs" })
+    .getByRole("button", { name: "Remove weblabs from favorites" });
   await rightWeblabsFavorite.click();
   await expect(rightWeblabsFavorite).toHaveAttribute("aria-pressed", "false");
   await expect(leftWeblabsFavorite).toHaveAttribute("aria-pressed", "true");

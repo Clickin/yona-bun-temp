@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-eight user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-nine user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -584,6 +584,19 @@ live/local desktop and mobile evidence agrees on the `16px` sidebar-right gap, `
 gap, 20px line box, and 13×13 heart. The approved `Yoram` product copy is naturally wider than
 legacy `Yona`, so no width or left-position compensation is added. Favorite and Project hide the
 footer while Recent History shows it through existing React state. This is not Wave 1 completion.
+
+The twenty-ninth verified slice migrates the framed left Favorite organization header rows and
+their organization-favorite stars. StyleX owns the exact row spacing and width, header flex and
+hover state, semantic toggle reset, logo/name/count geometry and typography, placeholder, and
+complete idle/active/hover star presentation. All seven concrete colors use semantic variables in
+the canonical global theme; no dark value or toggle is introduced. The owner emits none of the
+legacy organization, flex, name/count, star, or Material Icons presentation classes; only the
+`yobicon-angle-right` glyph remains as a separate icon-font primitive. The nested `project-ul` and
+its project rows are a separate downstream owner. Shared `app.css` organization/star selectors
+remain only because the authenticated right sidenav and other unmigrated consumers still render
+their matching classes; they cannot match this left owner and are not its fallback. Fresh live and
+local desktop/mobile evidence agrees on 270x25 rows, 3px/8px row margins, exact internal geometry,
+colors, hover, expand/collapse, and favorite mutation isolation. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

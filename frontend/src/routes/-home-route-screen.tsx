@@ -1636,6 +1636,151 @@ const authenticatedSidenavFavoriteShellStyles = stylex.create({
   },
 });
 
+const leftSidebarFavoriteOrganizationRowStyles = stylex.create({
+  row: {
+    marginBottom: "8px",
+    marginLeft: 0,
+    marginTop: "3px",
+    width: "270px",
+  },
+  header: {
+    alignItems: "center",
+    backgroundColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.leftSidebarFavoriteOrganizationHoverSurface,
+    },
+    cursor: {
+      default: "auto",
+      ":hover": "pointer",
+    },
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "1px 0",
+  },
+  toggle: {
+    alignItems: "center",
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    backgroundImage: "none",
+    borderStyle: "none",
+    boxShadow: "none",
+    color: globalColors.leftSidebarFavoriteOrganizationText,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontFamily: "inherit",
+    fontSize: "14px",
+    fontWeight: 400,
+    justifyContent: "space-between",
+    lineHeight: "inherit",
+    margin: 0,
+    minHeight: 0,
+    overflow: "hidden",
+    padding: 0,
+    textAlign: "left",
+    width: "auto",
+  },
+  logo: {
+    color: globalColors.leftSidebarFavoriteOrganizationText,
+    flexShrink: 0,
+    marginLeft: "2px",
+    overflow: "hidden",
+    paddingTop: "3px",
+    textAlign: "center",
+    width: "26px",
+  },
+  nameOwner: {
+    alignItems: "center",
+    color: globalColors.leftSidebarFavoriteOrganizationText,
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontFamily: "Roboto, sans-serif",
+    fontWeight: 700,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: "1px 0",
+    WebkitFontSmoothing: "antialiased",
+  },
+  name: {
+    color: globalColors.leftSidebarFavoriteOrganizationName,
+    fontFamily: "Roboto, sans-serif",
+    fontSize: "14px",
+    maxWidth: "140px",
+    minWidth: "50px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    WebkitFontSmoothing: "antialiased",
+    whiteSpace: "nowrap",
+  },
+  count: {
+    color: globalColors.leftSidebarFavoriteOrganizationCount,
+    flexShrink: 3,
+    fontSize: "12px",
+    maxWidth: "50px",
+    minWidth: "40px",
+    overflow: "hidden",
+    paddingRight: "10px",
+    textAlign: "right",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  starPlaceholder: {
+    flexShrink: 0,
+    width: "29px",
+  },
+  starButton: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    borderStyle: "none",
+    boxShadow: "none",
+    boxSizing: "border-box",
+    color: {
+      default: globalColors.leftSidebarFavoriteOrganizationStarIdle,
+      ":disabled": globalColors.leftSidebarFavoriteOrganizationStarIdle,
+      ":focus": globalColors.leftSidebarFavoriteOrganizationStarActive,
+      ":hover": globalColors.leftSidebarFavoriteOrganizationStarActive,
+    },
+    cursor: "pointer",
+    flexShrink: 0,
+    height: "16px",
+    lineHeight: "normal",
+    margin: 0,
+    minHeight: 0,
+    padding: 0,
+    textAlign: "start",
+    width: "29px",
+  },
+  starIcon: {
+    direction: "ltr",
+    display: "inline-block",
+    fontFamily: "Material Icons",
+    fontFeatureSettings: "liga",
+    fontSize: "16px",
+    fontStyle: "normal",
+    fontWeight: 400,
+    height: "15px",
+    letterSpacing: "normal",
+    lineHeight: "16px",
+    textTransform: "none",
+    verticalAlign: "bottom",
+    whiteSpace: "nowrap",
+    wordWrap: "normal",
+    WebkitFontSmoothing: "antialiased",
+  },
+  starredIcon: {
+    color: {
+      default: globalColors.leftSidebarFavoriteOrganizationStarActive,
+      ":hover": globalColors.leftSidebarFavoriteOrganizationStarActiveHover,
+    },
+  },
+});
+
 const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
   row: {
     marginBottom: "8px",
@@ -3133,23 +3278,30 @@ type SidebarFavoriteTarget =
   | { organizationName: string; type: "organization" }
   | { ownerName: string; projectName: string; type: "project" };
 
+type SidebarFavoriteButtonVariant =
+  | "authenticated-direct-project"
+  | "authenticated-favorite"
+  | "left-direct-project"
+  | "left-favorite-organization"
+  | "legacy";
+
 function SidebarFavoriteButton({
   initialFavorited,
-  isAuthenticatedDirectProjectStar = false,
-  isAuthenticatedFavoriteStar = false,
-  isLeftSidebarDirectProjectStar = false,
   label,
   runtimeConfig,
   target,
+  variant = "legacy",
 }: {
   initialFavorited: boolean;
-  isAuthenticatedDirectProjectStar?: boolean;
-  isAuthenticatedFavoriteStar?: boolean;
-  isLeftSidebarDirectProjectStar?: boolean;
   label: string;
   runtimeConfig: RuntimeConfig;
   target: SidebarFavoriteTarget;
+  variant?: SidebarFavoriteButtonVariant;
 }) {
+  const usesAuthenticatedDirectProjectOwner = variant === "authenticated-direct-project";
+  const usesAuthenticatedFavoriteOwner = variant === "authenticated-favorite";
+  const usesLeftDirectProjectOwner = variant === "left-direct-project";
+  const usesLeftFavoriteOrganizationOwner = variant === "left-favorite-organization";
   const queryClient = useQueryClient();
   const [isFavorited, setIsFavorited] = React.useState(initialFavorited);
   const requestPending = React.useRef(false);
@@ -3196,28 +3348,33 @@ function SidebarFavoriteButton({
       } favorites`}
       aria-pressed={isFavorited}
       className={
-        isLeftSidebarDirectProjectStar
-          ? stylex.props(leftSidebarDirectProjectRowStyles.starButton).className
-          : `${target.type === "project" ? "star-project" : "star-org"} flex-item ${
-              stylex.props(
-                (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-                  authenticatedSidenavFavoriteStarStyles.button,
-              ).className
-            }`.trimEnd()
+        usesLeftFavoriteOrganizationOwner
+          ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.starButton).className
+          : usesLeftDirectProjectOwner
+            ? stylex.props(leftSidebarDirectProjectRowStyles.starButton).className
+            : `${target.type === "project" ? "star-project" : "star-org"} flex-item ${
+                stylex.props(
+                  (usesAuthenticatedFavoriteOwner || usesAuthenticatedDirectProjectOwner) &&
+                    authenticatedSidenavFavoriteStarStyles.button,
+                ).className
+              }`.trimEnd()
       }
       data-stylex-owner={
-        isLeftSidebarDirectProjectStar
-          ? "left-sidebar-direct-project-rows"
-          : isAuthenticatedFavoriteStar
-            ? "authenticated-sidenav-favorite-stars"
-            : isAuthenticatedDirectProjectStar
-              ? "authenticated-sidenav-direct-project-rows"
-              : undefined
+        usesLeftFavoriteOrganizationOwner
+          ? "left-sidebar-favorite-organization-rows"
+          : usesLeftDirectProjectOwner
+            ? "left-sidebar-direct-project-rows"
+            : usesAuthenticatedFavoriteOwner
+              ? "authenticated-sidenav-favorite-stars"
+              : usesAuthenticatedDirectProjectOwner
+                ? "authenticated-sidenav-direct-project-rows"
+                : undefined
       }
       data-stylex-owner-state={
-        isLeftSidebarDirectProjectStar ||
-        isAuthenticatedFavoriteStar ||
-        isAuthenticatedDirectProjectStar
+        usesLeftFavoriteOrganizationOwner ||
+        usesLeftDirectProjectOwner ||
+        usesAuthenticatedFavoriteOwner ||
+        usesAuthenticatedDirectProjectOwner
           ? `${favoriteMutation.isPending ? "pending-" : ""}${isFavorited ? "starred" : "unstarred"}`
           : undefined
       }
@@ -3228,20 +3385,25 @@ function SidebarFavoriteButton({
       <i
         aria-hidden="true"
         className={
-          isLeftSidebarDirectProjectStar
+          usesLeftFavoriteOrganizationOwner
             ? stylex.props(
-                leftSidebarDirectProjectRowStyles.starIcon,
-                isFavorited && leftSidebarDirectProjectRowStyles.starredIcon,
+                leftSidebarFavoriteOrganizationRowStyles.starIcon,
+                isFavorited && leftSidebarFavoriteOrganizationRowStyles.starredIcon,
               ).className
-            : `${isFavorited ? "star starred material-icons" : "star material-icons"} ${
-                stylex.props(
-                  (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-                    authenticatedSidenavFavoriteStarStyles.icon,
-                  (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-                    isFavorited &&
-                    authenticatedSidenavFavoriteStarStyles.starredIcon,
+            : usesLeftDirectProjectOwner
+              ? stylex.props(
+                  leftSidebarDirectProjectRowStyles.starIcon,
+                  isFavorited && leftSidebarDirectProjectRowStyles.starredIcon,
                 ).className
-              }`.trimEnd()
+              : `${isFavorited ? "star starred material-icons" : "star material-icons"} ${
+                  stylex.props(
+                    (usesAuthenticatedFavoriteOwner || usesAuthenticatedDirectProjectOwner) &&
+                      authenticatedSidenavFavoriteStarStyles.icon,
+                    (usesAuthenticatedFavoriteOwner || usesAuthenticatedDirectProjectOwner) &&
+                      isFavorited &&
+                      authenticatedSidenavFavoriteStarStyles.starredIcon,
+                  ).className
+                }`.trimEnd()
         }
       >
         star
@@ -3467,90 +3629,133 @@ function SidebarOrganizationList({
       >
         {ownProjects.length > 0 && showOwnProjects ? (
           <li
-            className={`org-li ${
-              stylex.props(
-                isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.row,
-              ).className
-            }`.trimEnd()}
+            className={
+              isLeftSidebarFavoriteShell
+                ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.row).className
+                : `org-li ${
+                    stylex.props(
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavFavoriteOrganizationRowStyles.row,
+                    ).className
+                  }`.trimEnd()
+            }
             data-stylex-owner={
-              isAuthenticatedSidenav
-                ? "authenticated-sidenav-favorite-organization-rows"
-                : undefined
+              isLeftSidebarFavoriteShell
+                ? "left-sidebar-favorite-organization-rows"
+                : isAuthenticatedSidenav
+                  ? "authenticated-sidenav-favorite-organization-rows"
+                  : undefined
             }
           >
             <div
-              className={`org-list project-flex-container all-orgs ${
-                stylex.props(
-                  isAuthenticatedSidenav &&
-                    authenticatedSidenavFavoriteOrganizationRowStyles.header,
-                ).className
-              }`.trimEnd()}
+              className={
+                isLeftSidebarFavoriteShell
+                  ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.header).className
+                  : `org-list project-flex-container all-orgs ${
+                      stylex.props(
+                        isAuthenticatedSidenav &&
+                          authenticatedSidenavFavoriteOrganizationRowStyles.header,
+                      ).className
+                    }`.trimEnd()
+              }
             >
               <button
                 aria-expanded={isOwnProjectsExpanded}
-                className={`project-item project-item-container organization-toggle ${
-                  stylex.props(
-                    isAuthenticatedSidenav &&
-                      authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
-                    isAuthenticatedSidenav &&
-                      authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
-                    isAuthenticatedSidenav &&
-                      authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
-                  ).className
-                }`.trimEnd()}
+                className={
+                  isLeftSidebarFavoriteShell
+                    ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.toggle).className
+                    : `project-item project-item-container organization-toggle ${
+                        stylex.props(
+                          isAuthenticatedSidenav &&
+                            authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
+                          isAuthenticatedSidenav &&
+                            authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
+                          isAuthenticatedSidenav &&
+                            authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
+                        ).className
+                      }`.trimEnd()
+                }
                 onClick={() => setIsOwnProjectsExpanded((expanded) => !expanded)}
                 type="button"
               >
                 <div
-                  className={`flex-item site-logo ${
-                    stylex.props(
-                      isAuthenticatedSidenav &&
-                        authenticatedSidenavFavoriteOrganizationRowStyles.logo,
-                    ).className
-                  }`.trimEnd()}
+                  className={
+                    isLeftSidebarFavoriteShell
+                      ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.logo).className
+                      : `flex-item site-logo ${
+                          stylex.props(
+                            isAuthenticatedSidenav &&
+                              authenticatedSidenavFavoriteOrganizationRowStyles.logo,
+                          ).className
+                        }`.trimEnd()
+                  }
                 >
                   <i className="yobicon-angle-right"></i>
                 </div>
                 <div
-                  className={`projectName-owner all-org-names flex-item ${
-                    stylex.props(
-                      isAuthenticatedSidenav &&
-                        authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
-                    ).className
-                  }`.trimEnd()}
+                  className={
+                    isLeftSidebarFavoriteShell
+                      ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.nameOwner).className
+                      : `projectName-owner all-org-names flex-item ${
+                          stylex.props(
+                            isAuthenticatedSidenav &&
+                              authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
+                          ).className
+                        }`.trimEnd()
+                  }
                 >
                   <div
-                    className={`project-name org-name flex-item ${
-                      stylex.props(
-                        isAuthenticatedSidenav &&
-                          authenticatedSidenavFavoriteOrganizationRowStyles.name,
-                      ).className
-                    }`.trimEnd()}
+                    className={
+                      isLeftSidebarFavoriteShell
+                        ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.name).className
+                        : `project-name org-name flex-item ${
+                            stylex.props(
+                              isAuthenticatedSidenav &&
+                                authenticatedSidenavFavoriteOrganizationRowStyles.name,
+                            ).className
+                          }`.trimEnd()
+                    }
                   >
                     {loginId}
                   </div>
                   <div
-                    className={`project-owner flex-item sub-project-counter ${
-                      stylex.props(
-                        isAuthenticatedSidenav &&
-                          authenticatedSidenavFavoriteOrganizationRowStyles.owner,
-                      ).className
-                    }`.trimEnd()}
+                    className={
+                      isLeftSidebarFavoriteShell
+                        ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.count).className
+                        : `project-owner flex-item sub-project-counter ${
+                            stylex.props(
+                              isAuthenticatedSidenav &&
+                                authenticatedSidenavFavoriteOrganizationRowStyles.owner,
+                            ).className
+                          }`.trimEnd()
+                    }
                   >
                     {ownProjects.length}
                   </div>
                 </div>
               </button>
               <div
-                className={`star-org flex-item ${
-                  stylex.props(
-                    isAuthenticatedSidenav && authenticatedSidenavFavoriteStarStyles.placeholder,
-                  ).className
-                }`.trimEnd()}
-                data-stylex-owner={
-                  isAuthenticatedSidenav ? "authenticated-sidenav-favorite-stars" : undefined
+                className={
+                  isLeftSidebarFavoriteShell
+                    ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.starPlaceholder)
+                        .className
+                    : `star-org flex-item ${
+                        stylex.props(
+                          isAuthenticatedSidenav &&
+                            authenticatedSidenavFavoriteStarStyles.placeholder,
+                        ).className
+                      }`.trimEnd()
                 }
-                data-stylex-owner-state={isAuthenticatedSidenav ? "placeholder" : undefined}
+                data-stylex-owner={
+                  isLeftSidebarFavoriteShell
+                    ? "left-sidebar-favorite-organization-rows"
+                    : isAuthenticatedSidenav
+                      ? "authenticated-sidenav-favorite-stars"
+                      : undefined
+                }
+                data-stylex-owner-state={
+                  isLeftSidebarFavoriteShell || isAuthenticatedSidenav ? "placeholder" : undefined
+                }
               ></div>
             </div>
             <ul className="project-ul">
@@ -3572,6 +3777,7 @@ function SidebarOrganizationList({
             favored={sidebarIsFavorited(organization, true)}
             isLast={organizationKey(organization) === lastFavoriteOrganizationKey}
             isAuthenticatedSidenav={isAuthenticatedSidenav}
+            isLeftSidebar={isLeftSidebarFavoriteShell}
             key={organizationKey(organization)}
             normalizedQuery={normalizedQuery}
             organization={organization}
@@ -3582,6 +3788,7 @@ function SidebarOrganizationList({
           <SidebarOrganizationItem
             favored={sidebarIsFavorited(organization, false)}
             isAuthenticatedSidenav={isAuthenticatedSidenav}
+            isLeftSidebar={isLeftSidebarFavoriteShell}
             key={organizationKey(organization)}
             normalizedQuery={normalizedQuery}
             organization={organization}
@@ -3606,6 +3813,7 @@ function SidebarOrganizationList({
 function SidebarOrganizationItem({
   favored,
   isAuthenticatedSidenav = false,
+  isLeftSidebar = false,
   isLast = false,
   normalizedQuery,
   organization,
@@ -3613,6 +3821,7 @@ function SidebarOrganizationItem({
 }: {
   favored: boolean;
   isAuthenticatedSidenav?: boolean;
+  isLeftSidebar?: boolean;
   isLast?: boolean;
   normalizedQuery: string;
   organization: YoramRecord;
@@ -3628,70 +3837,107 @@ function SidebarOrganizationItem({
 
   return (
     <li
-      className={`org-li${isLast ? " favored" : ""} ${
-        stylex.props(
-          isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.row,
-        ).className
-      }`.trimEnd()}
+      className={
+        isLeftSidebar
+          ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.row).className
+          : `org-li${isLast ? " favored" : ""} ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.row,
+              ).className
+            }`.trimEnd()
+      }
       data-stylex-owner={
-        isAuthenticatedSidenav ? "authenticated-sidenav-favorite-organization-rows" : undefined
+        isLeftSidebar
+          ? "left-sidebar-favorite-organization-rows"
+          : isAuthenticatedSidenav
+            ? "authenticated-sidenav-favorite-organization-rows"
+            : undefined
       }
     >
       <div
-        className={`org-list project-flex-container all-orgs ${
-          stylex.props(
-            isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.header,
-          ).className
-        }`.trimEnd()}
+        className={
+          isLeftSidebar
+            ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.header).className
+            : `org-list project-flex-container all-orgs ${
+                stylex.props(
+                  isAuthenticatedSidenav &&
+                    authenticatedSidenavFavoriteOrganizationRowStyles.header,
+                ).className
+              }`.trimEnd()
+        }
       >
         <button
           aria-expanded={showNonFavoriteProjects}
-          className={`project-item project-item-container organization-toggle ${
-            stylex.props(
-              isAuthenticatedSidenav &&
-                authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
-              isAuthenticatedSidenav &&
-                authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
-              isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
-              isAuthenticatedSidenav &&
-                authenticatedSidenavFavoriteOrganizationRowStyles.realOrganizationToggle,
-            ).className
-          }`.trimEnd()}
+          className={
+            isLeftSidebar
+              ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.toggle).className
+              : `project-item project-item-container organization-toggle ${
+                  stylex.props(
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.realOrganizationToggle,
+                  ).className
+                }`.trimEnd()
+          }
           onClick={() => setShowNonFavoriteProjects((expanded) => !expanded)}
           type="button"
         >
           <div
-            className={`flex-item site-logo ${
-              stylex.props(
-                isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.logo,
-              ).className
-            }`.trimEnd()}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.logo).className
+                : `flex-item site-logo ${
+                    stylex.props(
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavFavoriteOrganizationRowStyles.logo,
+                    ).className
+                  }`.trimEnd()
+            }
           >
             <i className="yobicon-angle-right"></i>
           </div>
           <div
-            className={`projectName-owner all-org-names flex-item ${
-              stylex.props(
-                isAuthenticatedSidenav &&
-                  authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
-              ).className
-            }`.trimEnd()}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.nameOwner).className
+                : `projectName-owner all-org-names flex-item ${
+                    stylex.props(
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
+                    ).className
+                  }`.trimEnd()
+            }
           >
             <div
-              className={`project-name org-name flex-item ${
-                stylex.props(
-                  isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.name,
-                ).className
-              }`.trimEnd()}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.name).className
+                  : `project-name org-name flex-item ${
+                      stylex.props(
+                        isAuthenticatedSidenav &&
+                          authenticatedSidenavFavoriteOrganizationRowStyles.name,
+                      ).className
+                    }`.trimEnd()
+              }
             >
               {organizationName}
             </div>
             <div
-              className={`project-owner flex-item ${
-                stylex.props(
-                  isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.owner,
-                ).className
-              }`.trimEnd()}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarFavoriteOrganizationRowStyles.count).className
+                  : `project-owner flex-item ${
+                      stylex.props(
+                        isAuthenticatedSidenav &&
+                          authenticatedSidenavFavoriteOrganizationRowStyles.owner,
+                      ).className
+                    }`.trimEnd()
+              }
             >
               {projectCount}
             </div>
@@ -3699,11 +3945,17 @@ function SidebarOrganizationItem({
         </button>
         <SidebarFavoriteButton
           initialFavorited={favored}
-          isAuthenticatedFavoriteStar={isAuthenticatedSidenav}
           key={`organization-favorite-${organizationKey(organization)}-${String(favored)}`}
           label={organizationName}
           runtimeConfig={runtimeConfig}
           target={{ organizationName, type: "organization" }}
+          variant={
+            isLeftSidebar
+              ? "left-favorite-organization"
+              : isAuthenticatedSidenav
+                ? "authenticated-favorite"
+                : "legacy"
+          }
         />
       </div>
       <ul className="project-ul">
@@ -3813,11 +4065,11 @@ function SidebarAllProjectItem({
         </Link>
         <SidebarFavoriteButton
           initialFavorited={favored}
-          isAuthenticatedFavoriteStar={isAuthenticatedSidenav}
           key={`project-favorite-${projectKey(project)}-${String(favored)}`}
           label={`${ownerName}/${projectName}`}
           runtimeConfig={runtimeConfig}
           target={{ ownerName, projectName, type: "project" }}
+          variant={isAuthenticatedSidenav ? "authenticated-favorite" : "legacy"}
         />
       </SidebarHoverPopover>
     </li>
@@ -4428,13 +4680,17 @@ function SidebarProjectItem({
         </div>
         <SidebarFavoriteButton
           initialFavorited={isFavorited}
-          isAuthenticatedDirectProjectStar={!isLeftSidebar && !isAuthenticatedFavoritePane}
-          isAuthenticatedFavoriteStar={isAuthenticatedFavoritePane}
-          isLeftSidebarDirectProjectStar={isLeftSidebar}
           key={`project-favorite-${projectKey(project)}-${String(isFavorited)}`}
           label={`${ownerName}/${projectName}`}
           runtimeConfig={runtimeConfig}
           target={{ ownerName, projectName, type: "project" }}
+          variant={
+            isLeftSidebar
+              ? "left-direct-project"
+              : isAuthenticatedFavoritePane
+                ? "authenticated-favorite"
+                : "authenticated-direct-project"
+          }
         />
       </div>
     </li>
