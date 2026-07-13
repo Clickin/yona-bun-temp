@@ -1078,6 +1078,32 @@ function LegacyFramedSidebar({
   );
 }
 
+const authenticatedSidenavShellStyles = stylex.create({
+  shell: {
+    backgroundColor: globalColors.sidenavSurface,
+    borderStyle: "none",
+    borderWidth: 0,
+    boxShadow: globalColors.sidenavShadow,
+    color: globalColors.sidenavText,
+    overflowX: "hidden",
+    overflowY: "auto",
+    position: "absolute",
+    right: 0,
+    top: "40px",
+    width: 0,
+    zIndex: 999,
+  },
+  open: {
+    borderColor: globalColors.sidenavBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    width: {
+      default: "360px",
+      "@media (max-width: 720px)": "100vw",
+    },
+  },
+});
+
 const authenticatedSiteUserMenuStyles = stylex.create({
   menu: {
     float: "right",
@@ -1219,7 +1245,11 @@ function AuthenticatedSiteUserMenu({
 
   return (
     <>
-      <div id="mySidenav" className={isSidebarOpen ? "sidenav sidenav-open" : "sidenav"}>
+      <div
+        id="mySidenav"
+        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
+        data-stylex-owner="authenticated-site-sidenav-shell"
+      >
         <div className="span5 right-menu span-hard-wrap">
           <div className="row-fluid user-menu-wrap">
             <span className="user-menu">

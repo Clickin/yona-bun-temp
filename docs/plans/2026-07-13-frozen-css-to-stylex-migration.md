@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, two user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, three user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -275,6 +275,14 @@ and max-720 item/dropdown colors now use colocated StyleX declarations with exac
 The global theme entry adds only cited `@primary -> @orange`, `@low-white`, and `@white` values.
 The hidden sidenav, avatar and dropdown overlay primitives, React-button resets, icon font,
 inactive counter rule, and non-legacy menu height/reset remain fallback. This is not Wave 1
+completion.
+
+The third verified slice migrates only the authenticated `#mySidenav` outer open/closed shell.
+StyleX now owns its exact base position, width, overflow, surface, text, shadow, and open border,
+including the legacy JavaScript's desktop `360px` and max-720 `100vw` state. All colors and the
+semantic shadow live in the canonical global theme entry; no dark values or toggle were added.
+Scrollbar pseudo-elements, the inner right-menu width, account row, tabs, dynamic content, and
+mobile inner-width correction remain frozen fallback and later owners. This is not Wave 1
 completion.
 
 ### Wave 2 — Bootstrap primitives
