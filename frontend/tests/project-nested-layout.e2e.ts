@@ -236,6 +236,33 @@ test("project milestones to milestone detail keeps the legacy project shell DOM 
   await expectProjectMilestoneDetailGeometry(page);
 });
 
+test("project milestone detail to edit form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/milestone/5`);
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await captureProjectShellNodes(page);
+
+  await page.locator('.actrow a[href$="/milestone/5/editform"]').click();
+  await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5\/editform(?:\?|$)/);
+  await expect(page.locator("#milestone-form")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestoneEditGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#milestone-form")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestoneEditGeometry(page);
+});
+
 test("project milestones to posts keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1093,6 +1120,42 @@ async function expectProjectMilestoneDetailGeometry(page: Page) {
   expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
   expect(metrics.issuesTop).toBeGreaterThanOrEqual(metrics.titleBottom);
   expect(metrics.issuesBottom).toBeGreaterThan(metrics.issuesTop);
+}
+
+async function expectProjectMilestoneEditGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const form = rect("#milestone-form");
+    const title = rect("#milestone-form #title");
+    const actions = rect("#milestone-form .actrow");
+    return {
+      actionsBottom: actions.bottom,
+      actionsTop: actions.top,
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formTop: form.top,
+      menuBottom: menu.bottom,
+      titleBottom: title.bottom,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.formTop);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.actionsTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.actionsBottom).toBeLessThanOrEqual(metrics.formBottom + 1);
 }
 
 async function expectProjectMilestoneCreateGeometry(page: Page) {

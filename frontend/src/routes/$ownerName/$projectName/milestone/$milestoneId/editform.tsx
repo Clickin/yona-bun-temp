@@ -1,7 +1,7 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy milestone/edit.scala.html requires positive tab order on title/content controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { use, useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, ProjectMilestone } from "../../../../../api/types";
 import {
@@ -9,12 +9,12 @@ import {
   readSessionBootstrap,
   updateProjectMilestone,
 } from "../../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
-import { YonaQueryProvider } from "../../../../../query-client";
+import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
+import { ProjectMilestoneNotFoundBody, ProjectMilestoneNotFoundTitle } from "../$milestoneId";
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
   component: ProjectMilestoneEditFormRoute,
@@ -22,17 +22,23 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milest
 
 function ProjectMilestoneEditFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectMilestoneEditFormScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectMilestoneEditFormScreen
+      nestedProjectShell={nestedProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
-function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectMilestoneEditFormScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const numericMilestoneId = Number(milestoneId) || 0;
@@ -42,7 +48,24 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
   const milestoneQuery = useQuery({
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
   });
+  const milestoneNotFound =
+    restApiErrorStatus(milestoneQuery.error) === 404 ||
+    (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
+
+  if (milestoneNotFound && nestedProjectShell) {
+    return (
+      <>
+        <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
+        <ProjectMilestoneNotFoundBody />
+      </>
+    );
+  }
+
   if (!projectQuery.data || !milestoneQuery.data?.milestone) {
     return <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>;
   }
@@ -53,21 +76,38 @@ function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: Runt
     projectName,
   };
 
+  const editContent = (
+    <>
+      <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>
+      <ProjectMilestoneEditFormBody
+        milestone={milestoneQuery.data.milestone}
+        runtimeConfig={runtimeConfig}
+      />
+    </>
+  );
+
+  if (nestedProjectShell) {
+    return editContent;
+  }
+
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu
         active="milestone"
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
-      <ProjectMilestoneEditFormBody
-        milestone={milestoneQuery.data.milestone}
-        runtimeConfig={runtimeConfig}
-      />
+      {editContent}
     </SiteLayoutShell>
   );
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) {
+    return undefined;
+  }
+  return typeof error.status === "number" ? error.status : undefined;
 }
 
 function ProjectMilestoneEditFormBody({
