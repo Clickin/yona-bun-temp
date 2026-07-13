@@ -605,6 +605,38 @@ test("project change VCS to issue labels keeps the legacy project shell DOM node
   await expectProjectLabelsGeometry(page);
 });
 
+test("project issues to valid search keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      `${location.pathname.replace(/\/issues$/, "/search")}?keyword=sample&searchType=issue`,
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/search\?keyword=sample&searchType=issue$/);
+  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
+  await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop > li.active")).toHaveCount(0);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSearchGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSearchGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -677,6 +709,45 @@ async function expectProjectShellGeometry(page: Page) {
   expect(metrics.menuRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
   expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectSearchGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const pageWrap = rect(".page-wrap-outer");
+    const category = rect(".search-category-wrap");
+    const searchBox = rect(".search-box-wrap");
+    const result = rect(".search-result-wrap");
+    return {
+      categoryLeft: category.left,
+      categoryRight: category.right,
+      categoryTop: category.top,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      resultBottom: result.bottom,
+      resultRight: result.right,
+      resultTop: result.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      searchBoxRight: searchBox.right,
+      searchBoxTop: searchBox.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.pageLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.pageRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.categoryLeft).toBeGreaterThanOrEqual(metrics.pageLeft);
+  expect(metrics.categoryRight).toBeLessThanOrEqual(metrics.pageRight + 1);
+  expect(metrics.categoryTop).toBeLessThanOrEqual(metrics.searchBoxTop + 1);
+  expect(metrics.searchBoxRight).toBeLessThanOrEqual(metrics.pageRight + 1);
+  expect(metrics.resultTop).toBeGreaterThanOrEqual(metrics.searchBoxTop);
+  expect(metrics.resultBottom).toBeGreaterThan(metrics.resultTop);
+  expect(metrics.resultRight).toBeLessThanOrEqual(metrics.pageRight + 1);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
@@ -1576,6 +1647,44 @@ async function mockProjectHomeAndIssues(
         projectName: "sample",
         totalCount: 0,
         totalPages: 0,
+      });
+    if (path.endsWith("/projects/admin/sample/search"))
+      return json({
+        context: { organizationName: "", ownerName: "admin", projectName: "sample" },
+        counts: {
+          issueComments: 0,
+          issues: 1,
+          milestones: 0,
+          postComments: 0,
+          posts: 0,
+          projects: 0,
+          reviews: 0,
+          users: 0,
+        },
+        items: [
+          {
+            authorLabel: "Site Admin",
+            authorLoginId: "admin",
+            createdLabel: "Jul 13, 2026",
+            href: "/admin/sample/issue/1",
+            id: "issue-1",
+            number: "1",
+            ownerName: "admin",
+            projectName: "sample",
+            snippets: [{ highlights: [{ end: 6, start: 0 }], text: "Sample body" }],
+            state: "OPEN",
+            title: "Sample issue",
+            type: "issue",
+            updatedLabel: "Jul 13, 2026",
+          },
+        ],
+        keyword: "sample",
+        pageNum: 1,
+        pageSize: 15,
+        requestedSearchType: "issue",
+        scope: "project",
+        searchType: "issue",
+        totalCount: 1,
       });
     if (path.endsWith("/owners/admin/projects/sample/watchers"))
       return json({
