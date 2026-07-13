@@ -586,37 +586,6 @@ body:has(.legacy-framed-shell.is-open) {
   box-shadow: none;
 }
 
-.pin-in-sidebar {
-  position: absolute;
-  top: 9px;
-  right: -5px;
-  padding: 0 1px;
-  margin-right: 5px;
-  color: #3e2723;
-  font-size: 18px;
-  line-height: 18px;
-  background-color: #03a9f4;
-  border: 0;
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-  box-shadow: none;
-  appearance: none;
-}
-
-.pin-in-sidebar i.yobicon-arrow-right,
-.pin-in-sidebar i.yobicon-arrow-left {
-  display: inline-block;
-  padding: 4px 2px;
-}
-
-.pin-in-sidebar:hover,
-.pin-in-sidebar:focus {
-  color: #fff;
-  background-color: #03a9f4;
-  border: 0;
-  box-shadow: none;
-}
-
 .sidebar .nav-tabs li > .refresh-button {
   box-sizing: border-box;
   height: 29px;

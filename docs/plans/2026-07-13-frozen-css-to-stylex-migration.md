@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-six user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-seven user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -562,6 +562,18 @@ primitive owners rather than account-row fallback. The screen contains no popove
 `.popover` fallback is claimed. Fresh live/local desktop and mobile evidence agrees on `270×44`
 and `317.6875×44` row geometry, exact computed styles, hover states, action order, navigation,
 and pin behavior. This is not Wave 1 completion.
+
+The twenty-seventh verified slice migrates the framed left sidebar close pin. StyleX owns the
+complete React-button translation of the legacy pin: absolute placement, content box, button
+reset, 18px typography, 3px left radii, 24×26 geometry, icon padding, and base, actual-icon-hover,
+and keyboard-focus states. Its blue, brown, and white colors are semantic variables in the
+canonical global theme; no dark value or toggle is introduced. The button emits no
+`pin-in-sidebar`, and all three owner-specific `app.css` blocks are deleted. Only
+`yobicon-arrow-left` remains as the separate global glyph/font primitive, so no pin declaration
+remains fallback. Frozen `_page.less` still contains immutable evidence but cannot match this
+owner. No popover exists and no `.popover` fallback is claimed. Fresh live/local evidence agrees
+on the desktop `24×26 @ 246,9` and mobile `24×26 @ 293.6875,9` boxes, exact base/hover colors,
+close/reopen behavior, and screenshots. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

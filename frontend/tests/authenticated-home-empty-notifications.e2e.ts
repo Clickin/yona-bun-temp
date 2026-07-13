@@ -1599,7 +1599,7 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
   await openPin.click();
 
   const leftSidebar = page.locator("#sidebar");
-  const closePin = leftSidebar.locator(".pin-in-sidebar");
+  const closePin = leftSidebar.getByRole("button", { name: "Sidebar" });
   await expect(leftSidebar).toBeVisible();
   await expect(leftSidebar.locator(".avatar-wrap img")).toHaveAttribute(
     "src",
@@ -2774,7 +2774,9 @@ async function readDesktopOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const sidebar = document.querySelector<HTMLElement>("#sidebar");
     const main = document.querySelector<HTMLElement>(".legacy-framed-main");
-    const pin = document.querySelector<HTMLElement>("#sidebar .pin-in-sidebar");
+    const pin = document.querySelector<HTMLElement>(
+      '#sidebar [data-stylex-owner="left-sidebar-close-pin"]',
+    );
     const leftAvatar = document.querySelector<HTMLImageElement>("#sidebar .avatar-wrap img");
     const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
     if (!sidebar || !main || !pin || !leftAvatar || !rightAvatar) {

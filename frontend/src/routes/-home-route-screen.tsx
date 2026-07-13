@@ -1015,6 +1015,63 @@ const leftSidebarAccountActionStyles = stylex.create({
   },
 });
 
+const leftSidebarClosePinStyles = stylex.create({
+  button: {
+    appearance: "none",
+    backgroundColor: globalColors.leftSidebarClosePinSurface,
+    borderBottomColor: globalColors.leftSidebarClosePinText,
+    borderBottomStyle: "none",
+    borderBottomWidth: 0,
+    borderLeftColor: globalColors.leftSidebarClosePinText,
+    borderLeftStyle: "none",
+    borderLeftWidth: 0,
+    borderRadius: "3px 0 0 3px",
+    borderRightColor: globalColors.leftSidebarClosePinText,
+    borderRightStyle: "none",
+    borderRightWidth: 0,
+    borderTopColor: globalColors.leftSidebarClosePinText,
+    borderTopStyle: "none",
+    borderTopWidth: 0,
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: globalColors.leftSidebarClosePinText,
+    cursor: {
+      default: "auto",
+      ":hover": "pointer",
+    },
+    display: "block",
+    fontSize: "18px",
+    lineHeight: "20px",
+    margin: "0 5px 0 0",
+    padding: "0 1px",
+    position: "absolute",
+    right: "-5px",
+    top: "9px",
+    ":hover": {
+      backgroundColor: globalColors.leftSidebarClosePinSurface,
+      color: globalColors.leftSidebarClosePinText,
+    },
+    ":focus": {
+      backgroundColor: globalColors.leftSidebarClosePinSurface,
+      boxShadow: "none",
+      color: globalColors.leftSidebarClosePinInteractionText,
+    },
+  },
+  icon: {
+    cursor: {
+      default: "auto",
+      ":hover": "pointer",
+    },
+    display: "inline-block",
+    fontSize: "18px",
+    lineHeight: "18px",
+    padding: "4px 2px",
+    ":hover": {
+      color: globalColors.leftSidebarClosePinInteractionText,
+    },
+  },
+});
+
 function LegacyFramedSidebar({
   activeTab,
   basePath,
@@ -1099,14 +1156,18 @@ function LegacyFramedSidebar({
           </span>
         </Link>
         <button
+          {...stylex.props(leftSidebarClosePinStyles.button)}
           aria-controls="sidebar"
           aria-expanded="true"
-          className="pin-in-sidebar"
+          data-stylex-owner="left-sidebar-close-pin"
           onClick={onClose}
           title="Sidebar"
           type="button"
         >
-          <i aria-hidden="true" className="yobicon-arrow-left" />
+          <i
+            aria-hidden="true"
+            className={`yobicon-arrow-left ${stylex.props(leftSidebarClosePinStyles.icon).className}`}
+          />
         </button>
       </div>
       <ul {...stylex.props(leftSidebarTabStyles.tabs)} data-stylex-owner="left-sidebar-tabs">

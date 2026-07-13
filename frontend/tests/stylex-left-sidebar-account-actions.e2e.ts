@@ -44,8 +44,8 @@ for (const viewport of [
       owner: "left-sidebar-account-actions",
       ownerClasses: [],
       pin: {
-        className: "pin-in-sidebar",
-        owner: null,
+        owner: "left-sidebar-close-pin",
+        presentationClasses: [],
       },
       retainedClasses: {
         avatar: ["avatar-wrap", "smaller"],
@@ -150,10 +150,10 @@ test("left sidebar account actions have complete global-theme StyleX ownership",
     "avatar-wrap smaller",
     "caret-text hide-in-mobile",
     "label",
-    "pin-in-sidebar",
   ]) {
     expect(owner).toContain(retainedClass);
   }
+  expect(owner).toContain('data-stylex-owner="left-sidebar-close-pin"');
   expect(owner).toContain("reloadDocument");
 });
 
@@ -165,7 +165,9 @@ async function readEvidence(owner: Locator) {
     const logoutLabelElement = logoutElement.firstElementChild as HTMLElement;
     const avatarElement = profileElement.querySelector(".avatar-wrap.smaller") as HTMLElement;
     const caretElement = profileElement.querySelector(".caret-text.hide-in-mobile") as HTMLElement;
-    const pinElement = element.querySelector(".pin-in-sidebar") as HTMLElement;
+    const pinElement = element.querySelector(
+      '[data-stylex-owner="left-sidebar-close-pin"]',
+    ) as HTMLElement;
     const menus = Array.from(element.querySelectorAll(":scope > span")) as HTMLElement[];
     const box = (target: Element) => {
       const rect = target.getBoundingClientRect();
@@ -192,8 +194,10 @@ async function readEvidence(owner: Locator) {
         ),
       ),
       pin: {
-        className: pinElement.className,
         owner: pinElement.getAttribute("data-stylex-owner"),
+        presentationClasses: ["pin-in-sidebar"].filter((name) =>
+          pinElement.classList.contains(name),
+        ),
       },
       retainedClasses: {
         avatar: ["avatar-wrap", "smaller"].filter((name) => avatarElement.classList.contains(name)),

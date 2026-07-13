@@ -97,6 +97,12 @@ export const globalColors = stylex.defineVars({
   leftSidebarTabSurface: "#000000",
   // _page.less: .yobicon-refresh:hover color
   leftSidebarRefreshAccent: "#03a9f4",
+  // _page.less: .pin-in-sidebar background-color
+  leftSidebarClosePinSurface: "#03a9f4",
+  // _page.less: .pin-in-sidebar color
+  leftSidebarClosePinText: "#3e2723",
+  // _page.less: .pin-in-sidebar icon hover and React button focus color
+  leftSidebarClosePinInteractionText: "#ffffff",
   // _page.less: .sidebar color inherited by Recent issue rows
   leftSidebarRecentIssueText: "#ffffff",
   // _usermenu.less: .issue-title-start color
