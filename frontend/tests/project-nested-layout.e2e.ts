@@ -614,6 +614,36 @@ test("project pull request overview to edit form keeps the legacy project shell 
   await expectProjectPullRequestEditGeometry(page);
 });
 
+test("project pull request overview to default changes keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname}/changes`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9\/changes(?:\?|$)/);
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestChangesGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestChangesGeometry(page);
+});
+
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1742,6 +1772,31 @@ async function expectProjectPullRequestEditGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPullRequestChangesGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const diff = rect(".codediff-wrap");
+    return {
+      body,
+      diff,
+      menu,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(metrics.body.left).toBeGreaterThanOrEqual(0);
+  expect(metrics.body.right).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.diff.top).toBeGreaterThanOrEqual(metrics.menu.bottom);
+  expect(metrics.diff.bottom).toBeGreaterThan(metrics.diff.top);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectPullRequestCreateGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -2481,6 +2536,62 @@ async function mockProjectHomeAndIssues(
         threads: [],
         title: "Initial title",
         toBranch: "main",
+      });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/changes"))
+      return json({
+        cardThreads: [],
+        commits: [],
+        files: [],
+        inlineThreads: [],
+        nonRangedThreads: [],
+        pullRequest: {
+          attachments: [],
+          bodyMarkdown: "Initial body",
+          commits: [],
+          conflict: false,
+          contributor: {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "dev",
+            userId: 2,
+            userLabel: "Dev Member",
+          },
+          createdLabel: "Jul 2, 2026",
+          events: [],
+          fromBranch: "feature/ui",
+          fromOwnerName: "admin",
+          fromProjectName: "sample",
+          id: 90,
+          isMerging: false,
+          isWatching: false,
+          lackingReviewerCount: 0,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canDeleteSourceBranch: false,
+            canRead: true,
+            canReadChanges: true,
+            canReview: true,
+            canRestoreSourceBranch: false,
+            canUpdate: true,
+            canUpdateState: true,
+            canWatch: true,
+          },
+          projectName: "sample",
+          pullRequestNumber: 9,
+          receiver: {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "admin",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+          reviewed: false,
+          reviewers: [],
+          state: "open",
+          threads: [],
+          title: "Initial title",
+          toBranch: "main",
+        },
+        threads: [],
       });
     if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/form-options"))
       return json({
