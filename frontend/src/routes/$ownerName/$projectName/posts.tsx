@@ -19,12 +19,9 @@ import {
 } from "../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
+import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
-import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type ProjectPostsRouteSearch = {
   filter?: string;
@@ -81,19 +78,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/posts")({
 
 function ProjectPostsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPostsScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectPostsScreen runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const { t } = useLegacyMessages();
   const routeSearch = Route.useSearch();
   const search: ProjectPostsSearch = {
     filter: routeSearch.filter ?? "",
@@ -116,36 +105,15 @@ function ProjectPostsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
   return (
-    <>
-      <title>{`${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectPostsBody
-          labels={optionsQuery.data.labels}
-          posts={postsQuery.data}
-          project={projectQuery.data}
-          runtimeConfig={runtimeConfig}
-          search={search}
-        />
-      </SiteLayoutShell>
-    </>
+    <ProjectPostsBody
+      labels={optionsQuery.data.labels}
+      posts={postsQuery.data}
+      project={projectQuery.data}
+      runtimeConfig={runtimeConfig}
+      search={search}
+    />
   );
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function ProjectPostsBody({
