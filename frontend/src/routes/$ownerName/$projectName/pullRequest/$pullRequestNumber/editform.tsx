@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { use, useRef, useState } from "react";
 import {
   pullRequestMergeResultQueryOptions,
   pullRequestEditFormOptionsQueryOptions,
@@ -15,7 +15,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -25,17 +25,28 @@ export const Route = createFileRoute(
 
 function ProjectPullRequestEditRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectPullRequestEditScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestEditScreen runtimeConfig={runtimeConfig} />
+        <ProjectPullRequestEditScreen nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectPullRequestEditScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
   const { t } = useLegacyMessages();
   const prNumber = Number(pullRequestNumber) || 0;
@@ -50,25 +61,58 @@ function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: Runtim
     }),
   );
 
+  const formErrorStatus = pullRequestEditErrorStatus(formOptionsQuery.error);
   if (!projectQuery.data || !formOptionsQuery.data?.pullRequest) {
+    if (nestedProjectShell && (formErrorStatus === 403 || formErrorStatus === 404)) {
+      return (
+        <>
+          <title>{`${t(formErrorStatus === 404 ? "error.notfound" : "error.forbidden")} - ${ownerName}/${projectName}`}</title>
+          <ProjectPullRequestEditErrorBody status={formErrorStatus} />
+        </>
+      );
+    }
     return <title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>;
   }
 
   return (
     <>
       <title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
+      {nestedProjectShell ? null : (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+          <ProjectMenu
+            active="pullRequest"
+            basePath={runtimeConfig.basePath}
+            project={projectQuery.data}
+          />
+        </>
+      )}
       <ProjectPullRequestEditBody
         formOptions={formOptionsQuery.data}
         runtimeConfig={runtimeConfig}
       />
     </>
   );
+}
+
+function ProjectPullRequestEditErrorBody({ status }: { status: 403 | 404 }) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function pullRequestEditErrorStatus(error: unknown): 403 | 404 | undefined {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  const status = error.status;
+  return status === 403 || status === 404 ? status : undefined;
 }
 
 function ProjectPullRequestEditBody({
@@ -216,6 +260,7 @@ function ProjectPullRequestEditBody({
                     noChangesLabel={t("pullRequest.diff.noChanges")}
                     ownerName={sourceProjectOwnerName(formOptions)}
                     projectName={sourceProjectName(formOptions)}
+                    runtimeConfig={runtimeConfig}
                   />
                 ) : null}
               </div>
@@ -486,6 +531,7 @@ function MergeResult({
   noChangesLabel,
   ownerName,
   projectName,
+  runtimeConfig,
 }: {
   authorLabel: string;
   commitDateLabel: string;
@@ -494,6 +540,7 @@ function MergeResult({
   noChangesLabel: string;
   ownerName: string;
   projectName: string;
+  runtimeConfig: RuntimeConfig;
 }) {
   if (!commits.length) {
     return (

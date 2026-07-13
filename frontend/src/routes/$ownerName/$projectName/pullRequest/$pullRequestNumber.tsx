@@ -110,6 +110,9 @@ function ProjectPullRequestOverviewScreen({
   };
 
   if (isChildRoute) {
+    if (nestedProjectShell) {
+      return <Outlet />;
+    }
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
         <Outlet />

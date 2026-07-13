@@ -459,6 +459,28 @@ test("project pull request edit form exposes group search scope when project org
   );
 });
 
+test("project pull request edit form keeps the project shell for project-scoped 403 and 404", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const patchRequests: unknown[] = [];
+
+  for (const [status, copy] of [
+    [403, "You are not authorized"],
+    [404, "Page not found"],
+  ] as const) {
+    await mockProjectPullRequestEditForm(page, patchRequests, { formErrorStatus: status });
+    await page.goto(`${basePath}/admin/sample/pullRequest/7/editform?status=${status}`);
+    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator(".project-header-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
+      "Pull request",
+    );
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(copy);
+  }
+});
+
 test("project pull request edit form blocks submit when merge result has no commits", async ({
   page,
 }) => {
@@ -754,6 +776,7 @@ async function waitForDialog(page: Page, expectedType: "alert" | "confirm", acce
 }
 
 type MockProjectPullRequestEditFormOptions = {
+  formErrorStatus?: 403 | 404;
   mergeResult?: {
     commits: ReturnType<typeof defaultPullRequestCommit>[];
     conflict: boolean;
@@ -841,6 +864,14 @@ async function mockProjectPullRequestEditForm(
   await page.route(
     "**/api/v1/owners/admin/projects/sample/pull-requests/7/form-options",
     async (route) => {
+      if (options.formErrorStatus) {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ error: { status: options.formErrorStatus } }),
+          status: options.formErrorStatus,
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
