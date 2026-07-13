@@ -6,6 +6,7 @@ import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../../a
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
 });
 
 function ProjectCodeBranchRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectCodeBranchIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

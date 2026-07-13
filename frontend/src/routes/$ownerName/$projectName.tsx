@@ -38,6 +38,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { LastOutletTransition } from "../-last-outlet-transition";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
 
@@ -874,7 +875,7 @@ function ProjectLayoutScreen({
       ) : null}
       <ProjectNestedShellContext value>
         <ProjectLayoutContext value={project}>
-          <Outlet />
+          <LastOutletTransition routeId={Route.id} />
         </ProjectLayoutContext>
       </ProjectNestedShellContext>
     </>

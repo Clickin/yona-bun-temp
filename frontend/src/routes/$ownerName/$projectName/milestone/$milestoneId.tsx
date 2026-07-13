@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type {
@@ -59,7 +60,7 @@ function restApiErrorStatus(error: unknown) {
 }
 
 function ProjectMilestoneDetailRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectMilestoneDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

@@ -25,6 +25,7 @@ import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -43,7 +44,7 @@ function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
 }
 
 function ProjectPullRequestOverviewRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectPullRequestOverviewIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

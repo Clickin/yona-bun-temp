@@ -20,6 +20,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { LastOutletTransition } from "../-last-outlet-transition";
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
@@ -85,7 +86,7 @@ function OrganizationNestedLayout({
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
           />
           <title>{organizationName}</title>
-          <Outlet />
+          <LastOutletTransition routeId={Route.id} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>

@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import type { RuntimeConfig } from "../../../../runtime-config";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { ProjectCodeBranchHistoryRouteFrame } from "../commits";
 
 type ProjectCodeHistorySearch = {
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch")
 });
 
 function ProjectCodeHistoryRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectCodeBranchHistoryIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

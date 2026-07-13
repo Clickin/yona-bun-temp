@@ -1,5 +1,4 @@
 import * as React from "react";
-import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "framer-motion";
 import {
   Link,
   Navigate,
@@ -195,11 +194,7 @@ function RootResetShell() {
 
   const rootShellContent = (
     <>
-      <RootRouteTransition
-        authenticatedRevision={authenticatedRevision}
-        pathname={pathname}
-        skipAnimation={rendersPlainResponseState}
-      />
+      <Outlet key={authenticatedRevision} />
       {rendersPlainResponseState ? null : (
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
@@ -281,40 +276,6 @@ function RootResetShell() {
         )}
       </RootToastContext.Provider>
     </RootLoginDialogContext.Provider>
-  );
-}
-
-function RootRouteTransition({
-  authenticatedRevision,
-  pathname,
-  skipAnimation,
-}: {
-  authenticatedRevision: number;
-  pathname: string;
-  skipAnimation: boolean;
-}) {
-  const shouldReduceMotion = useReducedMotion();
-
-  if (skipAnimation || shouldReduceMotion) {
-    return <Outlet key={authenticatedRevision} />;
-  }
-
-  return (
-    <LazyMotion features={domAnimation} strict>
-      <AnimatePresence initial={false} mode="wait">
-        <m.div
-          key={pathname}
-          data-route-transition="true"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -2 }}
-          transition={{ duration: 0.16, ease: [0.25, 0.1, 0.25, 1] }}
-          style={{ willChange: "opacity, transform" }}
-        >
-          <Outlet key={authenticatedRevision} />
-        </m.div>
-      </AnimatePresence>
-    </LazyMotion>
   );
 }
 

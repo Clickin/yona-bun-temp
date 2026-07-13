@@ -5,6 +5,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
+import { LastOutletTransition } from "../../../../-last-outlet-transition";
 import {
   closePullRequestThreadRest,
   openPullRequestThreadRest,
@@ -108,7 +109,7 @@ export const Route = createFileRoute(
 });
 
 function ProjectPullRequestChangesRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectPullRequestChangesPage({

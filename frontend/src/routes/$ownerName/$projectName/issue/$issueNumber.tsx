@@ -40,6 +40,7 @@ import {
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
 
 const LEGACY_LINK_PROPS = {
@@ -128,7 +129,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 });
 
 function ProjectIssueDetailRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

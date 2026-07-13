@@ -12,6 +12,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { LastOutletTransition } from "../../-last-outlet-transition";
 
 type ProjectCodeHistorySearch = {
   page?: number;
@@ -53,7 +54,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits")({
 });
 
 function ProjectCodeHistoryRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectCodeHistoryIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {

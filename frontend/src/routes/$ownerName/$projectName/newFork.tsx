@@ -12,6 +12,7 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { LastOutletTransition } from "../../-last-outlet-transition";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectNestedShellContext } from "../$projectName";
 
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
 });
 
 function ProjectForkRoute() {
-  return <Outlet />;
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectForkRouteContent({
