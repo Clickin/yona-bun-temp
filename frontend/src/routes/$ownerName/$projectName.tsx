@@ -123,6 +123,7 @@ function ProjectHomeRoute() {
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
+  const postDetailNumber = exactProjectPostNumber(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -182,7 +183,9 @@ function ProjectHomeRoute() {
           ? "issueEdit"
           : issueDetailNumber !== null
             ? "issueDetail"
-            : standardActive;
+            : postDetailNumber !== null
+              ? "postDetail"
+              : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -219,6 +222,7 @@ function ProjectHomeRouteShell({
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
+    | "postDetail"
     | "postform"
     | "pullRequest"
     | "review"
@@ -586,6 +590,7 @@ function ProjectLayoutScreen({
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
+    | "postDetail"
     | "postform"
     | "pullRequest"
     | "review"
@@ -608,7 +613,8 @@ function ProjectLayoutScreen({
       {active === "issueDetail" ||
       active === "issueEdit" ||
       active === "milestoneDetail" ||
-      active === "milestoneEdit" ? null : (
+      active === "milestoneEdit" ||
+      active === "postDetail" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -672,20 +678,22 @@ function ProjectLayoutScreen({
                         ? "pullRequest"
                         : active === "postform"
                           ? "board"
-                          : active === "issueform"
-                            ? "issue"
-                            : active === "issueDetail"
+                          : active === "postDetail"
+                            ? "board"
+                            : active === "issueform"
                               ? "issue"
-                              : active === "issueEdit"
+                              : active === "issueDetail"
                                 ? "issue"
-                                : active === "delete" ||
-                                    active === "changeVcs" ||
-                                    active === "labels" ||
-                                    active === "members" ||
-                                    active === "transfer" ||
-                                    active === "webhooks"
-                                  ? "setting"
-                                  : active
+                                : active === "issueEdit"
+                                  ? "issue"
+                                  : active === "delete" ||
+                                      active === "changeVcs" ||
+                                      active === "labels" ||
+                                      active === "members" ||
+                                      active === "transfer" ||
+                                      active === "webhooks"
+                                    ? "setting"
+                                    : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -713,6 +721,7 @@ function ProjectLayoutScreen({
             active === "issueEdit" ||
             active === "milestoneDetail" ||
             active === "milestoneEdit" ||
+            active === "postDetail" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -750,6 +759,13 @@ function exactProjectMilestoneEditId(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/milestone/(\\d+)/editform$`,
   ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectPostNumber(pathname: string, homePath: string) {
+  const match = new RegExp(`^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/post/(\\d+)$`).exec(
+    pathname,
+  );
   return match ? Number(match[1]) : null;
 }
 
