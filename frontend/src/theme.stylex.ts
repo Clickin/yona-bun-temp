@@ -27,6 +27,14 @@ export const globalColors = stylex.defineVars({
   transparent: "transparent",
   // _usermenu.less: .user-project-list .no-result color
   sidenavNoResultText: "mediumvioletred",
+  // _usermenu.less: .nav-subtab.unstyled background-color
+  sidenavSubtabSurface: "#eeeeee",
+  // _usermenu.less: .nav-subtab.unstyled color
+  sidenavSubtabText: "#000000",
+  // _variables.less: @primary used by .nav-subtab active/interaction borders
+  sidenavSubtabAccent: "#f36c22",
+  // _yobiUI.less: .nav-subtab li.active a color
+  sidenavSubtabActiveText: "#fcfcfc",
   // _usermenu.less: .user-project-list .org-list:hover background-color
   sidenavOrganizationHoverSurface: "#f1f1f1",
   // _usermenu.less: .user-project-list .project-name.org-name color

@@ -2931,6 +2931,67 @@ function SidebarAllProjectItem({
   );
 }
 
+const authenticatedSidenavProjectSubtabStyles = stylex.create({
+  wrap: {
+    padding: "10px 0 5px",
+  },
+  list: {
+    backgroundColor: globalColors.sidenavSubtabSurface,
+    color: globalColors.sidenavSubtabText,
+    display: "inline-block",
+  },
+  item: {
+    border: 0,
+    display: "inline-block",
+    marginLeft: 0,
+  },
+  button: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    border: 0,
+    borderRadius: 0,
+    boxShadow: "none",
+    color: "inherit",
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    margin: 0,
+    padding: "5px 8px",
+    ":hover": {
+      backgroundColor: globalColors.transparent,
+      borderBottomColor: globalColors.sidenavSubtabAccent,
+      borderBottomStyle: "solid",
+      borderBottomWidth: "1px",
+      color: globalColors.sidenavSubtabText,
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: globalColors.transparent,
+      borderBottomColor: globalColors.sidenavSubtabAccent,
+      borderBottomStyle: "solid",
+      borderBottomWidth: "1px",
+      color: globalColors.sidenavSubtabText,
+      textDecoration: "none",
+    },
+  },
+  activeButton: {
+    backgroundColor: globalColors.sidenavSubtabAccent,
+    borderBottomColor: globalColors.sidenavSubtabAccent,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    color: globalColors.sidenavSubtabActiveText,
+    textDecoration: "none",
+    ":hover": {
+      backgroundColor: globalColors.sidenavSubtabAccent,
+      color: globalColors.sidenavSubtabActiveText,
+    },
+    ":focus": {
+      backgroundColor: globalColors.sidenavSubtabAccent,
+      color: globalColors.sidenavSubtabActiveText,
+    },
+  },
+});
+
 function SidebarProjectList({
   idPrefix,
   onSearchQueryChange,
@@ -2952,6 +3013,13 @@ function SidebarProjectList({
   const watchedProjects = recordArray(workspace.watchedProjects);
   const memberProjects = recordArray(workspace.memberProjects);
   const ownProjects = recordArray(workspace.ownProjects);
+  const isAuthenticatedSidenav = idPrefix === undefined;
+  const subtabs = [
+    ["recentlyVisited", "title.recently.visited"],
+    ["createdByMe", "title.createdByMe"],
+    ["watching", "title.watching"],
+    ["joinmember", "title.joinmember"],
+  ] as const;
 
   return (
     <div>
@@ -2969,28 +3037,51 @@ function SidebarProjectList({
             />
             <span className="bar"></span>
           </div>
-          <div className="subtab-wrap subtab-group">
-            <ul className="nav-subtab unstyled">
-              <li className={activeSubtab === "recentlyVisited" ? "active" : undefined}>
-                <button type="button" onClick={() => setActiveSubtab("recentlyVisited")}>
-                  {t("title.recently.visited")}
-                </button>
-              </li>
-              <li className={activeSubtab === "createdByMe" ? "active" : undefined}>
-                <button type="button" onClick={() => setActiveSubtab("createdByMe")}>
-                  {t("title.createdByMe")}
-                </button>
-              </li>
-              <li className={activeSubtab === "watching" ? "active" : undefined}>
-                <button type="button" onClick={() => setActiveSubtab("watching")}>
-                  {t("title.watching")}
-                </button>
-              </li>
-              <li className={activeSubtab === "joinmember" ? "active" : undefined}>
-                <button type="button" onClick={() => setActiveSubtab("joinmember")}>
-                  {t("title.joinmember")}
-                </button>
-              </li>
+          <div
+            className={`subtab-wrap subtab-group${
+              isAuthenticatedSidenav
+                ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.wrap).className}`
+                : ""
+            }`}
+            data-stylex-owner={
+              isAuthenticatedSidenav ? "authenticated-sidenav-project-subtabs" : undefined
+            }
+          >
+            <ul
+              className={`nav-subtab unstyled${
+                isAuthenticatedSidenav
+                  ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.list).className}`
+                  : ""
+              }`}
+            >
+              {subtabs.map(([subtab, messageKey], index) => (
+                <React.Fragment key={subtab}>
+                  <li
+                    className={`${activeSubtab === subtab ? "active" : ""}${
+                      isAuthenticatedSidenav
+                        ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.item).className}`
+                        : ""
+                    }`.trim()}
+                  >
+                    <button
+                      type="button"
+                      className={
+                        isAuthenticatedSidenav
+                          ? stylex.props(
+                              authenticatedSidenavProjectSubtabStyles.button,
+                              activeSubtab === subtab &&
+                                authenticatedSidenavProjectSubtabStyles.activeButton,
+                            ).className
+                          : undefined
+                      }
+                      onClick={() => setActiveSubtab(subtab)}
+                    >
+                      {t(messageKey)}
+                    </button>
+                  </li>
+                  {index < subtabs.length - 1 ? " " : null}
+                </React.Fragment>
+              ))}
             </ul>
           </div>
           <div className="tab-content">

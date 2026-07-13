@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twelve user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -373,6 +373,18 @@ declaration of this owner intentionally remains in fallback: removing its StyleX
 the old `app.css` absolute-star overlay and item-width drift only as deletion evidence. Shared
 Bootstrap/Yobi rules remain active solely for other consumers, not as fallback ownership for
 this migrated row. This is not Wave 1 completion.
+
+The thirteenth verified slice migrates the authenticated Project pane's four-button subtab strip.
+StyleX owns the exact strip/list/item/button reset, inactive, hover, focus, and active declarations.
+It restores the frozen legacy active surface that the earlier React button bridge omitted:
+`#f36c22` surface and bottom border with `#fcfcfc` text. All four concrete states use semantic
+variables in the canonical global theme entry; no route-local color, dark value, or toggle was
+added. Fresh live legacy and local Korean captures agree at both viewports on the `46px` strip,
+`265.45×31` list, `5px 8px` button padding, and active/inactive heights. The three inline gaps
+between the legacy Scala template's four `<li>` elements are emitted as React whitespace text
+nodes, recovering the exact width without numeric CSS compensation. No declaration of this owner
+intentionally remains in fallback; owner removal exposes the earlier transparent/black active
+drift as deletion evidence. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
