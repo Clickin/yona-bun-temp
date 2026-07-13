@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, six user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, seven user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -308,6 +308,14 @@ was added. The legacy max-720 `5px !important` rule targets anchors, not the Rea
 existing `8px 30px` button padding remains unchanged rather than adding a responsive
 compensation. Tab content, shared nav consumers, and frozen fallback remain later owners. This is
 not Wave 1 completion.
+
+The seventh verified slice migrates only the authenticated sidenav tab-panel state boundary.
+StyleX owns the outer `.tab-content.tab-box` overflow, top-border suppression, and lower corner
+radii; the inner tab-content overflow; and the three direct pane hidden/active display states.
+React state and the existing workspace query still own selection and content. This slice has no
+color declaration, so the global theme entry is unchanged. Inner search, list, star, row,
+scrollbar, left-sidebar, and anonymous-sidebar declarations remain fallback and later owners.
+This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

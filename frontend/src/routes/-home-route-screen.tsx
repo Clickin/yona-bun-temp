@@ -1175,6 +1175,23 @@ const authenticatedSidenavTabStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavTabPanelStyles = stylex.create({
+  panel: {
+    borderRadius: "0 0 4px 4px",
+    borderTopStyle: "none",
+    overflow: "hidden",
+  },
+  content: {
+    overflow: "hidden",
+  },
+  pane: {
+    display: "none",
+  },
+  activePane: {
+    display: "block",
+  },
+});
+
 const authenticatedSidenavContentFrameStyles = stylex.create({
   frame: {
     marginLeft: "10px",
@@ -1483,11 +1500,18 @@ function AuthenticatedSiteUserMenu({
               </button>
             </li>
           </ul>
-          <div className="tab-content tab-box">
-            <div id="usermenu-tab-content-list" className="tab-content">
+          <div
+            className={`tab-content tab-box ${stylex.props(authenticatedSidenavTabPanelStyles.panel).className}`}
+            data-stylex-owner="authenticated-sidenav-tab-panel"
+          >
+            <div
+              id="usermenu-tab-content-list"
+              className={`tab-content ${stylex.props(authenticatedSidenavTabPanelStyles.content).className}`}
+            >
               {workspace ? (
                 <SidebarTabContent
                   activeTab={activeSidebarTab}
+                  ownsAuthenticatedSidenavTabPanel
                   runtimeConfig={runtimeConfig}
                   sessionLoginId={loginId}
                   workspace={workspace}
@@ -1765,12 +1789,14 @@ function AnonymousSiteUserMenu() {
 function SidebarTabContent({
   activeTab,
   idPrefix,
+  ownsAuthenticatedSidenavTabPanel = false,
   runtimeConfig,
   sessionLoginId,
   workspace,
 }: {
   activeTab: SidebarTab;
   idPrefix?: string;
+  ownsAuthenticatedSidenavTabPanel?: boolean;
   runtimeConfig: RuntimeConfig;
   sessionLoginId: string;
   workspace: YoramRecord;
@@ -1779,7 +1805,16 @@ function SidebarTabContent({
   return (
     <>
       <div
-        className={`tab-pane user-project-list${activeTab === "favorite" ? " active" : ""}`}
+        className={`tab-pane user-project-list${activeTab === "favorite" ? " active" : ""}${
+          ownsAuthenticatedSidenavTabPanel
+            ? ` ${
+                stylex.props(
+                  authenticatedSidenavTabPanelStyles.pane,
+                  activeTab === "favorite" && authenticatedSidenavTabPanelStyles.activePane,
+                ).className
+              }`
+            : ""
+        }`}
         id={sidebarDomId(idPrefix, "myOrganizationList")}
       >
         {hasSidebarFavoriteData(workspace) ? (
@@ -1796,7 +1831,16 @@ function SidebarTabContent({
         )}
       </div>
       <div
-        className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}`}
+        className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}${
+          ownsAuthenticatedSidenavTabPanel
+            ? ` ${
+                stylex.props(
+                  authenticatedSidenavTabPanelStyles.pane,
+                  activeTab === "project" && authenticatedSidenavTabPanelStyles.activePane,
+                ).className
+              }`
+            : ""
+        }`}
         id={sidebarDomId(idPrefix, "myProjectList")}
       >
         <SidebarProjectList
@@ -1808,7 +1852,16 @@ function SidebarTabContent({
         />
       </div>
       <div
-        className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}`}
+        className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}${
+          ownsAuthenticatedSidenavTabPanel
+            ? ` ${
+                stylex.props(
+                  authenticatedSidenavTabPanelStyles.pane,
+                  activeTab === "recent" && authenticatedSidenavTabPanelStyles.activePane,
+                ).className
+              }`
+            : ""
+        }`}
         id={sidebarDomId(idPrefix, "myRecentIssueList")}
       >
         <SidebarRecentIssueList
