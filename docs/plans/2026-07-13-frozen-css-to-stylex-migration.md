@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-four user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-five user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -519,11 +519,9 @@ render a popover, the React owner renders none, and no `.popover` fallback exist
 temporarily unavoidable collision is the broader `.user-project-list li { margin-left: 0 }`,
 whose ancestor remains for distinct unmigrated organization and nested-project rows; StyleX owns
 the same value for this row. Fresh live/local desktop evidence agrees on the 270×26 row and exact
-internal geometry. At 390px, live Project shell placement/width is `y166/317.6875px` while the
-current local shell is `y196/270px` after the subtab owner restores the exact 1px active border;
-the row's 26px height and relative internals agree, so the outer framed Project shell remains the
-next owner and no row compensation is introduced. This is
-not Wave 1 completion.
+internal geometry. The twenty-fifth outer-shell slice below closes the former 390px placement and
+width gap: live and local now both render the Project row at `y166/317.6875px`, without row-level
+compensation. This is not Wave 1 completion.
 
 The twenty-fourth verified slice migrates the framed left sidebar's Project subtab strip. StyleX
 owns the complete wrap padding, list reset/surface, inline items, semantic-button reset,
@@ -533,13 +531,26 @@ of `subtab-wrap`, `subtab-group`, `nav-subtab`, `unstyled`, or `active`; React s
 `aria-pressed` own selection while the three Scala-template whitespace gaps remain real text
 nodes. Fresh desktop evidence now agrees exactly on the `270×76 @ y147` wrap, `270×61 @ y157`
 list, two-line item geometry, orange active state, and the direct-project row starting at `y223`.
-At 390px the live sidebar naturally expands to `317.6875px`, producing a `317.6875×46` wrap and
-single-row list, while the existing React framed-shell bridge still fixes the outer sidebar at
-270px and produces a `270×76` two-line strip. That known outer-shell gap remains the next owner;
-this slice adds no width or position compensation. The sole temporarily unavoidable lower-layer
+At 390px the twenty-fifth outer-shell slice below now lets the sidebar naturally expand to
+`317.6875px`, so live and local both produce the `317.6875×46` wrap and single-row list. This
+subtab owner itself still adds no width or position compensation. The sole temporarily unavoidable lower-layer
 collision is the outer `.user-project-list li { margin-left: 0 }`, retained for separate
 unmigrated Project shell/list consumers and exactly re-owned by StyleX. The legacy subtab has no
 popover and no `.popover` fallback exists. This is not Wave 1 completion.
+
+The twenty-fifth verified slice migrates the framed left sidebar outer shell. StyleX owns the
+exact content-box surface, text, right border, desktop sticky `270px` flex geometry, `100vh`
+height, and max-720 absolute shrink-to-fit `width:auto` state. Three concrete colors use semantic
+variables in the canonical global theme; no dark value or toggle is introduced. The aside emits
+no `hide-in-mobile`; it retains `sidebar` only because distinct unmigrated account, tab, pane,
+Favorite, and Recent descendants still consume frozen `.sidebar …` selectors. The two
+owner-specific `app.css` bridges (`> #sidebar` and `.sidebar.hide-in-mobile`) are deleted rather
+than retained as fallback. Mobile `z-index:1001` moves the existing React iframe-replacement
+stacking contract into StyleX: the flattened later main pane otherwise paints its legacy
+`z-index:1000` header over the absolute sidebar, which the real legacy iframe cannot do. Fresh
+live/local evidence agrees on the desktop `271×900` border box and the mobile `318.6875×844`
+border box with `317.6875px` content, one-line Project subtabs, row `y166`, full main-pane cover,
+and no document overflow. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -527,14 +527,6 @@ select:focus {
   overflow: hidden;
 }
 
-.legacy-framed-shell.is-open > #sidebar {
-  box-sizing: content-box;
-  flex: 0 0 270px;
-  width: 270px;
-  height: 100vh;
-  color: #fff;
-}
-
 .legacy-framed-shell.is-open > .legacy-framed-main {
   flex: 1 1 auto;
   width: auto;
@@ -2035,12 +2027,6 @@ span.issue-label {
     position: relative;
     display: block;
     height: 100vh;
-  }
-
-  .legacy-framed-shell.is-open > .sidebar.hide-in-mobile {
-    position: absolute;
-    z-index: 1001;
-    display: block !important;
   }
 
   .sidebar .nav-tabs li button {

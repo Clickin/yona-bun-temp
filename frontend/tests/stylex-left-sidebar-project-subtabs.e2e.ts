@@ -26,13 +26,17 @@ for (const viewport of [
       wrapWidth: 317.6875,
       wrapY: 120,
     },
-    local: { listHeight: 61, listWidth: 270, wrapHeight: 76, wrapWidth: 270, wrapY: 120 },
+    local: {
+      listHeight: 31,
+      listWidth: 317.6875,
+      wrapHeight: 46,
+      wrapWidth: 317.6875,
+      wrapY: 120,
+    },
     width: 390,
   },
 ]) {
-  test(`left Project subtabs preserve ${viewport.label} owned parity with explicit outer-shell gap`, async ({
-    page,
-  }) => {
+  test(`left Project subtabs preserve ${viewport.label} owned legacy parity`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await installAuthenticatedHome(page, "en-US");
     await page.goto(`${BASE_PATH}/`);
@@ -83,13 +87,24 @@ for (const viewport of [
             wrapY: 120,
           },
     );
-    expect(initial.geometry.items).toEqual([
-      { height: 31, width: 111.84375, x: 0, y: viewport.local.wrapY + 10 },
-      { height: 30, width: 56.265625, x: 115.4375, y: viewport.local.wrapY + 10 },
-      { height: 30, width: 72.78125, x: 175.296875, y: viewport.local.wrapY + 10 },
-      { height: 30, width: 66.015625, x: 0, y: viewport.local.wrapY + 41 },
-    ]);
-    expect(initial.geometry.gaps).toEqual([3.59375, 3.59375, -248.078125]);
+    expect(initial.geometry.items).toEqual(
+      viewport.label === "desktop"
+        ? [
+            { height: 31, width: 111.84375, x: 0, y: 157 },
+            { height: 30, width: 56.265625, x: 115.4375, y: 157 },
+            { height: 30, width: 72.78125, x: 175.296875, y: 157 },
+            { height: 30, width: 66.015625, x: 0, y: 188 },
+          ]
+        : [
+            { height: 31, width: 111.84375, x: 0, y: 130 },
+            { height: 30, width: 56.265625, x: 115.4375, y: 130 },
+            { height: 30, width: 72.78125, x: 175.296875, y: 130 },
+            { height: 30, width: 66.015625, x: 251.671875, y: 130 },
+          ],
+    );
+    expect(initial.geometry.gaps).toEqual(
+      viewport.label === "desktop" ? [3.59375, 3.59375, -248.078125] : [3.59375, 3.59375, 3.59375],
+    );
     expect(initial.styles.wrap).toEqual({ padding: "10px 0px 5px" });
     expect(initial.styles.list).toEqual({
       backgroundColor: "rgb(238, 238, 238)",
@@ -137,12 +152,21 @@ for (const viewport of [
 
     await buttons.nth(1).hover();
     const hoveredGeometry = (await readEvidence(owner)).geometry.items;
-    expect(hoveredGeometry).toEqual([
-      { height: 31, width: 111.84375, x: 0, y: viewport.local.wrapY + 10 },
-      { height: 31, width: 56.265625, x: 115.4375, y: viewport.local.wrapY + 10 },
-      { height: 30, width: 72.78125, x: 175.296875, y: viewport.local.wrapY + 10 },
-      { height: 30, width: 66.015625, x: 0, y: viewport.local.wrapY + 41 },
-    ]);
+    expect(hoveredGeometry).toEqual(
+      viewport.label === "desktop"
+        ? [
+            { height: 31, width: 111.84375, x: 0, y: 157 },
+            { height: 31, width: 56.265625, x: 115.4375, y: 157 },
+            { height: 30, width: 72.78125, x: 175.296875, y: 157 },
+            { height: 30, width: 66.015625, x: 0, y: 188 },
+          ]
+        : [
+            { height: 31, width: 111.84375, x: 0, y: 130 },
+            { height: 31, width: 56.265625, x: 115.4375, y: 130 },
+            { height: 30, width: 72.78125, x: 175.296875, y: 130 },
+            { height: 30, width: 66.015625, x: 251.671875, y: 130 },
+          ],
+    );
     await buttons.nth(2).hover();
     await expect(buttons.nth(2)).toHaveCSS("border-bottom", "1px solid rgb(243, 108, 34)");
     await expect(buttons.nth(2)).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");

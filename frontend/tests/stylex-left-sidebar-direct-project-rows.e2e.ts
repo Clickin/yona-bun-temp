@@ -23,12 +23,12 @@ for (const viewport of [
     label: "mobile",
     liveProjectTop: 166,
     liveProjectWidth: 317.6875,
-    localProjectTop: 196,
-    localProjectWidth: 270,
+    localProjectTop: 166,
+    localProjectWidth: 317.6875,
     width: 390,
   },
 ]) {
-  test(`left direct project rows preserve ${viewport.label} owned relative parity with explicit outer gap`, async ({
+  test(`left direct project rows preserve ${viewport.label} owned legacy parity`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -244,6 +244,7 @@ for (const viewport of [
     await expect(privateRow.row).toBeVisible();
     await expect(privateRow.row.locator(".yobicon-lock.yobicon-small")).toHaveCount(1);
 
+    await leftSidebar.getByRole("button", { name: "Sidebar" }).click();
     await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
     const rightRow = page
       .locator('[data-stylex-owner="authenticated-sidenav-direct-project-rows"]')

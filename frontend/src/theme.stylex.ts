@@ -65,6 +65,12 @@ export const globalColors = stylex.defineVars({
   leftSidebarDirectProjectStarActive: "#e91e63",
   // _usermenu.less: .starred:hover
   leftSidebarDirectProjectStarActiveHover: "#8a123b",
+  // _page.less: .sidebar background-color
+  leftSidebarOuterSurface: "#333333",
+  // _usermenu.less: .sidebar color
+  leftSidebarOuterText: "#ffffff",
+  // _page.less: .sidebar border-right
+  leftSidebarOuterBorder: "#000000",
   // _usermenu.less: .nav-subtab.unstyled background-color in the left Project pane
   leftSidebarProjectSubtabSurface: "#eeeeee",
   // _usermenu.less: .nav-subtab.unstyled color in the left Project pane

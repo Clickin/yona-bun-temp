@@ -952,6 +952,38 @@ export function SiteLayoutShell({
   );
 }
 
+const leftSidebarOuterShellStyles = stylex.create({
+  shell: {
+    backgroundColor: globalColors.leftSidebarOuterSurface,
+    borderRightColor: globalColors.leftSidebarOuterBorder,
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
+    bottom: 0,
+    boxSizing: "content-box",
+    color: globalColors.leftSidebarOuterText,
+    display: "block",
+    flexBasis: "270px",
+    flexGrow: 0,
+    flexShrink: 0,
+    height: "100vh",
+    left: 0,
+    position: {
+      default: "sticky",
+      "@media (max-width: 720px)": "absolute",
+    },
+    top: 0,
+    width: {
+      default: "270px",
+      "@media (max-width: 720px)": "auto",
+    },
+    // The React main pane is a later sibling and otherwise paints over this absolute mobile shell.
+    zIndex: {
+      default: "auto",
+      "@media (max-width: 720px)": 1001,
+    },
+  },
+});
+
 function LegacyFramedSidebar({
   activeTab,
   basePath,
@@ -990,7 +1022,12 @@ function LegacyFramedSidebar({
   };
 
   return (
-    <aside aria-label="Sidebar" className="sidebar hide-in-mobile" id="sidebar">
+    <aside
+      aria-label="Sidebar"
+      className={`sidebar ${stylex.props(leftSidebarOuterShellStyles.shell).className}`}
+      data-stylex-owner="left-sidebar-outer-shell"
+      id="sidebar"
+    >
       <div className="row-fluid user-menu-wrap">
         <span className="user-menu">
           <Link
