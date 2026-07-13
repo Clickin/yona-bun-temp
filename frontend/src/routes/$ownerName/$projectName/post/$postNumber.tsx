@@ -1,11 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  use,
   useState,
 } from "react";
 import ReactMarkdown from "react-markdown";
@@ -29,12 +28,9 @@ import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
 
@@ -60,101 +56,36 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 });
 
 function ProjectPostDetailRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { postNumber } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (nestedProjectShell && pathname.endsWith(`/post/${postNumber}/editform`)) {
-    return <Outlet />;
-  }
-
-  if (nestedProjectShell) {
-    return <ProjectPostDetailShell nestedProjectShell runtimeConfig={runtimeConfig} />;
-  }
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPostDetailShell nestedProjectShell={false} runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <Outlet />;
 }
 
-function ProjectPostDetailShell({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
   const postQuery = useQuery({
     ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
-    enabled: !nestedProjectShell,
     retry(failureCount, error) {
       return restApiErrorStatus(error) !== 404 && failureCount < 3;
     },
   });
 
-  if (isEditChildRoute && restApiErrorStatus(postQuery.error) === 404) {
-    return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <ProjectPostEditNotFoundTitle />
-        <ProjectPostEditNotFoundBody />
-      </SiteLayoutShell>
-    );
-  }
-
   if (!projectQuery.data) {
     return null;
   }
 
-  if (nestedProjectShell) {
-    return (
-      <ProjectPostDetailScreen
-        nestedProjectShell
-        project={projectQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
-    );
-  }
-
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectPostDetailScreen
-        nestedProjectShell={false}
-        project={projectQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
-    </SiteLayoutShell>
-  );
+  return <ProjectPostDetailScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectPostDetailScreen({
-  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
-  nestedProjectShell: boolean;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, postNumber, projectName } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isEditChildRoute = pathname.endsWith(`/post/${postNumber}/editform`);
   const postQuery = useQuery({
     ...readProjectPostQueryOptions(runtimeConfig, { ownerName, postNumber, projectName }),
     retry(failureCount, error) {
@@ -162,16 +93,10 @@ function ProjectPostDetailScreen({
     },
   });
 
-  if (!isEditChildRoute && restApiErrorStatus(postQuery.error) === 404) {
+  if (restApiErrorStatus(postQuery.error) === 404) {
     return (
       <>
         <ProjectPostNotFoundTitle ownerName={ownerName} projectName={projectName} />
-        {nestedProjectShell ? null : (
-          <>
-            <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-            <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
-          </>
-        )}
         <ProjectPostNotFoundBody ownerName={ownerName} projectName={projectName} />
       </>
     );
@@ -183,24 +108,8 @@ function ProjectPostDetailScreen({
 
   return (
     <>
-      {!isEditChildRoute ? (
-        <ProjectPostDetailTitle postTitle={stringField(postQuery.data.title)} />
-      ) : null}
-      {nestedProjectShell ? null : (
-        <>
-          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-          <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={project} />
-        </>
-      )}
-      {isEditChildRoute ? (
-        <Outlet />
-      ) : (
-        <ProjectPostDetailBody
-          post={postQuery.data}
-          project={project}
-          runtimeConfig={runtimeConfig}
-        />
-      )}
+      <ProjectPostDetailTitle postTitle={stringField(postQuery.data.title)} />
+      <ProjectPostDetailBody post={postQuery.data} project={project} runtimeConfig={runtimeConfig} />
     </>
   );
 }
@@ -2040,14 +1949,6 @@ function ctrlKey() {
 
 function siteSearchKeys() {
   return navigator.platform.toLowerCase().includes("mac") ? ["CTRL", "ALT", "S"] : ["ALT", "S"];
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function restApiErrorStatus(error: unknown) {

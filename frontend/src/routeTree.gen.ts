@@ -99,6 +99,7 @@ import { Route as OwnerNameProjectNameCompareRevisionRangeRouteImport } from './
 import { Route as OwnerNameProjectNameCommitsBranchRouteImport } from './routes/$ownerName/$projectName/commits/$branch'
 import { Route as OwnerNameProjectNameCommitCommitIdRouteImport } from './routes/$ownerName/$projectName/commit/$commitId'
 import { Route as OwnerNameProjectNameCodeBranchRouteImport } from './routes/$ownerName/$projectName/code/$branch'
+import { Route as OwnerNameProjectNamePostPostNumberIndexRouteImport } from './routes/$ownerName/$projectName/post/$postNumber/index'
 import { Route as OwnerNameProjectNameMilestoneMilestoneIdIndexRouteImport } from './routes/$ownerName/$projectName/milestone/$milestoneId/index'
 import { Route as OwnerNameProjectNameIssueIssueNumberIndexRouteImport } from './routes/$ownerName/$projectName/issue/$issueNumber/index'
 import { Route as OwnerNameProjectNameCommitsBranchIndexRouteImport } from './routes/$ownerName/$projectName/commits/$branch/index'
@@ -614,6 +615,12 @@ const OwnerNameProjectNameCodeBranchRoute =
     path: '/$branch',
     getParentRoute: () => OwnerNameProjectNameCodeRoute,
   } as any)
+const OwnerNameProjectNamePostPostNumberIndexRoute =
+  OwnerNameProjectNamePostPostNumberIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => OwnerNameProjectNamePostPostNumberRoute,
+  } as any)
 const OwnerNameProjectNameMilestoneMilestoneIdIndexRoute =
   OwnerNameProjectNameMilestoneMilestoneIdIndexRouteImport.update({
     id: '/',
@@ -806,6 +813,7 @@ export interface FileRoutesByFullPath {
   '/$ownerName/$projectName/commits/$branch/': typeof OwnerNameProjectNameCommitsBranchIndexRoute
   '/$ownerName/$projectName/issue/$issueNumber/': typeof OwnerNameProjectNameIssueIssueNumberIndexRoute
   '/$ownerName/$projectName/milestone/$milestoneId/': typeof OwnerNameProjectNameMilestoneMilestoneIdIndexRoute
+  '/$ownerName/$projectName/post/$postNumber/': typeof OwnerNameProjectNamePostPostNumberIndexRoute
   '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId': typeof OwnerNameProjectNamePullRequestPullRequestNumberChangesCommitIdRoute
 }
 export interface FileRoutesByTo {
@@ -884,7 +892,6 @@ export interface FileRoutesByTo {
   '/$ownerName/$projectName/compare/$revisionRange': typeof OwnerNameProjectNameCompareRevisionRangeRoute
   '/$ownerName/$projectName/issue/labelsform': typeof OwnerNameProjectNameIssueLabelsformRoute
   '/$ownerName/$projectName/newFork/$forkOwnerName': typeof OwnerNameProjectNameNewForkForkOwnerNameRoute
-  '/$ownerName/$projectName/post/$postNumber': typeof OwnerNameProjectNamePostPostNumberRouteWithChildren
   '/$ownerName/$projectName/pullRequest/$pullRequestNumber': typeof OwnerNameProjectNamePullRequestPullRequestNumberRouteWithChildren
   '/info/leave/$ownerName/$projectName': typeof InfoLeaveOwnerNameProjectNameRoute
   '/user/issues/new/mine': typeof UserIssuesNewMineRoute
@@ -904,6 +911,7 @@ export interface FileRoutesByTo {
   '/$ownerName/$projectName/commits/$branch': typeof OwnerNameProjectNameCommitsBranchIndexRoute
   '/$ownerName/$projectName/issue/$issueNumber': typeof OwnerNameProjectNameIssueIssueNumberIndexRoute
   '/$ownerName/$projectName/milestone/$milestoneId': typeof OwnerNameProjectNameMilestoneMilestoneIdIndexRoute
+  '/$ownerName/$projectName/post/$postNumber': typeof OwnerNameProjectNamePostPostNumberIndexRoute
   '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId': typeof OwnerNameProjectNamePullRequestPullRequestNumberChangesCommitIdRoute
 }
 export interface FileRoutesById {
@@ -1011,6 +1019,7 @@ export interface FileRoutesById {
   '/$ownerName/$projectName/commits/$branch/': typeof OwnerNameProjectNameCommitsBranchIndexRoute
   '/$ownerName/$projectName/issue/$issueNumber/': typeof OwnerNameProjectNameIssueIssueNumberIndexRoute
   '/$ownerName/$projectName/milestone/$milestoneId/': typeof OwnerNameProjectNameMilestoneMilestoneIdIndexRoute
+  '/$ownerName/$projectName/post/$postNumber/': typeof OwnerNameProjectNamePostPostNumberIndexRoute
   '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId': typeof OwnerNameProjectNamePullRequestPullRequestNumberChangesCommitIdRoute
 }
 export interface FileRouteTypes {
@@ -1119,6 +1128,7 @@ export interface FileRouteTypes {
     | '/$ownerName/$projectName/commits/$branch/'
     | '/$ownerName/$projectName/issue/$issueNumber/'
     | '/$ownerName/$projectName/milestone/$milestoneId/'
+    | '/$ownerName/$projectName/post/$postNumber/'
     | '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1197,7 +1207,6 @@ export interface FileRouteTypes {
     | '/$ownerName/$projectName/compare/$revisionRange'
     | '/$ownerName/$projectName/issue/labelsform'
     | '/$ownerName/$projectName/newFork/$forkOwnerName'
-    | '/$ownerName/$projectName/post/$postNumber'
     | '/$ownerName/$projectName/pullRequest/$pullRequestNumber'
     | '/info/leave/$ownerName/$projectName'
     | '/user/issues/new/mine'
@@ -1217,6 +1226,7 @@ export interface FileRouteTypes {
     | '/$ownerName/$projectName/commits/$branch'
     | '/$ownerName/$projectName/issue/$issueNumber'
     | '/$ownerName/$projectName/milestone/$milestoneId'
+    | '/$ownerName/$projectName/post/$postNumber'
     | '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId'
   id:
     | '__root__'
@@ -1323,6 +1333,7 @@ export interface FileRouteTypes {
     | '/$ownerName/$projectName/commits/$branch/'
     | '/$ownerName/$projectName/issue/$issueNumber/'
     | '/$ownerName/$projectName/milestone/$milestoneId/'
+    | '/$ownerName/$projectName/post/$postNumber/'
     | '/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes/$commitId'
   fileRoutesById: FileRoutesById
 }
@@ -1999,6 +2010,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerNameProjectNameCodeBranchRouteImport
       parentRoute: typeof OwnerNameProjectNameCodeRoute
     }
+    '/$ownerName/$projectName/post/$postNumber/': {
+      id: '/$ownerName/$projectName/post/$postNumber/'
+      path: '/'
+      fullPath: '/$ownerName/$projectName/post/$postNumber/'
+      preLoaderRoute: typeof OwnerNameProjectNamePostPostNumberIndexRouteImport
+      parentRoute: typeof OwnerNameProjectNamePostPostNumberRoute
+    }
     '/$ownerName/$projectName/milestone/$milestoneId/': {
       id: '/$ownerName/$projectName/milestone/$milestoneId/'
       path: '/'
@@ -2230,12 +2248,15 @@ const OwnerNameProjectNameMilestoneMilestoneIdRouteWithChildren =
 
 interface OwnerNameProjectNamePostPostNumberRouteChildren {
   OwnerNameProjectNamePostPostNumberEditformRoute: typeof OwnerNameProjectNamePostPostNumberEditformRoute
+  OwnerNameProjectNamePostPostNumberIndexRoute: typeof OwnerNameProjectNamePostPostNumberIndexRoute
 }
 
 const OwnerNameProjectNamePostPostNumberRouteChildren: OwnerNameProjectNamePostPostNumberRouteChildren =
   {
     OwnerNameProjectNamePostPostNumberEditformRoute:
       OwnerNameProjectNamePostPostNumberEditformRoute,
+    OwnerNameProjectNamePostPostNumberIndexRoute:
+      OwnerNameProjectNamePostPostNumberIndexRoute,
   }
 
 const OwnerNameProjectNamePostPostNumberRouteWithChildren =
