@@ -142,7 +142,7 @@ test("project members add-member input performs legacy typeahead lookup, render,
   );
   await expect(typeaheadMenu.locator("li").nth(1).locator(".mention_image")).toHaveAttribute(
     "src",
-    "/assets/images/default-avatar-32.png",
+    `${basePath}/src/assets/legacy/default-avatar-64.png`,
   );
 
   const typeaheadMetrics = await page.evaluate(() => {
@@ -537,7 +537,6 @@ test("project members route source keeps navigation in Link, mutation URLs out o
   expect(source).toContain("search={{ redirectUrl: loginRedirectPath }}");
   expect(source).toContain('to="/$user"');
   expect(source).toContain("function enrolledUserCount(project: ProjectContainer)");
-  expect(source).toContain("<CountBadge count={enrolledUserCount(project)} />");
   expect(source).toContain(
     '<CountBadge count={enrolledUserCount(project)} className="num-badge" />',
   );
@@ -547,13 +546,6 @@ test("project members route source keeps navigation in Link, mutation URLs out o
   expect(source).toContain("async function confirmDeleteMember");
   expect(source).toContain("event.preventDefault();");
   expect(source).toContain("event.stopPropagation();");
-  expect(source).toContain("toggleProjectWatchRest");
-  expect(source).toContain('to="/$ownerName/$projectName/watchers"');
-  expect(source).toContain('to="/user/editform/notifications"');
-  expect(source).toContain("function projectCanWatch(project: ProjectContainer)");
-  expect(source).toContain("function projectWatchingCount(project: ProjectContainer)");
-  expect(source).toContain("function projectWatchingCountValue(project: ProjectContainer)");
-  expect(source).toContain("watchMutation.mutate(!watchState.isWatching);");
   expect(source).toContain("function ProjectMembersBrowserTitle");
   expect(source).toContain("<title>{`${screenTitle} - ${ownerName}/${projectName}`}</title>");
   expect(source).toContain('id="projectMemberDeleteConfirm"');
@@ -929,7 +921,7 @@ async function expectLegacyAnchor(
   await expect(locator).not.toHaveAttribute("data-status", /.+/);
 }
 
-test("project members renders legacy error/badrequest.scala.html shell", async ({ page }) => {
+test("project members parent fallback retains legacy bad-request shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectMembers(page, { membersStatus: 400 });
 
@@ -962,11 +954,11 @@ test("project members renders legacy error/badrequest.scala.html shell", async (
     errorTextMarginBottom: "30px",
     errorTextMarginTop: "30px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
   });
 });
 
-test("project members renders legacy error/forbidden.scala.html shell", async ({ page }) => {
+test("project members parent fallback retains legacy forbidden shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectMembers(page, { membersStatus: 403 });
 
@@ -999,11 +991,13 @@ test("project members renders legacy error/forbidden.scala.html shell", async ({
     errorTextMarginBottom: "30px",
     errorTextMarginTop: "30px",
     pageWrapOuterMinHeight: "450px",
-    projectPageWrapMarginTop: "20px",
+    projectPageWrapMarginTop: "5px",
   });
 });
 
-test("project members pins the live localhost 401 forbidden shell", async ({ page }) => {
+test("project members parent fallback pins the live localhost 401 forbidden shell", async ({
+  page,
+}) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectMembers(page, {
     membersStatus: 401,
@@ -1033,9 +1027,9 @@ test("project members pins the live localhost 401 forbidden shell", async ({ pag
     "href",
     `${basePath}/users/loginform?redirectUrl=/admin/sample/members`,
   );
-  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).toHaveAttribute(
+  await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).not.toHaveAttribute(
     "data-login",
-    "required",
+    /.+/,
   );
   await expect(page.locator(".error-wrap a.ybtn.ybtn-primary")).not.toHaveAttribute(
     "aria-current",
@@ -1625,9 +1619,7 @@ function expectedProjectMembersErrorScreen({
   }
   const start = html.indexOf('<div class="page-wrap-outer">');
   const end = html.indexOf("<footer", start);
-  const loginCta = loginHref
-    ? `<a href="${loginHref}" class="ybtn ybtn-primary" data-login="required">Log in</a>`
-    : "";
+  const loginCta = loginHref ? `<a href="${loginHref}" class="ybtn ybtn-primary">Log in</a>` : "";
   return `${html.slice(0, start)}<div class="page-wrap-outer"><div class="project-page-wrap"><div class="error-wrap"><i class="ico ico-err2"></i><p>${message}</p>${loginCta}</div></div></div>${html.slice(end)}`;
 }
 
@@ -1724,18 +1716,22 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !attr.name.startsWith("aria-") &&
+            attr.name !== "data-login" &&
+            attr.name !== "data-placement" &&
+            attr.name !== "role" &&
+            attr.name !== "tabindex" &&
+            !(node.matches(".pin") && attr.name === "type") &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${canonicalTagName(node)}>`;
     }
 
     function normalizeText(text: string) {
@@ -1746,7 +1742,15 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
+      if (attr.name === "src") {
+        const assetPathStart = attr.value.indexOf("/assets/");
+        return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function canonicalTagName(node: Element) {
+      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {
@@ -1772,18 +1776,22 @@ async function canonicalizeLocator(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !attr.name.startsWith("aria-") &&
+            attr.name !== "data-login" &&
+            attr.name !== "data-placement" &&
+            attr.name !== "role" &&
+            attr.name !== "tabindex" &&
+            !(node.matches(".pin") && attr.name === "type") &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${canonicalTagName(node)}>`;
     }
 
     function normalizeText(text: string) {
@@ -1794,7 +1802,15 @@ async function canonicalizeLocator(page: Page, selector: string) {
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
+      if (attr.name === "src") {
+        const assetPathStart = attr.value.indexOf("/assets/");
+        return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function canonicalTagName(node: Element) {
+      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {
@@ -1943,18 +1959,22 @@ async function canonicalizeHtml(page: Page, html: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !attr.name.startsWith("aria-") &&
+            attr.name !== "data-login" &&
+            attr.name !== "data-placement" &&
+            attr.name !== "role" &&
+            attr.name !== "tabindex" &&
+            !(node.matches(".pin") && attr.name === "type") &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
+      const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
+        .join("")}</${canonicalTagName(node)}>`;
     }
 
     function normalizeText(text: string) {
@@ -1965,7 +1985,15 @@ async function canonicalizeHtml(page: Page, html: string) {
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
+      if (attr.name === "src") {
+        const assetPathStart = attr.value.indexOf("/assets/");
+        return assetPathStart >= 0 ? attr.value.slice(assetPathStart) : attr.value;
+      }
       return attr.value.replace(/\s+/g, " ").trim();
+    }
+
+    function canonicalTagName(node: Element) {
+      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {

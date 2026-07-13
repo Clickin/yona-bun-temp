@@ -216,6 +216,32 @@ test("project settings to members keeps the legacy project shell DOM nodes mount
   await expectProjectMembersGeometry(page);
 });
 
+test("project members to webhooks keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".members.project")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectMembersGeometry(page);
+
+  await page.locator("#subMenuWebhook a[href$='/admin/sample/webhooks']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/webhooks(?:\?|$)/);
+  await expect(page.locator("#subMenuWebhook")).toHaveClass(/active/);
+  await expect(page.locator("#formNewWebhook")).toBeVisible();
+  await expect(page.locator("#webhooksList .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectWebhooksGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#formNewWebhook")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectWebhooksGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -601,6 +627,52 @@ async function expectProjectMembersGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectWebhooksGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap.webhook-editor-wrap");
+    const tabs = rect(".project-page-wrap .nav-tabs");
+    const form = rect("#formNewWebhook");
+    const list = rect("#webhooksList");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formTop: form.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      listBottom: list.bottom,
+      listTop: list.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.listTop).toBeGreaterThanOrEqual(metrics.formBottom);
+  expect(metrics.listBottom).toBeGreaterThan(metrics.listTop);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -781,6 +853,8 @@ async function mockProjectHomeAndIssues(page: Page) {
         ],
         viewerCanUpdate: true,
       });
+    if (path.endsWith("/owners/admin/projects/sample/webhooks"))
+      return json({ viewerCanUpdate: true, webhooks: [] });
     return json({});
   });
 }
