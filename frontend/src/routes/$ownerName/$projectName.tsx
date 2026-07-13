@@ -92,6 +92,7 @@ function ProjectHomeRoute() {
   const milestonesPath = `${homePath}/milestones`;
   const postsPath = `${homePath}/posts`;
   const pullRequestsPath = `${homePath}/pullRequests`;
+  const reviewsPath = `${homePath}/reviews`;
   const active =
     pathname === homePath
       ? "home"
@@ -105,7 +106,9 @@ function ProjectHomeRoute() {
               ? "board"
               : pathname === pullRequestsPath
                 ? "pullRequest"
-                : null;
+                : pathname === reviewsPath
+                  ? "review"
+                  : null;
 
   if (!active) {
     return <Outlet />;
@@ -124,7 +127,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -175,7 +178,7 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -196,7 +199,9 @@ function ProjectLayoutScreen({
                 ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
                 : active === "pullRequest"
                   ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                  : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                  : active === "review"
+                    ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                    : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />

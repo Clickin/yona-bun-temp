@@ -3,23 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { changePasswordRest, readWorkspaceOverviewRest } from "../../../api/workspace";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
-
-const legacyTabLinkActiveProps = {
-  "aria-current": undefined,
-  className: undefined,
-  "data-status": undefined,
-};
-const legacyTabLinkActiveOptions = {
-  exact: true,
-  explicitUndefined: true,
-  includeHash: true,
-  includeSearch: true,
-} as const;
-const legacyTabLinkInactiveSearch = { __legacyTabActiveMarker: undefined };
 
 export const Route = createFileRoute("/user/editform/password")({
   component: UserPasswordSettingsRoute,
@@ -27,16 +12,7 @@ export const Route = createFileRoute("/user/editform/password")({
 
 function UserPasswordSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <UserPasswordSettingsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <UserPasswordSettingsScreen runtimeConfig={runtimeConfig} />;
 }
 
 function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -78,99 +54,83 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
 
   return (
     <>
-      <UserPasswordSettingsTitle loginId={loginId} />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t("userinfo.accountSetting")}</h3>
-        </div>
-      </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
-          <EditTabMenu active="password" />
+      <form
+        id="frmPassword"
+        method="post"
+        action={prefixBasePath(runtimeConfig.basePath, "/user/resetPassword")}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const formData = new FormData(event.currentTarget);
+          const nextErrors = validatePasswordForm(formData, t);
+          setFieldErrors(nextErrors);
+          if (Object.keys(nextErrors).length > 0) return;
 
-          <form
-            id="frmPassword"
-            method="post"
-            action={prefixBasePath(runtimeConfig.basePath, "/user/resetPassword")}
-            onSubmit={(event) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget);
-              const nextErrors = validatePasswordForm(formData, t);
-              setFieldErrors(nextErrors);
-              if (Object.keys(nextErrors).length > 0) return;
-
-              passwordMutation.mutate({
-                loginId: String(formData.get("loginId") ?? ""),
-                oldPassword: String(formData.get("oldPassword") ?? ""),
-                password: String(formData.get("password") ?? ""),
-                retypedPassword: String(formData.get("retypedPassword") ?? ""),
-              });
-            }}
-          >
-            <input type="hidden" name="loginId" value={loginId} />
-            <dl>
-              <dt>{t("user.currentPassword")}</dt>
-              <dd className="mt10">
-                <input
-                  type="password"
-                  id="oldPassword"
-                  name="oldPassword"
-                  defaultValue=""
-                  autoComplete="off"
-                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
-                />
-                <FieldPopover message={fieldErrors.oldPassword} />
-              </dd>
-              <dt>{t("user.newPassword")}</dt>
-              <dd className="mt10">
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  defaultValue=""
-                  autoComplete="off"
-                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
-                />
-                <FieldPopover message={fieldErrors.password} />
-              </dd>
-              <dt>{t("validation.retypePassword")}</dt>
-              <dd className="mt10">
-                <input
-                  type="password"
-                  id="retypedPassword"
-                  name="retypedPassword"
-                  defaultValue=""
-                  autoComplete="off"
-                  onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
-                />
-                <FieldPopover message={fieldErrors.retypedPassword} />
-              </dd>
-              <dd>
-                <button type="submit" className="ybtn ybtn-success">
-                  {t("userinfo.changePassword")}
-                </button>
-              </dd>
-            </dl>
-          </form>
-          <hr />
-          <div className="mt10">
-            <dl>
-              <dt>{t("site.resetPasswordEmail.desc")}</dt>
-              <dd className="mt10">
-                <Link to="/lostPassword" className="ybtn ybtn-fail">
-                  {t("site.resetPasswordEmail.title")}
-                </Link>
-              </dd>
-            </dl>
-          </div>
-        </div>
+          passwordMutation.mutate({
+            loginId: String(formData.get("loginId") ?? ""),
+            oldPassword: String(formData.get("oldPassword") ?? ""),
+            password: String(formData.get("password") ?? ""),
+            retypedPassword: String(formData.get("retypedPassword") ?? ""),
+          });
+        }}
+      >
+        <input type="hidden" name="loginId" value={loginId} />
+        <dl>
+          <dt>{t("user.currentPassword")}</dt>
+          <dd className="mt10">
+            <input
+              type="password"
+              id="oldPassword"
+              name="oldPassword"
+              defaultValue=""
+              autoComplete="off"
+              onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
+            />
+            <FieldPopover message={fieldErrors.oldPassword} />
+          </dd>
+          <dt>{t("user.newPassword")}</dt>
+          <dd className="mt10">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              defaultValue=""
+              autoComplete="off"
+              onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
+            />
+            <FieldPopover message={fieldErrors.password} />
+          </dd>
+          <dt>{t("validation.retypePassword")}</dt>
+          <dd className="mt10">
+            <input
+              type="password"
+              id="retypedPassword"
+              name="retypedPassword"
+              defaultValue=""
+              autoComplete="off"
+              onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
+            />
+            <FieldPopover message={fieldErrors.retypedPassword} />
+          </dd>
+          <dd>
+            <button type="submit" className="ybtn ybtn-success">
+              {t("userinfo.changePassword")}
+            </button>
+          </dd>
+        </dl>
+      </form>
+      <hr />
+      <div className="mt10">
+        <dl>
+          <dt>{t("site.resetPasswordEmail.desc")}</dt>
+          <dd className="mt10">
+            <Link to="/lostPassword" className="ybtn ybtn-fail">
+              {t("site.resetPasswordEmail.title")}
+            </Link>
+          </dd>
+        </dl>
       </div>
     </>
   );
-}
-
-function UserPasswordSettingsTitle({ loginId }: { loginId: string }) {
-  return loginId ? <title>{loginId}</title> : null;
 }
 
 function validatePasswordForm(
@@ -205,64 +165,5 @@ function FieldPopover({ message }: { message?: string }) {
       <div className="arrow"></div>
       <div className="popover-content">{message}</div>
     </div>
-  );
-}
-
-function EditTabMenu({ active }: { active: string }) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <ul className="nav nav-tabs mt20">
-      <li className={active === "profile" ? "active" : undefined}>
-        <Link
-          to="/user/editform"
-          search={legacyTabLinkInactiveSearch}
-          activeOptions={legacyTabLinkActiveOptions}
-          activeProps={legacyTabLinkActiveProps}
-        >
-          {t("userinfo.editProfile")}
-        </Link>
-      </li>
-      <li className={active === "password" ? "active" : undefined}>
-        <Link
-          to="/user/editform/password"
-          search={legacyTabLinkInactiveSearch}
-          activeOptions={legacyTabLinkActiveOptions}
-          activeProps={legacyTabLinkActiveProps}
-        >
-          {t("userinfo.changePassword")}
-        </Link>
-      </li>
-      <li className={active === "notifications" ? "active" : undefined}>
-        <Link
-          to="/user/editform/notifications"
-          search={legacyTabLinkInactiveSearch}
-          activeOptions={legacyTabLinkActiveOptions}
-          activeProps={legacyTabLinkActiveProps}
-        >
-          {t("userinfo.changeNotifications")}
-        </Link>
-      </li>
-      <li className={active === "emails" ? "active" : undefined}>
-        <Link
-          to="/user/editform/emails"
-          search={legacyTabLinkInactiveSearch}
-          activeOptions={legacyTabLinkActiveOptions}
-          activeProps={legacyTabLinkActiveProps}
-        >
-          {t("userinfo.changeEmails")}
-        </Link>
-      </li>
-      <li className={active === "token" ? "active" : undefined}>
-        <Link
-          to="/user/editform/token"
-          search={legacyTabLinkInactiveSearch}
-          activeOptions={legacyTabLinkActiveOptions}
-          activeProps={legacyTabLinkActiveProps}
-        >
-          {t("userinfo.token")}
-        </Link>
-      </li>
-    </ul>
   );
 }

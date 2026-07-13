@@ -25,6 +25,31 @@ test("user profile to email settings keeps the legacy user-settings shell DOM no
   await expectUserSettingsGeometry(page);
 });
 
+test("user email to password settings keeps the legacy user-settings shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserSettings(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/user/editform/emails`);
+  await expect(page.locator("form.form-inline.inner-bubble")).toBeVisible();
+  await captureUserSettingsShellNodes(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.locator('.page-wrap > .nav-tabs a[href$="/user/editform/password"]').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/password`);
+  await expect(page.locator("#frmPassword")).toBeVisible();
+  await expect(page.locator(".page-wrap > .nav-tabs > li.active")).toHaveText("Change password");
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#frmPassword")).toBeVisible();
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+});
+
 async function mockUserSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

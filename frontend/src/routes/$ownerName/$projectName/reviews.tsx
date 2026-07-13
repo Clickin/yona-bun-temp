@@ -9,12 +9,9 @@ import {
 } from "../../../api/pull-requests";
 import type { ProjectContainer } from "../../../api/types";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 import { SitePagination } from "../../sites/-pagination";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type ProjectReviewsRouteSearch = {
   authorId?: number;
@@ -73,14 +70,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/reviews")({
 
 function ProjectReviewsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectReviewsScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectReviewsScreen runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -95,7 +85,6 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     participantId: routeSearch.participantId ?? 0,
     state: routeSearch.state ?? "open",
   };
-  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -117,29 +106,14 @@ function ProjectReviewsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
   return (
     <>
-      <title>{`${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu
-          active="review"
-          basePath={runtimeConfig.basePath}
-          project={projectQuery.data}
-        />
-        <ProjectReviewsBody
-          project={projectQuery.data}
-          reviews={reviewsQuery.data}
-          runtimeConfig={runtimeConfig}
-          search={search}
-        />
-      </SiteLayoutShell>
+      <ProjectReviewsBody
+        project={projectQuery.data}
+        reviews={reviewsQuery.data}
+        runtimeConfig={runtimeConfig}
+        search={search}
+      />
     </>
   );
 }
@@ -483,16 +457,4 @@ function effectiveOrderBy(search: ProjectReviewsSearch) {
 
 function effectiveOrderDir(search: ProjectReviewsSearch) {
   return search.orderDir || "desc";
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
-}
-
-function booleanField(value: unknown) {
-  return typeof value === "boolean" ? value : Boolean(value);
 }
