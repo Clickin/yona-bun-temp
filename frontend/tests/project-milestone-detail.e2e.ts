@@ -250,24 +250,15 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   );
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
-  expect(
-    await page.locator('[data-toggle="search-scope"]').evaluateAll((nodes) =>
-      nodes.map((node) => ({
-        action: node.getAttribute("data-action"),
-        text: node.textContent?.replace(/\s+/g, " ").trim(),
-      })),
-    ),
-  ).toEqual([
-    { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
-    { action: `${basePath}/organizations/weblabs/search`, text: "This Group" },
-    { action: `${basePath}/search`, text: "All Projects" },
-  ]);
+  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
+  await expect(
+    page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
+  ).toHaveCount(0);
 
   const stableUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page
-    .locator('[data-toggle="search-scope"][data-action$="/organizations/weblabs/search"]')
-    .click();
+  await searchScopeButtons.filter({ hasText: "This Group" }).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -276,13 +267,13 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   await expect(page).toHaveURL(stableUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('[data-toggle="search-scope"][data-action$="/search"]').last().click();
+  await searchScopeButtons.filter({ hasText: "All Projects" }).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(stableUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('[data-toggle="search-scope"][data-action$="/weblabs/portal/search"]').click();
+  await searchScopeButtons.filter({ hasText: "This Project" }).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -310,6 +301,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const stateRequests: unknown[] = [];
   const deleteRequests: string[] = [];
+  await page.clock.setFixedTime(new Date("2026-05-31T00:00:00Z"));
   await page.addInitScript(() => {
     document.addEventListener("click", (event) => {
       const target = event.target;
@@ -519,7 +511,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(page.locator('#assignee li[data-value="2"] img')).toHaveAttribute(
     "src",
-    "/assets/images/dev-avatar.png",
+    `${basePath}/assets/images/dev-avatar.png`,
   );
   await expect(page.locator("#milestone[data-name='milestone.id'] .d-label")).toHaveText(
     "Update milestone",
@@ -768,7 +760,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
   );
   await expect(page.locator("#issue-item-41 .avatar-wrap.assinee img")).toHaveAttribute(
     "src",
-    "/assets/images/dev-avatar.png",
+    `${basePath}/assets/images/dev-avatar.png`,
   );
   await expect(page.locator("#issue-item-41 .mr20.mt10.pull-right")).toHaveAttribute(
     "title",
@@ -800,7 +792,7 @@ test("project milestone detail open state matches legacy milestone/view.scala.ht
     descMarginTop: "15px",
     descPaddingLeft: "15px",
     descPaddingTop: "10px",
-    filterMinHeight: "30px",
+    filterHeight: "30px",
     markdownInsideDesc: true,
     markdownScriptBootstrapCount: 0,
     progressBackgroundColor: "rgb(182, 218, 84)",
@@ -991,12 +983,13 @@ test("project milestone detail 404 milestone API preserves the legacy project-sc
   ).toHaveAttribute("target", "_blank");
   await expect(page.locator('.gnb-nav form[action$="/admin/sample/search"]')).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator('[data-toggle="search-scope"]')).toHaveCount(2);
-  expect(
-    await page
-      .locator('[data-toggle="search-scope"]')
-      .evaluateAll((nodes) => nodes.map((node) => node.textContent?.replace(/\s+/g, " ").trim())),
-  ).toEqual(["This Project", "All Projects"]);
+  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
+    "This Project",
+    "All Projects",
+  ]);
+  await expect(
+    page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
+  ).toHaveCount(0);
   expect(
     await page.locator(".project-menu-gruop > li").evaluateAll((items) =>
       items.map((item) => ({
@@ -1056,7 +1049,7 @@ test("project milestone detail mass-update assignee avatar falls back for empty 
   await page.click("#assignee > button");
   await expect(page.locator('#assignee li[data-value="2"] img')).toHaveAttribute(
     "src",
-    "/assets/images/default-avatar-32.png",
+    /\/src\/assets\/legacy\/default-avatar-64\.png$/u,
   );
   await expect(page.locator('#assignee li[data-value="2"] img[src=""]')).toHaveCount(0);
   expect(
@@ -1560,11 +1553,7 @@ test("project milestone detail E2E selectors stay anchored to legacy Scala HTML"
 });
 
 async function expectMilestoneDetailAssets(page: Page, basePath: string) {
-  const markdownLink = page.locator(
-    `link[href="${basePath}/assets/javascripts/lib/highlight/styles/default.css"]`,
-  );
-  await expect(markdownLink).toHaveAttribute("rel", "stylesheet");
-  await expect(markdownLink).toHaveAttribute("type", "text/css");
+  await expect(page.locator('link[href*="highlight/styles/default.css"]')).toHaveCount(0);
 
   const labelLink = page.locator(`link[href="${basePath}/admin/sample/issue/labels.css"]`);
   await expect(labelLink).toHaveAttribute("rel", "stylesheet");
@@ -2054,7 +2043,7 @@ async function milestoneDetailMetrics(page: Page) {
       descMarginTop: descStyle.marginTop,
       descPaddingLeft: descStyle.paddingLeft,
       descPaddingTop: descStyle.paddingTop,
-      filterMinHeight: getComputedStyle(filter).minHeight,
+      filterHeight: getComputedStyle(filter).height,
       markdownInsideDesc:
         markdownBox.top >= descBox.top &&
         markdownBox.bottom <= descBox.bottom &&
@@ -2137,7 +2126,7 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
 
     function visit(node: Node, currentRoot: Element): string {
       if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+        return normalizeText(node.textContent ?? "", node.parentElement);
       }
       if (!(node instanceof Element)) {
         return "";
@@ -2158,11 +2147,18 @@ async function canonicalizeMilestoneRouteRoots(page: Page) {
         .join("")}</${node.tagName.toLowerCase()}>`;
     }
 
-    function normalizeText(text: string) {
+    function normalizeText(text: string, parent: Element | null) {
+      const dateTitle = parent?.matches(".infos-item[title]") ? parent.getAttribute("title") : null;
+      if (dateTitle && /^\d{4}-\d{2}-\d{2}$/u.test(dateTitle)) {
+        return dateTitle;
+      }
       return text.replace(/\s+/g, " ").trim();
     }
 
     function normalizeAttr(element: Element, attr: Attr) {
+      if (attr.name === "src" && attr.value.includes("/assets/images/")) {
+        return attr.value.slice(attr.value.indexOf("/assets/images/"));
+      }
       return attr.name === "style" ? normalizeStyleAttr(element, attr.value) : attr.value;
     }
 

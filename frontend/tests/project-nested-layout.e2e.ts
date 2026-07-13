@@ -206,6 +206,36 @@ test("project branches to milestones keeps the legacy project shell DOM nodes mo
   await expectProjectMilestonesGeometry(page);
 });
 
+test("project milestones to milestone detail keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/milestones`);
+  await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/milestones$/, "/milestone/5")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5(?:\?|$)/);
+  await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestoneDetailGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".milesion-wrap h4 .title")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestoneDetailGeometry(page);
+});
+
 test("project milestones to posts keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1034,6 +1064,37 @@ async function expectProjectMilestonesGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectMilestoneDetailGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const title = rect(".milesion-wrap h4 .title");
+    const issues = rect("#issues");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      issuesBottom: issues.bottom,
+      issuesTop: issues.top,
+      menuBottom: menu.bottom,
+      titleBottom: title.bottom,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.issuesTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.issuesBottom).toBeGreaterThan(metrics.issuesTop);
+}
+
 async function expectProjectMilestoneCreateGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -1838,6 +1899,27 @@ async function mockProjectHomeAndIssues(
         viewerCanUpdate: true,
         viewerIsProjectMember: true,
         watchingCount: 2,
+      });
+    if (path.endsWith("/milestones/5"))
+      return json({
+        milestone: {
+          assignableUsers: [],
+          closedIssueCount: 0,
+          closedIssues: [],
+          completionPercent: 0,
+          contentsMarkdown: "Release scope",
+          dueDateLabel: "2026-07-31",
+          id: 5,
+          openIssueCount: 0,
+          openIssues: [],
+          openMilestones: [{ id: 5, title: "v1.0" }],
+          projectLabels: [],
+          state: "open",
+          title: "v1.0",
+          untilLabel: "24 days left",
+          viewerCanDelete: true,
+          viewerCanUpdate: true,
+        },
       });
     if (path.endsWith("/milestones")) return json({ milestones: [] });
     if (path.endsWith("/projects/admin/sample/posts/form-options")) return json({ labels: [] });

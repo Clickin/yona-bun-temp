@@ -15,6 +15,7 @@ test.beforeEach(async ({ page }) => {
 test("SVN milestone detail preserves the canonical desktop hierarchy and interactions", async ({
   page,
 }) => {
+  await page.clock.setFixedTime(new Date("2026-07-13T00:00:00+09:00"));
   const stateRequests: unknown[] = [];
   await mockSvnMilestoneDetail(page, stateRequests);
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
