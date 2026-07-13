@@ -1324,6 +1324,146 @@ const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavFavoriteProjectRowStyles = stylex.create({
+  row: {
+    cursor: "pointer",
+    lineHeight: "normal",
+  },
+  list: {
+    alignItems: "center",
+    backgroundColor: {
+      default: null,
+      ":hover": globalColors.sidenavOrganizationHoverSurface,
+    },
+    cursor: {
+      default: null,
+      ":hover": "pointer",
+    },
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "4px 0",
+    position: "relative",
+  },
+  link: {
+    alignItems: "center",
+    backgroundColor: globalColors.transparent,
+    color: globalColors.sidenavText,
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontSize: "14px",
+    fontWeight: 400,
+    height: "18px",
+    justifyContent: "space-between",
+    lineHeight: "16px",
+    marginRight: "29px",
+    overflow: "hidden",
+    textDecoration: {
+      default: "none",
+      ":focus": "none",
+      ":hover": "none",
+    },
+  },
+  logo: {
+    flexShrink: 0,
+    marginLeft: "2px",
+    overflow: "hidden",
+    paddingLeft: "22px",
+    paddingTop: "3px",
+    textAlign: "center",
+    width: "26px",
+  },
+  avatar: {
+    color: globalColors.sidenavText,
+  },
+  image: {
+    borderRadius: "3px",
+    height: "auto",
+    marginRight: 0,
+    verticalAlign: "text-top",
+    width: "16px",
+  },
+  nameOwner: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: "1px 0",
+  },
+  name: {
+    fontFamily: "roboto, sans-serif",
+    maxWidth: "150px",
+    minWidth: "50px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    WebkitFontSmoothing: "antialiased",
+    whiteSpace: "nowrap",
+  },
+  popover: {
+    backgroundClip: "padding-box",
+    backgroundColor: globalColors.sidenavPopoverSurface,
+    borderColor: globalColors.sidenavPopoverBorder,
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: globalColors.sidenavPopoverShadow,
+    color: globalColors.textOnAccent,
+    display: "block",
+    fontSize: "13px",
+    left: "100%",
+    lineHeight: 1,
+    marginLeft: "10px",
+    maxWidth: "276px",
+    minWidth: "200px",
+    overflowWrap: "break-word",
+    padding: "1px",
+    position: "absolute",
+    textAlign: "left",
+    top: "50%",
+    transform: "translateY(-50%)",
+    whiteSpace: "normal",
+    zIndex: 1010,
+  },
+  popoverArrow: {
+    borderColor: globalColors.transparent,
+    borderLeftWidth: 0,
+    borderRightColor: globalColors.sidenavPopoverArrowBorder,
+    borderStyle: "solid",
+    borderWidth: "11px",
+    display: "block",
+    height: 0,
+    left: "-11px",
+    marginTop: "-11px",
+    position: "absolute",
+    top: "50%",
+    width: 0,
+    "::after": {
+      borderColor: globalColors.transparent,
+      borderLeftWidth: 0,
+      borderRightColor: globalColors.sidenavPopoverSurface,
+      borderStyle: "solid",
+      borderWidth: "10px",
+      bottom: "-10px",
+      content: '""',
+      display: "block",
+      height: 0,
+      left: "1px",
+      position: "absolute",
+      width: 0,
+    },
+  },
+  popoverContent: {
+    lineHeight: "120%",
+    padding: "9px 10px",
+  },
+});
+
 const authenticatedSidenavTabPanelStyles = stylex.create({
   panel: {
     borderRadius: "0 0 4px 4px",
@@ -2325,6 +2465,7 @@ function SidebarOrganizationList({
               {visibleOwnProjects.map((project) => (
                 <SidebarAllProjectItem
                   favored={sidebarIsFavorited(project)}
+                  isAuthenticatedSidenav={isAuthenticatedSidenav}
                   key={projectKey(project)}
                   project={project}
                   runtimeConfig={runtimeConfig}
@@ -2474,6 +2615,7 @@ function SidebarOrganizationItem({
         {visibleProjects.map((project) => (
           <SidebarAllProjectItem
             favored={sidebarIsFavorited(project)}
+            isAuthenticatedSidenav={isAuthenticatedSidenav}
             key={projectKey(project)}
             project={project}
             runtimeConfig={runtimeConfig}
@@ -2487,11 +2629,13 @@ function SidebarOrganizationItem({
 
 function SidebarAllProjectItem({
   favored,
+  isAuthenticatedSidenav = false,
   project,
   runtimeConfig,
   showNonFavorite,
 }: {
   favored: boolean;
+  isAuthenticatedSidenav?: boolean;
   project: YoramRecord;
   runtimeConfig: RuntimeConfig;
   showNonFavorite: boolean;
@@ -2503,24 +2647,71 @@ function SidebarAllProjectItem({
   const isPrivate = sidebarProjectIsPrivate(project);
 
   return (
-    <li className={`user-li${favored ? " show-always" : showNonFavorite ? "" : " hide"}`}>
-      <SidebarHoverPopover content={overview}>
+    <li
+      className={`user-li${favored ? " show-always" : showNonFavorite ? "" : " hide"} ${
+        stylex.props(isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.row)
+          .className
+      }`.trimEnd()}
+      data-stylex-owner={
+        isAuthenticatedSidenav ? "authenticated-sidenav-favorite-project-rows" : undefined
+      }
+    >
+      <SidebarHoverPopover
+        content={overview}
+        isAuthenticatedFavoriteProjectRow={isAuthenticatedSidenav}
+      >
         <Link
-          className="project-item project-item-container sidebar-project-link sidebar-row-link"
+          className={`project-item project-item-container sidebar-project-link sidebar-row-link ${
+            stylex.props(
+              isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.link,
+            ).className
+          }`.trimEnd()}
           params={{ ownerName, projectName }}
           to="/$ownerName/$projectName"
         >
-          <div className="flex-item site-logo all-project-names">
-            <i className="project-avatar">
+          <div
+            className={`flex-item site-logo all-project-names ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.logo,
+              ).className
+            }`.trimEnd()}
+          >
+            <i
+              className={`project-avatar ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.avatar,
+                ).className
+              }`.trimEnd()}
+            >
               {logoUrl ? (
-                <img className="logo" src={logoUrl} alt="" />
+                <img
+                  alt=""
+                  className={`logo ${
+                    stylex.props(
+                      isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.image,
+                    ).className
+                  }`.trimEnd()}
+                  src={logoUrl}
+                />
               ) : (
                 <span className="dummy-25px"> </span>
               )}
             </i>
           </div>
-          <div className="projectName-owner flex-item">
-            <div className="project-name flex-item">
+          <div
+            className={`projectName-owner flex-item ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.nameOwner,
+              ).className
+            }`.trimEnd()}
+          >
+            <div
+              className={`project-name flex-item ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavFavoriteProjectRowStyles.name,
+                ).className
+              }`.trimEnd()}
+            >
               {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
             </div>
           </div>
@@ -2813,9 +3004,11 @@ function SidebarRecentIssueItem({ issue }: { issue: YoramRecord }) {
 function SidebarHoverPopover({
   children,
   content,
+  isAuthenticatedFavoriteProjectRow = false,
 }: {
   children: React.ReactNode;
   content: string;
+  isAuthenticatedFavoriteProjectRow?: boolean;
 }) {
   const [isVisible, setIsVisible] = React.useState(false);
   const showPopover = () => setIsVisible(Boolean(content));
@@ -2823,16 +3016,50 @@ function SidebarHoverPopover({
 
   return (
     <div
-      className="project-list project-flex-container"
+      className={`project-list project-flex-container ${
+        stylex.props(
+          isAuthenticatedFavoriteProjectRow && authenticatedSidenavFavoriteProjectRowStyles.list,
+        ).className
+      }`.trimEnd()}
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
-      style={isVisible ? { position: "relative" } : undefined}
+      style={isVisible && !isAuthenticatedFavoriteProjectRow ? { position: "relative" } : undefined}
     >
       {children}
       {isVisible ? (
-        <div className="popover right" role="tooltip" style={HOME_SIDEBAR_POPOVER_STYLE}>
-          <div className="arrow" />
-          <div className="popover-content">{content}</div>
+        <div
+          className={`popover right ${
+            stylex.props(
+              isAuthenticatedFavoriteProjectRow &&
+                authenticatedSidenavFavoriteProjectRowStyles.popover,
+            ).className
+          }`.trimEnd()}
+          data-stylex-owner={
+            isAuthenticatedFavoriteProjectRow
+              ? "authenticated-sidenav-favorite-project-popover"
+              : undefined
+          }
+          role="tooltip"
+          style={isAuthenticatedFavoriteProjectRow ? undefined : HOME_SIDEBAR_POPOVER_STYLE}
+        >
+          <div
+            className={`arrow ${
+              stylex.props(
+                isAuthenticatedFavoriteProjectRow &&
+                  authenticatedSidenavFavoriteProjectRowStyles.popoverArrow,
+              ).className
+            }`.trimEnd()}
+          />
+          <div
+            className={`popover-content ${
+              stylex.props(
+                isAuthenticatedFavoriteProjectRow &&
+                  authenticatedSidenavFavoriteProjectRowStyles.popoverContent,
+              ).className
+            }`.trimEnd()}
+          >
+            {content}
+          </div>
         </div>
       ) : null}
     </div>

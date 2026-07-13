@@ -31,6 +31,14 @@ export const globalColors = stylex.defineVars({
   sidenavOrganizationHoverSurface: "#f1f1f1",
   // _usermenu.less: .user-project-list .project-name.org-name color
   sidenavOrganizationName: "#00bcd4",
+  // _usermenu.less: .user-li .popover background-color
+  sidenavPopoverSurface: "#03a9f4",
+  // Bootstrap 2.3.1 .popover final border color
+  sidenavPopoverBorder: "rgba(0, 0, 0, 0.2)",
+  // Bootstrap 2.3.1 .popover.right .arrow final border color
+  sidenavPopoverArrowBorder: "rgba(0, 0, 0, 0.25)",
+  // _yobiUI.less: .popover final box-shadow
+  sidenavPopoverShadow: "-2px 2px 1px rgba(0, 0, 0, 0.1)",
   // _variables.less: @blue
   navigationAccent: "#5dbbe0",
   // _variables.less: @primary -> @orange

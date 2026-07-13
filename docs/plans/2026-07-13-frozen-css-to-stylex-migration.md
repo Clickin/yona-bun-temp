@@ -339,6 +339,18 @@ pseudo-elements, and the other panes remain frozen fallback and later owners. Fr
 captures at 1366×900 and 390×844 confirm the owned row's 25px height, internal geometry,
 typography, and exact computed colors. This is not Wave 1 completion.
 
+The tenth verified slice migrates the authenticated Favorite pane's nested project rows and
+their hover-visible right popover. StyleX owns the row/list flex geometry, hover surface, project
+link, logo/avatar, project name typography/truncation, and the complete React-generated popover
+surface, placement, border, shadow, arrow/`::after`, and content declarations. All concrete
+colors and the semantic shadow are supplied by the canonical global theme entry; no route-local
+raw color, dark value, or toggle was added. This scoped popover is part of the already
+React-owned project-row state and does not claim the shared Bootstrap popover primitive. Project
+star buttons/icons/state, direct Favorite projects, the Project tab, recent-issue rows/popovers,
+and scrollbar rules remain later owners. Fresh live legacy captures at 1366×900 and 390×844
+confirm the 26px project row, 18px item, right-side popover geometry, and final Bootstrap/Yobi
+cascade. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
