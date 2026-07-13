@@ -236,6 +236,35 @@ test("project code history branch route uses legacy anonymous author message", a
   ).toHaveText("Anonymous");
 });
 
+test("project file code history keeps legacy breadcrumbs and file-history table structure", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCodeHistory(page);
+
+  await page.goto(`${basePath}/admin/sample/commits/main/docs/README.md`);
+
+  await expect(page).toHaveTitle("Commit history - admin/sample");
+  await expect(page.locator(".project-menu-gruop > .code-menu .menu-name").first()).toHaveText(
+    "Code",
+  );
+  await expect(page.locator("#breadcrumbs.code-breadcrumb-wrap a")).toHaveText([
+    "sample",
+    "docs",
+    "README.md",
+  ]);
+  await expect(page.locator(".code-browse-wrap > .nav-tabs")).toHaveCount(0);
+  await expect(page.locator("#history .code-table.commits")).toHaveClass(/mt10/);
+  await expect(page.locator("#history .code-table.commits thead .browse")).toHaveCount(1);
+  await expect(page.locator("#history tbody tr .browse .ybtn").first()).toHaveText("Browse code");
+  await expect(page.locator("#history tbody tr .browse .ybtn").first()).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/code/abcdef1/docs/README.md`,
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+});
+
 test("project bare code history renders default branch on the legacy commits URL", async ({
   page,
 }) => {
@@ -849,11 +878,17 @@ async function mockProjectCodeHistory(
     const requestUrl = new URL(route.request().url());
     options.onHistoryRequest?.(requestUrl);
     const selectedBranch = requestUrl.searchParams.get("branch") || "main";
+    const path = requestUrl.searchParams.get("path") || "";
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         branches: [{ name: "main" }, { name: "feature/release" }],
-        breadcrumbs: [],
+        breadcrumbs: path
+          ? path.split("/").map((name, index, parts) => ({
+              name,
+              path: parts.slice(0, index + 1).join("/"),
+            }))
+          : [],
         commits: [
           {
             authorAvatarUrl: "/assets/images/default-avatar-32.png",
@@ -901,7 +936,7 @@ async function mockProjectCodeHistory(
         noHead: false,
         ownerName,
         page: 1,
-        path: "",
+        path,
         projectName,
         selectedBranch,
       }),

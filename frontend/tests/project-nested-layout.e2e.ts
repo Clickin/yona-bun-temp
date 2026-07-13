@@ -203,6 +203,44 @@ test("project issues to exact branch commit history keeps the legacy project she
   await expectProjectCommitHistoryGeometry(page);
 });
 
+test("project issues to file commit history keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      `${location.pathname.replace(/\/issues$/, "/commits/main/README.md")}`,
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/commits\/main\/README\.md(?:\?|$)/);
+  await expect(page.locator("#breadcrumbs.code-breadcrumb-wrap")).toBeVisible();
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectFileCommitHistoryGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#breadcrumbs.code-breadcrumb-wrap")).toBeVisible();
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectFileCommitHistoryGeometry(page);
+});
+
 test("project issues to exact code branch root keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1525,6 +1563,39 @@ async function expectProjectCommitHistoryGeometry(page: Page) {
   expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
   expect(metrics.historyTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
   expect(metrics.historyBottom).toBeGreaterThan(metrics.historyTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectFileCommitHistoryGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const breadcrumbs = rect("#breadcrumbs.code-breadcrumb-wrap");
+    const history = rect("#history");
+    const pageWrap = rect(".project-page-wrap");
+    return {
+      breadcrumbsBottom: breadcrumbs.bottom,
+      breadcrumbsTop: breadcrumbs.top,
+      historyBottom: history.bottom,
+      historyTop: history.top,
+      menuBottom: menu.bottom,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(metrics.breadcrumbsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.breadcrumbsBottom).toBeGreaterThan(metrics.breadcrumbsTop);
+  expect(metrics.historyTop).toBeGreaterThanOrEqual(metrics.breadcrumbsBottom);
+  expect(metrics.historyBottom).toBeGreaterThan(metrics.historyTop);
+  expect(metrics.pageLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.pageRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 

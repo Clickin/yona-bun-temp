@@ -37,9 +37,9 @@ function ProjectCodeFileHistoryRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const routeParams = Route.useParams();
   const { page } = Route.useSearch();
-
   return (
-    <ProjectCodeFileHistoryRouteFrame
+    <ProjectCodeFileHistoryRouteShell
+      nestedProjectShell
       page={page}
       routeParams={routeParams}
       runtimeConfig={runtimeConfig}
@@ -48,18 +48,32 @@ function ProjectCodeFileHistoryRoute() {
 }
 
 export function ProjectCodeFileHistoryRouteFrame({
+  nestedProjectShell = false,
   page,
   routeParams,
   runtimeConfig,
 }: {
+  nestedProjectShell?: boolean;
   page: number;
   routeParams: ProjectCodeFileHistoryRouteParams;
   runtimeConfig: RuntimeConfig;
 }) {
+  if (nestedProjectShell) {
+    return (
+      <ProjectCodeFileHistoryRouteShell
+        nestedProjectShell
+        page={page}
+        routeParams={routeParams}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectCodeFileHistoryRouteShell
+          nestedProjectShell={false}
           page={page}
           routeParams={routeParams}
           runtimeConfig={runtimeConfig}
@@ -70,10 +84,12 @@ export function ProjectCodeFileHistoryRouteFrame({
 }
 
 function ProjectCodeFileHistoryRouteShell({
+  nestedProjectShell,
   page,
   routeParams,
   runtimeConfig,
 }: {
+  nestedProjectShell: boolean;
   page: number;
   routeParams: ProjectCodeFileHistoryRouteParams;
   runtimeConfig: RuntimeConfig;
@@ -91,28 +107,39 @@ function ProjectCodeFileHistoryRouteShell({
     : { ownerName, projectName };
   const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
 
+  const screen = (
+    <ProjectCodeFileHistoryScreen
+      nestedProjectShell={nestedProjectShell}
+      page={page}
+      project={projectQuery.data}
+      routeParams={routeParams}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (nestedProjectShell) {
+    return screen;
+  }
+
   return (
     <SiteLayoutShell
       projectSearchScope={projectSearchScope}
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
     >
-      <ProjectCodeFileHistoryScreen
-        page={page}
-        project={projectQuery.data}
-        routeParams={routeParams}
-        runtimeConfig={runtimeConfig}
-      />
+      {screen}
     </SiteLayoutShell>
   );
 }
 
 function ProjectCodeFileHistoryScreen({
+  nestedProjectShell,
   page,
   project,
   routeParams,
   runtimeConfig,
 }: {
+  nestedProjectShell: boolean;
   page: number;
   project: ProjectContainer | undefined;
   routeParams: ProjectCodeFileHistoryRouteParams;
@@ -135,8 +162,12 @@ function ProjectCodeFileHistoryScreen({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+      {nestedProjectShell ? null : (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      )}
       <ProjectCodeFileHistoryBody history={historyQuery.data} routeParams={routeParams} />
     </>
   );

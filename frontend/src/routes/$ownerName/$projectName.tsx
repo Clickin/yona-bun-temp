@@ -134,6 +134,7 @@ function ProjectHomeRoute() {
   const codeBranch = exactProjectCodeBranch(pathname, homePath);
   const codeFilePath = exactProjectCodeFilePath(pathname, homePath);
   const commitsBranch = exactProjectCommitsBranch(pathname, homePath);
+  const commitsFilePath = exactProjectCommitsFilePath(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -150,7 +151,7 @@ function ProjectHomeRoute() {
             ? "code"
             : pathname === commitsPath
               ? "codeHistory"
-              : commitsBranch !== null
+              : commitsBranch !== null || commitsFilePath !== null
                 ? "codeHistory"
                 : pathname === branchesPath
                   ? "code"
@@ -850,6 +851,13 @@ function exactProjectCodeFilePath(pathname: string, homePath: string) {
 function exactProjectCommitsBranch(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commits/[^/]+/?$`,
+  ).exec(pathname);
+  return match ? match[0] : null;
+}
+
+function exactProjectCommitsFilePath(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commits/[^/]+/.+$`,
   ).exec(pathname);
   return match ? match[0] : null;
 }
