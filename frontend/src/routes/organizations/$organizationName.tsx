@@ -35,8 +35,9 @@ function OrganizationHomeRoute() {
   const isIssues = pathname === `${exactPath}/issues`;
   const isPullRequests = pathname === `${exactPath}/pullrequests`;
   const isMembers = pathname === `${exactPath}/members`;
+  const isSettings = pathname === `${exactPath}/settingform`;
 
-  if (!isHome && !isBoards && !isIssues && !isPullRequests && !isMembers) {
+  if (!isHome && !isBoards && !isIssues && !isPullRequests && !isMembers && !isSettings) {
     return <Outlet />;
   }
 
@@ -53,6 +54,7 @@ function OrganizationNestedLayout({
   const { organizationName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isPullRequests = pathname === `/organizations/${organizationName}/pullrequests`;
+  const isSettings = pathname === `/organizations/${organizationName}/settingform`;
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
@@ -71,7 +73,7 @@ function OrganizationNestedLayout({
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell
-          projectSearchScope={{ organizationName }}
+          projectSearchScope={isSettings ? undefined : { organizationName }}
           runtimeConfig={runtimeConfig}
           showLegacyProjectHeaderLinks
         >
@@ -83,13 +85,15 @@ function OrganizationNestedLayout({
           />
           <OrganizationMenu
             active={
-              isPullRequests
-                ? "pullrequests"
-                : pathname.endsWith("/issues")
-                  ? "issues"
-                  : pathname.endsWith("/boards")
-                    ? "boards"
-                    : "home"
+              isSettings
+                ? "none"
+                : isPullRequests
+                  ? "pullrequests"
+                  : pathname.endsWith("/issues")
+                    ? "issues"
+                    : pathname.endsWith("/boards")
+                      ? "boards"
+                      : "home"
             }
             organizationName={organizationName}
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
@@ -684,7 +688,7 @@ export function OrganizationMenu({
   organizationName,
   viewerCanUpdate,
 }: {
-  active: "home" | "issues" | "boards" | "pullrequests";
+  active?: "home" | "issues" | "boards" | "pullrequests" | "none";
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {

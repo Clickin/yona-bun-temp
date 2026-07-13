@@ -107,6 +107,36 @@ test("project milestones to posts keeps the legacy project shell DOM nodes mount
   await expectProjectPostsGeometry(page);
 });
 
+test("project posts to pull requests keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/posts`);
+  await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectPostsGeometry(page);
+
+  await page.locator(".project-menu-gruop a[href$='/admin/sample/pullRequests']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequests(?:\?|$)/);
+  await expect(
+    page.locator(".project-menu-gruop li", {
+      has: page.locator("a[href$='/admin/sample/pullRequests']"),
+    }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -314,6 +344,53 @@ async function expectProjectPostsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPullRequestsGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const tabs = rect(".pullrequeset-tab-menu");
+    const empty = rect(".post-list-wrap .error-wrap");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      emptyBottom: empty.bottom,
+      emptyLeft: empty.left,
+      emptyRight: empty.right,
+      emptyTop: empty.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.emptyTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.emptyBottom).toBeGreaterThan(metrics.emptyTop);
+  expect(metrics.emptyLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.emptyRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -409,6 +486,21 @@ async function mockProjectHomeAndIssues(page: Page) {
         ownerName: "admin",
         permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
+      });
+    if (path.endsWith("/projects/admin/sample/pull-requests"))
+      return json({
+        acceptedCount: 0,
+        category: "open",
+        closedCount: 0,
+        contributors: [],
+        currentUserId: 1,
+        items: [],
+        openCount: 0,
+        pageNum: 1,
+        pageSize: 15,
+        recentlyPushedBranches: [],
+        sentCount: 0,
+        totalCount: 0,
       });
     return json({});
   });
