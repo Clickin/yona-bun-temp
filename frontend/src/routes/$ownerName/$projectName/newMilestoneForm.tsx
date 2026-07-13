@@ -20,23 +20,59 @@ function ProjectMilestoneCreateFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
+    <ProjectMilestoneCreateFormScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />
+  );
+}
+
+export function ProjectMilestoneCreateFormScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectMilestoneCreateFormRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
+  return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectMilestoneCreateFormScreen runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectMilestoneCreateFormRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
+  const projectQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: renderProjectShell,
+  });
 
-  if (!projectQuery.data) {
+  if (renderProjectShell && !projectQuery.data) {
     return null;
+  }
+
+  const body = <ProjectMilestoneCreateFormBody runtimeConfig={runtimeConfig} />;
+
+  if (!renderProjectShell) {
+    return body;
   }
 
   const projectSearchScope = {
@@ -54,7 +90,7 @@ function ProjectMilestoneCreateFormScreen({ runtimeConfig }: { runtimeConfig: Ru
         basePath={runtimeConfig.basePath}
         project={projectQuery.data}
       />
-      <ProjectMilestoneCreateFormBody runtimeConfig={runtimeConfig} />
+      {body}
     </SiteLayoutShell>
   );
 }
