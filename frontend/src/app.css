@@ -586,20 +586,6 @@ body:has(.legacy-framed-shell.is-open) {
   box-shadow: none;
 }
 
-.sidebar .user-menu-wrap {
-  box-sizing: border-box;
-  padding: 10px;
-  color: gray;
-}
-
-.sidebar .user-menu-wrap a:hover {
-  color: #fff;
-}
-
-.sidebar .user-menu {
-  padding: 5px;
-}
-
 .pin-in-sidebar {
   position: absolute;
   top: 9px;

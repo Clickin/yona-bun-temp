@@ -984,6 +984,37 @@ const leftSidebarOuterShellStyles = stylex.create({
   },
 });
 
+const leftSidebarAccountActionStyles = stylex.create({
+  row: {
+    boxSizing: "border-box",
+    color: globalColors.leftSidebarAccountText,
+    padding: "10px",
+  },
+  menu: {
+    padding: "5px",
+  },
+  link: {
+    ":hover": {
+      color: globalColors.leftSidebarAccountHoverText,
+    },
+  },
+  logoutLink: {
+    ":hover": {
+      color: globalColors.leftSidebarAccountLogoutText,
+    },
+  },
+  logoutLabel: {
+    backgroundColor: globalColors.leftSidebarAccountLogoutSurface,
+    color: globalColors.leftSidebarAccountLogoutText,
+    fontWeight: "normal",
+    padding: "5px",
+    ":hover": {
+      backgroundColor: globalColors.leftSidebarAccountLogoutHoverSurface,
+      color: globalColors.leftSidebarAccountLogoutText,
+    },
+  },
+});
+
 function LegacyFramedSidebar({
   activeTab,
   basePath,
@@ -1028,9 +1059,13 @@ function LegacyFramedSidebar({
       data-stylex-owner="left-sidebar-outer-shell"
       id="sidebar"
     >
-      <div className="row-fluid user-menu-wrap">
-        <span className="user-menu">
+      <div
+        className={`row-fluid ${stylex.props(leftSidebarAccountActionStyles.row).className}`}
+        data-stylex-owner="left-sidebar-account-actions"
+      >
+        <span {...stylex.props(leftSidebarAccountActionStyles.menu)}>
           <Link
+            {...stylex.props(leftSidebarAccountActionStyles.link)}
             activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
             activeProps={{
               "aria-current": undefined,
@@ -1047,11 +1082,21 @@ function LegacyFramedSidebar({
             <span className="caret-text hide-in-mobile">{userLabel}</span>
           </Link>
         </span>
-        <span className="user-menu">
-          <Link to="/user/editform">{t("userinfo.accountSetting")}</Link>
+        <span {...stylex.props(leftSidebarAccountActionStyles.menu)}>
+          <Link {...stylex.props(leftSidebarAccountActionStyles.link)} to="/user/editform">
+            {t("userinfo.accountSetting")}
+          </Link>
         </span>
-        <Link reloadDocument to={LEGACY_AUTHENTICATED_LOGOUT_PATH}>
-          <span className="user-menu logout label">{t("title.logout")}</span>
+        <Link
+          {...stylex.props(leftSidebarAccountActionStyles.logoutLink)}
+          reloadDocument
+          to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
+        >
+          <span
+            className={`label ${stylex.props(leftSidebarAccountActionStyles.logoutLabel).className}`}
+          >
+            {t("title.logout")}
+          </span>
         </Link>
         <button
           aria-controls="sidebar"

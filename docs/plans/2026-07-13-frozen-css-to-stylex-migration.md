@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-five user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-six user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -551,6 +551,17 @@ stacking contract into StyleX: the flattened later main pane otherwise paints it
 live/local evidence agrees on the desktop `271×900` border box and the mobile `318.6875×844`
 border box with `317.6875px` content, one-line Project subtabs, row `y166`, full main-pane cover,
 and no document overflow. This is not Wave 1 completion.
+
+The twenty-sixth verified slice migrates the framed left sidebar account-action row. StyleX owns
+the exact 10px row padding, border-box sizing, muted text, two 5px menu paddings, link hover,
+logout text/weight/base surface, and violet hover surface. All five colors are semantic variables
+in the canonical global theme; no dark value or toggle is introduced. The owner emits none of
+`user-menu-wrap`, `user-menu`, or `logout`, and its three owner-only `app.css` selectors are
+deleted. `row-fluid`, avatar/caret, the close pin, and Bootstrap `.label` remain distinct
+primitive owners rather than account-row fallback. The screen contains no popover, and no
+`.popover` fallback is claimed. Fresh live/local desktop and mobile evidence agrees on `270×44`
+and `317.6875×44` row geometry, exact computed styles, hover states, action order, navigation,
+and pin behavior. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

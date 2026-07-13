@@ -71,6 +71,16 @@ export const globalColors = stylex.defineVars({
   leftSidebarOuterText: "#ffffff",
   // _page.less: .sidebar border-right
   leftSidebarOuterBorder: "#000000",
+  // _page.less: .sidebar .user-menu-wrap color
+  leftSidebarAccountText: "#808080",
+  // _page.less: .sidebar .user-menu-wrap a:hover color
+  leftSidebarAccountHoverText: "#ffffff",
+  // _usermenu.less: .logout color
+  leftSidebarAccountLogoutText: "#ffffff",
+  // Bootstrap 2.3.1 .label background-color
+  leftSidebarAccountLogoutSurface: "#999999",
+  // _usermenu.less: .logout:hover background-color
+  leftSidebarAccountLogoutHoverSurface: "#9c27b0",
   // _usermenu.less: .nav-subtab.unstyled background-color in the left Project pane
   leftSidebarProjectSubtabSurface: "#eeeeee",
   // _usermenu.less: .nav-subtab.unstyled color in the left Project pane
