@@ -137,6 +137,64 @@ test("project posts to pull requests keeps the legacy project shell DOM nodes mo
   await expectProjectPullRequestsGeometry(page);
 });
 
+test("project open pull requests to closed pull requests keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectPullRequestsGeometry(page);
+
+  await page.locator(".pullrequeset-tab-menu a[href*='/admin/sample/closedPullRequests']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/closedPullRequests(?:\?|$)/);
+  await expect(
+    page.locator(".pullrequeset-tab-menu li", {
+      has: page.locator("a[href*='/admin/sample/closedPullRequests']"),
+    }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+});
+
+test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page, { isForkedFromOrigin: true });
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectPullRequestsGeometry(page);
+
+  await page.locator(".pullrequeset-tab-menu a[href*='/admin/sample/sentPullRequests']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/sentPullRequests(?:\?|$)/);
+  await expect(
+    page.locator(".pullrequeset-tab-menu li", {
+      has: page.locator("a[href*='/admin/sample/sentPullRequests']"),
+    }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".post-list-wrap .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestsGeometry(page);
+});
+
 test("project pull requests to reviews keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -969,7 +1027,10 @@ async function expectProjectLabelsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
-async function mockProjectHomeAndIssues(page: Page) {
+async function mockProjectHomeAndIssues(
+  page: Page,
+  { isForkedFromOrigin = false }: { isForkedFromOrigin?: boolean } = {},
+) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
       body: JSON.stringify({ session: { csrfToken: "csrf" }, user: { id: 1, loginId: "admin" } }),
@@ -996,7 +1057,7 @@ async function mockProjectHomeAndIssues(page: Page) {
         cloneUrl: "https://example.com/admin/sample.git",
         id: 7,
         isFavorite: false,
-        isForkedFromOrigin: false,
+        isForkedFromOrigin,
         isPrivate: false,
         logoUrl: "/assets/images/project_default_logo.png",
         members: [],
