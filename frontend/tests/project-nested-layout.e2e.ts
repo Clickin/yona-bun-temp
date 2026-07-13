@@ -259,6 +259,48 @@ test("project open pull requests to closed pull requests keeps the legacy projec
   await expectProjectPullRequestsGeometry(page);
 });
 
+test("project pull requests to new pull request form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      `${location.pathname.replace(/\/pullRequests$/, "/newPullRequestForm")}?fromBranch=feature%2Fui&toBranch=main`,
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(
+    /\/admin\/sample\/newPullRequestForm\?fromBranch=feature%2Fui&toBranch=main$/,
+  );
+  await expect(page.locator(".content-wrap.frm-wrap form.nm")).toBeVisible();
+  await expect(page.locator("#fromBranch")).toHaveValue("feature/ui");
+  await expect(page.locator("#toBranch")).toHaveValue("main");
+  await expect(
+    page.locator(".project-menu-gruop li", {
+      has: page.locator("a[href$='/admin/sample/pullRequests']"),
+    }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestCreateGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".content-wrap.frm-wrap form.nm")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestCreateGeometry(page);
+});
+
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -897,6 +939,51 @@ async function expectProjectPullRequestsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPullRequestCreateGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".content-wrap.frm-wrap");
+    const selectors = rect(".pull-request-wrap");
+    const status = rect("#status");
+    const title = rect("#title");
+    return {
+      bodyBottom: body.bottom,
+      bodyTop: body.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      selectorsBottom: selectors.bottom,
+      selectorsTop: selectors.top,
+      statusBottom: status.bottom,
+      statusTop: status.top,
+      titleBottom: title.bottom,
+      titleTop: title.top,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.selectorsTop).toBeGreaterThanOrEqual(metrics.bodyTop);
+  expect(metrics.selectorsBottom).toBeGreaterThan(metrics.selectorsTop);
+  expect(metrics.statusTop).toBeGreaterThanOrEqual(metrics.selectorsBottom);
+  expect(metrics.statusBottom).toBeGreaterThan(metrics.statusTop);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.statusBottom);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.bodyBottom).toBeGreaterThan(metrics.titleBottom);
+}
+
 async function expectProjectReviewsGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -1394,6 +1481,21 @@ async function mockProjectHomeAndIssues(
         sentCount: 0,
         totalCount: 0,
       });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/form-options")) {
+      const url = new URL(route.request().url());
+      const fromBranch = url.searchParams.get("fromBranch") || "feature/ui";
+      const toBranch = url.searchParams.get("toBranch") || "main";
+      return json({
+        fromBranches: [{ name: "feature/ui", selected: fromBranch === "feature/ui" }],
+        fromProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+        mode: "create",
+        selected: { fromBranch, fromProjectId: 7, toBranch, toProjectId: 7 },
+        toBranches: [{ name: "main", selected: toBranch === "main" }],
+        toProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+      });
+    }
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/merge-result"))
+      return json({ commits: [], conflict: false, status: "MERGEABLE" });
     if (path.endsWith("/projects/admin/sample/reviews"))
       return json({
         allCount: 0,

@@ -357,7 +357,9 @@ test("project pull request create form restores legacy shell parity for project 
   ] satisfies Array<{ route: MockProjectRoute; scopeTexts: string[]; title: string }>;
 
   expect(ROUTE_SOURCE).toContain("<ProjectNewPullRequestRouteShell");
-  expect(ROUTE_SOURCE).toContain("projectSearchScope={projectSearchScope}");
+  expect(ROUTE_SOURCE).not.toContain("<YonaQueryProvider>");
+  expect(ROUTE_SOURCE).not.toContain("<LegacyI18nProvider");
+  expect(ROUTE_SOURCE).not.toContain("<SiteLayoutShell");
   expect(ROUTE_SOURCE).toContain(
     '<title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>',
   );
