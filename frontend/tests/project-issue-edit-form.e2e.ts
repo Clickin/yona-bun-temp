@@ -423,6 +423,39 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     .toBe("kept");
 });
 
+test("project issue edit form not found renders legacy project error shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page, { issueStatus: 404 });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
+  await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "Issue does not exist",
+  );
+  await expect(page.locator("#issue-form")).toHaveCount(0);
+  await expect(page).toHaveTitle("Page not found - admin/sample");
+});
+
+test("project issue edit form keeps non-404 fallback outside the project shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueEditForm(page, { issueStatus: 500 });
+
+  await page.goto(`${basePath}/admin/sample/issue/1/editform`);
+
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator("#issue-form")).toHaveCount(0);
+  await expect(page).toHaveTitle("Edit issue - admin/sample");
+});
+
 test("project issue edit form keeps legacy columns and uploader contained on desktop and mobile", async ({
   page,
 }) => {
@@ -955,6 +988,7 @@ async function mockProjectIssueEditForm(
   options: {
     issue?: Partial<Record<string, unknown>>;
     issueNumber?: number;
+    issueStatus?: number;
     project?: Partial<Record<string, unknown>>;
   } = {},
 ) {
@@ -1029,6 +1063,14 @@ async function mockProjectIssueEditForm(
     });
   });
   await page.route(`**/api/v1/projects/admin/sample/issues/${issueNumber}`, async (route) => {
+    if (options.issueStatus) {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ error: "not_found" }),
+        status: options.issueStatus,
+      });
+      return;
+    }
     const issue = {
       assigneeLoginId: "dev",
       authorId: 1,

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
+  use,
   useEffect,
   useRef,
   useState,
@@ -19,12 +20,11 @@ import {
   updateIssue,
   type RestIssueDetailResponse,
 } from "../../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
-import { YonaQueryProvider } from "../../../../../query-client";
+import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 
 const legacyRouteLocalActiveProps = {
   "aria-current": undefined,
@@ -38,17 +38,23 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 
 function ProjectIssueEditFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectIssueEditFormScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectIssueEditFormScreen
+      nestedProjectShell={nestedProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
-function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectIssueEditFormScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const { t } = useLegacyMessages();
   const numericIssueNumber = Number(issueNumber) || 0;
@@ -61,6 +67,10 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   const issueQuery = useQuery({
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, numericIssueNumber),
     queryKey: ["project", ownerName, projectName, "issues", numericIssueNumber],
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
   });
   const parentOptionsQuery = useQuery({
     queryFn: () =>
@@ -77,20 +87,42 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       }
     : { ownerName, projectName };
 
-  if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
+  const editTitle = <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>;
+
+  if (restApiErrorStatus(issueQuery.error) === 404) {
+    const notFoundContent = (
+      <>
+        <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>
+        <ProjectIssueEditNotFoundBody ownerName={ownerName} projectName={projectName} />
+      </>
+    );
+
+    if (nestedProjectShell) return notFoundContent;
+    if (!projectQuery.data) {
+      return <SiteLayoutShell runtimeConfig={runtimeConfig}>{notFoundContent}</SiteLayoutShell>;
+    }
+
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>
-        {null}
+        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+        {notFoundContent}
       </SiteLayoutShell>
     );
   }
 
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <title>{`${t("title.editIssue")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+  if (!projectQuery.data || !labelsQuery.data || !issueQuery.data || !parentOptionsQuery.data) {
+    if (nestedProjectShell) return editTitle;
+    return (
+      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+        {editTitle}
+      </SiteLayoutShell>
+    );
+  }
+
+  const editContent = (
+    <>
+      {editTitle}
       <ProjectIssueEditFormBody
         issue={issueQuery.data}
         labels={labelsQuery.data.labels}
@@ -98,8 +130,47 @@ function ProjectIssueEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
+    </>
+  );
+
+  if (nestedProjectShell) return editContent;
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      {editContent}
     </SiteLayoutShell>
   );
+}
+
+function ProjectIssueEditNotFoundBody({
+  ownerName,
+  projectName,
+}: {
+  ownerName: string;
+  projectName: string;
+}) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t("error.notfound.issue_post")}</p>
+          <Link to={`/${ownerName}/${projectName}/issues?state=all`} className="ybtn ybtn-primary">
+            {t("button.list")}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  return typeof error.status === "number" ? error.status : undefined;
 }
 
 function ProjectIssueEditFormBody({
