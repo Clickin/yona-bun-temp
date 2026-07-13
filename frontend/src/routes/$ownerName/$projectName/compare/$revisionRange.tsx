@@ -1,14 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { use, type ReactNode } from "react";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { useLegacyMessages } from "../../../../i18n";
 import { type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 type ParsedDiffLine =
   | { kind: "range"; text: string }
@@ -36,86 +32,24 @@ export const Route = createFileRoute("/$ownerName/$projectName/compare/$revision
 
 function ProjectCodeCompareRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-  const screen = (
-    <ProjectCodeCompareRouteShell
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
-
-  if (nestedProjectShell) return screen;
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        {screen}
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectCodeCompareRouteShell runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectCodeCompareRouteShell({
-  nestedProjectShell,
   runtimeConfig,
 }: {
-  nestedProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName, revisionRange } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
-
-  const body = (
+  return (
     <ProjectCodeCompareScreen
       project={projectQuery.data}
       revisionRange={revisionRange}
       runtimeConfig={runtimeConfig}
     />
-  );
-
-  if (nestedProjectShell) return body;
-
-  return (
-    <ProjectCodeCompareStandaloneShell
-      project={projectQuery.data}
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-    >
-      {body}
-    </ProjectCodeCompareStandaloneShell>
-  );
-}
-
-function ProjectCodeCompareStandaloneShell({
-  children,
-  project,
-  projectSearchScope,
-  runtimeConfig,
-}: {
-  children: ReactNode;
-  project: ProjectContainer | undefined;
-  projectSearchScope: { organizationName?: string; ownerName: string; projectName: string };
-  runtimeConfig: RuntimeConfig;
-}) {
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      {project ? (
-        <>
-          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-          <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-        </>
-      ) : null}
-      {children}
-    </SiteLayoutShell>
   );
 }
 
@@ -465,23 +399,4 @@ function compareCommitIds(compare: CodeCompareResponse, revisionRange: string) {
 
 function projectTo(ownerName: string, projectName: string, ...parts: string[]) {
   return `/${[ownerName, projectName, ...parts].filter((part) => part !== "").join("/")}`;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName =
-    typeof project.organizationName === "string" ? project.organizationName : "";
-  if (organizationName) {
-    return organizationName;
-  }
-  return projectIsProtected(project) ? ownerName : undefined;
-}
-
-function projectIsProtected(project: ProjectContainer) {
-  return (
-    project.isProtected === true ||
-    project.isProtected === "true" ||
-    project.isProtected === 1 ||
-    project.isProtected === "1" ||
-    (typeof project.projectScope === "string" && project.projectScope === "protected")
-  );
 }

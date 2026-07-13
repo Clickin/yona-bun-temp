@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
-import { use, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
@@ -20,10 +20,8 @@ import { currentSessionQueryOptions } from "../../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
-import { YonaQueryProvider } from "../../../../../query-client";
+import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 import {
   PullRequestBranchInfo,
   PullRequestHeader,
@@ -110,22 +108,7 @@ export const Route = createFileRoute(
 });
 
 function ProjectPullRequestChangesRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName, pullRequestNumber } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const commitPathMarker = `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}/changes/`;
-  const markerIndex = pathname.indexOf(commitPathMarker);
-  const commitId =
-    markerIndex === -1
-      ? ""
-      : decodeURIComponent(pathname.slice(markerIndex + commitPathMarker.length));
-
-  const nestedProjectShell = use(ProjectNestedShellContext);
-  if (nestedProjectShell && !commitId) {
-    return <ProjectPullRequestChangesShell commitId="" nestedProjectShell runtimeConfig={runtimeConfig} />;
-  }
-
-  return <ProjectPullRequestChangesPage commitId={commitId} runtimeConfig={runtimeConfig} />;
+  return <Outlet />;
 }
 
 export function ProjectPullRequestChangesPage({
@@ -135,38 +118,14 @@ export function ProjectPullRequestChangesPage({
   commitId?: string;
   runtimeConfig: RuntimeConfig;
 }) {
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (nestedProjectShell) {
-    return (
-      <ProjectPullRequestChangesShell
-        commitId={commitId}
-        nestedProjectShell
-        runtimeConfig={runtimeConfig}
-      />
-    );
-  }
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestChangesShell
-          commitId={commitId}
-          nestedProjectShell={false}
-          runtimeConfig={runtimeConfig}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectPullRequestChangesShell commitId={commitId} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectPullRequestChangesShell({
   commitId = "",
-  nestedProjectShell,
   runtimeConfig,
 }: {
   commitId: string;
-  nestedProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -177,7 +136,6 @@ function ProjectPullRequestChangesShell({
   return projectQuery.data ? (
     <ProjectPullRequestChangesScreen
       commitId={commitId}
-      nestedProjectShell={nestedProjectShell}
       project={projectQuery.data}
       runtimeConfig={runtimeConfig}
     />
@@ -186,12 +144,10 @@ function ProjectPullRequestChangesShell({
 
 function ProjectPullRequestChangesScreen({
   commitId,
-  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
   commitId: string;
-  nestedProjectShell: boolean;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -209,7 +165,7 @@ function ProjectPullRequestChangesScreen({
 
   const changesErrorStatus = pullRequestChangesErrorStatus(changesQuery.error);
   if (!changesQuery.data || !sessionQuery.data) {
-    if (nestedProjectShell && (changesErrorStatus === 403 || changesErrorStatus === 404)) {
+    if (changesErrorStatus === 403 || changesErrorStatus === 404) {
       return <ProjectPullRequestChangesErrorBody status={changesErrorStatus} />;
     }
     return null;
@@ -218,12 +174,6 @@ function ProjectPullRequestChangesScreen({
   return (
     <>
       <ProjectPullRequestChangesTitle ownerName={ownerName} projectName={projectName} />
-      {nestedProjectShell ? null : (
-        <>
-          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-          <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
-        </>
-      )}
       <ProjectPullRequestChangesBody
         changes={changesQuery.data}
         commitId={commitId}
