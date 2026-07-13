@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-nine user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -597,6 +597,20 @@ remain only because the authenticated right sidenav and other unmigrated consume
 their matching classes; they cannot match this left owner and are not its fallback. Fresh live and
 local desktop/mobile evidence agrees on 270x25 rows, 3px/8px row margins, exact internal geometry,
 colors, hover, expand/collapse, and favorite mutation isolation. This is not Wave 1 completion.
+
+The thirtieth verified slice migrates the framed left Favorite organization-nested project rows,
+their project-favorite stars, and their React-owned hover overlay. StyleX owns the complete row,
+visibility, flex/link/logo/avatar/name, star, overlay, arrow, and content declarations with exact
+legacy values. Ten concrete colors and the semantic shadow are defined through the canonical
+global theme, including the newly exposed direct-favorite divider border; no dark values or toggle
+are introduced. The owner emits none of its former row, layout, link, star, Material Icons, or
+overlay presentation classes and no inline placement style. With the last Favorite descendant
+consumer migrated, the Favorite pane also drops `user-project-list`; Project, Recent History, and
+the authenticated right sidenav retain it for their real consumers. The former 1px
+`.etc-favorites` border is now owned directly by the Favorite shell, preserving its exact geometry
+without compensation. Fresh live/local evidence agrees on desktop/mobile 270x26 rows and the exact
+204px hover overlay, star states, filtering, navigation, and mutation isolation. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 

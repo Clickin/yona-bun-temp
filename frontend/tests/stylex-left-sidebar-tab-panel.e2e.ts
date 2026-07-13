@@ -69,6 +69,11 @@ for (const viewport of [
       width: 270,
     });
     expect(initial.geometry.inner).toEqual(initial.geometry.panel);
+    expect(initial.paneIds).toEqual([
+      "left-sidebar-myOrganizationList",
+      "left-sidebar-myProjectList",
+      "left-sidebar-myRecentIssueList",
+    ]);
     expect(initial.geometry.panes).toEqual([
       { height: 0, left: 0, top: 0, width: 0 },
       { height: 0, left: 0, top: 0, width: 0 },
@@ -85,7 +90,7 @@ for (const viewport of [
       paneDisplays: ["none", "none", "block"],
     });
     expect(initial.pluginAttributes).toEqual([]);
-    expect(initial.retainedUserProjectList).toEqual([true, true, true]);
+    expect(initial.retainedUserProjectList).toEqual([false, true, true]);
     expect(initial.removedPresentationClasses).toEqual([]);
 
     await assertSingleVisiblePane(panel, "left-sidebar-myRecentIssueList");
@@ -198,6 +203,7 @@ async function readPanelEvidence(panel: Locator) {
     return {
       geometry: { inner: box(inner), panel: box(element), panes: panes.map(box) },
       owner: element.getAttribute("data-stylex-owner"),
+      paneIds: panes.map((pane) => pane.id),
       retainedUserProjectList: panes.map((pane) => pane.classList.contains("user-project-list")),
       pluginAttributes: Array.from(
         element.querySelectorAll(
@@ -230,7 +236,9 @@ async function readPanelEvidence(panel: Locator) {
 }
 
 async function assertSingleVisiblePane(panel: Locator, expectedId: string) {
-  const panes = panel.locator(":scope > * > .user-project-list");
+  const panes = panel.locator(
+    ":scope > * > #left-sidebar-myOrganizationList, :scope > * > #left-sidebar-myProjectList, :scope > * > #left-sidebar-myRecentIssueList",
+  );
   await expect(panes).toHaveCount(3);
   await expect(panes.filter({ visible: true })).toHaveCount(1);
   await expect(panes.filter({ visible: true })).toHaveAttribute("id", expectedId);

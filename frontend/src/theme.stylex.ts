@@ -65,6 +65,8 @@ export const globalColors = stylex.defineVars({
   leftSidebarFavoriteOrganizationStarActive: "#e91e63",
   // _usermenu.less: .starred:hover
   leftSidebarFavoriteOrganizationStarActiveHover: "#8a123b",
+  // _usermenu.less: .user-project-list .etc-favorites border-top
+  leftSidebarFavoriteDividerBorder: "#808080",
   // _page.less: .sidebar color inherited by direct project rows
   leftSidebarDirectProjectText: "#ffffff",
   // _usermenu.less: .project-avatar color in direct project rows
@@ -79,6 +81,26 @@ export const globalColors = stylex.defineVars({
   leftSidebarDirectProjectStarActive: "#e91e63",
   // _usermenu.less: .starred:hover
   leftSidebarDirectProjectStarActiveHover: "#8a123b",
+  // _page.less: .sidebar color inherited by Favorite nested project rows
+  leftSidebarFavoriteNestedProjectText: "#ffffff",
+  // _usermenu.less: .project-avatar color in Favorite nested project rows
+  leftSidebarFavoriteNestedProjectAvatar: "#000000",
+  // _usermenu.less: .sidebar .user-project-list .project-list:hover
+  leftSidebarFavoriteNestedProjectHoverSurface: "rgba(255, 255, 255, 0.15)",
+  // _usermenu.less: .star-project base color
+  leftSidebarFavoriteNestedProjectStarIdle: "#eeeeee",
+  // _usermenu.less: .star-project:hover and .starred
+  leftSidebarFavoriteNestedProjectStarActive: "#e91e63",
+  // _usermenu.less: .starred:hover
+  leftSidebarFavoriteNestedProjectStarActiveHover: "#8a123b",
+  // _usermenu.less: .user-li .popover background-color
+  leftSidebarFavoriteNestedProjectPopoverSurface: "#03a9f4",
+  // Bootstrap 2.3.1 .popover final border color
+  leftSidebarFavoriteNestedProjectPopoverBorder: "rgba(0, 0, 0, 0.2)",
+  // Bootstrap 2.3.1 .popover.right .arrow final border color
+  leftSidebarFavoriteNestedProjectPopoverArrowBorder: "rgba(0, 0, 0, 0.25)",
+  // _yobiUI.less: .popover final box-shadow
+  leftSidebarFavoriteNestedProjectPopoverShadow: "-2px 2px 1px rgba(0, 0, 0, 0.1)",
   // _page.less: .sidebar background-color
   leftSidebarOuterSurface: "#333333",
   // _usermenu.less: .sidebar color

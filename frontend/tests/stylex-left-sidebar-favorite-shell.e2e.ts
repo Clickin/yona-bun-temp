@@ -25,7 +25,7 @@ for (const state of ["populated", "empty"] as const) {
       const input = shell.getByRole("textbox", { name: "Type name" });
       const result = shell.locator("#left-sidebar-organizations");
       await expect(pane).toBeVisible();
-      await expect(pane).toHaveClass(/user-project-list/);
+      await expect(pane).not.toHaveClass(/user-project-list/);
       await expect(shell).toBeVisible();
       await expect(input).toHaveAttribute("placeholder", "Type name");
 
@@ -42,6 +42,7 @@ for (const state of ["populated", "empty"] as const) {
       });
 
       expect(initial.hasOwner).toBe(true);
+      expect(initial.hasLegacyAncestorClass).toBe(false);
       expect(initial.pluginAttributes).toEqual([]);
       expect(initial.ownedPresentationClasses).toEqual([]);
       expect(initial.geometry.root).toMatchObject({
@@ -118,6 +119,16 @@ for (const state of ["populated", "empty"] as const) {
         scrollbarThumbBackground: "rgb(39, 136, 186)",
         scrollbarWidth: "5px",
       });
+      expect(initial.divider).toEqual(
+        state === "populated"
+          ? {
+              borderTopColor: "rgb(128, 128, 128)",
+              borderTopStyle: "dashed",
+              borderTopWidth: "1px",
+              height: 1,
+            }
+          : null,
+      );
 
       if (state === "empty") {
         expect(initial.styles.result).toMatchObject({
@@ -206,6 +217,7 @@ test("left sidebar Favorite shell has complete global-theme StyleX ownership", (
   for (const token of [
     "leftSidebarFavoriteSearchSurface",
     "leftSidebarFavoriteSearchText",
+    "leftSidebarFavoriteDividerBorder",
     "sidenavNoResultText",
     "sidenavSearchFocusAccent",
     "sidenavScrollbarTrack",
@@ -216,6 +228,7 @@ test("left sidebar Favorite shell has complete global-theme StyleX ownership", (
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
   expect(themeSource).toContain('leftSidebarFavoriteSearchSurface: "#000000"');
   expect(themeSource).toContain('leftSidebarFavoriteSearchText: "#ffffff"');
+  expect(themeSource).toContain('leftSidebarFavoriteDividerBorder: "#808080"');
   expect(componentSource).toContain('idPrefix === "left-sidebar"');
   expect(componentSource).toContain('"left-sidebar-favorite-shell"');
   expect(componentSource).toContain("leftSidebarFavoriteShellStyles");
@@ -313,6 +326,8 @@ async function readEvidence(shell: Locator) {
     const before = getComputedStyle(bar, "::before");
     const after = getComputedStyle(bar, "::after");
     const resultStyle = getComputedStyle(result);
+    const divider = result.firstElementChild?.matches("ul") ? result.firstElementChild : null;
+    const dividerStyle = divider ? getComputedStyle(divider) : null;
     const scrollbar = getComputedStyle(result, "::-webkit-scrollbar");
     const thumb = getComputedStyle(result, "::-webkit-scrollbar-thumb");
     const ownedClasses = [
@@ -324,8 +339,18 @@ async function readEvidence(shell: Locator) {
       "tab-pane",
       "user-ul",
       "no-result",
+      "etc-favorites",
     ];
     return {
+      divider:
+        divider && dividerStyle
+          ? {
+              borderTopColor: dividerStyle.borderTopColor,
+              borderTopStyle: dividerStyle.borderTopStyle,
+              borderTopWidth: dividerStyle.borderTopWidth,
+              height: divider.getBoundingClientRect().height,
+            }
+          : null,
       geometry: {
         group: box(group),
         input: box(input),
@@ -334,6 +359,8 @@ async function readEvidence(shell: Locator) {
         root: box(element),
       },
       hasOwner: element.getAttribute("data-stylex-owner") === "left-sidebar-favorite-shell",
+      hasLegacyAncestorClass:
+        element.parentElement?.classList.contains("user-project-list") ?? false,
       ownedPresentationClasses: [element, group, input, bar, result].flatMap((target) =>
         ownedClasses.filter((className) => target.classList.contains(className)),
       ),

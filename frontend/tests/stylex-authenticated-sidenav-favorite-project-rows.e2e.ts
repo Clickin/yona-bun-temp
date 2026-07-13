@@ -31,9 +31,7 @@ test("authenticated Favorite nested project rows have narrow themed StyleX owner
   expect(source).toContain("ownsPopoverPresentation ? undefined : HOME_SIDEBAR_POPOVER_STYLE");
 });
 
-test("unmigrated framed Favorite popover keeps its legacy presentation boundary", async ({
-  page,
-}) => {
+test("framed Favorite popover uses the left nested-project StyleX owner", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1366 });
   await installAuthenticatedHome(page);
   await page.addInitScript(() => {
@@ -45,11 +43,15 @@ test("unmigrated framed Favorite popover keeps its legacy presentation boundary"
   const panel = page.locator("#left-sidebar-myOrganizationList");
   const ownToggle = panel.locator("[aria-expanded]").filter({ hasText: "admin" });
   await ownToggle.click();
-  const link = panel.getByRole("link", { name: /own-project/ });
+  const row = panel.locator('[data-stylex-owner="left-sidebar-favorite-nested-project-rows"]');
+  const link = row.getByRole("link", { name: /own-project/ });
   await link.locator("..").hover();
   const tooltip = panel.getByRole("tooltip", { name: "Own project overview" });
   await expect(tooltip).toBeVisible();
-  await expect(tooltip).not.toHaveAttribute("data-stylex-owner", /.+/);
+  await expect(tooltip).toHaveAttribute(
+    "data-stylex-owner",
+    "left-sidebar-favorite-nested-project-popover",
+  );
   expect(
     await tooltip.evaluate((element) => ({
       arrow: element.firstElementChild?.classList.contains("arrow"),
@@ -59,12 +61,11 @@ test("unmigrated framed Favorite popover keeps its legacy presentation boundary"
       style: element.getAttribute("style"),
     })),
   ).toEqual({
-    arrow: true,
-    content: true,
-    popover: true,
-    right: true,
-    style:
-      "display: block; left: 100%; margin-left: 10px; min-width: 200px; position: absolute; top: 50%; transform: translateY(-50%); z-index: 1060;",
+    arrow: false,
+    content: false,
+    popover: false,
+    right: false,
+    style: null,
   });
 });
 
