@@ -27,6 +27,12 @@ export const globalColors = stylex.defineVars({
   transparent: "transparent",
   // _usermenu.less: .user-project-list .no-result color
   sidenavNoResultText: "mediumvioletred",
+  // _usermenu.less: .search-input focus bar background
+  sidenavSearchFocusAccent: "#e91e63",
+  // _usermenu.less: .user-ul::-webkit-scrollbar background
+  sidenavScrollbarTrack: "#d3d3d3",
+  // _usermenu.less: .user-ul::-webkit-scrollbar-thumb background
+  sidenavScrollbarThumb: "#2788ba",
   // _usermenu.less: .nav-subtab.unstyled background-color
   sidenavSubtabSurface: "#eeeeee",
   // _usermenu.less: .nav-subtab.unstyled color

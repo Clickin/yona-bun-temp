@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fourteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -385,6 +385,19 @@ between the legacy Scala template's four `<li>` elements are emitted as React wh
 nodes, recovering the exact width without numeric CSS compensation. No declaration of this owner
 intentionally remains in fallback; owner removal exposes the earlier transparent/black active
 drift as deletion evidence. This is not Wave 1 completion.
+
+The fourteenth verified slice migrates only the authenticated Project pane's search and list
+shell. StyleX owns the group and input shell, React-owned focus bar including both pseudo-elements,
+inner tab-content overflow, all four pane display/list/scroll bounds, the empty-result state, and
+the Project-pane scrollbar track/thumb override. The focus accent and exact scrollbar colors are
+semantic variables in the canonical global theme entry; no raw owner color, dark value, or toggle
+was added. StyleX compiles the WebKit scrollbar pseudo-elements directly, so no declaration of
+this owner remains intentionally in fallback. The shared max-720 `16px !important` text-input
+primitive, direct project rows/stars, Project subtabs, Favorite/Recent History panes, and other
+scrollbar consumers remain separate owners. Fresh live legacy and local evidence agree on the
+42px input group, 114px four-row tab content, 50% focus bars, 5px light-gray scrollbar with the
+legacy blue thumb, empty-state presentation, and desktop/390 containment. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 
