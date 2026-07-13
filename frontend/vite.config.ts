@@ -1,4 +1,5 @@
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import stylex from "@stylexjs/unplugin";
 import babel from "@rolldown/plugin-babel";
 import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
@@ -79,6 +80,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: mode === "production" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
     plugins: [
+      stylex.vite(),
       tanstackRouter({
         generatedRouteTree: "src/routeTree.gen.ts",
         routesDirectory: "src/routes",
