@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -410,6 +410,22 @@ of this Favorite owner remains intentionally in fallback. Fresh live legacy and 
 agree on 175px/195px focus halves and the 5×10px light-gray scrollbar with the legacy blue thumb.
 The shared max-720 `16px !important` input primitive and global scrollbar thumb primitives remain
 separate owners. This is not Wave 1 completion.
+
+The sixteenth verified slice migrates only the authenticated Recent History pane's search and
+list shell. Its colocated owner directly owns the group/input box, React focus bar and both
+pseudo-elements, inner tab-content overflow, populated/empty pane display and list bounds,
+empty-result presentation, and the WebKit scrollbar track/thumb override. All four concrete
+colors reuse the canonical global focus, track, thumb, and no-result variables; no theme edit,
+raw owner color, dark value, toggle, shared-style refactor, abstraction, or dependency was added.
+Known legacy shell classes can be removed while the complete owned computed surface and relative
+geometry remain unchanged, so this owner retains no intentional fallback declaration. Fresh live
+legacy and local desktop/390 evidence agrees on the 350px/390px shell widths, 42px input group,
+64px populated inner pane, 54px populated result, 175px/195px focus halves, 5x10px scrollbar, and
+720px/675.2px scroll bounds. The live page's inherited 24px absolute-Y difference and mobile
+397px document width belong to the existing outer shell/tab layout and were not numerically
+compensated here. Recent issue rows, links, title typography, hover popover, the shared mobile
+input primitive, and global scrollbar primitives remain separate owners. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 
