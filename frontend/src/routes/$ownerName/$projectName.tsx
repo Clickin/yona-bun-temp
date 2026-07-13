@@ -136,6 +136,7 @@ function ProjectHomeRoute() {
   const commitsBranch = exactProjectCommitsBranch(pathname, homePath);
   const commitsFilePath = exactProjectCommitsFilePath(pathname, homePath);
   const commitDetailId = exactProjectCommitDetailId(pathname, homePath);
+  const compareRevisionRange = exactProjectCompareRevisionRange(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -197,6 +198,7 @@ function ProjectHomeRoute() {
                                                       : pathname === labelsPath
                                                         ? "labels"
                                                         : null;
+  const routeActive = compareRevisionRange !== null ? "compare" : standardActive;
   const active =
     pullRequestChangesNumber !== null
       ? "pullRequestChanges"
@@ -216,7 +218,7 @@ function ProjectHomeRoute() {
                     ? "postDetail"
                     : codeBranch !== null || codeFilePath !== null
                       ? "code"
-                      : standardActive;
+                      : routeActive;
 
   if (!active) {
     return <Outlet />;
@@ -238,6 +240,7 @@ function ProjectHomeRouteShell({
   active:
     | "board"
     | "changeVcs"
+    | "compare"
     | "commitDetail"
     | "code"
     | "codeHistory"
@@ -617,6 +620,7 @@ function ProjectLayoutScreen({
   active:
     | "board"
     | "changeVcs"
+    | "compare"
     | "commitDetail"
     | "code"
     | "codeHistory"
@@ -667,7 +671,8 @@ function ProjectLayoutScreen({
       active === "pullRequestEdit" ||
       active === "pullRequestChanges" ||
       active === "codeHistory" ||
-      active === "commitDetail" ? null : (
+      active === "commitDetail" ||
+      active === "compare" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -720,46 +725,44 @@ function ProjectLayoutScreen({
           active={
             active === "watchers" || (active === "search" && !searchForbidden)
               ? undefined
-              : active === "codeHistory"
+              : active === "codeHistory" || active === "commitDetail" || active === "compare"
                 ? "code"
-                : active === "commitDetail"
-                  ? "code"
-                  : active === "search"
-                    ? "home"
-                    : active === "newMilestone"
+                : active === "search"
+                  ? "home"
+                  : active === "newMilestone"
+                    ? "milestone"
+                    : active === "milestoneDetail"
                       ? "milestone"
-                      : active === "milestoneDetail"
+                      : active === "milestoneEdit"
                         ? "milestone"
-                        : active === "milestoneEdit"
-                          ? "milestone"
-                          : active === "newPullRequest"
+                        : active === "newPullRequest"
+                          ? "pullRequest"
+                          : active === "newFork"
                             ? "pullRequest"
-                            : active === "newFork"
-                              ? "pullRequest"
-                              : active === "postform"
+                            : active === "postform"
+                              ? "board"
+                              : active === "postDetail"
                                 ? "board"
-                                : active === "postDetail"
-                                  ? "board"
-                                  : active === "issueform"
+                                : active === "issueform"
+                                  ? "issue"
+                                  : active === "issueDetail"
                                     ? "issue"
-                                    : active === "issueDetail"
+                                    : active === "issueEdit"
                                       ? "issue"
-                                      : active === "issueEdit"
-                                        ? "issue"
-                                        : active === "pullRequestDetail"
+                                      : active === "pullRequestDetail"
+                                        ? "pullRequest"
+                                        : active === "pullRequestEdit"
                                           ? "pullRequest"
-                                          : active === "pullRequestEdit"
+                                          : active === "pullRequestChanges"
                                             ? "pullRequest"
-                                            : active === "pullRequestChanges"
-                                              ? "pullRequest"
-                                              : active === "delete" ||
-                                                  active === "changeVcs" ||
-                                                  active === "labels" ||
-                                                  active === "members" ||
-                                                  active === "transfer" ||
-                                                  active === "webhooks"
-                                                ? "setting"
-                                                : active
+                                            : active === "delete" ||
+                                                active === "changeVcs" ||
+                                                active === "labels" ||
+                                                active === "members" ||
+                                                active === "transfer" ||
+                                                active === "webhooks"
+                                              ? "setting"
+                                              : active
           }
           basePath={runtimeConfig.basePath}
           project={project}
@@ -795,6 +798,7 @@ function ProjectLayoutScreen({
             active === "code" ||
             active === "codeHistory" ||
             active === "commitDetail" ||
+            active === "compare" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search" ||
@@ -874,6 +878,13 @@ function exactProjectCommitsFilePath(pathname: string, homePath: string) {
 function exactProjectCommitDetailId(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commit/[^/]+$`,
+  ).exec(pathname);
+  return match ? match[0] : null;
+}
+
+function exactProjectCompareRevisionRange(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/compare/[^/]+\\.\\.[^/]+$`,
   ).exec(pathname);
   return match ? match[0] : null;
 }

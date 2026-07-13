@@ -182,6 +182,45 @@ test("project issues to exact single commit detail keeps the legacy project shel
   await expectProjectCommitDetailGeometry(page);
 });
 
+test("project issues to exact compare range keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      `${location.pathname.replace(/\/issues$/, "/compare/abcdef1234567890..1234567890abcdef")}`,
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(
+    /\/admin\/sample\/compare\/abcdef1234567890\.\.1234567890abcdef(?:\?|$)/,
+  );
+  await expect(page.locator(".code-browse-wrap .commitInfo .commitId")).toHaveText(
+    "@abcdef1234567890..1234567890abcdef",
+  );
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCompareGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".code-browse-wrap .commitInfo .commitId")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCompareGeometry(page);
+});
+
 test("project issues to exact no-head code root keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1634,6 +1673,37 @@ async function expectProjectCommitDetailGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectCompareGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { bottom: box.bottom, left: box.left, right: box.right, top: box.top };
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const compare = rect(".code-browse-wrap");
+    const commit = rect(".commitInfo");
+    return {
+      body,
+      commit,
+      compare,
+      menu,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.menu.bottom).toBeGreaterThan(metrics.menu.top);
+  expect(metrics.body.top).toBeGreaterThanOrEqual(metrics.menu.bottom);
+  expect(metrics.compare.top).toBeGreaterThanOrEqual(metrics.body.top);
+  expect(metrics.commit.top).toBeGreaterThanOrEqual(metrics.compare.top);
+  expect(metrics.commit.left).toBeGreaterThanOrEqual(metrics.body.left);
+  expect(metrics.commit.right).toBeLessThanOrEqual(metrics.body.right + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectFileCommitHistoryGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -3011,6 +3081,17 @@ async function mockProjectHomeAndIssues(
         projectName: "sample",
         selectedBranch: "main",
         threads: [],
+      });
+    if (path.includes("/projects/admin/sample/compare/"))
+      return json({
+        commitA: { commitId: "abcdef1234567890" },
+        commitB: { commitId: "1234567890abcdef" },
+        files: [],
+        noHead: false,
+        ownerName: "admin",
+        projectName: "sample",
+        revA: "abcdef1234567890",
+        revB: "1234567890abcdef",
       });
     if (path.endsWith("/projects/admin/sample/pull-requests"))
       return json({

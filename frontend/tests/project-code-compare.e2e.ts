@@ -35,6 +35,9 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
 
   await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
   await expect(page).toHaveTitle("abcdef1234567890..1234567890abcdef - admin/sample");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".commitInfo .commitId")).toHaveText(
     "@abcdef1234567890..1234567890abcdef",
