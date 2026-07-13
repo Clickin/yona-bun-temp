@@ -85,22 +85,30 @@ function ProjectHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isProjectHome = pathname === `/${ownerName}/${projectName}`;
+  const homePath = `/${ownerName}/${projectName}`;
+  const issuesPath = `${homePath}/issues`;
+  const active = pathname === homePath ? "home" : pathname === issuesPath ? "issue" : null;
 
-  if (!isProjectHome) {
+  if (!active) {
     return <Outlet />;
   }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectHomeRouteShell runtimeConfig={runtimeConfig} />
+        <ProjectHomeRouteShell active={active} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectHomeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectHomeRouteShell({
+  active,
+  runtimeConfig,
+}: {
+  active: "home" | "issue";
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -118,23 +126,41 @@ function ProjectHomeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHomeScreen project={query.data} />
+      <ProjectLayoutScreen active={active} project={query.data} />
     </SiteLayoutShell>
   );
 }
 
-function ProjectHomeScreen({ project }: { project: ProjectContainer }) {
+function ProjectLayoutScreen({
+  active,
+  project,
+}: {
+  active: "home" | "issue";
+  project: ProjectContainer;
+}) {
   const { runtimeConfig } = Route.useRouteContext();
-  const { projectName } = Route.useParams();
+  const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const { tabId } = Route.useSearch();
 
   return (
     <>
-      <title>{`${projectName} - ${t("menu.home")}`}</title>
+      <title>
+        {active === "home"
+          ? `${projectName} - ${t("menu.home")}`
+          : `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}
+      </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={project} />
-      <ProjectHomeBody project={project} runtimeConfig={runtimeConfig} tabId={tabId || "readme"} />
+      <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />
+      {active === "home" ? (
+        <ProjectHomeBody
+          project={project}
+          runtimeConfig={runtimeConfig}
+          tabId={tabId || "readme"}
+        />
+      ) : (
+        <Outlet />
+      )}
     </>
   );
 }

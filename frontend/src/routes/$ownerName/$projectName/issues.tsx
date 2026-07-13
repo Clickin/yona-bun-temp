@@ -17,8 +17,7 @@ import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
@@ -30,8 +29,6 @@ import {
   type ProjectIssueListRestResponse,
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
-import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type ProjectIssuesSearch = {
   assigneeId: string;
@@ -139,19 +136,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/issues")({
 
 function ProjectIssuesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectIssuesScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectIssuesScreen runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const { t } = useLegacyMessages();
   const search = Route.useSearch();
   const location = useLocation();
   const projectQuery = useQuery(
@@ -254,39 +243,8 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
-  const projectMenuCounts = isStandardProjectOwnedShell
-    ? {
-        board:
-          numberField((projectQuery.data as Record<string, unknown>).boardCount) ||
-          numberField((projectQuery.data as Record<string, unknown>).postCount),
-        issue: numberField((projectQuery.data as Record<string, unknown>).openIssueCount),
-        pullRequest: numberField(
-          (projectQuery.data as Record<string, unknown>).openPullRequestCount,
-        ),
-        review: numberField((projectQuery.data as Record<string, unknown>).reviewCount),
-      }
-    : undefined;
-
   return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
-    >
-      <title>{`${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="issue"
-        basePath={runtimeConfig.basePath}
-        counts={projectMenuCounts}
-        project={projectQuery.data}
-      />
+    <>
       <link
         rel="stylesheet"
         href={prefixBasePath(
@@ -319,16 +277,8 @@ function ProjectIssuesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         runtimeConfig={runtimeConfig}
         search={search}
       />
-    </SiteLayoutShell>
+    </>
   );
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function ProjectIssuesBody({

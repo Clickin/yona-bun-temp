@@ -30,10 +30,38 @@ function OrganizationHomeRoute() {
   const { organizationName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const exactPath = `/organizations/${organizationName}`;
+  const isHome = pathname === exactPath || pathname === `${exactPath}/`;
+  const isBoards = pathname === `${exactPath}/boards`;
 
-  if (pathname !== exactPath && pathname !== `${exactPath}/`) {
+  if (!isHome && !isBoards) {
     return <Outlet />;
   }
+
+  return <OrganizationNestedLayout isHome={isHome} runtimeConfig={runtimeConfig} />;
+}
+
+function OrganizationNestedLayout({
+  isHome,
+  runtimeConfig,
+}: {
+  isHome: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { organizationName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const organizationQuery = useQuery({
+    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
+    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
+  });
+
+  if (!organizationQuery.data) {
+    return null;
+  }
+
+  const organization = organizationQuery.data;
+  const logoUrl =
+    stringField(organization.logoUrl, "") ||
+    prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
 
   return (
     <YonaQueryProvider>
@@ -43,25 +71,26 @@ function OrganizationHomeRoute() {
           runtimeConfig={runtimeConfig}
           showLegacyProjectHeaderLinks
         >
-          <OrganizationHomeScreen runtimeConfig={runtimeConfig} />
+          <OrganizationHeader
+            enrollmentRequested={booleanField(organization.enrollmentRequested)}
+            logoUrl={logoUrl}
+            organizationName={organizationName}
+            viewerCanEnroll={booleanField(organization.viewerCanEnroll)}
+          />
+          <OrganizationMenu
+            active={pathname.endsWith("/boards") ? "boards" : "home"}
+            organizationName={organizationName}
+            viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
+          />
+          {isHome ? (
+            <OrganizationHomeBody organization={organization} runtimeConfig={runtimeConfig} />
+          ) : (
+            <Outlet />
+          )}
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
-}
-
-function OrganizationHomeScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { organizationName } = Route.useParams();
-  const query = useQuery({
-    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
-    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
-  });
-
-  if (!query.data) {
-    return null;
-  }
-
-  return <OrganizationHomeBody organization={query.data} runtimeConfig={runtimeConfig} />;
 }
 
 function OrganizationHomeBody({
@@ -78,9 +107,6 @@ function OrganizationHomeBody({
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveModalTouched, setLeaveModalTouched] = useState(false);
   const organizationName = stringField(organization.organizationName, "organization");
-  const logoUrl =
-    stringField(organization.logoUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
   const viewerCanLeave = booleanField(organization.viewerCanLeave);
   const viewerCanLeaveAfterValidation = optionalBooleanField(
     organization.viewerCanLeaveAfterValidation,
@@ -145,17 +171,6 @@ function OrganizationHomeBody({
   return (
     <>
       <title>{organizationName}</title>
-      <OrganizationHeader
-        enrollmentRequested={booleanField(organization.enrollmentRequested)}
-        logoUrl={logoUrl}
-        organizationName={organizationName}
-        viewerCanEnroll={booleanField(organization.viewerCanEnroll)}
-      />
-      <OrganizationMenu
-        active="home"
-        organizationName={organizationName}
-        viewerCanUpdate={viewerCanUpdate}
-      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="project-home-header row-fluid">
@@ -656,7 +671,7 @@ export function OrganizationMenu({
   organizationName,
   viewerCanUpdate,
 }: {
-  active?: "home";
+  active: "home" | "boards";
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
@@ -710,7 +725,7 @@ export function OrganizationMenu({
               {t("menu.issue")}
             </Link>
           </li>
-          <li className="">
+          <li className={active === "boards" ? "active" : ""}>
             <Link
               activeOptions={{
                 exact: true,
