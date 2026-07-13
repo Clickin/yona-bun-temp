@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-seven user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-eight user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -574,6 +574,16 @@ remains fallback. Frozen `_page.less` still contains immutable evidence but cann
 owner. No popover exists and no `.popover` fallback is claimed. Fresh live/local evidence agrees
 on the desktop `24×26 @ 246,9` and mobile `24×26 @ 293.6875,9` boxes, exact base/hover colors,
 close/reopen behavior, and screenshots. This is not Wave 1 completion.
+
+The twenty-eighth verified slice migrates the framed left sidebar footer. StyleX owns its exact
+absolute right/bottom anchors, muted text color, and heart color/middle alignment. Both concrete
+colors use semantic variables in the canonical global theme; no dark value or toggle is
+introduced. The owner emits no `sidebar-bottom`, and both owner-specific `app.css` blocks are
+deleted. Only `yobicon-hearts` remains as the separate global glyph/font primitive. Fresh
+live/local desktop and mobile evidence agrees on the `16px` sidebar-right gap, `8px` viewport-bottom
+gap, 20px line box, and 13×13 heart. The approved `Yoram` product copy is naturally wider than
+legacy `Yona`, so no width or left-position compensation is added. Favorite and Project hide the
+footer while Recent History shows it through existing React state. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

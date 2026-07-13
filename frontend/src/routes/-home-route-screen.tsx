@@ -1072,6 +1072,19 @@ const leftSidebarClosePinStyles = stylex.create({
   },
 });
 
+const leftSidebarFooterStyles = stylex.create({
+  footer: {
+    bottom: "8px",
+    color: globalColors.leftSidebarFooterText,
+    position: "absolute",
+    right: "15px",
+  },
+  heart: {
+    color: globalColors.leftSidebarFooterHeart,
+    verticalAlign: "middle",
+  },
+});
+
 function LegacyFramedSidebar({
   activeTab,
   basePath,
@@ -1244,8 +1257,16 @@ function LegacyFramedSidebar({
         </div>
       </div>
       {showBottom ? (
-        <div className="sidebar-bottom" id="sidebar-bottom">
-          Yoram, made by <i aria-hidden="true" className="yobicon-hearts" />
+        <div
+          {...stylex.props(leftSidebarFooterStyles.footer)}
+          data-stylex-owner="left-sidebar-footer"
+          id="sidebar-bottom"
+        >
+          Yoram, made by{" "}
+          <i
+            aria-hidden="true"
+            className={`yobicon-hearts ${stylex.props(leftSidebarFooterStyles.heart).className}`}
+          />
         </div>
       ) : null}
     </aside>

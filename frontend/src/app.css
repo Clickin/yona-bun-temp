@@ -608,18 +608,6 @@ body:has(.legacy-framed-shell.is-open) {
   box-shadow: none;
 }
 
-.sidebar-bottom {
-  position: absolute;
-  right: 15px;
-  bottom: 8px;
-  color: gray;
-}
-
-.sidebar-bottom .yobicon-hearts {
-  color: red;
-  vertical-align: middle;
-}
-
 .sidebar-row-link {
   color: inherit;
   text-decoration: none;

@@ -103,6 +103,10 @@ export const globalColors = stylex.defineVars({
   leftSidebarClosePinText: "#3e2723",
   // _page.less: .pin-in-sidebar icon hover and React button focus color
   leftSidebarClosePinInteractionText: "#ffffff",
+  // layout_framed.scala.html: #sidebar-bottom color
+  leftSidebarFooterText: "#808080",
+  // layout_framed.scala.html: #sidebar-bottom .yobicon-hearts color
+  leftSidebarFooterHeart: "#ff0000",
   // _page.less: .sidebar color inherited by Recent issue rows
   leftSidebarRecentIssueText: "#ffffff",
   // _usermenu.less: .issue-title-start color
