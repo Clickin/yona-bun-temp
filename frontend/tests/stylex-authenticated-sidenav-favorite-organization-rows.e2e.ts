@@ -11,7 +11,7 @@ test("authenticated Favorite organization rows have narrow themed StyleX ownersh
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavFavoriteOrganizationRowStyles");
-  const end = routeSource.indexOf("const authenticatedSidenavTabPanelStyles");
+  const end = routeSource.indexOf("const authenticatedSidenavFavoriteStarStyles");
 
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
@@ -177,8 +177,8 @@ for (const viewport of [
       expect(evidence.geometry.row.right).toBeLessThanOrEqual(evidence.geometry.shell.right);
     }
     expect(ownBase.toggleStyles.marginRight).toBe("0px");
-    expect(favoriteBase.toggleStyles.marginRight).toBe("29px");
-    expect(regularBase.toggleStyles.marginRight).toBe("29px");
+    expect(favoriteBase.toggleStyles.marginRight).toBe("0px");
+    expect(regularBase.toggleStyles.marginRight).toBe("0px");
     expect(ownBase.geometry.toggle.right + 29).toBe(ownBase.geometry.header.right);
     expect(favoriteBase.geometry.toggle.right + 29).toBe(favoriteBase.geometry.header.right);
     expect(regularBase.geometry.toggle.right + 29).toBe(regularBase.geometry.header.right);
@@ -240,19 +240,26 @@ for (const viewport of [
     const ownFallback = await readRowEvidence(own);
     const favoriteFallback = await readRowEvidence(favorite);
     const regularFallback = await readRowEvidence(regular);
+    expect(ownFallback).toEqual(ownBeforeFallback);
     for (const [before, fallback] of [
-      [ownBeforeFallback, ownFallback],
       [favoriteBeforeFallback, favoriteFallback],
       [regularBeforeFallback, regularFallback],
     ]) {
       expect(fallback.rowStyles).toEqual(before.rowStyles);
       expect(fallback.headerStyles).toEqual(before.headerStyles);
-      expect(fallback.toggleStyles).toEqual(before.toggleStyles);
+      expect(fallback.toggleStyles).toMatchObject({
+        ...before.toggleStyles,
+        marginRight: "29px",
+        width: `${Number.parseFloat(before.toggleStyles.width) - 29}px`,
+      });
       expect(fallback.logoStyles).toEqual(before.logoStyles);
       expect(fallback.nameOwnerStyles).toEqual(before.nameOwnerStyles);
       expect(fallback.nameStyles).toEqual(before.nameStyles);
       expect(fallback.ownerStyles).toEqual(before.ownerStyles);
-      expect(fallback.geometry).toEqual(before.geometry);
+      expect(fallback.geometry.header).toEqual(before.geometry.header);
+      expect(fallback.geometry.row).toEqual(before.geometry.row);
+      expect(fallback.geometry.toggle.right).toBe(before.geometry.toggle.right - 29);
+      expect(fallback.geometry.toggle.width).toBe(before.geometry.toggle.width - 29);
     }
     for (const row of [own, favorite, regular]) {
       await row.header.hover();

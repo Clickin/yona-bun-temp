@@ -1275,7 +1275,7 @@ const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
     width: "auto",
   },
   realOrganizationToggle: {
-    marginRight: "29px",
+    marginRight: 0,
   },
   logo: {
     flexShrink: 0,
@@ -1324,6 +1324,67 @@ const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavFavoriteStarStyles = stylex.create({
+  placeholder: {
+    color: globalColors.sidenavFavoriteStarIdle,
+    flexShrink: 0,
+    width: "29px",
+  },
+  button: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    borderStyle: "none",
+    boxShadow: "none",
+    boxSizing: "border-box",
+    color: {
+      default: globalColors.sidenavFavoriteStarIdle,
+      ":disabled": globalColors.sidenavFavoriteStarIdle,
+      ":focus": globalColors.sidenavFavoriteStarActive,
+      ":hover": globalColors.sidenavFavoriteStarActive,
+    },
+    cursor: "pointer",
+    flexShrink: 0,
+    height: "16px",
+    lineHeight: "normal",
+    margin: 0,
+    minHeight: 0,
+    padding: 0,
+    position: "static",
+    right: "auto",
+    textAlign: "start",
+    top: "auto",
+    transform: "none",
+    width: "29px",
+  },
+  companionLink: {
+    marginRight: 0,
+  },
+  icon: {
+    color: "inherit",
+    direction: "ltr",
+    display: "inline-block",
+    fontFamily: "Material Icons",
+    fontFeatureSettings: "liga",
+    fontSize: "16px",
+    fontStyle: "normal",
+    fontWeight: 400,
+    height: "15px",
+    letterSpacing: "normal",
+    lineHeight: "16px",
+    textTransform: "none",
+    verticalAlign: "bottom",
+    whiteSpace: "nowrap",
+    wordWrap: "normal",
+    WebkitFontSmoothing: "antialiased",
+  },
+  starredIcon: {
+    color: {
+      default: globalColors.sidenavFavoriteStarActive,
+      ":hover": globalColors.sidenavFavoriteStarActiveHover,
+    },
+  },
+});
+
 const authenticatedSidenavFavoriteProjectRowStyles = stylex.create({
   row: {
     cursor: "pointer",
@@ -1359,7 +1420,7 @@ const authenticatedSidenavFavoriteProjectRowStyles = stylex.create({
     height: "18px",
     justifyContent: "space-between",
     lineHeight: "16px",
-    marginRight: "29px",
+    marginRight: 0,
     overflow: "hidden",
     textDecoration: {
       default: "none",
@@ -2171,11 +2232,13 @@ type SidebarFavoriteTarget =
 
 function SidebarFavoriteButton({
   initialFavorited,
+  isAuthenticatedFavoriteStar = false,
   label,
   runtimeConfig,
   target,
 }: {
   initialFavorited: boolean;
+  isAuthenticatedFavoriteStar?: boolean;
   label: string;
   runtimeConfig: RuntimeConfig;
   target: SidebarFavoriteTarget;
@@ -2225,14 +2288,32 @@ function SidebarFavoriteButton({
         isFavorited ? "from" : "to"
       } favorites`}
       aria-pressed={isFavorited}
-      className={`${target.type === "project" ? "star-project" : "star-org"} flex-item`}
+      className={`${target.type === "project" ? "star-project" : "star-org"} flex-item ${
+        stylex.props(isAuthenticatedFavoriteStar && authenticatedSidenavFavoriteStarStyles.button)
+          .className
+      }`.trimEnd()}
+      data-stylex-owner={
+        isAuthenticatedFavoriteStar ? "authenticated-sidenav-favorite-stars" : undefined
+      }
+      data-stylex-owner-state={
+        isAuthenticatedFavoriteStar
+          ? `${favoriteMutation.isPending ? "pending-" : ""}${isFavorited ? "starred" : "unstarred"}`
+          : undefined
+      }
       disabled={favoriteMutation.isPending}
       onClick={toggleFavorite}
       type="button"
     >
       <i
         aria-hidden="true"
-        className={isFavorited ? "star starred material-icons" : "star material-icons"}
+        className={`${isFavorited ? "star starred material-icons" : "star material-icons"} ${
+          stylex.props(
+            isAuthenticatedFavoriteStar && authenticatedSidenavFavoriteStarStyles.icon,
+            isAuthenticatedFavoriteStar &&
+              isFavorited &&
+              authenticatedSidenavFavoriteStarStyles.starredIcon,
+          ).className
+        }`.trimEnd()}
       >
         star
       </i>
@@ -2459,7 +2540,17 @@ function SidebarOrganizationList({
                   </div>
                 </div>
               </button>
-              <div className="star-org flex-item"></div>
+              <div
+                className={`star-org flex-item ${
+                  stylex.props(
+                    isAuthenticatedSidenav && authenticatedSidenavFavoriteStarStyles.placeholder,
+                  ).className
+                }`.trimEnd()}
+                data-stylex-owner={
+                  isAuthenticatedSidenav ? "authenticated-sidenav-favorite-stars" : undefined
+                }
+                data-stylex-owner-state={isAuthenticatedSidenav ? "placeholder" : undefined}
+              ></div>
             </div>
             <ul className="project-ul">
               {visibleOwnProjects.map((project) => (
@@ -2499,6 +2590,7 @@ function SidebarOrganizationList({
         <ul className="etc-favorites"></ul>
         {visibleDirectFavorites.map((project) => (
           <SidebarProjectItem
+            isAuthenticatedFavoritePane={isAuthenticatedSidenav}
             key={projectKey(project)}
             project={project}
             runtimeConfig={runtimeConfig}
@@ -2605,6 +2697,7 @@ function SidebarOrganizationItem({
         </button>
         <SidebarFavoriteButton
           initialFavorited={favored}
+          isAuthenticatedFavoriteStar={isAuthenticatedSidenav}
           key={`organization-favorite-${organizationKey(organization)}-${String(favored)}`}
           label={organizationName}
           runtimeConfig={runtimeConfig}
@@ -2718,6 +2811,7 @@ function SidebarAllProjectItem({
         </Link>
         <SidebarFavoriteButton
           initialFavorited={favored}
+          isAuthenticatedFavoriteStar={isAuthenticatedSidenav}
           key={`project-favorite-${projectKey(project)}-${String(favored)}`}
           label={`${ownerName}/${projectName}`}
           runtimeConfig={runtimeConfig}
@@ -2872,9 +2966,11 @@ function SidebarProjectPane({
 }
 
 function SidebarProjectItem({
+  isAuthenticatedFavoritePane = false,
   project,
   runtimeConfig,
 }: {
+  isAuthenticatedFavoritePane?: boolean;
   project: YoramRecord;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -2888,7 +2984,11 @@ function SidebarProjectItem({
     <li className="user-li">
       <div className="project-list project-flex-container">
         <Link
-          className="project-item project-item-container sidebar-project-link sidebar-row-link"
+          className={`project-item project-item-container sidebar-project-link sidebar-row-link ${
+            stylex.props(
+              isAuthenticatedFavoritePane && authenticatedSidenavFavoriteStarStyles.companionLink,
+            ).className
+          }`.trimEnd()}
           params={{ ownerName, projectName }}
           to="/$ownerName/$projectName"
         >
@@ -2910,6 +3010,7 @@ function SidebarProjectItem({
         </Link>
         <SidebarFavoriteButton
           initialFavorited={isFavorited}
+          isAuthenticatedFavoriteStar={isAuthenticatedFavoritePane}
           key={`project-favorite-${projectKey(project)}-${String(isFavorited)}`}
           label={`${ownerName}/${projectName}`}
           runtimeConfig={runtimeConfig}

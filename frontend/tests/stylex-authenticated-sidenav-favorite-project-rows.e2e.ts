@@ -94,7 +94,7 @@ for (const viewport of [
         height: "18px",
         justifyContent: "space-between",
         lineHeight: "16px",
-        marginRight: "29px",
+        marginRight: "0px",
         overflowX: "hidden",
         overflowY: "hidden",
         textDecorationLine: "none",
@@ -275,13 +275,19 @@ for (const viewport of [
     ]) {
       expect(fallback.rowStyles).toEqual(before.rowStyles);
       expect(fallback.listStyles).toEqual(before.listStyles);
-      expect(fallback.linkStyles).toEqual(before.linkStyles);
+      expect(fallback.linkStyles).toMatchObject({
+        ...before.linkStyles,
+        marginRight: "29px",
+      });
       expect(fallback.logoStyles).toEqual(before.logoStyles);
       expect(fallback.avatarStyles).toEqual(before.avatarStyles);
       expect(fallback.nameOwnerStyles).toEqual(before.nameOwnerStyles);
       expect(fallback.nameStyles).toEqual(before.nameStyles);
       expect(fallback.imageStyles).toEqual(before.imageStyles);
-      expect(fallback.geometry).toEqual(before.geometry);
+      expect(fallback.geometry.list).toEqual(before.geometry.list);
+      expect(fallback.geometry.row).toEqual(before.geometry.row);
+      expect(fallback.geometry.link.right).toBe(before.geometry.link.right - 29);
+      expect(fallback.geometry.link.width).toBe(before.geometry.link.width - 29);
     }
 
     await own.list.hover();

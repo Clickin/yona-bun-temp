@@ -1,7 +1,7 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, eight user-menu slices complete
-Date: 2026-07-13
+Status: Wave 0 implemented; Wave 1 started, eleven user-menu slices complete
+Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
@@ -350,6 +350,17 @@ star buttons/icons/state, direct Favorite projects, the Project tab, recent-issu
 and scrollbar rules remain later owners. Fresh live legacy captures at 1366×900 and 390×844
 confirm the 26px project row, 18px item, right-side popover geometry, and final Bootstrap/Yobi
 cascade. This is not Wave 1 completion.
+
+The eleventh verified slice migrates the authenticated Favorite pane's organization, nested
+project, and direct-project favorite stars plus the current-user organization placeholder.
+StyleX owns the complete semantic-button reset, static flex geometry, icon typography, idle,
+starred, hover, focus, and pending states. It also removes the earlier React bridge's `29px`
+absolute-button and sibling-margin compensation: fresh live legacy evidence confirms a `29×16`
+static star wrapper, a left-aligned `16×15` icon, and a `29×0` empty placeholder at both desktop
+and mobile widths. The three concrete colors are canonical global theme variables with no dark
+values or toggle. Project-tab stars remain a separate later owner. No declaration of this
+Favorite-star owner intentionally remains in fallback; removing its StyleX classes exposes the
+known `app.css` absolute-placement drift as deletion evidence. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

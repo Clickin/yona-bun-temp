@@ -31,6 +31,12 @@ export const globalColors = stylex.defineVars({
   sidenavOrganizationHoverSurface: "#f1f1f1",
   // _usermenu.less: .user-project-list .project-name.org-name color
   sidenavOrganizationName: "#00bcd4",
+  // _usermenu.less: .star-project/.star-org base color
+  sidenavFavoriteStarIdle: "#eeeeee",
+  // _usermenu.less: .starred and star wrapper hover color
+  sidenavFavoriteStarActive: "#e91e63",
+  // _usermenu.less: .starred:hover color
+  sidenavFavoriteStarActiveHover: "#8a123b",
   // _usermenu.less: .user-li .popover background-color
   sidenavPopoverSurface: "#03a9f4",
   // Bootstrap 2.3.1 .popover final border color
