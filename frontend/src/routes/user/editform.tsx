@@ -34,7 +34,10 @@ function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  if (!pathname.endsWith("/user/editform")) {
+  const rendersNestedUserSettingsLayout =
+    pathname.endsWith("/user/editform") || pathname.endsWith("/user/editform/emails");
+
+  if (!rendersNestedUserSettingsLayout) {
     return <Outlet />;
   }
 
@@ -42,10 +45,49 @@ function UserProfileSettingsRoute() {
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
+          <UserSettingsNestedLayout
+            runtimeConfig={runtimeConfig}
+            showProfileBody={pathname.endsWith("/user/editform")}
+          />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function UserSettingsNestedLayout({
+  runtimeConfig,
+  showProfileBody,
+}: {
+  runtimeConfig: RuntimeConfig;
+  showProfileBody: boolean;
+}) {
+  const { t } = useLegacyMessages();
+  const workspaceQuery = useQuery({
+    queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
+    queryKey: ["workspace", "overview"],
+  });
+  const loginId = workspaceQuery.data?.profile?.loginId ?? "";
+
+  return (
+    <>
+      <UserProfileSettingsTitle loginId={loginId} />
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>{t("userinfo.accountSetting")}</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="page-wrap">
+          <EditTabMenu active={showProfileBody ? "profile" : "emails"} />
+          {showProfileBody ? (
+            <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
+          ) : (
+            <Outlet />
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -151,167 +193,152 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
   return (
     <>
-      <UserProfileSettingsTitle loginId={loginId} />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t("userinfo.accountSetting")}</h3>
-        </div>
-      </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
-          <EditTabMenu active="profile" />
+      <form
+        id="frmBasic"
+        method="post"
+        action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
+        className="pull-left"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const formData = new FormData(form);
+          profileMutation.mutate({
+            avatarAttachmentId: "",
+            email: String(formData.get("email") ?? ""),
+            name: String(formData.get("name") ?? ""),
+          });
+        }}
+      >
+        <dl>
+          <dt>{t("user.loginId")}</dt>
+          <dd className="mt10">
+            <input type="text" className="text" value={loginId} readOnly />
+          </dd>
+          <dt>{t("user.name")}</dt>
+          <dd className="mt10">
+            <input
+              key={`name-${displayName}`}
+              type="text"
+              name="name"
+              className="text"
+              defaultValue={displayName}
+            />
+          </dd>
+          <dt>{t("user.email")}</dt>
+          <dd className="mt10">
+            <input
+              key={`email-${email}`}
+              type="email"
+              name="email"
+              className="text"
+              defaultValue={email}
+            />
+          </dd>
+          <dd>
+            <button type="submit" className="ybtn ybtn-success">
+              {t("userinfo.editProfile")}
+            </button>
+          </dd>
+        </dl>
+      </form>
 
-          <form
-            id="frmBasic"
-            method="post"
-            action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-            className="pull-left"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const form = event.currentTarget;
-              const formData = new FormData(form);
-              profileMutation.mutate({
-                avatarAttachmentId: "",
-                email: String(formData.get("email") ?? ""),
-                name: String(formData.get("name") ?? ""),
-              });
-            }}
-          >
-            <dl>
-              <dt>{t("user.loginId")}</dt>
-              <dd className="mt10">
-                <input type="text" className="text" value={loginId} readOnly />
-              </dd>
-              <dt>{t("user.name")}</dt>
-              <dd className="mt10">
-                <input
-                  key={`name-${displayName}`}
-                  type="text"
-                  name="name"
-                  className="text"
-                  defaultValue={displayName}
-                />
-              </dd>
-              <dt>{t("user.email")}</dt>
-              <dd className="mt10">
-                <input
-                  key={`email-${email}`}
-                  type="email"
-                  name="email"
-                  className="text"
-                  defaultValue={email}
-                />
-              </dd>
-              <dd>
-                <button type="submit" className="ybtn ybtn-success">
-                  {t("userinfo.editProfile")}
-                </button>
-              </dd>
-            </dl>
-          </form>
+      <form
+        id="frmAvatar"
+        method="post"
+        action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
+        className="pull-left"
+        style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (avatarFile) {
+            avatarMutation.mutate(avatarFile);
+          }
+        }}
+      >
+        <input type="hidden" name="name" value={displayName} />
+        <input type="hidden" name="email" value={email} />
 
-          <form
-            id="frmAvatar"
-            method="post"
-            action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-            className="pull-left"
-            style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (avatarFile) {
-                avatarMutation.mutate(avatarFile);
-              }
-            }}
-          >
-            <input type="hidden" name="name" value={displayName} />
-            <input type="hidden" name="email" value={email} />
-
-            <div className="avatar-frm">
-              <div className="avatar-wrap xlarge">
-                {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
-                <img src={avatarUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
-              </div>
-              <div
-                className="upload-progress avatar"
-                style={avatarMutation.isPending ? undefined : { display: "none" }}
-              >
-                <div
-                  className="bar orange"
-                  style={avatarMutation.isPending ? { width: "100%" } : undefined}
-                ></div>
-              </div>
-              <div className="btn-wrap mt10 center-txt">
-                <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
-                  {t("userinfo.changeAvatar")}
-                  <input
-                    key={avatarFileInputKey}
-                    id="avatarFile"
-                    type="file"
-                    className="file"
-                    name="filePath"
-                    accept="image/*"
-                    onChange={handleAvatarFileChange}
-                  />
-                </div>
-              </div>
-            </div>
-          </form>
-
-          <div className="reset-user-visited-list">
-            <hr />
-            <form
-              method="post"
-              action={prefixBasePath(runtimeConfig.basePath, "/user/resetVisitedList")}
-              onSubmit={(event) => {
-                event.preventDefault();
-                resetVisitedMutation.mutate();
-              }}
-            >
-              <button type="submit" className="ybtn">
-                {t("userinfo.reset.visited.project.list")}
-              </button>
-            </form>
+        <div className="avatar-frm">
+          <div className="avatar-wrap xlarge">
+            {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
+            <img src={avatarUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
           </div>
           <div
-            id="avatarCropWrap"
-            className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
-            role="dialog"
-            data-backdrop="static"
-            aria-hidden={
-              avatarCropModalHasOpened ? (avatarCropModalOpen ? "false" : "true") : undefined
-            }
-            style={avatarCropModalOpen ? { display: "block" } : undefined}
+            className="upload-progress avatar"
+            style={avatarMutation.isPending ? undefined : { display: "none" }}
           >
-            <div className="modal-header center-txt">
-              <div className="avatar-wrap xlarge">
-                {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
-                <img
-                  src={avatarPreviewUrl || undefined}
-                  style={{ maxWidth: "none", width: "128px" }}
-                />
-              </div>
-            </div>
-            <div className="modal-body">
-              {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop preview image without an alt attribute. */}
-              <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} />
-              <canvas width="128" height="128" className="hide"></canvas>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="ybtn ybtn-default" onClick={dismissAvatarCropModal}>
-                {t("button.cancel")}
-              </button>
-              <button
-                type="button"
-                className="ybtn ybtn-success btnSubmitCrop"
-                onClick={submitAvatarCrop}
-              >
-                {t("button.save")}
-              </button>
+            <div
+              className="bar orange"
+              style={avatarMutation.isPending ? { width: "100%" } : undefined}
+            ></div>
+          </div>
+          <div className="btn-wrap mt10 center-txt">
+            <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
+              {t("userinfo.changeAvatar")}
+              <input
+                key={avatarFileInputKey}
+                id="avatarFile"
+                type="file"
+                className="file"
+                name="filePath"
+                accept="image/*"
+                onChange={handleAvatarFileChange}
+              />
             </div>
           </div>
-          {avatarCropModalOpen ? <div className="modal-backdrop in"></div> : null}
+        </div>
+      </form>
+
+      <div className="reset-user-visited-list">
+        <hr />
+        <form
+          method="post"
+          action={prefixBasePath(runtimeConfig.basePath, "/user/resetVisitedList")}
+          onSubmit={(event) => {
+            event.preventDefault();
+            resetVisitedMutation.mutate();
+          }}
+        >
+          <button type="submit" className="ybtn">
+            {t("userinfo.reset.visited.project.list")}
+          </button>
+        </form>
+      </div>
+      <div
+        id="avatarCropWrap"
+        className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
+        role="dialog"
+        data-backdrop="static"
+        aria-hidden={
+          avatarCropModalHasOpened ? (avatarCropModalOpen ? "false" : "true") : undefined
+        }
+        style={avatarCropModalOpen ? { display: "block" } : undefined}
+      >
+        <div className="modal-header center-txt">
+          <div className="avatar-wrap xlarge">
+            {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
+            <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
+          </div>
+        </div>
+        <div className="modal-body">
+          {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop preview image without an alt attribute. */}
+          <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} />
+          <canvas width="128" height="128" className="hide"></canvas>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="ybtn ybtn-default" onClick={dismissAvatarCropModal}>
+            {t("button.cancel")}
+          </button>
+          <button
+            type="button"
+            className="ybtn ybtn-success btnSubmitCrop"
+            onClick={submitAvatarCrop}
+          >
+            {t("button.save")}
+          </button>
         </div>
       </div>
+      {avatarCropModalOpen ? <div className="modal-backdrop in"></div> : null}
     </>
   );
 }

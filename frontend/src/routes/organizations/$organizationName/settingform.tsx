@@ -7,10 +7,8 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import { RestApiError } from "../../../api/rest-client";
 import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/organizations/$organizationName/settingform")({
   component: OrganizationSettingsRoute,
@@ -19,15 +17,7 @@ export const Route = createFileRoute("/organizations/$organizationName/settingfo
 function OrganizationSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
-          <OrganizationSettingsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <OrganizationSettingsScreen runtimeConfig={runtimeConfig} />;
 }
 
 function OrganizationSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -118,11 +108,6 @@ function OrganizationSettingsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-      <OrganizationMenu
-        organizationName={organizationName}
-        viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
-      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingMenu active="setting" organizationName={organizationName} />
@@ -222,121 +207,6 @@ function OrganizationSettingsBody({
   );
 }
 
-function OrganizationHeader({
-  logoUrl,
-  organizationName,
-}: {
-  logoUrl: string;
-  organizationName: string;
-}) {
-  return (
-    <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className="project-breadcrumb-wrap">
-            <div className="project-breadcrumb">
-              <span className="project-author">
-                <span className="group-title-head">group</span>
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  search={{}}
-                  to={`/organizations/${organizationName}`}
-                >
-                  {organizationName}
-                </Link>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function OrganizationMenu({
-  organizationName,
-  viewerCanUpdate,
-}: {
-  organizationName: string;
-  viewerCanUpdate: boolean;
-}) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={{}}
-              to={`/organizations/${organizationName}`}
-            >
-              {t("title.organizationHome")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/issues`}
-            >
-              {t("menu.issue")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/boards`}
-            >
-              {t("menu.board")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/pullrequests`}
-            >
-              {t("menu.pullRequest")}
-            </Link>
-          </li>
-        </ul>
-        <div className="project-setting">
-          <ul className="project-menu-nav">
-            {viewerCanUpdate ? (
-              <li className="">
-                <Link
-                  activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  search={() => undefined}
-                  to={`/organizations/${organizationName}/settingform`}
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">{t("menu.admin")}</span>
-                </Link>
-              </li>
-            ) : null}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function OrganizationSettingMenu({
   active,
   organizationName,
@@ -406,10 +276,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function booleanField(value: unknown) {
-  return value === true;
 }
 
 function selectedLogoFile(value: FormDataEntryValue | null) {

@@ -19,8 +19,7 @@ import {
 } from "../../../api/pull-requests";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
@@ -64,68 +63,15 @@ function ProjectPullRequestsRoute() {
   const search = Route.useSearch();
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectOpenPullRequestsRouteShell
-          ownerName={ownerName}
-          projectName={projectName}
-          runtimeConfig={runtimeConfig}
-          search={search}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
-}
-
-function ProjectOpenPullRequestsRouteShell({
-  ownerName,
-  projectName,
-  runtimeConfig,
-  search,
-}: {
-  ownerName: string;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-  search: ProjectPullRequestsSearch;
-}) {
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
-
-  if (!projectQuery.data) {
-    return null;
-  }
-
-  const isGitProject = stringField(projectQuery.data.vcs, "GIT") === "GIT";
-  if (!isGitProject) {
-    return (
-      <ProjectPullRequestsBadRequestRouteShell
-        ownerName={ownerName}
-        projectName={projectName}
-        runtimeConfig={runtimeConfig}
-      />
-    );
-  }
-
-  return (
-    <SiteLayoutShell
-      projectSearchScope={{
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }}
+    <ProjectPullRequestsScreen
+      category="open"
+      ownerName={ownerName}
+      projectName={projectName}
+      renderProjectShell={false}
+      requestType="open"
       runtimeConfig={runtimeConfig}
-    >
-      <ProjectPullRequestsScreen
-        category="open"
-        ownerName={ownerName}
-        project={projectQuery.data}
-        projectName={projectName}
-        requestType="open"
-        runtimeConfig={runtimeConfig}
-        search={search}
-      />
-    </SiteLayoutShell>
+      search={search}
+    />
   );
 }
 
@@ -166,6 +112,7 @@ export function ProjectPullRequestsScreen({
   ownerName,
   project: initialProject,
   projectName,
+  renderProjectShell = true,
   requestType,
   runtimeConfig,
   search,
@@ -174,6 +121,7 @@ export function ProjectPullRequestsScreen({
   ownerName: string;
   project?: ProjectContainer;
   projectName: string;
+  renderProjectShell?: boolean;
   requestType: "closed" | "open" | "sent";
   runtimeConfig: RuntimeConfig;
   search: ProjectPullRequestsSearch;
@@ -202,11 +150,13 @@ export function ProjectPullRequestsScreen({
   if (!isGitProject) {
     return (
       <>
-        <ProjectPullRequestsBrowserTitle
-          isGitProject={false}
-          ownerName={ownerName}
-          projectName={projectName}
-        />
+        {renderProjectShell ? (
+          <ProjectPullRequestsBrowserTitle
+            isGitProject={false}
+            ownerName={ownerName}
+            projectName={projectName}
+          />
+        ) : null}
         <ProjectPullRequestsBadRequestBody runtimeConfig={runtimeConfig} />
       </>
     );
@@ -218,13 +168,17 @@ export function ProjectPullRequestsScreen({
 
   return (
     <>
-      <ProjectPullRequestsBrowserTitle
-        isGitProject={isGitProject}
-        ownerName={ownerName}
-        projectName={projectName}
-      />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+      {renderProjectShell ? (
+        <>
+          <ProjectPullRequestsBrowserTitle
+            isGitProject={isGitProject}
+            ownerName={ownerName}
+            projectName={projectName}
+          />
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      ) : null}
       <ProjectPullRequestsBody
         project={project}
         pullRequests={pullRequestsQuery.data}
@@ -1122,12 +1076,4 @@ function projectPullRequestsBrowserTitle({
   return isGitProject
     ? `${projectName} - ${pullRequestMenuTitle} - ${ownerName}/${projectName}`
     : badRequestOnlyForGit;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }

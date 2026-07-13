@@ -91,6 +91,7 @@ function ProjectHomeRoute() {
   const branchesPath = `${homePath}/branches`;
   const milestonesPath = `${homePath}/milestones`;
   const postsPath = `${homePath}/posts`;
+  const pullRequestsPath = `${homePath}/pullRequests`;
   const active =
     pathname === homePath
       ? "home"
@@ -102,7 +103,9 @@ function ProjectHomeRoute() {
             ? "milestone"
             : pathname === postsPath
               ? "board"
-              : null;
+              : pathname === pullRequestsPath
+                ? "pullRequest"
+                : null;
 
   if (!active) {
     return <Outlet />;
@@ -121,7 +124,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -135,7 +138,7 @@ function ProjectHomeRouteShell({
 
   // BranchApp only renders the project layout for Git projects. Preserve its
   // site-level bad-request output for other VCS types.
-  if (active === "code" && query.data.vcs !== "GIT") {
+  if ((active === "code" || active === "pullRequest") && query.data.vcs !== "GIT") {
     return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }
 
@@ -172,7 +175,7 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -191,7 +194,9 @@ function ProjectLayoutScreen({
               ? `${projectName} - milestone - ${ownerName}/${projectName}`
               : active === "board"
                 ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                : active === "pullRequest"
+                  ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                  : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />

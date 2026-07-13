@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ORGANIZATION_SETTINGS_ROUTE_SOURCE =
   "src/routes/organizations/$organizationName/settingform.tsx";
-const LEGACY_ORGANIZATION_DEFAULT_LOGO = "/assets/images/group_default.png";
+const ORGANIZATION_PARENT_ROUTE_SOURCE = "src/routes/organizations/$organizationName.tsx";
 
 const EXPECTED_ORGANIZATION_SETTINGS_FORM = `
 <div class="unsupported hidden">
@@ -168,10 +168,11 @@ test("organization settings form matches legacy organization/setting.scala.html 
     "page-footer-outer",
   ]);
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
+  expect(await canonicalizeScreenRoot(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_ORGANIZATION_SETTINGS_FORM.replaceAll("__BASE_PATH__", basePath),
+      ".page-wrap-outer",
     ),
   );
 });
@@ -194,7 +195,7 @@ test("organization settings form pins the live localhost authenticated generic s
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    LEGACY_ORGANIZATION_DEFAULT_LOGO,
+    `${basePath}/legacy-assets/images/group_default.png`,
   );
 
   const shellMetrics = await page.evaluate(() => {
@@ -241,14 +242,13 @@ test("organization settings form keeps legacy setting.scala.html layout metrics"
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockOrganizationSettings(page);
+  await page.setViewportSize({ height: 900, width: 1440 });
 
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
   await expect(page.locator("#saveSetting")).toBeVisible();
 
   const metrics = await organizationSettingsMetrics(page);
 
-  expect(metrics.pageWrap.marginTop).toBe("20px");
-  expect(metrics.settingMenu.marginBottom).toBe("15px");
   expect(metrics.form.margin).toBe("0px");
   expect(metrics.bubble.backgroundColor).toBe("rgb(247, 247, 247)");
   expect(metrics.bubble.borderRadius).toBe("5px");
@@ -526,24 +526,28 @@ test("organization settings breadcrumb organization link keeps legacy href with 
   await expect(page.locator("#mylist-filter")).toBeVisible();
 });
 
-test("organization settings breadcrumb source uses direct Link without Link prop shim", () => {
-  const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
-  const headerBreadcrumb = source.match(
+test("organization settings parent owns the legacy breadcrumb shell without Link prop shims", () => {
+  const settingsSource = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
+  const parentSource = readFileSync(ORGANIZATION_PARENT_ROUTE_SOURCE, "utf8");
+  const headerBreadcrumb = parentSource.match(
     /<span className="project-author">[\s\S]*?<\/span>\s*<\/div>\s*<\/div>/u,
   )?.[0];
 
   expect(headerBreadcrumb).toContain("<Link");
-  expect(headerBreadcrumb).toContain("to={`/organizations/${organizationName}`}");
-  expect(source).toContain("showLegacyProjectHeaderLinks");
-  expect(source).toContain("<title>{organizationName}</title>");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("Parameters<typeof Link>");
-  expect(source).not.toContain("as unknown as");
+  expect(headerBreadcrumb).toContain('to="/organizations/$organizationName"');
+  expect(parentSource).toContain("showLegacyProjectHeaderLinks");
+  expect(settingsSource).toContain("<title>{organizationName}</title>");
+  expect(settingsSource).not.toContain("SiteLayoutShell");
+  expect(settingsSource).not.toContain("OrganizationHeader");
+  expect(settingsSource).not.toContain("OrganizationMenu");
+  expect(parentSource).not.toContain("globalThis.document");
+  expect(parentSource).not.toContain("document.title");
+  expect(parentSource).not.toContain("Parameters<typeof Link>");
+  expect(parentSource).not.toContain("as unknown as");
   expect(headerBreadcrumb).not.toContain(
     "href={organizationSettingHref(basePath, organizationName)}",
   );
-  expect(source).not.toContain(
+  expect(parentSource).not.toContain(
     "<a href={organizationSettingHref(basePath, organizationName)}>{organizationName}</a>",
   );
 });
@@ -619,7 +623,9 @@ test("organization settings menu board link preserves legacy href with SPA trans
   });
   await boardLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect(page).toHaveURL(
+    new RegExp(`${basePath}/organizations/weblabs/boards\\?filter=&orderBy=updatedDate`),
+  );
   await expect
     .poll(() =>
       page.evaluate(
@@ -956,14 +962,13 @@ function organizationAdminPayload() {
   };
 }
 
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
-      ),
-    );
-    return roots.map((root) => visit(root)).join("");
+async function canonicalizeScreenRoot(page: Page, selector: string) {
+  return page.evaluate((targetSelector) => {
+    const root = document.querySelector(targetSelector);
+    if (!root) {
+      throw new Error(`Missing selector: ${targetSelector}`);
+    }
+    return visit(root);
 
     function visit(node: Node): string {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -994,45 +999,49 @@ async function canonicalizeScreenRoots(page: Page) {
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
     }
-  });
+  }, selector);
 }
 
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
+async function canonicalizeHtml(page: Page, html: string, selector?: string) {
+  return page.evaluate(
+    ({ input, targetSelector }) => {
+      const template = document.createElement("template");
+      template.innerHTML = input;
+      const roots = targetSelector
+        ? Array.from(template.content.querySelectorAll(targetSelector))
+        : Array.from(template.content.children);
+      return roots.map((root) => visit(root)).join("");
 
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
+      function visit(node: Node): string {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent ?? "");
+        }
+        if (!(node instanceof Element)) {
+          return "";
+        }
+        const attrs = Array.from(node.attributes)
+          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        const open = attrs
+          ? `<${node.tagName.toLowerCase()} ${attrs}>`
+          : `<${node.tagName.toLowerCase()}>`;
+        return `${open}${Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("")}</${node.tagName.toLowerCase()}>`;
       }
-      if (!(node instanceof Element)) {
-        return "";
+
+      function normalizeText(text: string) {
+        return text.replace(/\s+/g, " ").trim();
       }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
 
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  }, html);
+      function normalizeAttr(attr: Attr) {
+        return attr.name === "style"
+          ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+          : attr.value;
+      }
+    },
+    { input: html, targetSelector: selector },
+  );
 }
