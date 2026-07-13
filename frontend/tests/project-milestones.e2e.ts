@@ -91,8 +91,8 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     rowWidth: 1260,
     searchButtonInsideSearchBar: true,
     searchInputLeftAlignedBeforeButton: true,
-    searchButtonWidth: 38,
-    searchInputWidth: 350,
+    searchButtonWidth: 12,
+    searchInputWidth: 360,
     tabWrapMarginBottom: "0px",
   });
 
@@ -142,21 +142,20 @@ test("project milestones list matches legacy milestone/list.scala.html populated
 
 test("project milestones route uses direct typed Link targets", () => {
   const routeSource = readFileSync("src/routes/$ownerName/$projectName/milestones.tsx", "utf8");
+  const parentRouteSource = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
 
   expect(routeSource).not.toContain("LegacyInternalLink");
   expect(routeSource).not.toContain("as never");
-  expect(routeSource).toContain("projectSearchScope={projectSearchScope}");
-  expect(routeSource).toContain(
-    "organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName)",
-  );
-  expect(routeSource).toContain(
-    "function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string)",
-  );
-  expect(routeSource).toContain("return projectIsProtected(project) ? ownerName : undefined;");
-  expect(routeSource).toContain('stringField(record.projectScope, "") === "protected"');
-  expect(routeSource).toContain(
-    "<title>{`${projectName} - milestone - ${ownerName}/${projectName}`}</title>",
-  );
+  expect(routeSource).not.toContain("SiteLayoutShell");
+  expect(routeSource).not.toContain("ProjectHeader");
+  expect(routeSource).not.toContain("ProjectMenu");
+  expect(routeSource).not.toContain("YonaQueryProvider");
+  expect(routeSource).not.toContain("LegacyI18nProvider");
+  expect(parentRouteSource).toContain("const milestonesPath = `${homePath}/milestones`;");
+  expect(parentRouteSource).toContain('"milestone"');
+  expect(parentRouteSource).toContain("`${projectName} - milestone - ${ownerName}/${projectName}`");
+  expect(parentRouteSource).toContain('active === "milestone"');
+  expect(parentRouteSource).toContain("`/${ownerName}/${projectName}/issue/labels.css`");
   expect(routeSource).not.toContain("useProjectMilestonesDocumentTitle");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain('globalThis["document"]');
@@ -216,22 +215,13 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect
-    .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
-    )
-    .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
-    ]);
+  await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await page
+    .locator(".gnb-search-form .dropdown-menu button")
+    .filter({ hasText: "This Group" })
+    .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -239,7 +229,10 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await page
+    .locator(".gnb-search-form .dropdown-menu button")
+    .filter({ hasText: "All Projects" })
+    .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 

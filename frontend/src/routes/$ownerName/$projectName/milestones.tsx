@@ -9,11 +9,8 @@ import type {
   YonaLabel,
 } from "../../../api/types";
 import { listProjectMilestones } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
-import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { useLegacyMessages } from "../../../i18n";
+import type { RuntimeConfig } from "../../../runtime-config";
 
 type MilestoneListSearch = {
   orderBy?: string;
@@ -39,14 +36,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestones")({
 
 function ProjectMilestonesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectMilestonesScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectMilestonesScreen runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -72,37 +62,12 @@ function ProjectMilestonesScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
   return (
-    <>
-      <title>{`${projectName} - milestone - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-        <ProjectMenu
-          active="milestone"
-          basePath={runtimeConfig.basePath}
-          project={projectQuery.data}
-        />
-        <link
-          rel="stylesheet"
-          href={prefixBasePath(
-            runtimeConfig.basePath,
-            `/${ownerName}/${projectName}/issue/labels.css`,
-          )}
-          type="text/css"
-        />
-        <ProjectMilestonesBody
-          milestones={milestonesQuery.data.milestones}
-          project={projectQuery.data}
-          search={search}
-        />
-      </SiteLayoutShell>
-    </>
+    <ProjectMilestonesBody
+      milestones={milestonesQuery.data.milestones}
+      project={projectQuery.data}
+      search={search}
+    />
   );
 }
 

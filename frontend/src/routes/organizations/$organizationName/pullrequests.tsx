@@ -1,18 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { readOrganizationContainerRest } from "../../../api/org-project";
 import {
   organizationPullRequestListQueryOptions,
   type PullRequestListItem,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
-import { apiQueryKeys } from "../../../api/query-keys";
-import type { OrganizationContainer } from "../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
@@ -39,16 +34,12 @@ function OrganizationPullRequestsRoute() {
   const search = Route.useSearch();
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <OrganizationPullRequestsPage
-          category="open"
-          organizationName={organizationName}
-          runtimeConfig={runtimeConfig}
-          search={search}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <OrganizationPullRequestsPage
+      category="open"
+      organizationName={organizationName}
+      runtimeConfig={runtimeConfig}
+      search={search}
+    />
   );
 }
 
@@ -63,10 +54,6 @@ export function OrganizationPullRequestsPage({
   runtimeConfig: RuntimeConfig;
   search: OrganizationPullRequestsSearch;
 }) {
-  const organizationQuery = useQuery({
-    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
-    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
-  });
   const pullRequestsQuery = useQuery(
     organizationPullRequestListQueryOptions(runtimeConfig, {
       category,
@@ -75,35 +62,29 @@ export function OrganizationPullRequestsPage({
     }),
   );
 
-  if (!organizationQuery.data || !pullRequestsQuery.data) {
+  if (!pullRequestsQuery.data) {
     return null;
   }
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={{ organizationName }}
+    <OrganizationPullRequestsBody
+      organizationName={organizationName}
+      pullRequests={pullRequestsQuery.data}
       runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
-      <OrganizationPullRequestsBody
-        organization={organizationQuery.data}
-        pullRequests={pullRequestsQuery.data}
-        runtimeConfig={runtimeConfig}
-        search={search}
-        selectedCategory={category}
-      />
-    </SiteLayoutShell>
+      search={search}
+      selectedCategory={category}
+    />
   );
 }
 
 function OrganizationPullRequestsBody({
-  organization,
+  organizationName,
   pullRequests,
   runtimeConfig,
   search,
   selectedCategory,
 }: {
-  organization: OrganizationContainer;
+  organizationName: string;
   pullRequests: PullRequestListResponse;
   runtimeConfig: RuntimeConfig;
   search: OrganizationPullRequestsSearch;
@@ -111,10 +92,6 @@ function OrganizationPullRequestsBody({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  const organizationName = stringField(organization.organizationName, "");
-  const logoUrl =
-    stringField(organization.logoUrl, "") ||
-    prefixBasePath(runtimeConfig.basePath, "/assets/images/group_default.png");
   const openAction = prefixBasePath(
     runtimeConfig.basePath,
     `/organizations/${organizationName}/pullrequests`,
@@ -131,12 +108,6 @@ function OrganizationPullRequestsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-      <OrganizationMenu
-        active="pullrequests"
-        organizationName={organizationName}
-        viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
-      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <div className="row-fluid cb">

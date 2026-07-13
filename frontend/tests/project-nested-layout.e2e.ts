@@ -53,6 +53,33 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await expectProjectBranchesGeometry(page);
 });
 
+test("project branches to milestones keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/branches`);
+  await expect(page.locator(".branch-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectBranchesGeometry(page);
+
+  await page.locator(".project-menu-gruop a[href$='/admin/sample/milestones']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/milestones(?:\?|$)/);
+  await expect(page.locator(".project-menu-gruop li").filter({ hasText: "Milestone" })).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestonesGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMilestonesGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -173,6 +200,48 @@ async function expectProjectBranchesGeometry(page: Page) {
   expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.tableLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
   expect(metrics.tableRight).toBeGreaterThan(metrics.tableLeft);
+}
+
+async function expectProjectMilestonesGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const empty = rect(".error-wrap");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      emptyBottom: empty.bottom,
+      emptyLeft: empty.left,
+      emptyRight: empty.right,
+      emptyTop: empty.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.emptyTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.emptyBottom).toBeGreaterThan(metrics.emptyTop);
+  expect(metrics.emptyLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.emptyRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
 async function mockProjectHomeAndIssues(page: Page) {
