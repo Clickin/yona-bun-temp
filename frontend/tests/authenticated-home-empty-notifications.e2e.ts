@@ -2840,7 +2840,7 @@ async function readLeftSidebarTabMetrics(page: Page) {
       '#sidebar > [data-stylex-owner="left-sidebar-tab-panel"]',
     );
     const search = document.querySelector<HTMLElement>(
-      "#left-sidebar-myOrganizationList .org-search",
+      '[data-stylex-owner="left-sidebar-favorite-shell"] input',
     );
     const tabs = Array.from(
       document.querySelectorAll<HTMLElement>(

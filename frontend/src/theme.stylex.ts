@@ -47,6 +47,10 @@ export const globalColors = stylex.defineVars({
   leftSidebarRecentIssueHoverSurface: "rgba(255, 255, 255, 0.15)",
   // _usermenu.less: .sidebar .search-input background-color
   leftSidebarRecentSearchSurface: "#000000",
+  // _usermenu.less: .sidebar .search-input background-color for the Favorite shell
+  leftSidebarFavoriteSearchSurface: "#000000",
+  // _usermenu.less: .sidebar .search-input color for the Favorite shell
+  leftSidebarFavoriteSearchText: "#ffffff",
   // _page.less: .sidebar .nav-tabs li a color
   leftSidebarTabText: "lightgray",
   // _page.less: .sidebar .nav-tabs active/interaction color

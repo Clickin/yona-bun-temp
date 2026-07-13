@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-one user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-two user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -491,6 +491,20 @@ desktop `y=105` and mobile `y=78`, while live Favorite-state evidence preserves 
 10px bottom-margin relationship rather than forcing the active pane to fill the panel height.
 Before/after local screenshots are byte-identical at both viewports. This is not Wave 1
 completion.
+
+The twenty-second verified slice migrates the framed left sidebar's Favorite search/result shell.
+StyleX owns the group, black/white input and focus state, React focus-bar pseudos, populated/empty
+result reset and bounds, exact 5px scrollbar, and empty-result presentation. The owner emits none
+of `search-result`, `group`, `search-input`, `org-search`, `bar`, `tab-pane`, `user-ul`, or
+`no-result`. Two evidenced Favorite search colors are defined in the global theme boundary; no
+dark value or toggle is introduced. Fresh English live legacy evidence pins the populated shell at
+`270×79 @ y105` desktop and `y78` mobile, with a `279.296875×42` input border box and
+`0px → 135px` focus halves. Populated/empty local owner-element screenshots are byte-identical
+before and after at both viewports. The outer `user-project-list` remains only for unmigrated row
+descendants, so its broad descendant scrollbar selector still matches temporarily; StyleX owns and
+overrides the exact scrollbar values until those rows migrate and the ancestor can be removed.
+Bootstrap input padding and the max-720 `16px !important` input rule remain separate shared
+primitives. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

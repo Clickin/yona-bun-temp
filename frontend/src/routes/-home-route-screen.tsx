@@ -1313,6 +1313,87 @@ const authenticatedSidenavTabStyles = stylex.create({
   },
 });
 
+const leftSidebarFavoriteShellStyles = stylex.create({
+  group: {
+    position: "relative",
+  },
+  input: {
+    backgroundColor: globalColors.leftSidebarFavoriteSearchSurface,
+    borderRadius: "unset",
+    borderStyle: {
+      default: "none",
+      ":focus": "none",
+    },
+    boxSizing: "content-box",
+    color: globalColors.leftSidebarFavoriteSearchText,
+    display: "block",
+    fontSize: "14px",
+    height: "34px",
+    marginBottom: 0,
+    outlineStyle: {
+      default: null,
+      ":focus": "none",
+    },
+    width: "99%",
+  },
+  bar: {
+    display: "block",
+    position: "relative",
+    "::before": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      left: "50%",
+      position: "absolute",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+    "::after": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      position: "absolute",
+      right: "50%",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+  },
+  focusedBar: {
+    "::before": {
+      width: "50%",
+    },
+    "::after": {
+      width: "50%",
+    },
+  },
+  result: {
+    display: "block",
+    listStyle: "none",
+    margin: "0 0 10px",
+    maxHeight: "80vh",
+    overflowX: "visible",
+    overflowY: "auto",
+    padding: 0,
+    "::-webkit-scrollbar": {
+      backgroundColor: globalColors.sidenavScrollbarTrack,
+      height: "10px",
+      width: "5px",
+    },
+    "::-webkit-scrollbar-thumb": {
+      backgroundColor: globalColors.sidenavScrollbarThumb,
+    },
+  },
+  noResult: {
+    color: globalColors.sidenavNoResultText,
+    fontSize: "16px",
+    marginBottom: "25px",
+    marginTop: "10px",
+    textAlign: "center",
+  },
+});
+
 const authenticatedSidenavFavoriteShellStyles = stylex.create({
   group: {
     position: "relative",
@@ -2913,9 +2994,12 @@ function SidebarOrganizationList({
   const visibleDirectFavorites = directFavoriteProjects.filter((project) =>
     sidebarProjectMatches(project, normalizedQuery),
   );
-  const favoriteShellOwner = isAuthenticatedSidenav
-    ? "authenticated-sidenav-favorite-shell"
-    : undefined;
+  const isLeftSidebarFavoriteShell = idPrefix === "left-sidebar";
+  const favoriteShellOwner = isLeftSidebarFavoriteShell
+    ? "left-sidebar-favorite-shell"
+    : isAuthenticatedSidenav
+      ? "authenticated-sidenav-favorite-shell"
+      : undefined;
   const favoriteShellGroupClass = isAuthenticatedSidenav
     ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.group).className}`
     : "";
@@ -2941,6 +3025,23 @@ function SidebarOrganizationList({
         ).className
       }`
     : "";
+  const leftFavoriteShellGroupClass = stylex.props(
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.group,
+  ).className;
+  const leftFavoriteShellInputClass = stylex.props(
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.input,
+  ).className;
+  const leftFavoriteShellBarClass = stylex.props(
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.bar,
+    isLeftSidebarFavoriteShell && isSearchFocused && leftSidebarFavoriteShellStyles.focusedBar,
+  ).className;
+  const leftFavoriteShellResultClass = stylex.props(
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.result,
+  ).className;
+  const leftFavoriteShellNoResultClass = stylex.props(
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.result,
+    isLeftSidebarFavoriteShell && leftSidebarFavoriteShellStyles.noResult,
+  ).className;
 
   if (
     ownProjects.length === 0 &&
@@ -2949,10 +3050,23 @@ function SidebarOrganizationList({
     directFavoriteProjects.length === 0
   ) {
     return (
-      <div className="search-result" data-stylex-owner={favoriteShellOwner}>
-        <div className={`group${favoriteShellGroupClass}`}>
+      <div
+        className={isLeftSidebarFavoriteShell ? undefined : "search-result"}
+        data-stylex-owner={favoriteShellOwner}
+      >
+        <div
+          className={
+            isLeftSidebarFavoriteShell
+              ? leftFavoriteShellGroupClass
+              : `group${favoriteShellGroupClass}`
+          }
+        >
           <input
-            className={`search-input org-search${favoriteShellInputClass}`}
+            className={
+              isLeftSidebarFavoriteShell
+                ? leftFavoriteShellInputClass
+                : `search-input org-search${favoriteShellInputClass}`
+            }
             type="text"
             autoComplete="off"
             onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
@@ -2961,11 +3075,19 @@ function SidebarOrganizationList({
             placeholder={t("title.type.name")}
             value={searchQuery}
           />
-          <span className={`bar${favoriteShellBarClass}`}></span>
+          <span
+            className={
+              isLeftSidebarFavoriteShell ? leftFavoriteShellBarClass : `bar${favoriteShellBarClass}`
+            }
+          ></span>
         </div>
         <div
           id={sidebarDomId(idPrefix, "organizations")}
-          className={`no-result tab-pane user-ul${favoriteShellNoResultClass}`}
+          className={
+            isLeftSidebarFavoriteShell
+              ? leftFavoriteShellNoResultClass
+              : `no-result tab-pane user-ul${favoriteShellNoResultClass}`
+          }
         >
           {t("title.no.results")}
         </div>
@@ -2974,10 +3096,23 @@ function SidebarOrganizationList({
   }
 
   return (
-    <div className="search-result" data-stylex-owner={favoriteShellOwner}>
-      <div className={`group${favoriteShellGroupClass}`}>
+    <div
+      className={isLeftSidebarFavoriteShell ? undefined : "search-result"}
+      data-stylex-owner={favoriteShellOwner}
+    >
+      <div
+        className={
+          isLeftSidebarFavoriteShell
+            ? leftFavoriteShellGroupClass
+            : `group${favoriteShellGroupClass}`
+        }
+      >
         <input
-          className={`search-input org-search${favoriteShellInputClass}`}
+          className={
+            isLeftSidebarFavoriteShell
+              ? leftFavoriteShellInputClass
+              : `search-input org-search${favoriteShellInputClass}`
+          }
           type="text"
           autoComplete="off"
           onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
@@ -2986,10 +3121,18 @@ function SidebarOrganizationList({
           placeholder={t("title.type.name")}
           value={searchQuery}
         />
-        <span className={`bar${favoriteShellBarClass}`}></span>
+        <span
+          className={
+            isLeftSidebarFavoriteShell ? leftFavoriteShellBarClass : `bar${favoriteShellBarClass}`
+          }
+        ></span>
       </div>
       <ul
-        className={`tab-pane user-ul${favoriteShellResultClass}`}
+        className={
+          isLeftSidebarFavoriteShell
+            ? leftFavoriteShellResultClass
+            : `tab-pane user-ul${favoriteShellResultClass}`
+        }
         id={sidebarDomId(idPrefix, "organizations")}
       >
         {ownProjects.length > 0 && showOwnProjects ? (
