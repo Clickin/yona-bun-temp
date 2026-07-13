@@ -221,12 +221,19 @@ function ProjectMembersScreen({
     return null;
   }
 
+  const mentionStylesheetHref = prefixBasePath(
+    runtimeConfig.basePath,
+    "/assets/javascripts/lib/mentionjs/mention.css",
+  );
   const body = (
-    <ProjectMembersBody
-      members={membersQuery.data}
-      project={projectData}
-      runtimeConfig={runtimeConfig}
-    />
+    <>
+      <ProjectMembersBody
+        members={membersQuery.data}
+        project={projectData}
+        runtimeConfig={runtimeConfig}
+      />
+      <link href={mentionStylesheetHref} media="screen" rel="stylesheet" type="text/css" />
+    </>
   );
 
   return renderProjectShell ? (
@@ -818,14 +825,9 @@ function parseLegacyMemberSearchItem(item: {
 }): LegacyMemberSuggestionView {
   const info = stringField(item.info, "");
   const loginId = stringField(item.loginId, "");
-  // ponytail: legacy UserApp.java builds item.info as
-  //   <img class='mention_image' src='...'><b class='mention_name'>NAME</b><span class='mention_username'> @LOGINID</span>
-  // Native DOMParser+querySelector replaces the hand-rolled regex HTML parser.
-  const doc = new DOMParser().parseFromString(info, "text/html");
-  const imageSrc = doc.querySelector(".mention_image")?.getAttribute("src") || defaultAvatarUrl;
-  const userLabel = doc.querySelector(".mention_name")?.textContent?.trim() || loginId;
-  const mentionUsername =
-    doc.querySelector(".mention_username")?.textContent?.trim() || `@${loginId}`;
+  const imageSrc = legacyMentionImageSrc(info) || defaultAvatarUrl;
+  const userLabel = legacyMentionText(info, "b", "mention_name") || loginId;
+  const mentionUsername = legacyMentionText(info, "span", "mention_username") || `@${loginId}`;
 
   return {
     imageSrc,
@@ -834,6 +836,28 @@ function parseLegacyMemberSearchItem(item: {
     mentionUsername,
     userLabel,
   };
+}
+
+function legacyMentionImageSrc(info: string) {
+  const match = /<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(info);
+  return match?.[1] || match?.[2] || match?.[3] || "";
+}
+
+function legacyMentionText(info: string, tagName: "b" | "span", className: string) {
+  const match = new RegExp(
+    `<${tagName}\\b[^>]*\\bclass\\s*=\\s*(?:"[^"]*\\b${className}\\b[^"]*"|'[^']*\\b${className}\\b[^']*')[^>]*>([\\s\\S]*?)<\\/${tagName}>`,
+    "i",
+  ).exec(info);
+  return match ? decodeLegacyMentionText(match[1].replace(/<[^>]*>/g, "")).trim() : "";
+}
+
+function decodeLegacyMentionText(value: string) {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">");
 }
 
 function legacyProjectRoleId(role: ProjectMembersResponse["roleOptions"][number]) {

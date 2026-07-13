@@ -12,12 +12,14 @@ import {
   deleteProjectMemberRest,
   enrollProjectRest,
   readProjectContainerQueryOptions,
+  readProjectMembersQueryOptions,
   toggleFavoriteProjectRest,
   toggleProjectWatchRest,
   updateProjectOverviewRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
+import { RestApiError } from "../../api/rest-client";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
@@ -95,6 +97,7 @@ function ProjectHomeRoute() {
   const reviewsPath = `${homePath}/reviews`;
   const settingPath = `${homePath}/setting`;
   const membersPath = `${homePath}/members`;
+  const webhooksPath = `${homePath}/webhooks`;
   const active =
     pathname === homePath
       ? "home"
@@ -114,7 +117,9 @@ function ProjectHomeRoute() {
                     ? "setting"
                     : pathname === membersPath
                       ? "members"
-                      : null;
+                      : pathname === webhooksPath
+                        ? "webhooks"
+                        : null;
 
   if (!active) {
     return <Outlet />;
@@ -142,13 +147,18 @@ function ProjectHomeRouteShell({
     | "milestone"
     | "pullRequest"
     | "review"
-    | "setting";
+    | "setting"
+    | "webhooks";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
+  const membersQuery = useQuery({
+    ...readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: active === "members",
+  });
 
   if (!query.data) {
     return null;
@@ -160,6 +170,21 @@ function ProjectHomeRouteShell({
     return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }
 
+  const membersErrorStatus =
+    membersQuery.error instanceof RestApiError ? membersQuery.error.status : undefined;
+  if (
+    active === "members" &&
+    (membersErrorStatus === 400 || membersErrorStatus === 401 || membersErrorStatus === 403)
+  ) {
+    return (
+      <ProjectMembersErrorRouteShell
+        errorStatus={membersErrorStatus}
+        project={query.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   const projectSearchScope = {
     organizationName: projectSearchScopeOrganizationName(query.data, ownerName),
     ownerName,
@@ -169,6 +194,57 @@ function ProjectHomeRouteShell({
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <ProjectLayoutScreen active={active} project={query.data} />
+    </SiteLayoutShell>
+  );
+}
+
+function ProjectMembersErrorRouteShell({
+  errorStatus,
+  project,
+  runtimeConfig,
+}: {
+  errorStatus: number;
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
+  const { t } = useLegacyMessages();
+  const isForbidden = errorStatus === 401 || errorStatus === 403;
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(project, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <title>{`${t(isForbidden ? "error.forbidden" : "error.badrequest")} - ${ownerName}/${projectName}`}</title>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu
+        active={isForbidden ? "home" : "setting"}
+        basePath={runtimeConfig.basePath}
+        project={project}
+      />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico ico-err2"></i>
+            <p>{t(isForbidden ? "error.forbidden" : "error.badrequest")}</p>
+            {errorStatus === 401 ? (
+              <Link
+                activeOptions={legacyProjectShellLinkActiveOptions}
+                activeProps={legacyProjectShellLinkActiveProps}
+                className="ybtn ybtn-primary"
+                mask={{ to: `/users/loginform?redirectUrl=/${ownerName}/${projectName}/members` }}
+                search={{ redirectUrl: `/${ownerName}/${projectName}/members` }}
+                to="/users/loginform"
+              >
+                {t("title.login")}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </SiteLayoutShell>
   );
 }
@@ -202,7 +278,8 @@ function ProjectLayoutScreen({
     | "milestone"
     | "pullRequest"
     | "review"
-    | "setting";
+    | "setting"
+    | "webhooks";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -233,7 +310,7 @@ function ProjectLayoutScreen({
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
-        active={active === "members" ? "setting" : active}
+        active={active === "members" || active === "webhooks" ? "setting" : active}
         basePath={runtimeConfig.basePath}
         project={project}
       />

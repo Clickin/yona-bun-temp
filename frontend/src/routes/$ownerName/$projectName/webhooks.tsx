@@ -33,16 +33,43 @@ export const Route = createFileRoute("/$ownerName/$projectName/webhooks")({
 function ProjectWebhooksRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectWebhooksRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectWebhooksRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectWebhooksRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectWebhooksRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectWebhooksRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectWebhooksRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const containerQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -54,15 +81,28 @@ function ProjectWebhooksRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCo
         projectName,
       }
     : { ownerName, projectName };
+  const screen = (
+    <ProjectWebhooksScreen renderProjectShell={renderProjectShell} runtimeConfig={runtimeConfig} />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectWebhooksScreen runtimeConfig={runtimeConfig} />
+      {screen}
     </SiteLayoutShell>
   );
 }
 
-function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectWebhooksScreen({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const legacyTitle = `${t("project.webhook")} - ${ownerName}/${projectName}`;
@@ -80,8 +120,16 @@ function ProjectWebhooksScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   return (
     <>
       <title>{legacyTitle}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      {renderProjectShell ? (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+          <ProjectMenu
+            active="setting"
+            basePath={runtimeConfig.basePath}
+            project={projectQuery.data}
+          />
+        </>
+      ) : null}
       <ProjectWebhooksBody
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
