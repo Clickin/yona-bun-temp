@@ -76,7 +76,7 @@ test("active template-first UI parity surfaces are closed in the gate", () => {
     [
       "frontend-api-query-boundary",
       [
-        "frontend/src/api/query-keys.ts",
+        "frontend/src/query-client.tsx",
         "frontend/src/api-query.spec.ts",
         "docs/provenance/ui-parity-reports/ui-parity-search-notification.md",
       ],

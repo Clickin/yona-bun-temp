@@ -16,7 +16,9 @@ export function readCurrentSessionRest(
 
 export function currentSessionQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
+    gcTime: Infinity,
     queryFn: () => readCurrentSessionRest(runtimeConfig),
     queryKey: apiQueryKeys.session(),
+    staleTime: Infinity,
   });
 }

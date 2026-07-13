@@ -264,6 +264,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/api\/org-project\.ts$/i,
       /^frontend\/src\/api\/query-keys\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
+      /^frontend\/src\/query-client\.tsx$/i,
     ],
     testKeywords: [
       "api-query",

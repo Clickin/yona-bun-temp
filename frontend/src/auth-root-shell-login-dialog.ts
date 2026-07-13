@@ -1,5 +1,6 @@
 import { signInWithPasswordRest } from "./api/auth";
 import { readSessionBootstrap } from "./auth-workspace-client";
+import { invalidateAuthenticationQueries } from "./query-client";
 import type { RuntimeConfig } from "./runtime-config";
 
 type RootLoginDialogSubmitState = {
@@ -13,9 +14,11 @@ export async function submitRootLoginDialogForm(
   state: RootLoginDialogSubmitState,
 ) {
   const { csrfToken } = await readSessionBootstrap(runtimeConfig);
-  return signInWithPasswordRest(runtimeConfig, csrfToken, {
+  const session = await signInWithPasswordRest(runtimeConfig, csrfToken, {
     identifier: state.identifier,
     password: state.password,
     rememberMe: state.rememberMe,
   });
+  await invalidateAuthenticationQueries();
+  return session;
 }

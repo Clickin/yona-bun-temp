@@ -25,6 +25,7 @@ import type * as LegacyI18n from "./i18n";
 import type * as QueryClientBoundary from "./query-client";
 import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
 import { getRouter } from "./router";
+import { YonaQueryProvider } from "./query-client";
 import "./app.css";
 
 type RetainedFrontendSupportBoundary = {
@@ -80,7 +81,9 @@ export function mountApp(container: Element, options: CreateAppOptions = {}) {
   const { router } = createApp(options);
   return createRoot(container).render(
     <div id="main" className="main">
-      <RouterProvider router={router} />
+      <YonaQueryProvider>
+        <RouterProvider router={router} />
+      </YonaQueryProvider>
     </div>,
   );
 }

@@ -1,5 +1,7 @@
 # Core Parity Audit
 
+- 2026-07-13 shared auth-query cache note: the SPA now owns one TanStack Query client for its full mount lifetime. Session and auth-capability projections are intentionally retained as stable data, and the shared root-login mutation invalidates both keys after successful authentication. This changes no legacy HTML, CSS/LESS, route, copy, or user-visible geometry; `frontend/src/query-client.test.ts` verifies the cache policy.
+
 ## Purpose
 
 - This document freezes the Wave 0 parity audit baseline for the current Rust pivot.
