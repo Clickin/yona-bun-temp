@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fourteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -398,6 +398,18 @@ scrollbar consumers remain separate owners. Fresh live legacy and local evidence
 42px input group, 114px four-row tab content, 50% focus bars, 5px light-gray scrollbar with the
 legacy blue thumb, empty-state presentation, and desktop/390 containment. This is not Wave 1
 completion.
+
+The fifteenth verified slice closes the earlier authenticated Favorite search/list shell's
+focus-bar and scrollbar fallback. The existing owner now directly compiles both bar
+pseudo-elements, React-owned focused widths, and the Favorite result's WebKit scrollbar
+track/thumb overrides. It reuses the canonical global focus, track, and thumb variables added by
+the Project-shell slice, so no theme value, raw owner color, dark value, toggle, abstraction, or
+new dependency was added. Legacy-class removal retains the complete group/input/bar/pseudo/result/
+empty/scrollbar computed surface at both populated and empty states, proving that no declaration
+of this Favorite owner remains intentionally in fallback. Fresh live legacy and local evidence
+agree on 175px/195px focus halves and the 5×10px light-gray scrollbar with the legacy blue thumb.
+The shared max-720 `16px !important` input primitive and global scrollbar thumb primitives remain
+separate owners. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

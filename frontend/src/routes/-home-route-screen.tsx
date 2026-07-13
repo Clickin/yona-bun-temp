@@ -1199,6 +1199,34 @@ const authenticatedSidenavFavoriteShellStyles = stylex.create({
   bar: {
     display: "block",
     position: "relative",
+    "::before": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      left: "50%",
+      position: "absolute",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+    "::after": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      position: "absolute",
+      right: "50%",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+  },
+  focusedBar: {
+    "::before": {
+      width: "50%",
+    },
+    "::after": {
+      width: "50%",
+    },
   },
   result: {
     listStyle: "none",
@@ -1207,6 +1235,14 @@ const authenticatedSidenavFavoriteShellStyles = stylex.create({
     overflowX: "visible",
     overflowY: "auto",
     padding: 0,
+    "::-webkit-scrollbar": {
+      backgroundColor: globalColors.sidenavScrollbarTrack,
+      height: "10px",
+      width: "5px",
+    },
+    "::-webkit-scrollbar-thumb": {
+      backgroundColor: globalColors.sidenavScrollbarThumb,
+    },
   },
   noResult: {
     color: globalColors.sidenavNoResultText,
@@ -2449,6 +2485,7 @@ function SidebarOrganizationList({
 }) {
   const { t } = useLegacyMessages();
   const [isOwnProjectsExpanded, setIsOwnProjectsExpanded] = React.useState(false);
+  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
   const ownProjects = recordArray(workspace.ownProjects);
   const favoriteOrganizations = recordArray(workspace.favoriteOrganizations);
   const organizations = recordArray(workspace.organizations);
@@ -2513,7 +2550,12 @@ function SidebarOrganizationList({
     ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.input).className}`
     : "";
   const favoriteShellBarClass = isAuthenticatedSidenav
-    ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.bar).className}`
+    ? ` ${
+        stylex.props(
+          authenticatedSidenavFavoriteShellStyles.bar,
+          isSearchFocused && authenticatedSidenavFavoriteShellStyles.focusedBar,
+        ).className
+      }`
     : "";
   const favoriteShellResultClass = isAuthenticatedSidenav
     ? ` ${stylex.props(authenticatedSidenavFavoriteShellStyles.result).className}`
@@ -2541,6 +2583,8 @@ function SidebarOrganizationList({
             type="text"
             autoComplete="off"
             onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
+            onBlur={() => setIsSearchFocused(false)}
+            onFocus={() => setIsSearchFocused(true)}
             placeholder={t("title.type.name")}
             value={searchQuery}
           />
@@ -2564,6 +2608,8 @@ function SidebarOrganizationList({
           type="text"
           autoComplete="off"
           onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
+          onBlur={() => setIsSearchFocused(false)}
+          onFocus={() => setIsSearchFocused(true)}
           placeholder={t("title.type.name")}
           value={searchQuery}
         />

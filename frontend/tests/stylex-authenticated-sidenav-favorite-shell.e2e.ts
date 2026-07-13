@@ -18,6 +18,9 @@ test("authenticated side-nav Favorite shell uses the global theme color boundary
   const ownerSource = routeSource.slice(start, end);
   expect(ownerSource).toContain("stylex.create");
   expect(ownerSource).toContain("globalColors.sidenavNoResultText");
+  expect(ownerSource).toContain("globalColors.sidenavSearchFocusAccent");
+  expect(ownerSource).toContain("globalColors.sidenavScrollbarTrack");
+  expect(ownerSource).toContain("globalColors.sidenavScrollbarThumb");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(|mediumvioletred/i);
   expect(themeSource).toContain('sidenavNoResultText: "mediumvioletred"');
   expect(routeSource).toContain('"authenticated-sidenav-favorite-shell"');
@@ -80,6 +83,26 @@ for (const state of ["populated", "empty"] as const) {
         1,
       );
       expect(base.barStyles).toEqual({ display: "block", position: "relative" });
+      expect(base.barPseudoStyles).toEqual({
+        after: {
+          backgroundColor: "rgb(233, 30, 99)",
+          bottom: "1px",
+          height: "1px",
+          position: "absolute",
+          right: `${base.geometry.root.width / 2}px`,
+          transitionDuration: "0.2s",
+          width: "0px",
+        },
+        before: {
+          backgroundColor: "rgb(233, 30, 99)",
+          bottom: "1px",
+          height: "1px",
+          left: `${base.geometry.root.width / 2}px`,
+          position: "absolute",
+          transitionDuration: "0.2s",
+          width: "0px",
+        },
+      });
       expect(base.resultStyles).toMatchObject({
         listStyleType: "none",
         marginBottom: state === "empty" ? "25px" : "10px",
@@ -93,6 +116,14 @@ for (const state of ["populated", "empty"] as const) {
         paddingTop: "0px",
       });
       expect(base.resultStyles.maxHeight).toBe(`${viewport.height * 0.8}px`);
+      expect(base.scrollbarStyles).toEqual({
+        scrollbar: {
+          backgroundColor: "rgb(211, 211, 211)",
+          height: "10px",
+          width: "5px",
+        },
+        thumb: { backgroundColor: "rgb(39, 136, 186)" },
+      });
       expect(base.geometry.group.left).toBe(base.geometry.root.left);
       expect(base.geometry.group.right).toBe(base.geometry.root.right);
       expect(base.geometry.input.left).toBe(base.geometry.group.left);
@@ -136,7 +167,7 @@ for (const state of ["populated", "empty"] as const) {
         .poll(() =>
           bar.evaluate((element) => Number.parseFloat(getComputedStyle(element, "::before").width)),
         )
-        .toBeGreaterThan(0);
+        .toBe(base.geometry.root.width / 2);
       const focused = await input.evaluate((element) => {
         const style = getComputedStyle(element);
         const bar = element.nextElementSibling;
@@ -152,15 +183,24 @@ for (const state of ["populated", "empty"] as const) {
       expect(focused.outlineStyle).toBe("none");
       expect(Number.parseFloat(focused.pseudoBeforeWidth)).toBeGreaterThan(0);
       expect(Number.parseFloat(focused.pseudoAfterWidth)).toBeGreaterThan(0);
+      expect(Number.parseFloat(focused.pseudoBeforeWidth)).toBe(base.geometry.root.width / 2);
+      expect(Number.parseFloat(focused.pseudoAfterWidth)).toBe(base.geometry.root.width / 2);
 
-      const beforeFallback = await readShellEvidence(root, group, input, bar, result);
-      await removeOwnerStyleXClasses(root, group, input, bar, result, state);
-      const fallback = await readShellEvidence(root, group, input, bar, result);
-      expect(fallback.groupStyles).toEqual(beforeFallback.groupStyles);
-      expect(fallback.inputStyles).toEqual(beforeFallback.inputStyles);
-      expect(fallback.barStyles).toEqual(beforeFallback.barStyles);
-      expect(fallback.resultStyles).toEqual(beforeFallback.resultStyles);
-      expect(fallback.geometry).toEqual(beforeFallback.geometry);
+      const beforeLegacyClassRemoval = await readShellEvidence(root, group, input, bar, result);
+      await removeKnownLegacyClasses(root, group, input, bar, result, state);
+      const afterLegacyClassRemoval = await readShellEvidence(root, group, input, bar, result);
+      expect(afterLegacyClassRemoval.hasOwner).toBe(true);
+      expect(afterLegacyClassRemoval.groupStyles).toEqual(beforeLegacyClassRemoval.groupStyles);
+      expect(afterLegacyClassRemoval.inputStyles).toEqual(beforeLegacyClassRemoval.inputStyles);
+      expect(afterLegacyClassRemoval.barStyles).toEqual(beforeLegacyClassRemoval.barStyles);
+      expect(afterLegacyClassRemoval.barPseudoStyles).toEqual(
+        beforeLegacyClassRemoval.barPseudoStyles,
+      );
+      expect(afterLegacyClassRemoval.resultStyles).toEqual(beforeLegacyClassRemoval.resultStyles);
+      expect(afterLegacyClassRemoval.scrollbarStyles).toEqual(
+        beforeLegacyClassRemoval.scrollbarStyles,
+      );
+      expect(afterLegacyClassRemoval.geometry).toEqual(beforeLegacyClassRemoval.geometry);
     });
   }
 }
@@ -276,8 +316,23 @@ async function readShellEvidence(
       const inputStyle = getComputedStyle(inputElement);
       const barStyle = getComputedStyle(barElement);
       const resultStyle = getComputedStyle(resultElement);
+      const pseudoStyle = (pseudo: "::before" | "::after") => {
+        const style = getComputedStyle(barElement, pseudo);
+        return {
+          backgroundColor: style.backgroundColor,
+          bottom: style.bottom,
+          height: style.height,
+          ...(pseudo === "::before" ? { left: style.left } : { right: style.right }),
+          position: style.position,
+          transitionDuration: style.transitionDuration,
+          width: style.width,
+        };
+      };
+      const scrollbarStyle = getComputedStyle(resultElement, "::-webkit-scrollbar");
+      const scrollbarThumbStyle = getComputedStyle(resultElement, "::-webkit-scrollbar-thumb");
       return {
         barStyles: { display: barStyle.display, position: barStyle.position },
+        barPseudoStyles: { after: pseudoStyle("::after"), before: pseudoStyle("::before") },
         childClasses: Array.from(element.children, (child) =>
           child === groupElement
             ? "group"
@@ -336,6 +391,14 @@ async function readShellEvidence(
           paddingTop: resultStyle.paddingTop,
           textAlign: resultStyle.textAlign,
         },
+        scrollbarStyles: {
+          scrollbar: {
+            backgroundColor: scrollbarStyle.backgroundColor,
+            height: scrollbarStyle.height,
+            width: scrollbarStyle.width,
+          },
+          thumb: { backgroundColor: scrollbarThumbStyle.backgroundColor },
+        },
         viewport: { scrollWidth: document.documentElement.scrollWidth, width: innerWidth },
         visibleText: resultElement.innerText,
       };
@@ -349,7 +412,7 @@ async function readShellEvidence(
   );
 }
 
-async function removeOwnerStyleXClasses(
+async function removeKnownLegacyClasses(
   root: Locator,
   group: Locator,
   input: Locator,
@@ -359,7 +422,7 @@ async function removeOwnerStyleXClasses(
 ) {
   await root.evaluate(
     (element, targets) => {
-      element.className = "search-result";
+      element.classList.remove("search-result");
       const [groupElement, inputElement, barElement, resultElement, empty] = targets as [
         HTMLElement,
         HTMLElement,
@@ -367,10 +430,11 @@ async function removeOwnerStyleXClasses(
         HTMLElement,
         boolean,
       ];
-      groupElement.className = "group";
-      inputElement.className = "search-input org-search";
-      barElement.className = "bar";
-      resultElement.className = empty ? "no-result tab-pane user-ul" : "tab-pane user-ul ";
+      groupElement.classList.remove("group");
+      inputElement.classList.remove("search-input", "org-search");
+      barElement.classList.remove("bar");
+      resultElement.classList.remove("user-ul");
+      if (empty) resultElement.classList.remove("no-result");
     },
     [
       await group.elementHandle(),
