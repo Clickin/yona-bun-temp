@@ -11,6 +11,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YonaQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { useRootLoginDialog, useRootToast } from "./__root";
+import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 
 type LegacyUserLinkSearch = {
   daysAgo: number;
@@ -500,7 +501,7 @@ function HomeScreen({
           className="siteintro"
           style={
             {
-              "--siteintro-background-image": `url("${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/bg-samples/photo-svetacreative.jpg")}")`,
+              "--siteintro-background-image": `url("${siteIntroBackgroundUrl}")`,
             } as React.CSSProperties
           }
         >

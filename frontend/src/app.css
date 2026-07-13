@@ -4237,7 +4237,7 @@ h1 {
 
 .error-wrap .ico {
   display: inline-block;
-  background-image: url("/legacy-assets/images/sprite.png");
+  background-image: url("./assets/legacy/sprite.png");
   background-repeat: no-repeat;
   vertical-align: middle;
 }
