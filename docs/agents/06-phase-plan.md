@@ -532,6 +532,13 @@
   `deviation` must be implemented by a disjoint worker or reclassified in root
   canonical docs, provenance, and follow-up plan before this phase closes.
 
+## Frontend improvement sequence (2026-07-13)
+
+- Phase 1 Router typecheck recovery is a confirmed prerequisite and remains separate from visible identity work.
+- Phase 2 adopts the approved `Yoram` product identity in the React frontend. It replaces product-facing Yona/NAVER copy and assets, keeps Apache-2.0/upstream attribution in README/NOTICE, leaves compatibility identifiers intact, and records the intentional parity deviation in `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`.
+- The default developer-contact item stays absent until a real public Yoram repository exists; configured operator feedback URLs continue to work.
+- Phase 3 may start only after the Phase 2 typecheck, build, focused desktop/mobile E2E, and updated screenshot baseline are green. StyleX begins with compiler/runtime integration that has no visible change, then one isolated React-owned pilot; the frozen legacy LESS/Bootstrap baseline remains unchanged.
+
 ## Phase Gate 규칙
 
 - phase 종료 기준은 UI completeness가 아니라 legacy parity와 provenance completeness다.

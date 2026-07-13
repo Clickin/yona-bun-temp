@@ -1,14 +1,14 @@
 type LooseJsonValue = ReturnType<typeof JSON.parse>;
 
-export type YonaRecord = Record<string, LooseJsonValue>;
+export type YoramRecord = Record<string, LooseJsonValue>;
 
-export type YonaLabel = YonaRecord & {
+export type YoramLabel = YoramRecord & {
   color: string;
   id: bigint | number | string;
   name: string;
 };
 
-export type YonaUserItem = YonaRecord & {
+export type YoramUserItem = YoramRecord & {
   avatarUrl: string;
   loginId: string;
   role: string;
@@ -16,17 +16,17 @@ export type YonaUserItem = YonaRecord & {
   userLabel: string;
 };
 
-export type YonaProjectItem = YonaRecord & {
+export type YoramProjectItem = YoramRecord & {
   ownerName: string;
   projectName: string;
 };
 
-export type YonaIssueListItem = YonaRecord & {
-  childIssues?: YonaIssueListItem[];
-  labels: YonaLabel[];
+export type YoramIssueListItem = YoramRecord & {
+  childIssues?: YoramIssueListItem[];
+  labels: YoramLabel[];
 };
 
-export type YonaAttachment = YonaRecord & {
+export type YoramAttachment = YoramRecord & {
   id: bigint | number | string;
   mimeType?: string;
   name: string;
@@ -35,28 +35,28 @@ export type YonaAttachment = YonaRecord & {
   url: string;
 };
 
-export type YonaIssueComment = YonaRecord & {
-  attachments?: YonaAttachment[];
-  voters: YonaUserItem[];
+export type YoramIssueComment = YoramRecord & {
+  attachments?: YoramAttachment[];
+  voters: YoramUserItem[];
 };
 
-export type YonaIssueTimelineItem = YonaRecord & {
-  comment?: YonaIssueComment;
+export type YoramIssueTimelineItem = YoramRecord & {
+  comment?: YoramIssueComment;
 };
 
-export type EnrollmentMutationResult = YonaRecord;
+export type EnrollmentMutationResult = YoramRecord;
 
-export type OrganizationRedirectResult = YonaRecord & {
+export type OrganizationRedirectResult = YoramRecord & {
   redirectPath?: string;
 };
 
-export type ReadAuthUiCapabilitiesResponse = YonaRecord;
+export type ReadAuthUiCapabilitiesResponse = YoramRecord;
 
-export type ReadCurrentSessionResponse = YonaRecord;
+export type ReadCurrentSessionResponse = YoramRecord;
 
-export type VerifyUserResponse = YonaRecord;
+export type VerifyUserResponse = YoramRecord;
 
-export type WorkspaceProfile = YonaRecord & {
+export type WorkspaceProfile = YoramRecord & {
   avatarUrl: string;
   connectedSocialProviders: string[];
   displayName: string;
@@ -68,23 +68,23 @@ export type WorkspaceProfile = YonaRecord & {
   sinceLabel: string;
 };
 
-export type WorkspaceIssueItem = YonaRecord & {
+export type WorkspaceIssueItem = YoramRecord & {
   childClosedCount?: number;
-  childIssues?: YonaIssueListItem[];
+  childIssues?: YoramIssueListItem[];
   childOpenCount?: number;
   dueDateLabel?: string;
   dueDateOverdue?: boolean;
   dueDateText?: string;
-  labels?: YonaLabel[];
+  labels?: YoramLabel[];
   milestoneId?: bigint | number | string;
   milestoneTitle?: string;
   parentIssueNumber?: bigint | number | string;
   parentIssueTitle?: string;
 };
 
-export type WorkspacePullRequestItem = YonaRecord;
+export type WorkspacePullRequestItem = YoramRecord;
 
-export type WorkspaceSidebarProjectItem = YonaRecord & {
+export type WorkspaceSidebarProjectItem = YoramRecord & {
   isFavorited: boolean;
   logoUrl: string;
   overview: string;
@@ -94,7 +94,7 @@ export type WorkspaceSidebarProjectItem = YonaRecord & {
   projectScope: string;
 };
 
-export type WorkspaceSidebarOrganizationItem = YonaRecord & {
+export type WorkspaceSidebarOrganizationItem = YoramRecord & {
   isFavorited: boolean;
   organizationId: bigint | number | string;
   organizationName: string;
@@ -103,11 +103,11 @@ export type WorkspaceSidebarOrganizationItem = YonaRecord & {
 };
 
 export type WorkspaceMemberProjectItem = WorkspaceSidebarProjectItem & {
-  notifications: YonaRecord[];
+  notifications: YoramRecord[];
 };
 
-export type ReadWorkspaceOverviewResponse = YonaRecord & {
-  emails: YonaRecord[];
+export type ReadWorkspaceOverviewResponse = YoramRecord & {
+  emails: YoramRecord[];
   favoriteOrganizations: WorkspaceSidebarOrganizationItem[];
   favoriteProjects: WorkspaceSidebarProjectItem[];
   issueItems: WorkspaceIssueItem[];
@@ -120,49 +120,49 @@ export type ReadWorkspaceOverviewResponse = YonaRecord & {
   watchedProjects: WorkspaceMemberProjectItem[];
 };
 
-export type ListProjectsResponse = YonaRecord & {
-  items: YonaRecord[];
-  projects?: YonaRecord[];
+export type ListProjectsResponse = YoramRecord & {
+  items: YoramRecord[];
+  projects?: YoramRecord[];
 };
 
-export type ListOrganizationsResponse = YonaRecord & {
-  items: YonaRecord[];
-  organizations?: YonaRecord[];
+export type ListOrganizationsResponse = YoramRecord & {
+  items: YoramRecord[];
+  organizations?: YoramRecord[];
 };
 
-export type OrganizationDetail = YonaRecord;
+export type OrganizationDetail = YoramRecord;
 
-export type ReadOrganizationMembersResponse = YonaRecord & {
-  enrollmentRequests: YonaUserItem[];
-  members: YonaUserItem[];
+export type ReadOrganizationMembersResponse = YoramRecord & {
+  enrollmentRequests: YoramUserItem[];
+  members: YoramUserItem[];
 };
 
-export type OrganizationAdminView = YonaRecord & {
-  enrollmentRequests: YonaUserItem[];
-  members: YonaUserItem[];
-  roleOptions: YonaRecord[];
+export type OrganizationAdminView = YoramRecord & {
+  enrollmentRequests: YoramUserItem[];
+  members: YoramUserItem[];
+  roleOptions: YoramRecord[];
 };
 
-export type OrganizationContainer = YonaRecord & {
-  adminMembers: YonaUserItem[];
-  memberMembers: YonaUserItem[];
-  visibleProjects: YonaProjectItem[];
+export type OrganizationContainer = YoramRecord & {
+  adminMembers: YoramUserItem[];
+  memberMembers: YoramUserItem[];
+  visibleProjects: YoramProjectItem[];
 };
 
-export type ProjectDetail = YonaRecord & {
+export type ProjectDetail = YoramRecord & {
   enrollmentRequestCount: number;
-  members: YonaUserItem[];
+  members: YoramUserItem[];
 };
 
-export type ReadProjectMembersResponse = YonaRecord & {
-  enrollmentRequests: YonaUserItem[];
-  members: YonaUserItem[];
+export type ReadProjectMembersResponse = YoramRecord & {
+  enrollmentRequests: YoramUserItem[];
+  members: YoramUserItem[];
 };
 
-export type ReadCodeBrowserResponse = YonaRecord & {
-  breadcrumbs: YonaRecord[];
-  branches: YonaRecord[];
-  entries: YonaRecord[];
+export type ReadCodeBrowserResponse = YoramRecord & {
+  breadcrumbs: YoramRecord[];
+  branches: YoramRecord[];
+  entries: YoramRecord[];
 };
 
 export type ProjectContainer = ProjectDetail & {
@@ -170,7 +170,7 @@ export type ProjectContainer = ProjectDetail & {
   boardCount: number;
   cloneUrl: string;
   codeMemberOnly: boolean;
-  currentMilestone: YonaRecord | null;
+  currentMilestone: YoramRecord | null;
   defaultTab: string;
   enrollmentRequested: boolean;
   isFavorited: boolean;
@@ -206,63 +206,63 @@ export type ProjectContainer = ProjectDetail & {
   watchCount: number;
 };
 
-export type ToggleFavoriteProjectResponse = YonaRecord & {
+export type ToggleFavoriteProjectResponse = YoramRecord & {
   favorited: boolean;
   ownerName: string;
   projectName: string;
 };
 
-export type ToggleFavoriteOrganizationResponse = YonaRecord & {
+export type ToggleFavoriteOrganizationResponse = YoramRecord & {
   favorited: boolean;
   organizationName: string;
 };
 
-export type RecordRecentProjectVisitResponse = YonaRecord;
+export type RecordRecentProjectVisitResponse = YoramRecord;
 
-export type ListProjectIssuesResponse = YonaRecord & {
-  items: YonaIssueListItem[];
+export type ListProjectIssuesResponse = YoramRecord & {
+  items: YoramIssueListItem[];
   ownerName?: string;
   projectName?: string;
 };
 
-export type ReadIssueDetailResponse = YonaRecord & {
-  attachments: YonaAttachment[];
-  comments: YonaIssueComment[];
-  labels: YonaLabel[];
-  sharers: YonaUserItem[];
-  timeline: YonaIssueTimelineItem[];
+export type ReadIssueDetailResponse = YoramRecord & {
+  attachments: YoramAttachment[];
+  comments: YoramIssueComment[];
+  labels: YoramLabel[];
+  sharers: YoramUserItem[];
+  timeline: YoramIssueTimelineItem[];
 };
 
-export type MassUpdateIssuesResponse = YonaRecord;
+export type MassUpdateIssuesResponse = YoramRecord;
 
-export type ListProjectLabelsResponse = YonaRecord & {
-  labels: YonaRecord[];
+export type ListProjectLabelsResponse = YoramRecord & {
+  labels: YoramRecord[];
 };
 
-export type ListProjectLabelCategoriesResponse = YonaRecord & {
-  categories: YonaRecord[];
+export type ListProjectLabelCategoriesResponse = YoramRecord & {
+  categories: YoramRecord[];
 };
 
-export type ProjectLabelMutationResponse = YonaRecord;
+export type ProjectLabelMutationResponse = YoramRecord;
 
-export type ProjectLabelCategoryMutationResponse = YonaRecord;
+export type ProjectLabelCategoryMutationResponse = YoramRecord;
 
-export type ListProjectMilestonesResponse = YonaRecord & {
+export type ListProjectMilestonesResponse = YoramRecord & {
   milestones: ProjectMilestone[];
 };
 
-export type ProjectMilestoneIssue = YonaRecord & {
-  labels: YonaLabel[];
+export type ProjectMilestoneIssue = YoramRecord & {
+  labels: YoramLabel[];
 };
 
-export type ProjectMilestone = YonaRecord & {
-  attachments: YonaRecord[];
+export type ProjectMilestone = YoramRecord & {
+  attachments: YoramRecord[];
   closedIssues: ProjectMilestoneIssue[];
   openIssues: ProjectMilestoneIssue[];
 };
 
-export type ProjectMilestoneMutationResponse = YonaRecord & {
+export type ProjectMilestoneMutationResponse = YoramRecord & {
   milestone?: ProjectMilestone;
 };
 
-export type ProjectMilestoneDeleteResponse = YonaRecord;
+export type ProjectMilestoneDeleteResponse = YoramRecord;

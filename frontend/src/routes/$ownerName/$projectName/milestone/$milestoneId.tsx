@@ -12,7 +12,7 @@ import type {
   ProjectContainer,
   ProjectMilestone,
   ProjectMilestoneIssue,
-  YonaLabel,
+  YoramLabel,
 } from "../../../../api/types";
 import {
   closeProjectMilestone,
@@ -1501,7 +1501,7 @@ function compareIssueLabels(
   return categoryOrder || left.name.localeCompare(right.name);
 }
 
-function issueLabelData(labels: YonaLabel[]) {
+function issueLabelData(labels: YoramLabel[]) {
   return labels
     .map((label) =>
       [

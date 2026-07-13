@@ -9,7 +9,7 @@ import {
 } from "../../../api/boards";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
@@ -55,13 +55,13 @@ export function ProjectBoardCreateFormScreen({
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectBoardCreateFormStandaloneShell runtimeConfig={runtimeConfig}>
           {content}
         </ProjectBoardCreateFormStandaloneShell>
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

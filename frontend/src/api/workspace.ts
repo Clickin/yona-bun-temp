@@ -5,7 +5,7 @@ import type {
   WorkspaceMemberProjectItem,
   WorkspaceSidebarOrganizationItem,
   WorkspaceSidebarProjectItem,
-  YonaRecord,
+  YoramRecord,
 } from "./types";
 import type { RuntimeConfig } from "../runtime-config";
 import { restFetch, type RestFetchOptions } from "./rest-client";
@@ -54,7 +54,7 @@ type WorkspaceProfileWithGuest = NonNullable<ReadWorkspaceOverviewResponse["prof
   isGuest?: boolean;
 };
 
-function normalizeSidebarProject(project: YonaRecord): WorkspaceSidebarProjectItem {
+function normalizeSidebarProject(project: YoramRecord): WorkspaceSidebarProjectItem {
   const ownerName = typeof project.ownerName === "string" ? project.ownerName : "";
   const projectName = typeof project.projectName === "string" ? project.projectName : "";
   const projectScope =
@@ -82,7 +82,9 @@ function normalizeSidebarProject(project: YonaRecord): WorkspaceSidebarProjectIt
 function normalizeSidebarProjects(value: unknown): WorkspaceSidebarProjectItem[] {
   return Array.isArray(value)
     ? value
-        .filter((project): project is YonaRecord => typeof project === "object" && project !== null)
+        .filter(
+          (project): project is YoramRecord => typeof project === "object" && project !== null,
+        )
         .map(normalizeSidebarProject)
     : [];
 }
@@ -91,7 +93,7 @@ function normalizeSidebarOrganizations(value: unknown): WorkspaceSidebarOrganiza
   return Array.isArray(value)
     ? value
         .filter(
-          (organization): organization is YonaRecord =>
+          (organization): organization is YoramRecord =>
             typeof organization === "object" && organization !== null,
         )
         .map((organization) => {

@@ -80,7 +80,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
   <div class="page-wrap">
     <div class="site-guide-outer">
       <h3>
-        <span>Tada! Welcome to Yona! - Web-based platform for collaborative software development</span>
+        <span>Tada! Welcome to Yoram! - Web-based platform for collaborative software development</span>
       </h3>
       <table class="welcome-table table borderless">
         <tbody>
@@ -122,10 +122,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -551,8 +548,8 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(fullHomeRouteSources).not.toContain("globalThis.document");
   expect(fullHomeRouteSources).not.toContain("window.document");
   expect(fullHomeRouteSources).not.toMatch(/useEffect[\s\S]{0,120}title/u);
-  expect(indexRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
-  expect(notificationsRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
+  expect(indexRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yoram"}</title>');
+  expect(notificationsRouteSource).toContain('<title>{runtimeConfig.siteName ?? "Yoram"}</title>');
   expect(routeSource).not.toContain("activeProps={{ className: undefined }}");
   expect(routeSource).not.toMatch(/<a[\s>]/u);
   expect(routeSource).not.toContain("document.dispatchEvent");
@@ -571,12 +568,9 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
     'const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine"',
   );
   expect(routeSource).toContain("prefixBasePath(runtimeConfig.basePath, notification.targetHref)");
-  expect(routeSource).toContain(
-    'const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS"',
-  );
-  expect(routeSource).toContain(
-    'const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona"',
-  );
+  expect(routeSource).toContain('<span className="provider">Yoram authors</span>');
+  expect(routeSource).toContain("const feedbackUrl = runtimeConfig.feedbackUrl?.trim()");
+  expect(routeSource).not.toContain("https://github.com/yona-projects/yona/issues");
   expect(routeSource).toContain("href={navbarCustomLinkUrl}");
   expect(routeSource).toContain(
     "href={prefixBasePath(basePath, LEGACY_AUTHENTICATED_LOGOUT_PATH)}",
@@ -632,7 +626,7 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   await expect(signupMenuLink).toHaveText("Sign up");
   await expect(signupMenuLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
-  await expect(landingSignupLink).toHaveText("Sign up for Yona");
+  await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).toHaveAttribute("class", "ybtn ybtn-success ybtn-padding");
 });
@@ -778,14 +772,14 @@ test("authenticated home empty notifications matches legacy index notifications 
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/`);
-  await expect(page).toHaveTitle("Yona");
+  await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
       page
         .locator("head > title")
         .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
     )
-    .toContain("Yona");
+    .toContain("Yoram");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");
@@ -1014,6 +1008,27 @@ test("authenticated shell renders legacy custom navbar link before my issues", a
   await expect(menuItems.nth(1)).not.toHaveAttribute("data-toggle");
   await expect(menuItems.nth(1)).not.toHaveAttribute("data-placement");
   await expect(menuItems.nth(1)).toHaveAttribute("title", "Shortcut (A)");
+});
+
+test("shared shell only renders the configured feedback link", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript(() => {
+    (
+      window as Window & {
+        __YONA_RUNTIME_CONFIG__?: Record<string, unknown>;
+      }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: "/yona",
+      feedbackUrl: "https://feedback.example.test/yoram",
+    };
+  });
+  await mockAuthenticatedEmptyNotifications(page);
+
+  await page.goto(`${basePath}/`);
+
+  const feedbackLink = page.locator(".gnb-nav a", { hasText: "Yoram repository" });
+  await expect(feedbackLink).toHaveAttribute("href", "https://feedback.example.test/yoram");
+  await expect(feedbackLink).toHaveAttribute("target", "_blank");
 });
 
 test("authenticated shared shell drops route-owned tooltip initializers but keeps metadata", async ({
@@ -1960,14 +1975,14 @@ test("direct notifications route matches legacy Application.notifications empty 
   });
 
   await page.goto(`${basePath}/notifications`);
-  await expect(page).toHaveTitle("Yona");
+  await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
       page
         .locator("head > title")
         .evaluateAll((titles) => titles.map((title) => title.textContent ?? "")),
     )
-    .toContain("Yona");
+    .toContain("Yoram");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
   await expect(page.locator(".warning-none")).toContainText("No notification");

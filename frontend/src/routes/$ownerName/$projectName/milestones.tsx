@@ -6,7 +6,7 @@ import type {
   ProjectContainer,
   ProjectMilestone,
   ProjectMilestoneIssue,
-  YonaLabel,
+  YoramLabel,
 } from "../../../api/types";
 import { listProjectMilestones } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
@@ -401,7 +401,7 @@ function issueSearchText(issue: ProjectMilestoneIssue) {
   return renderedText.toLowerCase();
 }
 
-function sortLabels(labels: YonaLabel[]) {
+function sortLabels(labels: YoramLabel[]) {
   return labels.slice().sort((left, right) => {
     const leftKey = `${stringField(left.categoryName)}\u0000${stringField(left.name)}`;
     const rightKey = `${stringField(right.categoryName)}\u0000${stringField(right.name)}`;

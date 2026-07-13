@@ -50,7 +50,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import { apiQueryKeys } from "../../../api/query-keys";
 import { RestApiError } from "../../../api/rest-client";
-import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../api/types";
+import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../api/types";
 import {
   createIssue,
   listIssueParentOptions,
@@ -617,7 +617,7 @@ function ProjectIssueFormBody({
     projectName: string;
   }>;
   initialBodyMarkdown: string;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   milestones: ProjectMilestone[];
   ownerName: string;
   parentIssueId: string;
@@ -3353,7 +3353,7 @@ function markdownInternalPath(href: string, basePath: string) {
   return href;
 }
 
-function normalizeIssueLabels(labels: YonaRecord[]): IssueLabelOption[] {
+function normalizeIssueLabels(labels: YoramRecord[]): IssueLabelOption[] {
   return labels.flatMap((label) => {
     const id = Number(label.id);
     const name = stringField(label.name, "");

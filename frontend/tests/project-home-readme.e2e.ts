@@ -604,7 +604,7 @@ test("project home leave modal posts legacy leave action", async ({ page }) => {
   const routeSource = await readFile("src/routes/$ownerName/$projectName.tsx", "utf8");
   const leaveModalSource = routeSource.slice(
     routeSource.indexOf("function insulateProjectHomeModalButtonClick"),
-    routeSource.indexOf("function YobiToast"),
+    routeSource.indexOf("function YoramToast"),
   );
   expect(leaveModalSource).toContain("event.preventDefault();");
   expect(leaveModalSource).toContain("event.stopPropagation();");
@@ -1079,7 +1079,7 @@ test("project home route owns project-util dropdown state and explicit Link sema
   expect(source).not.toContain('data-toggle="yobi-notify"');
   expect(source).not.toContain("data-clipboard-target");
   expect(source).not.toContain("onMouseDown=");
-  expect(source).toContain("<YobiToast notice={cloneCopyNotice} />");
+  expect(source).toContain("<YoramToast notice={cloneCopyNotice} />");
   expect(source).toContain("createFileRoute, Link, Outlet");
   expect(source).toContain("<Link activeProps={{}} to={toRoutePath(");
   expect(source).toContain("function HistoryLink(");

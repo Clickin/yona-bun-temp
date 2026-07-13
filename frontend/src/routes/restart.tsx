@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 
 const legacyLogoLinkActiveProps = {
   "aria-current": undefined,
@@ -22,11 +22,11 @@ function RestartRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <RestartScreen siteName={runtimeConfig.siteName ?? "Yona"} />
+        <RestartScreen siteName={runtimeConfig.siteName ?? "Yoram"} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

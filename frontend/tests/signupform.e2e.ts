@@ -18,7 +18,7 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   const routeRoot = page.locator(".page.full");
   await expect(routeRoot).toBeVisible();
   await expect(routeRoot.locator(":scope > .tag-line-wrap.signup .title")).toHaveText(
-    "Sign up for Yona",
+    "Sign up for Yoram",
   );
   await expect(routeRoot.locator(":scope > .tag-line-wrap.signup .tag-line")).toHaveText(
     "Web-based platform for collaborative software development",

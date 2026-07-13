@@ -12,12 +12,12 @@ import { RestApiError, restFetch } from "../../api/rest-client";
 import type {
   OrganizationContainer,
   OrganizationRedirectResult,
-  YonaRecord,
-  YonaUserItem,
+  YoramRecord,
+  YoramUserItem,
 } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
@@ -53,7 +53,7 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
     prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell
           projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
@@ -85,7 +85,7 @@ function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeCon
           <LastOutletTransition routeId={Route.id} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -305,7 +305,7 @@ function OrganizationHomeScreen({
   );
 }
 
-function OrganizationProject({ filter, project }: { filter: string; project: YonaRecord }) {
+function OrganizationProject({ filter, project }: { filter: string; project: YoramRecord }) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(project.ownerName, "");
   const projectName = stringField(project.projectName, "");
@@ -466,7 +466,7 @@ function MemberPanel({
   title,
 }: {
   className?: string;
-  members: YonaUserItem[];
+  members: YoramUserItem[];
   onLeaveClick: (event: MouseEvent<HTMLButtonElement>) => void;
   showLeave: boolean;
   title: string;

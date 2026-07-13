@@ -45,7 +45,7 @@ type RootLoginDialogState = {
   rememberMe: boolean;
 };
 
-type RootYobiDialogProps = {
+type RootYoramDialogProps = {
   isOpen: boolean;
   onDismiss: () => void;
 };
@@ -198,14 +198,14 @@ function RootResetShell() {
       {rendersPlainResponseState ? null : (
         <>
           <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-            <RootYobiDialog
+            <RootYoramDialog
               isOpen={rootShellModal === "yobiDialog"}
               onDismiss={closeRootShellModal}
             />
           </LegacyI18nProvider>
           <div id="yobiToasts" className="yobiToasts">
             {rootToast ? (
-              <RootYobiToast
+              <RootYoramToast
                 durationMs={rootToast.durationMs}
                 key={rootToast.key}
                 message={rootToast.message}
@@ -279,7 +279,7 @@ function RootResetShell() {
   );
 }
 
-function RootYobiToast({
+function RootYoramToast({
   durationMs,
   message,
   onDismiss,
@@ -312,7 +312,7 @@ function RootYobiToast({
   );
 }
 
-function RootYobiDialog({ isOpen, onDismiss }: RootYobiDialogProps) {
+function RootYoramDialog({ isOpen, onDismiss }: RootYoramDialogProps) {
   const { t } = useLegacyMessages();
   return (
     <div
@@ -627,13 +627,11 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   const rootAliasLocation = useRouterState({ select: (state) => state.location });
   const pathname = rootAliasLocation.pathname;
   const resetPasswordSearch = rootAliasLocation.search;
-  const feedbackUrl: string = "https://github.com/nforge/yobi/issues?state=open";
+  const feedbackUrl = runtimeConfig.feedbackUrl?.trim();
   const projectListPath: string = "/projects";
   const loginFormPath: string = "/users/loginform";
   const signupFormPath: string = "/users/signupform";
   const logoutPath: string = "/logout";
-  const naverCorpUrl: string = "http://navercorp.com/";
-  const d2ProgramUrl: string = "https://developers.naver.com/d2/";
 
   if (pathname === "/reset-password") {
     return <Navigate to="/resetPassword" search={resetPasswordSearch} replace />;
@@ -649,7 +647,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             className="logo"
             to="/"
           >
-            <h1 className="blind">{runtimeConfig.siteName ?? "Yona"}</h1>
+            <h1 className="blind">{runtimeConfig.siteName ?? "Yoram"}</h1>
           </Link>
           <ul className="gnb-nav">
             <li>
@@ -664,11 +662,13 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             <li>
               <Link to="/_help">{t("title.help")}</Link>
             </li>
-            <li>
-              <Link to="/" href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
-                {t("title.yobi.feedback")}
-              </Link>
-            </li>
+            {feedbackUrl ? (
+              <li>
+                <Link to="/" href={feedbackUrl} target="_blank">
+                  {t("title.yobi.feedback")}
+                </Link>
+              </li>
+            ) : null}
           </ul>
           <div id="mySidenav" className="sidenav">
             <div className="span5 right-menu span-hard-wrap">
@@ -767,22 +767,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">
-            Copyright ©{" "}
-            <Link to="/" href="http://navercorp.com/" target="_blank">
-              NAVER Corp.
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              to="/"
-              href="https://developers.naver.com/d2/"
-              target="_blank"
-              className="d2-program"
-            >
-              <span className="d2">D2</span>
-              <span className="program"> Program</span>
-            </Link>
-          </span>
+          <span className="provider">Yoram authors</span>
         </div>
       </footer>
     </>

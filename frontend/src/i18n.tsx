@@ -36,9 +36,17 @@ function parseLegacyMessages(source: string): LegacyMessageDictionary {
     if (!messageMatch) {
       continue;
     }
-    messages[messageMatch[1].trim()] = messageMatch[2].trim();
+    const key = messageMatch[1].trim();
+    messages[key] = rebrandLegacyMessageValue(key, messageMatch[2].trim());
   }
   return messages;
+}
+
+function rebrandLegacyMessageValue(key: string, value: string): string {
+  if (key === "title.yobi.feedback") {
+    return "Yoram repository";
+  }
+  return value.replace(/\b(?:naver|yobi|yona)\b/giu, "Yoram");
 }
 
 const LEGACY_MESSAGES: Record<LegacyLanguageCode, LegacyMessageDictionary> = {

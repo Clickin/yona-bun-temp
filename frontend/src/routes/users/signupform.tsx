@@ -7,7 +7,7 @@ import { currentSessionQueryOptions } from "../../api/session";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
@@ -26,11 +26,11 @@ function SignupFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SignupFormScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -49,7 +49,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const capabilities = capabilitiesQuery.data as AuthUiCapabilities | undefined;
   const socialLoginOnly = capabilities?.socialLoginOnly === true;
   const signupRequireConfirm = capabilities?.signupRequireConfirm === true;
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.signupFor", { args: [siteName] });
 
   React.useEffect(() => {

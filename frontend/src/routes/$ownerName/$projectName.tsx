@@ -26,7 +26,7 @@ import {
   pullRequestDetailQueryOptions,
 } from "../../api/pull-requests";
 import { isSearchType, projectSearchQueryOptions } from "../../api/search";
-import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
+import type { ProjectContainer, ProjectMilestone, YoramUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
 import {
   readIssueDetail,
@@ -35,7 +35,7 @@ import {
   readSessionBootstrap,
 } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
@@ -235,11 +235,11 @@ function ProjectHomeRoute() {
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectHomeRouteShell active={active} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -1049,7 +1049,7 @@ export function ProjectHomeBody({
   const projectRecord = recordField(project);
   const menuSetting = projectMenuSetting(project);
   const currentMilestone = projectCurrentMilestone(project);
-  const members = arrayField(projectRecord.members) as YonaUserItem[];
+  const members = arrayField(projectRecord.members) as YoramUserItem[];
   const currentUserId =
     numberField(projectRecord.viewerUserId) ||
     numberField(projectRecord.currentUserId) ||
@@ -1248,7 +1248,7 @@ export function ProjectHomeBody({
                 >
                   {t("code.copyUrl")}
                 </button>
-                <YobiToast notice={cloneCopyNotice} />
+                <YoramToast notice={cloneCopyNotice} />
               </div>
             ) : null}
           </div>
@@ -1460,7 +1460,7 @@ export function ProjectHomeBody({
   );
 }
 
-function YobiToast({ notice }: { notice: { key: number; message: string } | null }) {
+function YoramToast({ notice }: { notice: { key: number; message: string } | null }) {
   if (!notice) {
     return null;
   }
@@ -2134,7 +2134,7 @@ function ProgressBar({
   );
 }
 
-function ProjectMember({ basePath, member }: { basePath: string; member: YonaUserItem }) {
+function ProjectMember({ basePath, member }: { basePath: string; member: YoramUserItem }) {
   const loginId = stringField(member.loginId, "");
   const userLabel = stringField(member.userLabel, loginId);
 

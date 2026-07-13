@@ -26,7 +26,7 @@ function IndexRoute() {
 
   return (
     <>
-      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <title>{runtimeConfig.siteName ?? "Yoram"}</title>
       <HomeRouteScreen flashMessageKey={flashKey} runtimeConfig={runtimeConfig} />
     </>
   );

@@ -9,7 +9,7 @@ import type { ProjectWatchersResponse } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
@@ -27,11 +27,11 @@ function ProjectWatchersRoute() {
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectWatchersScreen nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

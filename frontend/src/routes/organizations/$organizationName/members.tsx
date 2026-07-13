@@ -16,7 +16,7 @@ import {
   updateOrganizationMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
-import type { OrganizationAdminView, YonaRecord, YonaUserItem } from "../../../api/types";
+import type { OrganizationAdminView, YoramRecord, YoramUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
@@ -392,7 +392,7 @@ function OrganizationMember({
   onToggleRoleDropdown,
   roleDropdownOpen,
 }: {
-  member: YonaUserItem;
+  member: YoramUserItem;
   organization: OrganizationAdminView;
   onDelete: (event: MouseEvent<HTMLButtonElement>, userId: number) => void;
   onRole: (userId: number, role: string) => void;
@@ -484,7 +484,7 @@ function EnrollmentRequest({
   user,
 }: {
   onAccept: (loginId: string) => void;
-  user: YonaUserItem;
+  user: YoramUserItem;
 }) {
   const { t } = useLegacyMessages();
   const loginId = stringField(user.loginId, "");
@@ -599,7 +599,7 @@ function OrganizationSettingMenu({
 
 function roleLabel(organization: OrganizationAdminView, role: string) {
   const option = organization.roleOptions.find(
-    (roleOption: YonaRecord) => stringField(roleOption.role, "") === role,
+    (roleOption: YoramRecord) => stringField(roleOption.role, "") === role,
   );
   return stringField(option?.label, role);
 }

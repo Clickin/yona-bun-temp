@@ -1,7 +1,7 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy migration/home.scala.html requires positive tab order on source/destination search inputs. */
 import { createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 export const Route = createFileRoute("/migration")({
@@ -13,14 +13,14 @@ function MigrationRoute() {
 
   return (
     <>
-      <title>{runtimeConfig.siteName ?? "Yona"}</title>
-      <YonaQueryProvider>
+      <title>{runtimeConfig.siteName ?? "Yoram"}</title>
+      <YoramQueryProvider>
         <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
           <SiteLayoutShell runtimeConfig={runtimeConfig}>
             <MigrationScreen />
           </SiteLayoutShell>
         </LegacyI18nProvider>
-      </YonaQueryProvider>
+      </YoramQueryProvider>
     </>
   );
 }

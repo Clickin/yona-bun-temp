@@ -2310,7 +2310,7 @@ function isValidIssueDueDate(value: string) {
   return trimmed === "" || !Number.isNaN(Date.parse(trimmed));
 }
 
-function YobiToast({ message, noticeKey }: { message: string; noticeKey: number }) {
+function YoramToast({ message, noticeKey }: { message: string; noticeKey: number }) {
   if (noticeKey === 0) {
     return null;
   }
@@ -2431,7 +2431,7 @@ function IssueSearchForm({
       method="get"
       onSubmit={handleSubmit}
     >
-      <YobiToast noticeKey={invalidDueDateNoticeKey} message={t("issue.error.invalid.duedate")} />
+      <YoramToast noticeKey={invalidDueDateNoticeKey} message={t("issue.error.invalid.duedate")} />
       <input type="hidden" name="orderBy" value={search.orderBy} />
       <input type="hidden" name="orderDir" value={search.orderDir} />
       <input type="hidden" name="state" value={search.state} />

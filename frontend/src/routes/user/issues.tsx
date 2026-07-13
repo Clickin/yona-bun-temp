@@ -10,7 +10,7 @@ import {
   type UserIssueListRestResponse,
 } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
@@ -84,14 +84,14 @@ function UserIssuesRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <UserIssuesTitle />
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
           <UserIssuesScreen runtimeConfig={runtimeConfig} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -401,7 +401,7 @@ function UserIssuesBody({
           </div>
         </div>
       </div>
-      <YobiToast notice={defaultLoginNotice} />
+      <YoramToast notice={defaultLoginNotice} />
     </div>
   );
 }
@@ -639,7 +639,7 @@ function MySeriesMenuTabs({
   );
 }
 
-function YobiToast({ notice }: { notice: { key: number; message: string } | null }) {
+function YoramToast({ notice }: { notice: { key: number; message: string } | null }) {
   if (!notice) {
     return null;
   }

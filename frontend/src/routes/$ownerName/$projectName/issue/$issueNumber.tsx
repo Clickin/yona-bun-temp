@@ -20,7 +20,7 @@ import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
 import { resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
-import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
+import type { ProjectContainer, ProjectMilestone, YoramRecord } from "../../../../api/types";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
   deleteIssueComment,
@@ -506,7 +506,7 @@ function IssueDetailBody({
   currentUserLoginId: string;
   currentUserIsAnonymous: boolean;
   issue: RestIssueDetailResponse;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   milestones: {
     closed: ProjectMilestone[];
     open: ProjectMilestone[];
@@ -1785,7 +1785,7 @@ function IssueLabelSelect({
   selectedLabelIds,
 }: {
   canManageLabels: boolean;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   ownerName: string;
   projectName: string;
   onChange: (labelIds: string[]) => void;
@@ -1798,7 +1798,7 @@ function IssueLabelSelect({
       categoryId: string;
       categoryIsExclusive: string;
       categoryName: string;
-      labels: YonaRecord[];
+      labels: YoramRecord[];
     }
   >();
   for (const label of labels) {
@@ -1996,7 +1996,7 @@ function LegacyLabelControl({
   onChange,
   selectedLabelIds,
 }: {
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   onChange: (labelIds: string[]) => void;
   selectedLabelIds: Set<string>;
 }) {
@@ -2090,7 +2090,7 @@ function IssueSelectedLabels({
   projectName,
 }: {
   issueState: string;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   ownerName: string;
   projectName: string;
 }) {
@@ -2150,7 +2150,7 @@ function IssueChildIssues({
   const issueNumber = stringField(issue.issueNumber);
   const parentIssueNumber = stringField(issue.parentIssueNumber, issueNumber);
   const parentIssueTitle = stringField(issue.parentIssueTitle, issue.title);
-  const parentIssueState = stringField((issue as YonaRecord).parentIssueState, issue.state);
+  const parentIssueState = stringField((issue as YoramRecord).parentIssueState, issue.state);
   const childOpenCount = numberField(issue.childOpenCount);
   const childClosedCount = numberField(issue.childClosedCount);
   const totalCount = childOpenCount + childClosedCount;

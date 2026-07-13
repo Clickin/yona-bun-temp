@@ -4,9 +4,9 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
-import type { ListProjectsResponse, YonaRecord } from "../api/types";
+import type { ListProjectsResponse, YoramRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -16,7 +16,7 @@ type ProjectsSearch = {
   pageNum?: number;
 };
 
-type ProjectDirectoryItem = YonaRecord & {
+type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
   createdTitle?: string;
   lastPushedLabel?: string;
@@ -51,11 +51,11 @@ function ProjectsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectsScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -431,7 +431,7 @@ function projectItems(payload: unknown): ProjectDirectoryItem[] {
   );
 }
 
-function projectLabels(project: YonaRecord): ProjectDirectoryLabel[] {
+function projectLabels(project: YoramRecord): ProjectDirectoryLabel[] {
   const labels = project.labels;
   if (!Array.isArray(labels)) {
     return [];
@@ -440,7 +440,7 @@ function projectLabels(project: YonaRecord): ProjectDirectoryLabel[] {
     if (!label || typeof label !== "object") {
       return [];
     }
-    const record = label as YonaRecord;
+    const record = label as YoramRecord;
     const id = stringOrNumberField(record, "id");
     const name = stringField(record, "name", "");
     if (!id || !name) {
@@ -456,12 +456,12 @@ function projectLabels(project: YonaRecord): ProjectDirectoryLabel[] {
   });
 }
 
-function stringField(record: YonaRecord, key: string, fallback: string): string {
+function stringField(record: YoramRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
-function stringOrNumberField(record: YonaRecord, key: string): string {
+function stringOrNumberField(record: YoramRecord, key: string): string {
   const value = record[key];
   if ((typeof value === "string" || typeof value === "number") && String(value) !== "") {
     return String(value);
@@ -469,7 +469,7 @@ function stringOrNumberField(record: YonaRecord, key: string): string {
   return "";
 }
 
-function numberField(record: YonaRecord, key: string, fallback: number): number {
+function numberField(record: YoramRecord, key: string, fallback: number): number {
   const value = record[key];
   return typeof value === "number" ? value : fallback;
 }
@@ -503,14 +503,14 @@ function positiveIntegerField(payload: unknown, key: string, fallback: number): 
   if (!payload || typeof payload !== "object") {
     return fallback;
   }
-  return positiveInteger((payload as YonaRecord)[key]) ?? fallback;
+  return positiveInteger((payload as YoramRecord)[key]) ?? fallback;
 }
 
 function clampPageNum(pageNum: number, totalPages: number) {
   return Math.min(Math.max(pageNum, 1), Math.max(totalPages, 1));
 }
 
-function projectIsReadable(record: YonaRecord): boolean {
+function projectIsReadable(record: YoramRecord): boolean {
   for (const key of ["viewerCanRead", "canRead", "isReadable", "readable"]) {
     if (record[key] === false) {
       return false;

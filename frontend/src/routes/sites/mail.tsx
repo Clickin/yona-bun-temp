@@ -9,7 +9,7 @@ import {
   type SiteMailOptionsResponse,
 } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 
@@ -47,7 +47,7 @@ function SiteMailRoute() {
   const search = normalizeSiteMailSearch(Route.useSearch());
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig} showLegacyProjectHeaderLinks>
           <SiteMailScreen
@@ -57,7 +57,7 @@ function SiteMailRoute() {
           />
         </SiteLayoutShell>
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

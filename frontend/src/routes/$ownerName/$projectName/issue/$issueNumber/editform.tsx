@@ -11,7 +11,7 @@ import {
 } from "react";
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
-import type { ProjectContainer, YonaRecord } from "../../../../../api/types";
+import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
 import {
   listIssueParentOptions,
   readIssueDetail,
@@ -150,7 +150,7 @@ function ProjectIssueEditFormBody({
   runtimeConfig,
 }: {
   issue: RestIssueDetailResponse;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   parentOptions: Array<{
     id: bigint | number;
     issueNumber: bigint | number;
@@ -165,7 +165,7 @@ function ProjectIssueEditFormBody({
   const queryClient = useQueryClient();
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
-  const issueRecord = issue as YonaRecord;
+  const issueRecord = issue as YoramRecord;
   const [titleFocusRequest, setTitleFocusRequest] = useState(1);
   const [bodyFocusRequest, setBodyFocusRequest] = useState(0);
   const [invalidDueDateNoticeKey, setInvalidDueDateNoticeKey] = useState(0);
@@ -278,7 +278,7 @@ function ProjectIssueEditFormBody({
               mutation.mutate(formData);
             }}
           >
-            <YobiToast
+            <YoramToast
               noticeKey={invalidDueDateNoticeKey}
               message={t("issue.error.invalid.duedate")}
             />
@@ -640,7 +640,7 @@ function SubtaskSelects({
   showOption: boolean;
 }) {
   const { t } = useLegacyMessages();
-  const issueRecord = issue as YonaRecord;
+  const issueRecord = issue as YoramRecord;
   const parentIssueId = stringField(issueRecord.parentIssueId, "");
   const hasChildIssue = booleanField(issueRecord.hasChildIssue);
   const movableProjects = issueMovableProjects(project);
@@ -746,7 +746,7 @@ function IssueLabelSelect({
   onChange,
   selectedLabelIds,
 }: {
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   ownerName: string;
   projectName: string;
   onChange: (value: string[]) => void;
@@ -893,7 +893,7 @@ function LegacyEditLabelSelect({
   onChange,
   selectedLabelIds,
 }: {
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   onChange: (value: string[]) => void;
   selectedLabelIds: Set<string>;
 }) {
@@ -1079,7 +1079,7 @@ function IssuePostFileUploader({ resourceId }: { resourceId: string }) {
   );
 }
 
-function groupLabels(labels: YonaRecord[]) {
+function groupLabels(labels: YoramRecord[]) {
   const groups = new Map<
     string,
     {
@@ -1105,7 +1105,7 @@ function groupLabels(labels: YonaRecord[]) {
 
 function issueMovableProjects(project: ProjectContainer) {
   const currentProjectId = stringField(project.id, "");
-  const rawProjects = (project as YonaRecord).movableIssueProjects;
+  const rawProjects = (project as YoramRecord).movableIssueProjects;
   if (!Array.isArray(rawProjects)) {
     return [];
   }
@@ -1115,7 +1115,7 @@ function issueMovableProjects(project: ProjectContainer) {
     if (!rawProject || typeof rawProject !== "object" || Array.isArray(rawProject)) {
       continue;
     }
-    const record = rawProject as YonaRecord;
+    const record = rawProject as YoramRecord;
     const id = stringField(record.id, "");
     const name = stringField(record.projectName, "") || stringField(record.name, "");
     if (!id || !name || id === currentProjectId) {
@@ -1140,7 +1140,7 @@ function isValidIssueDueDate(value: string) {
   return trimmed === "" || !Number.isNaN(Date.parse(trimmed));
 }
 
-function YobiToast({ message, noticeKey }: { message: string; noticeKey: number }) {
+function YoramToast({ message, noticeKey }: { message: string; noticeKey: number }) {
   if (noticeKey === 0) {
     return null;
   }

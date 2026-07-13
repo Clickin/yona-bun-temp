@@ -10,7 +10,7 @@ function UsersLoginRoute() {
 
   return (
     <>
-      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <title>{runtimeConfig.siteName ?? "Yoram"}</title>
       <HomeRouteScreen routePath="/users/login" runtimeConfig={runtimeConfig} />
     </>
   );

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { type RuntimeConfig } from "../../../runtime-config";
 import { readDirectIssueFormOptions } from "../../../auth-workspace-client";
 import { SiteLayoutShell } from "../../-home-route-screen";
@@ -16,7 +16,7 @@ export function DirectIssueFormRouteScreen({
   runtimeConfig: RuntimeConfig;
 }) {
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <DirectIssueFormProjectScreen
           commentId={commentId}
@@ -24,7 +24,7 @@ export function DirectIssueFormRouteScreen({
           runtimeConfig={runtimeConfig}
         />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

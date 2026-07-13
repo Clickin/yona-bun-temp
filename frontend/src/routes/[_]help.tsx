@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -39,16 +39,16 @@ function HelpTocRoute() {
   );
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <div onClickCapture={handleLayoutRootClickCapture}>
           <HelpTocTitle />
           <SiteLayoutShell runtimeConfig={runtimeConfig}>
-            <HelpTocScreen />
+            <HelpTocScreen appName={runtimeConfig.siteName ?? "Yoram"} />
           </SiteLayoutShell>
         </div>
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -57,10 +57,9 @@ function HelpTocTitle() {
   return <title>{t("title.help")}</title>;
 }
 
-function HelpTocScreen() {
+function HelpTocScreen({ appName }: { appName: string }) {
   const { t } = useLegacyMessages();
   const [openQuestionIndexes, setOpenQuestionIndexes] = React.useState(() => new Set<number>());
-  const appName = t("app.name");
   const toggleQuestion = (index: number) => {
     setOpenQuestionIndexes((current) => {
       const next = new Set(current);
@@ -107,13 +106,7 @@ function HelpTocScreen() {
               </div>
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
-                <Answer>
-                  {appName}를 설치하고자 하면{" "}
-                  <Link href="https://github.com/doortts/yona#korean" reloadDocument to="/">
-                    https://github.com/doortts/yona#korean
-                  </Link>
-                  를 참고해 주세요.
-                </Answer>
+                <Answer>공개 저장소가 준비되면 설치 안내를 제공할 예정입니다.</Answer>
               </div>
             </li>
             <li
@@ -259,11 +252,8 @@ function HelpTocScreen() {
               <div className="answer-wrap">
                 <i className="yobicon-a a" />
                 <Answer>
-                  {appName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
-                  <Link href="https://github.com/nforge/yobi/issues" reloadDocument to="/">
-                    {`${appName} 이슈트래커에 등록`}
-                  </Link>
-                  해 주시거나 패치를 만들어 보내주시면 됩니다.
+                  {appName}는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를
+                  통해 버그를 제보하거나 패치를 보내실 수 있습니다.
                 </Answer>
               </div>
             </li>

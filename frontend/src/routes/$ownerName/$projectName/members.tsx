@@ -26,7 +26,7 @@ import type { ProjectContainer } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
@@ -69,11 +69,11 @@ export function ProjectMembersRouteScreen({
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         {content}
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

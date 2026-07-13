@@ -4,7 +4,7 @@ import { apiQueryKeys } from "./api/query-keys";
 
 let activeQueryClient: QueryClient | undefined;
 
-export function createYonaQueryClient() {
+export function createYoramQueryClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: {
@@ -35,17 +35,17 @@ export function invalidateAuthenticationQueries() {
   ]).then(() => undefined);
 }
 
-export function YonaQueryProvider({ children }: React.PropsWithChildren) {
+export function YoramQueryProvider({ children }: React.PropsWithChildren) {
   const parentQueryClient = React.use(QueryClientContext);
   if (parentQueryClient) {
     return children;
   }
 
-  return <YonaQueryClientProvider>{children}</YonaQueryClientProvider>;
+  return <YoramQueryClientProvider>{children}</YoramQueryClientProvider>;
 }
 
-function YonaQueryClientProvider({ children }: React.PropsWithChildren) {
-  const [queryClient] = React.useState(() => createYonaQueryClient());
+function YoramQueryClientProvider({ children }: React.PropsWithChildren) {
+  const [queryClient] = React.useState(() => createYoramQueryClient());
 
   React.useEffect(() => {
     activeQueryClient = queryClient;

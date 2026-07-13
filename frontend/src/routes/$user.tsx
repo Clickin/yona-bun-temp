@@ -10,11 +10,11 @@ import type {
   WorkspaceMemberProjectItem,
   WorkspaceProfile,
   WorkspacePullRequestItem,
-  YonaLabel,
-  YonaRecord,
+  YoramLabel,
+  YoramRecord,
 } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -67,11 +67,11 @@ function PublicProfileRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <PublicProfileScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -119,7 +119,7 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
 
 function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const [activeUsermenuTab, setActiveUsermenuTab] =
     React.useState<UsermenuTab>("myOrganizationList");
 
@@ -141,11 +141,13 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 {t("title.help")}
               </Link>
             </li>
-            <li>
-              <Link to="/" href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
-                {t("title.yobi.feedback")}
-              </Link>
-            </li>
+            {runtimeConfig.feedbackUrl ? (
+              <li>
+                <Link to="/" href={runtimeConfig.feedbackUrl} target="_blank">
+                  {t("title.yobi.feedback")}
+                </Link>
+              </li>
+            ) : null}
           </ul>
           <div id="mySidenav" className="sidenav">
             <div className="span5 right-menu span-hard-wrap">
@@ -213,22 +215,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">
-            {"Copyright © "}
-            <Link to="/" href="http://navercorp.com/" target="_blank">
-              NAVER Corp.
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              to="/"
-              href="https://developers.naver.com/d2/"
-              target="_blank"
-              className="d2-program"
-            >
-              <span className="d2">D2</span>
-              <span className="program"> Program</span>
-            </Link>
-          </span>
+          <span className="provider">Yoram authors</span>
         </div>
       </footer>
     </>
@@ -759,7 +746,7 @@ function ProfileIssueChildRows({
   ownerName,
   projectName,
 }: {
-  issues: YonaRecord[];
+  issues: YoramRecord[];
   ownerName: string;
   projectName: string;
 }) {
@@ -786,7 +773,7 @@ function ProfileIssueChildRow({
   ownerName,
   projectName,
 }: {
-  issue: YonaRecord;
+  issue: YoramRecord;
   ownerName: string;
   projectName: string;
 }) {
@@ -794,7 +781,7 @@ function ProfileIssueChildRow({
   const projectPath = `/${ownerName}/${projectName}`;
   const issuePath = `${projectPath}/issue/${issueNumber}`;
   const isClosed = stringField(issue, "state") === "closed";
-  const labels = sortedWorkspaceIssueLabels((issue.labels ?? []) as YonaLabel[]);
+  const labels = sortedWorkspaceIssueLabels((issue.labels ?? []) as YoramLabel[]);
 
   return (
     <div className="issue-item  child-issue">
@@ -849,7 +836,7 @@ function ProfileIssueChildRow({
   );
 }
 
-function ProfileIssueChildCounts({ issue, issuePath }: { issue: YonaRecord; issuePath: string }) {
+function ProfileIssueChildCounts({ issue, issuePath }: { issue: YoramRecord; issuePath: string }) {
   const commentCount = numberField(issue, "commentCount");
   const voterCount = numberField(issue, "voterCount");
   if (commentCount <= 0 && voterCount <= 0) {
@@ -888,11 +875,11 @@ function truncateParentIssueTitle(title: string) {
   return title.length > 10 ? `${trimmed}...` : trimmed;
 }
 
-function sortedWorkspaceIssueLabels(labels: YonaLabel[]) {
+function sortedWorkspaceIssueLabels(labels: YoramLabel[]) {
   return labels.slice().sort(compareIssueLabels);
 }
 
-function compareIssueLabels(left: YonaLabel, right: YonaLabel) {
+function compareIssueLabels(left: YoramLabel, right: YoramLabel) {
   const categoryOrder = stringField(left.categoryName, "").localeCompare(
     stringField(right.categoryName, ""),
   );
@@ -1299,7 +1286,7 @@ function stringSearch(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
-function stringField(record: YonaRecord, key: string, fallback = "") {
+function stringField(record: YoramRecord, key: string, fallback = "") {
   const value = record[key];
   if (typeof value === "string") {
     return value;
@@ -1310,7 +1297,7 @@ function stringField(record: YonaRecord, key: string, fallback = "") {
   return fallback;
 }
 
-function numberField(record: YonaRecord, key: string, fallback = 0) {
+function numberField(record: YoramRecord, key: string, fallback = 0) {
   const value = record[key];
   if (typeof value === "number") {
     return value;

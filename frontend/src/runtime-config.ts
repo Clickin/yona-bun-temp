@@ -240,5 +240,5 @@ function normalizePositiveInteger(input: number | string | null | undefined, fal
 
 export function normalizeSiteName(input: string | null | undefined): string {
   const trimmed = (input ?? "").trim();
-  return trimmed === "" ? "Yona" : trimmed;
+  return trimmed === "" ? "Yoram" : trimmed;
 }

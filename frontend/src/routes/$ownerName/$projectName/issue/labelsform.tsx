@@ -19,10 +19,10 @@ import {
 } from "../../../../api/project-labels";
 import { readProjectSettingsQueryOptions } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
-import type { ProjectContainer, YonaRecord } from "../../../../api/types";
+import type { ProjectContainer, YoramRecord } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 
 const NEW_LABEL_COLORS = [
@@ -92,11 +92,11 @@ export function ProjectLabelsRouteScreen({
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         {content}
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -157,7 +157,7 @@ function ProjectLabelsBody({
   project,
   runtimeConfig,
 }: {
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -692,7 +692,7 @@ function ProjectLabelsList({
 }: {
   basePath: string;
   canManageIssueLabels: boolean;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   onDeleteLabel: (labelId: string) => void;
   onEditCategory: (category: EditableCategory) => void;
   onEditLabel: (label: EditableLabel) => void;
@@ -826,10 +826,10 @@ function ProjectLabelsList({
   );
 }
 
-function groupedLabels(labels: YonaRecord[]) {
+function groupedLabels(labels: YoramRecord[]) {
   const categories = new Map<
     string,
-    { id: string; isExclusive: boolean; labels: YonaRecord[]; name: string }
+    { id: string; isExclusive: boolean; labels: YoramRecord[]; name: string }
   >();
 
   for (const label of labels) {
@@ -931,7 +931,7 @@ function typeaheadMenuStyle(input: HTMLInputElement | null) {
 }
 
 function buildCategoryTypeaheadSource(
-  categories: Array<{ id: string; isExclusive: boolean; labels: YonaRecord[]; name: string }>,
+  categories: Array<{ id: string; isExclusive: boolean; labels: YoramRecord[]; name: string }>,
 ) {
   const seen = new Set<string>();
   const source: string[] = [];
@@ -1251,7 +1251,7 @@ function EditLabelModal({
   onSubmit,
 }: {
   label: EditableLabel | null;
-  labels: YonaRecord[];
+  labels: YoramRecord[];
   onCancel: () => void;
   onChange: (label: EditableLabel) => void;
   onSubmit: () => void;
@@ -1611,7 +1611,7 @@ function booleanField(value: unknown) {
   return value === true;
 }
 
-function isLabelExists(labels: YonaRecord[], categoryName: string, labelName: string) {
+function isLabelExists(labels: YoramRecord[], categoryName: string, labelName: string) {
   return labels.some(
     (label) =>
       stringField(label.category, "") === categoryName && stringField(label.name, "") === labelName,

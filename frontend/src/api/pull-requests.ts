@@ -4,7 +4,7 @@ import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-m
 import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
-import type { YonaAttachment } from "./types";
+import type { YoramAttachment } from "./types";
 
 export type PullRequestListCategory = "closed" | "open" | "sent";
 export type PullRequestState = "closed" | "conflict" | "merged" | "open" | string;
@@ -167,7 +167,7 @@ export type PullRequestCommit = {
 };
 
 export type PullRequestDetailResponse = {
-  attachments: YonaAttachment[];
+  attachments: YoramAttachment[];
   bodyHtml: string;
   bodyMarkdown: string;
   commits: PullRequestCommit[];

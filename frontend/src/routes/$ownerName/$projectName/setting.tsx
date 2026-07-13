@@ -12,7 +12,7 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import defaultProjectLogoUrl from "../../../assets/legacy/project_default_logo.png";
 import { SiteLayoutShell } from "../../-home-route-screen";
@@ -84,11 +84,11 @@ export function ProjectSettingRouteScreen({
   }
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         {content}
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

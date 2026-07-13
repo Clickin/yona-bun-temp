@@ -2,20 +2,14 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
-import type { YonaRecord } from "../api/types";
-import { YonaQueryProvider } from "../query-client";
+import type { YoramRecord } from "../api/types";
+import { YoramQueryProvider } from "../query-client";
 import { type RuntimeConfig, prefixBasePath } from "../runtime-config";
 
 export const Route = createFileRoute("/restricted")({
   component: RestrictedRoute,
 });
 
-const FOOTER_LINKS = {
-  authors: "https://github.com/yona-projects/yona/blob/master/AUTHORS",
-  naver: "https://navercorp.com",
-  naverLabs: "https://naverlabs.com/",
-  ncloud: "https://www.ncloud.com/?referer=yona",
-} as const;
 const legacyPlainLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
@@ -32,9 +26,9 @@ function RestrictedRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <RestrictedScreen runtimeConfig={runtimeConfig} />
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -49,7 +43,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const provider = stringValue(currentAuth?.provider) || "password";
   const authId = stringValue(currentAuth?.id) || stringValue(localUser?.loginId) || "";
   const expires = numberValue(currentAuth?.expires, -1);
-  const browserTitle = runtimeConfig.siteName ?? "Yona";
+  const browserTitle = runtimeConfig.siteName ?? "Yoram";
 
   return (
     <>
@@ -120,63 +114,15 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">
-            Copyright{" "}
-            <Link
-              href={FOOTER_LINKS.authors}
-              to="/"
-              reloadDocument
-              target="_blank"
-              className="yona-author"
-              activeOptions={legacyPlainLinkActiveOptions}
-              activeProps={legacyPlainLinkActiveProps}
-            >
-              Yona authors
-            </Link>{" "}
-            & ©{" "}
-            <Link
-              href={FOOTER_LINKS.naver}
-              to="/"
-              reloadDocument
-              target="_blank"
-              activeOptions={legacyPlainLinkActiveOptions}
-              activeProps={legacyPlainLinkActiveProps}
-            >
-              NAVER Corp.
-            </Link>{" "}
-            &{" "}
-            <Link
-              href={FOOTER_LINKS.naverLabs}
-              to="/"
-              reloadDocument
-              target="_blank"
-              className="naver-labs"
-              activeOptions={legacyPlainLinkActiveOptions}
-              activeProps={legacyPlainLinkActiveProps}
-            >
-              NAVER LABS
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              href={FOOTER_LINKS.ncloud}
-              to="/"
-              reloadDocument
-              target="_blank"
-              className="naver-cloud-platform"
-              activeOptions={legacyPlainLinkActiveOptions}
-              activeProps={legacyPlainLinkActiveProps}
-            >
-              NAVER CLOUD PLATFORM
-            </Link>
-          </span>
+          <span className="provider">Yoram authors</span>
         </div>
       </footer>
     </>
   );
 }
 
-function asRecord(value: unknown): YonaRecord | undefined {
-  return typeof value === "object" && value !== null ? (value as YonaRecord) : undefined;
+function asRecord(value: unknown): YoramRecord | undefined {
+  return typeof value === "object" && value !== null ? (value as YoramRecord) : undefined;
 }
 
 function stringValue(value: unknown): string {

@@ -4,10 +4,10 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { deleteProjectMemberRest } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import { currentSessionQueryOptions } from "../../../../api/session";
-import type { YonaRecord } from "../../../../api/types";
+import type { YoramRecord } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 
 export const Route = createFileRoute("/info/leave/$ownerName/$projectName")({
@@ -18,11 +18,11 @@ function UserProjectLeaveRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <UserProjectLeaveScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -79,7 +79,7 @@ function UserProjectLeaveScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
   return null;
 }
 
-function numberField(record: YonaRecord, key: string) {
+function numberField(record: YoramRecord, key: string) {
   const value = record[key];
   if (typeof value === "number") {
     return value;
@@ -94,7 +94,7 @@ function numberField(record: YonaRecord, key: string) {
   return 0;
 }
 
-function stringField(record: YonaRecord, key: string) {
+function stringField(record: YoramRecord, key: string) {
   const value = record[key];
   return typeof value === "string" ? value : "";
 }

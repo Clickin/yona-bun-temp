@@ -7,7 +7,7 @@ import { RestApiError } from "../api/rest-client";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
@@ -30,11 +30,11 @@ function SecretSetupRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SecretSetupScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -42,7 +42,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   const { language, t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const contextRoot = runtimeConfig.basePath === "/" ? "/" : `${runtimeConfig.basePath}/`;
   const welcome = lookupLegacyMessage(language, "app.welcome", { args: [siteName] });
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
@@ -270,7 +270,7 @@ function FieldErrorLabels({ errors }: { errors?: string[] }) {
 
 function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
 
   return (
     <>
@@ -294,16 +294,18 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 {t("title.help")}
               </Link>
             </li>
-            <li>
-              <Link
-                href="https://github.com/nforge/yobi/issues?state=open"
-                to="/"
-                target="_blank"
-                activeProps={legacyLinkActiveProps}
-              >
-                {t("title.yobi.feedback")}
-              </Link>
-            </li>
+            {runtimeConfig.feedbackUrl ? (
+              <li>
+                <Link
+                  href={runtimeConfig.feedbackUrl}
+                  to="/"
+                  target="_blank"
+                  activeProps={legacyLinkActiveProps}
+                >
+                  {t("title.yobi.feedback")}
+                </Link>
+              </li>
+            ) : null}
           </ul>
         </div>
       </header>
@@ -320,28 +322,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">
-            {"Copyright © "}
-            <Link
-              href="http://navercorp.com/"
-              to="/"
-              target="_blank"
-              activeProps={legacyLinkActiveProps}
-            >
-              NAVER Corp.
-            </Link>{" "}
-            Supported by{" "}
-            <Link
-              href="https://developers.naver.com/d2/"
-              to="/"
-              target="_blank"
-              className="d2-program"
-              activeProps={legacyLinkActiveProps}
-            >
-              <span className="d2">D2</span>
-              <span className="program"> Program</span>
-            </Link>
-          </span>
+          <span className="provider">Yoram authors</span>
         </div>
       </footer>
     </>

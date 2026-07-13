@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
-import type { ListOrganizationsResponse, YonaRecord } from "../api/types";
+import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -14,7 +14,7 @@ type OrgsSearch = {
   pageNum?: number;
 };
 
-type OrganizationDirectoryItem = YonaRecord & {
+type OrganizationDirectoryItem = YoramRecord & {
   createdLabel?: string;
   createdTitle?: string;
   descr?: string;
@@ -39,11 +39,11 @@ function OrgsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <OrgsScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -382,16 +382,16 @@ function organizationTotalPages(payload: unknown): number {
   return 1;
 }
 
-function stringField(record: YonaRecord, key: string, fallback: string): string {
+function stringField(record: YoramRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
-function organizationDisplayName(record: YonaRecord): string {
+function organizationDisplayName(record: YoramRecord): string {
   return stringField(record, "organizationName", stringField(record, "name", ""));
 }
 
-function organizationDescription(record: YonaRecord): string {
+function organizationDescription(record: YoramRecord): string {
   return stringField(record, "description", stringField(record, "descr", ""));
 }
 
@@ -421,7 +421,7 @@ function clampPageNum(pageNum: number, totalPages: number) {
   return Math.min(Math.max(pageNum, 1), Math.max(totalPages, 1));
 }
 
-function organizationIsReadable(record: YonaRecord): boolean {
+function organizationIsReadable(record: YoramRecord): boolean {
   for (const key of ["viewerCanRead", "canRead", "isReadable", "readable"]) {
     if (record[key] === false) {
       return false;

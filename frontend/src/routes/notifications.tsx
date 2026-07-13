@@ -10,7 +10,7 @@ function NotificationsRoute() {
 
   return (
     <>
-      <title>{runtimeConfig.siteName ?? "Yona"}</title>
+      <title>{runtimeConfig.siteName ?? "Yoram"}</title>
       <HomeRouteScreen routePath="/notifications" runtimeConfig={runtimeConfig} />
     </>
   );

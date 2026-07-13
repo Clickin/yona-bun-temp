@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -34,11 +34,11 @@ function ResetPasswordRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ResetPasswordScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -53,7 +53,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   const [fieldErrors, setFieldErrors] = React.useState<
     Partial<Record<"password" | "retypedPassword", string>>
   >({});
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const browserTitle = t("title.resetPassword");
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],

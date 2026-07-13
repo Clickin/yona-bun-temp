@@ -346,7 +346,7 @@ test("current-user issues route uses direct TanStack Link targets without generi
   );
   const tabsSource = routeSource.slice(
     routeSource.indexOf("function MySeriesMenuTabs("),
-    routeSource.indexOf("function YobiToast("),
+    routeSource.indexOf("function YoramToast("),
   );
 
   expect(routeSource).not.toContain("LegacyInternalLink");

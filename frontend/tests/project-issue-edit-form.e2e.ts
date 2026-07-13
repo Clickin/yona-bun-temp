@@ -813,7 +813,7 @@ test("project issue edit form renders movable project options without select2 av
       },
     ]);
 
-  expect(ROUTE_SOURCE).toContain("(project as YonaRecord).movableIssueProjects");
+  expect(ROUTE_SOURCE).toContain("(project as YoramRecord).movableIssueProjects");
   expect(ROUTE_SOURCE).toContain("id === currentProjectId");
 });
 

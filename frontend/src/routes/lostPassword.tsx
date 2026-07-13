@@ -4,7 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
 import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
@@ -29,11 +29,11 @@ function LostPasswordRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <LostPasswordScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -43,7 +43,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const navigate = useNavigate();
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const [submitError, setSubmitError] = React.useState("");
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const browserTitle = t("site.resetPasswordEmail.title");
   const title = lookupLegacyMessage(language, "title.resetPasswordFor", {
     args: [siteName],

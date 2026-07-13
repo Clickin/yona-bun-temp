@@ -6,14 +6,14 @@ export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
 });
 
-const Xmp: React.ElementType = "xmp";
+const Xmp = "xmp" as unknown as React.ComponentType<React.HTMLAttributes<HTMLElement>>;
 
 function UIKitRoute() {
   const [showsViaEmailDemo, setShowsViaEmailDemo] = React.useState(false);
 
   return (
     <>
-      <title>Yobi UI</title>
+      <title>Yoram UI</title>
       <style>{`body { color:#ccc; }
 dl { display:inline-block; margin:18px; }
 dd { margin-left:0; }
@@ -22,7 +22,7 @@ dd { margin-left:0; }
 .subtitle { font-size:24px; font-weight:bold; height:55px; line-height:55px; vertical-align:bottom; }
 .css { font-family: Consolas; color: #222; background: #C9EBB5; padding: 3px; border-radius: 3px; border: 1px solid #4CB848; }`}</style>
       <header className="gnb-outer">
-        <span className="subtitle">Yobi UI</span>
+        <span className="subtitle">Yoram UI</span>
       </header>
       <div className="page-wrap-outer">
         <div className="container page-wrap">
@@ -224,9 +224,7 @@ ${legacyAnchorMarkup('href="#" class="ybtn ybtn-danger"', "Danger")}`}</CodeSamp
       </div>
       <footer className="page-footer-outer">
         <div className="page-footer">
-          <span className="provider">
-            &copy; <strong>NAVER Corp.</strong>
-          </span>
+          <span className="provider">Yoram authors</span>
         </div>
       </footer>
     </>

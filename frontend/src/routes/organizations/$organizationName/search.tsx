@@ -15,7 +15,7 @@ import {
   type SearchType,
 } from "../../../api/search";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import {
@@ -86,11 +86,11 @@ export const Route = createFileRoute("/organizations/$organizationName/search")(
 function OrganizationSearchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <OrganizationSearchScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 

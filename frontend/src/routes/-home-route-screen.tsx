@@ -5,10 +5,10 @@ import { listNotificationsQueryOptions, type NotificationItem } from "../api/not
 import { toggleFavoriteOrganizationRest, toggleFavoriteProjectRest } from "../api/org-project";
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
-import type { YonaRecord } from "../api/types";
+import type { YoramRecord } from "../api/types";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
-import { YonaQueryProvider } from "../query-client";
+import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { useRootLoginDialog, useRootToast } from "./__root";
 import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
@@ -70,10 +70,6 @@ const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
 const LEGACY_ANONYMOUS_LOGOUT_PATH: string = "/logout";
 const LEGACY_LEFT_SIDEBAR_OPEN_KEY = "shallWeOpenLeftNavigation";
 const LEGACY_LEFT_SIDEBAR_TAB_KEY = "sidebarActiveMenu";
-const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/master/AUTHORS";
-const NAVER_CORP_URL: string = "https://navercorp.com";
-const NAVER_LABS_URL: string = "https://naverlabs.com/";
-const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
 const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
   activeProps: {
@@ -125,7 +121,7 @@ export function HomeRouteScreen({
   routePath?: string;
 }) {
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <HomeScreen
           flashMessageKey={flashMessageKey}
@@ -134,7 +130,7 @@ export function HomeRouteScreen({
           runtimeConfig={runtimeConfig}
         />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -156,7 +152,7 @@ function HomeScreen({
     ...listNotificationsQueryOptions(runtimeConfig, { from: 0, size: 20 }),
     enabled: sessionQuery.data?.isAnonymous === false,
   });
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const features = [
     ["yobicon-cgicenter", t("title.unlimitedProjects"), t("site.features.unlimitedProjects")],
     ["yobicon-code", t("title.codeManagement"), t("site.features.codeManagement")],
@@ -748,8 +744,7 @@ export function SiteLayoutShell({
   const shouldRenderProjectListingLink = runtimeConfig.hideProjectListing !== true && !isGuest;
   const shouldRenderAllProjectsSearchScope =
     (runtimeConfig.hideProjectListing !== true && !isGuest) || isSiteAdmin;
-  const feedbackUrl =
-    runtimeConfig.feedbackUrl?.trim() || "https://github.com/yona-projects/yona/issues";
+  const feedbackUrl = runtimeConfig.feedbackUrl?.trim();
   const initialSearchScope = projectSearchAction ? "project" : groupSearchAction ? "group" : "all";
   const [selectedSearchScope, setSelectedSearchScope] = React.useState<"all" | "group" | "project">(
     initialSearchScope,
@@ -961,42 +956,7 @@ export function SiteLayoutShell({
         {children}
         <footer className="page-footer-outer">
           <div className="page-footer">
-            <span className="provider">
-              Copyright{" "}
-              <Link
-                to={YONA_AUTHORS_URL}
-                href={YONA_AUTHORS_URL}
-                reloadDocument
-                target="_blank"
-                className="yona-author"
-              >
-                Yona authors
-              </Link>
-              {" & © "}
-              <Link to="/" href={NAVER_CORP_URL} reloadDocument target="_blank">
-                NAVER Corp.
-              </Link>
-              {" & "}
-              <Link
-                to={NAVER_LABS_URL}
-                href={NAVER_LABS_URL}
-                reloadDocument
-                target="_blank"
-                className="naver-labs"
-              >
-                NAVER LABS
-              </Link>{" "}
-              Supported by{" "}
-              <Link
-                to={NAVER_CLOUD_PLATFORM_URL}
-                href={NAVER_CLOUD_PLATFORM_URL}
-                reloadDocument
-                target="_blank"
-                className="naver-cloud-platform"
-              >
-                NAVER CLOUD PLATFORM
-              </Link>
-            </span>
+            <span className="provider">Yoram authors</span>
           </div>
         </footer>
       </div>
@@ -1020,8 +980,8 @@ function LegacyFramedSidebar({
   onRefresh: () => void;
   onTabChange: (tab: SidebarTab) => void;
   runtimeConfig: RuntimeConfig;
-  session: YonaRecord;
-  workspace: YonaRecord | undefined;
+  session: YoramRecord;
+  workspace: YoramRecord | undefined;
 }) {
   const { t } = useLegacyMessages();
   const [showBottom, setShowBottom] = React.useState(true);
@@ -1127,7 +1087,7 @@ function LegacyFramedSidebar({
       </div>
       {showBottom ? (
         <div className="sidebar-bottom" id="sidebar-bottom">
-          Yona, made by <i aria-hidden="true" className="yobicon-hearts" />
+          Yoram, made by <i aria-hidden="true" className="yobicon-hearts" />
         </div>
       ) : null}
     </aside>
@@ -1142,8 +1102,8 @@ function AuthenticatedSiteUserMenu({
 }: {
   basePath: string;
   runtimeConfig: RuntimeConfig;
-  session: YonaRecord;
-  workspace: YonaRecord | undefined;
+  session: YoramRecord;
+  workspace: YoramRecord | undefined;
 }) {
   const { t } = useLegacyMessages();
   const [activeSidebarTab, setActiveSidebarTab] = React.useState<"favorite" | "project" | "recent">(
@@ -1466,7 +1426,7 @@ function SidebarTabContent({
   idPrefix?: string;
   runtimeConfig: RuntimeConfig;
   sessionLoginId: string;
-  workspace: YonaRecord;
+  workspace: YoramRecord;
 }) {
   const [searchQuery, setSearchQuery] = React.useState("");
   return (
@@ -1603,7 +1563,7 @@ function SidebarOrganizationList({
   runtimeConfig: RuntimeConfig;
   searchQuery: string;
   sessionLoginId: string;
-  workspace: YonaRecord;
+  workspace: YoramRecord;
 }) {
   const { t } = useLegacyMessages();
   const [isOwnProjectsExpanded, setIsOwnProjectsExpanded] = React.useState(false);
@@ -1611,7 +1571,7 @@ function SidebarOrganizationList({
   const favoriteOrganizations = recordArray(workspace.favoriteOrganizations);
   const organizations = recordArray(workspace.organizations);
   const loginId = valueString(
-    workspace.loginId ?? (workspace.profile as YonaRecord | undefined)?.loginId,
+    workspace.loginId ?? (workspace.profile as YoramRecord | undefined)?.loginId,
     sessionLoginId,
   );
   const favoriteOrganizationKeys = new Set(favoriteOrganizations.map(organizationKey));
@@ -1623,13 +1583,13 @@ function SidebarOrganizationList({
       valueString(organization.organizationName ?? organization.name, "").toLocaleLowerCase(),
     ),
   );
-  const regularOrganizations: YonaRecord[] = [];
+  const regularOrganizations: YoramRecord[] = [];
   for (const organization of organizations) {
     if (!favoriteOrganizationKeys.has(organizationKey(organization))) {
       regularOrganizations.push(organization);
     }
   }
-  const directFavoriteProjects: YonaRecord[] = [];
+  const directFavoriteProjects: YoramRecord[] = [];
   const directFavoriteKeys = new Set<string>();
   for (const project of recordArray(workspace.favoriteProjects)) {
     const ownerName = valueString(project.ownerName ?? project.owner, "");
@@ -1778,7 +1738,7 @@ function SidebarOrganizationItem({
   favored: boolean;
   isLast?: boolean;
   normalizedQuery: string;
-  organization: YonaRecord;
+  organization: YoramRecord;
   runtimeConfig: RuntimeConfig;
 }) {
   const [showNonFavoriteProjects, setShowNonFavoriteProjects] = React.useState(false);
@@ -1836,7 +1796,7 @@ function SidebarAllProjectItem({
   showNonFavorite,
 }: {
   favored: boolean;
-  project: YonaRecord;
+  project: YoramRecord;
   runtimeConfig: RuntimeConfig;
   showNonFavorite: boolean;
 }) {
@@ -1892,7 +1852,7 @@ function SidebarProjectList({
   onSearchQueryChange: (query: string) => void;
   runtimeConfig: RuntimeConfig;
   searchQuery: string;
-  workspace: YonaRecord;
+  workspace: YoramRecord;
 }) {
   const { t } = useLegacyMessages();
   const [activeSubtab, setActiveSubtab] = React.useState<
@@ -1994,7 +1954,7 @@ function SidebarProjectPane({
   active?: boolean;
   id: string;
   idPrefix?: string;
-  projects: YonaRecord[];
+  projects: YoramRecord[];
   runtimeConfig: RuntimeConfig;
   searchQuery: string;
 }) {
@@ -2028,7 +1988,7 @@ function SidebarProjectItem({
   project,
   runtimeConfig,
 }: {
-  project: YonaRecord;
+  project: YoramRecord;
   runtimeConfig: RuntimeConfig;
 }) {
   const ownerName = valueString(project.ownerName ?? project.owner, "");
@@ -2082,7 +2042,7 @@ function SidebarRecentIssueList({
   idPrefix?: string;
   onSearchQueryChange: (query: string) => void;
   searchQuery: string;
-  workspace: YonaRecord;
+  workspace: YoramRecord;
 }) {
   const { t } = useLegacyMessages();
   const issues = recordArray(workspace.issueItems);
@@ -2130,7 +2090,7 @@ function SidebarRecentIssueList({
   );
 }
 
-function SidebarRecentIssueItem({ issue }: { issue: YonaRecord }) {
+function SidebarRecentIssueItem({ issue }: { issue: YoramRecord }) {
   const ownerName = valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "");
   const projectName = valueString(issue.projectName ?? issue.project_name ?? issue.project, "");
   const issueNumber = valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "");
@@ -2183,7 +2143,7 @@ function SidebarHoverPopover({
   );
 }
 
-function stringField(record: YonaRecord, key: string, fallback: string): string {
+function stringField(record: YoramRecord, key: string, fallback: string): string {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
@@ -2254,21 +2214,21 @@ function valueString(value: unknown, fallback: string) {
   return fallback;
 }
 
-function recordArray(value: unknown): YonaRecord[] {
+function recordArray(value: unknown): YoramRecord[] {
   return Array.isArray(value)
-    ? value.filter((item): item is YonaRecord => typeof item === "object" && item !== null)
+    ? value.filter((item): item is YoramRecord => typeof item === "object" && item !== null)
     : [];
 }
 
-function recordValue(value: unknown): YonaRecord {
-  return typeof value === "object" && value !== null ? (value as YonaRecord) : {};
+function recordValue(value: unknown): YoramRecord {
+  return typeof value === "object" && value !== null ? (value as YoramRecord) : {};
 }
 
 function normalizedSidebarQuery(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function sidebarIsFavorited(record: YonaRecord, fallback = false) {
+function sidebarIsFavorited(record: YoramRecord, fallback = false) {
   return typeof record.isFavorited === "boolean"
     ? record.isFavorited
     : typeof record.favored === "boolean"
@@ -2276,11 +2236,11 @@ function sidebarIsFavorited(record: YonaRecord, fallback = false) {
       : fallback;
 }
 
-function sidebarProjectIsPrivate(project: YonaRecord) {
+function sidebarProjectIsPrivate(project: YoramRecord) {
   return valueString(project.projectScope, "").toLocaleUpperCase() === "PRIVATE";
 }
 
-function sidebarProjectMatches(project: YonaRecord, normalizedQuery: string) {
+function sidebarProjectMatches(project: YoramRecord, normalizedQuery: string) {
   if (normalizedQuery === "") {
     return true;
   }
@@ -2289,7 +2249,7 @@ function sidebarProjectMatches(project: YonaRecord, normalizedQuery: string) {
     .some((value) => value.includes(normalizedQuery));
 }
 
-function sidebarNestedProjectMatches(project: YonaRecord, normalizedQuery: string) {
+function sidebarNestedProjectMatches(project: YoramRecord, normalizedQuery: string) {
   if (normalizedQuery === "") {
     return true;
   }
@@ -2298,7 +2258,7 @@ function sidebarNestedProjectMatches(project: YonaRecord, normalizedQuery: strin
     .some((value) => value.includes(normalizedQuery));
 }
 
-function sidebarOrganizationMatches(organization: YonaRecord, normalizedQuery: string) {
+function sidebarOrganizationMatches(organization: YoramRecord, normalizedQuery: string) {
   if (normalizedQuery === "") {
     return true;
   }
@@ -2314,7 +2274,7 @@ function sidebarOrganizationMatches(organization: YonaRecord, normalizedQuery: s
   );
 }
 
-function sidebarIssueMatches(issue: YonaRecord, normalizedQuery: string) {
+function sidebarIssueMatches(issue: YoramRecord, normalizedQuery: string) {
   if (normalizedQuery === "") {
     return true;
   }
@@ -2334,7 +2294,7 @@ function sidebarIssueMatches(issue: YonaRecord, normalizedQuery: string) {
     .some((value) => value.includes(normalizedQuery));
 }
 
-function hasSidebarFavoriteData(workspace: YonaRecord) {
+function hasSidebarFavoriteData(workspace: YoramRecord) {
   return (
     Array.isArray(workspace.ownProjects) ||
     Array.isArray(workspace.favoriteOrganizations) ||
@@ -2343,7 +2303,7 @@ function hasSidebarFavoriteData(workspace: YonaRecord) {
   );
 }
 
-function projectKey(project: YonaRecord) {
+function projectKey(project: YoramRecord) {
   return valueString(
     project.projectId ??
       project.id ??
@@ -2352,7 +2312,7 @@ function projectKey(project: YonaRecord) {
   );
 }
 
-function organizationKey(organization: YonaRecord) {
+function organizationKey(organization: YoramRecord) {
   return valueString(
     organization.organizationId ??
       organization.id ??
@@ -2362,7 +2322,7 @@ function organizationKey(organization: YonaRecord) {
   );
 }
 
-function recentIssueKey(issue: YonaRecord) {
+function recentIssueKey(issue: YoramRecord) {
   return valueString(
     issue.id ??
       `${valueString(issue.ownerName ?? issue.owner_name ?? issue.owner, "")}/${valueString(issue.projectName ?? issue.project_name ?? issue.project, "")}/${valueString(issue.issueNumber ?? issue.issue_number ?? issue.number, "")}`,
@@ -2370,7 +2330,7 @@ function recentIssueKey(issue: YonaRecord) {
   );
 }
 
-function booleanField(record: YonaRecord, key: string, fallback: boolean): boolean {
+function booleanField(record: YoramRecord, key: string, fallback: boolean): boolean {
   const value = record[key];
   return typeof value === "boolean" ? value : fallback;
 }

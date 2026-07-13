@@ -7,7 +7,7 @@ import { currentSessionQueryOptions } from "../../api/session";
 import type { ReadAuthUiCapabilitiesResponse } from "../../api/types";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
-import { YonaQueryProvider } from "../../query-client";
+import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
@@ -41,11 +41,11 @@ function LoginFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <YonaQueryProvider>
+    <YoramQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <LoginFormScreen runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
-    </YonaQueryProvider>
+    </YoramQueryProvider>
   );
 }
 
@@ -69,7 +69,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     nonEmptyString(capabilities?.loginIdPlaceholder) ?? t("user.login.key");
   const passwordPlaceholder =
     nonEmptyString(capabilities?.passwordPlaceholder) ?? t("user.password");
-  const siteName = runtimeConfig.siteName ?? "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.loginFor", { args: [siteName] });
   const showPasswordResetFlash = password === "reset";
   const signInMutation = useMutation({
@@ -301,7 +301,7 @@ function safeLocalPath(value: string, basePath: string) {
 
   const isAbsolute = /^[a-z][a-z0-9+.-]*:/i.test(value);
   const origin =
-    typeof globalThis.location === "undefined" ? "http://yona.local" : globalThis.location.origin;
+    typeof globalThis.location === "undefined" ? "http://yoram.local" : globalThis.location.origin;
   let url: URL;
   try {
     url = new URL(value, origin);

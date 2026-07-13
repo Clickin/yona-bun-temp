@@ -70,10 +70,7 @@ const EXPECTED_LOGIN_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -729,7 +726,7 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function RootOAuthProviderLink"),
   );
   const rootYobiDialogSource = source.slice(
-    source.indexOf("function RootYobiDialog"),
+    source.indexOf("function RootYoramDialog"),
     source.indexOf("function LegacySelect2Assets"),
   );
   expect(rootLoginDialogSource).toContain(
@@ -883,7 +880,7 @@ test("root yobi toast renders legacy shell DOM through React context without par
 
   const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
   const loginSource = readFileSync("src/routes/users/loginform.tsx", "utf8");
-  expect(rootSource).toContain("<RootYobiToast");
+  expect(rootSource).toContain("<RootYoramToast");
   expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
   expect(rootSource).toContain("durationMs={rootToast.durationMs}");
   expect(rootSource).toContain('<div className="msg">{message}</div>');

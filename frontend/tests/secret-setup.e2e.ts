@@ -11,8 +11,8 @@ const EXPECTED_SECRET_SCREEN = `
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__ROOT_HREF__" class="logo"><span>Yona</span></a>
-        <h3>Tada! Welcome to Yona!</h3>
+        <a href="__ROOT_HREF__" class="logo"><span>Yoram</span></a>
+        <h3>Tada! Welcome to Yoram!</h3>
         <div class="alert alert-block secret-box">
           <h4>Create website-admin account</h4>
           Caution: Password MUST be kept secret.
@@ -52,7 +52,7 @@ const EXPECTED_SECRET_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Powered by <strong>Yona</strong></span>
+    <span class="provider">Powered by <strong>Yoram</strong></span>
   </div>
 </footer>
 `;
@@ -67,11 +67,10 @@ const EXPECTED_FORM_ACTIONS = {
 const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <a href="__ROOT_HREF__" class="logo"><h1 class="blind">Yona</h1></a>
+    <a href="__ROOT_HREF__" class="logo"><h1 class="blind">Yoram</h1></a>
     <ul class="gnb-nav">
       <li><a href="__BASE_PATH__/projects">Project list</a></li>
       <li><a href="__BASE_PATH__/_help">Help</a></li>
-      <li><a href="https://github.com/nforge/yobi/issues?state=open" target="_blank">Feedback</a></li>
     </ul>
   </div>
 </header>
@@ -86,7 +85,7 @@ const EXPECTED_SECRET_NOT_FOUND_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright © <a href="http://navercorp.com/" target="_blank">NAVER Corp.</a> Supported by <a href="https://developers.naver.com/d2/" target="_blank" class="d2-program"><span class="d2">D2</span><span class="program"> Program</span></a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -125,7 +124,7 @@ test("first-run secret setup matches legacy welcome/secret.scala.html screen DOM
   });
 
   await page.goto(`${basePath}/secret`);
-  await expect(page).toHaveTitle("Tada! Welcome to Yona!");
+  await expect(page).toHaveTitle("Tada! Welcome to Yoram!");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
   const expectedFormAction = expectedFormActionFor(basePath);
@@ -204,9 +203,9 @@ test("first-run secret setup logo is SPA-owned internal navigation", async ({ pa
   await expectLegacyAnchor(page, ".secret-wrap .logo", {
     className: "logo",
     href: legacyRootHref(basePath),
-    text: "Yona",
+    text: "Yoram",
   });
-  await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yona");
+  await expect(page.locator(".secret-wrap .logo span")).toHaveText("Yoram");
 
   const documentRequests: string[] = [];
   page.on("request", (request) => {
@@ -457,7 +456,7 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
   await expectLegacyAnchor(page, ".gnb-inner > .logo", {
     className: "logo",
     href: legacyRootHref(basePath),
-    text: "Yona",
+    text: "Yoram",
   });
   await expectLegacyAnchor(page, ".gnb-nav a >> nth=0", {
     href: `${basePath}/projects`,
@@ -467,27 +466,14 @@ test("secret setup disabled matches legacy error/notfound_default.scala.html scr
     href: `${basePath}/_help`,
     text: "Help",
   });
-  await expectLegacyAnchor(page, ".gnb-nav a >> nth=2", {
-    href: "https://github.com/nforge/yobi/issues?state=open",
-    target: "_blank",
-    text: "Feedback",
-  });
+  await expect(page.locator(".gnb-nav a")).toHaveCount(2);
   await expectLegacyAnchor(page, ".error-wrap .ybtn", {
     className: "ybtn ybtn-info",
     href: legacyRootHref(basePath),
     text: "Home",
   });
-  await expectLegacyAnchor(page, ".page-footer .provider > a >> nth=0", {
-    href: "http://navercorp.com/",
-    target: "_blank",
-    text: "NAVER Corp.",
-  });
-  await expectLegacyAnchor(page, ".page-footer .provider > a >> nth=1", {
-    className: "d2-program",
-    href: "https://developers.naver.com/d2/",
-    target: "_blank",
-    text: "D2 Program",
-  });
+  await expect(page.locator(".page-footer .provider")).toHaveText("Yoram authors");
+  await expect(page.locator(".page-footer .provider a")).toHaveCount(0);
 
   await page.evaluate(() => {
     (
@@ -542,15 +528,12 @@ test("secret route source keeps anchors owned by TanStack Link", async () => {
   expect(SECRET_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/projects"\s+activeProps=/u);
   expect(SECRET_ROUTE_SOURCE).toMatch(/<Link\s+to="\/_help"\s+activeProps=/u);
-  expect(SECRET_ROUTE_SOURCE).toMatch(
-    /href="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+to="https:\/\/github\.com\/nforge\/yobi\/issues\?state=open"\s+target="_blank"/u,
-  );
-  expect(SECRET_ROUTE_SOURCE).toMatch(
-    /href="http:\/\/navercorp\.com\/"\s+to="http:\/\/navercorp\.com\/"\s+target="_blank"/u,
-  );
-  expect(SECRET_ROUTE_SOURCE).toMatch(
-    /href="https:\/\/developers\.naver\.com\/d2\/"\s+to="https:\/\/developers\.naver\.com\/d2\/"\s+target="_blank"\s+className="d2-program"/u,
-  );
+  expect(SECRET_ROUTE_SOURCE).toContain("runtimeConfig.feedbackUrl ? (");
+  expect(SECRET_ROUTE_SOURCE).toContain("href={runtimeConfig.feedbackUrl}");
+  expect(SECRET_ROUTE_SOURCE).toContain('className="provider">Yoram authors</span>');
+  expect(SECRET_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("navercorp.com");
+  expect(SECRET_ROUTE_SOURCE).not.toContain("developers.naver.com");
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/\bas\s+never\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\b/u);
   expect(SECRET_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\(/u);
