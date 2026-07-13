@@ -28,7 +28,8 @@ export const Route = createFileRoute("/organizations/$organizationName")({
 function OrganizationHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { organizationName } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const location = useRouterState({ select: (state) => state.location });
+  const { pathname } = location;
   const exactPath = `/organizations/${organizationName}`;
   const isHome = pathname === exactPath || pathname === `${exactPath}/`;
   const isBoards = pathname === `${exactPath}/boards`;
@@ -38,6 +39,8 @@ function OrganizationHomeRoute() {
   const isMembers = pathname === `${exactPath}/members`;
   const isSettings = pathname === `${exactPath}/settingform`;
   const isDeleteForm = pathname === `${exactPath}/deleteForm`;
+  const isSearch =
+    pathname === `${exactPath}/search` && isOrganizationSearchLayoutState(location.search);
 
   if (
     !isHome &&
@@ -47,7 +50,8 @@ function OrganizationHomeRoute() {
     !isClosedPullRequests &&
     !isMembers &&
     !isSettings &&
-    !isDeleteForm
+    !isDeleteForm &&
+    !isSearch
   ) {
     return <Outlet />;
   }
@@ -836,6 +840,27 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
+}
+
+function isOrganizationSearchLayoutState(search: string) {
+  const params = new URLSearchParams(search);
+  const keyword = params.get("keyword");
+  const searchType = params.get("searchType");
+  return (
+    keyword !== null &&
+    keyword.length > 0 &&
+    [
+      "auto",
+      "issue",
+      "user",
+      "project",
+      "post",
+      "milestone",
+      "issue_comment",
+      "post_comment",
+      "review",
+    ].includes(searchType ?? "")
+  );
 }
 
 function numberField(value: unknown) {

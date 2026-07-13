@@ -36,13 +36,15 @@ function UserProfileSettingsRoute() {
 
   const activeTab = pathname.endsWith("/user/editform")
     ? "profile"
-    : pathname.endsWith("/user/editform/emails")
-      ? "emails"
-      : pathname.endsWith("/user/editform/password")
-        ? "password"
-        : pathname.endsWith("/user/editform/token")
-          ? "token"
-          : null;
+    : pathname.endsWith("/user/editform/notifications")
+      ? "notifications"
+      : pathname.endsWith("/user/editform/emails")
+        ? "emails"
+        : pathname.endsWith("/user/editform/password")
+          ? "password"
+          : pathname.endsWith("/user/editform/token")
+            ? "token"
+            : null;
 
   if (!activeTab) {
     return <Outlet />;
@@ -64,7 +66,7 @@ function UserSettingsNestedLayout({
   activeTab,
 }: {
   runtimeConfig: RuntimeConfig;
-  activeTab: "profile" | "emails" | "password" | "token";
+  activeTab: "profile" | "notifications" | "emails" | "password" | "token";
 }) {
   const { t } = useLegacyMessages();
   const workspaceQuery = useQuery({
