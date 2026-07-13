@@ -13,6 +13,18 @@ export const globalColors = stylex.defineVars({
   sidenavBorder: "#cccccc",
   // _usermenu.less: #mySidenav box-shadow
   sidenavShadow: "2px 2px 10px #888888",
+  // _yobiUI.less: .nav-tabs li a color
+  sidenavTabAccent: "#3592b5",
+  // Bootstrap 2.3.1 bootstrap.css: .nav-tabs border and active tab border
+  sidenavTabBorder: "#dddddd",
+  // Bootstrap 2.3.1 bootstrap.css: .nav-tabs li a:hover side/top border
+  sidenavTabHoverBorder: "#eeeeee",
+  // _variables.less: @yobi-white-dark used by .nav-tabs li a:hover
+  sidenavTabHoverSurface: "#f2f2f2",
+  // Bootstrap 2.3.1 bootstrap.css: .nav-tabs > .active > a color
+  sidenavTabActiveText: "#555555",
+  // Bootstrap 2.3.1 bootstrap.css: inactive/active-bottom tab borders and button background
+  transparent: "transparent",
   // _variables.less: @blue
   navigationAccent: "#5dbbe0",
   // _variables.less: @primary -> @orange

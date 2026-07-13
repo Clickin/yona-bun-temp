@@ -1078,6 +1078,103 @@ function LegacyFramedSidebar({
   );
 }
 
+const authenticatedSidenavTabStyles = stylex.create({
+  tabs: {
+    borderBottomColor: globalColors.sidenavTabBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    listStyle: "none",
+    paddingLeft: 0,
+    "::before": {
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+  },
+  item: {
+    float: "left",
+    marginBottom: "-1px",
+  },
+  button: {
+    appearance: "none",
+    backgroundColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavTabHoverSurface,
+      ":focus": globalColors.sidenavTabHoverSurface,
+    },
+    borderBottomColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavTabBorder,
+      ":focus": globalColors.sidenavTabBorder,
+    },
+    borderLeftColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavTabHoverBorder,
+      ":focus": globalColors.sidenavTabHoverBorder,
+    },
+    borderRadius: "4px 4px 0 0",
+    borderRightColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavTabHoverBorder,
+      ":focus": globalColors.sidenavTabHoverBorder,
+    },
+    borderStyle: "solid",
+    borderTopColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavTabHoverBorder,
+      ":focus": globalColors.sidenavTabHoverBorder,
+    },
+    borderWidth: "1px",
+    color: globalColors.sidenavTabAccent,
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    lineHeight: "20px",
+    marginRight: "2px",
+    padding: "8px 30px",
+    textDecoration: {
+      default: null,
+      ":hover": "none",
+      ":focus": "none",
+    },
+  },
+  activeButton: {
+    backgroundColor: {
+      default: globalColors.sidenavSurface,
+      ":hover": globalColors.sidenavSurface,
+      ":focus": globalColors.sidenavSurface,
+    },
+    borderBottomColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.transparent,
+      ":focus": globalColors.transparent,
+    },
+    borderLeftColor: {
+      default: globalColors.sidenavTabBorder,
+      ":hover": globalColors.sidenavTabBorder,
+      ":focus": globalColors.sidenavTabBorder,
+    },
+    borderRightColor: {
+      default: globalColors.sidenavTabBorder,
+      ":hover": globalColors.sidenavTabBorder,
+      ":focus": globalColors.sidenavTabBorder,
+    },
+    borderTopColor: {
+      default: globalColors.sidenavTabBorder,
+      ":hover": globalColors.sidenavTabBorder,
+      ":focus": globalColors.sidenavTabBorder,
+    },
+    color: globalColors.sidenavTabActiveText,
+    cursor: "default",
+  },
+});
+
 const authenticatedSidenavContentFrameStyles = stylex.create({
   frame: {
     marginLeft: "10px",
@@ -1333,19 +1430,55 @@ function AuthenticatedSiteUserMenu({
               </span>
             </Link>
           </div>
-          <ul className="nav nav-tabs nm">
-            <li className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("favorite")}>
+          <ul
+            className={`nav nav-tabs nm ${stylex.props(authenticatedSidenavTabStyles.tabs).className}`}
+            data-stylex-owner="authenticated-sidenav-tabs"
+          >
+            <li
+              className={`myOrganizationList${activeSidebarTab === "favorite" ? " active" : ""} ${stylex.props(authenticatedSidenavTabStyles.item).className}`}
+            >
+              <button
+                className={
+                  stylex.props(
+                    authenticatedSidenavTabStyles.button,
+                    activeSidebarTab === "favorite" && authenticatedSidenavTabStyles.activeButton,
+                  ).className
+                }
+                type="button"
+                onClick={() => setActiveSidebarTab("favorite")}
+              >
                 {t("title.favorite")}
               </button>
             </li>
-            <li className={`myProjectList${activeSidebarTab === "project" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("project")}>
+            <li
+              className={`myProjectList${activeSidebarTab === "project" ? " active" : ""} ${stylex.props(authenticatedSidenavTabStyles.item).className}`}
+            >
+              <button
+                className={
+                  stylex.props(
+                    authenticatedSidenavTabStyles.button,
+                    activeSidebarTab === "project" && authenticatedSidenavTabStyles.activeButton,
+                  ).className
+                }
+                type="button"
+                onClick={() => setActiveSidebarTab("project")}
+              >
                 {t("title.project")}
               </button>
             </li>
-            <li className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""}`}>
-              <button type="button" onClick={() => setActiveSidebarTab("recent")}>
+            <li
+              className={`myRecentIssueList${activeSidebarTab === "recent" ? " active" : ""} ${stylex.props(authenticatedSidenavTabStyles.item).className}`}
+            >
+              <button
+                className={
+                  stylex.props(
+                    authenticatedSidenavTabStyles.button,
+                    activeSidebarTab === "recent" && authenticatedSidenavTabStyles.activeButton,
+                  ).className
+                }
+                type="button"
+                onClick={() => setActiveSidebarTab("recent")}
+              >
                 {t("title.recently.visited.issue")}
               </button>
             </li>

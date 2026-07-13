@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, five user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, six user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -299,6 +299,15 @@ the exact `_page.less` 10px top/left margins and 350px desktop width plus the ex
 no color and does not change the global theme entry. Bootstrap span/grid behavior, the global
 mobile `.span-hard-wrap`, account actions, tabs/content, scrollbars, anonymous frame, and other
 `.right-menu` consumers remain fallback. This is not Wave 1 completion.
+
+The sixth verified slice migrates only the authenticated sidenav Favorite / Project / Recent
+History tab strip. StyleX owns the list border/clearfix, item float/overlap, and React button
+base/hover/focus/active declarations. Every color and transparent state is supplied by the
+canonical global theme entry with exact Bootstrap or Yobi evidence; no dark-mode value or toggle
+was added. The legacy max-720 `5px !important` rule targets anchors, not the React buttons, so the
+existing `8px 30px` button padding remains unchanged rather than adding a responsive
+compensation. Tab content, shared nav consumers, and frozen fallback remain later owners. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
