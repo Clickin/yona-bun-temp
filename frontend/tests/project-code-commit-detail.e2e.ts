@@ -214,6 +214,12 @@ test("project commit detail route source has no generic LegacyInternalLink adapt
   );
 });
 
+test("project commit detail uses the parent nested project shell when its path is exact", async () => {
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("use(ProjectNestedShellContext)");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("if (nestedProjectShell) return body;");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("ProjectCommitDetailStandaloneShell");
+});
+
 test("project commit detail anonymous author fallback uses legacy message key", async () => {
   expect(LEGACY_MESSAGES_SOURCE).toMatch(/^user\.role\.anonymous\s*=\s*Anonymous$/m);
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('t("user.role.anonymous")');

@@ -135,6 +135,7 @@ function ProjectHomeRoute() {
   const codeFilePath = exactProjectCodeFilePath(pathname, homePath);
   const commitsBranch = exactProjectCommitsBranch(pathname, homePath);
   const commitsFilePath = exactProjectCommitsFilePath(pathname, homePath);
+  const commitDetailId = exactProjectCommitDetailId(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -153,47 +154,49 @@ function ProjectHomeRoute() {
               ? "codeHistory"
               : commitsBranch !== null || commitsFilePath !== null
                 ? "codeHistory"
-                : pathname === branchesPath
-                  ? "code"
-                  : pathname === milestonesPath
-                    ? "milestone"
-                    : pathname === newMilestonePath
-                      ? "newMilestone"
-                      : pathname === postsPath
-                        ? "board"
-                        : pathname === postFormPath
-                          ? "postform"
-                          : pathname === pullRequestsPath ||
-                              pathname === closedPullRequestsPath ||
-                              pathname === sentPullRequestsPath
-                            ? "pullRequest"
-                            : pathname === newPullRequestPath
-                              ? "newPullRequest"
-                              : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
-                                ? "newFork"
-                                : pathname === watchersPath
-                                  ? "watchers"
-                                  : pathname === searchPath
-                                    ? "search"
-                                    : pathname === statisticsPath
-                                      ? "statistics"
-                                      : pathname === reviewsPath
-                                        ? "review"
-                                        : pathname === settingPath || pathname === settingFormPath
-                                          ? "setting"
-                                          : pathname === membersPath
-                                            ? "members"
-                                            : pathname === webhooksPath
-                                              ? "webhooks"
-                                              : pathname === transferPath
-                                                ? "transfer"
-                                                : pathname === deletePath
-                                                  ? "delete"
-                                                  : pathname === changeVcsPath
-                                                    ? "changeVcs"
-                                                    : pathname === labelsPath
-                                                      ? "labels"
-                                                      : null;
+                : commitDetailId !== null
+                  ? "commitDetail"
+                  : pathname === branchesPath
+                    ? "code"
+                    : pathname === milestonesPath
+                      ? "milestone"
+                      : pathname === newMilestonePath
+                        ? "newMilestone"
+                        : pathname === postsPath
+                          ? "board"
+                          : pathname === postFormPath
+                            ? "postform"
+                            : pathname === pullRequestsPath ||
+                                pathname === closedPullRequestsPath ||
+                                pathname === sentPullRequestsPath
+                              ? "pullRequest"
+                              : pathname === newPullRequestPath
+                                ? "newPullRequest"
+                                : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
+                                  ? "newFork"
+                                  : pathname === watchersPath
+                                    ? "watchers"
+                                    : pathname === searchPath
+                                      ? "search"
+                                      : pathname === statisticsPath
+                                        ? "statistics"
+                                        : pathname === reviewsPath
+                                          ? "review"
+                                          : pathname === settingPath || pathname === settingFormPath
+                                            ? "setting"
+                                            : pathname === membersPath
+                                              ? "members"
+                                              : pathname === webhooksPath
+                                                ? "webhooks"
+                                                : pathname === transferPath
+                                                  ? "transfer"
+                                                  : pathname === deletePath
+                                                    ? "delete"
+                                                    : pathname === changeVcsPath
+                                                      ? "changeVcs"
+                                                      : pathname === labelsPath
+                                                        ? "labels"
+                                                        : null;
   const active =
     pullRequestChangesNumber !== null
       ? "pullRequestChanges"
@@ -235,6 +238,7 @@ function ProjectHomeRouteShell({
   active:
     | "board"
     | "changeVcs"
+    | "commitDetail"
     | "code"
     | "codeHistory"
     | "delete"
@@ -613,6 +617,7 @@ function ProjectLayoutScreen({
   active:
     | "board"
     | "changeVcs"
+    | "commitDetail"
     | "code"
     | "codeHistory"
     | "delete"
@@ -661,7 +666,8 @@ function ProjectLayoutScreen({
       active === "pullRequestDetail" ||
       active === "pullRequestEdit" ||
       active === "pullRequestChanges" ||
-      active === "codeHistory" ? null : (
+      active === "codeHistory" ||
+      active === "commitDetail" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -716,42 +722,44 @@ function ProjectLayoutScreen({
               ? undefined
               : active === "codeHistory"
                 ? "code"
-                : active === "search"
-                  ? "home"
-                  : active === "newMilestone"
-                    ? "milestone"
-                    : active === "milestoneDetail"
+                : active === "commitDetail"
+                  ? "code"
+                  : active === "search"
+                    ? "home"
+                    : active === "newMilestone"
                       ? "milestone"
-                      : active === "milestoneEdit"
+                      : active === "milestoneDetail"
                         ? "milestone"
-                        : active === "newPullRequest"
-                          ? "pullRequest"
-                          : active === "newFork"
+                        : active === "milestoneEdit"
+                          ? "milestone"
+                          : active === "newPullRequest"
                             ? "pullRequest"
-                            : active === "postform"
-                              ? "board"
-                              : active === "postDetail"
+                            : active === "newFork"
+                              ? "pullRequest"
+                              : active === "postform"
                                 ? "board"
-                                : active === "issueform"
-                                  ? "issue"
-                                  : active === "issueDetail"
+                                : active === "postDetail"
+                                  ? "board"
+                                  : active === "issueform"
                                     ? "issue"
-                                    : active === "issueEdit"
+                                    : active === "issueDetail"
                                       ? "issue"
-                                      : active === "pullRequestDetail"
-                                        ? "pullRequest"
-                                        : active === "pullRequestEdit"
+                                      : active === "issueEdit"
+                                        ? "issue"
+                                        : active === "pullRequestDetail"
                                           ? "pullRequest"
-                                          : active === "pullRequestChanges"
+                                          : active === "pullRequestEdit"
                                             ? "pullRequest"
-                                            : active === "delete" ||
-                                                active === "changeVcs" ||
-                                                active === "labels" ||
-                                                active === "members" ||
-                                                active === "transfer" ||
-                                                active === "webhooks"
-                                              ? "setting"
-                                              : active
+                                            : active === "pullRequestChanges"
+                                              ? "pullRequest"
+                                              : active === "delete" ||
+                                                  active === "changeVcs" ||
+                                                  active === "labels" ||
+                                                  active === "members" ||
+                                                  active === "transfer" ||
+                                                  active === "webhooks"
+                                                ? "setting"
+                                                : active
           }
           basePath={runtimeConfig.basePath}
           project={project}
@@ -786,6 +794,7 @@ function ProjectLayoutScreen({
             active === "pullRequestChanges" ||
             active === "code" ||
             active === "codeHistory" ||
+            active === "commitDetail" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search" ||
@@ -858,6 +867,13 @@ function exactProjectCommitsBranch(pathname: string, homePath: string) {
 function exactProjectCommitsFilePath(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commits/[^/]+/.+$`,
+  ).exec(pathname);
+  return match ? match[0] : null;
+}
+
+function exactProjectCommitDetailId(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/commit/[^/]+$`,
   ).exec(pathname);
   return match ? match[0] : null;
 }
