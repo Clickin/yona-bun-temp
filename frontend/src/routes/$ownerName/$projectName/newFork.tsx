@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { use, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
   readProjectContainerQueryOptions,
@@ -8,14 +8,12 @@ import {
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectForkOptionsResponse } from "../../../api/org-project";
-import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectNestedShellContext } from "../$projectName";
 
 type ForkCloneProgress = {
   originalOwnerName: string;
@@ -66,16 +64,12 @@ export function ProjectForkRouteContent({
   runtimeConfig: RuntimeConfig;
 }) {
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectForkRouteShell
-          forkOwnerName={forkOwnerName}
-          ownerName={ownerName}
-          projectName={projectName}
-          runtimeConfig={runtimeConfig}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectForkRouteShell
+      forkOwnerName={forkOwnerName}
+      ownerName={ownerName}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
@@ -90,6 +84,7 @@ function ProjectForkRouteShell({
   projectName: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const nestedProjectShell = use(ProjectNestedShellContext);
   const query = useQuery(
     readProjectForkOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -106,7 +101,9 @@ function ProjectForkRouteShell({
   });
 
   if (!query.data) {
-    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
+    return nestedProjectShell ? null : (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>
+    );
   }
 
   if (!isGitProject) {
@@ -127,54 +124,14 @@ function ProjectForkRouteShell({
     return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectForkTitle isGitProject={true} ownerName={ownerName} projectName={projectName} />
-      <ProjectForkScreen
-        forkOwnerName={forkOwnerName}
-        ownerName={ownerName}
-        options={query.data}
-        project={projectQuery.data}
-        projectName={projectName}
-        runtimeConfig={runtimeConfig}
-      />
-    </SiteLayoutShell>
-  );
-}
-
-function ProjectForkScreen({
-  forkOwnerName,
-  ownerName,
-  options,
-  project,
-  projectName,
-  runtimeConfig,
-}: {
-  forkOwnerName?: string;
-  ownerName: string;
-  options: ProjectForkOptionsResponse;
-  project: ProjectContainer;
-  projectName: string;
-  runtimeConfig: RuntimeConfig;
-}) {
-  return (
-    <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
-      <ProjectForkBody
-        forkOwnerName={forkOwnerName}
-        ownerName={ownerName}
-        options={options}
-        projectName={projectName}
-        runtimeConfig={runtimeConfig}
-      />
-    </>
+    <ProjectForkBody
+      forkOwnerName={forkOwnerName}
+      ownerName={ownerName}
+      options={query.data}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
@@ -482,24 +439,6 @@ function ProjectForkCloneProgress({ progress }: { progress: ForkCloneProgress })
   );
 }
 
-function projectSearchScopeOrganizationName(source: ProjectContainer, ownerName: string) {
-  const sourceRecord = recordField(source);
-  const organizationName = stringField(sourceRecord.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return projectIsProtected(sourceRecord) ? ownerName : undefined;
-}
-
-function projectIsProtected(source: Record<string, unknown>) {
-  const projectScope = stringField(source.projectScope, "").toUpperCase();
-  return (
-    booleanField(source.hasGroup) ||
-    booleanField(source.isProtected) ||
-    projectScope === "PROTECTED"
-  );
-}
-
 function projectPath(ownerName: string, projectName: string) {
   return `/${ownerName}/${projectName}`;
 }
@@ -524,8 +463,4 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function booleanField(value: unknown) {
-  return value === true || value === "true" || value === 1 || value === "1";
 }
