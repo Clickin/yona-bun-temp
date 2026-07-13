@@ -33,7 +33,6 @@ import {
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 const legacyLinkActiveOptions = { exact: true, explicitUndefined: true };
 const legacyHashLinkActiveOptions = { exact: true, explicitUndefined: true, includeHash: true };
-const legacyLinkInactiveSearch = { __legacyActive: undefined };
 const legacyLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
@@ -123,7 +122,7 @@ function ProjectPullRequestChangesRoute() {
 
   const nestedProjectShell = use(ProjectNestedShellContext);
   if (nestedProjectShell && !commitId) {
-    return <ProjectPullRequestChangesShell nestedProjectShell runtimeConfig={runtimeConfig} />;
+    return <ProjectPullRequestChangesShell commitId="" nestedProjectShell runtimeConfig={runtimeConfig} />;
   }
 
   return <ProjectPullRequestChangesPage commitId={commitId} runtimeConfig={runtimeConfig} />;
@@ -359,7 +358,6 @@ function ProjectPullRequestChangesBody({
                 <Link
                   to="/$user"
                   params={{ user: pullRequest.contributor.loginId }}
-                  search={legacyLinkInactiveSearch}
                   activeOptions={legacyLinkActiveOptions}
                   activeProps={legacyLinkActiveProps}
                   className="usf-group pull-left"
@@ -542,7 +540,6 @@ function ThreadReplyFormBody({
           <Link
             to="/$user"
             params={{ user: currentUser.loginId }}
-            search={legacyLinkInactiveSearch}
             activeOptions={legacyLinkActiveOptions}
             activeProps={legacyLinkActiveProps}
             className="avatar-wrap medium"
@@ -601,7 +598,6 @@ function NonRangedThreadComment({
         <Link
           to="/$user"
           params={{ user: comment.authorLoginId }}
-          search={legacyLinkInactiveSearch}
           activeOptions={legacyLinkActiveOptions}
           activeProps={legacyLinkActiveProps}
           className="avatar-wrap"
@@ -624,7 +620,6 @@ function NonRangedThreadComment({
             <Link
               to="/$user"
               params={{ user: comment.authorLoginId }}
-              search={legacyLinkInactiveSearch}
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
               title={comment.authorLabel}
@@ -636,7 +631,6 @@ function NonRangedThreadComment({
             <Link
               to="."
               hash={`comment-${comment.id}`}
-              search={legacyLinkInactiveSearch}
               activeOptions={legacyHashLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
               title={comment.createdLabel}
@@ -863,7 +857,6 @@ function ReviewCard({
     <Link
       to={reviewThreadPath(pullRequest, thread)}
       hash={`thread-${thread.id}`}
-      search={legacyLinkInactiveSearch}
       activeOptions={legacyHashLinkActiveOptions}
       activeProps={legacyLinkActiveProps}
       className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
@@ -1597,7 +1590,6 @@ function CommitDropdown({
         <li>
           <Link
             to={changesPath}
-            search={legacyLinkInactiveSearch}
             activeOptions={legacyLinkActiveOptions}
             activeProps={legacyLinkActiveProps}
             onClick={closeDropdown}
@@ -1610,8 +1602,7 @@ function CommitDropdown({
           commit.state === "CURRENT" ? (
             <li key={commit.commitId}>
               <Link
-                to={`${changesPath}/${encodeURIComponent(commit.commitId)}`}
-                search={legacyLinkInactiveSearch}
+                to="/" href={`${changesPath}/${encodeURIComponent(commit.commitId)}`} reloadDocument
                 activeOptions={legacyLinkActiveOptions}
                 activeProps={legacyLinkActiveProps}
                 onClick={closeDropdown}
@@ -1701,7 +1692,6 @@ function ReviewForm({
             <Link
               to="/$user"
               params={{ user: currentUser.loginId }}
-              search={legacyLinkInactiveSearch}
               activeOptions={legacyLinkActiveOptions}
               activeProps={legacyLinkActiveProps}
               className="avatar-wrap medium"

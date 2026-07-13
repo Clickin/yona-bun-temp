@@ -178,7 +178,7 @@ function ProjectPostsBody({
           </form>
           <div className="pull-right">
             <Link
-              to={`/${ownerName}/${projectName}/postform`}
+              to="/$ownerName/$projectName/postform" params={{ ownerName, projectName }} search={{}}
               activeProps={legacyRouteLocalActiveProps}
               className="ybtn ybtn-success"
             >
@@ -260,7 +260,7 @@ function BoardLabels({
         <dt>
           {t("label")}{" "}
           <Link
-            to={`/${ownerName}/${projectName}/issue/labelsform`}
+            to="/$ownerName/$projectName/issue/labelsform" params={{ ownerName, projectName }}
             activeProps={legacyRouteLocalActiveProps}
             target="_blank"
             className="label-edit"

@@ -414,7 +414,6 @@ function OrganizationMember({
         }}
         className="avatar-wrap mlarge pull-left mr10"
         params={{ user: loginId }}
-        search={() => undefined}
         to="/$user"
       >
         <img
@@ -500,7 +499,6 @@ function EnrollmentRequest({
             "data-status": undefined,
           }}
           params={{ user: loginId }}
-          search={() => undefined}
           to="/$user"
         >
           <img
@@ -521,7 +519,6 @@ function EnrollmentRequest({
               "data-status": undefined,
             }}
             params={{ user: loginId }}
-            search={() => undefined}
             to="/$user"
           >
             <strong>{stringField(user.userLabel, loginId)}</strong>
@@ -563,7 +560,6 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
-          search={() => undefined}
           to="/organizations/$organizationName/settingform"
         >
           {t("organization.settingFrom")}
@@ -578,7 +574,6 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
-          search={() => undefined}
           to="/organizations/$organizationName/members"
         >
           {t("organization.member")}
@@ -593,7 +588,6 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           params={{ organizationName }}
-          search={() => undefined}
           to="/organizations/$organizationName/deleteForm"
         >
           {t("organization.delete")}

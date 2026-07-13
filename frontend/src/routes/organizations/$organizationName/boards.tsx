@@ -216,9 +216,7 @@ function BoardFilters({
               }}
               className={active ? "filter active" : "filter"}
               key={filter.field}
-              to={`/organizations/${organizationName}/boards?orderBy=${filter.field}&orderDir=${
-                active ? nextDir : "desc"
-              }`}
+              to="/organizations/$organizationName/boards" params={{ organizationName }} search={{ filter: search.filter, orderBy: filter.field, orderDir: active ? nextDir : "desc", pageNum: search.pageNum, projectNames: search.projectNames }}
             >
               <i
                 className={`ico btn-gray-arrow ${

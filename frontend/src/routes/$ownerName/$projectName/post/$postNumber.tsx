@@ -891,7 +891,7 @@ function PostEditableLabels({
       <dt>
         {t("label")}{" "}
         <Link
-          to={`/${ownerName}/${projectName}/issue/labelsform`}
+          to="/$ownerName/$projectName/issue/labelsform" params={{ ownerName, projectName }}
           activeProps={legacyRouteLocalActiveProps}
           target="_blank"
           className="label-edit"
@@ -1013,7 +1013,6 @@ function PostSelectedLabels({
             to="/$ownerName/$projectName/posts"
             params={{ ownerName, projectName }}
             search={{ labelIds: [label.id] }}
-            mask={{ to: `/${ownerName}/${projectName}/posts?labelIds=${label.id}` }}
             activeProps={legacyRouteLocalActiveProps}
             className="label issue-label active static"
             key={label.id}

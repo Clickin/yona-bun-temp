@@ -211,7 +211,7 @@ function PullRequestOverviewErrorBody({
             <Link
               to="/$ownerName/$projectName/pullRequests"
               params={{ ownerName, projectName }}
-              search={{}}
+              search={{ filter: "", contributorId: 0, pageNum: 1 }}
               className="ybtn ybtn-primary"
               {...LEGACY_LINK_PROPS}
             >
@@ -524,6 +524,7 @@ function PullRequestStateEventMessage({
           ownerName: pullRequest.ownerName,
           projectName: pullRequest.projectName,
         }}
+        search={{ branch: "", path: "" }}
         title={t("code.showCommit")}
         {...LEGACY_LINK_PROPS}
       >
@@ -847,7 +848,6 @@ export function PullRequestHeader({
               projectName: pullRequest.projectName,
               pullRequestNumber: String(pullRequest.pullRequestNumber),
             }}
-            search={{ __legacyActiveSuppression: undefined }}
             {...LEGACY_LINK_PROPS}
           >
             {t("pullRequest.menu.overview")}

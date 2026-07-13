@@ -226,8 +226,7 @@ function OrganizationSettingMenu({
             className: undefined,
             "data-status": undefined,
           }}
-          search={() => undefined}
-          to={`/organizations/${organizationName}/settingform`}
+            to="/organizations/$organizationName/settingform" params={{ organizationName }}
         >
           {t("organization.settingFrom")}
         </Link>
@@ -241,7 +240,7 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           search={{}}
-          to={`/organizations/${organizationName}/members`}
+            to="/organizations/$organizationName/members" params={{ organizationName }}
         >
           {t("organization.member")}
         </Link>
@@ -255,7 +254,7 @@ function OrganizationSettingMenu({
             "data-status": undefined,
           }}
           search={{}}
-          to={`/organizations/${organizationName}/deleteForm`}
+            to="/organizations/$organizationName/deleteForm" params={{ organizationName }}
         >
           {t("organization.delete")}
         </Link>

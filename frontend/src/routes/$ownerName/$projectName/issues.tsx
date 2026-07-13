@@ -3008,7 +3008,7 @@ function TwoColumnModeCheckbox({
 }) {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.two.column.mode");
   const popoverContent = t("common.two.column.mode.desc");
   const clearPopoverTimer = () => {
@@ -3081,7 +3081,7 @@ function ShowSubtasksCheckbox({
 }) {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
   const clearPopoverTimer = () => {

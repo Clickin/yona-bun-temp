@@ -794,6 +794,7 @@ function MergeResult({
                   <Link
                     to="/$ownerName/$projectName/commit/$commitId"
                     params={{ commitId: commit.commitId, ownerName, projectName }}
+                    search={{ branch: "", path: "" }}
                   >
                     {commit.commitShortId}
                   </Link>

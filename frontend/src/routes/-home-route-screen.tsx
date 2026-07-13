@@ -16,7 +16,7 @@ type LegacyUserLinkSearch = {
   daysAgo: number;
   selected: "issues" | "projects" | "pullRequests";
 };
-type LegacyProjectsLinkSearch = { filter: string };
+type LegacyProjectsLinkSearch = { filter: string; labelIds: string };
 type LegacyProjectFormLinkSearch = { owner?: string };
 type LegacyUserIssuesLinkSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -41,9 +41,7 @@ const LEGACY_USER_LINK_SEARCH = {
   daysAgo: undefined!,
   selected: undefined!,
 } satisfies LegacyUserLinkSearch;
-const LEGACY_PROJECTS_LINK_SEARCH = {
-  filter: undefined!,
-} satisfies LegacyProjectsLinkSearch;
+const LEGACY_PROJECTS_LINK_SEARCH = { filter: "", labelIds: "" } satisfies LegacyProjectsLinkSearch;
 const LEGACY_PROJECT_FORM_LINK_SEARCH = {
   owner: undefined,
 } satisfies LegacyProjectFormLinkSearch;
@@ -64,7 +62,6 @@ const LEGACY_LOGIN_FORM_LINK_SEARCH = {
   password: undefined!,
   redirectUrl: undefined!,
 } satisfies LegacyLoginFormLinkSearch;
-const LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH = { __legacyLogoActiveMarker: undefined };
 const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new";
 const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
@@ -76,9 +73,6 @@ const YONA_AUTHORS_URL: string = "https://github.com/yona-projects/yona/blob/mas
 const NAVER_CORP_URL: string = "https://navercorp.com";
 const NAVER_LABS_URL: string = "https://naverlabs.com/";
 const NAVER_CLOUD_PLATFORM_URL: string = "https://www.ncloud.com/?referer=yona";
-const LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH = {
-  __legacyHomeStreamActiveMarker: undefined,
-};
 const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeSearch: true },
   activeProps: {
@@ -204,9 +198,7 @@ function HomeScreen({
   );
   const [isDefaultLandingButtonHidden, setIsDefaultLandingButtonHidden] = React.useState(false);
   const [isDefaultLandingPopoverVisible, setIsDefaultLandingPopoverVisible] = React.useState(false);
-  const defaultLandingPopoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  );
+  const defaultLandingPopoverTimer = React.useRef<number | null>(null);
   const [notificationItems, setNotificationItems] = React.useState<NotificationItem[]>([]);
   const [notificationHasMore, setNotificationHasMore] = React.useState(false);
   const [isLoadingMoreNotifications, setIsLoadingMoreNotifications] = React.useState(false);
@@ -403,7 +395,6 @@ function HomeScreen({
                       <Link
                         {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
                         to="/notifications"
-                        search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
                       >
                         {t("notification")}
                       </Link>
@@ -421,7 +412,6 @@ function HomeScreen({
                       <Link
                         {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
                         to="/user/files"
-                        search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
                       >
                         {t("user.files")}
                       </Link>
@@ -637,7 +627,6 @@ function NotificationStreamItem({
                 to={notification.targetHref}
                 href={prefixBasePath(runtimeConfig.basePath, notification.targetHref)}
                 {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
-                search={LEGACY_HOME_STREAM_LINK_SUPPRESSION_SEARCH}
               >
                 {notification.targetTitle}
               </Link>
@@ -881,7 +870,6 @@ export function SiteLayoutShell({
                     "data-status": undefined,
                   }}
                   className="logo logo-letter"
-                  search={LEGACY_GNB_LOGO_ACTIVE_MARKER_SEARCH}
                   to="/"
                 >
                   Y
@@ -903,7 +891,7 @@ export function SiteLayoutShell({
               ) : null}
               {feedbackUrl ? (
                 <li>
-                  <Link to={feedbackUrl} href={feedbackUrl} target="_blank">
+                  <Link to="/" href={feedbackUrl} target="_blank">
                     {t("title.yobi.feedback")}
                   </Link>
                 </li>
@@ -990,7 +978,7 @@ export function SiteLayoutShell({
                 Yona authors
               </Link>
               {" & © "}
-              <Link to={NAVER_CORP_URL} href={NAVER_CORP_URL} reloadDocument target="_blank">
+              <Link to="/" href={NAVER_CORP_URL} reloadDocument target="_blank">
                 NAVER Corp.
               </Link>
               {" & "}
@@ -1393,7 +1381,7 @@ function AnonymousSiteUserMenu({ basePath }: { basePath: string }) {
                   className: undefined,
                   "data-status": undefined,
                 }}
-                to="/user/anonymous"
+                to="/"
                 href={prefixBasePath(basePath, "/user/anonymous")}
                 reloadDocument
               >

@@ -40,7 +40,7 @@ function OrganizationHomeRoute() {
   const isSettings = pathname === `${exactPath}/settingform`;
   const isDeleteForm = pathname === `${exactPath}/deleteForm`;
   const isSearch =
-    pathname === `${exactPath}/search` && isOrganizationSearchLayoutState(location.search);
+    pathname === `${exactPath}/search` && isOrganizationSearchLayoutState(location.searchStr);
 
   if (
     !isHome &&
@@ -753,7 +753,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{ assigneeId: "", authorId: "", filter: "", mentionId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1, projectNames: [], state: "open" }}
               to="/organizations/$organizationName/issues"
             >
               {t("menu.issue")}
@@ -773,7 +773,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{ filter: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1, projectNames: [] }}
               to="/organizations/$organizationName/boards"
             >
               {t("menu.board")}
@@ -793,7 +793,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{ filter: "", pageNum: 1 }}
               to="/organizations/$organizationName/pullrequests"
             >
               {t("menu.pullRequest")}

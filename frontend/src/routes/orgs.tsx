@@ -78,6 +78,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       "data-status": undefined,
                     }}
                     to="/projects"
+                    search={{ filter: "", labelIds: "" }}
                   >
                     {t("project.public")} {t("title.projectList")}
                   </Link>
@@ -91,6 +92,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       "data-status": undefined,
                     }}
                     to="/orgs"
+                    search={{ filter: "" }}
                   >
                     {t("title.organization.list")}
                   </Link>

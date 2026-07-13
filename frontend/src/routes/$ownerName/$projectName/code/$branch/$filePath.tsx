@@ -388,7 +388,7 @@ function ProjectCodeFileBody({
             {isGit ? (
               <>
                 <div className="pull-right">
-                  <Link href={archiveHref} to={archivePath} reloadDocument className="ybtn">
+                  <Link to="/" href={archiveHref} reloadDocument className="ybtn">
                     {t("code.download")}
                   </Link>
                 </div>
@@ -666,7 +666,7 @@ function FileView({
             <Link
               to="/$ownerName/$projectName/commit/$commitId"
               params={{ commitId, ownerName, projectName }}
-              search={{ branch: selectedBranch }}
+              search={{ branch: selectedBranch, path: filePath }}
               hash={filePath}
               activeOptions={{
                 exact: true,
@@ -696,7 +696,7 @@ function FileView({
         <div className="pull-right">
           {!isBinary ? (
             <>
-              <Link href={rawHref} to={rawPath} className="ybtn" target="_blank">
+              <Link to="/" href={rawHref} className="ybtn" target="_blank">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </Link>
               {!currentUserIsAnonymous ? (
@@ -786,7 +786,7 @@ function FileView({
               <br />
               <span className="filesize">{stringField(file.size, "")}</span>
               <br />
-              <Link href={rawHref} to={rawPath} reloadDocument className="filehref ybtn">
+              <Link to="/" href={rawHref} reloadDocument className="filehref ybtn">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
                 {t("button.download")}
               </Link>
@@ -803,7 +803,7 @@ function FileView({
             </>
           ) : null}
           <br />
-          <Link href={rawHref} to={rawPath} target="_blank" className="filehref ybtn">
+          <Link to="/" href={rawHref} target="_blank" className="filehref ybtn">
             {t("code.viewRaw")}
           </Link>
         </p>

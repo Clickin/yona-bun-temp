@@ -295,7 +295,6 @@ function ProjectMembersErrorBody({
               activeProps={legacyLinkActiveProps}
               className="ybtn ybtn-primary"
               data-login="required"
-              mask={{ to: `/users/loginform?redirectUrl=${loginRedirectPath}` }}
               search={{ redirectUrl: loginRedirectPath }}
               to="/users/loginform"
             >

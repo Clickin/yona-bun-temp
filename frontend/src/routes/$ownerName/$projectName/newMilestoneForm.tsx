@@ -68,15 +68,19 @@ function ProjectMilestoneCreateFormRouteShell({
   if (renderProjectShell && !projectQuery.data) {
     return null;
   }
+  const project = projectQuery.data;
 
   const body = <ProjectMilestoneCreateFormBody runtimeConfig={runtimeConfig} />;
 
   if (!renderProjectShell) {
     return body;
   }
+  if (!project) {
+    return null;
+  }
 
   const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
+    organizationName: projectSearchScopeOrganizationName(project, ownerName),
     ownerName,
     projectName,
   };
@@ -84,11 +88,11 @@ function ProjectMilestoneCreateFormRouteShell({
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
       <title>{`${t("title.newMilestone")} - ${ownerName}/${projectName}`}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active="milestone"
         basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
+        project={project}
       />
       {body}
     </SiteLayoutShell>

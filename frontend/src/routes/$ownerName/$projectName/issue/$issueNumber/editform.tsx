@@ -159,7 +159,7 @@ function ProjectIssueEditNotFoundBody({
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t("error.notfound.issue_post")}</p>
-          <Link to={`/${ownerName}/${projectName}/issues?state=all`} className="ybtn ybtn-primary">
+          <Link to="/$ownerName/$projectName/issues" params={{ ownerName, projectName }} search={{ state: "all", assigneeId: "", authorId: "", commenterId: "", dueDate: "", filter: "", labelIds: [], milestoneId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1 }} className="ybtn ybtn-primary">
             {t("button.list")}
           </Link>
         </div>

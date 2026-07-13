@@ -2600,7 +2600,7 @@ function IssueLabelSelect({
     const label = labels.find((candidate) => candidate.id === id);
     return label ? [label] : [];
   });
-  const labelGroups = new Map<number, { labels: IssueLabelOption[]; name: string }>();
+  const labelGroups = new Map<string, { labels: IssueLabelOption[]; name: string }>();
   for (const label of labels) {
     const group = labelGroups.get(label.categoryId);
     if (group) group.labels.push(label);

@@ -32,7 +32,7 @@ type LegacyIssueItemRowAttrs = {
 };
 
 type MilestoneDetailSearch = {
-  state: "all" | "closed" | "open";
+  state?: "all" | "closed" | "open";
 };
 
 const LEGACY_MILESTONE_LINK_PROPS = {
@@ -306,6 +306,7 @@ function ProjectMilestoneDetailBody({
   const queryClient = useQueryClient();
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const search = Route.useSearch();
+  const selectedState = search.state ?? "open";
   const [filter, setFilter] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -319,7 +320,7 @@ function ProjectMilestoneDetailBody({
   const openIssueCount = numberField(milestone.openIssueCount);
   const closedIssueCount = numberField(milestone.closedIssueCount);
   const visibleIssues =
-    search.state === "closed" ? closedIssues : search.state === "all" ? allIssues : openIssues;
+    selectedState === "closed" ? closedIssues : selectedState === "all" ? allIssues : openIssues;
   const [checkedIssueIds, setCheckedIssueIds] = useState<string[]>([]);
   const attachmentsJson = useMemo(() => JSON.stringify(milestone.attachments ?? []), [milestone]);
   const milestoneQueryKey = ["project", ownerName, projectName, "milestones", Number(milestoneId)];
@@ -468,20 +469,20 @@ function ProjectMilestoneDetailBody({
 
           <div id="issues">
             <ul className="nav nav-tabs">
-              {(["open", "closed", "all"] as const).map((state) => (
-                <li key={state} className={search.state === state ? "active" : undefined}>
+              {(["open", "closed", "all"] as const).map((tabState) => (
+                <li key={tabState} className={selectedState === tabState ? "active" : undefined}>
                   <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
-                    search={{ state }}
+                    search={{ state: tabState }}
                     hash="issues"
                     {...LEGACY_MILESTONE_LINK_PROPS}
                   >
-                    {t(`issue.state.${state}`)}
+                    {t(`issue.state.${tabState}`)}
                     <span className="num-badge">
-                      {state === "open"
+                      {tabState === "open"
                         ? openIssueCount
-                        : state === "closed"
+                        : tabState === "closed"
                           ? closedIssueCount
                           : openIssueCount + closedIssueCount}
                     </span>

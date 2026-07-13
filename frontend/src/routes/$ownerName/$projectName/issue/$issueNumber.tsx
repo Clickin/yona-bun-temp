@@ -527,7 +527,7 @@ function ProjectIssueNotFoundBody({
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t("error.notfound.issue_post")}</p>
-          <Link to={`/${ownerName}/${projectName}/issues?state=all`} className="ybtn ybtn-primary">
+          <Link to="/$ownerName/$projectName/issues" params={{ ownerName, projectName }} search={{ state: "all", assigneeId: "", authorId: "", commenterId: "", dueDate: "", filter: "", labelIds: [], milestoneId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1 }} className="ybtn ybtn-primary">
             {t("button.list")}
           </Link>
         </div>
@@ -1149,7 +1149,7 @@ function IssueDetailBody({
                         ) : issue.milestoneId ? (
                           <Link
                             {...LEGACY_LINK_PROPS}
-                            to={`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`}
+                            to="/$ownerName/$projectName/milestone/$milestoneId" params={{ ownerName, projectName, milestoneId: String(issue.milestoneId) }} search={{ state: "open" }}
                           >
                             {stringField(issue.milestoneTitle)}
                           </Link>
@@ -1159,7 +1159,7 @@ function IssueDetailBody({
                       ) : (
                         <Link
                           {...LEGACY_LINK_PROPS}
-                          to={`/${ownerName}/${projectName}/newMilestoneForm`}
+                          to="/$ownerName/$projectName/newMilestoneForm" params={{ ownerName, projectName }}
                           className="ybtn ybtn-small ybtn-fullsize"
                           target="_blank"
                         >
@@ -1858,7 +1858,7 @@ function IssueLabelSelect({
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/issue/labelsform`}
+            to="/$ownerName/$projectName/issue/labelsform" params={{ ownerName, projectName }}
             target="_blank"
             className="label-edit"
           >
@@ -2135,7 +2135,7 @@ function IssueSelectedLabels({
     return null;
   }
 
-  const listPath = `/${ownerName}/${projectName}/issues?state=${encodeURIComponent(issueState)}`;
+  const listPath = "/$ownerName/$projectName/issues";
 
   return (
     <dl>
@@ -2144,7 +2144,7 @@ function IssueSelectedLabels({
         {labels.map((label) => (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`${listPath}&labelIds=${encodeURIComponent(String(label.id))}`}
+            to={listPath} params={{ ownerName, projectName }} search={{ state: issueState === "closed" ? "closed" : "open", assigneeId: "", authorId: "", commenterId: "", dueDate: "", filter: "", labelIds: [String(label.id)], milestoneId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1 }}
             className="label issue-label active static"
             key={String(label.id)}
             style={{ background: stringField(label.color) }}
@@ -2298,7 +2298,7 @@ function IssueChildIssue({
       {labels.map((label) => (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
+          to="/$ownerName/$projectName/issues" params={{ ownerName, projectName }} search={{ state: "open", assigneeId: "", authorId: "", commenterId: "", dueDate: "", filter: "", labelIds: [String(label.id)], milestoneId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1 }}
           className="label issue-label list-label active twoColumeModeTarget"
           key={String(label.id)}
           data-category-id={stringField(label.categoryId)}
@@ -2855,6 +2855,7 @@ function IssueEventRow({
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/commit/$commitId"
             params={{ ownerName, projectName, commitId }}
+            search={{ branch: "", path: "" }}
             className="link"
           >
             @{commitId}
@@ -3154,7 +3155,7 @@ function IssueCommentRow({
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
-              <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}`}>
+              <Link {...LEGACY_LINK_PROPS} to="/user/issues/new" search={{ commentId }}>
                 Reference in new issue
               </Link>
             </span>

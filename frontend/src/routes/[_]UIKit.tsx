@@ -373,7 +373,7 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
 }
 
 function CodeSample({ children }: { children: string }) {
-  return <xmp className="css">{children}</xmp>;
+  return React.createElement("xmp", { className: "css" }, children);
 }
 
 function legacyAnchorMarkup(attributes: string, text: string) {

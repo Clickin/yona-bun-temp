@@ -666,7 +666,9 @@ function OrganizationIssueItem({
           {issue.milestoneId ? (
             <span className="infos-item mileston-tag">
               <Link
-                to={`${projectRoutePath}/milestone/${issue.milestoneId}`}
+                to="/$ownerName/$projectName/milestone/$milestoneId"
+                params={{ ownerName: issue.ownerName, projectName: issue.projectName, milestoneId: String(issue.milestoneId) }}
+                search={{ state: "open" }}
                 title={t("milestone")}
               >
                 {issue.milestoneTitle}
@@ -699,7 +701,9 @@ function OrganizationIssueItem({
           <span className="post-id margin-right-5">#{issue.issueNumber}</span>
           {issue.labels.map((label) => (
             <Link
-              to={`${projectRoutePath}/issues?state=${state}&labelIds=${label.id}`}
+              to="/$ownerName/$projectName/issues"
+              params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
+              search={{ assigneeId: "", authorId: "", commenterId: "", dueDate: "", filter: "", labelIds: [String(label.id)], milestoneId: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1, state: state === "closed" ? "closed" : "open" }}
               className="label issue-label list-label"
               data-label-id={label.id}
               style={{ background: label.color }}
@@ -844,7 +848,8 @@ function OrganizationHeader({
                     "data-status": undefined,
                   }}
                   search={{}}
-                  to={`/organizations/${organizationName}`}
+                  to="/organizations/$organizationName"
+                  params={{ organizationName }}
                 >
                   {organizationName}
                 </Link>
@@ -881,7 +886,8 @@ function OrganizationMenu({
                 "data-status": undefined,
               }}
               search={{}}
-              to={`/organizations/${organizationName}`}
+              to="/organizations/$organizationName"
+              params={{ organizationName }}
             >
               {t("title.organizationHome")}
             </Link>
@@ -894,8 +900,9 @@ function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              search={{}}
-              to={`/organizations/${organizationName}/issues`}
+              search={{ assigneeId: "", authorId: "", filter: "", mentionId: "", orderBy: "createdDate", orderDir: "desc", pageNum: 1, projectNames: [], state: "open" }}
+              to="/organizations/$organizationName/issues"
+              params={{ organizationName }}
             >
               {t("menu.issue")}
             </Link>
@@ -908,8 +915,9 @@ function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              search={{}}
-              to={`/organizations/${organizationName}/boards`}
+              search={{ filter: "", orderBy: "updatedDate", orderDir: "desc", pageNum: 1, projectNames: [] }}
+              to="/organizations/$organizationName/boards"
+              params={{ organizationName }}
             >
               {t("menu.board")}
             </Link>
@@ -922,8 +930,9 @@ function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
-              search={{}}
-              to={`/organizations/${organizationName}/pullrequests`}
+              search={{ filter: "", pageNum: 1 }}
+              to="/organizations/$organizationName/pullrequests"
+              params={{ organizationName }}
             >
               {t("menu.pullRequest")}
             </Link>
@@ -940,8 +949,8 @@ function OrganizationMenu({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  search={{}}
-                  to={`/organizations/${organizationName}/settingform`}
+                  to="/organizations/$organizationName/settingform"
+                  params={{ organizationName }}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>
