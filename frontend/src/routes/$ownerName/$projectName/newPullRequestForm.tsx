@@ -13,12 +13,9 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { RestApiError } from "../../../api/rest-client";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
 
 type PullRequestFormSearch = {
@@ -46,19 +43,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/newPullRequestFor
 
 function ProjectNewPullRequestRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectNewPullRequestRouteShell runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectNewPullRequestRouteShell runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
-  const { t } = useLegacyMessages();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -74,22 +63,7 @@ function ProjectNewPullRequestRouteShell({ runtimeConfig }: { runtimeConfig: Run
       />
     );
   }
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
-
-  return (
-    <>
-      <title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectNewPullRequestScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
-      </SiteLayoutShell>
-    </>
-  );
+  return <ProjectNewPullRequestScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectNewPullRequestScreen({
@@ -113,33 +87,37 @@ function ProjectNewPullRequestScreen({
   const formOptionsQuery = useQuery({
     ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName, query }),
     placeholderData: (previousData) => previousData,
+    retry: false,
   });
 
   if (!project) {
     return null;
   }
 
-  if (formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 400) {
+  if (formOptionsQuery.data) {
     return (
       <>
-        <title>{`${t("error.pullRequest.empty.from.repository")} - ${ownerName}/${projectName}`}</title>
-        <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-        <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
-        <ProjectPullRequestCreateBadRequest
-          message={t("error.pullRequest.empty.from.repository")}
+        <title>{`${t("title.newPullRequest")} - ${ownerName}/${projectName}`}</title>
+        <ProjectNewPullRequestBody
+          formOptions={formOptionsQuery.data}
+          runtimeConfig={runtimeConfig}
         />
       </>
     );
   }
 
+  if (!formOptionsQuery.error) {
+    return null;
+  }
+
+  const isBadRequest =
+    formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 400;
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
-      {formOptionsQuery.data ? (
-        <ProjectNewPullRequestBody
-          formOptions={formOptionsQuery.data}
-          runtimeConfig={runtimeConfig}
+      <title>{`${t(isBadRequest ? "error.pullRequest.empty.from.repository" : "title.newPullRequest")} - ${ownerName}/${projectName}`}</title>
+      {isBadRequest ? (
+        <ProjectPullRequestCreateBadRequest
+          message={t("error.pullRequest.empty.from.repository")}
         />
       ) : null}
     </>
@@ -876,27 +854,6 @@ function stringSearch(value: unknown): string {
 function numberSearch(value: unknown): number {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return projectIsProtected(project) ? ownerName : undefined;
-}
-
-function projectIsProtected(project: ProjectContainer) {
-  const record = recordField(project);
-  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
-}
-
-function booleanField(value: unknown) {
-  return value === true || value === "true" || value === 1 || value === "1";
-}
-
-function recordField(value: unknown) {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
 function stringField(value: unknown, fallback: string) {

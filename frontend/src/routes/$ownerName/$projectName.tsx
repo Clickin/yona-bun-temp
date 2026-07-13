@@ -18,6 +18,7 @@ import {
   updateProjectOverviewRest,
 } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
+import { pullRequestCreateFormOptionsQueryOptions } from "../../api/pull-requests";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
 import { readProjectIssueFormOptions, readSessionBootstrap } from "../../auth-workspace-client";
@@ -107,6 +108,7 @@ function ProjectHomeRoute() {
   const changeVcsPath = `${homePath}/changeVCS`;
   const labelsPath = `${homePath}/issue/labelsform`;
   const issueFormPath = `${homePath}/issueform`;
+  const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const active =
     pathname === homePath
       ? "home"
@@ -128,23 +130,25 @@ function ProjectHomeRoute() {
                         pathname === closedPullRequestsPath ||
                         pathname === sentPullRequestsPath
                       ? "pullRequest"
-                      : pathname === reviewsPath
-                        ? "review"
-                        : pathname === settingPath
-                          ? "setting"
-                          : pathname === membersPath
-                            ? "members"
-                            : pathname === webhooksPath
-                              ? "webhooks"
-                              : pathname === transferPath
-                                ? "transfer"
-                                : pathname === deletePath
-                                  ? "delete"
-                                  : pathname === changeVcsPath
-                                    ? "changeVcs"
-                                    : pathname === labelsPath
-                                      ? "labels"
-                                      : null;
+                      : pathname === newPullRequestPath
+                        ? "newPullRequest"
+                        : pathname === reviewsPath
+                          ? "review"
+                          : pathname === settingPath
+                            ? "setting"
+                            : pathname === membersPath
+                              ? "members"
+                              : pathname === webhooksPath
+                                ? "webhooks"
+                                : pathname === transferPath
+                                  ? "transfer"
+                                  : pathname === deletePath
+                                    ? "delete"
+                                    : pathname === changeVcsPath
+                                      ? "changeVcs"
+                                      : pathname === labelsPath
+                                        ? "labels"
+                                        : null;
 
   if (!active) {
     return <Outlet />;
@@ -175,6 +179,7 @@ function ProjectHomeRouteShell({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "newPullRequest"
     | "postform"
     | "pullRequest"
     | "review"
@@ -196,11 +201,25 @@ function ProjectHomeRouteShell({
     queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
   });
+  const locationHref = useRouterState({ select: (state) => state.location.href });
+  const pullRequestFormQuery = useQuery({
+    ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, {
+      ownerName,
+      projectName,
+      query: projectPullRequestFormSearch(locationHref),
+    }),
+    enabled: active === "newPullRequest" && query.data?.vcs === "GIT",
+    retry: false,
+  });
 
   // The legacy creation endpoint redirects authentication and request failures
   // through its own standalone response. Keep that branch outside the nested
   // project shell; the successful form is the only child body owned here.
   if (active === "issueform" && (query.error || issueFormOptionsQuery.error)) {
+    return <Outlet />;
+  }
+
+  if (active === "newPullRequest" && (!query.data || query.data.vcs !== "GIT")) {
     return <Outlet />;
   }
 
@@ -237,7 +256,14 @@ function ProjectHomeRouteShell({
 
   return (
     <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectLayoutScreen active={active} project={query.data} />
+      <ProjectLayoutScreen
+        active={active}
+        project={query.data}
+        pullRequestFormBadRequest={
+          pullRequestFormQuery.error instanceof RestApiError &&
+          pullRequestFormQuery.error.status === 400
+        }
+      />
     </SiteLayoutShell>
   );
 }
@@ -312,6 +338,7 @@ function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig:
 function ProjectLayoutScreen({
   active,
   project,
+  pullRequestFormBadRequest,
 }: {
   active:
     | "board"
@@ -325,6 +352,7 @@ function ProjectLayoutScreen({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "newPullRequest"
     | "postform"
     | "pullRequest"
     | "review"
@@ -332,6 +360,7 @@ function ProjectLayoutScreen({
     | "transfer"
     | "webhooks";
   project: ProjectContainer;
+  pullRequestFormBadRequest: boolean;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
@@ -351,43 +380,51 @@ function ProjectLayoutScreen({
                 ? `${projectName} - milestone - ${ownerName}/${projectName}`
                 : active === "newMilestone"
                   ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
-                  : active === "postform"
-                    ? `${t("post.new")} - ${ownerName}/${projectName}`
-                    : active === "board"
-                      ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                      : active === "pullRequest"
-                        ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                        : active === "review"
-                          ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                          : active === "setting"
-                            ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                            : active === "labels"
-                              ? `${t("label")} - ${ownerName}/${projectName}`
-                              : active === "members"
-                                ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                                : active === "delete"
-                                  ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                  : active === "changeVcs"
-                                    ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                    : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                  : active === "newPullRequest"
+                    ? `${t(
+                        pullRequestFormBadRequest
+                          ? "error.pullRequest.empty.from.repository"
+                          : "title.newPullRequest",
+                      )} - ${ownerName}/${projectName}`
+                    : active === "postform"
+                      ? `${t("post.new")} - ${ownerName}/${projectName}`
+                      : active === "board"
+                        ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                        : active === "pullRequest"
+                          ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                          : active === "review"
+                            ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                            : active === "setting"
+                              ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                              : active === "labels"
+                                ? `${t("label")} - ${ownerName}/${projectName}`
+                                : active === "members"
+                                  ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                  : active === "delete"
+                                    ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                    : active === "changeVcs"
+                                      ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                      : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
           active === "newMilestone"
             ? "milestone"
-            : active === "postform"
-              ? "board"
-              : active === "issueform"
-                ? "issue"
-                : active === "delete" ||
-                    active === "changeVcs" ||
-                    active === "labels" ||
-                    active === "members" ||
-                    active === "transfer" ||
-                    active === "webhooks"
-                  ? "setting"
-                  : active
+            : active === "newPullRequest"
+              ? "pullRequest"
+              : active === "postform"
+                ? "board"
+                : active === "issueform"
+                  ? "issue"
+                  : active === "delete" ||
+                      active === "changeVcs" ||
+                      active === "labels" ||
+                      active === "members" ||
+                      active === "transfer" ||
+                      active === "webhooks"
+                    ? "setting"
+                    : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -413,6 +450,16 @@ function ProjectLayoutScreen({
       )}
     </>
   );
+}
+
+function projectPullRequestFormSearch(locationHref: string) {
+  const search = new URL(locationHref, "http://localhost").searchParams;
+  return {
+    fromBranch: search.get("fromBranch") || "",
+    fromProjectId: Number(search.get("fromProjectId")) || 0,
+    toBranch: search.get("toBranch") || "",
+    toProjectId: Number(search.get("toProjectId")) || 0,
+  };
 }
 
 function ProjectHomeBody({
