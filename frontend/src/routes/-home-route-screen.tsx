@@ -4085,6 +4085,10 @@ function SidebarHoverPopover({
   const [isVisible, setIsVisible] = React.useState(false);
   const showPopover = () => setIsVisible(Boolean(content));
   const hidePopover = () => setIsVisible(false);
+  const ownsPopoverPresentation =
+    isAuthenticatedFavoriteProjectRow ||
+    isAuthenticatedRecentIssueRow ||
+    isLeftSidebarRecentIssueRow;
 
   return (
     <div
@@ -4109,7 +4113,7 @@ function SidebarHoverPopover({
       {children}
       {isVisible ? (
         <div
-          className={`popover right ${
+          className={`${ownsPopoverPresentation ? "" : "popover right"} ${
             stylex.props(
               isAuthenticatedFavoriteProjectRow &&
                 authenticatedSidenavFavoriteProjectRowStyles.popover,
@@ -4127,16 +4131,10 @@ function SidebarHoverPopover({
                   : undefined
           }
           role="tooltip"
-          style={
-            isAuthenticatedFavoriteProjectRow ||
-            isAuthenticatedRecentIssueRow ||
-            isLeftSidebarRecentIssueRow
-              ? undefined
-              : HOME_SIDEBAR_POPOVER_STYLE
-          }
+          style={ownsPopoverPresentation ? undefined : HOME_SIDEBAR_POPOVER_STYLE}
         >
           <div
-            className={`arrow ${
+            className={`${ownsPopoverPresentation ? "" : "arrow"} ${
               stylex.props(
                 isAuthenticatedFavoriteProjectRow &&
                   authenticatedSidenavFavoriteProjectRowStyles.popoverArrow,
@@ -4147,7 +4145,7 @@ function SidebarHoverPopover({
             }`.trimEnd()}
           />
           <div
-            className={`popover-content ${
+            className={`${ownsPopoverPresentation ? "" : "popover-content"} ${
               stylex.props(
                 isAuthenticatedFavoriteProjectRow &&
                   authenticatedSidenavFavoriteProjectRowStyles.popoverContent,

@@ -177,6 +177,7 @@ for (const viewport of [
     const tooltip = page.locator('[data-stylex-owner="left-sidebar-recent-issue-popover"]');
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toHaveText("project #1");
+    await expectOwnedPopoverLegacyClassesAbsent(tooltip);
     const popover = await readPopoverEvidence(tooltip);
     const hoveredHost = await host.evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -486,6 +487,17 @@ async function readPopoverEvidence(tooltip: Locator) {
       ]),
     };
   });
+}
+
+async function expectOwnedPopoverLegacyClassesAbsent(tooltip: Locator) {
+  expect(
+    await tooltip.evaluate((element) => ({
+      arrow: element.firstElementChild?.classList.contains("arrow"),
+      content: element.lastElementChild?.classList.contains("popover-content"),
+      popover: element.classList.contains("popover"),
+      right: element.classList.contains("right"),
+    })),
+  ).toEqual({ arrow: false, content: false, popover: false, right: false });
 }
 
 async function removeLegacyClasses(row: Locator, tooltip: Locator) {

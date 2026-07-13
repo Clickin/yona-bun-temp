@@ -25,6 +25,47 @@ test("authenticated Favorite nested project rows have narrow themed StyleX owner
   expect(ownerSource).toContain("globalColors.textOnAccent");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}|rgba?\(|starred|starButton|starIcon/i);
   expect(source).toContain('"authenticated-sidenav-favorite-project-rows"');
+  expect(source).toContain('ownsPopoverPresentation ? "" : "popover right"');
+  expect(source).toContain('ownsPopoverPresentation ? "" : "arrow"');
+  expect(source).toContain('ownsPopoverPresentation ? "" : "popover-content"');
+  expect(source).toContain("ownsPopoverPresentation ? undefined : HOME_SIDEBAR_POPOVER_STYLE");
+});
+
+test("unmigrated framed Favorite popover keeps its legacy presentation boundary", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1366 });
+  await installAuthenticatedHome(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "true");
+    localStorage.setItem("sidebarActiveMenu", "myOrganizationList");
+  });
+  await page.goto(`${BASE_PATH}/`);
+
+  const panel = page.locator("#left-sidebar-myOrganizationList");
+  const ownToggle = panel.locator("[aria-expanded]").filter({ hasText: "admin" });
+  await ownToggle.click();
+  const link = panel.getByRole("link", { name: /own-project/ });
+  await link.locator("..").hover();
+  const tooltip = panel.getByRole("tooltip", { name: "Own project overview" });
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).not.toHaveAttribute("data-stylex-owner", /.+/);
+  expect(
+    await tooltip.evaluate((element) => ({
+      arrow: element.firstElementChild?.classList.contains("arrow"),
+      content: element.lastElementChild?.classList.contains("popover-content"),
+      popover: element.classList.contains("popover"),
+      right: element.classList.contains("right"),
+      style: element.getAttribute("style"),
+    })),
+  ).toEqual({
+    arrow: true,
+    content: true,
+    popover: true,
+    right: true,
+    style:
+      "display: block; left: 100%; margin-left: 10px; min-width: 200px; position: absolute; top: 50%; transform: translateY(-50%); z-index: 1060;",
+  });
 });
 
 for (const viewport of [
@@ -161,6 +202,7 @@ for (const viewport of [
     await own.list.hover();
     const tooltip = page.getByRole("tooltip", { name: "Own project overview" });
     await expect(tooltip).toBeVisible();
+    await expectOwnedPopoverLegacyClassesAbsent(tooltip);
     const popoverBase = await readPopoverEvidence(tooltip);
     console.log(
       `authenticated-sidenav-favorite-project-popover-${viewport.label}`,
@@ -291,45 +333,11 @@ for (const viewport of [
     }
 
     await own.list.hover();
-    const fallbackTooltip = page.locator(
+    const ownedTooltipAfterRowClassDeletion = page.locator(
       '[data-stylex-owner="authenticated-sidenav-favorite-project-popover"]',
     );
-    const popoverBeforeFallback = await readPopoverEvidence(fallbackTooltip);
-    await removePopoverOwnerStyleXClasses(fallbackTooltip);
-    const popoverFallback = await readPopoverEvidence(fallbackTooltip);
-    expect(popoverFallback.styles).toMatchObject({
-      backgroundClip: popoverBeforeFallback.styles.backgroundClip,
-      backgroundColor: popoverBeforeFallback.styles.backgroundColor,
-      borderBottomColor: popoverBeforeFallback.styles.borderBottomColor,
-      borderBottomStyle: popoverBeforeFallback.styles.borderBottomStyle,
-      borderBottomWidth: popoverBeforeFallback.styles.borderBottomWidth,
-      borderRadius: popoverBeforeFallback.styles.borderRadius,
-      boxShadow: popoverBeforeFallback.styles.boxShadow,
-      color: popoverBeforeFallback.styles.color,
-      fontSize: popoverBeforeFallback.styles.fontSize,
-      lineHeight: popoverBeforeFallback.styles.lineHeight,
-      maxWidth: popoverBeforeFallback.styles.maxWidth,
-      minWidth: popoverBeforeFallback.styles.minWidth,
-      padding: popoverBeforeFallback.styles.padding,
-      position: popoverBeforeFallback.styles.position,
-      textAlign: popoverBeforeFallback.styles.textAlign,
-      whiteSpace: popoverBeforeFallback.styles.whiteSpace,
-      wordWrap: popoverBeforeFallback.styles.wordWrap,
-    });
-    expect(popoverFallback.arrowStyles).toEqual({
-      ...popoverBeforeFallback.arrowStyles,
-      top: "50%",
-    });
-    expect(popoverFallback.arrowAfterStyles).toEqual(popoverBeforeFallback.arrowAfterStyles);
-    expect(popoverFallback.contentStyles).toEqual(popoverBeforeFallback.contentStyles);
-    expect(popoverFallback.styles).toMatchObject({
-      display: "none",
-      left: "0px",
-      marginLeft: "10px",
-      top: "0px",
-      transform: "none",
-      zIndex: "1010",
-    });
+    await expect(ownedTooltipAfterRowClassDeletion).toBeVisible();
+    await expectOwnedPopoverLegacyClassesAbsent(ownedTooltipAfterRowClassDeletion);
     await page.mouse.move(0, 0);
 
     await page.getByRole("button", { name: "Recent History" }).click({ force: true });
@@ -524,8 +532,8 @@ async function readHoverEvidence(list: Locator) {
 
 async function readPopoverEvidence(tooltip: Locator) {
   return tooltip.evaluate((element) => {
-    const arrow = element.querySelector<HTMLElement>(".arrow");
-    const content = element.querySelector<HTMLElement>(".popover-content");
+    const arrow = element.firstElementChild as HTMLElement | null;
+    const content = element.lastElementChild as HTMLElement | null;
     if (!arrow || !content) throw new Error("Popover structure is incomplete");
     const style = getComputedStyle(element);
     const arrowStyle = getComputedStyle(arrow);
@@ -597,6 +605,17 @@ async function readPopoverEvidence(tooltip: Locator) {
   });
 }
 
+async function expectOwnedPopoverLegacyClassesAbsent(tooltip: Locator) {
+  expect(
+    await tooltip.evaluate((element) => ({
+      arrow: element.firstElementChild?.classList.contains("arrow"),
+      content: element.lastElementChild?.classList.contains("popover-content"),
+      popover: element.classList.contains("popover"),
+      right: element.classList.contains("right"),
+    })),
+  ).toEqual({ arrow: false, content: false, popover: false, right: false });
+}
+
 async function removeOwnerStyleXClasses(row: ProjectRowLocators) {
   const imageHandle = (await row.image.count()) > 0 ? await row.image.elementHandle() : null;
   await row.row.evaluate(
@@ -623,16 +642,6 @@ async function removeOwnerStyleXClasses(row: ProjectRowLocators) {
       imageHandle,
     ],
   );
-}
-
-async function removePopoverOwnerStyleXClasses(tooltip: Locator) {
-  await tooltip.evaluate((element) => {
-    element.className = "popover right";
-    const arrow = element.querySelector<HTMLElement>(".arrow");
-    const content = element.querySelector<HTMLElement>(".popover-content");
-    if (arrow) arrow.className = "arrow";
-    if (content) content.className = "popover-content";
-  });
 }
 
 async function installAuthenticatedHome(page: Page) {
