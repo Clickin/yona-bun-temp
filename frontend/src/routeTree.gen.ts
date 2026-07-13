@@ -44,6 +44,7 @@ import { Route as SitesDataRouteImport } from './routes/sites/data'
 import { Route as OrganizationsNewRouteImport } from './routes/organizations/new'
 import { Route as OrganizationsOrganizationNameRouteImport } from './routes/organizations/$organizationName'
 import { Route as OwnerNameProjectNameRouteImport } from './routes/$ownerName/$projectName'
+import { Route as OrganizationsOrganizationNameIndexRouteImport } from './routes/organizations/$organizationName/index'
 import { Route as VerifyLoginIdVerificationCodeRouteImport } from './routes/verify/$loginId/$verificationCode'
 import { Route as UserIssuesNewRouteImport } from './routes/user/issues_/new'
 import { Route as UserEditformTokenRouteImport } from './routes/user/editform/token'
@@ -285,6 +286,12 @@ const OwnerNameProjectNameRoute = OwnerNameProjectNameRouteImport.update({
   path: '/$ownerName/$projectName',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizationsOrganizationNameIndexRoute =
+  OrganizationsOrganizationNameIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => OrganizationsOrganizationNameRoute,
+  } as any)
 const VerifyLoginIdVerificationCodeRoute =
   VerifyLoginIdVerificationCodeRouteImport.update({
     id: '/verify/$loginId/$verificationCode',
@@ -742,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/user/editform/token': typeof UserEditformTokenRoute
   '/user/issues/new': typeof UserIssuesNewRouteWithChildren
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/code/$branch': typeof OwnerNameProjectNameCodeBranchRouteWithChildren
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
   '/$ownerName/$projectName/commits/$branch': typeof OwnerNameProjectNameCommitsBranchRouteWithChildren
@@ -787,7 +795,6 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/secret': typeof SecretRoute
   '/$ownerName/$projectName': typeof OwnerNameProjectNameRouteWithChildren
-  '/organizations/$organizationName': typeof OrganizationsOrganizationNameRouteWithChildren
   '/organizations/new': typeof OrganizationsNewRoute
   '/sites/data': typeof SitesDataRoute
   '/sites/diagnostic': typeof SitesDiagnosticRoute
@@ -841,6 +848,7 @@ export interface FileRoutesByTo {
   '/user/editform/password': typeof UserEditformPasswordRoute
   '/user/editform/token': typeof UserEditformTokenRoute
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/organizations/$organizationName': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
   '/$ownerName/$projectName/commits/$branch': typeof OwnerNameProjectNameCommitsBranchRouteWithChildren
   '/$ownerName/$projectName/compare/$revisionRange': typeof OwnerNameProjectNameCompareRevisionRangeRoute
@@ -942,6 +950,7 @@ export interface FileRoutesById {
   '/user/editform/token': typeof UserEditformTokenRoute
   '/user/issues_/new': typeof UserIssuesNewRouteWithChildren
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/code/$branch': typeof OwnerNameProjectNameCodeBranchRouteWithChildren
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
   '/$ownerName/$projectName/commits/$branch': typeof OwnerNameProjectNameCommitsBranchRouteWithChildren
@@ -1045,6 +1054,7 @@ export interface FileRouteTypes {
     | '/user/editform/token'
     | '/user/issues/new'
     | '/verify/$loginId/$verificationCode'
+    | '/organizations/$organizationName/'
     | '/$ownerName/$projectName/code/$branch'
     | '/$ownerName/$projectName/commit/$commitId'
     | '/$ownerName/$projectName/commits/$branch'
@@ -1090,7 +1100,6 @@ export interface FileRouteTypes {
     | '/search'
     | '/secret'
     | '/$ownerName/$projectName'
-    | '/organizations/$organizationName'
     | '/organizations/new'
     | '/sites/data'
     | '/sites/diagnostic'
@@ -1144,6 +1153,7 @@ export interface FileRouteTypes {
     | '/user/editform/password'
     | '/user/editform/token'
     | '/verify/$loginId/$verificationCode'
+    | '/organizations/$organizationName'
     | '/$ownerName/$projectName/commit/$commitId'
     | '/$ownerName/$projectName/commits/$branch'
     | '/$ownerName/$projectName/compare/$revisionRange'
@@ -1244,6 +1254,7 @@ export interface FileRouteTypes {
     | '/user/editform/token'
     | '/user/issues_/new'
     | '/verify/$loginId/$verificationCode'
+    | '/organizations/$organizationName/'
     | '/$ownerName/$projectName/code/$branch'
     | '/$ownerName/$projectName/commit/$commitId'
     | '/$ownerName/$projectName/commits/$branch'
@@ -1558,6 +1569,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$ownerName/$projectName'
       preLoaderRoute: typeof OwnerNameProjectNameRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/organizations/$organizationName/': {
+      id: '/organizations/$organizationName/'
+      path: '/'
+      fullPath: '/organizations/$organizationName/'
+      preLoaderRoute: typeof OrganizationsOrganizationNameIndexRouteImport
+      parentRoute: typeof OrganizationsOrganizationNameRoute
     }
     '/verify/$loginId/$verificationCode': {
       id: '/verify/$loginId/$verificationCode'
@@ -2269,6 +2287,7 @@ interface OrganizationsOrganizationNameRouteChildren {
   OrganizationsOrganizationNamePullrequestsRoute: typeof OrganizationsOrganizationNamePullrequestsRoute
   OrganizationsOrganizationNameSearchRoute: typeof OrganizationsOrganizationNameSearchRoute
   OrganizationsOrganizationNameSettingformRoute: typeof OrganizationsOrganizationNameSettingformRoute
+  OrganizationsOrganizationNameIndexRoute: typeof OrganizationsOrganizationNameIndexRoute
 }
 
 const OrganizationsOrganizationNameRouteChildren: OrganizationsOrganizationNameRouteChildren =
@@ -2289,6 +2308,8 @@ const OrganizationsOrganizationNameRouteChildren: OrganizationsOrganizationNameR
       OrganizationsOrganizationNameSearchRoute,
     OrganizationsOrganizationNameSettingformRoute:
       OrganizationsOrganizationNameSettingformRoute,
+    OrganizationsOrganizationNameIndexRoute:
+      OrganizationsOrganizationNameIndexRoute,
   }
 
 const OrganizationsOrganizationNameRouteWithChildren =

@@ -27,43 +27,12 @@ export const Route = createFileRoute("/organizations/$organizationName")({
 
 function OrganizationHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { organizationName } = Route.useParams();
-  const location = useRouterState({ select: (state) => state.location });
-  const { pathname } = location;
-  const exactPath = `/organizations/${organizationName}`;
-  const isHome = pathname === exactPath || pathname === `${exactPath}/`;
-  const isBoards = pathname === `${exactPath}/boards`;
-  const isIssues = pathname === `${exactPath}/issues`;
-  const isPullRequests = pathname === `${exactPath}/pullrequests`;
-  const isClosedPullRequests = pathname === `${exactPath}/closedPullrequests`;
-  const isMembers = pathname === `${exactPath}/members`;
-  const isSettings = pathname === `${exactPath}/settingform`;
-  const isDeleteForm = pathname === `${exactPath}/deleteForm`;
-  const isSearch =
-    pathname === `${exactPath}/search` && isOrganizationSearchLayoutState(location.searchStr);
-
-  if (
-    !isHome &&
-    !isBoards &&
-    !isIssues &&
-    !isPullRequests &&
-    !isClosedPullRequests &&
-    !isMembers &&
-    !isSettings &&
-    !isDeleteForm &&
-    !isSearch
-  ) {
-    return <Outlet />;
-  }
-
-  return <OrganizationNestedLayout isHome={isHome} runtimeConfig={runtimeConfig} />;
+  return <OrganizationNestedLayout runtimeConfig={runtimeConfig} />;
 }
 
 function OrganizationNestedLayout({
-  isHome,
   runtimeConfig,
 }: {
-  isHome: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { organizationName } = Route.useParams();
@@ -116,18 +85,28 @@ function OrganizationNestedLayout({
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
           />
           <title>{organizationName}</title>
-          {isHome ? (
-            <OrganizationHomeBody organization={organization} runtimeConfig={runtimeConfig} />
-          ) : (
-            <Outlet />
-          )}
+          <Outlet />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function OrganizationHomeBody({
+export function OrganizationHomeIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { organizationName } = Route.useParams();
+  const organizationQuery = useQuery({
+    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
+    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
+  });
+
+  if (!organizationQuery.data) {
+    return null;
+  }
+
+  return <OrganizationHomeScreen organization={organizationQuery.data} runtimeConfig={runtimeConfig} />;
+}
+
+function OrganizationHomeScreen({
   organization,
   runtimeConfig,
 }: {
