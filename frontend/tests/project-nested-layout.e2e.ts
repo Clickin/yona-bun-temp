@@ -267,6 +267,31 @@ test("project webhooks to transfer keeps the legacy project shell DOM nodes moun
   await expectProjectTransferGeometry(page);
 });
 
+test("project transfer to delete keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  await expect(page.locator("#btnTransfer")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectTransferGeometry(page);
+
+  await page.locator("#subMenuProjectDelete a[href$='/admin/sample/deleteform']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/deleteform(?:\?|$)/);
+  await expect(page.locator("#subMenuProjectDelete")).toHaveClass(/active/);
+  await expect(page.locator("#btnDelete")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectDeleteGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#btnDelete")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectDeleteGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -712,6 +737,52 @@ async function expectProjectTransferGeometry(page: Page) {
     const tabs = rect(".project-page-wrap .nav-tabs");
     const form = rect(".bubble-wrap.gray.wp");
     const action = rect("#btnTransfer");
+    return {
+      actionBottom: action.bottom,
+      actionTop: action.top,
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formTop: form.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.actionTop).toBeGreaterThanOrEqual(metrics.formBottom);
+  expect(metrics.actionBottom).toBeGreaterThan(metrics.actionTop);
+}
+
+async function expectProjectDeleteGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const tabs = rect(".project-page-wrap .nav-tabs");
+    const form = rect(".bubble-wrap.gray.wp");
+    const action = rect("#btnDelete");
     return {
       actionBottom: action.bottom,
       actionTop: action.top,

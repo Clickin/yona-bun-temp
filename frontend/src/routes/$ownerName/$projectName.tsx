@@ -99,6 +99,7 @@ function ProjectHomeRoute() {
   const membersPath = `${homePath}/members`;
   const webhooksPath = `${homePath}/webhooks`;
   const transferPath = `${homePath}/transfer`;
+  const deletePath = `${homePath}/deleteform`;
   const active =
     pathname === homePath
       ? "home"
@@ -122,7 +123,9 @@ function ProjectHomeRoute() {
                         ? "webhooks"
                         : pathname === transferPath
                           ? "transfer"
-                          : null;
+                          : pathname === deletePath
+                            ? "delete"
+                            : null;
 
   if (!active) {
     return <Outlet />;
@@ -144,6 +147,7 @@ function ProjectHomeRouteShell({
   active:
     | "board"
     | "code"
+    | "delete"
     | "home"
     | "issue"
     | "members"
@@ -276,6 +280,7 @@ function ProjectLayoutScreen({
   active:
     | "board"
     | "code"
+    | "delete"
     | "home"
     | "issue"
     | "members"
@@ -311,12 +316,17 @@ function ProjectLayoutScreen({
                       ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
                       : active === "members"
                         ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                        : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                        : active === "delete"
+                          ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                          : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
-          active === "members" || active === "transfer" || active === "webhooks"
+          active === "delete" ||
+          active === "members" ||
+          active === "transfer" ||
+          active === "webhooks"
             ? "setting"
             : active
         }
