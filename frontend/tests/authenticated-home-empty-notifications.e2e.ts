@@ -1731,11 +1731,9 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await expect(projectTab).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("#left-sidebar-tab-content-list")).toHaveCount(1);
   await expect(page.locator("#usermenu-tab-content-list")).toHaveCount(1);
+  await expect(page.locator("#left-sidebar-tab-content-list > .user-project-list")).toHaveCount(3);
   await expect(
-    page.locator("#left-sidebar-tab-content-list > .tab-pane.user-project-list"),
-  ).toHaveCount(3);
-  await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
   ).toHaveAttribute("id", "left-sidebar-myOrganizationList");
   expect(await duplicateSidebarIds(page)).toEqual([]);
 
@@ -1751,7 +1749,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
       .getByRole("button", { exact: true, name: "Project" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
   ).toHaveAttribute("id", "left-sidebar-myProjectList");
   expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
 
@@ -1770,7 +1768,7 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
       .getByRole("button", { exact: true, name: "Recent History" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
+    page.locator("#left-sidebar-tab-content-list > .user-project-list:visible"),
   ).toHaveAttribute("id", "left-sidebar-myRecentIssueList");
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myRecentIssueList",
@@ -2838,7 +2836,9 @@ async function readLeftSidebarTabMetrics(page: Page) {
     const nav = document.querySelector<HTMLElement>(
       '#sidebar > [data-stylex-owner="left-sidebar-tabs"]',
     );
-    const content = document.querySelector<HTMLElement>("#sidebar > .tab-content");
+    const content = document.querySelector<HTMLElement>(
+      '#sidebar > [data-stylex-owner="left-sidebar-tab-panel"]',
+    );
     const search = document.querySelector<HTMLElement>(
       "#left-sidebar-myOrganizationList .org-search",
     );

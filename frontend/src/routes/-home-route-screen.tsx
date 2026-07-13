@@ -1078,8 +1078,14 @@ function LegacyFramedSidebar({
           </button>
         </li>
       </ul>
-      <div className="tab-content tab-box">
-        <div className="tab-content" id="left-sidebar-tab-content-list">
+      <div
+        {...stylex.props(leftSidebarTabPanelStyles.panel)}
+        data-stylex-owner="left-sidebar-tab-panel"
+      >
+        <div
+          {...stylex.props(leftSidebarTabPanelStyles.content)}
+          id="left-sidebar-tab-content-list"
+        >
           {workspace ? (
             <SidebarTabContent
               activeTab={activeTab}
@@ -1102,6 +1108,23 @@ function LegacyFramedSidebar({
     </aside>
   );
 }
+
+const leftSidebarTabPanelStyles = stylex.create({
+  panel: {
+    borderRadius: "0 0 4px 4px",
+    borderTopStyle: "none",
+    overflow: "hidden",
+  },
+  content: {
+    overflow: "hidden",
+  },
+  pane: {
+    display: "none",
+  },
+  activePane: {
+    display: "block",
+  },
+});
 
 const leftSidebarTabStyles = stylex.create({
   tabs: {
@@ -2652,21 +2675,30 @@ function SidebarTabContent({
   workspace: YoramRecord;
 }) {
   const [searchQuery, setSearchQuery] = React.useState("");
+  const paneClassName = (tab: SidebarTab) => {
+    const isActive = activeTab === tab;
+    if (isLeftSidebar) {
+      return `user-project-list ${
+        stylex.props(
+          leftSidebarTabPanelStyles.pane,
+          isActive && leftSidebarTabPanelStyles.activePane,
+        ).className
+      }`;
+    }
+    return `tab-pane user-project-list${isActive ? " active" : ""}${
+      isAuthenticatedSidenav
+        ? ` ${
+            stylex.props(
+              authenticatedSidenavTabPanelStyles.pane,
+              isActive && authenticatedSidenavTabPanelStyles.activePane,
+            ).className
+          }`
+        : ""
+    }`;
+  };
   return (
     <>
-      <div
-        className={`tab-pane user-project-list${activeTab === "favorite" ? " active" : ""}${
-          isAuthenticatedSidenav
-            ? ` ${
-                stylex.props(
-                  authenticatedSidenavTabPanelStyles.pane,
-                  activeTab === "favorite" && authenticatedSidenavTabPanelStyles.activePane,
-                ).className
-              }`
-            : ""
-        }`}
-        id={sidebarDomId(idPrefix, "myOrganizationList")}
-      >
+      <div className={paneClassName("favorite")} id={sidebarDomId(idPrefix, "myOrganizationList")}>
         {hasSidebarFavoriteData(workspace) ? (
           <SidebarOrganizationList
             idPrefix={idPrefix}
@@ -2681,19 +2713,7 @@ function SidebarTabContent({
           "Loading..."
         )}
       </div>
-      <div
-        className={`tab-pane user-project-list${activeTab === "project" ? " active" : ""}${
-          isAuthenticatedSidenav
-            ? ` ${
-                stylex.props(
-                  authenticatedSidenavTabPanelStyles.pane,
-                  activeTab === "project" && authenticatedSidenavTabPanelStyles.activePane,
-                ).className
-              }`
-            : ""
-        }`}
-        id={sidebarDomId(idPrefix, "myProjectList")}
-      >
+      <div className={paneClassName("project")} id={sidebarDomId(idPrefix, "myProjectList")}>
         <SidebarProjectList
           idPrefix={idPrefix}
           onSearchQueryChange={setSearchQuery}
@@ -2702,19 +2722,7 @@ function SidebarTabContent({
           workspace={workspace}
         />
       </div>
-      <div
-        className={`tab-pane user-project-list${activeTab === "recent" ? " active" : ""}${
-          isAuthenticatedSidenav
-            ? ` ${
-                stylex.props(
-                  authenticatedSidenavTabPanelStyles.pane,
-                  activeTab === "recent" && authenticatedSidenavTabPanelStyles.activePane,
-                ).className
-              }`
-            : ""
-        }`}
-        id={sidebarDomId(idPrefix, "myRecentIssueList")}
-      >
+      <div className={paneClassName("recent")} id={sidebarDomId(idPrefix, "myRecentIssueList")}>
         <SidebarRecentIssueList
           idPrefix={idPrefix}
           isLeftSidebar={isLeftSidebar}

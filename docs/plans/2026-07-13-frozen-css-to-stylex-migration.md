@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-one user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -479,6 +479,18 @@ theme entry with no dark value or toggle. The migrated owner emits none of `nav`
 Fresh English legacy/local evidence agrees exactly on the locale-dependent `270×61` desktop wrap
 and `270×34` mobile single row, while Korean desktop copy also remains one row. This owner has no
 intentional presentation fallback. This is not Wave 1 completion.
+
+The twenty-first verified slice migrates the framed left sidebar's tab-panel state boundary.
+StyleX owns the outer panel overflow, top-border suppression and lower radii, inner overflow, and
+the three direct panes' hidden/active display states. The owner emits none of `tab-content`,
+`tab-box`, `tab-pane`, or `active`; no migrated panel declaration remains fallback. Each pane
+retains only `user-project-list` because unmigrated Favorite/Project descendant rules still use it
+as a separate ancestor consumer. This slice has no color and therefore does not change the global
+theme. Fresh English live legacy and local Recent-state evidence agrees exactly on `270×106` at
+desktop `y=105` and mobile `y=78`, while live Favorite-state evidence preserves its inner list's
+10px bottom-margin relationship rather than forcing the active pane to fill the panel height.
+Before/after local screenshots are byte-identical at both viewports. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 
