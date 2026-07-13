@@ -119,6 +119,34 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await expectProjectBranchesGeometry(page);
 });
 
+test("project issues to exact commit history keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/commits")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/commits(?:\?|$)/);
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitHistoryGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#history .code-table.commits")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitHistoryGeometry(page);
+});
+
 test("project issues to exact no-head code root keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1444,6 +1472,34 @@ async function expectProjectBranchesGeometry(page: Page) {
   expect(metrics.tableRight).toBeGreaterThan(metrics.tableLeft);
 }
 
+async function expectProjectCommitHistoryGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const tabs = rect(".code-browse-wrap > .nav.nav-tabs");
+    const history = rect("#history");
+    return {
+      historyBottom: history.bottom,
+      historyTop: history.top,
+      menuBottom: menu.bottom,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.historyTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.historyBottom).toBeGreaterThan(metrics.historyTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectMilestonesGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -2750,6 +2806,20 @@ async function mockProjectHomeAndIssues(
         ownerName: "admin",
         permissions: { canDelete: true, canUpdate: true },
         projectName: "sample",
+      });
+    if (path.endsWith("/projects/admin/sample/commits"))
+      return json({
+        branches: [{ name: "main" }],
+        breadcrumbs: [],
+        commits: [],
+        hasNewer: false,
+        hasOlder: false,
+        noHead: false,
+        ownerName: "admin",
+        page: 0,
+        path: "",
+        projectName: "sample",
+        selectedBranch: "main",
       });
     if (path.endsWith("/projects/admin/sample/pull-requests"))
       return json({
