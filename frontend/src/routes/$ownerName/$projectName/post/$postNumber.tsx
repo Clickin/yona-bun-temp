@@ -61,7 +61,13 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 
 function ProjectPostDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { postNumber } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell && pathname.endsWith(`/post/${postNumber}/editform`)) {
+    return <Outlet />;
+  }
 
   if (nestedProjectShell) {
     return <ProjectPostDetailShell nestedProjectShell runtimeConfig={runtimeConfig} />;

@@ -625,6 +625,65 @@ test("project posts to post detail and missing post keep the legacy project shel
   await expectProjectShellGeometry(page);
 });
 
+test("project post detail to exact post edit form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname}/editform`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/post\/3\/editform(?:\?|$)/);
+  await expect(page.locator("form.nm #title")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("form.nm #title")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      location.pathname.replace(/\/post\/3\/editform$/, "/post/404/editform"),
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/post\/404\/editform(?:\?|$)/);
+  await expect(page.locator(".error-wrap > p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+});
+
+test("missing post edit form keeps the legacy site-only error shell", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.goto(`${basePath}/admin/sample/post/404/editform`);
+  await expect(page.locator(".error-wrap > p")).toHaveText(
+    "Server error occurred; service is not available",
+  );
+  await expect(page.locator(".project-header-outer")).toHaveCount(0);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(0);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+});
+
 test("project posts to new post form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
