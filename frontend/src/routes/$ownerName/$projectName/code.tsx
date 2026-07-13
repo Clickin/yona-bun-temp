@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
-import { useLayoutEffect } from "react";
+import { use, useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
@@ -14,7 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
   beforeLoad: ({ location, params }) => {
@@ -38,9 +38,14 @@ function ProjectCodeRoute() {
   const { ownerName, projectName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isProjectCodeRoot = pathname === `/${ownerName}/${projectName}/code`;
+  const isProjectNestedShell = use(ProjectNestedShellContext);
 
   if (!isProjectCodeRoot) {
     return <Outlet />;
+  }
+
+  if (isProjectNestedShell) {
+    return <ProjectCodeNestedRoute runtimeConfig={runtimeConfig} />;
   }
 
   return (
@@ -50,6 +55,15 @@ function ProjectCodeRoute() {
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
+}
+
+function ProjectCodeNestedRoute({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+
+  return <ProjectCodeScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectCodeRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -86,6 +100,7 @@ function ProjectCodeScreen({
 }) {
   const { ownerName, projectName } = Route.useParams();
   const navigate = useNavigate();
+  const isProjectNestedShell = use(ProjectNestedShellContext);
   const codeQuery = useQuery(
     codeBrowserQueryOptions(runtimeConfig, { ownerName, projectName, branch: "", path: "" }),
   );
@@ -102,6 +117,12 @@ function ProjectCodeScreen({
 
   if (!project || !codeQuery.data) {
     return null;
+  }
+
+  if (isProjectNestedShell) {
+    return (
+      <ProjectCodeBody code={codeQuery.data} project={project} runtimeConfig={runtimeConfig} />
+    );
   }
 
   return (

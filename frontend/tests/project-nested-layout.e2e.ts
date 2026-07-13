@@ -119,6 +119,34 @@ test("project issues to branches keeps the legacy project shell DOM nodes mounte
   await expectProjectBranchesGeometry(page);
 });
 
+test("project issues to exact no-head code root keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page, { codeNoHead: true });
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/code")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/code(?:\?|$)/);
+  await expect(page.locator(".project-page-wrap .alert.alert-block")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".project-page-wrap .alert.alert-block")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+});
+
 test("project issues to new issue form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -2370,8 +2398,13 @@ async function mockProjectHomeAndIssues(
   page: Page,
   {
     isForkedFromOrigin = false,
+    codeNoHead = false,
     pullRequestChangesErrorStatus,
-  }: { isForkedFromOrigin?: boolean; pullRequestChangesErrorStatus?: 403 | 404 } = {},
+  }: {
+    isForkedFromOrigin?: boolean;
+    codeNoHead?: boolean;
+    pullRequestChangesErrorStatus?: 403 | 404;
+  } = {},
 ) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -2547,6 +2580,18 @@ async function mockProjectHomeAndIssues(
         projectName: "sample",
         totalCount: 0,
         totalPages: 0,
+      });
+    if (path.endsWith("/projects/admin/sample/code"))
+      return json({
+        branches: [],
+        breadcrumbs: [],
+        entries: [],
+        file: null,
+        noHead: codeNoHead,
+        ownerName: "admin",
+        path: "",
+        projectName: "sample",
+        selectedBranch: codeNoHead ? "" : "main",
       });
     if (path.endsWith("/projects/admin/sample/search")) {
       if (new URL(route.request().url()).searchParams.get("keyword") === "forbidden") {
