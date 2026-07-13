@@ -113,6 +113,41 @@ test("project issues to new issue form keeps the legacy project shell DOM nodes 
   await expectProjectIssueFormGeometry(page);
 });
 
+test("project issues to issue detail keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/issue/11")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/issue\/11(?:\?|$)/);
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await expect(page.locator(".board-header.issue .title")).toContainText("Sample issue");
+  await expect(
+    page.locator(".project-menu-gruop li", {
+      has: page.locator("a[href$='/admin/sample/issues']"),
+    }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueDetailGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".project-page-wrap.board-view")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectIssueDetailGeometry(page);
+});
+
 test("project branches to milestones keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1113,6 +1148,49 @@ async function expectProjectIssueFormGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectIssueDetailGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap.board-view");
+    const boardHeader = rect(".board-header.issue");
+    const boardBody = rect(".board-body");
+    return {
+      boardBodyBottom: boardBody.bottom,
+      boardBodyTop: boardBody.top,
+      boardHeaderBottom: boardHeader.bottom,
+      boardHeaderTop: boardHeader.top,
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.boardHeaderTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.boardHeaderBottom).toBeGreaterThan(metrics.boardHeaderTop);
+  expect(metrics.boardBodyTop).toBeGreaterThanOrEqual(metrics.boardHeaderBottom);
+  expect(metrics.boardBodyBottom).toBeGreaterThan(metrics.boardBodyTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectForkGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -1731,6 +1809,25 @@ async function mockProjectHomeAndIssues(
         movableIssueProjects: [],
       });
     if (path.endsWith("/issues/parent-options")) return json({ items: [] });
+    if (path.endsWith("/issues/11"))
+      return json({
+        bodyMarkdown: "Sample body",
+        canBeDeleted: true,
+        childIssues: [],
+        comments: [],
+        createdLabel: "Jul 13, 2026",
+        issueId: 11,
+        issueNumber: 11,
+        labels: [],
+        ownerName: "admin",
+        projectName: "sample",
+        state: "open",
+        timeline: [],
+        title: "Sample issue",
+        viewerCanComment: true,
+        viewerCanUpdate: true,
+        viewerCanWatch: true,
+      });
     if (path.endsWith("/assignable-users") || path.endsWith("/issue-search-users"))
       return json({ items: [], total: 0, truncated: false });
     if (path.endsWith("/projects/admin/sample/issues"))

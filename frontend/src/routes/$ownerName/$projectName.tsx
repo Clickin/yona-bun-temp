@@ -24,7 +24,11 @@ import { pullRequestCreateFormOptionsQueryOptions } from "../../api/pull-request
 import { isSearchType, projectSearchQueryOptions } from "../../api/search";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
-import { readProjectIssueFormOptions, readSessionBootstrap } from "../../auth-workspace-client";
+import {
+  readIssueDetail,
+  readProjectIssueFormOptions,
+  readSessionBootstrap,
+} from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -114,11 +118,12 @@ function ProjectHomeRoute() {
   const changeVcsPath = `${homePath}/changeVCS`;
   const labelsPath = `${homePath}/issue/labelsform`;
   const issueFormPath = `${homePath}/issueform`;
+  const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
   const searchPath = `${homePath}/search`;
-  const active =
+  const standardActive =
     pathname === homePath
       ? "home"
       : pathname === issuesPath
@@ -164,6 +169,7 @@ function ProjectHomeRoute() {
                                             : pathname === labelsPath
                                               ? "labels"
                                               : null;
+  const active = issueDetailNumber !== null ? "issueDetail" : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -189,6 +195,7 @@ function ProjectHomeRouteShell({
     | "delete"
     | "home"
     | "issue"
+    | "issueDetail"
     | "issueform"
     | "labels"
     | "members"
@@ -218,6 +225,19 @@ function ProjectHomeRouteShell({
     enabled: active === "issueform",
     queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
     queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+  });
+  const issueDetailNumber = exactProjectIssueNumber(
+    useRouterState({ select: (state) => state.location.pathname }),
+    `/${ownerName}/${projectName}`,
+  );
+  const issueDetailQuery = useQuery({
+    enabled: active === "issueDetail" && issueDetailNumber !== null,
+    queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, issueDetailNumber ?? 0),
+    queryKey: ["project-issue-detail", ownerName, projectName, issueDetailNumber ?? 0],
+    retry(failureCount, error) {
+      return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
   });
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const projectSearch = projectSearchRouteSearch(locationHref);
@@ -255,6 +275,7 @@ function ProjectHomeRouteShell({
   const preserveForkShellRef = useRef(false);
   const preserveWatchersShellRef = useRef(false);
   const preserveSearchShellRef = useRef(false);
+  const preserveIssueDetailShellRef = useRef(false);
   const previousSearchHrefRef = useRef(locationHref);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
@@ -278,6 +299,14 @@ function ProjectHomeRouteShell({
   ) {
     preserveSearchShellRef.current = false;
   }
+  if (active === "issueDetail" && previousActiveRef.current !== "issueDetail") {
+    preserveIssueDetailShellRef.current = true;
+  } else if (
+    active !== "issueDetail" ||
+    (issueDetailQuery.error && projectRouteErrorStatus(issueDetailQuery.error) !== 404)
+  ) {
+    preserveIssueDetailShellRef.current = false;
+  }
   previousActiveRef.current = active;
   previousSearchHrefRef.current = locationHref;
 
@@ -285,6 +314,16 @@ function ProjectHomeRouteShell({
   // through its own standalone response. Keep that branch outside the nested
   // project shell; the successful form is the only child body owned here.
   if (active === "issueform" && (query.error || issueFormOptionsQuery.error)) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "issueDetail" &&
+    (!query.data ||
+      (!issueDetailQuery.data &&
+        projectRouteErrorStatus(issueDetailQuery.error) !== 404 &&
+        !preserveIssueDetailShellRef.current))
+  ) {
     return <Outlet />;
   }
 
@@ -451,6 +490,7 @@ function ProjectLayoutScreen({
     | "delete"
     | "home"
     | "issue"
+    | "issueDetail"
     | "issueform"
     | "labels"
     | "members"
@@ -477,49 +517,51 @@ function ProjectLayoutScreen({
 
   return (
     <>
-      <title>
-        {active === "home"
-          ? `${projectName} - ${t("menu.home")}`
-          : active === "issue"
-            ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
-            : active === "issueform"
-              ? `${t("title.newIssue")} - ${ownerName}/${projectName}`
-              : active === "milestone"
-                ? `${projectName} - milestone - ${ownerName}/${projectName}`
-                : active === "newMilestone"
-                  ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
-                  : active === "newPullRequest"
-                    ? `${t(
-                        pullRequestFormBadRequest
-                          ? "error.pullRequest.empty.from.repository"
-                          : "title.newPullRequest",
-                      )} - ${ownerName}/${projectName}`
-                    : active === "newFork"
-                      ? `${t("fork")} - ${ownerName}/${projectName}`
-                      : active === "watchers"
-                        ? `${t("title.projectWatchers")} - ${ownerName}/${projectName}`
-                        : active === "search"
-                          ? `${t("title.search")} - ${ownerName}/${projectName}`
-                          : active === "postform"
-                            ? `${t("post.new")} - ${ownerName}/${projectName}`
-                            : active === "board"
-                              ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                              : active === "pullRequest"
-                                ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                                : active === "review"
-                                  ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                                  : active === "setting"
-                                    ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                                    : active === "labels"
-                                      ? `${t("label")} - ${ownerName}/${projectName}`
-                                      : active === "members"
-                                        ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                                        : active === "delete"
-                                          ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                          : active === "changeVcs"
-                                            ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                            : `${t("title.branches")} - ${ownerName}/${projectName}`}
-      </title>
+      {active === "issueDetail" ? null : (
+        <title>
+          {active === "home"
+            ? `${projectName} - ${t("menu.home")}`
+            : active === "issue"
+              ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
+              : active === "issueform"
+                ? `${t("title.newIssue")} - ${ownerName}/${projectName}`
+                : active === "milestone"
+                  ? `${projectName} - milestone - ${ownerName}/${projectName}`
+                  : active === "newMilestone"
+                    ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
+                    : active === "newPullRequest"
+                      ? `${t(
+                          pullRequestFormBadRequest
+                            ? "error.pullRequest.empty.from.repository"
+                            : "title.newPullRequest",
+                        )} - ${ownerName}/${projectName}`
+                      : active === "newFork"
+                        ? `${t("fork")} - ${ownerName}/${projectName}`
+                        : active === "watchers"
+                          ? `${t("title.projectWatchers")} - ${ownerName}/${projectName}`
+                          : active === "search"
+                            ? `${t("title.search")} - ${ownerName}/${projectName}`
+                            : active === "postform"
+                              ? `${t("post.new")} - ${ownerName}/${projectName}`
+                              : active === "board"
+                                ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                                : active === "pullRequest"
+                                  ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                                  : active === "review"
+                                    ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                                    : active === "setting"
+                                      ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                                      : active === "labels"
+                                        ? `${t("label")} - ${ownerName}/${projectName}`
+                                        : active === "members"
+                                          ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                          : active === "delete"
+                                            ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                            : active === "changeVcs"
+                                              ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                              : `${t("title.branches")} - ${ownerName}/${projectName}`}
+        </title>
+      )}
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
@@ -537,14 +579,16 @@ function ProjectLayoutScreen({
                       ? "board"
                       : active === "issueform"
                         ? "issue"
-                        : active === "delete" ||
-                            active === "changeVcs" ||
-                            active === "labels" ||
-                            active === "members" ||
-                            active === "transfer" ||
-                            active === "webhooks"
-                          ? "setting"
-                          : active
+                        : active === "issueDetail"
+                          ? "issue"
+                          : active === "delete" ||
+                              active === "changeVcs" ||
+                              active === "labels" ||
+                              active === "members" ||
+                              active === "transfer" ||
+                              active === "webhooks"
+                            ? "setting"
+                            : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -567,13 +611,30 @@ function ProjectLayoutScreen({
         />
       ) : (
         <ProjectNestedShellContext
-          value={active === "newFork" || active === "watchers" || active === "search"}
+          value={
+            active === "issueDetail" ||
+            active === "newFork" ||
+            active === "watchers" ||
+            active === "search"
+          }
         >
           <Outlet />
         </ProjectNestedShellContext>
       )}
     </>
   );
+}
+
+function exactProjectIssueNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/issue/(\\d+)$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function projectRouteErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  return typeof error.status === "number" ? error.status : undefined;
 }
 
 function projectPullRequestFormSearch(locationHref: string) {
