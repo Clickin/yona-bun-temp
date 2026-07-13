@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegacyI18nProvider } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
 import { OrganizationPullRequestsPage, type OrganizationPullRequestsSearch } from "./pullrequests";
 
 export const Route = createFileRoute("/organizations/$organizationName/closedPullrequests")({
@@ -19,15 +17,11 @@ function OrganizationClosedPullRequestsRoute() {
   const search = Route.useSearch();
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <OrganizationPullRequestsPage
-          category="closed"
-          organizationName={organizationName}
-          runtimeConfig={runtimeConfig}
-          search={search}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <OrganizationPullRequestsPage
+      category="closed"
+      organizationName={organizationName}
+      runtimeConfig={runtimeConfig}
+      search={search}
+    />
   );
 }

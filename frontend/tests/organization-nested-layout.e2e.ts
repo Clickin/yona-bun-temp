@@ -312,6 +312,58 @@ test("organization settings to delete form keeps the legacy shell nodes mounted"
   await expectShellContainment(page);
 });
 
+test("organization pull requests to closed pull requests keeps the legacy shell nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationNestedLayout(page);
+
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto(`${basePath}/organizations/weblabs/pullrequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Pull request");
+
+  await page.evaluate(() => {
+    (
+      window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
+    ).__organizationNestedLayoutNodes = {
+      header: document.querySelector(".gnb-outer"),
+      organizationHeader: document.querySelector(".project-header-outer"),
+      organizationMenu: document.querySelector(".project-menu-outer"),
+    };
+  });
+
+  await page.locator(".pullrequeset-tab-menu button").nth(1).click();
+  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/closedPullrequests`);
+  await expect(page.locator(".pullrequeset-tab-menu > li.active")).toHaveText("Closed0");
+  await expect(page.locator(".project-menu-gruop > li.active a")).toHaveText("Pull request");
+
+  expect(
+    await page.evaluate(() => {
+      const saved = (
+        window as Window &
+          typeof globalThis & {
+            __organizationNestedLayoutNodes?: {
+              header: Element | null;
+              organizationHeader: Element | null;
+              organizationMenu: Element | null;
+            };
+          }
+      ).__organizationNestedLayoutNodes;
+      return Boolean(
+        saved &&
+        saved.header === document.querySelector(".gnb-outer") &&
+        saved.organizationHeader === document.querySelector(".project-header-outer") &&
+        saved.organizationMenu === document.querySelector(".project-menu-outer"),
+      );
+    }),
+  ).toBe(true);
+
+  await expectShellContainment(page);
+  await page.setViewportSize({ height: 844, width: 390 });
+  await expectShellContainment(page);
+});
+
 async function expectShellContainment(page: Page) {
   const metrics = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");

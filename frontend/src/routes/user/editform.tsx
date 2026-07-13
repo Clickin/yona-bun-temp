@@ -40,7 +40,9 @@ function UserProfileSettingsRoute() {
       ? "emails"
       : pathname.endsWith("/user/editform/password")
         ? "password"
-        : null;
+        : pathname.endsWith("/user/editform/token")
+          ? "token"
+          : null;
 
   if (!activeTab) {
     return <Outlet />;
@@ -62,7 +64,7 @@ function UserSettingsNestedLayout({
   activeTab,
 }: {
   runtimeConfig: RuntimeConfig;
-  activeTab: "profile" | "emails" | "password";
+  activeTab: "profile" | "emails" | "password" | "token";
 }) {
   const { t } = useLegacyMessages();
   const workspaceQuery = useQuery({
@@ -76,7 +78,7 @@ function UserSettingsNestedLayout({
       <UserProfileSettingsTitle loginId={loginId} />
       <div className="site-breadcrumb-outer">
         <div className="site-breadcrumb-inner">
-          <h3>{t("userinfo.accountSetting")}</h3>
+          <h3>{t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}</h3>
         </div>
       </div>
       <div className="page-wrap-outer">

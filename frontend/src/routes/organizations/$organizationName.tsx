@@ -34,6 +34,7 @@ function OrganizationHomeRoute() {
   const isBoards = pathname === `${exactPath}/boards`;
   const isIssues = pathname === `${exactPath}/issues`;
   const isPullRequests = pathname === `${exactPath}/pullrequests`;
+  const isClosedPullRequests = pathname === `${exactPath}/closedPullrequests`;
   const isMembers = pathname === `${exactPath}/members`;
   const isSettings = pathname === `${exactPath}/settingform`;
   const isDeleteForm = pathname === `${exactPath}/deleteForm`;
@@ -43,6 +44,7 @@ function OrganizationHomeRoute() {
     !isBoards &&
     !isIssues &&
     !isPullRequests &&
+    !isClosedPullRequests &&
     !isMembers &&
     !isSettings &&
     !isDeleteForm
@@ -63,6 +65,7 @@ function OrganizationNestedLayout({
   const { organizationName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isPullRequests = pathname === `/organizations/${organizationName}/pullrequests`;
+  const isClosedPullRequests = pathname === `/organizations/${organizationName}/closedPullrequests`;
   const isSettings = pathname === `/organizations/${organizationName}/settingform`;
   const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;
   const organizationQuery = useQuery({
@@ -97,7 +100,7 @@ function OrganizationNestedLayout({
             active={
               isSettings || isDeleteForm
                 ? "none"
-                : isPullRequests
+                : isPullRequests || isClosedPullRequests
                   ? "pullrequests"
                   : pathname.endsWith("/issues")
                     ? "issues"
