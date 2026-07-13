@@ -474,6 +474,40 @@ test("project settings to members keeps the legacy project shell DOM nodes mount
   await expectProjectMembersGeometry(page);
 });
 
+test("project settings alias to canonical settings form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const aliasScrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await captureProjectShellNodes(page);
+
+  await page.locator("#subMenuProjectSetting a[href$='/admin/sample/settingform']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/settingform(?:\?|$)/);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
+  await expect(page.locator(".project-setting li")).toHaveClass(/active/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSettingsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSettingsGeometry(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    aliasScrollWidth,
+  );
+});
+
 test("project members to webhooks keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {

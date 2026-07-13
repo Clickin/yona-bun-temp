@@ -13,6 +13,7 @@ function ProjectSettingFormRoute() {
     <ProjectSettingRouteScreen
       ownerName={ownerName}
       projectName={projectName}
+      renderProjectShell={false}
       runtimeConfig={runtimeConfig}
       selfRoutePath="/$ownerName/$projectName/settingform"
     />
