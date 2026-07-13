@@ -36,8 +36,17 @@ function OrganizationHomeRoute() {
   const isPullRequests = pathname === `${exactPath}/pullrequests`;
   const isMembers = pathname === `${exactPath}/members`;
   const isSettings = pathname === `${exactPath}/settingform`;
+  const isDeleteForm = pathname === `${exactPath}/deleteForm`;
 
-  if (!isHome && !isBoards && !isIssues && !isPullRequests && !isMembers && !isSettings) {
+  if (
+    !isHome &&
+    !isBoards &&
+    !isIssues &&
+    !isPullRequests &&
+    !isMembers &&
+    !isSettings &&
+    !isDeleteForm
+  ) {
     return <Outlet />;
   }
 
@@ -55,6 +64,7 @@ function OrganizationNestedLayout({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isPullRequests = pathname === `/organizations/${organizationName}/pullrequests`;
   const isSettings = pathname === `/organizations/${organizationName}/settingform`;
+  const isDeleteForm = pathname === `/organizations/${organizationName}/deleteForm`;
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
@@ -73,7 +83,7 @@ function OrganizationNestedLayout({
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell
-          projectSearchScope={isSettings ? undefined : { organizationName }}
+          projectSearchScope={isSettings || isDeleteForm ? undefined : { organizationName }}
           runtimeConfig={runtimeConfig}
           showLegacyProjectHeaderLinks
         >
@@ -85,7 +95,7 @@ function OrganizationNestedLayout({
           />
           <OrganizationMenu
             active={
-              isSettings
+              isSettings || isDeleteForm
                 ? "none"
                 : isPullRequests
                   ? "pullrequests"

@@ -34,10 +34,15 @@ function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  const rendersNestedUserSettingsLayout =
-    pathname.endsWith("/user/editform") || pathname.endsWith("/user/editform/emails");
+  const activeTab = pathname.endsWith("/user/editform")
+    ? "profile"
+    : pathname.endsWith("/user/editform/emails")
+      ? "emails"
+      : pathname.endsWith("/user/editform/password")
+        ? "password"
+        : null;
 
-  if (!rendersNestedUserSettingsLayout) {
+  if (!activeTab) {
     return <Outlet />;
   }
 
@@ -45,10 +50,7 @@ function UserProfileSettingsRoute() {
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <UserSettingsNestedLayout
-            runtimeConfig={runtimeConfig}
-            showProfileBody={pathname.endsWith("/user/editform")}
-          />
+          <UserSettingsNestedLayout runtimeConfig={runtimeConfig} activeTab={activeTab} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
@@ -57,10 +59,10 @@ function UserProfileSettingsRoute() {
 
 function UserSettingsNestedLayout({
   runtimeConfig,
-  showProfileBody,
+  activeTab,
 }: {
   runtimeConfig: RuntimeConfig;
-  showProfileBody: boolean;
+  activeTab: "profile" | "emails" | "password";
 }) {
   const { t } = useLegacyMessages();
   const workspaceQuery = useQuery({
@@ -79,8 +81,8 @@ function UserSettingsNestedLayout({
       </div>
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <EditTabMenu active={showProfileBody ? "profile" : "emails"} />
-          {showProfileBody ? (
+          <EditTabMenu active={activeTab} />
+          {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />
           ) : (
             <Outlet />
