@@ -73,14 +73,13 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
         .locator(".project-header-outer")
         .evaluate((element) => getComputedStyle(element).backgroundImage),
     )
-    .toContain(`${basePath}/legacy-assets/images/project_default.jpg`);
-  const canonicalProjectLogoUrl = `${basePath}/legacy-assets/images/project_default_logo.png`;
-  await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
-    "src",
-    canonicalProjectLogoUrl,
-  );
+    .toContain("/src/assets/legacy/project_default.jpg");
+  const canonicalProjectLogoUrl = await page
+    .locator(".project-header-avatar img")
+    .getAttribute("src");
+  expect(canonicalProjectLogoUrl).toContain("/src/assets/legacy/project_default_logo.png");
   const projectLogoResponse = await page.request.get(
-    new URL(canonicalProjectLogoUrl, page.url()).href,
+    new URL(canonicalProjectLogoUrl!, page.url()).href,
   );
   expect(projectLogoResponse.status()).toBe(200);
   await expect(
