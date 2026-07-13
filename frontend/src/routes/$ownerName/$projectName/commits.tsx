@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -15,7 +15,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
 type ProjectCodeHistorySearch = {
   page?: number;
@@ -62,6 +62,7 @@ function ProjectCodeHistoryRoute() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const commitsRootPath = `/${ownerName}/${projectName}/commits`;
   const isProjectCodeHistoryRoot = pathname === commitsRootPath;
+  const nestedProjectShell = use(ProjectNestedShellContext);
 
   if (!isProjectCodeHistoryRoot) {
     return (
@@ -72,12 +73,31 @@ function ProjectCodeHistoryRoute() {
     );
   }
 
+  if (nestedProjectShell) {
+    return <ProjectCodeHistoryNestedRoute runtimeConfig={runtimeConfig} />;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
         <ProjectCodeHistoryRouteShell runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
+  );
+}
+
+function ProjectCodeHistoryNestedRoute({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+
+  return (
+    <ProjectCodeHistoryScreen
+      nestedProjectShell
+      project={projectQuery.data}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
@@ -105,16 +125,22 @@ function ProjectCodeHistoryRouteShell({ runtimeConfig }: { runtimeConfig: Runtim
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
     >
-      <ProjectCodeHistoryScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      <ProjectCodeHistoryScreen
+        nestedProjectShell={false}
+        project={projectQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
     </SiteLayoutShell>
   );
 }
 
 function ProjectCodeHistoryScreen({
+  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
-  project: ProjectContainer;
+  nestedProjectShell: boolean;
+  project: ProjectContainer | undefined;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -123,15 +149,19 @@ function ProjectCodeHistoryScreen({
     codeHistoryQueryOptions(runtimeConfig, { ownerName, page, path: "", projectName }),
   );
 
-  if (!historyQuery.data) {
+  if (!project || !historyQuery.data) {
     return null;
   }
 
   return (
     <>
       <ProjectCodeHistoryTitle />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+      {nestedProjectShell ? null : (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      )}
       <ProjectCodeHistoryBody
         history={historyQuery.data}
         ownerName={ownerName}

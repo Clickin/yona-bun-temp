@@ -103,6 +103,7 @@ function ProjectHomeRoute() {
   const issuesPath = `${homePath}/issues`;
   const branchesPath = `${homePath}/branches`;
   const codePath = `${homePath}/code`;
+  const commitsPath = `${homePath}/commits`;
   const milestonesPath = `${homePath}/milestones`;
   const newMilestonePath = `${homePath}/newMilestoneForm`;
   const postsPath = `${homePath}/posts`;
@@ -146,47 +147,49 @@ function ProjectHomeRoute() {
           ? "issueform"
           : pathname === codePath
             ? "code"
-            : pathname === branchesPath
-              ? "code"
-              : pathname === milestonesPath
-                ? "milestone"
-                : pathname === newMilestonePath
-                  ? "newMilestone"
-                  : pathname === postsPath
-                    ? "board"
-                    : pathname === postFormPath
-                      ? "postform"
-                      : pathname === pullRequestsPath ||
-                          pathname === closedPullRequestsPath ||
-                          pathname === sentPullRequestsPath
-                        ? "pullRequest"
-                        : pathname === newPullRequestPath
-                          ? "newPullRequest"
-                          : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
-                            ? "newFork"
-                            : pathname === watchersPath
-                              ? "watchers"
-                              : pathname === searchPath
-                                ? "search"
-                                : pathname === statisticsPath
-                                  ? "statistics"
-                                  : pathname === reviewsPath
-                                    ? "review"
-                                    : pathname === settingPath || pathname === settingFormPath
-                                      ? "setting"
-                                      : pathname === membersPath
-                                        ? "members"
-                                        : pathname === webhooksPath
-                                          ? "webhooks"
-                                          : pathname === transferPath
-                                            ? "transfer"
-                                            : pathname === deletePath
-                                              ? "delete"
-                                              : pathname === changeVcsPath
-                                                ? "changeVcs"
-                                                : pathname === labelsPath
-                                                  ? "labels"
-                                                  : null;
+            : pathname === commitsPath
+              ? "codeHistory"
+              : pathname === branchesPath
+                ? "code"
+                : pathname === milestonesPath
+                  ? "milestone"
+                  : pathname === newMilestonePath
+                    ? "newMilestone"
+                    : pathname === postsPath
+                      ? "board"
+                      : pathname === postFormPath
+                        ? "postform"
+                        : pathname === pullRequestsPath ||
+                            pathname === closedPullRequestsPath ||
+                            pathname === sentPullRequestsPath
+                          ? "pullRequest"
+                          : pathname === newPullRequestPath
+                            ? "newPullRequest"
+                            : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
+                              ? "newFork"
+                              : pathname === watchersPath
+                                ? "watchers"
+                                : pathname === searchPath
+                                  ? "search"
+                                  : pathname === statisticsPath
+                                    ? "statistics"
+                                    : pathname === reviewsPath
+                                      ? "review"
+                                      : pathname === settingPath || pathname === settingFormPath
+                                        ? "setting"
+                                        : pathname === membersPath
+                                          ? "members"
+                                          : pathname === webhooksPath
+                                            ? "webhooks"
+                                            : pathname === transferPath
+                                              ? "transfer"
+                                              : pathname === deletePath
+                                                ? "delete"
+                                                : pathname === changeVcsPath
+                                                  ? "changeVcs"
+                                                  : pathname === labelsPath
+                                                    ? "labels"
+                                                    : null;
   const active =
     pullRequestChangesNumber !== null
       ? "pullRequestChanges"
@@ -229,6 +232,7 @@ function ProjectHomeRouteShell({
     | "board"
     | "changeVcs"
     | "code"
+    | "codeHistory"
     | "delete"
     | "home"
     | "issue"
@@ -606,6 +610,7 @@ function ProjectLayoutScreen({
     | "board"
     | "changeVcs"
     | "code"
+    | "codeHistory"
     | "delete"
     | "home"
     | "issue"
@@ -651,7 +656,8 @@ function ProjectLayoutScreen({
       active === "postDetail" ||
       active === "pullRequestDetail" ||
       active === "pullRequestEdit" ||
-      active === "pullRequestChanges" ? null : (
+      active === "pullRequestChanges" ||
+      active === "codeHistory" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -704,42 +710,44 @@ function ProjectLayoutScreen({
           active={
             active === "watchers" || (active === "search" && !searchForbidden)
               ? undefined
-              : active === "search"
-                ? "home"
-                : active === "newMilestone"
-                  ? "milestone"
-                  : active === "milestoneDetail"
+              : active === "codeHistory"
+                ? "code"
+                : active === "search"
+                  ? "home"
+                  : active === "newMilestone"
                     ? "milestone"
-                    : active === "milestoneEdit"
+                    : active === "milestoneDetail"
                       ? "milestone"
-                      : active === "newPullRequest"
-                        ? "pullRequest"
-                        : active === "newFork"
+                      : active === "milestoneEdit"
+                        ? "milestone"
+                        : active === "newPullRequest"
                           ? "pullRequest"
-                          : active === "postform"
-                            ? "board"
-                            : active === "postDetail"
+                          : active === "newFork"
+                            ? "pullRequest"
+                            : active === "postform"
                               ? "board"
-                              : active === "issueform"
-                                ? "issue"
-                                : active === "issueDetail"
+                              : active === "postDetail"
+                                ? "board"
+                                : active === "issueform"
                                   ? "issue"
-                                  : active === "issueEdit"
+                                  : active === "issueDetail"
                                     ? "issue"
-                                    : active === "pullRequestDetail"
-                                      ? "pullRequest"
-                                      : active === "pullRequestEdit"
+                                    : active === "issueEdit"
+                                      ? "issue"
+                                      : active === "pullRequestDetail"
                                         ? "pullRequest"
-                                        : active === "pullRequestChanges"
+                                        : active === "pullRequestEdit"
                                           ? "pullRequest"
-                                          : active === "delete" ||
-                                              active === "changeVcs" ||
-                                              active === "labels" ||
-                                              active === "members" ||
-                                              active === "transfer" ||
-                                              active === "webhooks"
-                                            ? "setting"
-                                            : active
+                                          : active === "pullRequestChanges"
+                                            ? "pullRequest"
+                                            : active === "delete" ||
+                                                active === "changeVcs" ||
+                                                active === "labels" ||
+                                                active === "members" ||
+                                                active === "transfer" ||
+                                                active === "webhooks"
+                                              ? "setting"
+                                              : active
           }
           basePath={runtimeConfig.basePath}
           project={project}
@@ -773,6 +781,7 @@ function ProjectLayoutScreen({
             active === "pullRequestEdit" ||
             active === "pullRequestChanges" ||
             active === "code" ||
+            active === "codeHistory" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search" ||
