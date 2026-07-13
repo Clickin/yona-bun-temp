@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { HTMLAttributes } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
@@ -21,11 +21,10 @@ import {
   readProjectMilestone,
   readSessionBootstrap,
 } from "../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyIssueItemRowAttrs = {
@@ -63,38 +62,43 @@ function restApiErrorStatus(error: unknown) {
 
 function ProjectMilestoneDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const { milestoneId } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (pathname.endsWith(`/milestone/${milestoneId}/editform`)) {
+    return <Outlet />;
+  }
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectMilestoneDetailScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectMilestoneDetailScreen
+      nestedProjectShell={nestedProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
-function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectMilestoneDetailScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, milestoneId } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isEditChildRoute = pathname.endsWith(`/milestone/${milestoneId}/editform`);
   const numericMilestoneId = Number(milestoneId) || 0;
-  const projectQuery = useQuery({
-    ...readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-    enabled: !isEditChildRoute,
-  });
-  const sessionQuery = useQuery({
-    ...currentSessionQueryOptions(runtimeConfig),
-    enabled: !isEditChildRoute,
-  });
+  const projectQuery = useQuery(
+    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
+  );
+  const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const milestoneQuery = useQuery({
-    enabled: !isEditChildRoute,
     queryFn: () => readProjectMilestone(runtimeConfig, ownerName, projectName, numericMilestoneId),
     queryKey: ["project", ownerName, projectName, "milestones", numericMilestoneId],
+    retry(failureCount, error) {
+      return restApiErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
   });
-
-  if (isEditChildRoute) {
-    return <Outlet />;
-  }
 
   if (!projectQuery.data) {
     return null;
@@ -121,6 +125,15 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
     (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
 
   if (milestoneNotFound) {
+    if (nestedProjectShell) {
+      return (
+        <>
+          <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
+          <ProjectMilestoneNotFoundBody />
+        </>
+      );
+    }
+
     return (
       <SiteLayoutShell
         projectSearchScope={projectSearchScope}
@@ -135,6 +148,10 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
   }
 
   if (milestoneQuery.isPending || !milestoneQuery.data?.milestone) {
+    if (nestedProjectShell) {
+      return null;
+    }
+
     return (
       <SiteLayoutShell
         projectSearchScope={projectSearchScope}
@@ -160,29 +177,41 @@ function ProjectMilestoneDetailScreen({ runtimeConfig }: { runtimeConfig: Runtim
       currentUser,
     );
 
-  return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
+  const detailContent = (
+    <>
       <ProjectMilestoneDetailTitle
         milestoneTitle={stringField(milestoneQuery.data.milestone.title)}
         ownerName={ownerName}
         projectName={projectName}
       />
-      {projectShell}
-      <MilestoneDetailAssets
-        basePath={runtimeConfig.basePath}
-        ownerName={ownerName}
-        projectName={projectName}
-      />
+      {nestedProjectShell ? null : (
+        <MilestoneDetailAssets
+          basePath={runtimeConfig.basePath}
+          ownerName={ownerName}
+          projectName={projectName}
+        />
+      )}
       <ProjectMilestoneDetailBody
         currentUser={currentUser}
         milestone={milestoneQuery.data.milestone}
         runtimeConfig={runtimeConfig}
         viewerIsProjectMember={viewerIsProjectMember}
       />
+    </>
+  );
+
+  if (nestedProjectShell) {
+    return detailContent;
+  }
+
+  return (
+    <SiteLayoutShell
+      projectSearchScope={projectSearchScope}
+      runtimeConfig={runtimeConfig}
+      showLegacyProjectHeaderLinks
+    >
+      {projectShell}
+      {detailContent}
     </SiteLayoutShell>
   );
 }

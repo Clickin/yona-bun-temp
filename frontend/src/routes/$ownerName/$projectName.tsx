@@ -26,6 +26,7 @@ import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api
 import { RestApiError } from "../../api/rest-client";
 import {
   readIssueDetail,
+  readProjectMilestone,
   readProjectIssueFormOptions,
   readSessionBootstrap,
 } from "../../auth-workspace-client";
@@ -120,6 +121,7 @@ function ProjectHomeRoute() {
   const issueFormPath = `${homePath}/issueform`;
   const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
+  const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -171,11 +173,13 @@ function ProjectHomeRoute() {
                                               ? "labels"
                                               : null;
   const active =
-    issueEditNumber !== null
-      ? "issueEdit"
-      : issueDetailNumber !== null
-        ? "issueDetail"
-        : standardActive;
+    milestoneDetailId !== null
+      ? "milestoneDetail"
+      : issueEditNumber !== null
+        ? "issueEdit"
+        : issueDetailNumber !== null
+          ? "issueDetail"
+          : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -207,6 +211,7 @@ function ProjectHomeRouteShell({
     | "labels"
     | "members"
     | "milestone"
+    | "milestoneDetail"
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
@@ -254,6 +259,20 @@ function ProjectHomeRouteShell({
     enabled: active === "issueEdit" && issueEditNumber !== null,
     queryFn: () => readIssueDetail(runtimeConfig, ownerName, projectName, issueEditNumber ?? 0),
     queryKey: ["project", ownerName, projectName, "issues", issueEditNumber ?? 0],
+    retry(failureCount, error) {
+      return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
+  });
+  const milestoneDetailId = exactProjectMilestoneDetailId(
+    useRouterState({ select: (state) => state.location.pathname }),
+    `/${ownerName}/${projectName}`,
+  );
+  const milestoneDetailQuery = useQuery({
+    enabled: active === "milestoneDetail" && milestoneDetailId !== null,
+    queryFn: () =>
+      readProjectMilestone(runtimeConfig, ownerName, projectName, milestoneDetailId ?? 0),
+    queryKey: ["project", ownerName, projectName, "milestones", milestoneDetailId ?? 0],
     retry(failureCount, error) {
       return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
     },
@@ -362,6 +381,14 @@ function ProjectHomeRouteShell({
       (!issueEditQuery.data &&
         projectRouteErrorStatus(issueEditQuery.error) !== 404 &&
         !preserveIssueEditShellRef.current))
+  ) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "milestoneDetail" &&
+    milestoneDetailQuery.error &&
+    projectRouteErrorStatus(milestoneDetailQuery.error) !== 404
   ) {
     return <Outlet />;
   }
@@ -535,6 +562,7 @@ function ProjectLayoutScreen({
     | "labels"
     | "members"
     | "milestone"
+    | "milestoneDetail"
     | "newMilestone"
     | "newFork"
     | "newPullRequest"
@@ -557,7 +585,7 @@ function ProjectLayoutScreen({
 
   return (
     <>
-      {active === "issueDetail" || active === "issueEdit" ? null : (
+      {active === "issueDetail" || active === "issueEdit" || active === "milestoneDetail" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -611,31 +639,33 @@ function ProjectLayoutScreen({
               ? "home"
               : active === "newMilestone"
                 ? "milestone"
-                : active === "newPullRequest"
-                  ? "pullRequest"
-                  : active === "newFork"
+                : active === "milestoneDetail"
+                  ? "milestone"
+                  : active === "newPullRequest"
                     ? "pullRequest"
-                    : active === "postform"
-                      ? "board"
-                      : active === "issueform"
-                        ? "issue"
-                        : active === "issueDetail"
+                    : active === "newFork"
+                      ? "pullRequest"
+                      : active === "postform"
+                        ? "board"
+                        : active === "issueform"
                           ? "issue"
-                          : active === "issueEdit"
+                          : active === "issueDetail"
                             ? "issue"
-                            : active === "delete" ||
-                                active === "changeVcs" ||
-                                active === "labels" ||
-                                active === "members" ||
-                                active === "transfer" ||
-                                active === "webhooks"
-                              ? "setting"
-                              : active
+                            : active === "issueEdit"
+                              ? "issue"
+                              : active === "delete" ||
+                                  active === "changeVcs" ||
+                                  active === "labels" ||
+                                  active === "members" ||
+                                  active === "transfer" ||
+                                  active === "webhooks"
+                                ? "setting"
+                                : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
       />
-      {active === "milestone" ? (
+      {active === "milestone" || active === "milestoneDetail" ? (
         <link
           rel="stylesheet"
           href={prefixBasePath(
@@ -656,6 +686,7 @@ function ProjectLayoutScreen({
           value={
             active === "issueDetail" ||
             active === "issueEdit" ||
+            active === "milestoneDetail" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -678,6 +709,13 @@ function exactProjectIssueNumber(pathname: string, homePath: string) {
 function exactProjectIssueEditNumber(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/issue/(\\d+)/editform$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectMilestoneDetailId(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/milestone/(\\d+)$`,
   ).exec(pathname);
   return match ? Number(match[1]) : null;
 }
