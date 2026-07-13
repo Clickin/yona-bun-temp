@@ -27,6 +27,10 @@ export const globalColors = stylex.defineVars({
   transparent: "transparent",
   // _usermenu.less: .user-project-list .no-result color
   sidenavNoResultText: "mediumvioletred",
+  // _usermenu.less: .user-project-list .org-list:hover background-color
+  sidenavOrganizationHoverSurface: "#f1f1f1",
+  // _usermenu.less: .user-project-list .project-name.org-name color
+  sidenavOrganizationName: "#00bcd4",
   // _variables.less: @blue
   navigationAccent: "#5dbbe0",
   // _variables.less: @primary -> @orange

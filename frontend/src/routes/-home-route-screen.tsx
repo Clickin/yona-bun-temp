@@ -1217,6 +1217,113 @@ const authenticatedSidenavFavoriteShellStyles = stylex.create({
   },
 });
 
+const authenticatedSidenavFavoriteOrganizationRowStyles = stylex.create({
+  row: {
+    marginBottom: "8px",
+    marginLeft: 0,
+    marginTop: "3px",
+  },
+  header: {
+    alignItems: "center",
+    backgroundColor: {
+      default: null,
+      ":hover": globalColors.sidenavOrganizationHoverSurface,
+    },
+    cursor: {
+      default: null,
+      ":hover": "pointer",
+    },
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "1px 0",
+    position: "relative",
+  },
+  projectItem: {
+    fontSize: "14px",
+    fontWeight: 400,
+    overflow: "hidden",
+  },
+  itemContainer: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+  },
+  toggle: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    backgroundImage: "none",
+    borderStyle: "none",
+    boxShadow: "none",
+    color: "inherit",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontStretch: "inherit",
+    fontStyle: "inherit",
+    fontVariant: "inherit",
+    fontWeight: "inherit",
+    lineHeight: "inherit",
+    margin: 0,
+    minHeight: 0,
+    padding: 0,
+    textAlign: "left",
+    width: "auto",
+  },
+  realOrganizationToggle: {
+    marginRight: "29px",
+  },
+  logo: {
+    flexShrink: 0,
+    marginLeft: "2px",
+    overflow: "hidden",
+    paddingTop: "3px",
+    textAlign: "center",
+    width: "26px",
+  },
+  nameOwner: {
+    alignItems: "center",
+    color: globalColors.textOnAccent,
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontFamily: "Roboto, sans-serif",
+    fontWeight: 700,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: "1px 0",
+    WebkitFontSmoothing: "antialiased",
+  },
+  name: {
+    color: globalColors.sidenavOrganizationName,
+    fontFamily: "roboto, sans-serif",
+    fontSize: "14px",
+    maxWidth: "140px",
+    minWidth: "50px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    WebkitFontSmoothing: "antialiased",
+    whiteSpace: "nowrap",
+  },
+  owner: {
+    color: globalColors.sidenavAccountText,
+    flexShrink: 3,
+    fontSize: "12px",
+    maxWidth: "50px",
+    minWidth: "40px",
+    overflow: "hidden",
+    paddingRight: "10px",
+    textAlign: "right",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+});
+
 const authenticatedSidenavTabPanelStyles = stylex.create({
   panel: {
     borderRadius: "0 0 4px 4px",
@@ -2137,20 +2244,77 @@ function SidebarOrganizationList({
         id={sidebarDomId(idPrefix, "organizations")}
       >
         {ownProjects.length > 0 && showOwnProjects ? (
-          <li className="org-li">
-            <div className="org-list project-flex-container all-orgs">
+          <li
+            className={`org-li ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.row,
+              ).className
+            }`.trimEnd()}
+            data-stylex-owner={
+              isAuthenticatedSidenav
+                ? "authenticated-sidenav-favorite-organization-rows"
+                : undefined
+            }
+          >
+            <div
+              className={`org-list project-flex-container all-orgs ${
+                stylex.props(
+                  isAuthenticatedSidenav &&
+                    authenticatedSidenavFavoriteOrganizationRowStyles.header,
+                ).className
+              }`.trimEnd()}
+            >
               <button
                 aria-expanded={isOwnProjectsExpanded}
-                className="project-item project-item-container organization-toggle"
+                className={`project-item project-item-container organization-toggle ${
+                  stylex.props(
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
+                    isAuthenticatedSidenav &&
+                      authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
+                  ).className
+                }`.trimEnd()}
                 onClick={() => setIsOwnProjectsExpanded((expanded) => !expanded)}
                 type="button"
               >
-                <div className="flex-item site-logo">
+                <div
+                  className={`flex-item site-logo ${
+                    stylex.props(
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavFavoriteOrganizationRowStyles.logo,
+                    ).className
+                  }`.trimEnd()}
+                >
                   <i className="yobicon-angle-right"></i>
                 </div>
-                <div className="projectName-owner all-org-names flex-item">
-                  <div className="project-name org-name flex-item">{loginId}</div>
-                  <div className="project-owner flex-item sub-project-counter">
+                <div
+                  className={`projectName-owner all-org-names flex-item ${
+                    stylex.props(
+                      isAuthenticatedSidenav &&
+                        authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
+                    ).className
+                  }`.trimEnd()}
+                >
+                  <div
+                    className={`project-name org-name flex-item ${
+                      stylex.props(
+                        isAuthenticatedSidenav &&
+                          authenticatedSidenavFavoriteOrganizationRowStyles.name,
+                      ).className
+                    }`.trimEnd()}
+                  >
+                    {loginId}
+                  </div>
+                  <div
+                    className={`project-owner flex-item sub-project-counter ${
+                      stylex.props(
+                        isAuthenticatedSidenav &&
+                          authenticatedSidenavFavoriteOrganizationRowStyles.owner,
+                      ).className
+                    }`.trimEnd()}
+                  >
                     {ownProjects.length}
                   </div>
                 </div>
@@ -2174,6 +2338,7 @@ function SidebarOrganizationList({
           <SidebarOrganizationItem
             favored={sidebarIsFavorited(organization, true)}
             isLast={organizationKey(organization) === lastFavoriteOrganizationKey}
+            isAuthenticatedSidenav={isAuthenticatedSidenav}
             key={organizationKey(organization)}
             normalizedQuery={normalizedQuery}
             organization={organization}
@@ -2183,6 +2348,7 @@ function SidebarOrganizationList({
         {visibleRegularOrganizations.map((organization) => (
           <SidebarOrganizationItem
             favored={sidebarIsFavorited(organization, false)}
+            isAuthenticatedSidenav={isAuthenticatedSidenav}
             key={organizationKey(organization)}
             normalizedQuery={normalizedQuery}
             organization={organization}
@@ -2204,12 +2370,14 @@ function SidebarOrganizationList({
 
 function SidebarOrganizationItem({
   favored,
+  isAuthenticatedSidenav = false,
   isLast = false,
   normalizedQuery,
   organization,
   runtimeConfig,
 }: {
   favored: boolean;
+  isAuthenticatedSidenav?: boolean;
   isLast?: boolean;
   normalizedQuery: string;
   organization: YoramRecord;
@@ -2224,20 +2392,74 @@ function SidebarOrganizationItem({
     : projects;
 
   return (
-    <li className={`org-li${isLast ? " favored" : ""}`}>
-      <div className="org-list project-flex-container all-orgs">
+    <li
+      className={`org-li${isLast ? " favored" : ""} ${
+        stylex.props(
+          isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.row,
+        ).className
+      }`.trimEnd()}
+      data-stylex-owner={
+        isAuthenticatedSidenav ? "authenticated-sidenav-favorite-organization-rows" : undefined
+      }
+    >
+      <div
+        className={`org-list project-flex-container all-orgs ${
+          stylex.props(
+            isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.header,
+          ).className
+        }`.trimEnd()}
+      >
         <button
           aria-expanded={showNonFavoriteProjects}
-          className="project-item project-item-container organization-toggle"
+          className={`project-item project-item-container organization-toggle ${
+            stylex.props(
+              isAuthenticatedSidenav &&
+                authenticatedSidenavFavoriteOrganizationRowStyles.projectItem,
+              isAuthenticatedSidenav &&
+                authenticatedSidenavFavoriteOrganizationRowStyles.itemContainer,
+              isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.toggle,
+              isAuthenticatedSidenav &&
+                authenticatedSidenavFavoriteOrganizationRowStyles.realOrganizationToggle,
+            ).className
+          }`.trimEnd()}
           onClick={() => setShowNonFavoriteProjects((expanded) => !expanded)}
           type="button"
         >
-          <div className="flex-item site-logo">
+          <div
+            className={`flex-item site-logo ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.logo,
+              ).className
+            }`.trimEnd()}
+          >
             <i className="yobicon-angle-right"></i>
           </div>
-          <div className="projectName-owner all-org-names flex-item">
-            <div className="project-name org-name flex-item">{organizationName}</div>
-            <div className="project-owner flex-item">{projectCount}</div>
+          <div
+            className={`projectName-owner all-org-names flex-item ${
+              stylex.props(
+                isAuthenticatedSidenav &&
+                  authenticatedSidenavFavoriteOrganizationRowStyles.nameOwner,
+              ).className
+            }`.trimEnd()}
+          >
+            <div
+              className={`project-name org-name flex-item ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.name,
+                ).className
+              }`.trimEnd()}
+            >
+              {organizationName}
+            </div>
+            <div
+              className={`project-owner flex-item ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavFavoriteOrganizationRowStyles.owner,
+                ).className
+              }`.trimEnd()}
+            >
+              {projectCount}
+            </div>
           </div>
         </button>
         <SidebarFavoriteButton

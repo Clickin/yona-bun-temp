@@ -328,6 +328,17 @@ Focus-bar pseudo-elements, scrollbar pseudo-elements, organization rows/stars/li
 the Project/Recent History panes, and other consumers remain fallback and later owners. This is
 not Wave 1 completion.
 
+The ninth verified slice migrates only the authenticated Favorite pane's populated organization
+header rows, including the current user's own-project header and favorite/regular organization
+headers. StyleX owns the exact row margins, flex header and hover state, React toggle reset,
+logo/name/owner layout, typography, and truncation. Every concrete color is supplied by the
+canonical global theme entry: the new evidenced organization-name and hover-surface variables
+join the existing white, muted-text, and transparent variables; no route-local raw color, dark
+value, or toggle was added. Project rows, project lists, star buttons/icons, focus and scrollbar
+pseudo-elements, and the other panes remain frozen fallback and later owners. Fresh live legacy
+captures at 1366×900 and 390×844 confirm the owned row's 25px height, internal geometry,
+typography, and exact computed colors. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
