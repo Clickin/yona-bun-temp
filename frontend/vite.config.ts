@@ -1,7 +1,8 @@
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import babel from "@rolldown/plugin-babel";
 import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
 function normalizeBasePath(input: string | undefined): string {
@@ -85,6 +86,7 @@ export default defineConfig(({ mode }) => {
         autoCodeSplitting: true,
       }),
       react(),
+      babel({ presets: [reactCompilerPreset()] }),
     ],
     server: {
       host: "127.0.0.1",
