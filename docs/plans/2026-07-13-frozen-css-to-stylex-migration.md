@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, seventeen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, eighteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -442,6 +442,18 @@ legacy and local desktop/390 evidence agrees on the 350px/390px row widths, 27px
 13px title, and 204×37.59375 right popover with exact arrow/content metrics. Other Bootstrap/Yobi
 popover consumers and the non-authenticated left-sidebar inline popover remain separate owners.
 This is not Wave 1 completion.
+
+The eighteenth verified slice migrates the framed left sidebar's Recent History issue rows and
+their React-owned hover popover. A distinct owner preserves the dark sidebar's white text and
+translucent white hover while reusing the globally themed marker and full popover palette. StyleX
+owns every visible popover declaration, including placement, surface, border, shadow, arrow, and
+content; removing `.popover`, `.right`, `.arrow`, and `.popover-content` retains the complete
+computed surface, so this owner has no `.popover` fallback. Exactly the frozen `.issue-item`
+`display:block !important` and `padding-left:5px !important` declarations remain unavoidable.
+Fresh live legacy and local desktop/390 evidence agrees on the 270×27 row and 204×37.59375
+popover with its 280px left edge. The current React framed shell's desktop tab wrap and mobile
+overflow clipping are recorded as separate outer-owner gaps and are not compensated in this
+slice. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

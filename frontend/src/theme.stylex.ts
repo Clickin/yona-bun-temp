@@ -43,6 +43,10 @@ export const globalColors = stylex.defineVars({
   sidenavSubtabActiveText: "#fcfcfc",
   // _usermenu.less: .user-project-list .org-list:hover background-color
   sidenavOrganizationHoverSurface: "#f1f1f1",
+  // _usermenu.less: .sidebar .user-project-list .project-list:hover background-color
+  leftSidebarRecentIssueHoverSurface: "rgba(255, 255, 255, 0.15)",
+  // _page.less: .sidebar color inherited by Recent issue rows
+  leftSidebarRecentIssueText: "#ffffff",
   // _usermenu.less: .issue-title-start color
   sidenavIssueTitleMarker: "darkgray",
   // _usermenu.less: .user-project-list .project-name.org-name color
