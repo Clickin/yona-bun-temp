@@ -583,6 +583,37 @@ test("project pull requests to pull request overview and missing detail keep the
   await expectProjectShellGeometry(page);
 });
 
+test("project pull request overview to edit form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+  await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname}/editform`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9\/editform(?:\?|$)/);
+  await expect(page.locator("form.nm")).toBeVisible();
+  await expect(page.locator("#title")).toHaveValue("Initial title");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestEditGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("form.nm")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestEditGeometry(page);
+});
+
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1669,6 +1700,48 @@ async function expectProjectPullRequestOverviewGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPullRequestEditGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const form = rect(".content-wrap.frm-wrap form.nm");
+    const title = rect("#title");
+    const selectors = rect(".pull-request-wrap");
+    const status = rect("#status");
+    return {
+      form,
+      gnb,
+      header,
+      menu,
+      scrollWidth: document.documentElement.scrollWidth,
+      selectors,
+      status,
+      title,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnb.bottom).toBeGreaterThan(metrics.gnb.top);
+  expect(metrics.header.bottom).toBeGreaterThan(metrics.header.top);
+  expect(metrics.menu.bottom).toBeGreaterThan(metrics.menu.top);
+  expect(metrics.form.top).toBeGreaterThanOrEqual(metrics.menu.bottom);
+  expect(metrics.selectors.top).toBeGreaterThanOrEqual(metrics.form.top);
+  expect(metrics.selectors.bottom).toBeGreaterThan(metrics.selectors.top);
+  expect(metrics.status.top).toBeGreaterThanOrEqual(metrics.selectors.bottom);
+  expect(metrics.status.bottom).toBeGreaterThan(metrics.status.top);
+  expect(metrics.title.top).toBeGreaterThanOrEqual(metrics.status.bottom);
+  expect(metrics.title.bottom).toBeGreaterThan(metrics.title.top);
+  expect(metrics.title.left).toBeGreaterThanOrEqual(metrics.form.left);
+  expect(metrics.title.right).toBeLessThanOrEqual(metrics.form.right + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectPullRequestCreateGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -2408,6 +2481,21 @@ async function mockProjectHomeAndIssues(
         threads: [],
         title: "Initial title",
         toBranch: "main",
+      });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/9/form-options"))
+      return json({
+        fromBranches: [{ name: "feature/ui", selected: true }],
+        fromProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
+        mode: "edit",
+        pullRequest: {
+          bodyMarkdown: "Initial body",
+          id: 90,
+          state: "OPEN",
+          title: "Initial title",
+        },
+        selected: { fromBranch: "feature/ui", fromProjectId: 7, toBranch: "main", toProjectId: 7 },
+        toBranches: [{ name: "main", selected: true }],
+        toProjects: [{ id: 7, ownerName: "admin", projectName: "sample", selected: true }],
       });
     if (path.endsWith("/owners/admin/projects/sample/pull-requests/404"))
       return route.fulfill({

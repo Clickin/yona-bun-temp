@@ -122,6 +122,7 @@ function ProjectHomeRoute() {
   const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
   const pullRequestDetailNumber = exactProjectPullRequestNumber(pathname, homePath);
+  const pullRequestEditNumber = exactProjectPullRequestEditNumber(pathname, homePath);
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
@@ -176,19 +177,21 @@ function ProjectHomeRoute() {
                                               ? "labels"
                                               : null;
   const active =
-    pullRequestDetailNumber !== null
-      ? "pullRequestDetail"
-      : milestoneEditId !== null
-        ? "milestoneEdit"
-        : milestoneDetailId !== null
-          ? "milestoneDetail"
-          : issueEditNumber !== null
-            ? "issueEdit"
-            : issueDetailNumber !== null
-              ? "issueDetail"
-              : postDetailNumber !== null
-                ? "postDetail"
-                : standardActive;
+    pullRequestEditNumber !== null
+      ? "pullRequestEdit"
+      : pullRequestDetailNumber !== null
+        ? "pullRequestDetail"
+        : milestoneEditId !== null
+          ? "milestoneEdit"
+          : milestoneDetailId !== null
+            ? "milestoneDetail"
+            : issueEditNumber !== null
+              ? "issueEdit"
+              : issueDetailNumber !== null
+                ? "issueDetail"
+                : postDetailNumber !== null
+                  ? "postDetail"
+                  : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -229,6 +232,7 @@ function ProjectHomeRouteShell({
     | "postform"
     | "pullRequest"
     | "pullRequestDetail"
+    | "pullRequestEdit"
     | "review"
     | "search"
     | "setting"
@@ -598,6 +602,7 @@ function ProjectLayoutScreen({
     | "postform"
     | "pullRequest"
     | "pullRequestDetail"
+    | "pullRequestEdit"
     | "review"
     | "search"
     | "setting"
@@ -620,7 +625,8 @@ function ProjectLayoutScreen({
       active === "milestoneDetail" ||
       active === "milestoneEdit" ||
       active === "postDetail" ||
-      active === "pullRequestDetail" ? null : (
+      active === "pullRequestDetail" ||
+      active === "pullRequestEdit" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -694,14 +700,16 @@ function ProjectLayoutScreen({
                                   ? "issue"
                                   : active === "pullRequestDetail"
                                     ? "pullRequest"
-                                    : active === "delete" ||
-                                        active === "changeVcs" ||
-                                        active === "labels" ||
-                                        active === "members" ||
-                                        active === "transfer" ||
-                                        active === "webhooks"
-                                      ? "setting"
-                                      : active
+                                    : active === "pullRequestEdit"
+                                      ? "pullRequest"
+                                      : active === "delete" ||
+                                          active === "changeVcs" ||
+                                          active === "labels" ||
+                                          active === "members" ||
+                                          active === "transfer" ||
+                                          active === "webhooks"
+                                        ? "setting"
+                                        : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -731,6 +739,7 @@ function ProjectLayoutScreen({
             active === "milestoneEdit" ||
             active === "postDetail" ||
             active === "pullRequestDetail" ||
+            active === "pullRequestEdit" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -781,6 +790,13 @@ function exactProjectPostNumber(pathname: string, homePath: string) {
 function exactProjectPullRequestNumber(pathname: string, homePath: string) {
   const match = new RegExp(
     `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pullRequest/(\\d+)$`,
+  ).exec(pathname);
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectPullRequestEditNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pullRequest/(\\d+)/editform$`,
   ).exec(pathname);
   return match ? Number(match[1]) : null;
 }
