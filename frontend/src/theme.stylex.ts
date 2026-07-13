@@ -51,6 +51,20 @@ export const globalColors = stylex.defineVars({
   leftSidebarFavoriteSearchSurface: "#000000",
   // _usermenu.less: .sidebar .search-input color for the Favorite shell
   leftSidebarFavoriteSearchText: "#ffffff",
+  // _page.less: .sidebar color inherited by direct project rows
+  leftSidebarDirectProjectText: "#ffffff",
+  // _usermenu.less: .project-avatar color in direct project rows
+  leftSidebarDirectProjectAvatar: "#000000",
+  // _usermenu.less: .project-owner color in direct project rows
+  leftSidebarDirectProjectOwnerText: "#808080",
+  // _usermenu.less: .sidebar .user-project-list .project-list:hover
+  leftSidebarDirectProjectHoverSurface: "rgba(255, 255, 255, 0.15)",
+  // _usermenu.less: .star-project base color
+  leftSidebarDirectProjectStarIdle: "#eeeeee",
+  // _usermenu.less: .star-project:hover and .starred
+  leftSidebarDirectProjectStarActive: "#e91e63",
+  // _usermenu.less: .starred:hover
+  leftSidebarDirectProjectStarActiveHover: "#8a123b",
   // _page.less: .sidebar .nav-tabs li a color
   leftSidebarTabText: "lightgray",
   // _page.less: .sidebar .nav-tabs active/interaction color

@@ -1637,6 +1637,155 @@ const authenticatedSidenavFavoriteStarStyles = stylex.create({
   },
 });
 
+const leftSidebarDirectProjectRowStyles = stylex.create({
+  row: {
+    color: globalColors.leftSidebarDirectProjectText,
+    cursor: "pointer",
+    lineHeight: "normal",
+    marginLeft: 0,
+  },
+  list: {
+    alignItems: "center",
+    backgroundColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.leftSidebarDirectProjectHoverSurface,
+    },
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "4px 0",
+  },
+  item: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontSize: "14px",
+    fontWeight: 400,
+    justifyContent: "space-between",
+    overflow: "hidden",
+  },
+  logo: {
+    flexShrink: 0,
+    marginLeft: "2px",
+    overflow: "hidden",
+    paddingTop: "3px",
+    textAlign: "center",
+    width: "26px",
+  },
+  avatar: {
+    color: globalColors.leftSidebarDirectProjectAvatar,
+  },
+  image: {
+    borderRadius: "3px",
+    height: "auto",
+    marginRight: 0,
+    verticalAlign: "text-top",
+    width: "16px",
+  },
+  nameOwner: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: "1px 0",
+  },
+  name: {
+    fontFamily: "roboto, sans-serif",
+    maxWidth: "150px",
+    minWidth: "50px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    WebkitFontSmoothing: "antialiased",
+    whiteSpace: "nowrap",
+  },
+  projectLink: {
+    color: {
+      default: globalColors.leftSidebarDirectProjectText,
+      ":focus": globalColors.leftSidebarDirectProjectText,
+      ":hover": globalColors.leftSidebarDirectProjectText,
+    },
+    display: "contents",
+    textDecoration: {
+      default: "none",
+      ":focus": "none",
+      ":hover": "none",
+    },
+  },
+  owner: {
+    color: globalColors.leftSidebarDirectProjectOwnerText,
+    flexShrink: 3,
+    fontSize: "12px",
+    maxWidth: "50px",
+    minWidth: "40px",
+    overflow: "hidden",
+    paddingRight: "10px",
+    textAlign: "right",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  ownerLink: {
+    color: globalColors.leftSidebarDirectProjectOwnerText,
+    textDecoration: {
+      default: "none",
+      ":focus": "underline",
+      ":hover": "underline",
+    },
+  },
+  starButton: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    borderStyle: "none",
+    boxShadow: "none",
+    boxSizing: "border-box",
+    color: {
+      default: globalColors.leftSidebarDirectProjectStarIdle,
+      ":disabled": globalColors.leftSidebarDirectProjectStarIdle,
+      ":focus": globalColors.leftSidebarDirectProjectStarActive,
+      ":hover": globalColors.leftSidebarDirectProjectStarActive,
+    },
+    cursor: "pointer",
+    flexShrink: 0,
+    height: "16px",
+    lineHeight: "normal",
+    margin: 0,
+    minHeight: 0,
+    padding: 0,
+    textAlign: "start",
+    width: "29px",
+  },
+  starIcon: {
+    color: "inherit",
+    direction: "ltr",
+    display: "inline-block",
+    fontFamily: "Material Icons",
+    fontFeatureSettings: "liga",
+    fontSize: "16px",
+    fontStyle: "normal",
+    fontWeight: 400,
+    height: "15px",
+    letterSpacing: "normal",
+    lineHeight: "16px",
+    textTransform: "none",
+    verticalAlign: "bottom",
+    whiteSpace: "nowrap",
+    wordWrap: "normal",
+    WebkitFontSmoothing: "antialiased",
+  },
+  starredIcon: {
+    color: {
+      default: globalColors.leftSidebarDirectProjectStarActive,
+      ":hover": globalColors.leftSidebarDirectProjectStarActiveHover,
+    },
+  },
+});
+
 const authenticatedSidenavDirectProjectRowStyles = stylex.create({
   row: {
     color: globalColors.sidenavText,
@@ -2824,6 +2973,7 @@ function SidebarFavoriteButton({
   initialFavorited,
   isAuthenticatedDirectProjectStar = false,
   isAuthenticatedFavoriteStar = false,
+  isLeftSidebarDirectProjectStar = false,
   label,
   runtimeConfig,
   target,
@@ -2831,6 +2981,7 @@ function SidebarFavoriteButton({
   initialFavorited: boolean;
   isAuthenticatedDirectProjectStar?: boolean;
   isAuthenticatedFavoriteStar?: boolean;
+  isLeftSidebarDirectProjectStar?: boolean;
   label: string;
   runtimeConfig: RuntimeConfig;
   target: SidebarFavoriteTarget;
@@ -2880,21 +3031,29 @@ function SidebarFavoriteButton({
         isFavorited ? "from" : "to"
       } favorites`}
       aria-pressed={isFavorited}
-      className={`${target.type === "project" ? "star-project" : "star-org"} flex-item ${
-        stylex.props(
-          (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-            authenticatedSidenavFavoriteStarStyles.button,
-        ).className
-      }`.trimEnd()}
+      className={
+        isLeftSidebarDirectProjectStar
+          ? stylex.props(leftSidebarDirectProjectRowStyles.starButton).className
+          : `${target.type === "project" ? "star-project" : "star-org"} flex-item ${
+              stylex.props(
+                (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
+                  authenticatedSidenavFavoriteStarStyles.button,
+              ).className
+            }`.trimEnd()
+      }
       data-stylex-owner={
-        isAuthenticatedFavoriteStar
-          ? "authenticated-sidenav-favorite-stars"
-          : isAuthenticatedDirectProjectStar
-            ? "authenticated-sidenav-direct-project-rows"
-            : undefined
+        isLeftSidebarDirectProjectStar
+          ? "left-sidebar-direct-project-rows"
+          : isAuthenticatedFavoriteStar
+            ? "authenticated-sidenav-favorite-stars"
+            : isAuthenticatedDirectProjectStar
+              ? "authenticated-sidenav-direct-project-rows"
+              : undefined
       }
       data-stylex-owner-state={
-        isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar
+        isLeftSidebarDirectProjectStar ||
+        isAuthenticatedFavoriteStar ||
+        isAuthenticatedDirectProjectStar
           ? `${favoriteMutation.isPending ? "pending-" : ""}${isFavorited ? "starred" : "unstarred"}`
           : undefined
       }
@@ -2904,15 +3063,22 @@ function SidebarFavoriteButton({
     >
       <i
         aria-hidden="true"
-        className={`${isFavorited ? "star starred material-icons" : "star material-icons"} ${
-          stylex.props(
-            (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-              authenticatedSidenavFavoriteStarStyles.icon,
-            (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
-              isFavorited &&
-              authenticatedSidenavFavoriteStarStyles.starredIcon,
-          ).className
-        }`.trimEnd()}
+        className={
+          isLeftSidebarDirectProjectStar
+            ? stylex.props(
+                leftSidebarDirectProjectRowStyles.starIcon,
+                isFavorited && leftSidebarDirectProjectRowStyles.starredIcon,
+              ).className
+            : `${isFavorited ? "star starred material-icons" : "star material-icons"} ${
+                stylex.props(
+                  (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
+                    authenticatedSidenavFavoriteStarStyles.icon,
+                  (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
+                    isFavorited &&
+                    authenticatedSidenavFavoriteStarStyles.starredIcon,
+                ).className
+              }`.trimEnd()
+        }
       >
         star
       </i>
@@ -3262,6 +3428,7 @@ function SidebarOrganizationList({
         {visibleDirectFavorites.map((project) => (
           <SidebarProjectItem
             isAuthenticatedFavoritePane={isAuthenticatedSidenav}
+            isLeftSidebar={idPrefix === "left-sidebar"}
             key={projectKey(project)}
             project={project}
             runtimeConfig={runtimeConfig}
@@ -3662,6 +3829,7 @@ function SidebarProjectList({
   const memberProjects = recordArray(workspace.memberProjects);
   const ownProjects = recordArray(workspace.ownProjects);
   const isAuthenticatedSidenav = idPrefix === undefined;
+  const isLeftSidebar = idPrefix === "left-sidebar";
   const subtabs = [
     ["recentlyVisited", "title.recently.visited"],
     ["createdByMe", "title.createdByMe"],
@@ -3767,6 +3935,7 @@ function SidebarProjectList({
               active={activeSubtab === "recentlyVisited"}
               id="recentlyVisited"
               idPrefix={idPrefix}
+              isLeftSidebar={isLeftSidebar}
               projects={recentProjects}
               runtimeConfig={runtimeConfig}
               searchQuery={searchQuery}
@@ -3775,6 +3944,7 @@ function SidebarProjectList({
               active={activeSubtab === "watching"}
               id="watching"
               idPrefix={idPrefix}
+              isLeftSidebar={isLeftSidebar}
               projects={watchedProjects}
               runtimeConfig={runtimeConfig}
               searchQuery={searchQuery}
@@ -3783,6 +3953,7 @@ function SidebarProjectList({
               active={activeSubtab === "createdByMe"}
               id="createdByMe"
               idPrefix={idPrefix}
+              isLeftSidebar={isLeftSidebar}
               projects={ownProjects}
               runtimeConfig={runtimeConfig}
               searchQuery={searchQuery}
@@ -3791,6 +3962,7 @@ function SidebarProjectList({
               active={activeSubtab === "joinmember"}
               id="joinmember"
               idPrefix={idPrefix}
+              isLeftSidebar={isLeftSidebar}
               projects={memberProjects}
               runtimeConfig={runtimeConfig}
               searchQuery={searchQuery}
@@ -3806,6 +3978,7 @@ function SidebarProjectPane({
   active = false,
   id,
   idPrefix,
+  isLeftSidebar = false,
   projects,
   runtimeConfig,
   searchQuery,
@@ -3813,6 +3986,7 @@ function SidebarProjectPane({
   active?: boolean;
   id: string;
   idPrefix?: string;
+  isLeftSidebar?: boolean;
   projects: YoramRecord[];
   runtimeConfig: RuntimeConfig;
   searchQuery: string;
@@ -3852,6 +4026,7 @@ function SidebarProjectPane({
     >
       {visibleProjects.map((project) => (
         <SidebarProjectItem
+          isLeftSidebar={isLeftSidebar}
           key={projectKey(project)}
           project={project}
           runtimeConfig={runtimeConfig}
@@ -3863,10 +4038,12 @@ function SidebarProjectPane({
 
 function SidebarProjectItem({
   isAuthenticatedFavoritePane = false,
+  isLeftSidebar = false,
   project,
   runtimeConfig,
 }: {
   isAuthenticatedFavoritePane?: boolean;
+  isLeftSidebar?: boolean;
   project: YoramRecord;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -3878,50 +4055,94 @@ function SidebarProjectItem({
 
   return (
     <li
-      className={`user-li ${stylex.props(authenticatedSidenavDirectProjectRowStyles.row).className}`}
-      data-stylex-owner="authenticated-sidenav-direct-project-rows"
+      className={
+        isLeftSidebar
+          ? stylex.props(leftSidebarDirectProjectRowStyles.row).className
+          : `user-li ${stylex.props(authenticatedSidenavDirectProjectRowStyles.row).className}`
+      }
+      data-stylex-owner={
+        isLeftSidebar
+          ? "left-sidebar-direct-project-rows"
+          : "authenticated-sidenav-direct-project-rows"
+      }
     >
       <div
-        className={`project-list project-flex-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.list).className}`}
+        className={
+          isLeftSidebar
+            ? stylex.props(leftSidebarDirectProjectRowStyles.list).className
+            : `project-list project-flex-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.list).className}`
+        }
       >
         <div
-          className={`project-item project-item-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.item).className}`}
+          className={
+            isLeftSidebar
+              ? stylex.props(leftSidebarDirectProjectRowStyles.item).className
+              : `project-item project-item-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.item).className}`
+          }
         >
           <div
-            className={`flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarDirectProjectRowStyles.logo).className
+                : `flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`
+            }
           >
             <Link
               aria-label={`Open ${ownerName}/${projectName}`}
               className={
-                stylex.props(authenticatedSidenavDirectProjectRowStyles.projectLink).className
+                stylex.props(
+                  isLeftSidebar
+                    ? leftSidebarDirectProjectRowStyles.projectLink
+                    : authenticatedSidenavDirectProjectRowStyles.projectLink,
+                ).className
               }
               params={{ ownerName, projectName }}
               to="/$ownerName/$projectName"
             >
               <i
-                className={`project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`}
+                className={
+                  isLeftSidebar
+                    ? stylex.props(leftSidebarDirectProjectRowStyles.avatar).className
+                    : `project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`
+                }
               >
                 {logoUrl ? (
                   <img
                     alt=""
-                    className={`logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`}
+                    className={
+                      isLeftSidebar
+                        ? stylex.props(leftSidebarDirectProjectRowStyles.image).className
+                        : `logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`
+                    }
                     src={logoUrl}
                   />
                 ) : (
-                  <span className="dummy-25px"> </span>
+                  <span className={isLeftSidebar ? undefined : "dummy-25px"}> </span>
                 )}
               </i>
             </Link>
           </div>
           <div
-            className={`projectName-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.nameOwner).className}`}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarDirectProjectRowStyles.nameOwner).className
+                : `projectName-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.nameOwner).className}`
+            }
           >
             <div
-              className={`project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarDirectProjectRowStyles.name).className
+                  : `project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`
+              }
             >
               <Link
                 className={
-                  stylex.props(authenticatedSidenavDirectProjectRowStyles.projectLink).className
+                  stylex.props(
+                    isLeftSidebar
+                      ? leftSidebarDirectProjectRowStyles.projectLink
+                      : authenticatedSidenavDirectProjectRowStyles.projectLink,
+                  ).className
                 }
                 params={{ ownerName, projectName }}
                 to="/$ownerName/$projectName"
@@ -3930,11 +4151,19 @@ function SidebarProjectItem({
               </Link>
             </div>
             <div
-              className={`project-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.owner).className}`}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarDirectProjectRowStyles.owner).className
+                  : `project-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.owner).className}`
+              }
             >
               <Link
                 className={
-                  stylex.props(authenticatedSidenavDirectProjectRowStyles.ownerLink).className
+                  stylex.props(
+                    isLeftSidebar
+                      ? leftSidebarDirectProjectRowStyles.ownerLink
+                      : authenticatedSidenavDirectProjectRowStyles.ownerLink,
+                  ).className
                 }
                 params={{ user: ownerName }}
                 to="/$user"
@@ -3946,8 +4175,9 @@ function SidebarProjectItem({
         </div>
         <SidebarFavoriteButton
           initialFavorited={isFavorited}
-          isAuthenticatedDirectProjectStar={!isAuthenticatedFavoritePane}
+          isAuthenticatedDirectProjectStar={!isLeftSidebar && !isAuthenticatedFavoritePane}
           isAuthenticatedFavoriteStar={isAuthenticatedFavoritePane}
+          isLeftSidebarDirectProjectStar={isLeftSidebar}
           key={`project-favorite-${projectKey(project)}-${String(isFavorited)}`}
           label={`${ownerName}/${projectName}`}
           runtimeConfig={runtimeConfig}

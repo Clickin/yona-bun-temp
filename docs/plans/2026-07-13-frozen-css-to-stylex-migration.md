@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-two user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-three user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -505,6 +505,24 @@ descendants, so its broad descendant scrollbar selector still matches temporaril
 overrides the exact scrollbar values until those rows migrate and the ancestor can be removed.
 Bootstrap input padding and the max-720 `16px !important` input rule remain separate shared
 primitives. This is not Wave 1 completion.
+
+The twenty-third verified slice migrates the framed left sidebar's shared direct-project rows in
+both the Favorite pane and all four Project subtabs. StyleX owns the complete row/list/item flex
+geometry and hover state, logo/avatar/image, name/owner typography and truncation, semantic link
+states, and favorite star states. Every concrete color is defined at the canonical global theme
+boundary with no dark value or toggle. The migrated owner emits none of `user-li`, `project-list`,
+`project-flex-container`, `project-item`, `project-item-container`, `flex-item`, `site-logo`,
+`project-avatar`, `logo`, `dummy-25px`, `projectName-owner`, `project-name`, `project-owner`,
+`star-project`, `star`, `starred`, or `material-icons`; only `yobicon-lock yobicon-small` remains
+as the separate private-project icon-font primitive. The legacy direct-project partial does not
+render a popover, the React owner renders none, and no `.popover` fallback exists. The sole
+temporarily unavoidable collision is the broader `.user-project-list li { margin-left: 0 }`,
+whose ancestor remains for distinct unmigrated organization and nested-project rows; StyleX owns
+the same value for this row. Fresh live/local desktop evidence agrees on the 270×26 row and exact
+internal geometry. At 390px, live Project shell placement/width is `y166/317.6875px` while the
+current local shell is `y195/270px`; the row's 26px height and relative internals agree, so the
+outer Project shell/subtabs remain the next owner and no row compensation is introduced. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
