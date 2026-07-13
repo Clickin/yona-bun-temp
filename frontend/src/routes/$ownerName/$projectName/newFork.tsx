@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute, useRouter } from "@tanstack/react-router";
 import { use, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
@@ -12,6 +12,7 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { LastOutletTransition } from "../../-last-outlet-transition";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectNestedShellContext } from "../$projectName";
 
@@ -40,16 +41,7 @@ export const Route = createFileRoute("/$ownerName/$projectName/newFork")({
 });
 
 function ProjectForkRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
-
-  return (
-    <ProjectForkRouteContent
-      ownerName={ownerName}
-      projectName={projectName}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
 export function ProjectForkRouteContent({
@@ -107,8 +99,8 @@ function ProjectForkRouteShell({
   }
 
   if (!isGitProject) {
-    return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+    const body = (
+      <>
         <ProjectForkTitle isGitProject={false} ownerName={ownerName} projectName={projectName} />
         <DefaultSearchErrorBody
           iconClassName="ico-404"
@@ -116,12 +108,19 @@ function ProjectForkRouteShell({
           runtimeConfig={runtimeConfig}
           ybtnClassName="ybtn ybtn-info"
         />
-      </SiteLayoutShell>
+      </>
+    );
+    return nestedProjectShell ? (
+      body
+    ) : (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>{body}</SiteLayoutShell>
     );
   }
 
   if (!projectQuery.data) {
-    return <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>;
+    return nestedProjectShell ? null : (
+      <SiteLayoutShell runtimeConfig={runtimeConfig}>{null}</SiteLayoutShell>
+    );
   }
 
   return (

@@ -20,6 +20,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { LastOutletTransition } from "../-last-outlet-transition";
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
@@ -27,45 +28,10 @@ export const Route = createFileRoute("/organizations/$organizationName")({
 
 function OrganizationHomeRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { organizationName } = Route.useParams();
-  const location = useRouterState({ select: (state) => state.location });
-  const { pathname } = location;
-  const exactPath = `/organizations/${organizationName}`;
-  const isHome = pathname === exactPath || pathname === `${exactPath}/`;
-  const isBoards = pathname === `${exactPath}/boards`;
-  const isIssues = pathname === `${exactPath}/issues`;
-  const isPullRequests = pathname === `${exactPath}/pullrequests`;
-  const isClosedPullRequests = pathname === `${exactPath}/closedPullrequests`;
-  const isMembers = pathname === `${exactPath}/members`;
-  const isSettings = pathname === `${exactPath}/settingform`;
-  const isDeleteForm = pathname === `${exactPath}/deleteForm`;
-  const isSearch =
-    pathname === `${exactPath}/search` && isOrganizationSearchLayoutState(location.search);
-
-  if (
-    !isHome &&
-    !isBoards &&
-    !isIssues &&
-    !isPullRequests &&
-    !isClosedPullRequests &&
-    !isMembers &&
-    !isSettings &&
-    !isDeleteForm &&
-    !isSearch
-  ) {
-    return <Outlet />;
-  }
-
-  return <OrganizationNestedLayout isHome={isHome} runtimeConfig={runtimeConfig} />;
+  return <OrganizationNestedLayout runtimeConfig={runtimeConfig} />;
 }
 
-function OrganizationNestedLayout({
-  isHome,
-  runtimeConfig,
-}: {
-  isHome: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+function OrganizationNestedLayout({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { organizationName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isPullRequests = pathname === `/organizations/${organizationName}/pullrequests`;
@@ -116,18 +82,30 @@ function OrganizationNestedLayout({
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
           />
           <title>{organizationName}</title>
-          {isHome ? (
-            <OrganizationHomeBody organization={organization} runtimeConfig={runtimeConfig} />
-          ) : (
-            <Outlet />
-          )}
+          <LastOutletTransition routeId={Route.id} />
         </SiteLayoutShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function OrganizationHomeBody({
+export function OrganizationHomeIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { organizationName } = Route.useParams();
+  const organizationQuery = useQuery({
+    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
+    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
+  });
+
+  if (!organizationQuery.data) {
+    return null;
+  }
+
+  return (
+    <OrganizationHomeScreen organization={organizationQuery.data} runtimeConfig={runtimeConfig} />
+  );
+}
+
+function OrganizationHomeScreen({
   organization,
   runtimeConfig,
 }: {
@@ -753,7 +731,17 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{
+                assigneeId: "",
+                authorId: "",
+                filter: "",
+                mentionId: "",
+                orderBy: "updatedDate",
+                orderDir: "desc",
+                pageNum: 1,
+                projectNames: [],
+                state: "open",
+              }}
               to="/organizations/$organizationName/issues"
             >
               {t("menu.issue")}
@@ -773,7 +761,13 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{
+                filter: "",
+                orderBy: "updatedDate",
+                orderDir: "desc",
+                pageNum: 1,
+                projectNames: [],
+              }}
               to="/organizations/$organizationName/boards"
             >
               {t("menu.board")}
@@ -793,7 +787,7 @@ export function OrganizationMenu({
                 "data-status": undefined,
               }}
               params={{ organizationName }}
-              search={{}}
+              search={{ filter: "", pageNum: 1 }}
               to="/organizations/$organizationName/pullrequests"
             >
               {t("menu.pullRequest")}

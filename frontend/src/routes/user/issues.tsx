@@ -534,7 +534,7 @@ function MySeriesMenuTabs({
   const { t } = useLegacyMessages();
   const defaultLoginPagePath = "user/issues";
   const [isDefaultLoginPagePopoverVisible, setIsDefaultLoginPagePopoverVisible] = useState(false);
-  const defaultLoginPagePopoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const defaultLoginPagePopoverTimer = useRef<number | null>(null);
   const defaultLoginPageTitle = t("button.setDefaultLoginPage");
   const defaultLoginPageContent = t("button.setDefaultLoginPage.desc");
   const legacyTabActiveOptions = {
@@ -584,6 +584,14 @@ function MySeriesMenuTabs({
           activeOptions={legacyTabActiveOptions}
           activeProps={legacyTabActiveProps}
           to="/user/issues"
+          search={{
+            filter: "assigned",
+            orderBy: "updatedDate",
+            orderDir: "desc",
+            pageNum: 1,
+            query: "",
+            state: "open",
+          }}
         >
           {t("issue.myIssue")}
         </Link>
@@ -899,7 +907,21 @@ function UserIssueItem({
             </span>
             {issue.labels.map((label) => (
               <Link
-                to={`${projectRoutePath}/issues?state=open&labelIds=${label.id}`}
+                to="/$ownerName/$projectName/issues"
+                params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
+                search={{
+                  state: "open",
+                  assigneeId: "",
+                  authorId: "",
+                  commenterId: "",
+                  dueDate: "",
+                  filter: "",
+                  labelIds: [String(label.id)],
+                  milestoneId: "",
+                  orderBy: "updatedDate",
+                  orderDir: "desc",
+                  pageNum: 1,
+                }}
                 className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 data-label-id={label.id}
                 style={{ background: label.color }}
@@ -1082,7 +1104,14 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
       ) : null}
       {parentIssueNumber ? (
         <span className="infos-item subtask">
-          <Link to={`/${issue.ownerName}/${issue.projectName}/issue/${parentIssueNumber}`}>
+          <Link
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{
+              ownerName: issue.ownerName,
+              projectName: issue.projectName,
+              issueNumber: String(parentIssueNumber),
+            }}
+          >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
           </Link>
         </span>
@@ -1137,7 +1166,21 @@ function UserIssueChildRow({
           data-label-id={String(label.id)}
           key={String(label.id)}
           style={childIssueLabelStyle(label.color)}
-          to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
+          to="/$ownerName/$projectName/issues"
+          params={{ ownerName, projectName }}
+          search={{
+            state: "open",
+            assigneeId: "",
+            authorId: "",
+            commenterId: "",
+            dueDate: "",
+            filter: "",
+            labelIds: [String(label.id)],
+            milestoneId: "",
+            orderBy: "updatedDate",
+            orderDir: "desc",
+            pageNum: 1,
+          }}
         >
           {label.name}
         </Link>
@@ -1268,7 +1311,7 @@ function TwoColumnModeCheckbox({
 }) {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.two.column.mode");
   const popoverContent = t("common.two.column.mode.desc");
   const clearPopoverTimer = () => {
@@ -1337,7 +1380,7 @@ function ShowSubtasksCheckbox({
 }) {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
   const clearPopoverTimer = () => {

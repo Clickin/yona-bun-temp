@@ -549,11 +549,11 @@ function RootLoginDialog({
                   {t("title.rememberMe")}
                 </label>
               </div>
-              <Link to={lostPasswordPath} href={prefixBasePath(basePath, "/lostPassword")}>
+              <Link to="/" href={prefixBasePath(basePath, "/lostPassword")}>
                 {t("title.resetPassword")}
               </Link>
               <span className="gray-txt ml10 mr10">|</span>
-              <Link to={signupPath} href={prefixBasePath(basePath, "/users/signupform")}>
+              <Link to="/" href={prefixBasePath(basePath, "/users/signupform")}>
                 {t("title.signup")}
               </Link>
             </div>
@@ -653,7 +653,11 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link to={projectListPath} href={prefixBasePath(runtimeConfig.basePath, "/projects")}>
+              <Link
+                to="/projects"
+                search={{ filter: "", labelIds: "" }}
+                href={prefixBasePath(runtimeConfig.basePath, "/projects")}
+              >
                 {t("title.projectList")}
               </Link>
             </li>
@@ -661,11 +665,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               <Link to="/_help">{t("title.help")}</Link>
             </li>
             <li>
-              <Link
-                to={feedbackUrl}
-                href="https://github.com/nforge/yobi/issues?state=open"
-                target="_blank"
-              >
+              <Link to="/" href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
                 {t("title.yobi.feedback")}
               </Link>
             </li>
@@ -675,7 +675,7 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
                   <Link
-                    to="/user/anonymous"
+                    to="/"
                     href={prefixBasePath(runtimeConfig.basePath, "/user/anonymous")}
                     reloadDocument
                   >
@@ -769,12 +769,12 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         <div className="page-footer">
           <span className="provider">
             Copyright ©{" "}
-            <Link to={naverCorpUrl} href="http://navercorp.com/" target="_blank">
+            <Link to="/" href="http://navercorp.com/" target="_blank">
               NAVER Corp.
             </Link>{" "}
             Supported by{" "}
             <Link
-              to={d2ProgramUrl}
+              to="/"
               href="https://developers.naver.com/d2/"
               target="_blank"
               className="d2-program"

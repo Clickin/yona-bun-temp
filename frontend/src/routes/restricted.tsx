@@ -124,7 +124,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             Copyright{" "}
             <Link
               href={FOOTER_LINKS.authors}
-              to={FOOTER_LINKS.authors}
+              to="/"
               reloadDocument
               target="_blank"
               className="yona-author"
@@ -136,7 +136,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             & ©{" "}
             <Link
               href={FOOTER_LINKS.naver}
-              to={FOOTER_LINKS.naver}
+              to="/"
               reloadDocument
               target="_blank"
               activeOptions={legacyPlainLinkActiveOptions}
@@ -147,7 +147,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             &{" "}
             <Link
               href={FOOTER_LINKS.naverLabs}
-              to={FOOTER_LINKS.naverLabs}
+              to="/"
               reloadDocument
               target="_blank"
               className="naver-labs"
@@ -159,7 +159,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             Supported by{" "}
             <Link
               href={FOOTER_LINKS.ncloud}
-              to={FOOTER_LINKS.ncloud}
+              to="/"
               reloadDocument
               target="_blank"
               className="naver-cloud-platform"

@@ -496,7 +496,8 @@ function OrganizationHeader({
                     "data-status": undefined,
                   }}
                   search={{}}
-                  to={`/organizations/${organizationName}`}
+                  to="/organizations/$organizationName"
+                  params={{ organizationName }}
                 >
                   {organizationName}
                 </Link>
@@ -528,7 +529,8 @@ function OrganizationMenu({
             <Link
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
               search={{}}
-              to={`/organizations/${organizationName}`}
+              to="/organizations/$organizationName"
+              params={{ organizationName }}
             >
               {t("title.organizationHome")}
             </Link>
@@ -536,8 +538,19 @@ function OrganizationMenu({
           <li className="">
             <Link
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/issues`}
+              search={{
+                assigneeId: "",
+                authorId: "",
+                filter: "",
+                mentionId: "",
+                orderBy: "createdDate",
+                orderDir: "desc",
+                pageNum: 1,
+                projectNames: [],
+                state: "open",
+              }}
+              to="/organizations/$organizationName/issues"
+              params={{ organizationName }}
             >
               {t("menu.issue")}
             </Link>
@@ -545,8 +558,15 @@ function OrganizationMenu({
           <li className="">
             <Link
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/boards`}
+              search={{
+                filter: "",
+                orderBy: "updatedDate",
+                orderDir: "desc",
+                pageNum: 1,
+                projectNames: [],
+              }}
+              to="/organizations/$organizationName/boards"
+              params={{ organizationName }}
             >
               {t("menu.board")}
             </Link>
@@ -554,8 +574,9 @@ function OrganizationMenu({
           <li className={active === "pullrequests" ? "active" : ""}>
             <Link
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
-              search={() => undefined}
-              to={`/organizations/${organizationName}/pullrequests`}
+              search={{ filter: "", pageNum: 1 }}
+              to="/organizations/$organizationName/pullrequests"
+              params={{ organizationName }}
             >
               {t("menu.pullRequest")}
             </Link>
@@ -572,8 +593,8 @@ function OrganizationMenu({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  search={() => undefined}
-                  to={`/organizations/${organizationName}/settingform`}
+                  to="/organizations/$organizationName/settingform"
+                  params={{ organizationName }}
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">{t("menu.admin")}</span>

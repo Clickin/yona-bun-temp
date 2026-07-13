@@ -79,6 +79,7 @@ const PARITY_SLICES = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/routes\/-home-route-screen\.tsx$/i,
+      /^frontend\/src\/routes\/-last-outlet-transition\.tsx$/i,
       /^frontend\/src\/routes\/index\.tsx$/i,
       /^frontend\/src\/routes\/-home-view\.tsx$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,

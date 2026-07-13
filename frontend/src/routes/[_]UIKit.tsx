@@ -6,6 +6,8 @@ export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
 });
 
+const Xmp: React.ElementType = "xmp";
+
 function UIKitRoute() {
   const [showsViaEmailDemo, setShowsViaEmailDemo] = React.useState(false);
 
@@ -373,7 +375,7 @@ function AvatarDemo({ label, size }: { label: string; size: string }) {
 }
 
 function CodeSample({ children }: { children: string }) {
-  return <xmp className="css">{children}</xmp>;
+  return <Xmp className="css">{children}</Xmp>;
 }
 
 function legacyAnchorMarkup(attributes: string, text: string) {

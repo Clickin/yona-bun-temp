@@ -137,7 +137,7 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
         </Link>
       </li>
       <li className="active">
-        <Link {...legacySiteSidebarLinkProps} search={legacyMailSidebarSearch} to="/sites/mail">
+        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
@@ -366,7 +366,7 @@ function renderLegacyHtmlMessageParts(
   parts: LegacyHtmlMessagePart[],
   keyPrefix: string,
 ): ReactNode[] {
-  return parts.flatMap((part, index) => {
+  return parts.flatMap<ReactNode>((part, index): ReactNode[] => {
     const key = `${keyPrefix}-${index}`;
 
     if (part.kind === "text") {

@@ -116,7 +116,18 @@ function UserFilesScreen({
               </Link>
             </li>
             <li>
-              <Link activeProps={legacyRouteLocalActiveProps} to="/user/issues">
+              <Link
+                activeProps={legacyRouteLocalActiveProps}
+                to="/user/issues"
+                search={{
+                  filter: "assigned",
+                  orderBy: "updatedDate",
+                  orderDir: "desc",
+                  pageNum: 1,
+                  query: "",
+                  state: "open",
+                }}
+              >
                 {t("issue.myIssue")}
               </Link>
             </li>

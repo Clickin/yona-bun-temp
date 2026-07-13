@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import type { MouseEvent, ReactNode } from "react";
-import { createContext, useEffect, useRef, useState } from "react";
+import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
+import { createContext, use, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
@@ -38,6 +38,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { LastOutletTransition } from "../-last-outlet-transition";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
 
@@ -53,6 +54,7 @@ const legacyProjectShellLinkActiveProps = {
 };
 
 export const ProjectNestedShellContext = createContext(false);
+export const ProjectLayoutContext = createContext<ProjectContainer | null>(null);
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
@@ -66,6 +68,7 @@ export const Route = createFileRoute("/$ownerName/$projectName")({
         ? { parentIssueId: legacyQueryString(search.parentIssueId) }
         : {}),
       ...(typeof search.tabId === "string" ? { tabId: search.tabId } : {}),
+      ...(Number.isFinite(Number(search.page)) ? { page: Number(search.page) } : {}),
     };
   },
 });
@@ -80,7 +83,7 @@ function legacyQueryString(value: unknown) {
 
 type LeaveModalPhase = "initial" | "open" | "closed";
 
-function insulateProjectHomeModalButtonClick(event: MouseEvent<HTMLElement>) {
+function insulateProjectHomeModalButtonClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
   event.stopPropagation();
 }
@@ -646,7 +649,6 @@ function ProjectMembersErrorRouteShell({
                 activeOptions={legacyProjectShellLinkActiveOptions}
                 activeProps={legacyProjectShellLinkActiveProps}
                 className="ybtn ybtn-primary"
-                mask={{ to: `/users/loginform?redirectUrl=/${ownerName}/${projectName}/members` }}
                 search={{ redirectUrl: `/${ownerName}/${projectName}/members` }}
                 to="/users/loginform"
               >
@@ -747,7 +749,6 @@ function ProjectLayoutScreen({
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
-  const { tabId } = Route.useSearch();
 
   return (
     <>
@@ -872,37 +873,11 @@ function ProjectLayoutScreen({
           type="text/css"
         />
       ) : null}
-      {active === "home" ? (
-        <ProjectHomeBody
-          project={project}
-          runtimeConfig={runtimeConfig}
-          tabId={tabId || "readme"}
-        />
-      ) : (
-        <ProjectNestedShellContext
-          value={
-            active === "issueDetail" ||
-            active === "issueEdit" ||
-            active === "milestoneDetail" ||
-            active === "milestoneEdit" ||
-            active === "postDetail" ||
-            active === "postEdit" ||
-            active === "pullRequestDetail" ||
-            active === "pullRequestEdit" ||
-            active === "pullRequestChanges" ||
-            active === "code" ||
-            active === "codeHistory" ||
-            active === "commitDetail" ||
-            active === "compare" ||
-            active === "newFork" ||
-            active === "watchers" ||
-            active === "search" ||
-            active === "statistics"
-          }
-        >
-          <Outlet />
-        </ProjectNestedShellContext>
-      )}
+      <ProjectNestedShellContext value>
+        <ProjectLayoutContext value={project}>
+          <LastOutletTransition routeId={Route.id} />
+        </ProjectLayoutContext>
+      </ProjectNestedShellContext>
     </>
   );
 }
@@ -1049,7 +1024,7 @@ function projectSearchRouteSearch(locationHref: string) {
   };
 }
 
-function ProjectHomeBody({
+export function ProjectHomeBody({
   project,
   runtimeConfig,
   tabId,
@@ -1147,7 +1122,7 @@ function ProjectHomeBody({
     insulateProjectHomeModalButtonClick(event);
     setLeaveModalPhase("open");
   };
-  const closeLeaveModal = (event: MouseEvent<HTMLElement>) => {
+  const closeLeaveModal = (event: SyntheticEvent<HTMLElement>) => {
     insulateProjectHomeModalButtonClick(event);
     setLeaveModalPhase("closed");
   };
@@ -1474,7 +1449,9 @@ function ProjectHomeBody({
         <div
           className="modal-backdrop in"
           onClick={closeLeaveModal}
-          onKeyDown={closeLeaveModal}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeLeaveModal(event);
+          }}
           role="presentation"
           tabIndex={-1}
         ></div>
@@ -1679,7 +1656,7 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                 >
                   <img
                     src={
-                      stringField(itemRecord.actorAvatarUrl) ||
+                      stringField(itemRecord.actorAvatarUrl, "") ||
                       prefixBasePath(basePath, defaultHistoryAvatarUrl)
                     }
                     width="32"
@@ -1737,7 +1714,7 @@ function HistoryLink({
 }) {
   if (href === "#" || href.startsWith("http://") || href.startsWith("https://")) {
     return (
-      <Link href={href} className={className}>
+      <Link to="/" href={href} className={className}>
         {children}
       </Link>
     );
@@ -1826,7 +1803,7 @@ function DashboardPane({
                               <span className="avatar-wrap smaller">
                                 <img
                                   src={
-                                    stringField(record.avatarUrl) ||
+                                    stringField(record.avatarUrl, "") ||
                                     prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
                                   }
                                   width="20"
@@ -1982,7 +1959,7 @@ function DashboardPane({
                               >
                                 <img
                                   src={
-                                    stringField(record.contributorAvatarUrl) ||
+                                    stringField(record.contributorAvatarUrl, "") ||
                                     prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
                                   }
                                   width="20"
@@ -2170,7 +2147,7 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YonaUse
       >
         <img
           src={
-            stringField(member.avatarUrl) ||
+            stringField(member.avatarUrl, "") ||
             prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
           }
           alt={loginId}

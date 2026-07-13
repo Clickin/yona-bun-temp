@@ -19,8 +19,8 @@ import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type PublicProfileSearch = {
-  daysAgo: number;
-  selected: "issues" | "projects" | "pullRequests";
+  daysAgo?: number;
+  selected?: "issues" | "projects" | "pullRequests";
 };
 
 type LegacyIssueRowAttributes = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -78,12 +78,14 @@ function PublicProfileRoute() {
 function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { user } = Route.useParams();
   const search = Route.useSearch();
+  const daysAgo = search.daysAgo ?? 14;
+  const selected = search.selected ?? "issues";
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
   const profileQuery = useQuery(
     readPublicUserProfileQueryOptions(runtimeConfig, {
-      daysAgo: search.daysAgo,
+      daysAgo,
       loginId: user,
-      selected: search.selected,
+      selected,
     }),
   );
   const redirectPath = profileQuery.data?.redirectPath;
@@ -103,10 +105,10 @@ function PublicProfileScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <PublicProfileBody
-        daysAgo={search.daysAgo}
+        daysAgo={daysAgo}
         profileResponse={profileQuery.data}
         runtimeConfig={runtimeConfig}
-        selected={search.selected}
+        selected={selected}
         viewerIsGuest={
           sessionQuery.data.isAnonymous !== false || sessionQuery.data.isGuest === true
         }
@@ -130,7 +132,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link {...LEGACY_LINK_PROPS} to="/projects">
+              <Link {...LEGACY_LINK_PROPS} to="/projects" search={{ filter: "", labelIds: "" }}>
                 {t("title.projectList")}
               </Link>
             </li>
@@ -140,7 +142,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
               </Link>
             </li>
             <li>
-              <Link to="https://github.com/nforge/yobi/issues?state=open" target="_blank">
+              <Link to="/" href="https://github.com/nforge/yobi/issues?state=open" target="_blank">
                 {t("title.yobi.feedback")}
               </Link>
             </li>
@@ -149,7 +151,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
             <div className="span5 right-menu span-hard-wrap">
               <div className="row-fluid user-menu-wrap">
                 <span className="user-menu">
-                  <Link to="/user/anonymous" reloadDocument>
+                  <Link to="/" href="/user/anonymous" reloadDocument>
                     {t("userinfo.profile")}
                   </Link>
                 </span>
@@ -158,7 +160,7 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
                     {t("userinfo.accountSetting")}
                   </Link>
                 </span>
-                <Link to="/logout" reloadDocument>
+                <Link to="/" href="/logout" reloadDocument>
                   <span className="user-menu logout label">{t("title.logout")}</span>
                 </Link>
               </div>
@@ -213,11 +215,16 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <div className="page-footer">
           <span className="provider">
             {"Copyright © "}
-            <Link to="http://navercorp.com/" target="_blank">
+            <Link to="/" href="http://navercorp.com/" target="_blank">
               NAVER Corp.
             </Link>{" "}
             Supported by{" "}
-            <Link to="https://developers.naver.com/d2/" target="_blank" className="d2-program">
+            <Link
+              to="/"
+              href="https://developers.naver.com/d2/"
+              target="_blank"
+              className="d2-program"
+            >
               <span className="d2">D2</span>
               <span className="program"> Program</span>
             </Link>
@@ -605,7 +612,21 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
             {labels.map((label) => (
               <Link
                 {...LEGACY_LINK_PROPS}
-                to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
+                to="/$ownerName/$projectName/issues"
+                params={{ ownerName, projectName }}
+                search={{
+                  assigneeId: "",
+                  authorId: "",
+                  commenterId: "",
+                  dueDate: "",
+                  filter: "",
+                  labelIds: [String(label.id)],
+                  milestoneId: "",
+                  orderBy: "updatedDate",
+                  orderDir: "desc",
+                  pageNum: 1,
+                  state: "open",
+                }}
                 className="label issue-label list-label"
                 data-label-id={String(label.id)}
                 key={String(label.id)}
@@ -650,7 +671,9 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
               <span className="mileston-tag">
                 <Link
                   {...LEGACY_LINK_PROPS}
-                  to={`${projectPath}/milestone/${milestoneId}`}
+                  to="/$ownerName/$projectName/milestone/$milestoneId"
+                  params={{ ownerName, projectName, milestoneId: String(milestoneId) }}
+                  search={{ state: "open" }}
                   title={t("milestone")}
                 >
                   {milestoneTitle}
@@ -720,7 +743,8 @@ function ProfileIssueSubtaskSummary({
         <span className="infos-item subtask">
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/issue/${parentIssueNumber}`}
+            to="/$ownerName/$projectName/issue/$issueNumber"
+            params={{ ownerName, projectName, issueNumber: String(parentIssueNumber) }}
           >
             {`#${parentIssueNumber} ${truncateParentIssueTitle(parentIssueTitle)}`}
           </Link>
@@ -794,7 +818,21 @@ function ProfileIssueChildRow({
       {labels.map((label) => (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={`${projectPath}/issues?state=open&labelIds=${String(label.id)}`}
+          to="/$ownerName/$projectName/issues"
+          params={{ ownerName, projectName }}
+          search={{
+            assigneeId: "",
+            authorId: "",
+            commenterId: "",
+            dueDate: "",
+            filter: "",
+            labelIds: [String(label.id)],
+            milestoneId: "",
+            orderBy: "updatedDate",
+            orderDir: "desc",
+            pageNum: 1,
+            state: "open",
+          }}
           className="label issue-label list-label active twoColumeModeTarget"
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
@@ -950,7 +988,8 @@ function ProfilePullRequestRow({ pullRequest }: { pullRequest: WorkspacePullRequ
           {receiverLoginId ? (
             <Link
               {...LEGACY_LINK_PROPS}
-              to={`/${receiverLoginId}`}
+              to="/$user"
+              params={{ user: receiverLoginId }}
               className="avatar-wrap assinee"
               title={receiverLabel}
             >
@@ -1000,7 +1039,11 @@ function ProfileProjectRow({
                   {" "}
                   <Link
                     {...LEGACY_LINK_PROPS}
-                    to={`/${project.originOwnerName}/${project.originProjectName}`}
+                    to="/$ownerName/$projectName"
+                    params={{
+                      ownerName: project.originOwnerName,
+                      projectName: project.originProjectName,
+                    }}
                   >
                     {project.originOwnerName}/{project.originProjectName}
                   </Link>
@@ -1029,7 +1072,8 @@ function ProfileProjectRow({
         <div className="stats">
           {project.viewerCanWatch ? (
             <Link
-              to={`${projectPath}/${project.isWatching ? "unwatch" : "watch"}`}
+              to="/"
+              href={`${projectPath}/${project.isWatching ? "unwatch" : "watch"}`}
               reloadDocument
               className="ybtn watchBtn"
             >
@@ -1042,7 +1086,8 @@ function ProfileProjectRow({
           ) : null}
           {project.viewerCanLeave ? (
             <Link
-              to={`/info/leave/${project.ownerName}/${project.projectName}`}
+              to="/"
+              href={`/info/leave/${project.ownerName}/${project.projectName}`}
               reloadDocument
               data-projectname={project.projectName}
               className="nbtn black medium last leaveProject"
@@ -1064,7 +1109,7 @@ function TwoColumnModeCheckbox() {
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = React.useRef<number | null>(null);
   const popoverTitle = t("common.two.column.mode");
   const popoverContent = t("common.two.column.mode.desc");
 
@@ -1136,7 +1181,7 @@ function TwoColumnModeCheckbox() {
 function ShowSubtasksCheckbox() {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
-  const popoverTimer = React.useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const popoverTimer = React.useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
 
@@ -1220,7 +1265,13 @@ function ProfileTextLink({
     return <span className="infos-item"></span>;
   }
   return (
-    <Link {...LEGACY_LINK_PROPS} to={`/${loginId}`} className={className} title={loginId}>
+    <Link
+      {...LEGACY_LINK_PROPS}
+      to="/$user"
+      params={{ user: loginId }}
+      className={className}
+      title={loginId}
+    >
       {label || loginId}
     </Link>
   );
@@ -1240,7 +1291,7 @@ function pullRequestKey(pullRequest: WorkspacePullRequestItem) {
   )}/${numberField(pullRequest, "pullRequestNumber")}`;
 }
 
-function isProfileTab(value: string): value is PublicProfileSearch["selected"] {
+function isProfileTab(value: string): value is NonNullable<PublicProfileSearch["selected"]> {
   return ["issues", "projects", "pullRequests"].includes(value);
 }
 

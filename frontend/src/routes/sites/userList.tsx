@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type CSSProperties, type MouseEvent } from "react";
+import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -64,7 +64,7 @@ function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElem
   event.stopPropagation();
 }
 
-function insulateSiteUserDeleteModalBackdropClick(event: MouseEvent<HTMLDivElement>) {
+function insulateSiteUserDeleteModalBackdropClick(event: SyntheticEvent<HTMLDivElement>) {
   event.preventDefault();
   event.stopPropagation();
 }
@@ -126,7 +126,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     insulateSiteUserDeleteModalButtonClick(event);
     closeDeleteModal();
   };
-  const dismissDeleteModalBackdrop = (event: MouseEvent<HTMLDivElement>) => {
+  const dismissDeleteModalBackdrop = (event: SyntheticEvent<HTMLDivElement>) => {
     insulateSiteUserDeleteModalBackdropClick(event);
     closeDeleteModal();
   };
@@ -358,7 +358,9 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 <div
                   className="modal-backdrop fade in"
                   onClick={dismissDeleteModalBackdrop}
-                  onKeyDown={dismissDeleteModalBackdrop}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") dismissDeleteModalBackdrop(event);
+                  }}
                   role="button"
                   tabIndex={-1}
                 ></div>
@@ -492,11 +494,7 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
     <ul className="site-setting-nav">
       <li className="active">
-        <Link
-          {...LEGACY_SITE_SETTING_NAV_LINK_PROPS}
-          search={LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH}
-          to="/sites/userList"
-        >
+        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/userList">
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>

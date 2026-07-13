@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import type { HTMLAttributes } from "react";
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type {
@@ -23,8 +24,6 @@ import {
 } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyIssueItemRowAttrs = {
@@ -32,7 +31,7 @@ type LegacyIssueItemRowAttrs = {
 };
 
 type MilestoneDetailSearch = {
-  state: "all" | "closed" | "open";
+  state?: "all" | "closed" | "open";
 };
 
 const LEGACY_MILESTONE_LINK_PROPS = {
@@ -61,28 +60,12 @@ function restApiErrorStatus(error: unknown) {
 }
 
 function ProjectMilestoneDetailRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { milestoneId } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (pathname.endsWith(`/milestone/${milestoneId}/editform`)) {
-    return <Outlet />;
-  }
-
-  return (
-    <ProjectMilestoneDetailScreen
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
-function ProjectMilestoneDetailScreen({
-  nestedProjectShell,
+export function ProjectMilestoneDetailIndexScreen({
   runtimeConfig,
 }: {
-  nestedProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName, milestoneId } = Route.useParams();
@@ -104,63 +87,21 @@ function ProjectMilestoneDetailScreen({
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-  const projectShell = (
-    <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="milestone"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-    </>
-  );
-
   const milestoneNotFound =
     restApiErrorStatus(milestoneQuery.error) === 404 ||
     (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
 
   if (milestoneNotFound) {
-    if (nestedProjectShell) {
-      return (
-        <>
-          <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
-          <ProjectMilestoneNotFoundBody />
-        </>
-      );
-    }
-
     return (
-      <SiteLayoutShell
-        projectSearchScope={projectSearchScope}
-        runtimeConfig={runtimeConfig}
-        showLegacyProjectHeaderLinks
-      >
-        {projectShell}
+      <>
         <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
         <ProjectMilestoneNotFoundBody />
-      </SiteLayoutShell>
+      </>
     );
   }
 
   if (milestoneQuery.isPending || !milestoneQuery.data?.milestone) {
-    if (nestedProjectShell) {
-      return null;
-    }
-
-    return (
-      <SiteLayoutShell
-        projectSearchScope={projectSearchScope}
-        runtimeConfig={runtimeConfig}
-        showLegacyProjectHeaderLinks
-      >
-        {projectShell}
-      </SiteLayoutShell>
-    );
+    return null;
   }
 
   const currentUser = {
@@ -184,13 +125,11 @@ function ProjectMilestoneDetailScreen({
         ownerName={ownerName}
         projectName={projectName}
       />
-      {nestedProjectShell ? null : (
-        <MilestoneDetailAssets
-          basePath={runtimeConfig.basePath}
-          ownerName={ownerName}
-          projectName={projectName}
-        />
-      )}
+      <MilestoneDetailAssets
+        basePath={runtimeConfig.basePath}
+        ownerName={ownerName}
+        projectName={projectName}
+      />
       <ProjectMilestoneDetailBody
         currentUser={currentUser}
         milestone={milestoneQuery.data.milestone}
@@ -200,28 +139,7 @@ function ProjectMilestoneDetailScreen({
     </>
   );
 
-  if (nestedProjectShell) {
-    return detailContent;
-  }
-
-  return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
-      {projectShell}
-      {detailContent}
-    </SiteLayoutShell>
-  );
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
+  return detailContent;
 }
 
 function ProjectMilestoneDetailTitle({
@@ -306,6 +224,7 @@ function ProjectMilestoneDetailBody({
   const queryClient = useQueryClient();
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const search = Route.useSearch();
+  const selectedState = search.state ?? "open";
   const [filter, setFilter] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -319,7 +238,7 @@ function ProjectMilestoneDetailBody({
   const openIssueCount = numberField(milestone.openIssueCount);
   const closedIssueCount = numberField(milestone.closedIssueCount);
   const visibleIssues =
-    search.state === "closed" ? closedIssues : search.state === "all" ? allIssues : openIssues;
+    selectedState === "closed" ? closedIssues : selectedState === "all" ? allIssues : openIssues;
   const [checkedIssueIds, setCheckedIssueIds] = useState<string[]>([]);
   const attachmentsJson = useMemo(() => JSON.stringify(milestone.attachments ?? []), [milestone]);
   const milestoneQueryKey = ["project", ownerName, projectName, "milestones", Number(milestoneId)];
@@ -468,20 +387,20 @@ function ProjectMilestoneDetailBody({
 
           <div id="issues">
             <ul className="nav nav-tabs">
-              {(["open", "closed", "all"] as const).map((state) => (
-                <li key={state} className={search.state === state ? "active" : undefined}>
+              {(["open", "closed", "all"] as const).map((tabState) => (
+                <li key={tabState} className={selectedState === tabState ? "active" : undefined}>
                   <Link
                     to="/$ownerName/$projectName/milestone/$milestoneId"
                     params={{ ownerName, projectName, milestoneId }}
-                    search={{ state }}
+                    search={{ state: tabState }}
                     hash="issues"
                     {...LEGACY_MILESTONE_LINK_PROPS}
                   >
-                    {t(`issue.state.${state}`)}
+                    {t(`issue.state.${tabState}`)}
                     <span className="num-badge">
-                      {state === "open"
+                      {tabState === "open"
                         ? openIssueCount
-                        : state === "closed"
+                        : tabState === "closed"
                           ? closedIssueCount
                           : openIssueCount + closedIssueCount}
                     </span>

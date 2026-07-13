@@ -123,7 +123,9 @@ const getExtension = (file) => {
   return file.slice(dot).toLowerCase();
 };
 
-const isGeneratedFile = (file) => GENERATED_FILE_SUFFIXES.some((suffix) => file.endsWith(suffix));
+const isGeneratedFile = (file) =>
+  file.startsWith("frontend/public/legacy-assets/") ||
+  GENERATED_FILE_SUFFIXES.some((suffix) => file.endsWith(suffix));
 
 const stagedResult = spawnSync(GIT_BIN, STAGED_CMD, { encoding: "utf8" });
 if (stagedResult.status !== 0) {

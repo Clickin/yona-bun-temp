@@ -1,10 +1,9 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
   type ChangeEvent,
-  use,
   useEffect,
   useRef,
   useState,
@@ -40,10 +39,9 @@ import {
   watchIssue,
   type RestIssueDetailResponse,
 } from "../../../../auth-workspace-client";
-import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -131,30 +129,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/$issueNumbe
 });
 
 function ProjectIssueDetailRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { issueNumber } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (pathname.endsWith(`/issue/${issueNumber}/editform`)) {
-    return <Outlet />;
-  }
-
-  return (
-    <ProjectIssueDetailScreen
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
-function ProjectIssueDetailScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+export function ProjectIssueDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
   const projectQuery = useQuery(
@@ -195,33 +173,12 @@ function ProjectIssueDetailScreen({
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-  const projectWithHeaderAssets = projectWithLegacyHeaderAssets(
-    projectQuery.data,
-    runtimeConfig.basePath,
-  );
-
   if (restApiErrorStatus(issueQuery.error) === 404) {
-    if (nestedProjectShell) {
-      return (
-        <>
-          <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
-          <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
-        </>
-      );
-    }
-
     return (
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <>
         <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
-        <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
-        <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
         <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
-      </SiteLayoutShell>
+      </>
     );
   }
 
@@ -264,17 +221,7 @@ function ProjectIssueDetailScreen({
     </>
   );
 
-  if (nestedProjectShell) {
-    return detailContent;
-  }
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      {detailContent}
-    </SiteLayoutShell>
-  );
+  return detailContent;
 }
 
 function ProjectIssueDetailTitle({
@@ -323,14 +270,6 @@ function ProjectIssueNotFoundTitle({
   const { t } = useLegacyMessages();
 
   return <title>{`${t("error.notfound")} - ${ownerName}/${projectName}`}</title>;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function restApiErrorStatus(error: unknown) {
@@ -527,7 +466,24 @@ function ProjectIssueNotFoundBody({
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
           <p>{t("error.notfound.issue_post")}</p>
-          <Link to={`/${ownerName}/${projectName}/issues?state=all`} className="ybtn ybtn-primary">
+          <Link
+            to="/$ownerName/$projectName/issues"
+            params={{ ownerName, projectName }}
+            search={{
+              state: "all",
+              assigneeId: "",
+              authorId: "",
+              commenterId: "",
+              dueDate: "",
+              filter: "",
+              labelIds: [],
+              milestoneId: "",
+              orderBy: "updatedDate",
+              orderDir: "desc",
+              pageNum: 1,
+            }}
+            className="ybtn ybtn-primary"
+          >
             {t("button.list")}
           </Link>
         </div>
@@ -1149,7 +1105,13 @@ function IssueDetailBody({
                         ) : issue.milestoneId ? (
                           <Link
                             {...LEGACY_LINK_PROPS}
-                            to={`/${ownerName}/${projectName}/milestone/${String(issue.milestoneId)}`}
+                            to="/$ownerName/$projectName/milestone/$milestoneId"
+                            params={{
+                              ownerName,
+                              projectName,
+                              milestoneId: String(issue.milestoneId),
+                            }}
+                            search={{ state: "open" }}
                           >
                             {stringField(issue.milestoneTitle)}
                           </Link>
@@ -1159,7 +1121,8 @@ function IssueDetailBody({
                       ) : (
                         <Link
                           {...LEGACY_LINK_PROPS}
-                          to={`/${ownerName}/${projectName}/newMilestoneForm`}
+                          to="/$ownerName/$projectName/newMilestoneForm"
+                          params={{ ownerName, projectName }}
                           className="ybtn ybtn-small ybtn-fullsize"
                           target="_blank"
                         >
@@ -1858,7 +1821,8 @@ function IssueLabelSelect({
         {canManageLabels ? (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`/${ownerName}/${projectName}/issue/labelsform`}
+            to="/$ownerName/$projectName/issue/labelsform"
+            params={{ ownerName, projectName }}
             target="_blank"
             className="label-edit"
           >
@@ -2135,7 +2099,7 @@ function IssueSelectedLabels({
     return null;
   }
 
-  const listPath = `/${ownerName}/${projectName}/issues?state=${encodeURIComponent(issueState)}`;
+  const listPath = "/$ownerName/$projectName/issues";
 
   return (
     <dl>
@@ -2144,7 +2108,21 @@ function IssueSelectedLabels({
         {labels.map((label) => (
           <Link
             {...LEGACY_LINK_PROPS}
-            to={`${listPath}&labelIds=${encodeURIComponent(String(label.id))}`}
+            to={listPath}
+            params={{ ownerName, projectName }}
+            search={{
+              state: issueState === "closed" ? "closed" : "open",
+              assigneeId: "",
+              authorId: "",
+              commenterId: "",
+              dueDate: "",
+              filter: "",
+              labelIds: [String(label.id)],
+              milestoneId: "",
+              orderBy: "updatedDate",
+              orderDir: "desc",
+              pageNum: 1,
+            }}
             className="label issue-label active static"
             key={String(label.id)}
             style={{ background: stringField(label.color) }}
@@ -2298,7 +2276,21 @@ function IssueChildIssue({
       {labels.map((label) => (
         <Link
           {...LEGACY_LINK_PROPS}
-          to={`/${ownerName}/${projectName}/issues?state=open&labelIds=${String(label.id)}`}
+          to="/$ownerName/$projectName/issues"
+          params={{ ownerName, projectName }}
+          search={{
+            state: "open",
+            assigneeId: "",
+            authorId: "",
+            commenterId: "",
+            dueDate: "",
+            filter: "",
+            labelIds: [String(label.id)],
+            milestoneId: "",
+            orderBy: "updatedDate",
+            orderDir: "desc",
+            pageNum: 1,
+          }}
           className="label issue-label list-label active twoColumeModeTarget"
           key={String(label.id)}
           data-category-id={stringField(label.categoryId)}
@@ -2855,6 +2847,7 @@ function IssueEventRow({
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/commit/$commitId"
             params={{ ownerName, projectName, commitId }}
+            search={{ branch: "", path: "" }}
             className="link"
           >
             @{commitId}
@@ -3154,7 +3147,7 @@ function IssueCommentRow({
           </span>
           <span className="act-row pull-right">
             <span className="new-issue-by">
-              <Link {...LEGACY_LINK_PROPS} to={`/user/issues/new?commentId=${commentId}`}>
+              <Link {...LEGACY_LINK_PROPS} to="/user/issues/new" search={{ commentId }}>
                 Reference in new issue
               </Link>
             </span>
@@ -4288,17 +4281,6 @@ function stringField(value: unknown, fallback = "") {
     : typeof value === "number" || typeof value === "bigint"
       ? String(value)
       : fallback;
-}
-
-function projectWithLegacyHeaderAssets(project: ProjectContainer, basePath: string) {
-  const logoUrl =
-    stringField(project.logoUrl) ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default_logo.png");
-  const backgroundImageUrl =
-    stringField(project.backgroundImageUrl) ||
-    stringField(project.backgroundUrl) ||
-    prefixBasePath(basePath, "/legacy-assets/images/project_default.jpg");
-  return { ...project, backgroundImageUrl, logoUrl };
 }
 
 function isValidIssueDueDate(value: string) {

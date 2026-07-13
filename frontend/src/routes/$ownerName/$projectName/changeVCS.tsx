@@ -164,7 +164,7 @@ function ProjectChangeVcsBody({
   const [changeVcsModalTouched, setChangeVcsModalTouched] = useState(false);
   const ownerName = stringField(project.ownerName, "owner");
   const projectName = stringField(project.projectName, "project");
-  const currentVcs = stringField(project.currentVcs, stringField(project.vcs, "GIT"));
+  const currentVcs = stringField(project.currentVcs, "GIT");
   const nextVcs = stringField(project.nextVcs, currentVcs === "GIT" ? "Subversion" : "GIT");
   const changeMutation = useMutation({
     mutationFn: async () => {

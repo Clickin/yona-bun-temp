@@ -1,7 +1,7 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy milestone/edit.scala.html requires positive tab order on title/content controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { use, useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, ProjectMilestone } from "../../../../../api/types";
 import {
@@ -11,9 +11,7 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { SiteLayoutShell } from "../../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 import { ProjectMilestoneNotFoundBody, ProjectMilestoneNotFoundTitle } from "../$milestoneId";
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
@@ -22,23 +20,10 @@ export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milest
 
 function ProjectMilestoneEditFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  return (
-    <ProjectMilestoneEditFormScreen
-      nestedProjectShell={nestedProjectShell}
-      runtimeConfig={runtimeConfig}
-    />
-  );
+  return <ProjectMilestoneEditFormScreen runtimeConfig={runtimeConfig} />;
 }
 
-function ProjectMilestoneEditFormScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ProjectMilestoneEditFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName, milestoneId } = Route.useParams();
   const numericMilestoneId = Number(milestoneId) || 0;
@@ -57,7 +42,7 @@ function ProjectMilestoneEditFormScreen({
     restApiErrorStatus(milestoneQuery.error) === 404 ||
     (milestoneQuery.isSuccess && !milestoneQuery.data?.milestone);
 
-  if (milestoneNotFound && nestedProjectShell) {
+  if (milestoneNotFound) {
     return (
       <>
         <ProjectMilestoneNotFoundTitle ownerName={ownerName} projectName={projectName} />
@@ -70,12 +55,6 @@ function ProjectMilestoneEditFormScreen({
     return <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
   const editContent = (
     <>
       <title>{`${t("title.editMilestone")} - ${ownerName}/${projectName}`}</title>
@@ -86,21 +65,7 @@ function ProjectMilestoneEditFormScreen({
     </>
   );
 
-  if (nestedProjectShell) {
-    return editContent;
-  }
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="milestone"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-      {editContent}
-    </SiteLayoutShell>
-  );
+  return editContent;
 }
 
 function restApiErrorStatus(error: unknown) {
@@ -637,14 +602,6 @@ function stringField(value: unknown, fallback: string) {
     return String(value);
   }
   return fallback;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function booleanField(value: unknown) {

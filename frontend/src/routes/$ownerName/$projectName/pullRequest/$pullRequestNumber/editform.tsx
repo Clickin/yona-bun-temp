@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { use, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   pullRequestMergeResultQueryOptions,
   pullRequestEditFormOptionsQueryOptions,
@@ -9,13 +9,10 @@ import {
   type PullRequestFormOptionsResponse,
   type PullRequestFormSelected,
 } from "../../../../../api/pull-requests";
-import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
-import { YonaQueryProvider } from "../../../../../query-client";
+import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -25,34 +22,13 @@ export const Route = createFileRoute(
 
 function ProjectPullRequestEditRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (nestedProjectShell) {
-    return <ProjectPullRequestEditScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
-  }
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestEditScreen nestedProjectShell={false} runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <ProjectPullRequestEditScreen runtimeConfig={runtimeConfig} />;
 }
 
-function ProjectPullRequestEditScreen({
-  nestedProjectShell,
-  runtimeConfig,
-}: {
-  nestedProjectShell: boolean;
-  runtimeConfig: RuntimeConfig;
-}) {
+function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
   const { t } = useLegacyMessages();
   const prNumber = Number(pullRequestNumber) || 0;
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
   const formOptionsQuery = useQuery(
     pullRequestEditFormOptionsQueryOptions(runtimeConfig, {
       ownerName,
@@ -62,8 +38,8 @@ function ProjectPullRequestEditScreen({
   );
 
   const formErrorStatus = pullRequestEditErrorStatus(formOptionsQuery.error);
-  if (!projectQuery.data || !formOptionsQuery.data?.pullRequest) {
-    if (nestedProjectShell && (formErrorStatus === 403 || formErrorStatus === 404)) {
+  if (!formOptionsQuery.data?.pullRequest) {
+    if (formErrorStatus === 403 || formErrorStatus === 404) {
       return (
         <>
           <title>{`${t(formErrorStatus === 404 ? "error.notfound" : "error.forbidden")} - ${ownerName}/${projectName}`}</title>
@@ -77,16 +53,6 @@ function ProjectPullRequestEditScreen({
   return (
     <>
       <title>{`${t("title.editPullRequest")} - ${ownerName}/${projectName}`}</title>
-      {nestedProjectShell ? null : (
-        <>
-          <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-          <ProjectMenu
-            active="pullRequest"
-            basePath={runtimeConfig.basePath}
-            project={projectQuery.data}
-          />
-        </>
-      )}
       <ProjectPullRequestEditBody
         formOptions={formOptionsQuery.data}
         runtimeConfig={runtimeConfig}
@@ -579,6 +545,7 @@ function MergeResult({
                   <Link
                     to="/$ownerName/$projectName/commit/$commitId"
                     params={{ commitId: commit.commitId, ownerName, projectName }}
+                    search={{ branch: "", path: "" }}
                   >
                     {commit.commitShortId}
                   </Link>

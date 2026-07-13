@@ -281,7 +281,11 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </Link>
           <ul className="gnb-nav">
             <li>
-              <Link to="/projects" activeProps={legacyLinkActiveProps}>
+              <Link
+                to="/projects"
+                search={{ filter: "", labelIds: "" }}
+                activeProps={legacyLinkActiveProps}
+              >
                 {t("title.projectList")}
               </Link>
             </li>
@@ -293,7 +297,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <li>
               <Link
                 href="https://github.com/nforge/yobi/issues?state=open"
-                to="https://github.com/nforge/yobi/issues?state=open"
+                to="/"
                 target="_blank"
                 activeProps={legacyLinkActiveProps}
               >
@@ -320,7 +324,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             {"Copyright © "}
             <Link
               href="http://navercorp.com/"
-              to="http://navercorp.com/"
+              to="/"
               target="_blank"
               activeProps={legacyLinkActiveProps}
             >
@@ -329,7 +333,7 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             Supported by{" "}
             <Link
               href="https://developers.naver.com/d2/"
-              to="https://developers.naver.com/d2/"
+              to="/"
               target="_blank"
               className="d2-program"
               activeProps={legacyLinkActiveProps}

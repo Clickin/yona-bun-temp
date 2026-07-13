@@ -109,11 +109,7 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}를 설치하고자 하면{" "}
-                  <Link
-                    href="https://github.com/doortts/yona#korean"
-                    reloadDocument
-                    to="https://github.com/doortts/yona#korean"
-                  >
+                  <Link href="https://github.com/doortts/yona#korean" reloadDocument to="/">
                     https://github.com/doortts/yona#korean
                   </Link>
                   를 참고해 주세요.
@@ -179,7 +175,9 @@ function HelpTocScreen() {
                   우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다. 자물쇠가
                   있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다. 혹은 자신의{" "}
                   <Link
-                    to="/info"
+                    to="/"
+                    href="/info"
+                    reloadDocument
                     activeOptions={legacyAnswerLinkActiveOptions}
                     activeProps={legacyAnswerLinkActiveProps}
                   >
@@ -206,7 +204,9 @@ function HelpTocScreen() {
                 <Answer>
                   자신의{" "}
                   <Link
-                    to="/info"
+                    to="/"
+                    href="/info"
+                    reloadDocument
                     activeOptions={legacyAnswerLinkActiveOptions}
                     activeProps={legacyAnswerLinkActiveProps}
                   >
@@ -260,11 +260,7 @@ function HelpTocScreen() {
                 <i className="yobicon-a a" />
                 <Answer>
                   {appName}는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면{" "}
-                  <Link
-                    href="https://github.com/nforge/yobi/issues"
-                    reloadDocument
-                    to="https://github.com/nforge/yobi/issues"
-                  >
+                  <Link href="https://github.com/nforge/yobi/issues" reloadDocument to="/">
                     {`${appName} 이슈트래커에 등록`}
                   </Link>
                   해 주시거나 패치를 만들어 보내주시면 됩니다.

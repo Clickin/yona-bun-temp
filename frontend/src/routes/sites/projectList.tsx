@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState, type MouseEvent } from "react";
+import { useState, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -25,7 +25,7 @@ const legacyLinkSuppressionProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
-function insulateProjectDeleteModalClick(event: MouseEvent<HTMLElement>) {
+function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
   event.stopPropagation();
 }
@@ -75,7 +75,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     setDeleteModalClosed(false);
     setDeleteProject(selectedProject);
   };
-  const dismissDeleteModal = (event: MouseEvent<HTMLElement>) => {
+  const dismissDeleteModal = (event: SyntheticEvent<HTMLElement>) => {
     insulateProjectDeleteModalClick(event);
     closeDeletionModal();
   };
@@ -251,7 +251,9 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 <div
                   className="modal-backdrop fade in"
                   onClick={dismissDeleteModal}
-                  onKeyDown={dismissDeleteModal}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") dismissDeleteModal(event);
+                  }}
                   role="button"
                   tabIndex={-1}
                 ></div>

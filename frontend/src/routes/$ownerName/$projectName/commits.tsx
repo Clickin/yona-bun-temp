@@ -1,21 +1,12 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  redirect,
-  useRouter,
-  useRouterState,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { codeHistoryQueryOptions, type CodeHistoryResponse } from "../../../api/code-commits";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
+import { LastOutletTransition } from "../../-last-outlet-transition";
 
 type ProjectCodeHistorySearch = {
   page?: number;
@@ -57,89 +48,22 @@ export const Route = createFileRoute("/$ownerName/$projectName/commits")({
 });
 
 function ProjectCodeHistoryRoute() {
-  const { runtimeConfig } = Route.useRouteContext();
-  const { ownerName, projectName } = Route.useParams();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const commitsRootPath = `/${ownerName}/${projectName}/commits`;
-  const isProjectCodeHistoryRoot = pathname === commitsRootPath;
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  if (!isProjectCodeHistoryRoot) {
-    return (
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectCodeHistoryTitle />
-        <Outlet />
-      </LegacyI18nProvider>
-    );
-  }
-
-  if (nestedProjectShell) {
-    return <ProjectCodeHistoryNestedRoute runtimeConfig={runtimeConfig} />;
-  }
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectCodeHistoryRouteShell runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <LastOutletTransition routeId={Route.id} />;
 }
 
-function ProjectCodeHistoryNestedRoute({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+export function ProjectCodeHistoryIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
 
-  return (
-    <ProjectCodeHistoryScreen
-      nestedProjectShell
-      project={projectQuery.data}
-      runtimeConfig={runtimeConfig}
-    />
-  );
-}
-
-function ProjectCodeHistoryRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
-  const isStandardProjectOwnedShell = !projectSearchScope.organizationName;
-
-  if (!projectQuery.data) {
-    return null;
-  }
-
-  return (
-    <SiteLayoutShell
-      projectSearchScope={projectSearchScope}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks={isStandardProjectOwnedShell}
-    >
-      <ProjectCodeHistoryScreen
-        nestedProjectShell={false}
-        project={projectQuery.data}
-        runtimeConfig={runtimeConfig}
-      />
-    </SiteLayoutShell>
-  );
+  return <ProjectCodeHistoryScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectCodeHistoryScreen({
-  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
-  nestedProjectShell: boolean;
   project: ProjectContainer | undefined;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -156,12 +80,6 @@ function ProjectCodeHistoryScreen({
   return (
     <>
       <ProjectCodeHistoryTitle />
-      {nestedProjectShell ? null : (
-        <>
-          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-          <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-        </>
-      )}
       <ProjectCodeHistoryBody
         history={historyQuery.data}
         ownerName={ownerName}
@@ -190,15 +108,11 @@ export function ProjectCodeBranchHistoryRouteFrame({
   runtimeConfig: RuntimeConfig;
 }) {
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectCodeBranchHistoryRouteShell
-          page={page}
-          routeParams={routeParams}
-          runtimeConfig={runtimeConfig}
-        />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectCodeBranchHistoryRouteShell
+      page={page}
+      routeParams={routeParams}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
@@ -220,24 +134,15 @@ function ProjectCodeBranchHistoryRouteShell({
   );
   const project = projectQuery.data;
   if (!project || !historyQuery.data) return null;
-  const organizationName = projectSearchScopeOrganizationName(project, ownerName);
   return (
-    <SiteLayoutShell
-      projectSearchScope={{ organizationName, ownerName, projectName }}
+    <ProjectCodeHistoryBody
+      history={historyQuery.data}
+      ownerName={ownerName}
+      project={project}
+      projectName={projectName}
+      requestedBranch={branch}
       runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks={!organizationName}
-    >
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-      <ProjectCodeHistoryBody
-        history={historyQuery.data}
-        ownerName={ownerName}
-        project={project}
-        projectName={projectName}
-        requestedBranch={branch}
-        runtimeConfig={runtimeConfig}
-      />
-    </SiteLayoutShell>
+    />
   );
 }
 
@@ -648,13 +553,4 @@ function projectRoutePath(ownerName: string, projectName: string, ...parts: stri
 
 function encodeBranch(branch: string) {
   return encodeURIComponent(branch);
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName =
-    typeof project.organizationName === "string" ? project.organizationName : "";
-  if (organizationName) {
-    return organizationName;
-  }
-  return project.isProtected === true ? ownerName : undefined;
 }

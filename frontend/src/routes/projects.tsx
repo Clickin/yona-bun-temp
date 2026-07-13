@@ -88,6 +88,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className: undefined,
                     "data-status": undefined,
                   }}
+                  search={{ filter: "", labelIds: "" }}
                   to="/projects"
                 >
                   {t("project.public")} {t("title.projectList")}
@@ -100,6 +101,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     className: undefined,
                     "data-status": undefined,
                   }}
+                  search={{ filter: "" }}
                   to="/orgs"
                 >
                   {t("title.organization.list")}
@@ -180,8 +182,8 @@ function ProjectsPagination({
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
   const pageSearch = (pageNum: number) => ({
-    ...(filter ? { filter } : {}),
-    ...(labelIds ? { labelIds: labelIdSearchValue(labelIds) } : {}),
+    filter,
+    labelIds: labelIds ? labelIdSearchValue(labelIds) : "",
     pageNum,
   });
   const navigateToPage = (pageNum: number) => {
@@ -362,7 +364,7 @@ function ProjectListItem({
                       ),
                     );
                   }}
-                  search={{ labelIds: labelIdSearchValue(label.id) }}
+                  search={{ filter: "", labelIds: labelIdSearchValue(label.id) }}
                   to="/projects"
                 >
                   {label.name}
@@ -379,6 +381,7 @@ function ProjectListItem({
             <Link
               to="/$user"
               params={{ user: ownerName }}
+              search={{ daysAgo: 14, selected: "issues" }}
               className="owner-name-small"
               activeProps={{
                 "aria-current": undefined,

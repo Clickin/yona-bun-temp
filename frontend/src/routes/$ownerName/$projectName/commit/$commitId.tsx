@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { use, useState, type ReactNode } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -22,12 +22,9 @@ import { apiQueryKeys } from "../../../../api/query-keys";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
-import { YonaQueryProvider } from "../../../../query-client";
+import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
@@ -82,38 +79,23 @@ function ProjectCommitDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const routeParams = Route.useParams();
   const search = Route.useSearch();
-  const nestedProjectShell = use(ProjectNestedShellContext);
-
-  const screen = (
+  return (
     <ProjectCommitDetailScreen
       branch={search.branch}
-      nestedProjectShell={nestedProjectShell}
       path={search.path}
       routeParams={routeParams}
       runtimeConfig={runtimeConfig}
     />
   );
-
-  if (nestedProjectShell) return screen;
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        {screen}
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
 }
 
 function ProjectCommitDetailScreen({
   branch,
-  nestedProjectShell,
   path,
   routeParams,
   runtimeConfig,
 }: {
   branch: string;
-  nestedProjectShell: boolean;
   path: string;
   routeParams: { commitId: string; ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
@@ -136,7 +118,7 @@ function ProjectCommitDetailScreen({
     return null;
   }
 
-  const body = (
+  return (
     <>
       <ProjectCommitDetailTitle commitId={detailQuery.data.commit?.commitId ?? commitId} />
       <ProjectCommitDetailBody
@@ -156,39 +138,6 @@ function ProjectCommitDetailScreen({
         runtimeConfig={runtimeConfig}
       />
     </>
-  );
-
-  if (nestedProjectShell) return body;
-
-  return (
-    <ProjectCommitDetailStandaloneShell project={projectQuery.data} runtimeConfig={runtimeConfig}>
-      {body}
-    </ProjectCommitDetailStandaloneShell>
-  );
-}
-
-function ProjectCommitDetailStandaloneShell({
-  children,
-  project,
-  runtimeConfig,
-}: {
-  children: ReactNode;
-  project: ProjectContainer;
-  runtimeConfig: RuntimeConfig;
-}) {
-  const { ownerName, projectName } = Route.useParams();
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(project, ownerName),
-    ownerName,
-    projectName,
-  };
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
-      {children}
-    </SiteLayoutShell>
   );
 }
 
@@ -1631,24 +1580,6 @@ function ReviewForm({
 
 function stringField(value: unknown, fallback: string) {
   return typeof value === "string" && value.length > 0 ? value : fallback;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return projectIsProtected(project) ? ownerName : undefined;
-}
-
-function projectIsProtected(project: ProjectContainer) {
-  return (
-    project.isProtected === true ||
-    project.isProtected === "true" ||
-    project.isProtected === 1 ||
-    project.isProtected === "1" ||
-    stringField(project.projectScope, "") === "protected"
-  );
 }
 
 function Editor({
