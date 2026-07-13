@@ -474,6 +474,9 @@ test("project search renders legacy error/forbidden.scala.html shell for anonymo
     ],
   });
   await expect(page.locator(".project-menu-outer .project-menu-gruop > li.active")).toHaveCount(1);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(
     page.locator(".project-menu-outer .project-menu-gruop > li.active a"),
   ).toHaveAttribute("href", `${basePath}/admin/sample`);
