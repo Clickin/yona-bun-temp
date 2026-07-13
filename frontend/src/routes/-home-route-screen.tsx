@@ -3778,6 +3778,93 @@ const authenticatedSidenavRecentShellStyles = stylex.create({
   },
 });
 
+const leftSidebarRecentShellStyles = stylex.create({
+  group: {
+    position: "relative",
+  },
+  input: {
+    backgroundColor: globalColors.leftSidebarRecentSearchSurface,
+    borderRadius: 0,
+    borderStyle: "none",
+    borderWidth: 0,
+    boxSizing: "content-box",
+    color: globalColors.leftSidebarRecentIssueText,
+    display: "block",
+    fontSize: "14px",
+    height: "34px",
+    marginBottom: 0,
+    outline: "none",
+    width: "99%",
+    ":focus": {
+      borderStyle: "none",
+      borderWidth: 0,
+      outline: "none",
+    },
+  },
+  bar: {
+    display: "block",
+    position: "relative",
+    "::before": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      left: "50%",
+      position: "absolute",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+    "::after": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      position: "absolute",
+      right: "50%",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+  },
+  focusedBar: {
+    "::before": {
+      width: "50%",
+    },
+    "::after": {
+      width: "50%",
+    },
+  },
+  tabContent: {
+    overflow: "hidden",
+  },
+  pane: {
+    display: "none",
+    listStyleType: "none",
+    margin: "0 0 10px",
+    maxHeight: "80vh",
+    overflowX: "visible",
+    overflowY: "auto",
+    padding: 0,
+    "::-webkit-scrollbar": {
+      backgroundColor: globalColors.sidenavScrollbarTrack,
+      height: "10px",
+      width: "5px",
+    },
+    "::-webkit-scrollbar-thumb": {
+      backgroundColor: globalColors.sidenavScrollbarThumb,
+    },
+  },
+  activePane: {
+    display: "block",
+  },
+  noResult: {
+    color: globalColors.sidenavNoResultText,
+    fontSize: "16px",
+    marginBottom: "25px",
+    marginTop: "10px",
+    textAlign: "center",
+  },
+});
+
 function SidebarRecentIssueList({
   idPrefix,
   isLeftSidebar,
@@ -3796,7 +3883,7 @@ function SidebarRecentIssueList({
   const issues = recordArray(workspace.issueItems);
   const normalizedQuery = normalizedSidebarQuery(searchQuery);
   const visibleIssues = issues.filter((issue) => sidebarIssueMatches(issue, normalizedQuery));
-  const isAuthenticatedSidenav = idPrefix === undefined;
+  const isAuthenticatedSidenav = !isLeftSidebar && idPrefix === undefined;
 
   return (
     <div>
@@ -3804,19 +3891,27 @@ function SidebarRecentIssueList({
         <div
           className="tab-pane myproject-list-wrap"
           data-stylex-owner={
-            isAuthenticatedSidenav ? "authenticated-sidenav-recent-shell" : undefined
+            isAuthenticatedSidenav
+              ? "authenticated-sidenav-recent-shell"
+              : isLeftSidebar
+                ? "left-sidebar-recent-shell"
+                : undefined
           }
         >
           <div
             className={`group ${
-              stylex.props(isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.group)
-                .className
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.group,
+                isLeftSidebar && leftSidebarRecentShellStyles.group,
+              ).className
             }`.trimEnd()}
           >
             <input
               className={`search-input project-search ${
-                stylex.props(isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.input)
-                  .className
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.input,
+                  isLeftSidebar && leftSidebarRecentShellStyles.input,
+                ).className
               }`.trimEnd()}
               type="text"
               id={sidebarDomId(idPrefix, "recent-issue-query")}
@@ -3834,6 +3929,8 @@ function SidebarRecentIssueList({
                   isAuthenticatedSidenav &&
                     isSearchFocused &&
                     authenticatedSidenavRecentShellStyles.focusedBar,
+                  isLeftSidebar && leftSidebarRecentShellStyles.bar,
+                  isLeftSidebar && isSearchFocused && leftSidebarRecentShellStyles.focusedBar,
                 ).className
               }`.trimEnd()}
             ></span>
@@ -3842,6 +3939,7 @@ function SidebarRecentIssueList({
             className={`tab-content ${
               stylex.props(
                 isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.tabContent,
+                isLeftSidebar && leftSidebarRecentShellStyles.tabContent,
               ).className
             }`.trimEnd()}
           >
@@ -3853,6 +3951,9 @@ function SidebarRecentIssueList({
                     isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.pane,
                     isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.activePane,
                     isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.noResult,
+                    isLeftSidebar && leftSidebarRecentShellStyles.pane,
+                    isLeftSidebar && leftSidebarRecentShellStyles.activePane,
+                    isLeftSidebar && leftSidebarRecentShellStyles.noResult,
                   ).className
                 }`.trimEnd()}
               >
@@ -3864,6 +3965,8 @@ function SidebarRecentIssueList({
                   stylex.props(
                     isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.pane,
                     isAuthenticatedSidenav && authenticatedSidenavRecentShellStyles.activePane,
+                    isLeftSidebar && leftSidebarRecentShellStyles.pane,
+                    isLeftSidebar && leftSidebarRecentShellStyles.activePane,
                   ).className
                 }`.trimEnd()}
                 id={sidebarDomId(idPrefix, "recentlyVisitedIssues")}

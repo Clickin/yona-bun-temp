@@ -45,6 +45,8 @@ export const globalColors = stylex.defineVars({
   sidenavOrganizationHoverSurface: "#f1f1f1",
   // _usermenu.less: .sidebar .user-project-list .project-list:hover background-color
   leftSidebarRecentIssueHoverSurface: "rgba(255, 255, 255, 0.15)",
+  // _usermenu.less: .sidebar .search-input background-color
+  leftSidebarRecentSearchSurface: "#000000",
   // _page.less: .sidebar color inherited by Recent issue rows
   leftSidebarRecentIssueText: "#ffffff",
   // _usermenu.less: .issue-title-start color

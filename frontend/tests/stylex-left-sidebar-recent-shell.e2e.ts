@@ -7,101 +7,123 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
 
-test("authenticated Recent History shell has narrow global-theme StyleX ownership", () => {
+test("left sidebar Recent History shell has narrow global-theme StyleX ownership", () => {
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const styleStart = source.indexOf("const authenticatedSidenavRecentShellStyles");
+  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const styleStart = source.indexOf("const leftSidebarRecentShellStyles");
   const styleEnd = source.indexOf("function SidebarRecentIssueList", styleStart);
   const recentStart = source.indexOf("function SidebarRecentIssueList");
   const recentEnd = source.indexOf("function SidebarRecentIssueItem", recentStart);
+
   expect(styleStart).toBeGreaterThanOrEqual(0);
   expect(styleEnd).toBeGreaterThan(styleStart);
   expect(recentStart).toBeGreaterThanOrEqual(0);
   expect(recentEnd).toBeGreaterThan(recentStart);
+
   const shellStyles = source.slice(styleStart, styleEnd);
   const recentSource = source.slice(recentStart, recentEnd);
-  expect(shellStyles).toContain("globalColors.sidenavSearchFocusAccent");
-  expect(shellStyles).toContain("globalColors.sidenavScrollbarTrack");
-  expect(shellStyles).toContain("globalColors.sidenavScrollbarThumb");
-  expect(shellStyles).toContain("globalColors.sidenavNoResultText");
-  expect(shellStyles).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(/i);
+  for (const token of [
+    "leftSidebarRecentSearchSurface",
+    "leftSidebarRecentIssueText",
+    "sidenavSearchFocusAccent",
+    "sidenavScrollbarTrack",
+    "sidenavScrollbarThumb",
+    "sidenavNoResultText",
+  ]) {
+    expect(shellStyles).toContain(`globalColors.${token}`);
+  }
+  expect(shellStyles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(theme).toContain('leftSidebarRecentSearchSurface: "#000000"');
+  expect(recentSource).toMatch(/isLeftSidebar\s*\? "left-sidebar-recent-shell"/);
+  expect(recentSource).toContain("leftSidebarRecentShellStyles");
+  expect(recentSource).toContain(
+    "const isAuthenticatedSidenav = !isLeftSidebar && idPrefix === undefined",
+  );
   expect(recentSource).toContain('"authenticated-sidenav-recent-shell"');
-  expect(recentSource).toContain("authenticatedSidenavRecentShellStyles");
-  expect(recentSource).not.toContain("authenticatedSidenavDirectProjectRowStyles");
-  expect(recentSource).not.toContain("authenticatedSidenavFavoriteProjectRowStyles");
 });
 
 for (const state of ["populated", "empty"] as const) {
   for (const viewport of [
-    { height: 900, label: "desktop", width: 1366, shellWidth: 350, x: 1015 },
-    { height: 844, label: "mobile", width: 390, shellWidth: 390, x: 9 },
+    { height: 900, label: "desktop", shellTop: 105, width: 1366 },
+    { height: 844, label: "mobile", shellTop: 78, width: 390 },
   ]) {
-    test(`authenticated Recent History ${state} shell preserves ${viewport.label} parity and behavior`, async ({
+    test(`left sidebar Recent History ${state} shell preserves ${viewport.label} parity and behavior`, async ({
       page,
     }) => {
       await page.setViewportSize(viewport);
       await installAuthenticatedHome(page, state);
       await page.goto(`${BASE_PATH}/`);
       await page.evaluate(() => document.fonts.ready);
-      await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
-      await page.getByRole("button", { name: "Recent History", exact: true }).click();
+
+      const sidebar = page.locator("#sidebar");
+      await expect(sidebar).toBeVisible();
+      await sidebar.getByRole("button", { exact: true, name: "Recent History" }).click();
 
       const shell = page.locator(
-        '#myRecentIssueList [data-stylex-owner="authenticated-sidenav-recent-shell"]',
+        '#left-sidebar-myRecentIssueList [data-stylex-owner="left-sidebar-recent-shell"]',
       );
       const input = shell.getByRole("textbox", { name: "Type name" });
-      const result = shell.locator("#recentlyVisitedIssues");
+      const result = shell.locator("#left-sidebar-recentlyVisitedIssues");
       await expect(shell).toBeVisible();
+
       const initial = await readEvidence(shell);
-      console.log(
-        `authenticated-sidenav-recent-shell-${state}-${viewport.label}`,
-        JSON.stringify(initial),
-      );
+      console.log(`left-sidebar-recent-shell-${state}-${viewport.label}`, JSON.stringify(initial));
       await saveScreenshot(
         page,
-        `stylex-authenticated-sidenav-recent-shell-${state}-${viewport.label}-${initial.hasOwner ? "after" : "before"}.png`,
+        `stylex-left-sidebar-recent-shell-${state}-${viewport.label}-${initial.hasOwner ? "after" : "before"}.png`,
       );
+      await shell.screenshot({
+        path: resolve(
+          SCREENSHOT_DIRECTORY,
+          `stylex-left-sidebar-recent-shell-element-${state}-${viewport.label}-${initial.hasOwner ? "after" : "before"}.png`,
+        ),
+      });
 
       expect(initial.hasOwner).toBe(true);
       expect(initial.pluginAttributes).toEqual([]);
       expect(initial.geometry.root).toMatchObject({
         height: state === "populated" ? 106 : 97,
-        left: viewport.x,
-        width: viewport.shellWidth,
+        left: 0,
+        top: viewport.shellTop,
+        width: 270,
       });
-      expect(initial.geometry.group).toMatchObject({ height: 42, width: viewport.shellWidth });
+      expect(initial.geometry.group).toMatchObject({ height: 42, left: 0, width: 270 });
       expect(initial.geometry.input).toMatchObject({
         height: 42,
-        width: viewport.label === "desktop" ? 358.5 : 398.09375,
+        left: 0,
+        width: 279.296875,
       });
       expect(initial.geometry.inner).toMatchObject({
         height: state === "populated" ? 64 : 55,
-        width: viewport.shellWidth,
+        width: 270,
       });
       expect(initial.geometry.result).toMatchObject({
         height: state === "populated" ? 54 : 20,
-        width: viewport.shellWidth,
+        width: 270,
       });
       expect(initial.geometry.group.bottom).toBe(initial.geometry.inner.top);
       expect(initial.styles.groupPosition).toBe("relative");
       expect(initial.styles.input).toEqual({
+        backgroundColor: "rgb(0, 0, 0)",
         borderRadius: "0px",
         borderStyle: "none",
         borderWidth: "0px",
         boxSizing: "content-box",
+        color: "rgb(255, 255, 255)",
         display: "block",
         fontSize: viewport.label === "desktop" ? "14px" : "16px",
         height: "34px",
         marginBottom: "0px",
         outlineStyle: "none",
         padding: "4px 6px",
-        width: viewport.label === "desktop" ? "346.5px" : "386.094px",
+        width: "267.297px",
       });
       expect(initial.styles.bar).toEqual({ display: "block", position: "relative" });
       expect(initial.styles.before).toEqual({
         backgroundColor: "rgb(233, 30, 99)",
         bottom: "1px",
         height: "1px",
-        left: `${viewport.shellWidth / 2}px`,
+        left: "135px",
         position: "absolute",
         transitionDuration: "0.2s",
         width: "0px",
@@ -111,7 +133,7 @@ for (const state of ["populated", "empty"] as const) {
         bottom: "1px",
         height: "1px",
         position: "absolute",
-        right: `${viewport.shellWidth / 2}px`,
+        right: "135px",
         transitionDuration: "0.2s",
         width: "0px",
       });
@@ -129,6 +151,7 @@ for (const state of ["populated", "empty"] as const) {
         scrollbarThumbBackground: "rgb(39, 136, 186)",
         scrollbarWidth: "5px",
       });
+
       if (state === "empty") {
         expect(initial.styles.result).toMatchObject({
           color: "rgb(199, 21, 133)",
@@ -139,20 +162,22 @@ for (const state of ["populated", "empty"] as const) {
       } else {
         await expect(result.locator(":scope > li.user-li")).toHaveCount(2);
         for (const row of await result.locator(":scope > li.user-li").all()) {
-          await expect(row).toHaveAttribute(
-            "data-stylex-owner",
-            "authenticated-sidenav-recent-issue-rows",
-          );
+          await expect(row).toHaveAttribute("data-stylex-owner", "left-sidebar-recent-issue-rows");
         }
         await input.fill("needle");
         await expect(result.locator(":scope > li.user-li")).toHaveCount(1);
         await expect(result).toContainText("needle issue");
         await expect(result).not.toContainText("other issue");
-        await page.getByRole("button", { name: "Project", exact: true }).click();
-        await expect(page.locator("#myProjectList .project-search")).toHaveValue("needle");
-        await page.getByRole("button", { name: "Recent History", exact: true }).click();
+        await sidebar.getByRole("button", { exact: true, name: "Project" }).click();
+        await expect(sidebar.locator("#left-sidebar-myProjectList .project-search")).toHaveValue(
+          "needle",
+        );
+        await sidebar.getByRole("button", { exact: true, name: "Recent History" }).click();
         await expect(input).toHaveValue("needle");
         await input.fill("");
+        await expect(result.locator(":scope > li.user-li")).toHaveCount(2);
+        await expect(result).toContainText("needle issue");
+        await expect(result).toContainText("other issue");
       }
 
       await input.focus();
@@ -162,23 +187,58 @@ for (const state of ["populated", "empty"] as const) {
             Number.parseFloat(getComputedStyle(element.querySelector(".bar")!, "::before").width),
           ),
         )
-        .toBe(viewport.shellWidth / 2);
+        .toBe(135);
       const focused = await readEvidence(shell);
-      expect(focused.styles.before.width).toBe(`${viewport.shellWidth / 2}px`);
-      expect(focused.styles.after.width).toBe(`${viewport.shellWidth / 2}px`);
+      expect(focused.styles.before.width).toBe("135px");
+      expect(focused.styles.after.width).toBe("135px");
+      await shell.screenshot({
+        path: resolve(
+          SCREENSHOT_DIRECTORY,
+          `stylex-left-sidebar-recent-shell-element-${state}-${viewport.label}-focused-after.png`,
+        ),
+      });
 
+      await input.blur();
+      await expect
+        .poll(() =>
+          shell.evaluate((element) =>
+            Number.parseFloat(getComputedStyle(element.querySelector(".bar")!, "::before").width),
+          ),
+        )
+        .toBe(0);
+      await input.focus();
+      await expect
+        .poll(() =>
+          shell.evaluate((element) =>
+            Number.parseFloat(getComputedStyle(element.querySelector(".bar")!, "::before").width),
+          ),
+        )
+        .toBe(135);
+      const beforeDeletion = await readEvidence(shell);
       await removeKnownLegacyShellClasses(shell);
       const withoutLegacyPresentation = await readEvidence(shell);
-      expect(withoutLegacyPresentation.hasOwner).toBe(true);
-      expect(withoutLegacyPresentation.geometry).toEqual(focused.geometry);
-      expect(withoutLegacyPresentation.styles).toEqual(focused.styles);
-      expect(withoutLegacyPresentation.pluginAttributes).toEqual([]);
+      expect(withoutLegacyPresentation).toEqual(beforeDeletion);
+
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+      await expect(
+        page.locator(
+          '#left-sidebar-myRecentIssueList [data-stylex-owner="authenticated-sidenav-recent-shell"]',
+        ),
+      ).toHaveCount(0);
+      await expect(
+        page.locator('#myRecentIssueList [data-stylex-owner="authenticated-sidenav-recent-shell"]'),
+      ).toHaveCount(1);
+      await expect(
+        page.locator('#myRecentIssueList [data-stylex-owner="left-sidebar-recent-shell"]'),
+      ).toHaveCount(0);
     });
   }
 }
 
 async function installAuthenticatedHome(page: Page, state: "populated" | "empty") {
   await page.addInitScript((basePath) => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "true");
+    localStorage.setItem("sidebarActiveMenu", "myRecentIssueList");
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
     ).__YONA_RUNTIME_CONFIG__ = {
@@ -245,7 +305,7 @@ async function readEvidence(shell: Locator) {
     const inner = element.lastElementChild;
     const result = inner?.firstElementChild;
     if (!group || !input || !bar || !inner || !result) {
-      throw new Error("Authenticated Recent History shell is incomplete");
+      throw new Error("Left sidebar Recent History shell is incomplete");
     }
     const box = (target: Element) => {
       const rect = target.getBoundingClientRect();
@@ -274,7 +334,7 @@ async function readEvidence(shell: Locator) {
         result: box(result),
         root: box(element),
       },
-      hasOwner: element.getAttribute("data-stylex-owner") === "authenticated-sidenav-recent-shell",
+      hasOwner: element.getAttribute("data-stylex-owner") === "left-sidebar-recent-shell",
       pluginAttributes: Array.from(
         element.querySelectorAll(
           "[data-toggle], [data-target], [data-action], [data-href], [data-url], [data-request-method]",
@@ -304,10 +364,12 @@ async function readEvidence(shell: Locator) {
         groupPosition: getComputedStyle(group).position,
         innerOverflow: { x: innerStyle.overflowX, y: innerStyle.overflowY },
         input: {
+          backgroundColor: inputStyle.backgroundColor,
           borderRadius: inputStyle.borderRadius,
           borderStyle: inputStyle.borderStyle,
           borderWidth: inputStyle.borderWidth,
           boxSizing: inputStyle.boxSizing,
+          color: inputStyle.color,
           display: inputStyle.display,
           fontSize: inputStyle.fontSize,
           height: inputStyle.height,

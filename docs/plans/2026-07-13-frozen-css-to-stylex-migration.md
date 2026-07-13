@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, eighteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, nineteen user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -454,6 +454,18 @@ Fresh live legacy and local desktop/390 evidence agrees on the 270×27 row and 2
 popover with its 280px left edge. The current React framed shell's desktop tab wrap and mobile
 overflow clipping are recorded as separate outer-owner gaps and are not compensated in this
 slice. This is not Wave 1 completion.
+
+The nineteenth verified slice migrates only the framed left sidebar's Recent History search/list
+shell. StyleX owns the group, black/white input surface, React focus-bar pseudos, tab-content,
+populated and empty panes, list/overflow bounds, and 5×10px scrollbar. The new black search
+surface and every reused text/focus/scrollbar/no-result color come from the canonical global
+theme, with no dark value or toggle. Removing the known shell presentation classes retains the
+complete owned computed surface and relative geometry, so this owner has no intentional fallback
+declaration. The Bootstrap input padding and max-720 `font-size:16px !important` remain separate
+shared input primitives rather than this shell's fallback. Fresh live legacy and local 1366/390
+evidence agrees on the 270px shell, 42px input group, 64px populated inner pane, 54px list, 135px
+focus halves, and scrollbar. The current React desktop tab wrap places the local shell 27px lower;
+that outer-owner gap is recorded without compensation. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
