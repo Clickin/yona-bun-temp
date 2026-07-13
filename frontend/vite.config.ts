@@ -97,7 +97,6 @@ export default defineConfig(({ mode }) => {
       proxy: buildBackendProxy(basePath, backendTarget),
     },
     resolve: {
-      dedupe: ["react", "react-dom"],
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
