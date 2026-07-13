@@ -19,6 +19,7 @@ import {
   toggleProjectWatchRest,
   updateProjectOverviewRest,
 } from "../../api/org-project";
+import { readProjectPostQueryOptions } from "../../api/boards";
 import { apiQueryKeys } from "../../api/query-keys";
 import { pullRequestCreateFormOptionsQueryOptions } from "../../api/pull-requests";
 import { isSearchType, projectSearchQueryOptions } from "../../api/search";
@@ -131,6 +132,7 @@ function ProjectHomeRoute() {
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
+  const postEditNumber = exactProjectPostEditNumber(pathname, homePath);
   const codeBranch = exactProjectCodeBranch(pathname, homePath);
   const codeFilePath = exactProjectCodeFilePath(pathname, homePath);
   const commitsBranch = exactProjectCommitsBranch(pathname, homePath);
@@ -216,9 +218,11 @@ function ProjectHomeRoute() {
                   ? "issueDetail"
                   : postDetailNumber !== null
                     ? "postDetail"
-                    : codeBranch !== null || codeFilePath !== null
-                      ? "code"
-                      : routeActive;
+                    : postEditNumber !== null
+                      ? "postEdit"
+                      : codeBranch !== null || codeFilePath !== null
+                        ? "code"
+                        : routeActive;
 
   if (!active) {
     return <Outlet />;
@@ -259,6 +263,7 @@ function ProjectHomeRouteShell({
     | "newFork"
     | "newPullRequest"
     | "postDetail"
+    | "postEdit"
     | "postform"
     | "pullRequest"
     | "pullRequestDetail"
@@ -334,6 +339,22 @@ function ProjectHomeRouteShell({
     },
     retryOnMount: false,
   });
+  const postEditNumber = exactProjectPostEditNumber(
+    useRouterState({ select: (state) => state.location.pathname }),
+    `/${ownerName}/${projectName}`,
+  );
+  const postEditQuery = useQuery({
+    ...readProjectPostQueryOptions(runtimeConfig, {
+      ownerName,
+      postNumber: postEditNumber === null ? "" : String(postEditNumber),
+      projectName,
+    }),
+    enabled: active === "postEdit" && postEditNumber !== null,
+    retry(failureCount, error) {
+      return projectRouteErrorStatus(error) !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
+  });
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const projectSearch = projectSearchRouteSearch(locationHref);
   const searchQuery = useQuery({
@@ -372,6 +393,7 @@ function ProjectHomeRouteShell({
   const preserveSearchShellRef = useRef(false);
   const preserveIssueDetailShellRef = useRef(false);
   const preserveIssueEditShellRef = useRef(false);
+  const preservePostEditShellRef = useRef(false);
   const previousSearchHrefRef = useRef(locationHref);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
@@ -411,6 +433,14 @@ function ProjectHomeRouteShell({
   ) {
     preserveIssueEditShellRef.current = false;
   }
+  if (active === "postEdit" && previousActiveRef.current === "postDetail") {
+    preservePostEditShellRef.current = true;
+  } else if (
+    active !== "postEdit" ||
+    (postEditQuery.error && projectRouteErrorStatus(postEditQuery.error) !== 404)
+  ) {
+    preservePostEditShellRef.current = false;
+  }
   previousActiveRef.current = active;
   previousSearchHrefRef.current = locationHref;
 
@@ -437,6 +467,17 @@ function ProjectHomeRouteShell({
       (!issueEditQuery.data &&
         projectRouteErrorStatus(issueEditQuery.error) !== 404 &&
         !preserveIssueEditShellRef.current))
+  ) {
+    return <Outlet />;
+  }
+
+  if (active === "postEdit" && projectRouteErrorStatus(postEditQuery.error) === 404) {
+    return <ProjectPostEditNotFoundRouteShell runtimeConfig={runtimeConfig} />;
+  }
+
+  if (
+    active === "postEdit" &&
+    (!query.data || (!postEditQuery.data && !preservePostEditShellRef.current))
   ) {
     return <Outlet />;
   }
@@ -595,6 +636,27 @@ function ProjectMembersErrorRouteShell({
   );
 }
 
+function ProjectPostEditNotFoundRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  const { t } = useLegacyMessages();
+
+  return (
+    <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <title>{t("error.internalServerError")}</title>
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="error-wrap">
+            <i className="ico-404"></i>
+            <p>{t("error.internalServerError")}</p>
+            <Link to="/" className="ybtn ybtn-primary">
+              {t("menu.home")}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </SiteLayoutShell>
+  );
+}
+
 function ProjectBranchesBadRequestRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
 
@@ -639,6 +701,7 @@ function ProjectLayoutScreen({
     | "newFork"
     | "newPullRequest"
     | "postDetail"
+    | "postEdit"
     | "postform"
     | "pullRequest"
     | "pullRequestDetail"
@@ -667,6 +730,7 @@ function ProjectLayoutScreen({
       active === "milestoneDetail" ||
       active === "milestoneEdit" ||
       active === "postDetail" ||
+      active === "postEdit" ||
       active === "pullRequestDetail" ||
       active === "pullRequestEdit" ||
       active === "pullRequestChanges" ||
@@ -743,26 +807,28 @@ function ProjectLayoutScreen({
                               ? "board"
                               : active === "postDetail"
                                 ? "board"
-                                : active === "issueform"
-                                  ? "issue"
-                                  : active === "issueDetail"
+                                : active === "postEdit"
+                                  ? "board"
+                                  : active === "issueform"
                                     ? "issue"
-                                    : active === "issueEdit"
+                                    : active === "issueDetail"
                                       ? "issue"
-                                      : active === "pullRequestDetail"
-                                        ? "pullRequest"
-                                        : active === "pullRequestEdit"
+                                      : active === "issueEdit"
+                                        ? "issue"
+                                        : active === "pullRequestDetail"
                                           ? "pullRequest"
-                                          : active === "pullRequestChanges"
+                                          : active === "pullRequestEdit"
                                             ? "pullRequest"
-                                            : active === "delete" ||
-                                                active === "changeVcs" ||
-                                                active === "labels" ||
-                                                active === "members" ||
-                                                active === "transfer" ||
-                                                active === "webhooks"
-                                              ? "setting"
-                                              : active
+                                            : active === "pullRequestChanges"
+                                              ? "pullRequest"
+                                              : active === "delete" ||
+                                                  active === "changeVcs" ||
+                                                  active === "labels" ||
+                                                  active === "members" ||
+                                                  active === "transfer" ||
+                                                  active === "webhooks"
+                                                ? "setting"
+                                                : active
           }
           basePath={runtimeConfig.basePath}
           project={project}
@@ -792,6 +858,7 @@ function ProjectLayoutScreen({
             active === "milestoneDetail" ||
             active === "milestoneEdit" ||
             active === "postDetail" ||
+            active === "postEdit" ||
             active === "pullRequestDetail" ||
             active === "pullRequestEdit" ||
             active === "pullRequestChanges" ||
@@ -844,6 +911,13 @@ function exactProjectPostNumber(pathname: string, homePath: string) {
   const match = new RegExp(`^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/post/(\\d+)$`).exec(
     pathname,
   );
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectPostEditNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/post/(\\d+)/editform$`,
+  ).exec(pathname);
   return match ? Number(match[1]) : null;
 }
 
