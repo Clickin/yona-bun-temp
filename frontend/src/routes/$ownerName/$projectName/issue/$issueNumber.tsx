@@ -4,6 +4,7 @@ import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanst
 import {
   Fragment,
   type ChangeEvent,
+  use,
   useEffect,
   useRef,
   useState,
@@ -19,9 +20,8 @@ import { listProjectLabelsQueryOptions } from "../../../../api/project-labels";
 import { currentSessionQueryOptions } from "../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { translateLegacyResource } from "../../../../api/translation";
-import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
+import { resolveInitialLanguage, useLegacyMessages } from "../../../../i18n";
 import type { ProjectContainer, ProjectMilestone, YonaRecord } from "../../../../api/types";
-import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import {
   deleteIssueComment,
@@ -43,7 +43,7 @@ import {
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { useRootToast } from "../../../__root";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -134,21 +134,27 @@ function ProjectIssueDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { issueNumber } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const nestedProjectShell = use(ProjectNestedShellContext);
 
   if (pathname.endsWith(`/issue/${issueNumber}/editform`)) {
     return <Outlet />;
   }
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectIssueDetailScreen runtimeConfig={runtimeConfig} />
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectIssueDetailScreen
+      nestedProjectShell={nestedProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
-function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectIssueDetailScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, issueNumber } = Route.useParams();
   const numericIssueNumber = Number(issueNumber) || 0;
   const projectQuery = useQuery(
@@ -161,6 +167,7 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     retry(failureCount, error) {
       return restApiErrorStatus(error) !== 404 && failureCount < 3;
     },
+    retryOnMount: false,
   });
   const labelsQuery = useQuery(
     listProjectLabelsQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -199,6 +206,15 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   );
 
   if (restApiErrorStatus(issueQuery.error) === 404) {
+    if (nestedProjectShell) {
+      return (
+        <>
+          <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
+          <ProjectIssueNotFoundBody ownerName={ownerName} projectName={projectName} />
+        </>
+      );
+    }
+
     return (
       <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
         <ProjectIssueNotFoundTitle ownerName={ownerName} projectName={projectName} />
@@ -218,16 +234,14 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     return null;
   }
 
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+  const detailContent = (
+    <>
       <ProjectIssueDetailTitle
         issueBodyMarkdown={stringField(issueQuery.data.bodyMarkdown)}
         issueTitle={stringField(issueQuery.data.title)}
         ownerName={ownerName}
         projectName={projectName}
       />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
-      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <IssueDetailAssets
         basePath={runtimeConfig.basePath}
         ownerName={ownerName}
@@ -247,6 +261,18 @@ function ProjectIssueDetailScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
+    </>
+  );
+
+  if (nestedProjectShell) {
+    return detailContent;
+  }
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectWithHeaderAssets} />
+      <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      {detailContent}
     </SiteLayoutShell>
   );
 }

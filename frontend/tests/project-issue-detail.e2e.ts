@@ -87,11 +87,11 @@ test("project issue detail restores live Korean metadata controls and editor geo
   await expect(page.locator(".span-right-pane #comment-77 .ago").first()).toHaveText("4일 전");
   await expect(page.locator(".project-header-outer")).toHaveAttribute(
     "style",
-    /legacy-assets\/images\/project_default\.jpg/u,
+    /src\/assets\/legacy\/project_default\.jpg/u,
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    /legacy-assets\/images\/project_default_logo\.png$/u,
+    /src\/assets\/legacy\/project_default_logo\.png$/u,
   );
 
   const assignee = page.getByRole("combobox", { name: "담당자" });
