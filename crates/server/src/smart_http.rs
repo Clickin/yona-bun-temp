@@ -513,7 +513,7 @@ pub(crate) fn smart_http_basic_challenge_response() -> Response {
     let mut response = (StatusCode::UNAUTHORIZED, LEGACY_LOGIN_REQUIRED_MESSAGE).into_response();
     response.headers_mut().insert(
         WWW_AUTHENTICATE,
-        HeaderValue::from_static("Basic realm=\"Yona\""),
+        HeaderValue::from_static("Basic realm=\"Yoram\""),
     );
     response
 }

@@ -129,16 +129,12 @@ fn rest_site_update_response(config: &SiteUpdateConfig) -> RestSiteUpdateRespons
     } else {
         None
     };
-    let release_url = version_to_update.as_ref().map(|version| {
-        trimmed_option(Some(&config.release_url))
-            .or_else(|| {
-                discovered_update
-                    .as_ref()
-                    .and_then(|metadata| metadata.release_url.clone())
-            })
-            .unwrap_or_else(|| {
-                format!("https://github.com/yona-projects/yona/releases/tag/{version}")
-            })
+    let release_url = version_to_update.as_ref().and_then(|_| {
+        trimmed_option(Some(&config.release_url)).or_else(|| {
+            discovered_update
+                .as_ref()
+                .and_then(|metadata| metadata.release_url.clone())
+        })
     });
     let message = if version_to_update.is_some() {
         "site.update.isAvailable"
@@ -181,7 +177,7 @@ fn site_update_download_payload(
             .file_name()
             .and_then(|value| value.to_str())
             .filter(|value| !value.trim().is_empty())
-            .unwrap_or("yona-update.bin")
+            .unwrap_or("yoram-update.bin")
             .to_string();
         return Ok(SiteUpdateDownloadPayload {
             bytes,
@@ -307,7 +303,7 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
         .set_write_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
     let request = format!(
-        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yona-Rust-Update-Checker\r\nAccept: */*\r\nConnection: close\r\n\r\n",
+        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yoram-Update-Checker\r\nAccept: */*\r\nConnection: close\r\n\r\n",
         parsed.path, parsed.host
     );
     std::io::Write::write_all(&mut stream, request.as_bytes())
@@ -343,7 +339,7 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
         .rsplit('/')
         .next()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or("yona-update.bin")
+        .unwrap_or("yoram-update.bin")
         .to_string();
     Ok(SiteUpdateDownloadPayload {
         bytes: body,
@@ -447,7 +443,7 @@ fn site_update_payload_from_http_response_bytes(
         .rsplit('/')
         .next()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or("yona-update.bin")
+        .unwrap_or("yoram-update.bin")
         .to_string();
     Ok(SiteUpdateDownloadPayload {
         bytes: body,

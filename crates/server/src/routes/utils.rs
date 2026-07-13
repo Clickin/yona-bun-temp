@@ -215,7 +215,7 @@ pub(crate) fn default_public_origin(configured: &str) -> String {
 }
 
 pub(crate) fn site_name_from_option(value: Option<&str>) -> String {
-    trimmed_option(value).unwrap_or_else(|| "Yona".to_string())
+    trimmed_option(value).unwrap_or_else(|| "Yoram".to_string())
 }
 
 pub(crate) fn trimmed_option(value: Option<&str>) -> Option<String> {
@@ -2534,6 +2534,16 @@ mod tests {
         assert_eq!(
             max_uploaded_file_size_from_env_value(Some("not-a-number")),
             LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+    }
+
+    #[test]
+    fn site_name_defaults_to_yoram_without_overriding_configured_identity() {
+        assert_eq!(site_name_from_option(None), "Yoram");
+        assert_eq!(site_name_from_option(Some("  ")), "Yoram");
+        assert_eq!(
+            site_name_from_option(Some(" Custom Forge ")),
+            "Custom Forge"
         );
     }
 }

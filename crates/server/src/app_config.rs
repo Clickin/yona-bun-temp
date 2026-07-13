@@ -304,9 +304,9 @@ impl Default for AppRuntimeConfig {
             project_default_menus: default_project_menu_keys(),
             project_default_scope: "public".to_string(),
             session_timeout_seconds: None,
-            send_yona_usage: true,
+            send_yona_usage: false,
             show_user_email: true,
-            site_name: "Yona".to_string(),
+            site_name: site_name_from_option(None),
             site_update: SiteUpdateConfig::default(),
             slack_webhook_colors: BTreeMap::new(),
             smtp: SmtpRuntimeConfig::default(),
@@ -342,7 +342,7 @@ impl AppRuntimeConfig {
                 config.project_default_scope.as_deref(),
             ),
             session_timeout_seconds: config.session_timeout_seconds,
-            send_yona_usage: config.send_yona_usage.unwrap_or(true),
+            send_yona_usage: config.send_yona_usage.unwrap_or(false),
             show_user_email: config.show_user_email.unwrap_or(true),
             site_name: site_name_from_option(config.site_name.as_deref()),
             site_update: SiteUpdateConfig::from_startup(config),
@@ -505,7 +505,7 @@ impl SmtpRuntimeConfig {
     pub(crate) fn default_from(&self) -> String {
         trimmed_option(Some(&self.from))
             .or_else(|| self.sender_from_user_and_domain())
-            .unwrap_or_else(|| "noreply@yona.local".to_string())
+            .unwrap_or_else(|| "noreply@yoram.local".to_string())
     }
 
     pub(crate) fn not_configured_items(&self) -> Vec<String> {
@@ -541,5 +541,21 @@ impl TranslationProxyConfig {
             header_value: trimmed_option(config.translation_header_value.as_deref())
                 .unwrap_or_default(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn application_and_smtp_defaults_use_yoram_identity() {
+        let defaults = AppRuntimeConfig::default();
+        assert_eq!(defaults.site_name, "Yoram");
+        assert!(!defaults.send_yona_usage);
+        assert_eq!(
+            SmtpRuntimeConfig::default().default_from(),
+            "noreply@yoram.local"
+        );
     }
 }

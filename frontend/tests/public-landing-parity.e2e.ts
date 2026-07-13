@@ -60,7 +60,7 @@ const EXPECTED_PUBLIC_LANDING = `
         </ul>
       </div>
       <div class="signup-btn">
-        <a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success ybtn-padding">Sign up for Yona</a>
+        <a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success ybtn-padding">Sign up for Yoram</a>
       </div>
     </div>
   </div>
@@ -85,7 +85,7 @@ const EXPECTED_PUBLIC_LANDING = `
         <div class="feature-image"><i class="yobicon-articles"></i></div>
         <div class="feature-info">
           <h3 class="feature-title">Issue tracker</h3>
-          <p class="feature-desc">Yona provides an issue tracker to help you deal with your issues more easily and clearly.</p>
+          <p class="feature-desc">Yoram provides an issue tracker to help you deal with your issues more easily and clearly.</p>
         </div>
       </li>
       <li>
@@ -106,7 +106,7 @@ const EXPECTED_PUBLIC_LANDING = `
         <div class="feature-image"><i class="yobicon-friends"></i></div>
         <div class="feature-info">
           <h3 class="feature-title">Team play</h3>
-          <p class="feature-desc">Yona provides a simple and easy team management tool to help you build teams for projects.</p>
+          <p class="feature-desc">Yoram provides a simple and easy team management tool to help you build teams for projects.</p>
         </div>
       </li>
     </ul>
@@ -114,10 +114,7 @@ const EXPECTED_PUBLIC_LANDING = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -144,9 +141,9 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   expect(actual).toEqual(expected);
   expect(await readLegacyLayoutShell(page)).toEqual({
     contentType: "text/html; charset=UTF-8",
-    faviconHref: "/legacy-assets/images/favicon.ico",
-    ogDescription: "Yona",
-    ogTitle: "Yona",
+    faviconHref: `${basePath}/src/assets/yoram-favicon.svg`,
+    ogDescription: "Yoram",
+    ogTitle: "Yoram",
     ogType: "website",
     ogUrl: "/",
     stylesheetHrefs: [
@@ -161,8 +158,8 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
       "/legacy-assets/javascripts/lib/magnific-popup/magnific-popup.css",
     ],
     twitterCard: "summary",
-    twitterDescription: "Yona",
-    twitterTitle: "Yona",
+    twitterDescription: "Yoram",
+    twitterTitle: "Yoram",
     twitterUrl: "/",
     viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
     xUaCompatible: "IE=edge,chrome=1",
@@ -238,7 +235,7 @@ async function readLegacyLayoutShell(page: Page) {
 
     return {
       contentType: httpEquiv("Content-Type"),
-      faviconHref: href('link[rel="shortcut icon"]'),
+      faviconHref: href('link[rel="icon"]'),
       ogDescription: meta('meta[property="og:description"]'),
       ogTitle: meta('meta[property="og:title"]'),
       ogType: meta('meta[property="og:type"]'),

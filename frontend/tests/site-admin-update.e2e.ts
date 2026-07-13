@@ -9,15 +9,14 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
 </div>
 <header class="gnb-outer">
   <div class="gnb-inner">
-    <div class="pin" data-toggle="tooltip" data-placement="bottom" title="Sidebar">
+    <button type="button" class="pin" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
-    </div>
+    </button>
     <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+      <li><a href="__BASE_PATH__/" class="logo logo-letter">Y</a></li>
       <li><a href="__BASE_PATH__/projects" class="show-progress-bar">List All</a></li>
       <li class="divider"></li>
-      <li><a href="https://github.com/yona-projects/yona/issues" target="_blank">Feedback</a></li>
       <li>
         <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
@@ -36,9 +35,9 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
           <a href="__BASE_PATH__/users/logout"><span class="user-menu logout label">Log out</span></a>
         </div>
         <ul class="nav nav-tabs nm">
-          <li class="myOrganizationList active"><button type="button" data-toggle="tab">Favorite</button></li>
-          <li class="myProjectList"><button type="button" data-toggle="tab">Project</button></li>
-          <li class="myRecentIssueList"><button type="button" data-toggle="tab">Recent History</button></li>
+          <li class="myOrganizationList active"><button type="button">Favorite</button></li>
+          <li class="myProjectList"><button type="button">Project</button></li>
+          <li class="myRecentIssueList"><button type="button">Recent History</button></li>
         </ul>
         <div class="tab-content tab-box">
           <div id="usermenu-tab-content-list" class="tab-content">Loading...</div>
@@ -46,15 +45,15 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
       </div>
     </div>
     <ul class="gnb-usermenu">
-      <li class="gnb-usermenu-item" data-toggle="tooltip" data-placement="bottom" title="Shortcut (A)">
+      <li class="gnb-usermenu-item" title="Shortcut (A)">
         <a href="__BASE_PATH__/user/issues" class="user-item-btn loggged-in">My Issues</a>
       </li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" data-toggle="tooltip" title="Site administration" data-placement="bottom" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
+      <li class="gnb-usermenu-item"><a href="__BASE_PATH__/sites/userList" title="Site administration" class="usermenu-icon-button show-progress-bar"><i class="yobicon-wrench"></i></a></li>
       <li class="divider"></li>
-      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" data-toggle="tooltip" data-placement="bottom" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
+      <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn"><button type="button" class="gnb-dropdown-toggle" title="User menu, Shortcut (F)"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png"></span><span class="caret"></span></button></li>
       <li class="gnb-usermenu-dropdown">
-        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn" data-toggle="dropdown"><i class="yobicon-plus"></i><span class="caret"></span></button>
+        <button type="button" class="gnb-dropdown-toggle dropdwon-box-btn"><i class="yobicon-plus"></i><span class="caret"></span></button>
         <ul class="dropdown-menu flat right">
           <li><a href="__BASE_PATH__/user/issues/new">New issue</a></li>
           <li><a href="__BASE_PATH__/user/issues/new/mine">New issue - personal inbox</a></li>
@@ -90,7 +89,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
         <div class="title_area">
           <h2 class="pull-left">Software Update</h2>
         </div>
-        <p>Current version is Yona 1.0.0</p>
+        <p>Current version is Yoram 1.0.0</p>
         <p>You are using the latest version</p>
       </div>
     </div>
@@ -98,10 +97,7 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -124,12 +120,12 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   await expect(page).toHaveTitle("Site settings");
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/update`);
   await expect.poll(() => new URL(page.url()).search).toBe("");
-  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All"]);
   expect(
     await page
       .locator(".gnb-nav a[href]")
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
-  ).toEqual([basePath, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
+  ).toEqual([`${basePath}/`, `${basePath}/projects`]);
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -168,15 +164,11 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
     const searchBox = document.querySelector(".gnb-search-form .search-box");
     const listAllLink = document.querySelector('.gnb-nav a[href$="/projects"]');
-    const feedbackLink = document.querySelector(
-      '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
-    );
     if (
       !(navbar instanceof HTMLElement) ||
       !(searchForm instanceof HTMLElement) ||
       !(searchBox instanceof HTMLElement) ||
-      !(listAllLink instanceof HTMLElement) ||
-      !(feedbackLink instanceof HTMLElement)
+      !(listAllLink instanceof HTMLElement)
     ) {
       return null;
     }
@@ -184,13 +176,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
     const searchFormRect = searchForm.getBoundingClientRect();
     const searchBoxRect = searchBox.getBoundingClientRect();
     const listAllRect = listAllLink.getBoundingClientRect();
-    const feedbackRect = feedbackLink.getBoundingClientRect();
     return {
-      feedback: {
-        left: feedbackRect.left,
-        right: feedbackRect.right,
-        top: feedbackRect.top,
-      },
       listAll: {
         left: listAllRect.left,
         right: listAllRect.right,
@@ -208,7 +194,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
         right: searchBoxRect.right,
         top: searchBoxRect.top,
       },
-      searchBoxDoesNotOverlapFeedback: searchBoxRect.left >= feedbackRect.right,
+      searchBoxDoesNotOverlapListAll: searchBoxRect.left >= listAllRect.right,
       searchForm: {
         bottom: searchFormRect.bottom,
         right: searchFormRect.right,
@@ -224,9 +210,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   expect(shellBoxes!.searchBox.bottom).toBeLessThanOrEqual(shellBoxes!.navbar.bottom);
   expect(shellBoxes!.listAll.left).toBeGreaterThan(shellBoxes!.navbar.left);
   expect(shellBoxes!.listAll.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
-  expect(shellBoxes!.feedback.left).toBeGreaterThan(shellBoxes!.listAll.right);
-  expect(shellBoxes!.feedback.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
-  expect(shellBoxes!.searchBoxDoesNotOverlapFeedback).toBe(true);
+  expect(shellBoxes!.searchBoxDoesNotOverlapListAll).toBe(true);
   await expect
     .poll(() => siteSettingSidebarAnchorMarkers(page))
     .toEqual([
@@ -290,7 +274,7 @@ test("site admin update renders the legacy available-version branch", async ({ p
   });
 
   await page.goto(`${basePath}/sites/update`);
-  await expect(page.locator("strong")).toHaveText("Yona 1.1.0 is available");
+  await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
   const updateSidebarLink = page.locator(".site-setting-nav li.active a");
   await expect(updateSidebarLink).toHaveText("Software Update1");
   await expect(updateSidebarLink.locator(".notification-badge")).toHaveText("1");
@@ -311,13 +295,13 @@ test("site admin update renders the legacy available-version branch", async ({ p
     });
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
-  expect(routeSource).toContain("const releaseUrl = response.versionToUpdate");
-  expect(routeSource).toContain("href={releaseUrl}");
+  expect(routeSource).toContain("const releaseUrl = response.releaseUrl?.trim()");
+  expect(routeSource).not.toContain("href={releaseUrl}");
   expect(routeSource).toContain("to={releaseUrl}");
   expect(routeSource).not.toContain("externalReleaseUrl");
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("reloadDocument");
-  await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
+  await expect(page.getByText("Current version is Yoram 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
   expect(await updateAvailableMetrics(page)).toEqual({
     contentWidthRatio: 0.83,
@@ -336,7 +320,7 @@ test("site admin update renders the legacy available-version branch", async ({ p
   });
 });
 
-test("site admin update derives the legacy release URL when the payload omits it", async ({
+test("site admin update omits the download link when no Yoram release URL exists", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -350,16 +334,13 @@ test("site admin update derives the legacy release URL when the payload omits it
   });
 
   await page.goto(`${basePath}/sites/update`);
-  await expect(page.locator("strong")).toHaveText("Yona 1.1.0 is available");
-  await expect(page.locator("a.ybtn.ybtn-success")).toHaveAttribute(
-    "href",
-    "https://github.com/yona-projects/yona/releases/tag/v1.1.0",
-  );
+  await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
+  await expect(page.locator("a.ybtn.ybtn-success")).toHaveCount(0);
+  await expect(page.getByText("Download", { exact: true })).toHaveCount(0);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
-  expect(routeSource).toContain(
-    "https://github.com/yona-projects/yona/releases/tag/v${response.versionToUpdate}",
-  );
-  await expect(page.getByText("Current version is Yona 1.0.0")).toBeVisible();
+  expect(routeSource).toContain("const releaseUrl = response.releaseUrl?.trim()");
+  expect(routeSource).not.toContain("github.com/yona-projects/yona/releases/tag");
+  await expect(page.getByText("Current version is Yoram 1.0.0")).toBeVisible();
   await expect(page.getByText("You are using the latest version")).toHaveCount(0);
 });
 

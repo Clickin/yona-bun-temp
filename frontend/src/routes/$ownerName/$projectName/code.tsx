@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -97,7 +97,7 @@ function ProjectCodeNoHead({
 }) {
   const { t } = useLegacyMessages();
   const { ownerName, projectName } = Route.useParams();
-  const siteName = "Yona";
+  const siteName = runtimeConfig.siteName ?? "Yoram";
   const vcs = stringField(project.vcs, "").toUpperCase();
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
   const browserTitle = isSvn

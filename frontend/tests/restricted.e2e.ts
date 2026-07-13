@@ -50,10 +50,7 @@ const EXPECTED_RESTRICTED_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      & © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      & <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -66,14 +63,14 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
 
   await page.goto(`${basePath}/restricted`);
   await expect(page.locator(".gnb-outer")).toBeVisible();
-  await expect(page).toHaveTitle("Yona");
+  await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
       page.evaluate(() =>
         Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
       ),
     )
-    .toContain("Yona");
+    .toContain("Yoram");
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
   await expect(page.locator(".page-footer-outer")).toBeVisible();
   await expect(page.locator("iframe")).toHaveAttribute(
@@ -143,7 +140,7 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
     .toBe("1");
 });
 
-test("restricted footer links preserve legacy external anchors without router markers", async ({
+test("restricted footer renders the approved Yoram attribution without upstream links", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -151,41 +148,8 @@ test("restricted footer links preserve legacy external anchors without router ma
 
   await page.goto(`${basePath}/restricted`);
 
-  await expectLegacyAnchor(
-    page.locator(
-      '.page-footer .provider a[href="https://github.com/yona-projects/yona/blob/master/AUTHORS"]',
-    ),
-    {
-      className: "yona-author",
-      href: "https://github.com/yona-projects/yona/blob/master/AUTHORS",
-      target: "_blank",
-      text: "Yona authors",
-    },
-  );
-  await expectLegacyAnchor(page.locator('.page-footer .provider a[href="https://navercorp.com"]'), {
-    className: null,
-    href: "https://navercorp.com",
-    target: "_blank",
-    text: "NAVER Corp.",
-  });
-  await expectLegacyAnchor(
-    page.locator('.page-footer .provider a[href="https://naverlabs.com/"]'),
-    {
-      className: "naver-labs",
-      href: "https://naverlabs.com/",
-      target: "_blank",
-      text: "NAVER LABS",
-    },
-  );
-  await expectLegacyAnchor(
-    page.locator('.page-footer .provider a[href="https://www.ncloud.com/?referer=yona"]'),
-    {
-      className: "naver-cloud-platform",
-      href: "https://www.ncloud.com/?referer=yona",
-      target: "_blank",
-      text: "NAVER CLOUD PLATFORM",
-    },
-  );
+  await expect(page.locator(".page-footer .provider")).toHaveText("Yoram authors");
+  await expect(page.locator(".page-footer .provider a")).toHaveCount(0);
 });
 
 test("restricted route source keeps internal navigation out of raw anchors", async () => {
@@ -211,7 +175,7 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
 
 test("restricted route source renders legacy site title without imperative mutation", async () => {
   expect(RESTRICTED_ROUTE_SOURCE).toContain(
-    'const browserTitle = runtimeConfig.siteName ?? "Yona";',
+    'const browserTitle = runtimeConfig.siteName ?? "Yoram";',
   );
   expect(RESTRICTED_ROUTE_SOURCE).toContain("<title>{browserTitle}</title>");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/\bdocument\s*\.\s*title\b/u);
@@ -222,24 +186,12 @@ test("restricted route source renders legacy site title without imperative mutat
   );
 });
 
-test("restricted route source keeps footer links as external href Links", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain(
-    'authors: "https://github.com/yona-projects/yona/blob/master/AUTHORS"',
-  );
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('naver: "https://navercorp.com"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('naverLabs: "https://naverlabs.com/"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('ncloud: "https://www.ncloud.com/?referer=yona"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.authors}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.authors}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.naver}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.naver}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.naverLabs}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.naverLabs}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("href={FOOTER_LINKS.ncloud}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("to={FOOTER_LINKS.ncloud}");
-  expect(RESTRICTED_ROUTE_SOURCE).toContain("reloadDocument");
-  expect(RESTRICTED_ROUTE_SOURCE).not.toContain(" as never");
-  expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/to=\{["'`]https?:\/\//);
+test("restricted route source keeps the approved plain Yoram footer attribution", async () => {
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('<span className="provider">Yoram authors</span>');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("github.com/yona-projects/yona");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("navercorp.com");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("naverlabs.com");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain("ncloud.com");
 });
 
 test("restricted route source drops route-owned tooltip initializer marker", async () => {

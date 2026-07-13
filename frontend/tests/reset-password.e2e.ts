@@ -23,9 +23,9 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
     "login-form-wrap frm-wrap",
   ]);
   await expect(routeRoot.locator(":scope > .reset-password .title")).toHaveText(
-    "Reset password for Yona",
+    "Reset password for Yoram",
   );
-  await expect(routeRoot.locator(":scope > .reset-password .highlight")).toHaveText("Yona");
+  await expect(routeRoot.locator(":scope > .reset-password .highlight")).toHaveText("Yoram");
   await expect(routeRoot.locator(":scope > .reset-password .tag-line")).toHaveText(
     "Web-based platform for collaborative software development",
   );
@@ -77,7 +77,7 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
   expect(desktop.viewport).toEqual({ height: 720, scrollWidth: 1280, width: 1280 });
   expectBox(desktop.page, { height: 338, width: 1280, x: 0, y: 40 });
   expectBox(desktop.tagLineWrap, { height: 152, width: 1280, x: 0, y: 40 });
-  expectBox(desktop.title, { height: 42, width: 447.92, x: 416.03, y: 120 });
+  expectBox(desktop.title, { height: 42, width: 472.94, x: 403.53, y: 120 });
   expectBox(desktop.tagLine, { height: 20, width: 1280, x: 0, y: 172 });
   expectBox(desktop.form, { height: 132, width: 400, x: 440, y: 246 });
   expectBox(desktop.password, { height: 36, width: 398, x: 440, y: 246 });

@@ -8,20 +8,20 @@ const CODE_ROUTE_SOURCE = new URL(
 const EXPECTED_BROWSER_TITLE = "sample - Code - admin/sample";
 
 const EXPECTED_NO_HEAD_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid"><div class="span12"><div class="alert alert-block"><h4>The repository is empty!</h4></div><h5>Create a new local repository by cloning the repository created on Yona, and push README.md file.</h5><pre><code>git clone http://admin@example.com/admin/sample sample
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="row-fluid"><div class="span12"><div class="alert alert-block"><h4>The repository is empty!</h4></div><h5>Create a new local repository by cloning the repository created on Yoram, and push README.md file.</h5><pre><code>git clone http://admin@example.com/admin/sample sample
 cd sample/
 echo "# sample" > README.md
 git add README.md
-git commit -m "Hello Yona"
-git push origin master</code></pre><h5>Or, create a new local repository and add it as a remote repository of the Yona repository. Then push README.md file.</h5><pre><code>mkdir sample
+git commit -m "Hello Yoram"
+git push origin master</code></pre><h5>Or, create a new local repository and add it as a remote repository of the Yoram repository. Then push README.md file.</h5><pre><code>mkdir sample
 cd sample/
 echo "# sample" > README.md
 git init
 git add README.md
-git commit -m "Hello Yona"
+git commit -m "Hello Yoram"
 git remote add origin http://admin@example.com/admin/sample
 git push origin master</code></pre><h5>If you have already created a local git repository, you can just add a git repo created in (0) to make a remote repo and push your code.</h5><pre><code>git remote add origin http://admin@example.com/admin/sample
-git push origin master</code></pre><h5>You can keep updating your code in your Yona repository by using 'pull' and 'push'. 'pull' retrieves updated code from the remote repository; 'push' posts your code to the remote repository.</h5><pre><code>git pull origin master
+git push origin master</code></pre><h5>You can keep updating your code in your Yoram repository by using 'pull' and 'push'. 'pull' retrieves updated code from the remote repository; 'push' posts your code to the remote repository.</h5><pre><code>git pull origin master
 git push origin master</code></pre></div></div></div></div>
 `;
 
@@ -64,6 +64,27 @@ test("project empty git repository matches legacy code/nohead.scala.html DOM", a
     spanMinHeight: "30px",
     spanWidthPercent: 100,
   });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileBoxes = await page.evaluate(() => {
+    const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const projectWrap = document.querySelector<HTMLElement>(".project-page-wrap");
+    const alert = document.querySelector<HTMLElement>(".alert.alert-block");
+    if (!pageWrap || !projectWrap || !alert) return null;
+    const box = (element: HTMLElement) => element.getBoundingClientRect();
+    return {
+      alertRight: Math.round(box(alert).right),
+      pageRight: Math.round(box(pageWrap).right),
+      projectRight: Math.round(box(projectWrap).right),
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(mobileBoxes).toEqual({
+    alertRight: 390,
+    pageRight: 390,
+    projectRight: 390,
+    viewportWidth: 390,
+  });
 });
 
 test("project trailing-slash code root replaces to the canonical legacy code URL", async ({
@@ -90,6 +111,8 @@ test("project empty git repository title is rendered by the nohead route", () =>
   expect(source).toContain('? `${t("title.commitHistory")} - ${ownerName}/${projectName}`');
   expect(source).toContain(': `${projectName} - ${t("menu.code")} - ${ownerName}/${projectName}`;');
   expect(source).toContain("<title>{browserTitle}</title>");
+  expect(source).toContain('const siteName = runtimeConfig.siteName ?? "Yoram";');
+  expect(source).not.toContain('const siteName = "Yona";');
   expect(source).not.toMatch(/\bdocument\s*\.\s*title\b/u);
   expect(source).not.toMatch(/\bglobalThis\s*\.\s*document\b/u);
   expect(source).not.toMatch(/\bwindow\s*\.\s*document\b/u);

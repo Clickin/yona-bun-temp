@@ -46,10 +46,23 @@ impl Default for MailboxPollingConfig {
         Self {
             enabled: false,
             fetch_command: String::new(),
-            imap_address: "noreply@yona.local".to_string(),
+            imap_address: "noreply@yoram.local".to_string(),
             initial_delay_ms: 5_000,
             interval_ms: 60_000,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn polling_defaults_use_yoram_identity() {
+        assert_eq!(
+            MailboxPollingConfig::default().imap_address,
+            "noreply@yoram.local"
+        );
     }
 }
 

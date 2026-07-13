@@ -385,8 +385,8 @@ pub(crate) async fn project_list(
         ListProjectsResponse {
             items: vec![ProjectListItem {
                 owner_name: "pilot".to_string(),
-                project_name: "yona".to_string(),
-                overview: "Yona project".to_string(),
+                project_name: "yoram".to_string(),
+                overview: "Yoram project".to_string(),
                 project_scope: "public".to_string(),
                 ..Default::default()
             }],

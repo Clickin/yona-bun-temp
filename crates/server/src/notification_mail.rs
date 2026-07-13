@@ -61,12 +61,12 @@ impl Default for NotificationMailDeliveryConfig {
     fn default() -> Self {
         Self {
             allowed_domains: Vec::new(),
-            default_from: "noreply@yona.local".to_string(),
+            default_from: "noreply@yoram.local".to_string(),
             hide_address: false,
             integrations: IntegrationConfig::default(),
             recipient_limit: None,
             reply_to_address: None,
-            site_name: "Yona".to_string(),
+            site_name: site_name_from_option(None),
         }
     }
 }
@@ -821,4 +821,16 @@ pub fn spawn_notification_mail_scheduler(
             tokio::time::sleep(Duration::from_millis(config.interval_ms)).await;
         }
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn delivery_defaults_use_yoram_identity() {
+        let defaults = NotificationMailDeliveryConfig::default();
+        assert_eq!(defaults.default_from, "noreply@yoram.local");
+        assert_eq!(defaults.site_name, "Yoram");
+    }
 }

@@ -410,7 +410,7 @@ async fn smart_http_rejects_getanyfile_and_challenges_anonymous_push() {
         headers
             .get(http::header::WWW_AUTHENTICATE)
             .and_then(|value| value.to_str().ok()),
-        Some("Basic realm=\"Yona\"")
+        Some("Basic realm=\"Yoram\"")
     );
 }
 
@@ -559,7 +559,7 @@ async fn smart_http_basic_auth_routes_ldap_and_preserves_local_fallback_and_toke
         headers
             .get(http::header::WWW_AUTHENTICATE)
             .and_then(|value| value.to_str().ok()),
-        Some("Basic realm=\"Yona\"")
+        Some("Basic realm=\"Yoram\"")
     );
 }
 
@@ -636,7 +636,7 @@ async fn smart_http_basic_auth_uses_injected_confirmation_config_without_env_mut
         headers
             .get(http::header::WWW_AUTHENTICATE)
             .and_then(|value| value.to_str().ok()),
-        Some("Basic realm=\"Yona\"")
+        Some("Basic realm=\"Yoram\"")
     );
 }
 

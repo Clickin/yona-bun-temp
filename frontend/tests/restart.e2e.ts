@@ -6,7 +6,7 @@ const EXPECTED_RESTART_SCREEN = `
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__HOME_HREF__" class="logo"><span>Yona</span></a>
+        <a href="__HOME_HREF__" class="logo"><span>Yoram</span></a>
         <h3>Welcome!</h3>
         <p class="secret-box txt-center">
           Server needs to be restarted.
@@ -17,7 +17,7 @@ const EXPECTED_RESTART_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Powered by <strong>Yona</strong></span>
+    <span class="provider">Powered by <strong>Yoram</strong></span>
   </div>
 </footer>
 `;
@@ -27,7 +27,7 @@ const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
   <div class="container page-wrap">
     <div class="page">
       <div class="secret-wrap">
-        <a href="__HOME_HREF__" class="logo"><span>Yona</span></a>
+        <a href="__HOME_HREF__" class="logo"><span>Yoram</span></a>
         <h3>Welcome!</h3>
         <p class="secret-box txt-center">
           Server needs to be restarted.Please update application.secret with random text.
@@ -38,7 +38,7 @@ const EXPECTED_FAILED_SECRET_RESTART_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Powered by <strong>Yona</strong></span>
+    <span class="provider">Powered by <strong>Yoram</strong></span>
   </div>
 </footer>
 `;

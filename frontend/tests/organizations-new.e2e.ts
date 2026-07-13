@@ -97,10 +97,7 @@ const EXPECTED_ORGANIZATION_NEW = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -113,12 +110,12 @@ test("organization create form matches legacy organization/create.scala.html DOM
   await mockAuthenticatedSession(page);
 
   await page.goto(`${basePath}/organizations/new`);
-  await expect(page).toHaveTitle("Yona");
+  await expect(page).toHaveTitle("Yoram");
   expect(
     await page.evaluate(() =>
       Array.from(document.head.querySelectorAll("title"), (title) => title.textContent ?? ""),
     ),
-  ).toContain("Yona");
+  ).toContain("Yoram");
   await expect(page.locator('form[name="new-org"]')).toBeVisible();
   await expect(page.locator("#name")).toBeFocused();
   await expect(page.locator(".n-alert")).toHaveAttribute("data-errType", "name");

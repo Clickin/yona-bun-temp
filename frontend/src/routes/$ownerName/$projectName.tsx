@@ -559,11 +559,15 @@ function ProjectHomeRouteShell({
     return null;
   }
 
-  // BranchApp only renders the project layout for Git projects. Preserve its
-  // site-level bad-request output for other VCS types.
+  // BranchApp remains Git-only, while CodeApp has a distinct SVN no-head
+  // screen at the exact code root. Preserve the bad-request shell only for
+  // pull requests and unsupported code-root VCS values.
+  const projectVcs = query.data.vcs.toUpperCase();
+  const codeRootVcsSupported =
+    projectVcs === "GIT" || projectVcs === "SVN" || projectVcs === "SUBVERSION";
   if (
-    (active === "pullRequest" || (active === "code" && pathname === codePath)) &&
-    query.data.vcs !== "GIT"
+    (active === "pullRequest" && projectVcs !== "GIT") ||
+    (active === "code" && pathname === codePath && !codeRootVcsSupported)
   ) {
     return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }

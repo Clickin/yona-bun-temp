@@ -286,7 +286,7 @@ pub(super) fn lock(
     let comment = xml::text(&request, "comment")
         .or_else(|| xml::text(&request, "owner"))
         .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "Yona WebDAV lock".to_string());
+        .unwrap_or_else(|| "Yoram WebDAV lock".to_string());
     let token = lock_helpers::new_token();
     let lock = match yoram_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
         Ok(lock) => lock,

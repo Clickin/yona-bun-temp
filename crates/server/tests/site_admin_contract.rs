@@ -4967,6 +4967,36 @@ async fn site_admin_update_status_follows_legacy_update_view_branches() {
 }
 
 #[tokio::test]
+async fn site_admin_update_status_does_not_synthesize_an_upstream_release_url() {
+    let (app, _repo, db) = build_app_with_site_update_config(SiteUpdateConfig {
+        current_version: "9.9.8".to_string(),
+        latest_version: "v9.9.9".to_string(),
+        ..SiteUpdateConfig::default()
+    })
+    .await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let payload =
+        response_json(rest_get(app.clone(), "/yona/api/v1/site/update", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(payload["message"], "site.update.isAvailable");
+    assert_eq!(payload["versionToUpdate"], "v9.9.9");
+    assert!(payload["releaseUrl"].is_null());
+    assert!(!payload
+        .to_string()
+        .contains("github.com/yona-projects/yona"));
+
+    let download = rest_get(
+        app,
+        "/yona/api/v1/site/update/download",
+        Some(&admin_cookie),
+    )
+    .await;
+    assert_eq!(download.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn site_admin_update_status_discovers_live_metadata_when_configured() {
     let metadata_dir = tempfile::tempdir().expect("metadata tempdir");
     let metadata_path = metadata_dir.path().join("latest.json");

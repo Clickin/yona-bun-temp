@@ -70,6 +70,8 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
   await expect(page).toHaveTitle("커밋 히스토리 - admin/sample");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("코드");
   await expect(page.locator(".alert.alert-block h4")).toHaveText("저장소가 비어있습니다!");
+  await expect(page.locator(".project-page-wrap h5")).toContainText("Yoram");
+  await expect(page.locator(".project-page-wrap h5")).not.toContainText("Yona");
   await expect(page.locator(".project-util-wrap")).toContainText("그만 지켜보기");
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({
     alertHeight: 80,
@@ -80,7 +82,6 @@ test("live ko-KR empty svn code root keeps the legacy title and responsive shell
     projectWidth: 1346,
     utilWidth: 147,
   });
-
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readNoHeadSvnShellMetrics(page)).toEqual({
     alertHeight: 80,

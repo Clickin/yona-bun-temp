@@ -1,6 +1,6 @@
 # Frontend Yoram Rebrand
 
-Status: active intentional deviation
+Status: Phase 2 complete; intentional identity deviation retained
 Date: 2026-07-13
 
 ## Approved identity
@@ -40,15 +40,55 @@ Yona attribution outside the product-facing UI.
 
 ## Verification evidence
 
-Phase 2 is complete only when the frontend inventory has no unapproved
-user-facing Yona/NAVER identity, focused Korean desktop/mobile E2E and screenshot
-baselines are updated deliberately, `pnpm --dir frontend check` and production
-build pass, and legal/upstream notices remain present. Phase 3 StyleX work is a
-separate commit and cannot rewrite the frozen legacy LESS/Bootstrap sources.
+The frontend inventory has no unapproved user-facing Yona/NAVER identity,
+focused Korean desktop/mobile E2E and screenshots were updated deliberately,
+`pnpm --dir frontend check`, focused rebrand Vitest, and the production build
+pass, and legal/upstream notices remain present. Phase 3 StyleX work remains a
+separate commit and does not rewrite the frozen legacy LESS/Bootstrap sources.
 
 The full-stack integration restored all eight Rust crates and `cargo check
---workspace` passes. The four focused Playwright files start the real Rust
-backend and pass 46/75 cases; the remaining 29 expose pre-existing Router-lineage
-parity regressions (default `/projects?filter=&labelIds=` serialization,
-active-link attributes, and focus/navigation timing) rather than missing backend
-or rebrand runtime failures. These remain an explicit Phase 2 verification gap.
+--workspace` passes. The focused Playwright inventory starts the real Rust
+backend. Identity-focused cases pass; nine older cases still expose independently
+tracked DOM/Router baseline drift (form action base prefixes, tab element roles,
+and stale fixture structure), not rebrand or backend runtime failures.
+
+The empty Git/SVN repository instructions at `/admin/sample/code` now project
+the configured runtime site name with the approved `Yoram` fallback. This keeps
+the exact legacy `code/nohead.scala.html` and `code/nohead_svn.scala.html` DOM,
+commands, route behavior, and frozen geometry while replacing the formerly
+hardcoded user-visible `Yona` copy. The parent project shell now recognizes
+Git, SVN, and SUBVERSION as supported VCS values for the exact `/code` root,
+while retaining the Git-only pull-request and unsupported-VCS error branches.
+Focused Git and SVN E2E cover English and Korean copy plus desktop and 390px
+geometry.
+
+Managed Rust backend + React Playwright screenshot baselines for the ko-KR
+empty SVN state are stored at
+`output/playwright/yoram-rebrand-code-nohead-ko-desktop.png` (1366x900,
+SHA-256 `05e808f5b69f9147bf25c9f95060b97d1380082012b8670aaf4d9364d414bc2d`)
+and `output/playwright/yoram-rebrand-code-nohead-ko-mobile.png` (390x844,
+SHA-256 `a32172f4dc6e096de92a54eb62c58d85b4f94ed3db346c383bd14708f66eff20`).
+The focused capture run passed 1/1; screenshot calls were temporary and are not
+part of the E2E source.
+
+The software-update screen keeps the legacy available-version and current-version
+copy, but no longer invents a Yona GitHub release target when `releaseUrl` is
+absent. Until a public Yoram repository exists, an available version without a
+configured or discovered nonempty release URL renders no Download link. A real
+configured or discovered release URL remains an unchanged external link.
+
+The shared editor Markdown help retains the exact legacy feature order,
+input/output examples, two-column structure, toggle interaction, local sample
+image, and frozen geometry from `help/markdown.scala.html`. Product-facing
+upstream examples (`yobi.io`, `repo.yona.io`, `demo.yobi.io`, `@yobi`, and
+`Yobi` titles) are intentionally replaced by `example.com`, `@example`, and
+neutral internal sample paths. No Yoram repository or developer-contact link is
+invented before a public repository exists.
+
+Phase 2 identity verification baselines now expect the approved `Yoram`
+fallback in route metadata, public copy, password recovery highlights,
+restricted/restart branding, and the plain `Yoram authors` footer. The password
+recovery desktop title metric was re-recorded for the longer approved name;
+mobile wrapping is unchanged. `/migration` intentionally retains its legacy
+user-visible `Yona to Github` migration-tool label, and compatibility-only CSS,
+route, environment, API, and test-description names remain unchanged.

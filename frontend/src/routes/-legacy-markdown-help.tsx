@@ -34,16 +34,16 @@ const MARKDOWN_STYLING_SAMPLE = `
 `;
 
 const MARKDOWN_LINK_SAMPLE = `
-[Site](http://yobi.io/ "Yobi Site")
+[Site](https://example.com/ "Example Site")
 
-http://yobi.io/
+https://example.com/
 `;
 
 const MARKDOWN_LINK_OUTPUT_SAMPLE = `
 
-[Site](http://yobi.io/ "Yobi Site")
+[Site](https://example.com/ "Example Site")
 
-http://yobi.io/
+https://example.com/
 `;
 
 const MARKDOWN_LIST_INPUT_SAMPLE = `
@@ -68,11 +68,11 @@ const MARKDOWN_TASK_LIST_SAMPLE = `
 `;
 
 const MARKDOWN_IMAGE_INPUT_SAMPLE = `
-![title](https://repo.yona.io/assets/images/ico-like-small.png "Yobi")
+![title](https://example.com/images/sample.png "Sample image")
 `;
 
 const MARKDOWN_IMAGE_OUTPUT_SAMPLE = `
-![title](/assets/images/ico-like-small.png "Yobi")
+![title](/assets/images/ico-like-small.png "Sample image")
 `;
 
 const MARKDOWN_BLOCKQUOTE_SAMPLE = `
@@ -109,7 +109,7 @@ Also, you can copy & paste table from excel sheet
 
 const MARKDOWN_SHORT_LINK_SAMPLE = `
 Issue no: #2
-Mention: @yobi
+Mention: @example
 commit: @763575 or @763575f177a4ce8b9370954de3ea1a1410205593
 `;
 
@@ -120,7 +120,7 @@ type MarkdownSampleHeadingRendererProps = ComponentPropsWithoutRef<"h1"> & Extra
 
 function MarkdownSampleLink({ children, href, node: _node, ...props }: MarkdownSampleLinkProps) {
   return href ? (
-    <Link href={href} to={href} {...props}>
+    <Link to={href} {...props}>
       {children}
     </Link>
   ) : (
@@ -561,22 +561,19 @@ export function LegacyMarkdownHelp() {
               <div className="markdown-wrap">
                 <p>
                   Issue no:{" "}
-                  <MarkdownSampleLink href="http://demo.yobi.io/yobi/yobi/issue/2">
-                    #2
-                  </MarkdownSampleLink>
+                  <MarkdownSampleLink href="/example/example/issue/2">#2</MarkdownSampleLink>
                 </p>
                 <p></p>
                 <p>
-                  Mention:{" "}
-                  <MarkdownSampleLink href="http://demo.yobi.io/yobi">@yobi</MarkdownSampleLink>
+                  Mention: <MarkdownSampleLink href="/example">@example</MarkdownSampleLink>
                 </p>
                 <p>
                   commit:{" "}
-                  <MarkdownSampleLink href="http://demo.yobi.io/yobi/yobi/commit/763575">
+                  <MarkdownSampleLink href="/example/example/commit/763575">
                     @763575
                   </MarkdownSampleLink>{" "}
                   or{" "}
-                  <MarkdownSampleLink href="http://demo.yobi.io/yobi/yobi/commit/763575f177a4ce8b9370954de3ea1a1410205593">
+                  <MarkdownSampleLink href="/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593">
                     @763575
                   </MarkdownSampleLink>
                 </p>

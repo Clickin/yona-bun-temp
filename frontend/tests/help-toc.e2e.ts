@@ -72,13 +72,13 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yona를 설치하고 싶어요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yoram를 설치하고 싶어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            Yona를 설치하고자 하면 <a href="https://github.com/doortts/yona#korean">https://github.com/doortts/yona#korean</a>를 참고해 주세요.
+            공개 저장소가 준비되면 설치 안내를 제공할 예정입니다.
           </div>
         </div>
       </li>
@@ -166,14 +166,13 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yona의 버그를 발견했어요.</button>
+          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yoram의 버그를 발견했어요.</button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
           <div class="answer" style="width: 100%;">
-            Yona는 현재 Open Source로 진행되고 있습니다. 버그를 발견하셨다면
-            <a href="https://github.com/nforge/yobi/issues">Yona 이슈트래커에 등록</a>해 주시거나 패치를 만들어 보내주시면 됩니다.
+            Yoram는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를 통해 버그를 제보하거나 패치를 보내실 수 있습니다.
           </div>
         </div>
       </li>
@@ -182,10 +181,7 @@ const EXPECTED_HELP_SCREEN = `
 </div>
 <footer class="page-footer-outer">
   <div class="page-footer">
-    <span class="provider">Copyright <a href="https://github.com/yona-projects/yona/blob/master/AUTHORS" target="_blank" class="yona-author">Yona authors</a>
-      &amp; © <a href="https://navercorp.com" target="_blank">NAVER Corp.</a>
-      &amp; <a href="https://naverlabs.com/" target="_blank" class="naver-labs">NAVER LABS</a>
-      Supported by <a href="https://www.ncloud.com/?referer=yona" target="_blank" class="naver-cloud-platform">NAVER CLOUD PLATFORM</a></span>
+    <span class="provider">Yoram authors</span>
   </div>
 </footer>
 `;
@@ -210,7 +206,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.querySelector\(["'`]title["'`]\)/);
   expect(HELP_ROUTE_SOURCE).not.toMatch(/\bdocument\.head\b/);
   expect(HELP_ROUTE_SOURCE).not.toMatch(/useEffect[\s\S]{0,200}\btitle\b/);
-  expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/doortts/yona#korean"');
+  expect(HELP_ROUTE_SOURCE).not.toContain("github.com/doortts/yona");
   expect(HELP_ROUTE_SOURCE).toContain('prefixBasePath(runtimeConfig.basePath, "/")');
   expect(HELP_ROUTE_SOURCE).toContain("handleLayoutRootClickCapture");
   expect(HELP_ROUTE_SOURCE).toContain('target.className !== "logo logo-letter"');
@@ -226,7 +222,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(HELP_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(HELP_ROUTE_SOURCE).toContain('"aria-current": undefined');
   expect(HELP_ROUTE_SOURCE).toContain('"data-status": undefined');
-  expect(HELP_ROUTE_SOURCE).toContain('href="https://github.com/nforge/yobi/issues"');
+  expect(HELP_ROUTE_SOURCE).not.toContain("github.com/nforge/yobi");
 
   await page.addInitScript(() => {
     const originalAddEventListener = Element.prototype.addEventListener;
@@ -257,25 +253,13 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
   await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
   await expect(page.locator(".qas > .qa .question").first()).toHaveJSProperty("tagName", "BUTTON");
-  await expect(page.locator(".qas > .qa .answer a")).toHaveCount(5);
+  await expect(page.locator(".qas > .qa .answer a")).toHaveCount(3);
   expect(await renderedHelpAnswerLinks(page)).toEqual([
-    {
-      href: "https://github.com/doortts/yona#korean",
-      text: "https://github.com/doortts/yona#korean",
-    },
     { href: `${basePath}/`, text: "메인화면" },
     { href: `${basePath}/info`, text: "정보 페이지" },
     { href: `${basePath}/info`, text: "정보 페이지" },
-    { href: "https://github.com/nforge/yobi/issues", text: "Yona 이슈트래커에 등록" },
   ]);
   expect(await renderedHelpAnswerLinkActiveMarkers(page)).toEqual([
-    {
-      ariaCurrent: null,
-      className: null,
-      dataStatus: null,
-      href: "https://github.com/doortts/yona#korean",
-      text: "https://github.com/doortts/yona#korean",
-    },
     {
       ariaCurrent: null,
       className: null,
@@ -297,28 +281,8 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       href: `${basePath}/info`,
       text: "정보 페이지",
     },
-    {
-      ariaCurrent: null,
-      className: null,
-      dataStatus: null,
-      href: "https://github.com/nforge/yobi/issues",
-      text: "Yona 이슈트래커에 등록",
-    },
   ]);
-  expect(await readExternalAnswerLinkContainment(page)).toEqual([
-    {
-      href: "https://github.com/doortts/yona#korean",
-      text: "https://github.com/doortts/yona#korean",
-      containedInAnswer: true,
-      hasVisibleArea: true,
-    },
-    {
-      href: "https://github.com/nforge/yobi/issues",
-      text: "Yona 이슈트래커에 등록",
-      containedInAnswer: true,
-      hasVisibleArea: true,
-    },
-  ]);
+  expect(await readExternalAnswerLinkContainment(page)).toEqual([]);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -456,6 +420,14 @@ test("shared markdown help uses typed React targets without legacy target marker
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(SHARED_MARKDOWN_HELP_SOURCE).not.toMatch(
+    /(?:yobi\.io|repo\.yona\.io|demo\.yobi\.io|@yobi|"Yobi")/u,
+  );
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain('[Site](https://example.com/ "Example Site")');
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
+    '![title](https://example.com/images/sample.png "Sample image")',
+  );
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("Mention: @example");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain(".dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain("currentTarget.dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain('data-toggle="markdown-help"');
@@ -495,6 +467,29 @@ test("shared markdown help uses typed React targets without legacy target marker
     "markdownTables",
     "markdownShortLinks",
   ]);
+  await expect(markdownHelp.locator(".markdownLinks pre")).toContainText(
+    '[Site](https://example.com/ "Example Site")',
+  );
+  await expect(markdownHelp.locator(".markdownImages pre")).toContainText(
+    '![title](https://example.com/images/sample.png "Sample image")',
+  );
+  await expect(markdownHelp.locator(".markdownShortLinks pre")).toContainText("Mention: @example");
+  expect(
+    await markdownHelp.locator(".markdownShortLinks .markdown-wrap a").evaluateAll((links) =>
+      links.map((link) => ({
+        href: link.getAttribute("href"),
+        text: link.textContent?.trim(),
+      })),
+    ),
+  ).toEqual([
+    { href: `${basePath}/example/example/issue/2`, text: "#2" },
+    { href: `${basePath}/example`, text: "@example" },
+    { href: `${basePath}/example/example/commit/763575`, text: "@763575" },
+    {
+      href: `${basePath}/example/example/commit/763575f177a4ce8b9370954de3ea1a1410205593`,
+      text: "@763575",
+    },
+  ]);
   const navItems = markdownHelp.locator(".markdown-help-nav > .help-nav");
   const linkNav = navItems.filter({ hasText: /^Link$/u });
   const listNav = navItems.filter({ hasText: /^List$/u });
@@ -531,6 +526,18 @@ test("shared markdown help uses typed React targets without legacy target marker
     /active/,
   );
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issueform`);
+  await expect(page.locator(".markdown-help")).toBeVisible();
+  expect(await readMarkdownHelpMobileMetrics(page)).toEqual({
+    labelContainedInNav: true,
+    navInsideRoot: true,
+    navWidthAlignedWithRoot: true,
+    rootInsideViewport: true,
+    wrapInsideRoot: true,
+    wrapWidthAlignedWithNav: true,
+  });
 });
 
 async function renderedMarkdownHelpNavItems(page: Page) {
@@ -578,6 +585,43 @@ async function readMarkdownHelpMetrics(page: Page) {
         navBox.bottom <= rootBox.bottom,
       navWidthAlignedWithRoot: Math.abs(navBox.width - rootBox.width) <= 1,
       paneTopAlignedToNavBottom: Math.abs(wrapBox.top - navBox.bottom) <= 1,
+      wrapInsideRoot:
+        wrapBox.top >= rootBox.top &&
+        wrapBox.left >= rootBox.left &&
+        wrapBox.right <= rootBox.right &&
+        wrapBox.bottom <= rootBox.bottom,
+      wrapWidthAlignedWithNav: Math.abs(wrapBox.width - navBox.width) <= 1,
+    };
+  });
+}
+
+async function readMarkdownHelpMobileMetrics(page: Page) {
+  return page.evaluate(() => {
+    const root = document.querySelector(".markdown-help");
+    const nav = document.querySelector(".markdown-help-nav");
+    const label = document.querySelector(".markdown-help-nav .label");
+    const wrap = document.querySelector(".markdown-help-wrap");
+    if (!root || !nav || !label || !wrap) {
+      throw new Error("Expected mobile markdown help metric targets to render.");
+    }
+    const rootBox = root.getBoundingClientRect();
+    const navBox = nav.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    const wrapBox = wrap.getBoundingClientRect();
+
+    return {
+      labelContainedInNav:
+        labelBox.top >= navBox.top &&
+        labelBox.bottom <= navBox.bottom &&
+        labelBox.left >= navBox.left &&
+        labelBox.right <= navBox.right,
+      navInsideRoot:
+        navBox.top >= rootBox.top &&
+        navBox.left >= rootBox.left &&
+        navBox.right <= rootBox.right &&
+        navBox.bottom <= rootBox.bottom,
+      navWidthAlignedWithRoot: Math.abs(navBox.width - rootBox.width) <= 1,
+      rootInsideViewport: rootBox.left >= 0 && rootBox.right <= window.innerWidth + 1,
       wrapInsideRoot:
         wrapBox.top >= rootBox.top &&
         wrapBox.left >= rootBox.left &&
@@ -849,6 +893,24 @@ async function mockMarkdownHelpIssueForm(page: Page) {
             name: "bug",
           },
         ],
+      }),
+    });
+  });
+  await page.route("**/api/v1/projects/admin/sample/issues/form-options", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        canCreateIssueAssignee: true,
+        canCreateIssueMilestone: true,
+        canManageIssueLabels: true,
+        currentProject: {
+          logoUrl: "/assets/images/project_default_logo.png",
+          ownerName: "admin",
+          projectId: 7,
+          projectName: "sample",
+        },
+        issueTemplateMarkdown: "",
+        movableIssueProjects: [],
       }),
     });
   });

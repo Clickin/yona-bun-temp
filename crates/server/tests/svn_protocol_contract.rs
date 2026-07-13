@@ -5831,7 +5831,7 @@ async fn svn_protocol_private_project_uses_basic_auth_challenge() {
             .headers()
             .get(http::header::WWW_AUTHENTICATE)
             .and_then(|value| value.to_str().ok()),
-        Some("Basic realm=\"Yona\"")
+        Some("Basic realm=\"Yoram\"")
     );
 
     let response = direct_request(
@@ -5891,6 +5891,6 @@ async fn svn_protocol_private_project_accepts_ldap_basic_auth_and_challenges_wro
             .headers()
             .get(http::header::WWW_AUTHENTICATE)
             .and_then(|value| value.to_str().ok()),
-        Some("Basic realm=\"Yona\"")
+        Some("Basic realm=\"Yoram\"")
     );
 }

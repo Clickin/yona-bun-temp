@@ -117,19 +117,21 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
   if (!response) {
     return null;
   }
-  const releaseUrl = response.versionToUpdate
-    ? (response.releaseUrl ??
-      `https://github.com/yona-projects/yona/releases/tag/v${response.versionToUpdate}`)
-    : "";
+  const releaseUrl = response.releaseUrl?.trim();
 
   return (
     <>
       {response.versionToUpdate ? (
         <p>
-          <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>{" "}
-          <Link to={releaseUrl} className="ybtn ybtn-success">
-            {t("site.update.download")}
-          </Link>
+          <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>
+          {releaseUrl ? (
+            <>
+              {" "}
+              <Link to={releaseUrl} className="ybtn ybtn-success">
+                {t("site.update.download")}
+              </Link>
+            </>
+          ) : null}
         </p>
       ) : null}
       {response.currentVersion ? (

@@ -77,7 +77,7 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
 test("legacy GET /users/login title source renders React metadata without imperative document mutation", async () => {
   const source = readFileSync("src/routes/users/login.tsx", "utf8");
 
-  expect(source).toContain('<title>{runtimeConfig.siteName ?? "Yona"}</title>');
+  expect(source).toContain('<title>{runtimeConfig.siteName ?? "Yoram"}</title>');
   expect(source).toContain('<HomeRouteScreen routePath="/users/login"');
   expect(source).not.toContain("document.title");
   expect(source).not.toContain("globalThis.document");
@@ -138,12 +138,10 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
   expect(source).toContain("<RootYoramToast");
   expect(source).toContain("key: `notify:${source.dataset.message");
   expect(source).not.toContain("toast.innerHTML");
-  expect(source).toContain('href="https://github.com/nforge/yobi/issues?state=open"');
-  expect(source).toContain('href="http://navercorp.com/"');
-  expect(source).toContain('href="https://developers.naver.com/d2/"');
-  expect(source).not.toContain('to="https://github.com/nforge/yobi/issues?state=open"');
-  expect(source).not.toContain('to="http://navercorp.com/"');
-  expect(source).not.toContain('to="https://developers.naver.com/d2/"');
+  expect(source).toContain('<span className="provider">Yoram authors</span>');
+  expect(source).not.toContain("github.com/nforge/yobi");
+  expect(source).not.toContain("navercorp.com");
+  expect(source).not.toContain("developers.naver.com");
   expect(source).toContain('to="/user/anonymous"');
   expect(source).not.toContain('to="/logout"');
   expect(source).not.toContain('<a href={prefixBasePath(runtimeConfig.basePath, "/projects")}');

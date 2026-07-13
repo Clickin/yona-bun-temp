@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { expect, test } from "vitest";
 import { LEGACY_LANGUAGE_CODES, lookupLegacyMessage } from "./i18n";
 import { normalizeSiteName } from "./runtime-config";
@@ -29,6 +29,28 @@ test("Yoram is the frontend product default", () => {
   expect(indexHtml).not.toContain("legacy-assets/images/favicon.ico");
 });
 
+test("the release bundle source excludes unreferenced upstream identity assets", () => {
+  for (const fileName of [
+    "favicon.ico",
+    "logo.png",
+    "logo-orange.png",
+    "logo-white.png",
+    "yobi-logo.png",
+    "yobi-title.png",
+    "yobi_logo.png",
+    "yobi_orange.png",
+    "yobi_symbol_w.png",
+    "yobi_w.png",
+    "yobi_intro_code.jpg",
+    "yona-logo.png",
+    "yona_logo.png",
+  ]) {
+    expect(existsSync(new URL(`../public/legacy-assets/images/${fileName}`, import.meta.url))).toBe(
+      false,
+    );
+  }
+});
+
 test("legacy product message values render with Yoram branding in every locale", () => {
   for (const language of LEGACY_LANGUAGE_CODES) {
     for (const key of productBrandedLegacyMessageKeys) {
@@ -43,4 +65,20 @@ test("legacy product message values render with Yoram branding in every locale",
   expect(lookupLegacyMessage("en-US", "project.onmember", { args: ["one"] })).toContain(
     "yobicon-friends",
   );
+});
+
+test("shared Markdown help examples are product-neutral until a public Yoram repository exists", () => {
+  const markdownHelpSource = readFileSync(
+    new URL("./routes/-legacy-markdown-help.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(markdownHelpSource).not.toMatch(
+    /(?:yobi\.io|repo\.yona\.io|demo\.yobi\.io|@yobi|"Yobi")/u,
+  );
+  expect(markdownHelpSource).toContain('[Site](https://example.com/ "Example Site")');
+  expect(markdownHelpSource).toContain(
+    '![title](https://example.com/images/sample.png "Sample image")',
+  );
+  expect(markdownHelpSource).toContain("Mention: @example");
 });

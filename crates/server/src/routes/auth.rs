@@ -1236,7 +1236,7 @@ async fn fetch_oauth_provider_identity(
     }
 
     let client = reqwest::Client::builder()
-        .user_agent("Yona OAuth")
+        .user_agent("Yoram OAuth")
         .build()
         .map_err(|error| error.to_string())?;
     let token_response: Value = client
