@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
@@ -12,6 +12,7 @@ import {
   deleteProjectMemberRest,
   enrollProjectRest,
   readProjectContainerQueryOptions,
+  readProjectForkOptionsQueryOptions,
   readProjectMembersQueryOptions,
   toggleFavoriteProjectRest,
   toggleProjectWatchRest,
@@ -39,6 +40,8 @@ const legacyProjectShellLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+
+export const ProjectNestedShellContext = createContext(false);
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
@@ -109,6 +112,7 @@ function ProjectHomeRoute() {
   const labelsPath = `${homePath}/issue/labelsform`;
   const issueFormPath = `${homePath}/issueform`;
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
+  const newForkPath = `${homePath}/newFork`;
   const active =
     pathname === homePath
       ? "home"
@@ -132,23 +136,25 @@ function ProjectHomeRoute() {
                       ? "pullRequest"
                       : pathname === newPullRequestPath
                         ? "newPullRequest"
-                        : pathname === reviewsPath
-                          ? "review"
-                          : pathname === settingPath
-                            ? "setting"
-                            : pathname === membersPath
-                              ? "members"
-                              : pathname === webhooksPath
-                                ? "webhooks"
-                                : pathname === transferPath
-                                  ? "transfer"
-                                  : pathname === deletePath
-                                    ? "delete"
-                                    : pathname === changeVcsPath
-                                      ? "changeVcs"
-                                      : pathname === labelsPath
-                                        ? "labels"
-                                        : null;
+                        : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
+                          ? "newFork"
+                          : pathname === reviewsPath
+                            ? "review"
+                            : pathname === settingPath
+                              ? "setting"
+                              : pathname === membersPath
+                                ? "members"
+                                : pathname === webhooksPath
+                                  ? "webhooks"
+                                  : pathname === transferPath
+                                    ? "transfer"
+                                    : pathname === deletePath
+                                      ? "delete"
+                                      : pathname === changeVcsPath
+                                        ? "changeVcs"
+                                        : pathname === labelsPath
+                                          ? "labels"
+                                          : null;
 
   if (!active) {
     return <Outlet />;
@@ -179,6 +185,7 @@ function ProjectHomeRouteShell({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "newFork"
     | "newPullRequest"
     | "postform"
     | "pullRequest"
@@ -211,6 +218,19 @@ function ProjectHomeRouteShell({
     enabled: active === "newPullRequest" && query.data?.vcs === "GIT",
     retry: false,
   });
+  const forkOptionsQuery = useQuery({
+    ...readProjectForkOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: active === "newFork",
+    retry: false,
+  });
+  const previousActiveRef = useRef(active);
+  const preserveForkShellRef = useRef(false);
+  if (active === "newFork" && previousActiveRef.current !== "newFork") {
+    preserveForkShellRef.current = true;
+  } else if (active !== "newFork") {
+    preserveForkShellRef.current = false;
+  }
+  previousActiveRef.current = active;
 
   // The legacy creation endpoint redirects authentication and request failures
   // through its own standalone response. Keep that branch outside the nested
@@ -220,6 +240,18 @@ function ProjectHomeRouteShell({
   }
 
   if (active === "newPullRequest" && (!query.data || query.data.vcs !== "GIT")) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "newFork" &&
+    (!query.data ||
+      query.data.vcs !== "GIT" ||
+      forkOptionsQuery.error ||
+      (forkOptionsQuery.data &&
+        stringField(recordField(forkOptionsQuery.data.source).vcs, "").toUpperCase() !== "GIT") ||
+      (!forkOptionsQuery.data && !preserveForkShellRef.current))
+  ) {
     return <Outlet />;
   }
 
@@ -352,6 +384,7 @@ function ProjectLayoutScreen({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "newFork"
     | "newPullRequest"
     | "postform"
     | "pullRequest"
@@ -386,25 +419,27 @@ function ProjectLayoutScreen({
                           ? "error.pullRequest.empty.from.repository"
                           : "title.newPullRequest",
                       )} - ${ownerName}/${projectName}`
-                    : active === "postform"
-                      ? `${t("post.new")} - ${ownerName}/${projectName}`
-                      : active === "board"
-                        ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                        : active === "pullRequest"
-                          ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                          : active === "review"
-                            ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                            : active === "setting"
-                              ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                              : active === "labels"
-                                ? `${t("label")} - ${ownerName}/${projectName}`
-                                : active === "members"
-                                  ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                                  : active === "delete"
-                                    ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                    : active === "changeVcs"
-                                      ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                      : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                    : active === "newFork"
+                      ? `${t("fork")} - ${ownerName}/${projectName}`
+                      : active === "postform"
+                        ? `${t("post.new")} - ${ownerName}/${projectName}`
+                        : active === "board"
+                          ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                          : active === "pullRequest"
+                            ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                            : active === "review"
+                              ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                              : active === "setting"
+                                ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                                : active === "labels"
+                                  ? `${t("label")} - ${ownerName}/${projectName}`
+                                  : active === "members"
+                                    ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                    : active === "delete"
+                                      ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                      : active === "changeVcs"
+                                        ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                        : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
@@ -413,18 +448,20 @@ function ProjectLayoutScreen({
             ? "milestone"
             : active === "newPullRequest"
               ? "pullRequest"
-              : active === "postform"
-                ? "board"
-                : active === "issueform"
-                  ? "issue"
-                  : active === "delete" ||
-                      active === "changeVcs" ||
-                      active === "labels" ||
-                      active === "members" ||
-                      active === "transfer" ||
-                      active === "webhooks"
-                    ? "setting"
-                    : active
+              : active === "newFork"
+                ? "pullRequest"
+                : active === "postform"
+                  ? "board"
+                  : active === "issueform"
+                    ? "issue"
+                    : active === "delete" ||
+                        active === "changeVcs" ||
+                        active === "labels" ||
+                        active === "members" ||
+                        active === "transfer" ||
+                        active === "webhooks"
+                      ? "setting"
+                      : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -446,7 +483,9 @@ function ProjectLayoutScreen({
           tabId={tabId || "readme"}
         />
       ) : (
-        <Outlet />
+        <ProjectNestedShellContext value={active === "newFork"}>
+          <Outlet />
+        </ProjectNestedShellContext>
       )}
     </>
   );

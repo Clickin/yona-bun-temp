@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const PROJECT_FORK_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/newFork.tsx";
+const PROJECT_PARENT_ROUTE_SOURCE = "src/routes/$ownerName/$projectName.tsx";
 const PROJECT_FORK_OWNER_ROUTE_SOURCE =
   "src/routes/$ownerName/$projectName/newFork/$forkOwnerName.tsx";
 
@@ -257,7 +258,7 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await expect(page.locator(".project-menu-gruop")).toHaveCount(0);
   await expect(page.locator(".content-wrap.frm-wrap")).toHaveCount(0);
   await expect(page.locator("#helpMessage")).toHaveCount(0);
-  await expect(page.locator(".error-wrap i.ico-404")).toBeVisible();
+  await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap p")).toHaveText(
     "This request is only supported in a git project.",
   );
@@ -414,8 +415,11 @@ test("project fork admin cog badge uses enrolled users count from legacy project
 test("project fork route has no raw route-local internal anchors", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
 
-  expect(source).toContain("projectSearchScope={projectSearchScope}");
-  expect(source).toContain("projectSearchScopeOrganizationName(projectQuery.data, ownerName)");
+  expect(source).toContain("useContext(ProjectNestedShellContext)");
+  expect(source).not.toContain("YonaQueryProvider");
+  expect(source).not.toContain("LegacyI18nProvider");
+  expect(source).not.toContain("<ProjectHeader");
+  expect(source).not.toContain("<ProjectMenu");
   expect(source).not.toMatch(/<a(?:\s|>)/u);
   expect(source).not.toContain("</a>");
   expect(source).not.toContain("href={prefixBasePath");
@@ -429,11 +433,11 @@ test("project fork route has no raw route-local internal anchors", async () => {
 
 test("project fork browser title is rendered through React head title", async () => {
   const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
+  const parentSource = readFileSync(PROJECT_PARENT_ROUTE_SOURCE, "utf8");
 
-  expect(source).toContain("<ProjectForkTitle isGitProject={true}");
   expect(source).toContain("<ProjectForkTitle isGitProject={false}");
   expect(source).toContain("<title>");
-  expect(source).toContain('`${t("fork")} - ${ownerName}/${projectName}`');
+  expect(parentSource).toContain('`${t("fork")} - ${ownerName}/${projectName}`');
   expect(source).toContain('t("error.badrequest.only.available.for.git")');
   expect(source).toContain("useEffect(() =>");
   expect(source).not.toMatch(/document\s*\.\s*title/u);

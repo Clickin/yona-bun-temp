@@ -301,6 +301,44 @@ test("project pull requests to new pull request form keeps the legacy project sh
   await expectProjectPullRequestCreateGeometry(page);
 });
 
+test("project pull requests to fork owner keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/pullRequests$/, "/newFork")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/newFork(?:\?|$)/);
+  await expect(page.locator("#project-owner")).toHaveValue("admin");
+  await expect(page.locator(".project-menu-gruop > li.active a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequests`,
+  );
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectForkGeometry(page);
+
+  await page.selectOption("#project-owner", "devs");
+  await expect(page).toHaveURL(/\/admin\/sample\/newFork\/devs(?:\?|$)/);
+  await expect(page.locator("#project-owner")).toHaveValue("devs");
+  await expectProjectShellNodesToPersist(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#helpMessage")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectForkGeometry(page);
+});
+
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -847,6 +885,39 @@ async function expectProjectIssueFormGeometry(page: Page) {
   expect(metrics.editorTop).toBeGreaterThanOrEqual(metrics.titleBottom);
   expect(metrics.editorBottom).toBeGreaterThan(metrics.editorTop);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectForkGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const form = rect(".content-wrap.frm-wrap form");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formLeft: form.left,
+      formRight: form.right,
+      formTop: form.top,
+      headerBottom: header.bottom,
+      menuTop: menu.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.menuTop).toBeGreaterThanOrEqual(metrics.headerBottom);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.menuTop);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.formLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.formRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
 }
 
 async function expectProjectPostsGeometry(page: Page) {
@@ -1496,6 +1567,17 @@ async function mockProjectHomeAndIssues(
     }
     if (path.endsWith("/owners/admin/projects/sample/pull-requests/merge-result"))
       return json({ commits: [], conflict: false, status: "MERGEABLE" });
+    if (path.endsWith("/owners/admin/projects/sample/fork-options"))
+      return json({
+        canFork: true,
+        existingForks: [{ ownerName: "devs", projectName: "sample" }],
+        ownerOptions: [
+          { organization: false, ownerName: "admin", selected: true },
+          { organization: true, ownerName: "devs", selected: false },
+        ],
+        selected: { ownerName: "admin", projectName: "sample", projectScope: "PUBLIC" },
+        source: { ownerName: "admin", projectName: "sample", vcs: "GIT" },
+      });
     if (path.endsWith("/projects/admin/sample/reviews"))
       return json({
         allCount: 0,
