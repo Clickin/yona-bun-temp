@@ -136,6 +136,18 @@ export function ProjectPullRequestChangesPage({
   commitId?: string;
   runtimeConfig: RuntimeConfig;
 }) {
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return (
+      <ProjectPullRequestChangesShell
+        commitId={commitId}
+        nestedProjectShell
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
