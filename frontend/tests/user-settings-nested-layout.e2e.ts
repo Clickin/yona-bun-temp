@@ -50,6 +50,31 @@ test("user email to password settings keeps the legacy user-settings shell DOM n
   await expectUserSettingsGeometry(page);
 });
 
+test("user password to token settings keeps the legacy user-settings shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserSettings(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/user/editform/password`);
+  await expect(page.locator("#frmPassword")).toBeVisible();
+  await captureUserSettingsShellNodes(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.locator('.page-wrap > .nav-tabs a[href$="/user/editform/token"]').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/token`);
+  await expect(page.locator(".token-generate #frmBasic")).toBeVisible();
+  await expect(page.locator(".page-wrap > .nav-tabs > li.active")).toHaveText("User Token");
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".token-generate #frmBasic")).toBeVisible();
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+});
+
 async function mockUserSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -130,7 +155,9 @@ async function expectUserSettingsGeometry(page: Page) {
     const gnb = rect(".gnb-outer");
     const pageWrap = rect(".page-wrap-outer");
     const tabs = rect(".page-wrap > .nav-tabs");
-    const body = rect(".page-wrap > form, .page-wrap > #frmBasic");
+    const body = rect(
+      ".page-wrap > form, .page-wrap > #frmBasic, .page-wrap > .token-generate > #frmBasic",
+    );
     return {
       bodyLeft: body.left,
       bodyRight: body.right,

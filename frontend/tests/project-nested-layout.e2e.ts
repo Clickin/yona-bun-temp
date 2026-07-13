@@ -166,6 +166,31 @@ test("project pull requests to reviews keeps the legacy project shell DOM nodes 
   await expectProjectReviewsGeometry(page);
 });
 
+test("project reviews to settings keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/reviews`);
+  await expect(page.locator(".review-list-wrap .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectReviewsGeometry(page);
+
+  await page.locator(".project-setting a[href$='/admin/sample/setting']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/setting(?:\?|$)/);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expect(page.locator(".project-setting li")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSettingsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSettingsGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -467,6 +492,47 @@ async function expectProjectReviewsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectSettingsGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const tabs = rect(".project-page-wrap .nav-tabs");
+    const form = rect("#saveSetting");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      formBottom: form.bottom,
+      formTop: form.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -590,6 +656,41 @@ async function mockProjectHomeAndIssues(page: Page) {
         participantCount: 0,
         state: "open",
         totalCount: 0,
+      });
+    if (path.endsWith("/owners/admin/projects/sample/settings"))
+      return json({
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        defaultReviewerCount: 2,
+        id: 7,
+        isCodeAccessibleMemberOnly: false,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        isUsingReviewerCount: true,
+        logoUrl: "/assets/images/project_default_logo.png",
+        maxReviewerCount: 3,
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        openIssueCount: 0,
+        openPullRequestCount: 0,
+        organizationName: "",
+        overview: "Sample overview",
+        ownerName: "admin",
+        postCount: 0,
+        projectName: "sample",
+        projectScope: "PUBLIC",
+        reviewCount: 0,
+        vcs: "GIT",
+        viewerCanUpdate: true,
+        viewerCanWatch: false,
+        watchCount: 0,
       });
     return json({});
   });

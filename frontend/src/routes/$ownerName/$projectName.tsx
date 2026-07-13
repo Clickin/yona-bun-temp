@@ -93,6 +93,7 @@ function ProjectHomeRoute() {
   const postsPath = `${homePath}/posts`;
   const pullRequestsPath = `${homePath}/pullRequests`;
   const reviewsPath = `${homePath}/reviews`;
+  const settingPath = `${homePath}/setting`;
   const active =
     pathname === homePath
       ? "home"
@@ -108,7 +109,9 @@ function ProjectHomeRoute() {
                 ? "pullRequest"
                 : pathname === reviewsPath
                   ? "review"
-                  : null;
+                  : pathname === settingPath
+                    ? "setting"
+                    : null;
 
   if (!active) {
     return <Outlet />;
@@ -127,7 +130,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review" | "setting";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -178,7 +181,7 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review";
+  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review" | "setting";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -201,7 +204,9 @@ function ProjectLayoutScreen({
                   ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
                   : active === "review"
                     ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                    : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                    : active === "setting"
+                      ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                      : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />

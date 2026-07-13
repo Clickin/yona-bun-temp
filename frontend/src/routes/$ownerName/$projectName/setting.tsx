@@ -14,7 +14,6 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultProjectLogoUrl from "../../../assets/legacy/project_default_logo.png";
 import {
   ProjectHeader as SharedProjectHeader,
@@ -39,6 +38,7 @@ const LEGACY_PROJECT_SETTINGS_ROUTE = "/$ownerName/$projectName/settingform";
 type ProjectSettingRouteScreenProps = {
   ownerName: string;
   projectName: string;
+  renderProjectShell?: boolean;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 };
@@ -55,6 +55,7 @@ function ProjectSettingRoute() {
     <ProjectSettingRouteScreen
       ownerName={ownerName}
       projectName={projectName}
+      renderProjectShell={false}
       runtimeConfig={runtimeConfig}
       selfRoutePath={LEGACY_PROJECT_SETTINGS_ROUTE}
     />
@@ -64,18 +65,28 @@ function ProjectSettingRoute() {
 export function ProjectSettingRouteScreen({
   ownerName,
   projectName,
+  renderProjectShell = true,
   runtimeConfig,
   selfRoutePath,
 }: ProjectSettingRouteScreenProps) {
+  const content = (
+    <ProjectSettingRouteShell
+      ownerName={ownerName}
+      projectName={projectName}
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+      selfRoutePath={selfRoutePath}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectSettingRouteShell
-          ownerName={ownerName}
-          projectName={projectName}
-          runtimeConfig={runtimeConfig}
-          selfRoutePath={selfRoutePath}
-        />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -84,6 +95,7 @@ export function ProjectSettingRouteScreen({
 function ProjectSettingRouteShell({
   ownerName,
   projectName,
+  renderProjectShell = true,
   runtimeConfig,
   selfRoutePath,
 }: ProjectSettingRouteScreenProps) {
@@ -105,6 +117,25 @@ function ProjectSettingRouteShell({
     return null;
   }
 
+  const screen = (
+    <ProjectSettingScreen
+      branches={
+        isGitProject ? (branchesQuery.data?.branches.map((branch) => branch.name) ?? []) : []
+      }
+      defaultBranch={isGitProject ? (branchesQuery.data?.defaultBranch ?? "") : ""}
+      ownerName={ownerName}
+      project={project}
+      projectName={projectName}
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+      selfRoutePath={selfRoutePath}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
+
   const projectSearchScope = {
     organizationName: projectSearchScopeOrganizationName(shellProject, ownerName),
     ownerName,
@@ -117,18 +148,7 @@ function ProjectSettingRouteShell({
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks={!projectSearchScope.organizationName}
     >
-      <ProjectSettingScreen
-        branches={
-          isGitProject ? (branchesQuery.data?.branches.map((branch) => branch.name) ?? []) : []
-        }
-        defaultBranch={isGitProject ? (branchesQuery.data?.defaultBranch ?? "") : ""}
-        ownerName={ownerName}
-        project={project}
-        shellProject={shellProject}
-        projectName={projectName}
-        runtimeConfig={runtimeConfig}
-        selfRoutePath={selfRoutePath}
-      />
+      {screen}
     </SiteLayoutShell>
   );
 }
@@ -138,8 +158,8 @@ function ProjectSettingScreen({
   defaultBranch,
   ownerName,
   project,
-  shellProject,
   projectName,
+  renderProjectShell,
   runtimeConfig,
   selfRoutePath,
 }: {
@@ -147,32 +167,34 @@ function ProjectSettingScreen({
   defaultBranch: string;
   ownerName: string;
   project: ProjectContainer;
-  shellProject: ProjectContainer;
   projectName: string;
+  renderProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
   selfRoutePath: string;
 }) {
   const { t } = useLegacyMessages();
 
-  return (
+  const body = (
+    <ProjectSettingBody
+      branches={branches}
+      defaultBranch={defaultBranch}
+      ownerName={ownerName}
+      projectName={projectName}
+      project={project}
+      runtimeConfig={runtimeConfig}
+      selfRoutePath={selfRoutePath}
+    />
+  );
+
+  return renderProjectShell ? (
     <>
       <title>{`${t("title.projectSetting")} - ${ownerName}/${projectName}`}</title>
-      <SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
-      <SharedProjectMenu
-        active="setting"
-        basePath={runtimeConfig.basePath}
-        project={shellProject}
-      />
-      <ProjectSettingBody
-        branches={branches}
-        defaultBranch={defaultBranch}
-        ownerName={ownerName}
-        projectName={projectName}
-        project={project}
-        runtimeConfig={runtimeConfig}
-        selfRoutePath={selfRoutePath}
-      />
+      <SharedProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <SharedProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+      {body}
     </>
+  ) : (
+    body
   );
 }
 
