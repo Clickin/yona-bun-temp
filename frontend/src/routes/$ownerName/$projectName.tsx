@@ -94,6 +94,7 @@ function ProjectHomeRoute() {
   const milestonesPath = `${homePath}/milestones`;
   const newMilestonePath = `${homePath}/newMilestoneForm`;
   const postsPath = `${homePath}/posts`;
+  const postFormPath = `${homePath}/postform`;
   const pullRequestsPath = `${homePath}/pullRequests`;
   const closedPullRequestsPath = `${homePath}/closedPullRequests`;
   const sentPullRequestsPath = `${homePath}/sentPullRequests`;
@@ -118,27 +119,29 @@ function ProjectHomeRoute() {
               ? "newMilestone"
               : pathname === postsPath
                 ? "board"
-                : pathname === pullRequestsPath ||
-                    pathname === closedPullRequestsPath ||
-                    pathname === sentPullRequestsPath
-                  ? "pullRequest"
-                  : pathname === reviewsPath
-                    ? "review"
-                    : pathname === settingPath
-                      ? "setting"
-                      : pathname === membersPath
-                        ? "members"
-                        : pathname === webhooksPath
-                          ? "webhooks"
-                          : pathname === transferPath
-                            ? "transfer"
-                            : pathname === deletePath
-                              ? "delete"
-                              : pathname === changeVcsPath
-                                ? "changeVcs"
-                                : pathname === labelsPath
-                                  ? "labels"
-                                  : null;
+                : pathname === postFormPath
+                  ? "postform"
+                  : pathname === pullRequestsPath ||
+                      pathname === closedPullRequestsPath ||
+                      pathname === sentPullRequestsPath
+                    ? "pullRequest"
+                    : pathname === reviewsPath
+                      ? "review"
+                      : pathname === settingPath
+                        ? "setting"
+                        : pathname === membersPath
+                          ? "members"
+                          : pathname === webhooksPath
+                            ? "webhooks"
+                            : pathname === transferPath
+                              ? "transfer"
+                              : pathname === deletePath
+                                ? "delete"
+                                : pathname === changeVcsPath
+                                  ? "changeVcs"
+                                  : pathname === labelsPath
+                                    ? "labels"
+                                    : null;
 
   if (!active) {
     return <Outlet />;
@@ -168,6 +171,7 @@ function ProjectHomeRouteShell({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "postform"
     | "pullRequest"
     | "review"
     | "setting"
@@ -304,6 +308,7 @@ function ProjectLayoutScreen({
     | "members"
     | "milestone"
     | "newMilestone"
+    | "postform"
     | "pullRequest"
     | "review"
     | "setting"
@@ -327,37 +332,41 @@ function ProjectLayoutScreen({
               ? `${projectName} - milestone - ${ownerName}/${projectName}`
               : active === "newMilestone"
                 ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
-                : active === "board"
-                  ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                  : active === "pullRequest"
-                    ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                    : active === "review"
-                      ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                      : active === "setting"
-                        ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                        : active === "labels"
-                          ? `${t("label")} - ${ownerName}/${projectName}`
-                          : active === "members"
-                            ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                            : active === "delete"
-                              ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                              : active === "changeVcs"
-                                ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                : active === "postform"
+                  ? `${t("post.new")} - ${ownerName}/${projectName}`
+                  : active === "board"
+                    ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                    : active === "pullRequest"
+                      ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                      : active === "review"
+                        ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                        : active === "setting"
+                          ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                          : active === "labels"
+                            ? `${t("label")} - ${ownerName}/${projectName}`
+                            : active === "members"
+                              ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                              : active === "delete"
+                                ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                : active === "changeVcs"
+                                  ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                  : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
           active === "newMilestone"
             ? "milestone"
-            : active === "delete" ||
-                active === "changeVcs" ||
-                active === "labels" ||
-                active === "members" ||
-                active === "transfer" ||
-                active === "webhooks"
-              ? "setting"
-              : active
+            : active === "postform"
+              ? "board"
+              : active === "delete" ||
+                  active === "changeVcs" ||
+                  active === "labels" ||
+                  active === "members" ||
+                  active === "transfer" ||
+                  active === "webhooks"
+                ? "setting"
+                : active
         }
         basePath={runtimeConfig.basePath}
         project={project}

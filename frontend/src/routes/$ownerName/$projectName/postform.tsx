@@ -1,21 +1,18 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html requires positive tab order on title/body/save/cancel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import {
   createProjectPostRest,
   readProjectPostFormOptionsQueryOptions,
   type BoardOnlineCommitResponse,
 } from "../../../api/boards";
-import { readProjectContainerQueryOptions } from "../../../api/org-project";
-import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
 
 type BoardPostFormSearch = {
   branch?: string;
@@ -41,68 +38,58 @@ export const Route = createFileRoute("/$ownerName/$projectName/postform")({
 function ProjectBoardCreateFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectBoardCreateFormScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectBoardCreateFormScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = <ProjectBoardCreateFormRouteShell runtimeConfig={runtimeConfig} />;
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectBoardCreateFormRouteShell runtimeConfig={runtimeConfig} />
+        <ProjectBoardCreateFormStandaloneShell runtimeConfig={runtimeConfig}>
+          {content}
+        </ProjectBoardCreateFormStandaloneShell>
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectBoardCreateFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectBoardCreateFormStandaloneShell({
+  children,
+  runtimeConfig,
+}: {
+  children: ReactNode;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
 
   return (
     <>
       <title>{`${t("post.new")} - ${ownerName}/${projectName}`}</title>
-      <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-        <ProjectBoardCreateFormScreen runtimeConfig={runtimeConfig} />
+      <SiteLayoutShell
+        projectSearchScope={{ ownerName, projectName }}
+        runtimeConfig={runtimeConfig}
+      >
+        {children}
       </SiteLayoutShell>
     </>
   );
 }
 
-function ProjectBoardCreateFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
-  const { ownerName, projectName } = Route.useParams();
-  const search = Route.useSearch();
-  const projectQuery = useQuery(
-    readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
-  );
-  const optionsQuery = useQuery(
-    readProjectPostFormOptionsQueryOptions(runtimeConfig, {
-      branch: search.branch,
-      edit: Boolean(search.edit),
-      issueTemplate: Boolean(search.issueTemplate),
-      ownerName,
-      path: search.path ?? "",
-      projectName,
-      readme: Boolean(search.readme),
-    }),
-  );
-
-  if (!projectQuery.data || !optionsQuery.data) {
-    return null;
-  }
-
-  return (
-    <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="board" basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectBoardCreateFormBody runtimeConfig={runtimeConfig} />
-    </>
-  );
+function ProjectBoardCreateFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return <ProjectBoardCreateFormBody runtimeConfig={runtimeConfig} />;
 }
 
 function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -465,28 +452,6 @@ function compactBoardPostFormSearch(search: BoardPostFormSearch) {
     ...(search.path !== undefined ? { path: search.path } : {}),
     ...(search.readme ? { readme: true } : {}),
   };
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
-}
-
-function stringField(value: unknown, fallback: string) {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number" || typeof value === "bigint") {
-    return String(value);
-  }
-  return fallback;
-}
-
-function booleanField(value: unknown) {
-  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function lineEnding(value: string) {

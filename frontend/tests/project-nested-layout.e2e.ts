@@ -107,6 +107,39 @@ test("project milestones to posts keeps the legacy project shell DOM nodes mount
   await expectProjectPostsGeometry(page);
 });
 
+test("project posts to new post form keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/posts`);
+  await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectPostsGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/posts$/, "/postform")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/postform(?:\?|$)/);
+  await expect(page.locator("#title")).toBeVisible();
+  await expect(page.locator("#editor-body-body")).toBeVisible();
+  await expect(
+    page.locator(".project-menu-gruop li", {
+      has: page.locator("a[href$='/admin/sample/posts']"),
+    }),
+  ).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostFormGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#title")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostFormGeometry(page);
+});
+
 test("project milestones to new milestone form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -638,6 +671,56 @@ async function expectProjectMilestoneCreateGeometry(page: Page) {
   expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
   expect(metrics.titleLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
   expect(metrics.titleRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectPostFormGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const body = rect(".project-page-wrap");
+    const form = rect(".project-page-wrap form.nm");
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const title = rect("#title");
+    const editor = rect("#editor-body-body");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      editorBottom: editor.bottom,
+      editorTop: editor.top,
+      formBottom: form.bottom,
+      formTop: form.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      titleBottom: title.bottom,
+      titleLeft: title.left,
+      titleRight: title.right,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.formTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.formTop);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.titleLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+  expect(metrics.titleRight).toBeLessThanOrEqual(metrics.bodyRight + 1);
+  expect(metrics.editorTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.editorBottom).toBeGreaterThan(metrics.editorTop);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
