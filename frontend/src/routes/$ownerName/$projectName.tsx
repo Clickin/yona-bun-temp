@@ -121,6 +121,7 @@ function ProjectHomeRoute() {
   const issueFormPath = `${homePath}/issueform`;
   const issueDetailNumber = exactProjectIssueNumber(pathname, homePath);
   const issueEditNumber = exactProjectIssueEditNumber(pathname, homePath);
+  const pullRequestDetailNumber = exactProjectPullRequestNumber(pathname, homePath);
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
@@ -175,17 +176,19 @@ function ProjectHomeRoute() {
                                               ? "labels"
                                               : null;
   const active =
-    milestoneEditId !== null
-      ? "milestoneEdit"
-      : milestoneDetailId !== null
-        ? "milestoneDetail"
-        : issueEditNumber !== null
-          ? "issueEdit"
-          : issueDetailNumber !== null
-            ? "issueDetail"
-            : postDetailNumber !== null
-              ? "postDetail"
-              : standardActive;
+    pullRequestDetailNumber !== null
+      ? "pullRequestDetail"
+      : milestoneEditId !== null
+        ? "milestoneEdit"
+        : milestoneDetailId !== null
+          ? "milestoneDetail"
+          : issueEditNumber !== null
+            ? "issueEdit"
+            : issueDetailNumber !== null
+              ? "issueDetail"
+              : postDetailNumber !== null
+                ? "postDetail"
+                : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -225,6 +228,7 @@ function ProjectHomeRouteShell({
     | "postDetail"
     | "postform"
     | "pullRequest"
+    | "pullRequestDetail"
     | "review"
     | "search"
     | "setting"
@@ -593,6 +597,7 @@ function ProjectLayoutScreen({
     | "postDetail"
     | "postform"
     | "pullRequest"
+    | "pullRequestDetail"
     | "review"
     | "search"
     | "setting"
@@ -614,7 +619,8 @@ function ProjectLayoutScreen({
       active === "issueEdit" ||
       active === "milestoneDetail" ||
       active === "milestoneEdit" ||
-      active === "postDetail" ? null : (
+      active === "postDetail" ||
+      active === "pullRequestDetail" ? null : (
         <title>
           {active === "home"
             ? `${projectName} - ${t("menu.home")}`
@@ -686,14 +692,16 @@ function ProjectLayoutScreen({
                                 ? "issue"
                                 : active === "issueEdit"
                                   ? "issue"
-                                  : active === "delete" ||
-                                      active === "changeVcs" ||
-                                      active === "labels" ||
-                                      active === "members" ||
-                                      active === "transfer" ||
-                                      active === "webhooks"
-                                    ? "setting"
-                                    : active
+                                  : active === "pullRequestDetail"
+                                    ? "pullRequest"
+                                    : active === "delete" ||
+                                        active === "changeVcs" ||
+                                        active === "labels" ||
+                                        active === "members" ||
+                                        active === "transfer" ||
+                                        active === "webhooks"
+                                      ? "setting"
+                                      : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -722,6 +730,7 @@ function ProjectLayoutScreen({
             active === "milestoneDetail" ||
             active === "milestoneEdit" ||
             active === "postDetail" ||
+            active === "pullRequestDetail" ||
             active === "newFork" ||
             active === "watchers" ||
             active === "search"
@@ -766,6 +775,13 @@ function exactProjectPostNumber(pathname: string, homePath: string) {
   const match = new RegExp(`^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/post/(\\d+)$`).exec(
     pathname,
   );
+  return match ? Number(match[1]) : null;
+}
+
+function exactProjectPullRequestNumber(pathname: string, homePath: string) {
+  const match = new RegExp(
+    `^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/pullRequest/(\\d+)$`,
+  ).exec(pathname);
   return match ? Number(match[1]) : null;
 }
 

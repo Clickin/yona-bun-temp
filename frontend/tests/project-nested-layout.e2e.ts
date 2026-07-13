@@ -19,6 +19,17 @@ test("project home to issues keeps the legacy project shell DOM nodes mounted", 
   await expectProjectShellNodesToPersist(page);
   await expectProjectShellGeometry(page);
 
+  await page.evaluate(() => {
+    history.pushState({}, "", location.pathname.replace(/\/pullRequest\/404$/, "/pullRequest/403"));
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
+    "You are not authorized",
+  );
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".issue-list-wrap")).toBeVisible();
   await expectProjectShellNodesToPersist(page);
@@ -531,6 +542,45 @@ test("project pull requests to fork owner keeps the legacy project shell DOM nod
   await expect(page.locator("#helpMessage")).toBeVisible();
   await expectProjectShellNodesToPersist(page);
   await expectProjectForkGeometry(page);
+});
+
+test("project pull requests to pull request overview and missing detail keep the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/pullRequests`);
+  await expect(page.locator(".pullrequeset-tab-menu")).toBeVisible();
+  await captureProjectShellNodes(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", location.pathname.replace(/\/pullRequests$/, "/pullRequest/9"));
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9(?:\?|$)/);
+  await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestOverviewGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".board-header.issue .title")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPullRequestOverviewGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", location.pathname.replace(/\/pullRequest\/9$/, "/pullRequest/404"));
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText("Page not found");
+  await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
 });
 
 test("project open pull requests to sent pull requests keeps the legacy project shell DOM nodes mounted", async ({
@@ -1586,6 +1636,39 @@ async function expectProjectPullRequestsGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPullRequestOverviewGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const title = rect(".board-header.issue .title");
+    const content = rect(".board-body .content");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      contentBottom: content.bottom,
+      contentTop: content.top,
+      menuBottom: menu.bottom,
+      scrollWidth: document.documentElement.scrollWidth,
+      titleBottom: title.bottom,
+      titleTop: title.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.titleTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.titleBottom).toBeGreaterThan(metrics.titleTop);
+  expect(metrics.contentTop).toBeGreaterThanOrEqual(metrics.titleBottom);
+  expect(metrics.contentBottom).toBeGreaterThan(metrics.contentTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectPullRequestCreateGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -2277,6 +2360,66 @@ async function mockProjectHomeAndIssues(
         recentlyPushedBranches: [],
         sentCount: 0,
         totalCount: 0,
+      });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/9"))
+      return json({
+        attachments: [],
+        bodyMarkdown: "Initial body",
+        commits: [],
+        conflict: false,
+        contributor: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "dev",
+          userId: 2,
+          userLabel: "Dev Member",
+        },
+        createdLabel: "Jul 2, 2026",
+        events: [],
+        fromBranch: "feature/ui",
+        fromOwnerName: "admin",
+        fromProjectName: "sample",
+        id: 90,
+        isMerging: false,
+        isWatching: false,
+        lackingReviewerCount: 0,
+        ownerName: "admin",
+        permissions: {
+          canComment: true,
+          canDeleteSourceBranch: false,
+          canRead: true,
+          canReadChanges: true,
+          canReview: true,
+          canRestoreSourceBranch: false,
+          canUpdate: true,
+          canUpdateState: true,
+          canWatch: true,
+        },
+        projectName: "sample",
+        pullRequestNumber: 9,
+        receiver: {
+          avatarUrl: "/assets/images/default-avatar-32.png",
+          loginId: "admin",
+          userId: 1,
+          userLabel: "Site Admin",
+        },
+        reviewed: false,
+        reviewers: [],
+        state: "open",
+        threads: [],
+        title: "Initial title",
+        toBranch: "main",
+      });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/404"))
+      return route.fulfill({
+        body: JSON.stringify({ error: { code: "not_found", message: "Page not found" } }),
+        contentType: "application/json",
+        status: 404,
+      });
+    if (path.endsWith("/owners/admin/projects/sample/pull-requests/403"))
+      return route.fulfill({
+        body: JSON.stringify({ error: { code: "forbidden", message: "You are not authorized" } }),
+        contentType: "application/json",
+        status: 403,
       });
     if (path.endsWith("/owners/admin/projects/sample/pull-requests/form-options")) {
       const url = new URL(route.request().url());
