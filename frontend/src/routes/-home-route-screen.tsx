@@ -1356,9 +1356,6 @@ const authenticatedSidenavFavoriteStarStyles = stylex.create({
     transform: "none",
     width: "29px",
   },
-  companionLink: {
-    marginRight: 0,
-  },
   icon: {
     color: "inherit",
     direction: "ltr",
@@ -1381,6 +1378,109 @@ const authenticatedSidenavFavoriteStarStyles = stylex.create({
     color: {
       default: globalColors.sidenavFavoriteStarActive,
       ":hover": globalColors.sidenavFavoriteStarActiveHover,
+    },
+  },
+});
+
+const authenticatedSidenavDirectProjectRowStyles = stylex.create({
+  row: {
+    color: globalColors.sidenavText,
+    cursor: "pointer",
+    lineHeight: "normal",
+  },
+  list: {
+    alignItems: "center",
+    backgroundColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.sidenavOrganizationHoverSurface,
+    },
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    padding: "4px 0",
+    position: "static",
+  },
+  item: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    fontSize: "14px",
+    fontWeight: 400,
+    justifyContent: "space-between",
+    overflow: "hidden",
+  },
+  logo: {
+    flexShrink: 0,
+    marginLeft: "2px",
+    overflow: "hidden",
+    paddingTop: "3px",
+    textAlign: "center",
+    width: "26px",
+  },
+  avatar: {
+    color: globalColors.sidenavText,
+  },
+  image: {
+    borderRadius: "3px",
+    height: "auto",
+    marginRight: 0,
+    verticalAlign: "text-top",
+    width: "16px",
+  },
+  nameOwner: {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexWrap: "nowrap",
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: "1px 0",
+  },
+  name: {
+    fontFamily: "roboto, sans-serif",
+    maxWidth: "150px",
+    minWidth: "50px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    WebkitFontSmoothing: "antialiased",
+    whiteSpace: "nowrap",
+  },
+  projectLink: {
+    color: {
+      default: globalColors.sidenavText,
+      ":focus": globalColors.sidenavText,
+      ":hover": globalColors.sidenavText,
+    },
+    display: "contents",
+    textDecoration: {
+      default: "none",
+      ":focus": "none",
+      ":hover": "none",
+    },
+  },
+  owner: {
+    color: globalColors.sidenavAccountText,
+    flexShrink: 3,
+    fontSize: "12px",
+    maxWidth: "50px",
+    minWidth: "40px",
+    overflow: "hidden",
+    paddingRight: "10px",
+    textAlign: "right",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  ownerLink: {
+    color: globalColors.sidenavAccountText,
+    textDecoration: {
+      default: "none",
+      ":focus": "underline",
+      ":hover": "underline",
     },
   },
 });
@@ -2232,12 +2332,14 @@ type SidebarFavoriteTarget =
 
 function SidebarFavoriteButton({
   initialFavorited,
+  isAuthenticatedDirectProjectStar = false,
   isAuthenticatedFavoriteStar = false,
   label,
   runtimeConfig,
   target,
 }: {
   initialFavorited: boolean;
+  isAuthenticatedDirectProjectStar?: boolean;
   isAuthenticatedFavoriteStar?: boolean;
   label: string;
   runtimeConfig: RuntimeConfig;
@@ -2289,14 +2391,20 @@ function SidebarFavoriteButton({
       } favorites`}
       aria-pressed={isFavorited}
       className={`${target.type === "project" ? "star-project" : "star-org"} flex-item ${
-        stylex.props(isAuthenticatedFavoriteStar && authenticatedSidenavFavoriteStarStyles.button)
-          .className
+        stylex.props(
+          (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
+            authenticatedSidenavFavoriteStarStyles.button,
+        ).className
       }`.trimEnd()}
       data-stylex-owner={
-        isAuthenticatedFavoriteStar ? "authenticated-sidenav-favorite-stars" : undefined
+        isAuthenticatedFavoriteStar
+          ? "authenticated-sidenav-favorite-stars"
+          : isAuthenticatedDirectProjectStar
+            ? "authenticated-sidenav-direct-project-rows"
+            : undefined
       }
       data-stylex-owner-state={
-        isAuthenticatedFavoriteStar
+        isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar
           ? `${favoriteMutation.isPending ? "pending-" : ""}${isFavorited ? "starred" : "unstarred"}`
           : undefined
       }
@@ -2308,8 +2416,9 @@ function SidebarFavoriteButton({
         aria-hidden="true"
         className={`${isFavorited ? "star starred material-icons" : "star material-icons"} ${
           stylex.props(
-            isAuthenticatedFavoriteStar && authenticatedSidenavFavoriteStarStyles.icon,
-            isAuthenticatedFavoriteStar &&
+            (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
+              authenticatedSidenavFavoriteStarStyles.icon,
+            (isAuthenticatedFavoriteStar || isAuthenticatedDirectProjectStar) &&
               isFavorited &&
               authenticatedSidenavFavoriteStarStyles.starredIcon,
           ).className
@@ -2981,35 +3090,76 @@ function SidebarProjectItem({
   const isFavorited = sidebarIsFavorited(project);
 
   return (
-    <li className="user-li">
-      <div className="project-list project-flex-container">
-        <Link
-          className={`project-item project-item-container sidebar-project-link sidebar-row-link ${
-            stylex.props(
-              isAuthenticatedFavoritePane && authenticatedSidenavFavoriteStarStyles.companionLink,
-            ).className
-          }`.trimEnd()}
-          params={{ ownerName, projectName }}
-          to="/$ownerName/$projectName"
+    <li
+      className={`user-li ${stylex.props(authenticatedSidenavDirectProjectRowStyles.row).className}`}
+      data-stylex-owner="authenticated-sidenav-direct-project-rows"
+    >
+      <div
+        className={`project-list project-flex-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.list).className}`}
+      >
+        <div
+          className={`project-item project-item-container ${stylex.props(authenticatedSidenavDirectProjectRowStyles.item).className}`}
         >
-          <div className="flex-item site-logo">
-            <i className="project-avatar">
-              {logoUrl ? (
-                <img className="logo" src={logoUrl} alt="" />
-              ) : (
-                <span className="dummy-25px"> </span>
-              )}
-            </i>
+          <div
+            className={`flex-item site-logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.logo).className}`}
+          >
+            <Link
+              aria-label={`Open ${ownerName}/${projectName}`}
+              className={
+                stylex.props(authenticatedSidenavDirectProjectRowStyles.projectLink).className
+              }
+              params={{ ownerName, projectName }}
+              to="/$ownerName/$projectName"
+            >
+              <i
+                className={`project-avatar ${stylex.props(authenticatedSidenavDirectProjectRowStyles.avatar).className}`}
+              >
+                {logoUrl ? (
+                  <img
+                    alt=""
+                    className={`logo ${stylex.props(authenticatedSidenavDirectProjectRowStyles.image).className}`}
+                    src={logoUrl}
+                  />
+                ) : (
+                  <span className="dummy-25px"> </span>
+                )}
+              </i>
+            </Link>
           </div>
-          <div className="projectName-owner flex-item">
-            <div className="project-name flex-item">
-              {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+          <div
+            className={`projectName-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.nameOwner).className}`}
+          >
+            <div
+              className={`project-name flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.name).className}`}
+            >
+              <Link
+                className={
+                  stylex.props(authenticatedSidenavDirectProjectRowStyles.projectLink).className
+                }
+                params={{ ownerName, projectName }}
+                to="/$ownerName/$projectName"
+              >
+                {projectName} {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+              </Link>
             </div>
-            <div className="project-owner flex-item">{ownerName}</div>
+            <div
+              className={`project-owner flex-item ${stylex.props(authenticatedSidenavDirectProjectRowStyles.owner).className}`}
+            >
+              <Link
+                className={
+                  stylex.props(authenticatedSidenavDirectProjectRowStyles.ownerLink).className
+                }
+                params={{ user: ownerName }}
+                to="/$user"
+              >
+                {ownerName}
+              </Link>
+            </div>
           </div>
-        </Link>
+        </div>
         <SidebarFavoriteButton
           initialFavorited={isFavorited}
+          isAuthenticatedDirectProjectStar={!isAuthenticatedFavoritePane}
           isAuthenticatedFavoriteStar={isAuthenticatedFavoritePane}
           key={`project-favorite-${projectKey(project)}-${String(isFavorited)}`}
           label={`${ownerName}/${projectName}`}

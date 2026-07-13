@@ -206,8 +206,11 @@ for (const viewport of [
       name: "Add outside/project-tab-project to favorites",
     });
     await expect(projectTabStar).toBeVisible();
-    await expect(projectTabStar).not.toHaveAttribute("data-stylex-owner");
-    await expect(projectTabStar).not.toHaveAttribute("data-stylex-owner-state");
+    await expect(projectTabStar).toHaveAttribute(
+      "data-stylex-owner",
+      "authenticated-sidenav-direct-project-rows",
+    );
+    await expect(projectTabStar).toHaveAttribute("data-stylex-owner-state", "unstarred");
   });
 }
 

@@ -343,7 +343,10 @@ for (const viewport of [
       .getByRole("link", { name: /project-tab-project/ })
       .locator("xpath=ancestor::li[1]");
     await expect(projectTabRow).toBeVisible();
-    await expect(projectTabRow).not.toHaveAttribute("data-stylex-owner", /.+/);
+    await expect(projectTabRow).toHaveAttribute(
+      "data-stylex-owner",
+      "authenticated-sidenav-direct-project-rows",
+    );
     await page.getByRole("button", { exact: true, name: "Favorite" }).click({ force: true });
 
     expect(await own.link.getAttribute("href")).toBe(`${BASE_PATH}/admin/own-project`);

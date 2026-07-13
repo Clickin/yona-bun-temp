@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, eleven user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twelve user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -361,6 +361,18 @@ and mobile widths. The three concrete colors are canonical global theme variable
 values or toggle. Project-tab stars remain a separate later owner. No declaration of this
 Favorite-star owner intentionally remains in fallback; removing its StyleX classes exposes the
 known `app.css` absolute-placement drift as deletion evidence. This is not Wave 1 completion.
+
+The twelfth verified slice migrates the authenticated sidenav's shared direct-project rows in
+both the Favorite pane and every Project-tab subpane. StyleX owns the complete row/list/item,
+logo/avatar/image, project-name, owner-link, hover, and star declarations, while React/TanStack
+owns the separate project and owner navigation plus favorite mutation. All concrete colors come
+from the canonical global theme entry; no route-local color, dark value, or toggle was added.
+Fresh live legacy captures at 1366×900 and 390×844 confirm the exact `350×26`/`390×26` rows,
+`321×18`/`361×18` items, static `29×16` stars, typography, truncation, and link states. No
+declaration of this owner intentionally remains in fallback: removing its StyleX classes exposes
+the old `app.css` absolute-star overlay and item-width drift only as deletion evidence. Shared
+Bootstrap/Yobi rules remain active solely for other consumers, not as fallback ownership for
+this migrated row. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
