@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent } from "react";
-import { useState } from "react";
+import { use, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
@@ -23,7 +23,7 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../../i18n";
 import { YonaQueryProvider } from "../../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { ProjectHeader, ProjectMenu } from "../../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../../$projectName";
 import {
   PullRequestBranchInfo,
   PullRequestHeader,
@@ -121,6 +121,11 @@ function ProjectPullRequestChangesRoute() {
       ? ""
       : decodeURIComponent(pathname.slice(markerIndex + commitPathMarker.length));
 
+  const nestedProjectShell = use(ProjectNestedShellContext);
+  if (nestedProjectShell && !commitId) {
+    return <ProjectPullRequestChangesShell nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
+
   return <ProjectPullRequestChangesPage commitId={commitId} runtimeConfig={runtimeConfig} />;
 }
 
@@ -134,17 +139,23 @@ export function ProjectPullRequestChangesPage({
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestChangesShell commitId={commitId} runtimeConfig={runtimeConfig} />
+        <ProjectPullRequestChangesShell
+          commitId={commitId}
+          nestedProjectShell={false}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
 function ProjectPullRequestChangesShell({
-  commitId,
+  commitId = "",
+  nestedProjectShell,
   runtimeConfig,
 }: {
   commitId: string;
+  nestedProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -155,6 +166,7 @@ function ProjectPullRequestChangesShell({
   return projectQuery.data ? (
     <ProjectPullRequestChangesScreen
       commitId={commitId}
+      nestedProjectShell={nestedProjectShell}
       project={projectQuery.data}
       runtimeConfig={runtimeConfig}
     />
@@ -163,10 +175,12 @@ function ProjectPullRequestChangesShell({
 
 function ProjectPullRequestChangesScreen({
   commitId,
+  nestedProjectShell,
   project,
   runtimeConfig,
 }: {
   commitId: string;
+  nestedProjectShell: boolean;
   project: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -182,15 +196,23 @@ function ProjectPullRequestChangesScreen({
   );
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
 
+  const changesErrorStatus = pullRequestChangesErrorStatus(changesQuery.error);
   if (!changesQuery.data || !sessionQuery.data) {
+    if (nestedProjectShell && (changesErrorStatus === 403 || changesErrorStatus === 404)) {
+      return <ProjectPullRequestChangesErrorBody status={changesErrorStatus} />;
+    }
     return null;
   }
 
   return (
     <>
       <ProjectPullRequestChangesTitle ownerName={ownerName} projectName={projectName} />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+      {nestedProjectShell ? null : (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+          <ProjectMenu active="pullRequest" basePath={runtimeConfig.basePath} project={project} />
+        </>
+      )}
       <ProjectPullRequestChangesBody
         changes={changesQuery.data}
         commitId={commitId}
@@ -210,6 +232,25 @@ function ProjectPullRequestChangesScreen({
       />
     </>
   );
+}
+
+function ProjectPullRequestChangesErrorBody({ status }: { status: 403 | 404 }) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function pullRequestChangesErrorStatus(error: unknown): 403 | 404 | undefined {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  return error.status === 403 || error.status === 404 ? error.status : undefined;
 }
 
 function ProjectPullRequestChangesTitle({

@@ -84,7 +84,7 @@ const EXPECTED_PULL_REQUEST_SELECTED_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.repl
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>dev@example.com</strong><span class="ago" title="Jul 4, 2026">Jul 4, 2026</span></p><pre class="commitMsg mt5">Add UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
+    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>dev@example.com</strong><span class="ago" title="Jul 4, 2026">Jul 4, 2026</span></p><pre class="commitMsg mt5">Add UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
   )
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
@@ -101,7 +101,7 @@ const EXPECTED_PULL_REQUEST_SELECTED_NO_AUTHOR_CHANGE = EXPECTED_PULL_REQUEST_CH
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Anonymous</strong><span class="ago" title="Jul 9, 2026">Jul 9, 2026</span></p><pre class="commitMsg mt5">No author metadata\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
+    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>Anonymous</strong><span class="ago" title="Jul 9, 2026">Jul 9, 2026</span></p><pre class="commitMsg mt5">No author metadata\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
   )
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
@@ -118,7 +118,7 @@ const EXPECTED_PULL_REQUEST_PRIOR_CHANGE = EXPECTED_PULL_REQUEST_CHANGES.replace
   )
   .replace(
     `<div class="diff-body diffs-wrap-scroll">`,
-    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>old@example.com</strong><span class="ago" title="Jul 3, 2026">Jul 3, 2026</span></p><pre class="commitMsg mt5">Old UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
+    `<p class="commitInfo"><span class="avatar-wrap smaller"><img src="__BASE_PATH__/assets/images/default-avatar-32.png" width="32" height="32"></span><strong>old@example.com</strong><span class="ago" title="Jul 3, 2026">Jul 3, 2026</span></p><pre class="commitMsg mt5">Old UI\n\nDetails</pre><div class="diff-body diffs-wrap-scroll">`,
   )
   .replaceAll(
     `action="__BASE_PATH__/admin/sample/pullRequest/90/comments"`,
@@ -450,6 +450,26 @@ test("project pull request changes uses legacy project-scoped GNB search shell",
   expect(metrics!.menu.top).toBeGreaterThanOrEqual(metrics!.projectHeader.bottom - 1);
 });
 
+test("project pull request default changes keeps the project shell for project-scoped 403 and 404", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  for (const [status, copy] of [
+    [403, "You are not authorized"],
+    [404, "Page not found"],
+  ] as const) {
+    await mockPullRequestChanges(page, { changesErrorStatus: status });
+    await page.goto(`${basePath}/admin/sample/pullRequest/9/changes?status=${status}`);
+    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator(".project-header-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+    await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
+      "Pull request",
+    );
+    await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(copy);
+  }
+});
+
 test("project pull request changes renders legacy file diff error row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPullRequestChanges(page, {
@@ -740,7 +760,7 @@ test("project pull request selected commit without author renders legacy anonymo
   await expect(page.locator(".commitInfo > a.avatar-wrap")).toHaveCount(0);
   await expect(page.locator(".commitInfo > .avatar-wrap.smaller img")).toHaveAttribute(
     "src",
-    "/assets/images/default-avatar-32.png",
+    `${basePath}/assets/images/default-avatar-32.png`,
   );
 
   expect(await canonicalizeAll(page, ".page-wrap-outer")).toEqual(
@@ -1568,6 +1588,7 @@ async function mockPullRequestChanges(
   page: Page,
   options: {
     cardThreads?: unknown[];
+    changesErrorStatus?: 403 | 404;
     commits?: unknown[];
     expectedCommitId?: string;
     files?: unknown[];
@@ -1626,6 +1647,14 @@ async function mockPullRequestChanges(
     async (route) => {
       const url = new URL(route.request().url());
       expect(url.searchParams.get("commitId") ?? "").toBe(options.expectedCommitId ?? "");
+      if (options.changesErrorStatus) {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ error: { status: options.changesErrorStatus } }),
+          status: options.changesErrorStatus,
+        });
+        return;
+      }
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
