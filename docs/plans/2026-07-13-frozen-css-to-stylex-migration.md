@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, first slice complete
+Status: Wave 0 implemented; Wave 1 started, two user-menu slices complete
 Date: 2026-07-13
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -266,7 +266,16 @@ max-720 `_responsive.less` color now have colocated StyleX ownership. The frozen
 active, including the shared Bootstrap/`_yobiUI.less` `ybtn ybtn-success` primitive and untouched
 hidden/authenticated menus. Its four legacy colors use the global variables in
 `frontend/src/theme.stylex.ts`, establishing the override boundary without inventing dark-mode
-values or behavior. This is not Wave 1 completion.
+values or behavior.
+
+The second verified slice migrates the authenticated top-right `AuthenticatedSiteUserMenu`
+boundary, excluding its hidden `#mySidenav`: container/items, links and hover, dividers,
+site-admin icon size, dropdown toggles/carets and hover/focus, create action, last-item spacing,
+and max-720 item/dropdown colors now use colocated StyleX declarations with exact legacy values.
+The global theme entry adds only cited `@primary -> @orange`, `@low-white`, and `@white` values.
+The hidden sidenav, avatar and dropdown overlay primitives, React-button resets, icon font,
+inactive counter rule, and non-legacy menu height/reset remain fallback. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 

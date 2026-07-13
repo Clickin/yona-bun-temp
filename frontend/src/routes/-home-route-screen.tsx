@@ -1078,6 +1078,97 @@ function LegacyFramedSidebar({
   );
 }
 
+const authenticatedSiteUserMenuStyles = stylex.create({
+  menu: {
+    float: "right",
+    listStyle: "none",
+    padding: 0,
+  },
+  item: {
+    float: "left",
+    margin: "5px 0",
+    position: "relative",
+  },
+  itemText: {
+    color: {
+      default: globalColors.textMuted,
+      "@media (max-width: 720px)": globalColors.navigationAccent,
+    },
+    fontSize: "14px",
+  },
+  itemLink: {
+    color: globalColors.textMuted,
+    lineHeight: "30px",
+    padding: "5px 10px",
+    textDecoration: "none",
+    ":hover": {
+      color: globalColors.textOnDarkHover,
+    },
+  },
+  adminLink: {
+    fontSize: "16px",
+  },
+  divider: {
+    lineHeight: "30px",
+    "::after": {
+      color: globalColors.navigationDivider,
+      content: '"|"',
+      opacity: 0.35,
+    },
+  },
+  dropdownItem: {
+    color: {
+      default: globalColors.navigationDropdownText,
+      "@media (max-width: 720px)": globalColors.navigationAccent,
+    },
+    fontSize: "14px",
+  },
+  dropdownButton: {
+    padding: "0 10px",
+  },
+  dropdownToggle: {
+    display: "inline-block",
+    lineHeight: "30px",
+    textDecoration: "none",
+    transition: "all 0.15s ease",
+    ":hover": {
+      color: globalColors.navigationAccent,
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: globalColors.navigationAccent,
+      textDecoration: "none",
+    },
+  },
+  caret: {
+    borderLeft: "4px solid transparent",
+    borderRight: "4px solid transparent",
+    borderTop: "4px solid currentColor",
+    content: '""',
+    display: "inline-block",
+    height: 0,
+    marginLeft: "5px",
+    transition: "all 0.15s ease",
+    verticalAlign: "middle",
+    width: 0,
+  },
+  createButton: {
+    backgroundColor: globalColors.navigationCreateAction,
+    borderRadius: "3px",
+    color: globalColors.textOnAccent,
+    padding: "0 10px",
+    ":hover": {
+      color: globalColors.textOnAccent,
+    },
+    ":focus": {
+      color: globalColors.textOnAccent,
+    },
+  },
+  lastItem: {
+    marginLeft: "10px",
+  },
+});
+
 function AuthenticatedSiteUserMenu({
   basePath,
   runtimeConfig,
@@ -1195,43 +1286,64 @@ function AuthenticatedSiteUserMenu({
           </div>
         </div>
       </div>
-      <ul className="gnb-usermenu">
+      <ul
+        className={`gnb-usermenu ${stylex.props(authenticatedSiteUserMenuStyles.menu).className}`}
+        data-stylex-owner="authenticated-site-user-menu"
+      >
         {navbarCustomLinkName ? (
-          <li className="gnb-usermenu-item">
-            <Link to={navbarCustomLinkUrl} reloadDocument className="user-item-btn loggged-in">
+          <li
+            className={`gnb-usermenu-item ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.itemText).className}`}
+          >
+            <Link
+              to={navbarCustomLinkUrl}
+              reloadDocument
+              className={`user-item-btn loggged-in ${stylex.props(authenticatedSiteUserMenuStyles.itemLink).className}`}
+            >
               {navbarCustomLinkName}
             </Link>
           </li>
         ) : null}
-        <li className="gnb-usermenu-item" title={`${t("title.shortcut")} (A)`}>
+        <li
+          className={`gnb-usermenu-item ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.itemText).className}`}
+          title={`${t("title.shortcut")} (A)`}
+        >
           <Link
             to="/user/issues"
             search={LEGACY_USER_ISSUES_LINK_SEARCH}
-            className="user-item-btn loggged-in"
+            className={`user-item-btn loggged-in ${stylex.props(authenticatedSiteUserMenuStyles.itemLink).className}`}
           >
             {t("issue.myIssue")}
           </Link>
         </li>
-        <li className="divider"></li>
+        <li
+          className={`divider ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.divider).className}`}
+        ></li>
         {isSiteAdmin ? (
           <>
-            <li className="gnb-usermenu-item">
+            <li
+              className={`gnb-usermenu-item ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.itemText).className}`}
+            >
               <Link
                 to="/sites/userList"
                 search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
                 title={t("menu.siteAdmin")}
-                className="usermenu-icon-button show-progress-bar"
+                className={`usermenu-icon-button show-progress-bar ${stylex.props(authenticatedSiteUserMenuStyles.itemLink, authenticatedSiteUserMenuStyles.adminLink).className}`}
               >
                 <i className="yobicon-wrench" />
               </Link>
             </li>
-            <li className="divider"></li>
+            <li
+              className={`divider ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.divider).className}`}
+            ></li>
           </>
         ) : null}
-        <li className="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
+        <li
+          className={`gnb-usermenu-dropdown sidebar-open-btn ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.dropdownItem).className}`}
+          id="sidebar-open-btn"
+        >
           <button
             type="button"
-            className="gnb-dropdown-toggle"
+            className={`gnb-dropdown-toggle ${stylex.props(authenticatedSiteUserMenuStyles.dropdownButton, authenticatedSiteUserMenuStyles.dropdownToggle).className}`}
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
             aria-controls="mySidenav"
             aria-expanded={isSidebarOpen}
@@ -1240,20 +1352,24 @@ function AuthenticatedSiteUserMenu({
             <span className="avatar-wrap smaller">
               <img src={avatarUrl} alt="" />
             </span>
-            <span className="caret"></span>
+            <span
+              className={`caret ${stylex.props(authenticatedSiteUserMenuStyles.caret).className}`}
+            ></span>
           </button>
         </li>
         <li
-          className={isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"}
+          className={`${isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"} ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.dropdownItem, authenticatedSiteUserMenuStyles.lastItem).className}`}
           onBlur={handleCreateMenuBlur}
         >
           <button
             type="button"
-            className="gnb-dropdown-toggle dropdwon-box-btn"
+            className={`gnb-dropdown-toggle dropdwon-box-btn ${stylex.props(authenticatedSiteUserMenuStyles.dropdownButton, authenticatedSiteUserMenuStyles.dropdownToggle, authenticatedSiteUserMenuStyles.createButton).className}`}
             onClick={handleCreateMenuToggleClick}
           >
             <i className="yobicon-plus"></i>
-            <span className="caret"></span>
+            <span
+              className={`caret ${stylex.props(authenticatedSiteUserMenuStyles.caret).className}`}
+            ></span>
           </button>
           <ul className="dropdown-menu flat right">
             <li>
