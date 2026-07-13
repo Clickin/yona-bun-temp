@@ -15,6 +15,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import defaultProjectLogoUrl from "../../../assets/legacy/project_default_logo.png";
+import { SiteLayoutShell } from "../../-home-route-screen";
 import {
   ProjectHeader as SharedProjectHeader,
   ProjectMenu as SharedProjectMenu,
@@ -32,7 +33,6 @@ const legacyProjectSettingsLinkSuppressActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-const legacyProjectSettingsCogSearch = { __legacyProjectSettingsCogActiveMarker: undefined };
 const LEGACY_PROJECT_SETTINGS_ROUTE = "/$ownerName/$projectName/settingform";
 
 type ProjectSettingRouteScreenProps = {

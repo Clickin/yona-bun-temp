@@ -75,6 +75,33 @@ test("user password to token settings keeps the legacy user-settings shell DOM n
   await expectUserSettingsGeometry(page);
 });
 
+test("user token to notification settings keeps the legacy user-settings shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockUserSettings(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/user/editform/token`);
+  await expect(page.locator(".token-generate #frmBasic")).toBeVisible();
+  await captureUserSettingsShellNodes(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.locator('.page-wrap > .nav-tabs a[href$="/user/editform/notifications"]').click();
+  await expect(page).toHaveURL(`${basePath}/user/editform/notifications`);
+  await expect(page.locator("#notification-projects")).toBeVisible();
+  await expect(page.locator(".page-wrap > .nav-tabs > li.active")).toHaveText(
+    "Notification settings",
+  );
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#notification-projects")).toBeVisible();
+  await expectUserSettingsShellNodesToPersist(page);
+  await expectUserSettingsGeometry(page);
+});
+
 async function mockUserSettings(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({
@@ -107,7 +134,14 @@ function workspaceBody() {
     },
     pullRequestItems: [],
     recentProjects: [],
-    watchedProjects: [],
+    watchedProjects: [
+      {
+        notifications: [{ enabled: true, eventType: "NEW_ISSUE" }],
+        ownerName: "admin",
+        projectId: "1",
+        projectName: "sample",
+      },
+    ],
   };
 }
 
@@ -156,7 +190,7 @@ async function expectUserSettingsGeometry(page: Page) {
     const pageWrap = rect(".page-wrap-outer");
     const tabs = rect(".page-wrap > .nav-tabs");
     const body = rect(
-      ".page-wrap > form, .page-wrap > #frmBasic, .page-wrap > .token-generate > #frmBasic",
+      ".page-wrap > form, .page-wrap > #frmBasic, .page-wrap > .token-generate > #frmBasic, .page-wrap > div > #notification-projects",
     );
     return {
       bodyLeft: body.left,

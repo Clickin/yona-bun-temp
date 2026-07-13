@@ -3,27 +3,12 @@ import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readWorkspaceOverviewRest, toggleWorkspaceNotificationRest } from "../../../api/workspace";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/user/editform/notifications")({
   component: UserNotificationSettingsRoute,
 });
-
-const legacyEditTabLinkActiveProps = {
-  "aria-current": undefined,
-  className: undefined,
-  "data-status": undefined,
-};
-const legacyEditTabLinkActiveOptions = {
-  exact: true,
-  explicitUndefined: true,
-  includeHash: true,
-  includeSearch: true,
-} as const;
-const legacyEditTabLinkInactiveSearch = { __legacyEditTabActiveMarker: undefined };
 
 type WatchedProjectRow = {
   notifications?: unknown;
@@ -70,15 +55,7 @@ const NOTIFICATION_TYPES = [
 function UserNotificationSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell runtimeConfig={runtimeConfig}>
-          <UserNotificationSettingsScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <UserNotificationSettingsScreen runtimeConfig={runtimeConfig} />;
 }
 
 function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -89,10 +66,6 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
     queryFn: () => readWorkspaceOverviewRest(runtimeConfig),
     queryKey: ["workspace", "overview"],
   });
-  const loginId =
-    typeof workspaceQuery.data?.profile?.loginId === "string"
-      ? workspaceQuery.data.profile.loginId
-      : "";
   const watchedProjects = (workspaceQuery.data?.watchedProjects ?? []) as WatchedProjectRow[];
   const routeHashProjectId = normalizeProjectHash(routeLocation.hash);
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -120,92 +93,68 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
   });
 
   return (
-    <>
-      <UserNotificationSettingsTitle loginId={loginId} />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t("userinfo.accountSetting")}</h3>
-        </div>
-      </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
-          <EditTabMenu active="notifications" />
-
-          <div>
-            <ul id="notification-projects" className="unstyled lst-stacked span3 mr20">
-              {watchedProjects.map((project) => {
-                const projectId = stringValue(project.projectId);
-                return (
-                  <li
-                    key={projectId}
-                    className={projectId === activeProjectId ? "active" : undefined}
-                  >
-                    <Link
-                      to="/user/editform/notifications"
-                      hash={projectId}
-                      search={legacyEditTabLinkInactiveSearch}
-                      activeOptions={legacyEditTabLinkActiveOptions}
-                      activeProps={legacyEditTabLinkActiveProps}
-                      onClick={() => {
-                        setSelectedProjectId(projectId);
-                      }}
-                    >
-                      {`${stringValue(project.ownerName)} / ${stringValue(project.projectName)}`}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="tab-content">
-              {watchedProjects.map((project) => {
-                const projectId = stringValue(project.projectId);
-                const notifications = Array.isArray(project.notifications)
-                  ? (project.notifications as NotificationRow[])
-                  : [];
-                return (
-                  <div
-                    key={projectId}
-                    id={projectId}
-                    className={projectId === activeProjectId ? "tab-pane active" : "tab-pane"}
-                  >
-                    <table className="table table-striped table-bordered">
-                      <tbody>
-                        {NOTIFICATION_TYPES.map(([eventType, messageKey]) => (
-                          <tr key={eventType}>
-                            <th>{t(messageKey)}</th>
-                            <td>
-                              <div className="switch" data-on-label="On" data-off-label="Off">
-                                <input
-                                  className="notiUpdate"
-                                  type="checkbox"
-                                  checked={isNotificationEnabled(notifications, eventType)}
-                                  onChange={(event) =>
-                                    toggleMutation.mutate({
-                                      checked: event.currentTarget.checked,
-                                      eventType,
-                                      projectId,
-                                    })
-                                  }
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
+    <div>
+      <ul id="notification-projects" className="unstyled lst-stacked span3 mr20">
+        {watchedProjects.map((project) => {
+          const projectId = stringValue(project.projectId);
+          return (
+            <li key={projectId} className={projectId === activeProjectId ? "active" : undefined}>
+              <Link
+                to="/user/editform/notifications"
+                hash={projectId}
+                onClick={() => {
+                  setSelectedProjectId(projectId);
+                }}
+              >
+                {`${stringValue(project.ownerName)} / ${stringValue(project.projectName)}`}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="tab-content">
+        {watchedProjects.map((project) => {
+          const projectId = stringValue(project.projectId);
+          const notifications = Array.isArray(project.notifications)
+            ? (project.notifications as NotificationRow[])
+            : [];
+          return (
+            <div
+              key={projectId}
+              id={projectId}
+              className={projectId === activeProjectId ? "tab-pane active" : "tab-pane"}
+            >
+              <table className="table table-striped table-bordered">
+                <tbody>
+                  {NOTIFICATION_TYPES.map(([eventType, messageKey]) => (
+                    <tr key={eventType}>
+                      <th>{t(messageKey)}</th>
+                      <td>
+                        <div className="switch" data-on-label="On" data-off-label="Off">
+                          <input
+                            className="notiUpdate"
+                            type="checkbox"
+                            checked={isNotificationEnabled(notifications, eventType)}
+                            onChange={(event) =>
+                              toggleMutation.mutate({
+                                checked: event.currentTarget.checked,
+                                eventType,
+                                projectId,
+                              })
+                            }
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
-    </>
+    </div>
   );
-}
-
-function UserNotificationSettingsTitle({ loginId }: { loginId: string }) {
-  return loginId ? <title>{loginId}</title> : null;
 }
 
 function activeProjectIdFromHash(watchedProjects: WatchedProjectRow[], hashProjectId: string) {
@@ -260,63 +209,4 @@ function stringValue(value: unknown): string {
     return value;
   }
   return typeof value === "number" ? String(value) : "";
-}
-
-function EditTabMenu({ active }: { active: string }) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <ul className="nav nav-tabs mt20">
-      <li className={active === "profile" ? "active" : undefined}>
-        <Link
-          to="/user/editform"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.editProfile")}
-        </Link>
-      </li>
-      <li className={active === "password" ? "active" : undefined}>
-        <Link
-          to="/user/editform/password"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changePassword")}
-        </Link>
-      </li>
-      <li className={active === "notifications" ? "active" : undefined}>
-        <Link
-          to="/user/editform/notifications"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changeNotifications")}
-        </Link>
-      </li>
-      <li className={active === "emails" ? "active" : undefined}>
-        <Link
-          to="/user/editform/emails"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changeEmails")}
-        </Link>
-      </li>
-      <li className={active === "token" ? "active" : undefined}>
-        <Link
-          to="/user/editform/token"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.token")}
-        </Link>
-      </li>
-    </ul>
-  );
 }

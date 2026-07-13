@@ -14,8 +14,6 @@ import {
   type SearchResponse,
   type SearchType,
 } from "../../../api/search";
-import { readOrganizationContainerRest } from "../../../api/org-project";
-import { apiQueryKeys } from "../../../api/query-keys";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -28,7 +26,6 @@ import {
   isRequestTextTooLargeError,
   RequestTextTooLargeErrorBody,
 } from "../../-search-screen";
-import { OrganizationHeader, OrganizationMenu } from "../$organizationName";
 
 type SearchCategory = {
   countKey: keyof SearchCounts;
@@ -88,7 +85,6 @@ export const Route = createFileRoute("/organizations/$organizationName/search")(
 
 function OrganizationSearchRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
@@ -102,11 +98,6 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
   const { t } = useLegacyMessages();
   const { organizationName } = Route.useParams();
   const search = Route.useSearch();
-  const organizationQuery = useQuery({
-    enabled: !search.routeInvalid,
-    queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
-    queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
-  });
   const hasKeyword = search.keyword.length > 0;
   const searchQuery = useQuery({
     ...organizationSearchQueryOptions(runtimeConfig, {
@@ -156,51 +147,24 @@ function OrganizationSearchScreen({ runtimeConfig }: { runtimeConfig: RuntimeCon
     );
   }
 
-  if (!organizationQuery.data) {
-    return null;
-  }
-
-  const logoUrl =
-    typeof organizationQuery.data.logoUrl === "string" && organizationQuery.data.logoUrl.length > 0
-      ? organizationQuery.data.logoUrl
-      : prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/group_default.png");
-
   if (isDefaultForbiddenError(searchQuery.error)) {
     return (
-      <SiteLayoutShell
-        projectSearchScope={{ organizationName }}
-        runtimeConfig={runtimeConfig}
-        showLegacyProjectHeaderLinks
-      >
+      <>
         <title>{searchTitle}</title>
-        <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-        <OrganizationMenu
-          organizationName={organizationName}
-          viewerCanUpdate={Boolean(organizationQuery.data.viewerCanUpdate)}
-        />
         <OrganizationSearchErrorBody messageKey="error.forbidden" />
-      </SiteLayoutShell>
+      </>
     );
   }
 
   return (
-    <SiteLayoutShell
-      projectSearchScope={{ organizationName }}
-      runtimeConfig={runtimeConfig}
-      showLegacyProjectHeaderLinks
-    >
+    <>
       <title>{searchTitle}</title>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-      <OrganizationMenu
-        organizationName={organizationName}
-        viewerCanUpdate={Boolean(organizationQuery.data.viewerCanUpdate)}
-      />
       <OrganizationSearchBody
         organizationName={organizationName}
         result={result}
         runtimeConfig={runtimeConfig}
       />
-    </SiteLayoutShell>
+    </>
   );
 }
 
