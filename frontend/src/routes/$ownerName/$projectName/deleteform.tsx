@@ -33,16 +33,43 @@ export const Route = createFileRoute("/$ownerName/$projectName/deleteform")({
 function ProjectDeleteFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectDeleteFormRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectDeleteFormRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectDeleteFormRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectDeleteFormRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectDeleteFormRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectDeleteFormRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const containerQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -55,18 +82,35 @@ function ProjectDeleteFormRouteShell({ runtimeConfig }: { runtimeConfig: Runtime
       }
     : { ownerName, projectName };
 
+  const screen = (
+    <ProjectDeleteFormScreen
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
+
   return (
     <SiteLayoutShell
       projectSearchScope={projectSearchScope}
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
-      <ProjectDeleteFormScreen runtimeConfig={runtimeConfig} />
+      {screen}
     </SiteLayoutShell>
   );
 }
 
-function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectDeleteFormScreen({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const legacyTitle = `${t("project.delete")} - ${ownerName}/${projectName}`;
@@ -86,6 +130,7 @@ function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       <title>{legacyTitle}</title>
       <ProjectDeleteFormBody
         formProject={query.data}
+        renderProjectShell={renderProjectShell}
         runtimeConfig={runtimeConfig}
         shellProject={containerQuery.data}
       />
@@ -95,10 +140,12 @@ function ProjectDeleteFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
 
 function ProjectDeleteFormBody({
   formProject,
+  renderProjectShell,
   runtimeConfig,
   shellProject,
 }: {
   formProject: ProjectContainer;
+  renderProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
   shellProject: ProjectContainer;
 }) {
@@ -150,8 +197,12 @@ function ProjectDeleteFormBody({
 
   return (
     <>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
-      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={shellProject} />
+      {renderProjectShell ? (
+        <>
+          <ProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
+          <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={shellProject} />
+        </>
+      ) : null}
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu
