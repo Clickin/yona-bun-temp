@@ -191,6 +191,31 @@ test("project reviews to settings keeps the legacy project shell DOM nodes mount
   await expectProjectSettingsGeometry(page);
 });
 
+test("project settings to members keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/setting`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectSettingsGeometry(page);
+
+  await page.locator("#subMenuProjectMember a[href$='/admin/sample/members']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/members(?:\?|$)/);
+  await expect(page.locator("#subMenuProjectMember")).toHaveClass(/active/);
+  await expect(page.locator(".members.project")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMembersGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".members.project")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectMembersGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -533,6 +558,49 @@ async function expectProjectSettingsGeometry(page: Page) {
   expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
 }
 
+async function expectProjectMembersGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap");
+    const tabs = rect(".project-page-wrap .nav-tabs");
+    const members = rect(".members.project");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      membersBottom: members.bottom,
+      membersTop: members.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.membersTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.membersBottom).toBeGreaterThan(metrics.membersTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -691,6 +759,27 @@ async function mockProjectHomeAndIssues(page: Page) {
         viewerCanUpdate: true,
         viewerCanWatch: false,
         watchCount: 0,
+      });
+    if (path.endsWith("/owners/admin/projects/sample/members"))
+      return json({
+        enrollmentRequests: [],
+        members: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            isOwner: true,
+            loginId: "admin",
+            role: "manager",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+        ],
+        ownerName: "admin",
+        projectName: "sample",
+        roleOptions: [
+          { label: "Manager", role: "manager" },
+          { label: "Member", role: "member" },
+        ],
+        viewerCanUpdate: true,
       });
     return json({});
   });

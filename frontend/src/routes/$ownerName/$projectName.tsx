@@ -94,6 +94,7 @@ function ProjectHomeRoute() {
   const pullRequestsPath = `${homePath}/pullRequests`;
   const reviewsPath = `${homePath}/reviews`;
   const settingPath = `${homePath}/setting`;
+  const membersPath = `${homePath}/members`;
   const active =
     pathname === homePath
       ? "home"
@@ -111,7 +112,9 @@ function ProjectHomeRoute() {
                   ? "review"
                   : pathname === settingPath
                     ? "setting"
-                    : null;
+                    : pathname === membersPath
+                      ? "members"
+                      : null;
 
   if (!active) {
     return <Outlet />;
@@ -130,7 +133,16 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review" | "setting";
+  active:
+    | "board"
+    | "code"
+    | "home"
+    | "issue"
+    | "members"
+    | "milestone"
+    | "pullRequest"
+    | "review"
+    | "setting";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -181,7 +193,16 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "board" | "code" | "home" | "issue" | "milestone" | "pullRequest" | "review" | "setting";
+  active:
+    | "board"
+    | "code"
+    | "home"
+    | "issue"
+    | "members"
+    | "milestone"
+    | "pullRequest"
+    | "review"
+    | "setting";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -206,10 +227,16 @@ function ProjectLayoutScreen({
                     ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
                     : active === "setting"
                       ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                      : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                      : active === "members"
+                        ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                        : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu
+        active={active === "members" ? "setting" : active}
+        basePath={runtimeConfig.basePath}
+        project={project}
+      />
       {active === "milestone" ? (
         <link
           rel="stylesheet"
