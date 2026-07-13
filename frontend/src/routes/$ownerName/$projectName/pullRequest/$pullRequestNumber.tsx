@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
+import { Fragment, use, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -27,7 +27,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -47,17 +47,31 @@ function insulateModalButtonClick(event: MouseEvent<HTMLButtonElement>) {
 
 function ProjectPullRequestOverviewRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectPullRequestOverviewScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectPullRequestOverviewScreen runtimeConfig={runtimeConfig} />
+        <ProjectPullRequestOverviewScreen
+          nestedProjectShell={false}
+          runtimeConfig={runtimeConfig}
+        />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectPullRequestOverviewScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName, pullRequestNumber } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isChildRoute = !pathname.endsWith(
@@ -74,6 +88,11 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
       pullRequestNumber: prNumber,
     }),
     enabled: !isChildRoute,
+    retry(failureCount, error) {
+      const status = restApiErrorStatus(error);
+      return status !== 401 && status !== 403 && status !== 404 && failureCount < 3;
+    },
+    retryOnMount: false,
   });
   const sessionQuery = useQuery({
     ...currentSessionQueryOptions(runtimeConfig),
@@ -98,23 +117,46 @@ function ProjectPullRequestOverviewScreen({ runtimeConfig }: { runtimeConfig: Ru
     );
   }
 
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <PullRequestOverviewTitle ownerName={ownerName} projectName={projectName} />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu
-        active="pullRequest"
-        basePath={runtimeConfig.basePath}
-        project={projectQuery.data}
-      />
-      {pullRequestQuery.data && sessionQuery.data ? (
+  const errorStatus = restApiErrorStatus(pullRequestQuery.error);
+  const content =
+    errorStatus === 401 || errorStatus === 403 || errorStatus === 404 ? (
+      <>
+        <PullRequestOverviewErrorTitle
+          ownerName={ownerName}
+          projectName={projectName}
+          status={errorStatus}
+        />
+        <PullRequestOverviewErrorBody
+          ownerName={ownerName}
+          projectName={projectName}
+          status={errorStatus}
+        />
+      </>
+    ) : pullRequestQuery.data && sessionQuery.data ? (
+      <>
+        <PullRequestOverviewTitle ownerName={ownerName} projectName={projectName} />
         <PullRequestOverviewBody
           currentUserLoginId={String(sessionQuery.data.loginId ?? "")}
           project={projectQuery.data}
           pullRequest={pullRequestQuery.data}
           runtimeConfig={runtimeConfig}
         />
-      ) : null}
+      </>
+    ) : null;
+
+  if (nestedProjectShell) {
+    return content;
+  }
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
+      <ProjectMenu
+        active="pullRequest"
+        basePath={runtimeConfig.basePath}
+        project={projectQuery.data}
+      />
+      {content}
     </SiteLayoutShell>
   );
 }
@@ -129,6 +171,54 @@ function PullRequestOverviewTitle({
   const { t } = useLegacyMessages();
 
   return <title>{`${t("menu.pullRequest")} - ${ownerName}/${projectName}`}</title>;
+}
+
+function PullRequestOverviewErrorTitle({
+  ownerName,
+  projectName,
+  status,
+}: {
+  ownerName: string;
+  projectName: string;
+  status: 401 | 403 | 404;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <title>{`${t(status === 404 ? "error.notfound" : "error.forbidden")} - ${ownerName}/${projectName}`}</title>
+  );
+}
+
+function PullRequestOverviewErrorBody({
+  ownerName,
+  projectName,
+  status,
+}: {
+  ownerName: string;
+  projectName: string;
+  status: 401 | 403 | 404;
+}) {
+  const { t } = useLegacyMessages();
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="error-wrap">
+          <i className="ico ico-err2"></i>
+          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+          {status === 404 ? (
+            <Link
+              to="/$ownerName/$projectName/pullRequests"
+              params={{ ownerName, projectName }}
+              search={{}}
+              className="ybtn ybtn-primary"
+              {...LEGACY_LINK_PROPS}
+            >
+              {t("button.list")}
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PullRequestOverviewBody({
@@ -1106,6 +1196,11 @@ function stringField(value: unknown, fallback = "") {
 
 function booleanField(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function restApiErrorStatus(error: unknown) {
+  if (typeof error !== "object" || error === null || !("status" in error)) return undefined;
+  return typeof error.status === "number" ? error.status : undefined;
 }
 
 function disabledAcceptButtonTitle(
