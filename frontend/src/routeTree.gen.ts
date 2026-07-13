@@ -45,6 +45,7 @@ import { Route as OrganizationsNewRouteImport } from './routes/organizations/new
 import { Route as OrganizationsOrganizationNameRouteImport } from './routes/organizations/$organizationName'
 import { Route as OwnerNameProjectNameRouteImport } from './routes/$ownerName/$projectName'
 import { Route as OrganizationsOrganizationNameIndexRouteImport } from './routes/organizations/$organizationName/index'
+import { Route as OwnerNameProjectNameIndexRouteImport } from './routes/$ownerName/$projectName/index'
 import { Route as VerifyLoginIdVerificationCodeRouteImport } from './routes/verify/$loginId/$verificationCode'
 import { Route as UserIssuesNewRouteImport } from './routes/user/issues_/new'
 import { Route as UserEditformTokenRouteImport } from './routes/user/editform/token'
@@ -298,6 +299,12 @@ const OrganizationsOrganizationNameIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => OrganizationsOrganizationNameRoute,
+  } as any)
+const OwnerNameProjectNameIndexRoute =
+  OwnerNameProjectNameIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => OwnerNameProjectNameRoute,
   } as any)
 const VerifyLoginIdVerificationCodeRoute =
   VerifyLoginIdVerificationCodeRouteImport.update({
@@ -801,6 +808,7 @@ export interface FileRoutesByFullPath {
   '/user/editform/token': typeof UserEditformTokenRoute
   '/user/issues/new': typeof UserIssuesNewRouteWithChildren
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/$ownerName/$projectName/': typeof OwnerNameProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/code/$branch': typeof OwnerNameProjectNameCodeBranchRouteWithChildren
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
@@ -853,7 +861,6 @@ export interface FileRoutesByTo {
   '/restricted': typeof RestrictedRoute
   '/search': typeof SearchRoute
   '/secret': typeof SecretRoute
-  '/$ownerName/$projectName': typeof OwnerNameProjectNameRouteWithChildren
   '/organizations/new': typeof OrganizationsNewRoute
   '/sites/data': typeof SitesDataRoute
   '/sites/diagnostic': typeof SitesDiagnosticRoute
@@ -906,6 +913,7 @@ export interface FileRoutesByTo {
   '/user/editform/password': typeof UserEditformPasswordRoute
   '/user/editform/token': typeof UserEditformTokenRoute
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/$ownerName/$projectName': typeof OwnerNameProjectNameIndexRoute
   '/organizations/$organizationName': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
   '/$ownerName/$projectName/compare/$revisionRange': typeof OwnerNameProjectNameCompareRevisionRangeRoute
@@ -1009,6 +1017,7 @@ export interface FileRoutesById {
   '/user/editform/token': typeof UserEditformTokenRoute
   '/user/issues_/new': typeof UserIssuesNewRouteWithChildren
   '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRoute
+  '/$ownerName/$projectName/': typeof OwnerNameProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/$ownerName/$projectName/code/$branch': typeof OwnerNameProjectNameCodeBranchRouteWithChildren
   '/$ownerName/$projectName/commit/$commitId': typeof OwnerNameProjectNameCommitCommitIdRoute
@@ -1120,6 +1129,7 @@ export interface FileRouteTypes {
     | '/user/editform/token'
     | '/user/issues/new'
     | '/verify/$loginId/$verificationCode'
+    | '/$ownerName/$projectName/'
     | '/organizations/$organizationName/'
     | '/$ownerName/$projectName/code/$branch'
     | '/$ownerName/$projectName/commit/$commitId'
@@ -1172,7 +1182,6 @@ export interface FileRouteTypes {
     | '/restricted'
     | '/search'
     | '/secret'
-    | '/$ownerName/$projectName'
     | '/organizations/new'
     | '/sites/data'
     | '/sites/diagnostic'
@@ -1225,6 +1234,7 @@ export interface FileRouteTypes {
     | '/user/editform/password'
     | '/user/editform/token'
     | '/verify/$loginId/$verificationCode'
+    | '/$ownerName/$projectName'
     | '/organizations/$organizationName'
     | '/$ownerName/$projectName/commit/$commitId'
     | '/$ownerName/$projectName/compare/$revisionRange'
@@ -1327,6 +1337,7 @@ export interface FileRouteTypes {
     | '/user/editform/token'
     | '/user/issues_/new'
     | '/verify/$loginId/$verificationCode'
+    | '/$ownerName/$projectName/'
     | '/organizations/$organizationName/'
     | '/$ownerName/$projectName/code/$branch'
     | '/$ownerName/$projectName/commit/$commitId'
@@ -1656,6 +1667,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizations/$organizationName/'
       preLoaderRoute: typeof OrganizationsOrganizationNameIndexRouteImport
       parentRoute: typeof OrganizationsOrganizationNameRoute
+    }
+    '/$ownerName/$projectName/': {
+      id: '/$ownerName/$projectName/'
+      path: '/'
+      fullPath: '/$ownerName/$projectName/'
+      preLoaderRoute: typeof OwnerNameProjectNameIndexRouteImport
+      parentRoute: typeof OwnerNameProjectNameRoute
     }
     '/verify/$loginId/$verificationCode': {
       id: '/verify/$loginId/$verificationCode'
@@ -2368,6 +2386,7 @@ interface OwnerNameProjectNameRouteChildren {
   OwnerNameProjectNameTransferRoute: typeof OwnerNameProjectNameTransferRoute
   OwnerNameProjectNameWatchersRoute: typeof OwnerNameProjectNameWatchersRoute
   OwnerNameProjectNameWebhooksRoute: typeof OwnerNameProjectNameWebhooksRoute
+  OwnerNameProjectNameIndexRoute: typeof OwnerNameProjectNameIndexRoute
   OwnerNameProjectNameCommitCommitIdRoute: typeof OwnerNameProjectNameCommitCommitIdRoute
   OwnerNameProjectNameCompareRevisionRangeRoute: typeof OwnerNameProjectNameCompareRevisionRangeRoute
   OwnerNameProjectNameIssueIssueNumberRoute: typeof OwnerNameProjectNameIssueIssueNumberRouteWithChildren
@@ -2409,6 +2428,7 @@ const OwnerNameProjectNameRouteChildren: OwnerNameProjectNameRouteChildren = {
   OwnerNameProjectNameTransferRoute: OwnerNameProjectNameTransferRoute,
   OwnerNameProjectNameWatchersRoute: OwnerNameProjectNameWatchersRoute,
   OwnerNameProjectNameWebhooksRoute: OwnerNameProjectNameWebhooksRoute,
+  OwnerNameProjectNameIndexRoute: OwnerNameProjectNameIndexRoute,
   OwnerNameProjectNameCommitCommitIdRoute:
     OwnerNameProjectNameCommitCommitIdRoute,
   OwnerNameProjectNameCompareRevisionRangeRoute:

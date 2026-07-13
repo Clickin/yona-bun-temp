@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, use, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
@@ -53,6 +53,7 @@ const legacyProjectShellLinkActiveProps = {
 };
 
 export const ProjectNestedShellContext = createContext(false);
+export const ProjectLayoutContext = createContext<ProjectContainer | null>(null);
 
 export const Route = createFileRoute("/$ownerName/$projectName")({
   component: ProjectHomeRoute,
@@ -747,7 +748,6 @@ function ProjectLayoutScreen({
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
-  const { tabId } = Route.useSearch();
 
   return (
     <>
@@ -872,37 +872,11 @@ function ProjectLayoutScreen({
           type="text/css"
         />
       ) : null}
-      {active === "home" ? (
-        <ProjectHomeBody
-          project={project}
-          runtimeConfig={runtimeConfig}
-          tabId={tabId || "readme"}
-        />
-      ) : (
-        <ProjectNestedShellContext
-          value={
-            active === "issueDetail" ||
-            active === "issueEdit" ||
-            active === "milestoneDetail" ||
-            active === "milestoneEdit" ||
-            active === "postDetail" ||
-            active === "postEdit" ||
-            active === "pullRequestDetail" ||
-            active === "pullRequestEdit" ||
-            active === "pullRequestChanges" ||
-            active === "code" ||
-            active === "codeHistory" ||
-            active === "commitDetail" ||
-            active === "compare" ||
-            active === "newFork" ||
-            active === "watchers" ||
-            active === "search" ||
-            active === "statistics"
-          }
-        >
+      <ProjectNestedShellContext value>
+        <ProjectLayoutContext value={project}>
           <Outlet />
-        </ProjectNestedShellContext>
-      )}
+        </ProjectLayoutContext>
+      </ProjectNestedShellContext>
     </>
   );
 }
@@ -1049,7 +1023,7 @@ function projectSearchRouteSearch(locationHref: string) {
   };
 }
 
-function ProjectHomeBody({
+export function ProjectHomeBody({
   project,
   runtimeConfig,
   tabId,
