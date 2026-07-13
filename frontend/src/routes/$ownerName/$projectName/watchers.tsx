@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { use } from "react";
 import {
   readProjectContainerQueryOptions,
   readProjectWatchersQueryOptions,
@@ -11,7 +12,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YonaQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
   component: ProjectWatchersRoute,
@@ -19,17 +20,28 @@ export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
 
 function ProjectWatchersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  if (nestedProjectShell) {
+    return <ProjectWatchersScreen nestedProjectShell runtimeConfig={runtimeConfig} />;
+  }
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectWatchersScreen runtimeConfig={runtimeConfig} />
+        <ProjectWatchersScreen nestedProjectShell={false} runtimeConfig={runtimeConfig} />
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectWatchersScreen({
+  nestedProjectShell,
+  runtimeConfig,
+}: {
+  nestedProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const projectQuery = useQuery(
@@ -43,6 +55,14 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
     return null;
   }
 
+  const body = (
+    <ProjectWatchersBody basePath={runtimeConfig.basePath} watchers={watchersQuery.data} />
+  );
+
+  if (nestedProjectShell) {
+    return body;
+  }
+
   const projectSearchScope = {
     organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
     ownerName,
@@ -54,7 +74,7 @@ function ProjectWatchersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       <title>{`${t("title.projectWatchers")} - ${ownerName}/${projectName}`}</title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectMenu basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectWatchersBody basePath={runtimeConfig.basePath} watchers={watchersQuery.data} />
+      {body}
     </SiteLayoutShell>
   );
 }

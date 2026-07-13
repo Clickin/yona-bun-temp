@@ -275,7 +275,11 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain("function projectIsProtected(project: ProjectContainer)");
   expect(source).toContain('stringField(record.projectScope, "") === "protected"');
   expect(source).toContain('to="/$user"');
-  expect(source).toContain('import { ProjectHeader, ProjectMenu } from "../$projectName";');
+  expect(source).toContain(
+    'import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";',
+  );
+  expect(source).toContain("const nestedProjectShell = use(ProjectNestedShellContext);");
+  expect(source).toContain("return <ProjectWatchersScreen nestedProjectShell");
   expect(source).toContain(
     'import defaultAvatarUrl from "../../../assets/legacy/default-avatar-128.png";',
   );

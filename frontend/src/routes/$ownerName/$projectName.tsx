@@ -14,6 +14,7 @@ import {
   readProjectContainerQueryOptions,
   readProjectForkOptionsQueryOptions,
   readProjectMembersQueryOptions,
+  readProjectWatchersQueryOptions,
   toggleFavoriteProjectRest,
   toggleProjectWatchRest,
   updateProjectOverviewRest,
@@ -113,6 +114,7 @@ function ProjectHomeRoute() {
   const issueFormPath = `${homePath}/issueform`;
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
+  const watchersPath = `${homePath}/watchers`;
   const active =
     pathname === homePath
       ? "home"
@@ -138,23 +140,25 @@ function ProjectHomeRoute() {
                         ? "newPullRequest"
                         : pathname === newForkPath || pathname.startsWith(`${newForkPath}/`)
                           ? "newFork"
-                          : pathname === reviewsPath
-                            ? "review"
-                            : pathname === settingPath
-                              ? "setting"
-                              : pathname === membersPath
-                                ? "members"
-                                : pathname === webhooksPath
-                                  ? "webhooks"
-                                  : pathname === transferPath
-                                    ? "transfer"
-                                    : pathname === deletePath
-                                      ? "delete"
-                                      : pathname === changeVcsPath
-                                        ? "changeVcs"
-                                        : pathname === labelsPath
-                                          ? "labels"
-                                          : null;
+                          : pathname === watchersPath
+                            ? "watchers"
+                            : pathname === reviewsPath
+                              ? "review"
+                              : pathname === settingPath
+                                ? "setting"
+                                : pathname === membersPath
+                                  ? "members"
+                                  : pathname === webhooksPath
+                                    ? "webhooks"
+                                    : pathname === transferPath
+                                      ? "transfer"
+                                      : pathname === deletePath
+                                        ? "delete"
+                                        : pathname === changeVcsPath
+                                          ? "changeVcs"
+                                          : pathname === labelsPath
+                                            ? "labels"
+                                            : null;
 
   if (!active) {
     return <Outlet />;
@@ -192,6 +196,7 @@ function ProjectHomeRouteShell({
     | "review"
     | "setting"
     | "transfer"
+    | "watchers"
     | "webhooks";
   runtimeConfig: RuntimeConfig;
 }) {
@@ -223,12 +228,22 @@ function ProjectHomeRouteShell({
     enabled: active === "newFork",
     retry: false,
   });
+  const watchersQuery = useQuery({
+    ...readProjectWatchersQueryOptions(runtimeConfig, { ownerName, projectName }),
+    enabled: active === "watchers",
+  });
   const previousActiveRef = useRef(active);
   const preserveForkShellRef = useRef(false);
+  const preserveWatchersShellRef = useRef(false);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
   } else if (active !== "newFork") {
     preserveForkShellRef.current = false;
+  }
+  if (active === "watchers" && previousActiveRef.current !== "watchers") {
+    preserveWatchersShellRef.current = true;
+  } else if (active !== "watchers" || watchersQuery.error) {
+    preserveWatchersShellRef.current = false;
   }
   previousActiveRef.current = active;
 
@@ -240,6 +255,13 @@ function ProjectHomeRouteShell({
   }
 
   if (active === "newPullRequest" && (!query.data || query.data.vcs !== "GIT")) {
+    return <Outlet />;
+  }
+
+  if (
+    active === "watchers" &&
+    (!query.data || (!watchersQuery.data && !preserveWatchersShellRef.current))
+  ) {
     return <Outlet />;
   }
 
@@ -391,6 +413,7 @@ function ProjectLayoutScreen({
     | "review"
     | "setting"
     | "transfer"
+    | "watchers"
     | "webhooks";
   project: ProjectContainer;
   pullRequestFormBadRequest: boolean;
@@ -421,47 +444,51 @@ function ProjectLayoutScreen({
                       )} - ${ownerName}/${projectName}`
                     : active === "newFork"
                       ? `${t("fork")} - ${ownerName}/${projectName}`
-                      : active === "postform"
-                        ? `${t("post.new")} - ${ownerName}/${projectName}`
-                        : active === "board"
-                          ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                          : active === "pullRequest"
-                            ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                            : active === "review"
-                              ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                              : active === "setting"
-                                ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                                : active === "labels"
-                                  ? `${t("label")} - ${ownerName}/${projectName}`
-                                  : active === "members"
-                                    ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                                    : active === "delete"
-                                      ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                      : active === "changeVcs"
-                                        ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                        : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                      : active === "watchers"
+                        ? `${t("title.projectWatchers")} - ${ownerName}/${projectName}`
+                        : active === "postform"
+                          ? `${t("post.new")} - ${ownerName}/${projectName}`
+                          : active === "board"
+                            ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                            : active === "pullRequest"
+                              ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                              : active === "review"
+                                ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                                : active === "setting"
+                                  ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                                  : active === "labels"
+                                    ? `${t("label")} - ${ownerName}/${projectName}`
+                                    : active === "members"
+                                      ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                      : active === "delete"
+                                        ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                        : active === "changeVcs"
+                                          ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                          : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
-          active === "newMilestone"
-            ? "milestone"
-            : active === "newPullRequest"
-              ? "pullRequest"
-              : active === "newFork"
+          active === "watchers"
+            ? undefined
+            : active === "newMilestone"
+              ? "milestone"
+              : active === "newPullRequest"
                 ? "pullRequest"
-                : active === "postform"
-                  ? "board"
-                  : active === "issueform"
-                    ? "issue"
-                    : active === "delete" ||
-                        active === "changeVcs" ||
-                        active === "labels" ||
-                        active === "members" ||
-                        active === "transfer" ||
-                        active === "webhooks"
-                      ? "setting"
-                      : active
+                : active === "newFork"
+                  ? "pullRequest"
+                  : active === "postform"
+                    ? "board"
+                    : active === "issueform"
+                      ? "issue"
+                      : active === "delete" ||
+                          active === "changeVcs" ||
+                          active === "labels" ||
+                          active === "members" ||
+                          active === "transfer" ||
+                          active === "webhooks"
+                        ? "setting"
+                        : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
@@ -483,7 +510,7 @@ function ProjectLayoutScreen({
           tabId={tabId || "readme"}
         />
       ) : (
-        <ProjectNestedShellContext value={active === "newFork"}>
+        <ProjectNestedShellContext value={active === "newFork" || active === "watchers"}>
           <Outlet />
         </ProjectNestedShellContext>
       )}
