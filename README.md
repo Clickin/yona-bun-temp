@@ -6,6 +6,9 @@ functionality and UX closely enough that an administrator can replace a legacy
 Yona deployment without users noticing route, copy, layout, or workflow
 differences.
 
+Yoram is developed from Yona under the Apache License, Version 2.0. The
+upstream copyright and attribution are preserved in `NOTICE` and `LICENSE`.
+
 Yoram is not affiliated with NAVER, NAVER LABS, or the Yona project. The `Yona`
 name remains in compatibility settings, legacy route references, test fixtures,
 and attribution text where that is required to describe the upstream project or

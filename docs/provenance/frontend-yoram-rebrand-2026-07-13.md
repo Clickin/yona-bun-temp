@@ -65,9 +65,9 @@ geometry.
 Managed Rust backend + React Playwright screenshot baselines for the ko-KR
 empty SVN state are stored at
 `output/playwright/yoram-rebrand-code-nohead-ko-desktop.png` (1366x900,
-SHA-256 `05e808f5b69f9147bf25c9f95060b97d1380082012b8670aaf4d9364d414bc2d`)
+SHA-256 `05e8084c8c87221330d4473cc4e7abccd5b4fb6b8d5111f89ba657dfe6631e75`)
 and `output/playwright/yoram-rebrand-code-nohead-ko-mobile.png` (390x844,
-SHA-256 `a32172f4dc6e096de92a54eb62c58d85b4f94ed3db346c383bd14708f66eff20`).
+SHA-256 `a3217204191a2204701744d2ef64044d5e27be8284f08bd190573b3e82399e39`).
 The focused capture run passed 1/1; screenshot calls were temporary and are not
 part of the E2E source.
 
@@ -92,3 +92,8 @@ recovery desktop title metric was re-recorded for the longer approved name;
 mobile wrapping is unchanged. `/migration` intentionally retains its legacy
 user-visible `Yona to Github` migration-tool label, and compatibility-only CSS,
 route, environment, API, and test-description names remain unchanged.
+
+The completion audit also covers Git identities produced by the backend VCS
+layer. When no user author is supplied, README commits and server-created pull
+request merge/preview commits use `Yoram <yoram@example.invalid>` rather than an
+upstream product identity. Explicit user/configured authors are not rewritten.

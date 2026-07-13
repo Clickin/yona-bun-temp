@@ -13,6 +13,8 @@ pub const MAX_SMART_HTTP_RPC_BYTES: usize = 100 * 1024 * 1024;
 
 const HEADER_BODY_DELIMITER_CRLF: &[u8] = b"\r\n\r\n";
 const HEADER_BODY_DELIMITER_LF: &[u8] = b"\n\n";
+const DEFAULT_GIT_AUTHOR_EMAIL: &str = "yoram@example.invalid";
+const DEFAULT_GIT_AUTHOR_NAME: &str = "Yoram";
 
 pub fn svn_executable(name: &str) -> PathBuf {
     let executable_name = if cfg!(windows) && !name.ends_with(".exe") {
@@ -1820,12 +1822,12 @@ pub fn commit_text_file(
     }
 
     let email = if author_email.trim().is_empty() {
-        "yona@example.invalid"
+        DEFAULT_GIT_AUTHOR_EMAIL
     } else {
         author_email.trim()
     };
     let name = if author_name.trim().is_empty() {
-        "Yona"
+        DEFAULT_GIT_AUTHOR_NAME
     } else {
         author_name.trim()
     };
@@ -2711,9 +2713,12 @@ pub fn merge_pull_request(
     git_worktree_output(work_dir.path(), &["checkout", &to_branch])?;
     git_worktree_output(
         work_dir.path(),
-        &["config", "user.email", "yona@example.invalid"],
+        &["config", "user.email", DEFAULT_GIT_AUTHOR_EMAIL],
     )?;
-    git_worktree_output(work_dir.path(), &["config", "user.name", "Yona"])?;
+    git_worktree_output(
+        work_dir.path(),
+        &["config", "user.name", DEFAULT_GIT_AUTHOR_NAME],
+    )?;
     git_worktree_output_with_path(
         work_dir.path(),
         &["remote", "add", "pull-request-source"],
@@ -2786,9 +2791,12 @@ pub fn preview_pull_request_merge(
     git_worktree_output(work_dir.path(), &["init"])?;
     git_worktree_output(
         work_dir.path(),
-        &["config", "user.email", "yona@example.invalid"],
+        &["config", "user.email", DEFAULT_GIT_AUTHOR_EMAIL],
     )?;
-    git_worktree_output(work_dir.path(), &["config", "user.name", "Yona"])?;
+    git_worktree_output(
+        work_dir.path(),
+        &["config", "user.name", DEFAULT_GIT_AUTHOR_NAME],
+    )?;
     git_worktree_output_with_path(
         work_dir.path(),
         &["remote", "add", "target"],
