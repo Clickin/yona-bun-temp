@@ -13,17 +13,14 @@ import {
   addOrganizationMemberRest,
   deleteOrganizationMemberRest,
   readOrganizationAdminRest,
-  readOrganizationDetailRest,
   updateOrganizationMemberRoleRest,
 } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationAdminView, YonaRecord, YonaUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { SiteLayoutShell } from "../../-home-route-screen";
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
@@ -36,21 +33,7 @@ function insulateOrganizationMembersDeleteModalButtonClick(event: MouseEvent<HTM
 
 function OrganizationMembersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
-  const { organizationName } = Route.useParams();
-
-  return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <SiteLayoutShell
-          projectSearchScope={{ organizationName }}
-          runtimeConfig={runtimeConfig}
-          showLegacyProjectHeaderLinks
-        >
-          <OrganizationMembersScreen runtimeConfig={runtimeConfig} />
-        </SiteLayoutShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
-  );
+  return <OrganizationMembersScreen runtimeConfig={runtimeConfig} />;
 }
 
 function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -59,30 +42,9 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
     queryFn: () => readOrganizationAdminRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "admin"],
   });
-  const detailQuery = useQuery({
-    queryFn: () => readOrganizationDetailRest(runtimeConfig, organizationName),
-    queryKey: apiQueryKeys.organization.base(organizationName),
-  });
 
   if (query.error instanceof RestApiError && query.error.status === 403) {
-    if (!detailQuery.data) {
-      return <title>{organizationName}</title>;
-    }
-    const logoUrl = stringField(detailQuery.data.logoUrl, "") || "/assets/images/group_default.png";
-    const detailOrganizationName = stringField(detailQuery.data.organizationName, organizationName);
-
-    return (
-      <>
-        <title>{organizationName}</title>
-        <OrganizationHeader logoUrl={logoUrl} organizationName={detailOrganizationName} />
-        <OrganizationMenu
-          basePath={runtimeConfig.basePath}
-          organizationName={detailOrganizationName}
-          viewerCanUpdate={booleanField(detailQuery.data.viewerCanUpdate)}
-        />
-        <OrganizationMembersErrorBody messageKey="error.forbidden" />
-      </>
-    );
+    return <OrganizationMembersErrorBody messageKey="error.forbidden" />;
   }
 
   if (!query.data) {
@@ -123,7 +85,6 @@ function OrganizationMembersBody({
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const [openRoleDropdownLoginId, setOpenRoleDropdownLoginId] = useState<string | null>(null);
   const organizationName = stringField(organization.organizationName, "organization");
-  const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const adminQueryKey = [...apiQueryKeys.organization.base(organizationName), "admin"] as const;
   const normalizedLoginQuery = loginIdQuery.trim();
   const mentionStylesheetHref = prefixBasePath(
@@ -261,12 +222,6 @@ function OrganizationMembersBody({
   return (
     <>
       <title>{organizationName}</title>
-      <OrganizationHeader logoUrl={logoUrl} organizationName={organizationName} />
-      <OrganizationMenu
-        basePath={runtimeConfig.basePath}
-        organizationName={organizationName}
-        viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
-      />
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <OrganizationSettingMenu
@@ -582,148 +537,6 @@ function EnrollmentRequest({
           <i className="yobicon-addfriend"></i>
           {t("button.add")}
         </button>
-      </div>
-    </div>
-  );
-}
-
-function OrganizationHeader({
-  logoUrl,
-  organizationName,
-}: {
-  logoUrl: string;
-  organizationName: string;
-}) {
-  return (
-    <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
-          </div>
-          <div className="project-breadcrumb-wrap">
-            <div className="project-breadcrumb">
-              <span className="project-author">
-                <span className="group-title-head">group</span>
-                <Link
-                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  params={{ organizationName }}
-                  search={() => undefined}
-                  to="/organizations/$organizationName"
-                >
-                  {organizationName}
-                </Link>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function OrganizationMenu({
-  organizationName,
-  viewerCanUpdate,
-}: {
-  basePath: string;
-  organizationName: string;
-  viewerCanUpdate: boolean;
-}) {
-  const { t } = useLegacyMessages();
-
-  return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              params={{ organizationName }}
-              search={() => undefined}
-              to="/organizations/$organizationName"
-            >
-              {t("title.organizationHome")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              params={{ organizationName }}
-              search={() => undefined}
-              to="/organizations/$organizationName/issues"
-            >
-              {t("menu.issue")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              params={{ organizationName }}
-              search={() => undefined}
-              to="/organizations/$organizationName/boards"
-            >
-              {t("menu.board")}
-            </Link>
-          </li>
-          <li className="">
-            <Link
-              activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-              activeProps={{
-                "aria-current": undefined,
-                className: undefined,
-                "data-status": undefined,
-              }}
-              params={{ organizationName }}
-              search={() => undefined}
-              to="/organizations/$organizationName/pullrequests"
-            >
-              {t("menu.pullRequest")}
-            </Link>
-          </li>
-        </ul>
-        <div className="project-setting">
-          <ul className="project-menu-nav">
-            {viewerCanUpdate ? (
-              <li className="">
-                <Link
-                  activeOptions={{ exact: true, includeHash: true, includeSearch: true }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  params={{ organizationName }}
-                  search={() => undefined}
-                  to="/organizations/$organizationName/settingform"
-                >
-                  <i className="yobicon-cog"></i>
-                  <span className="blind">{t("menu.admin")}</span>
-                </Link>
-              </li>
-            ) : null}
-          </ul>
-        </div>
       </div>
     </div>
   );

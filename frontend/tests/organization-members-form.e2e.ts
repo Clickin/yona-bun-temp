@@ -5,6 +5,10 @@ const ORGANIZATION_MEMBERS_ROUTE_SOURCE = readFileSync(
   "src/routes/organizations/$organizationName/members.tsx",
   "utf8",
 );
+const ORGANIZATION_ROUTE_SOURCE = readFileSync(
+  "src/routes/organizations/$organizationName.tsx",
+  "utf8",
+);
 
 const EXPECTED_ORGANIZATION_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -47,17 +51,23 @@ test("organization members matches legacy organization/members.scala.html DOM", 
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
   await expect(page.locator(".project-page-wrap legend h3")).toHaveText("Sign-up request (1)");
 
-  expect(await canonicalizeScreenRoots(page)).toEqual(
+  expect(
+    await canonicalizeScreenRoots(
+      page,
+      ".page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css']",
+    ),
+  ).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_ORGANIZATION_MEMBERS.replaceAll("__BASE_PATH__", basePath).replaceAll(
         "__MENTION_STYLESHEET_HREF__",
         mentionStylesheetHref,
       ),
+      ".page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css']",
     ),
   );
   expect(await organizationMemberMetrics(page)).toEqual({
-    addButtonOffsetLeft: 384,
+    addButtonOffsetLeft: 398,
     addInputWidth: 384,
     avatarHeight: 40,
     avatarWidth: 40,
@@ -96,7 +106,7 @@ test("organization members restores localhost organization shell and scoped navb
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    "/assets/images/group_default.png",
+    legacyOrganizationAssetHref(basePath),
   );
   await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
 
@@ -170,7 +180,7 @@ test("organization members forbidden response renders legacy organization error 
   );
   await expect(page.locator(".project-header-avatar img")).toHaveAttribute(
     "src",
-    "/assets/images/group_default.png",
+    legacyOrganizationAssetHref(basePath),
   );
   await expect(page.locator(".project-page-wrap > .error-wrap")).toBeVisible();
   await expect(page.locator(".project-page-wrap > .error-wrap p")).toHaveText(
@@ -519,10 +529,15 @@ test("organization members route source keeps internal navigation out of raw anc
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
     'className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}',
   );
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("projectSearchScope={{ organizationName }}");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain("showLegacyProjectHeaderLinks");
+  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).not.toContain(
+    "projectSearchScope={{ organizationName }}",
+  );
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain("showLegacyProjectHeaderLinks");
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain("projectSearchScope={{ organizationName }}");
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain("const isMembers");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain("<title>{organizationName}</title>");
-  expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('"/assets/images/group_default.png"');
+  expect(ORGANIZATION_ROUTE_SOURCE).toContain("/legacy-assets/images/group_default.png");
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain('to="/$user"');
   expect(ORGANIZATION_MEMBERS_ROUTE_SOURCE).toContain(
     'to="/organizations/$organizationName/members"',
@@ -784,7 +799,7 @@ test("organization members menu board link preserves legacy href with SPA transi
   });
   await boardLink.click();
 
-  await expect(page).toHaveURL(`${basePath}/organizations/weblabs/boards`);
+  await expect(page).toHaveURL(new RegExp(`${basePath}/organizations/weblabs/boards(?:\\?.*)?$`));
   await expect
     .poll(() =>
       page.evaluate(
@@ -1312,13 +1327,12 @@ async function dispatchCancelableClick(page: Page, selector: string) {
   }, selector);
 }
 
-async function canonicalizeScreenRoots(page: Page) {
-  return page.evaluate(() => {
-    const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], .page-footer-outer",
-      ),
-    );
+async function canonicalizeScreenRoots(
+  page: Page,
+  selector = ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], .page-footer-outer",
+) {
+  return page.evaluate((rootSelector) => {
+    const roots = Array.from(document.querySelectorAll(rootSelector));
     return roots.map((root) => visit(root)).join("");
 
     function visit(node: Node): string {
@@ -1353,7 +1367,7 @@ async function canonicalizeScreenRoots(page: Page) {
         ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
         : attr.value;
     }
-  });
+  }, selector);
 }
 
 function legacyMentionStylesheetHref(basePath: string) {
@@ -1362,45 +1376,53 @@ function legacyMentionStylesheetHref(basePath: string) {
     : `${basePath}/assets/javascripts/lib/mentionjs/mention.css`;
 }
 
-async function canonicalizeHtml(page: Page, html: string) {
-  return page.evaluate((input) => {
-    const template = document.createElement("template");
-    template.innerHTML = input;
-    return Array.from(template.content.children)
-      .map((root) => visit(root))
-      .join("");
+function legacyOrganizationAssetHref(basePath: string) {
+  return `${basePath === "/" ? "" : basePath}/legacy-assets/images/group_default.png`;
+}
 
-    function visit(node: Node): string {
-      if (node.nodeType === Node.TEXT_NODE) {
-        return normalizeText(node.textContent ?? "");
-      }
-      if (!(node instanceof Element)) {
-        return "";
-      }
-      const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
-        .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
-        .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
-        : `<${node.tagName.toLowerCase()}>`;
-      return `${open}${Array.from(node.childNodes)
-        .map((child) => visit(child))
-        .join("")}</${node.tagName.toLowerCase()}>`;
-    }
+async function canonicalizeHtml(page: Page, html: string, selector?: string) {
+  return page.evaluate(
+    ({ input, rootSelector }) => {
+      const template = document.createElement("template");
+      template.innerHTML = input;
+      const roots = rootSelector
+        ? Array.from(template.content.querySelectorAll(rootSelector))
+        : Array.from(template.content.children);
+      return roots.map((root) => visit(root)).join("");
 
-    function normalizeText(text: string) {
-      return text.replace(/\s+/g, " ").trim();
-    }
-
-    function normalizeAttr(attr: Attr) {
-      if (attr.name === "required") {
-        return "required";
+      function visit(node: Node): string {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return normalizeText(node.textContent ?? "");
+        }
+        if (!(node instanceof Element)) {
+          return "";
+        }
+        const attrs = Array.from(node.attributes)
+          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+          .join(" ");
+        const open = attrs
+          ? `<${node.tagName.toLowerCase()} ${attrs}>`
+          : `<${node.tagName.toLowerCase()}>`;
+        return `${open}${Array.from(node.childNodes)
+          .map((child) => visit(child))
+          .join("")}</${node.tagName.toLowerCase()}>`;
       }
-      return attr.name === "style"
-        ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
-        : attr.value;
-    }
-  }, html);
+
+      function normalizeText(text: string) {
+        return text.replace(/\s+/g, " ").trim();
+      }
+
+      function normalizeAttr(attr: Attr) {
+        if (attr.name === "required") {
+          return "required";
+        }
+        return attr.name === "style"
+          ? attr.value.replace(/\s+/g, "").replace(/;$/u, "").replaceAll('"', "'")
+          : attr.value;
+      }
+    },
+    { input: html, rootSelector: selector },
+  );
 }

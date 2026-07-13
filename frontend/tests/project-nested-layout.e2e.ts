@@ -80,6 +80,33 @@ test("project branches to milestones keeps the legacy project shell DOM nodes mo
   await expectProjectMilestonesGeometry(page);
 });
 
+test("project milestones to posts keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/milestones`);
+  await expect(page.locator(".page-wrap-outer .error-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectMilestonesGeometry(page);
+
+  await page.locator(".project-menu-gruop a[href$='/admin/sample/posts']").click();
+  await expect(page).toHaveURL(/\/admin\/sample\/posts(?:\?|$)/);
+  await expect(page.locator(".project-menu-gruop li").filter({ hasText: "Board" })).toHaveClass(
+    /active/,
+  );
+  await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".post-list.project-page-wrap .error-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectPostsGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -244,6 +271,49 @@ async function expectProjectMilestonesGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectPostsGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".post-list.project-page-wrap");
+    const search = rect(".search-wrap.underline");
+    const empty = rect(".post-list.project-page-wrap .error-wrap");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      emptyBottom: empty.bottom,
+      emptyTop: empty.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      searchBottom: search.bottom,
+      searchTop: search.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.searchTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.searchBottom).toBeGreaterThan(metrics.searchTop);
+  expect(metrics.emptyTop).toBeGreaterThanOrEqual(metrics.searchBottom);
+  expect(metrics.emptyBottom).toBeGreaterThan(metrics.emptyTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function mockProjectHomeAndIssues(page: Page) {
   await page.route("**/api/auth/session", async (route) =>
     route.fulfill({
@@ -293,6 +363,18 @@ async function mockProjectHomeAndIssues(page: Page) {
         viewerIsProjectMember: true,
       });
     if (path.endsWith("/milestones")) return json({ milestones: [] });
+    if (path.endsWith("/projects/admin/sample/posts/form-options")) return json({ labels: [] });
+    if (path.endsWith("/projects/admin/sample/posts"))
+      return json({
+        items: [],
+        notices: [],
+        ownerName: "admin",
+        pageNum: 1,
+        pageSize: 15,
+        projectName: "sample",
+        readme: null,
+        totalCount: 0,
+      });
     if (path.endsWith("/labels")) return json({ labels: [] });
     if (path.endsWith("/assignable-users") || path.endsWith("/issue-search-users"))
       return json({ items: [], total: 0, truncated: false });

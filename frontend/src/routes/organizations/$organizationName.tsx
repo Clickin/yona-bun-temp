@@ -34,8 +34,9 @@ function OrganizationHomeRoute() {
   const isBoards = pathname === `${exactPath}/boards`;
   const isIssues = pathname === `${exactPath}/issues`;
   const isPullRequests = pathname === `${exactPath}/pullrequests`;
+  const isMembers = pathname === `${exactPath}/members`;
 
-  if (!isHome && !isBoards && !isIssues && !isPullRequests) {
+  if (!isHome && !isBoards && !isIssues && !isPullRequests && !isMembers) {
     return <Outlet />;
   }
 

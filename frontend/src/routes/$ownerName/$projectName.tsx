@@ -90,6 +90,7 @@ function ProjectHomeRoute() {
   const issuesPath = `${homePath}/issues`;
   const branchesPath = `${homePath}/branches`;
   const milestonesPath = `${homePath}/milestones`;
+  const postsPath = `${homePath}/posts`;
   const active =
     pathname === homePath
       ? "home"
@@ -99,7 +100,9 @@ function ProjectHomeRoute() {
           ? "code"
           : pathname === milestonesPath
             ? "milestone"
-            : null;
+            : pathname === postsPath
+              ? "board"
+              : null;
 
   if (!active) {
     return <Outlet />;
@@ -118,7 +121,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "code" | "home" | "issue" | "milestone";
+  active: "board" | "code" | "home" | "issue" | "milestone";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -169,7 +172,7 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "code" | "home" | "issue" | "milestone";
+  active: "board" | "code" | "home" | "issue" | "milestone";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -186,7 +189,9 @@ function ProjectLayoutScreen({
             ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
             : active === "milestone"
               ? `${projectName} - milestone - ${ownerName}/${projectName}`
-              : `${t("title.branches")} - ${ownerName}/${projectName}`}
+              : active === "board"
+                ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />
