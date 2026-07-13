@@ -38,6 +38,7 @@ const legacyLinkActiveProps = {
   "data-status": undefined,
 };
 const legacyLinkActiveOptions = { exact: true };
+const projectMembersBadRequestBody = <ProjectMembersErrorBody messageKey="error.badrequest" />;
 
 export const Route = createFileRoute("/$ownerName/$projectName/members")({
   component: ProjectMembersRoute,
@@ -46,16 +47,43 @@ export const Route = createFileRoute("/$ownerName/$projectName/members")({
 function ProjectMembersRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectMembersRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectMembersRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectMembersRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectMembersRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectMembersRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectMembersRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -68,6 +96,18 @@ function ProjectMembersRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCon
       }
     : undefined;
 
+  const screen = (
+    <ProjectMembersScreen
+      project={projectQuery.data}
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
+
   return (
     <SiteLayoutShell
       projectSearchScope={projectSearchScope}
@@ -76,7 +116,7 @@ function ProjectMembersRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeCon
         projectSearchScope && !projectSearchScope.organizationName,
       )}
     >
-      <ProjectMembersScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
+      {screen}
     </SiteLayoutShell>
   );
 }
@@ -88,9 +128,11 @@ function insulateProjectMemberDeleteConfirmClick(event: MouseEvent<HTMLButtonEle
 
 function ProjectMembersScreen({
   project,
+  renderProjectShell,
   runtimeConfig,
 }: {
   project?: ProjectContainer;
+  renderProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -120,7 +162,7 @@ function ProjectMembersScreen({
   }
 
   if (membersErrorStatus === 400) {
-    return (
+    return renderProjectShell ? (
       <>
         <ProjectMembersBrowserTitle
           ownerName={ownerName}
@@ -129,13 +171,30 @@ function ProjectMembersScreen({
         />
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
         <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectData} />
-        <ProjectMembersErrorBody messageKey="error.badrequest" />
+        {projectMembersBadRequestBody}
+      </>
+    ) : (
+      <>
+        <ProjectMembersBrowserTitle
+          ownerName={ownerName}
+          projectName={projectName}
+          titleKey={documentTitleKey}
+        />
+        {projectMembersBadRequestBody}
       </>
     );
   }
 
   if (membersErrorStatus === 401 || membersErrorStatus === 403) {
-    return (
+    const body = (
+      <ProjectMembersErrorBody
+        loginRedirectPath={
+          membersErrorStatus === 401 ? `/${ownerName}/${projectName}/members` : undefined
+        }
+        messageKey="error.forbidden"
+      />
+    );
+    return renderProjectShell ? (
       <>
         <ProjectMembersBrowserTitle
           ownerName={ownerName}
@@ -144,12 +203,16 @@ function ProjectMembersScreen({
         />
         <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
         <ProjectMenu active="home" basePath={runtimeConfig.basePath} project={projectData} />
-        <ProjectMembersErrorBody
-          loginRedirectPath={
-            membersErrorStatus === 401 ? `/${ownerName}/${projectName}/members` : undefined
-          }
-          messageKey="error.forbidden"
+        {body}
+      </>
+    ) : (
+      <>
+        <ProjectMembersBrowserTitle
+          ownerName={ownerName}
+          projectName={projectName}
+          titleKey={documentTitleKey}
         />
+        {body}
       </>
     );
   }
@@ -158,7 +221,15 @@ function ProjectMembersScreen({
     return null;
   }
 
-  return (
+  const body = (
+    <ProjectMembersBody
+      members={membersQuery.data}
+      project={projectData}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  return renderProjectShell ? (
     <>
       <ProjectMembersBrowserTitle
         ownerName={ownerName}
@@ -167,11 +238,16 @@ function ProjectMembersScreen({
       />
       <ProjectHeader basePath={runtimeConfig.basePath} project={projectData} />
       <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={projectData} />
-      <ProjectMembersBody
-        members={membersQuery.data}
-        project={projectData}
-        runtimeConfig={runtimeConfig}
+      {body}
+    </>
+  ) : (
+    <>
+      <ProjectMembersBrowserTitle
+        ownerName={ownerName}
+        projectName={projectName}
+        titleKey={documentTitleKey}
       />
+      {body}
     </>
   );
 }
