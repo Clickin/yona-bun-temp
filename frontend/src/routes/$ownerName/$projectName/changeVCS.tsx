@@ -31,16 +31,43 @@ export const Route = createFileRoute("/$ownerName/$projectName/changeVCS")({
 function ProjectChangeVcsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectChangeVcsRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectChangeVcsRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectChangeVcsRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectChangeVcsRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectChangeVcsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectChangeVcsRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const containerQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -55,18 +82,32 @@ function ProjectChangeVcsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeC
     projectName,
   };
 
+  const screen = (
+    <ProjectChangeVcsScreen renderProjectShell={renderProjectShell} runtimeConfig={runtimeConfig} />
+  );
+
+  if (!renderProjectShell) {
+    return screen;
+  }
+
   return (
     <SiteLayoutShell
       projectSearchScope={projectSearchScope}
       runtimeConfig={runtimeConfig}
       showLegacyProjectHeaderLinks
     >
-      <ProjectChangeVcsScreen runtimeConfig={runtimeConfig} />
+      {screen}
     </SiteLayoutShell>
   );
 }
 
-function ProjectChangeVcsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectChangeVcsScreen({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const containerQuery = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
@@ -84,6 +125,7 @@ function ProjectChangeVcsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
       <ProjectChangeVcsTitle ownerName={ownerName} projectName={projectName} />
       <ProjectChangeVcsBody
         project={changeVcsQuery.data}
+        renderProjectShell={renderProjectShell}
         shellProject={containerQuery.data}
         runtimeConfig={runtimeConfig}
       />
@@ -105,10 +147,12 @@ function ProjectChangeVcsTitle({
 
 function ProjectChangeVcsBody({
   project,
+  renderProjectShell,
   shellProject,
   runtimeConfig,
 }: {
   project: ProjectChangeVcsResponse;
+  renderProjectShell: boolean;
   shellProject: ProjectContainer;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -171,12 +215,16 @@ function ProjectChangeVcsBody({
 
   return (
     <>
-      <SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
-      <SharedProjectMenu
-        active="setting"
-        basePath={runtimeConfig.basePath}
-        project={shellProject}
-      />
+      {renderProjectShell ? (
+        <>
+          <SharedProjectHeader basePath={runtimeConfig.basePath} project={shellProject} />
+          <SharedProjectMenu
+            active="setting"
+            basePath={runtimeConfig.basePath}
+            project={shellProject}
+          />
+        </>
+      ) : null}
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu
