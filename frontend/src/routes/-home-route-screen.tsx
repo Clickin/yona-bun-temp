@@ -3745,6 +3745,72 @@ const authenticatedSidenavProjectShellStyles = stylex.create({
   },
 });
 
+const leftSidebarProjectSubtabStyles = stylex.create({
+  wrap: {
+    padding: "10px 0 5px",
+  },
+  list: {
+    backgroundColor: globalColors.leftSidebarProjectSubtabSurface,
+    color: globalColors.leftSidebarProjectSubtabText,
+    display: "inline-block",
+    listStyleType: "none",
+    margin: 0,
+    padding: 0,
+  },
+  item: {
+    borderStyle: "none",
+    borderWidth: 0,
+    display: "inline-block",
+    marginLeft: 0,
+  },
+  button: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    borderRadius: 0,
+    borderStyle: "none",
+    borderWidth: 0,
+    boxShadow: "none",
+    color: "inherit",
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    margin: 0,
+    padding: "5px 8px",
+    ":hover": {
+      backgroundColor: globalColors.transparent,
+      borderBottomColor: globalColors.leftSidebarProjectSubtabAccent,
+      borderBottomStyle: "solid",
+      borderBottomWidth: "1px",
+      color: globalColors.leftSidebarProjectSubtabText,
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: globalColors.transparent,
+      borderBottomColor: globalColors.leftSidebarProjectSubtabAccent,
+      borderBottomStyle: "solid",
+      borderBottomWidth: "1px",
+      color: globalColors.leftSidebarProjectSubtabText,
+      textDecoration: "none",
+    },
+  },
+  activeButton: {
+    backgroundColor: globalColors.leftSidebarProjectSubtabAccent,
+    borderBottomColor: globalColors.leftSidebarProjectSubtabAccent,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    color: globalColors.leftSidebarProjectSubtabActiveText,
+    textDecoration: "none",
+    ":hover": {
+      backgroundColor: globalColors.leftSidebarProjectSubtabAccent,
+      color: globalColors.leftSidebarProjectSubtabActiveText,
+    },
+    ":focus": {
+      backgroundColor: globalColors.leftSidebarProjectSubtabAccent,
+      color: globalColors.leftSidebarProjectSubtabActiveText,
+    },
+  },
+});
+
 const authenticatedSidenavProjectSubtabStyles = stylex.create({
   wrap: {
     padding: "10px 0 5px",
@@ -3878,41 +3944,64 @@ function SidebarProjectList({
             ></span>
           </div>
           <div
-            className={`subtab-wrap subtab-group${
-              isAuthenticatedSidenav
-                ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.wrap).className}`
-                : ""
-            }`}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarProjectSubtabStyles.wrap).className
+                : `subtab-wrap subtab-group${
+                    isAuthenticatedSidenav
+                      ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.wrap).className}`
+                      : ""
+                  }`
+            }
             data-stylex-owner={
-              isAuthenticatedSidenav ? "authenticated-sidenav-project-subtabs" : undefined
+              isLeftSidebar
+                ? "left-sidebar-project-subtabs"
+                : isAuthenticatedSidenav
+                  ? "authenticated-sidenav-project-subtabs"
+                  : undefined
             }
           >
             <ul
-              className={`nav-subtab unstyled${
-                isAuthenticatedSidenav
-                  ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.list).className}`
-                  : ""
-              }`}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarProjectSubtabStyles.list).className
+                  : `nav-subtab unstyled${
+                      isAuthenticatedSidenav
+                        ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.list).className}`
+                        : ""
+                    }`
+              }
             >
               {subtabs.map(([subtab, messageKey], index) => (
                 <React.Fragment key={subtab}>
                   <li
-                    className={`${activeSubtab === subtab ? "active" : ""}${
-                      isAuthenticatedSidenav
-                        ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.item).className}`
-                        : ""
-                    }`.trim()}
+                    className={
+                      isLeftSidebar
+                        ? stylex.props(leftSidebarProjectSubtabStyles.item).className
+                        : `${activeSubtab === subtab ? "active" : ""}${
+                            isAuthenticatedSidenav
+                              ? ` ${stylex.props(authenticatedSidenavProjectSubtabStyles.item).className}`
+                              : ""
+                          }`.trim()
+                    }
                   >
                     <button
                       type="button"
+                      aria-pressed={isLeftSidebar ? activeSubtab === subtab : undefined}
                       className={
-                        isAuthenticatedSidenav
+                        isLeftSidebar
                           ? stylex.props(
-                              authenticatedSidenavProjectSubtabStyles.button,
+                              leftSidebarProjectSubtabStyles.button,
                               activeSubtab === subtab &&
-                                authenticatedSidenavProjectSubtabStyles.activeButton,
+                                leftSidebarProjectSubtabStyles.activeButton,
                             ).className
-                          : undefined
+                          : isAuthenticatedSidenav
+                            ? stylex.props(
+                                authenticatedSidenavProjectSubtabStyles.button,
+                                activeSubtab === subtab &&
+                                  authenticatedSidenavProjectSubtabStyles.activeButton,
+                              ).className
+                            : undefined
                       }
                       onClick={() => setActiveSubtab(subtab)}
                     >

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, twenty-three user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty-four user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -520,9 +520,26 @@ temporarily unavoidable collision is the broader `.user-project-list li { margin
 whose ancestor remains for distinct unmigrated organization and nested-project rows; StyleX owns
 the same value for this row. Fresh live/local desktop evidence agrees on the 270×26 row and exact
 internal geometry. At 390px, live Project shell placement/width is `y166/317.6875px` while the
-current local shell is `y195/270px`; the row's 26px height and relative internals agree, so the
-outer Project shell/subtabs remain the next owner and no row compensation is introduced. This is
+current local shell is `y196/270px` after the subtab owner restores the exact 1px active border;
+the row's 26px height and relative internals agree, so the outer framed Project shell remains the
+next owner and no row compensation is introduced. This is
 not Wave 1 completion.
+
+The twenty-fourth verified slice migrates the framed left sidebar's Project subtab strip. StyleX
+owns the complete wrap padding, list reset/surface, inline items, semantic-button reset,
+typography inheritance, padding, and inactive/hover/focus/active states. Four evidenced colors are
+defined at the canonical global theme boundary with no dark value or toggle. The owner emits none
+of `subtab-wrap`, `subtab-group`, `nav-subtab`, `unstyled`, or `active`; React state and
+`aria-pressed` own selection while the three Scala-template whitespace gaps remain real text
+nodes. Fresh desktop evidence now agrees exactly on the `270×76 @ y147` wrap, `270×61 @ y157`
+list, two-line item geometry, orange active state, and the direct-project row starting at `y223`.
+At 390px the live sidebar naturally expands to `317.6875px`, producing a `317.6875×46` wrap and
+single-row list, while the existing React framed-shell bridge still fixes the outer sidebar at
+270px and produces a `270×76` two-line strip. That known outer-shell gap remains the next owner;
+this slice adds no width or position compensation. The sole temporarily unavoidable lower-layer
+collision is the outer `.user-project-list li { margin-left: 0 }`, retained for separate
+unmigrated Project shell/list consumers and exactly re-owned by StyleX. The legacy subtab has no
+popover and no `.popover` fallback exists. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

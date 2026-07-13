@@ -65,6 +65,14 @@ export const globalColors = stylex.defineVars({
   leftSidebarDirectProjectStarActive: "#e91e63",
   // _usermenu.less: .starred:hover
   leftSidebarDirectProjectStarActiveHover: "#8a123b",
+  // _usermenu.less: .nav-subtab.unstyled background-color in the left Project pane
+  leftSidebarProjectSubtabSurface: "#eeeeee",
+  // _usermenu.less: .nav-subtab.unstyled color in the left Project pane
+  leftSidebarProjectSubtabText: "#000000",
+  // _variables.less: @primary -> @orange for the left Project subtabs
+  leftSidebarProjectSubtabAccent: "#f36c22",
+  // _yobiUI.less: .nav-subtab li.active a color in the left Project pane
+  leftSidebarProjectSubtabActiveText: "#fcfcfc",
   // _page.less: .sidebar .nav-tabs li a color
   leftSidebarTabText: "lightgray",
   // _page.less: .sidebar .nav-tabs active/interaction color
