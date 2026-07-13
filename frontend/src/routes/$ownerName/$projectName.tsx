@@ -89,6 +89,7 @@ function ProjectHomeRoute() {
   const homePath = `/${ownerName}/${projectName}`;
   const issuesPath = `${homePath}/issues`;
   const branchesPath = `${homePath}/branches`;
+  const milestonesPath = `${homePath}/milestones`;
   const active =
     pathname === homePath
       ? "home"
@@ -96,7 +97,9 @@ function ProjectHomeRoute() {
         ? "issue"
         : pathname === branchesPath
           ? "code"
-          : null;
+          : pathname === milestonesPath
+            ? "milestone"
+            : null;
 
   if (!active) {
     return <Outlet />;
@@ -115,7 +118,7 @@ function ProjectHomeRouteShell({
   active,
   runtimeConfig,
 }: {
-  active: "code" | "home" | "issue";
+  active: "code" | "home" | "issue" | "milestone";
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -166,7 +169,7 @@ function ProjectLayoutScreen({
   active,
   project,
 }: {
-  active: "code" | "home" | "issue";
+  active: "code" | "home" | "issue" | "milestone";
   project: ProjectContainer;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
@@ -181,10 +184,22 @@ function ProjectLayoutScreen({
           ? `${projectName} - ${t("menu.home")}`
           : active === "issue"
             ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
-            : `${t("title.branches")} - ${ownerName}/${projectName}`}
+            : active === "milestone"
+              ? `${projectName} - milestone - ${ownerName}/${projectName}`
+              : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu active={active} basePath={runtimeConfig.basePath} project={project} />
+      {active === "milestone" ? (
+        <link
+          rel="stylesheet"
+          href={prefixBasePath(
+            runtimeConfig.basePath,
+            `/${ownerName}/${projectName}/issue/labels.css`,
+          )}
+          type="text/css"
+        />
+      ) : null}
       {active === "home" ? (
         <ProjectHomeBody
           project={project}

@@ -33,8 +33,9 @@ function OrganizationHomeRoute() {
   const isHome = pathname === exactPath || pathname === `${exactPath}/`;
   const isBoards = pathname === `${exactPath}/boards`;
   const isIssues = pathname === `${exactPath}/issues`;
+  const isPullRequests = pathname === `${exactPath}/pullrequests`;
 
-  if (!isHome && !isBoards && !isIssues) {
+  if (!isHome && !isBoards && !isIssues && !isPullRequests) {
     return <Outlet />;
   }
 
@@ -50,6 +51,7 @@ function OrganizationNestedLayout({
 }) {
   const { organizationName } = Route.useParams();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isPullRequests = pathname === `/organizations/${organizationName}/pullrequests`;
   const organizationQuery = useQuery({
     queryFn: () => readOrganizationContainerRest(runtimeConfig, organizationName),
     queryKey: [...apiQueryKeys.organization.base(organizationName), "container"],
@@ -80,15 +82,18 @@ function OrganizationNestedLayout({
           />
           <OrganizationMenu
             active={
-              pathname.endsWith("/issues")
-                ? "issues"
-                : pathname.endsWith("/boards")
-                  ? "boards"
-                  : "home"
+              isPullRequests
+                ? "pullrequests"
+                : pathname.endsWith("/issues")
+                  ? "issues"
+                  : pathname.endsWith("/boards")
+                    ? "boards"
+                    : "home"
             }
             organizationName={organizationName}
             viewerCanUpdate={booleanField(organization.viewerCanUpdate)}
           />
+          <title>{organizationName}</title>
           {isHome ? (
             <OrganizationHomeBody organization={organization} runtimeConfig={runtimeConfig} />
           ) : (
@@ -678,7 +683,7 @@ export function OrganizationMenu({
   organizationName,
   viewerCanUpdate,
 }: {
-  active: "home" | "issues" | "boards";
+  active: "home" | "issues" | "boards" | "pullrequests";
   organizationName: string;
   viewerCanUpdate: boolean;
 }) {
@@ -752,7 +757,7 @@ export function OrganizationMenu({
               {t("menu.board")}
             </Link>
           </li>
-          <li className="">
+          <li className={active === "pullrequests" ? "active" : ""}>
             <Link
               activeOptions={{
                 exact: true,
