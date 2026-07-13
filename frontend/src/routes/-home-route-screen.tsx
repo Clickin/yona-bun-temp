@@ -1027,26 +1027,50 @@ function LegacyFramedSidebar({
           <i aria-hidden="true" className="yobicon-arrow-left" />
         </button>
       </div>
-      <ul className="nav nav-tabs nm">
-        <li className={`myOrganizationList${activeTab === "favorite" ? " active" : ""}`}>
-          <button type="button" onClick={() => selectTab("favorite")}>
+      <ul {...stylex.props(leftSidebarTabStyles.tabs)} data-stylex-owner="left-sidebar-tabs">
+        <li {...stylex.props(leftSidebarTabStyles.item)}>
+          <button
+            {...stylex.props(
+              leftSidebarTabStyles.button,
+              activeTab === "favorite" && leftSidebarTabStyles.activeButton,
+            )}
+            aria-pressed={activeTab === "favorite"}
+            type="button"
+            onClick={() => selectTab("favorite")}
+          >
             {t("title.favorite")}
           </button>
         </li>
-        <li className={`myProjectList${activeTab === "project" ? " active" : ""}`}>
-          <button type="button" onClick={() => selectTab("project")}>
+        <li {...stylex.props(leftSidebarTabStyles.item)}>
+          <button
+            {...stylex.props(
+              leftSidebarTabStyles.button,
+              activeTab === "project" && leftSidebarTabStyles.activeButton,
+            )}
+            aria-pressed={activeTab === "project"}
+            type="button"
+            onClick={() => selectTab("project")}
+          >
             {t("title.project")}
           </button>
         </li>
-        <li className={`myRecentIssueList${activeTab === "recent" ? " active" : ""}`}>
-          <button type="button" onClick={() => selectTab("recent")}>
+        <li {...stylex.props(leftSidebarTabStyles.item)}>
+          <button
+            {...stylex.props(
+              leftSidebarTabStyles.button,
+              activeTab === "recent" && leftSidebarTabStyles.activeButton,
+            )}
+            aria-pressed={activeTab === "recent"}
+            type="button"
+            onClick={() => selectTab("recent")}
+          >
             {t("title.recently.visited.issue")}
           </button>
         </li>
-        <li>
+        <li {...stylex.props(leftSidebarTabStyles.item)}>
           <button
+            {...stylex.props(leftSidebarTabStyles.refreshButton)}
             aria-label="Refresh"
-            className="btn-transparent refresh-button"
             onClick={onRefresh}
             type="button"
           >
@@ -1078,6 +1102,96 @@ function LegacyFramedSidebar({
     </aside>
   );
 }
+
+const leftSidebarTabStyles = stylex.create({
+  tabs: {
+    borderBottomStyle: "none",
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    width: "270px",
+    "::before": {
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+  },
+  item: {
+    float: "left",
+    marginBottom: "-2px",
+  },
+  button: {
+    appearance: "none",
+    backgroundColor: {
+      default: globalColors.transparent,
+      ":hover": globalColors.leftSidebarTabSurface,
+      ":focus": globalColors.leftSidebarTabSurface,
+    },
+    borderRadius: "4px 4px 0 0",
+    borderStyle: "none",
+    boxShadow: "none",
+    color: {
+      default: globalColors.leftSidebarTabText,
+      ":hover": globalColors.leftSidebarTabAccent,
+      ":focus": globalColors.leftSidebarTabAccent,
+    },
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    fontWeight: "bold",
+    lineHeight: "20px",
+    marginRight: "2px",
+    paddingBottom: "8px",
+    paddingLeft: {
+      default: "10px",
+      "@media (max-width: 720px)": "5px",
+    },
+    paddingRight: {
+      default: "10px",
+      "@media (max-width: 720px)": "5px",
+    },
+    paddingTop: "8px",
+  },
+  activeButton: {
+    backgroundColor: {
+      default: globalColors.leftSidebarTabSurface,
+      ":hover": globalColors.leftSidebarTabSurface,
+      ":focus": globalColors.leftSidebarTabSurface,
+    },
+    color: {
+      default: globalColors.leftSidebarTabAccent,
+      ":hover": globalColors.leftSidebarTabAccent,
+      ":focus": globalColors.leftSidebarTabAccent,
+    },
+    cursor: "default",
+  },
+  refreshButton: {
+    appearance: "none",
+    backgroundColor: globalColors.transparent,
+    borderRadius: 0,
+    borderStyle: "none",
+    boxShadow: "none",
+    boxSizing: "border-box",
+    color: {
+      default: "inherit",
+      ":hover": globalColors.leftSidebarRefreshAccent,
+      ":focus": globalColors.leftSidebarRefreshAccent,
+    },
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    height: "29px",
+    lineHeight: "13px",
+    marginRight: 0,
+    padding: "12px 0 0 6px",
+  },
+});
 
 const authenticatedSidenavTabStyles = stylex.create({
   tabs: {

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, nineteen user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, twenty user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -451,9 +451,10 @@ content; removing `.popover`, `.right`, `.arrow`, and `.popover-content` retains
 computed surface, so this owner has no `.popover` fallback. Exactly the frozen `.issue-item`
 `display:block !important` and `padding-left:5px !important` declarations remain unavoidable.
 Fresh live legacy and local desktop/390 evidence agrees on the 270×27 row and 204×37.59375
-popover with its 280px left edge. The current React framed shell's desktop tab wrap and mobile
-overflow clipping are recorded as separate outer-owner gaps and are not compensated in this
-slice. This is not Wave 1 completion.
+popover with its 280px left edge. Fresh English legacy evidence also proves that the desktop tab
+wrap is locale-dependent parity rather than an outer-owner gap; the mobile framed-shell overflow
+clipping remains separate evidence and is not compensated in this slice. This is not Wave 1
+completion.
 
 The nineteenth verified slice migrates only the framed left sidebar's Recent History search/list
 shell. StyleX owns the group, black/white input surface, React focus-bar pseudos, tab-content,
@@ -464,8 +465,20 @@ complete owned computed surface and relative geometry, so this owner has no inte
 declaration. The Bootstrap input padding and max-720 `font-size:16px !important` remain separate
 shared input primitives rather than this shell's fallback. Fresh live legacy and local 1366/390
 evidence agrees on the 270px shell, 42px input group, 64px populated inner pane, 54px list, 135px
-focus halves, and scrollbar. The current React desktop tab wrap places the local shell 27px lower;
-that outer-owner gap is recorded without compensation. This is not Wave 1 completion.
+focus halves, and scrollbar. English desktop copy wraps the refresh item and places the shell at
+`y=105` in both legacy and React, while English mobile and shorter Korean desktop copy keep a
+single row at `y=78`; no placement compensation is required. This is not Wave 1 completion.
+
+The twentieth verified slice migrates the framed left sidebar's Favorite / Project / Recent
+History tab strip and Refresh control. StyleX owns the 270px list reset and clearfix, four floated
+items, three semantic tab buttons with active/hover/focus states, the max-720 horizontal padding,
+and the Refresh button geometry and hover state. Every color comes from the canonical global
+theme entry with no dark value or toggle. The migrated owner emits none of `nav`, `nav-tabs`,
+`nm`, `active`, `myOrganizationList`, `myProjectList`, `myRecentIssueList`, `btn-transparent`, or
+`refresh-button`; only `yobicon-refresh` remains as the separate global icon-font primitive.
+Fresh English legacy/local evidence agrees exactly on the locale-dependent `270×61` desktop wrap
+and `270×34` mobile single row, while Korean desktop copy also remains one row. This owner has no
+intentional presentation fallback. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

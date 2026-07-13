@@ -1722,10 +1722,13 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   await page.goto(`${basePath}/`);
 
   const leftSidebar = page.locator("#sidebar");
-  const leftTabs = leftSidebar.locator(":scope > .nav.nav-tabs.nm");
+  const leftTabs = leftSidebar.locator('[data-stylex-owner="left-sidebar-tabs"]');
+  const favoriteTab = leftTabs.getByRole("button", { exact: true, name: "Favorite" });
+  const projectTab = leftTabs.getByRole("button", { exact: true, name: "Project" });
+  const recentTab = leftTabs.getByRole("button", { exact: true, name: "Recent History" });
   await expect(leftSidebar).toBeVisible();
-  await expect(leftTabs.locator(".myOrganizationList")).toHaveClass(/active/);
-  await expect(leftTabs.locator(".myProjectList")).not.toHaveClass(/active/);
+  await expect(favoriteTab).toHaveAttribute("aria-pressed", "true");
+  await expect(projectTab).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("#left-sidebar-tab-content-list")).toHaveCount(1);
   await expect(page.locator("#usermenu-tab-content-list")).toHaveCount(1);
   await expect(
@@ -1736,28 +1739,36 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
   ).toHaveAttribute("id", "left-sidebar-myOrganizationList");
   expect(await duplicateSidebarIds(page)).toEqual([]);
 
-  await leftTabs.locator(".myProjectList > button").click();
-  await expect(leftTabs.locator(".myProjectList")).toHaveClass(/active/);
+  await projectTab.click();
+  await expect(projectTab).toHaveAttribute("aria-pressed", "true");
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myProjectList",
   );
   await page.reload();
-  await expect(page.locator("#sidebar .myProjectList")).toHaveClass(/active/);
+  await expect(
+    page
+      .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+      .getByRole("button", { exact: true, name: "Project" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
   ).toHaveAttribute("id", "left-sidebar-myProjectList");
   expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
 
   const requestCountBeforeRefresh = workspace.requestCount;
-  await page.locator("#sidebar .refresh-button").click();
+  await leftTabs.getByRole("button", { name: "Refresh" }).click();
   await expect.poll(() => workspace.requestCount).toBeGreaterThan(requestCountBeforeRefresh);
 
-  await page.locator("#sidebar .myRecentIssueList > button").click();
+  await recentTab.click();
   expect(await page.evaluate(() => localStorage.getItem("sidebarActiveMenu"))).toBe(
     "myRecentIssueList",
   );
   await page.reload();
-  await expect(page.locator("#sidebar .myRecentIssueList")).toHaveClass(/active/);
+  await expect(
+    page
+      .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+      .getByRole("button", { exact: true, name: "Recent History" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.locator("#left-sidebar-tab-content-list > .user-project-list.active"),
   ).toHaveAttribute("id", "left-sidebar-myRecentIssueList");
@@ -1769,7 +1780,10 @@ test("authenticated left framed sidebar persists tabs refreshes Query and keeps 
     "href",
     `${basePath}/admin/sample/issue/42`,
   );
-  await page.locator("#sidebar .myProjectList > button").click();
+  await page
+    .locator('#sidebar [data-stylex-owner="left-sidebar-tabs"]')
+    .getByRole("button", { exact: true, name: "Project" })
+    .click();
   const projectLink = page.locator("#left-sidebar-myProjectList a[href$='/admin/sample']").first();
   await expect(projectLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await page.evaluate(() => {
@@ -2821,12 +2835,18 @@ async function readMobileOpenLeftSidebarMetrics(page: Page) {
 
 async function readLeftSidebarTabMetrics(page: Page) {
   return page.evaluate(() => {
-    const nav = document.querySelector<HTMLElement>("#sidebar > .nav-tabs");
+    const nav = document.querySelector<HTMLElement>(
+      '#sidebar > [data-stylex-owner="left-sidebar-tabs"]',
+    );
     const content = document.querySelector<HTMLElement>("#sidebar > .tab-content");
     const search = document.querySelector<HTMLElement>(
       "#left-sidebar-myOrganizationList .org-search",
     );
-    const tabs = Array.from(document.querySelectorAll<HTMLElement>("#sidebar > .nav-tabs > li"));
+    const tabs = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '#sidebar > [data-stylex-owner="left-sidebar-tabs"] > li',
+      ),
+    );
     const buttons = tabs.map((tab) => tab.querySelector<HTMLButtonElement>(":scope > button"));
     const refresh = buttons.at(-1);
     if (

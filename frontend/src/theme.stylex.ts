@@ -47,6 +47,14 @@ export const globalColors = stylex.defineVars({
   leftSidebarRecentIssueHoverSurface: "rgba(255, 255, 255, 0.15)",
   // _usermenu.less: .sidebar .search-input background-color
   leftSidebarRecentSearchSurface: "#000000",
+  // _page.less: .sidebar .nav-tabs li a color
+  leftSidebarTabText: "lightgray",
+  // _page.less: .sidebar .nav-tabs active/interaction color
+  leftSidebarTabAccent: "#f36c22",
+  // _page.less: .sidebar .nav-tabs active/interaction background-color
+  leftSidebarTabSurface: "#000000",
+  // _page.less: .yobicon-refresh:hover color
+  leftSidebarRefreshAccent: "#03a9f4",
   // _page.less: .sidebar color inherited by Recent issue rows
   leftSidebarRecentIssueText: "#ffffff",
   // _usermenu.less: .issue-title-start color

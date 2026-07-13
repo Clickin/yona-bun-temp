@@ -70,7 +70,7 @@ for (const viewport of [
     const shellGeometry = await page.evaluate(() => {
       const selectors = [
         "#sidebar > .user-menu-wrap",
-        "#sidebar > .nav-tabs",
+        '#sidebar > [data-stylex-owner="left-sidebar-tabs"]',
         "#left-sidebar-myRecentIssueList",
         "#left-sidebar-recent-issue-query",
         "#left-sidebar-recentlyVisitedIssues",
@@ -92,11 +92,10 @@ for (const viewport of [
       top: 0,
       width: 271,
     });
-    // Known outer-owner evidence: the current desktop framed nav wraps to 61px while legacy and
-    // mobile use 34px. This row slice preserves exact internal and host-relative geometry without
-    // compensating for that separate shell drift.
+    // English legacy copy wraps the refresh item on desktop, while the narrower mobile padding
+    // keeps all four items on one row. These locale-dependent legacy heights are intentional.
     const rowTop = viewport.label === "desktop" ? 147 : 120;
-    expect(shellGeometry["#sidebar > .nav-tabs"]).toEqual({
+    expect(shellGeometry['#sidebar > [data-stylex-owner="left-sidebar-tabs"]']).toEqual({
       height: viewport.label === "desktop" ? 61 : 34,
       top: 44,
     });
