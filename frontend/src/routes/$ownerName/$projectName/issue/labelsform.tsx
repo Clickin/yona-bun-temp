@@ -24,8 +24,6 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { SiteLayoutShell } from "../../../-home-route-screen";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -72,40 +70,63 @@ export const Route = createFileRoute("/$ownerName/$projectName/issue/labelsform"
 function ProjectLabelsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
+  return <ProjectLabelsRouteScreen renderProjectShell={false} runtimeConfig={runtimeConfig} />;
+}
+
+export function ProjectLabelsRouteScreen({
+  renderProjectShell = true,
+  runtimeConfig,
+}: {
+  renderProjectShell?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const content = (
+    <ProjectLabelsRouteShell
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectLabelsRouteShell runtimeConfig={runtimeConfig} />
+        {content}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
 }
 
-function ProjectLabelsRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectLabelsRouteShell({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const projectQuery = useQuery(
     readProjectSettingsQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
-  const projectSearchScope = projectQuery.data
-    ? {
-        organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-        ownerName,
-        projectName,
-      }
-    : { ownerName, projectName };
-
   return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
-      <ProjectLabelsScreen project={projectQuery.data} runtimeConfig={runtimeConfig} />
-    </SiteLayoutShell>
+    <ProjectLabelsScreen
+      project={projectQuery.data}
+      renderProjectShell={renderProjectShell}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
 function ProjectLabelsScreen({
   project,
+  renderProjectShell,
   runtimeConfig,
 }: {
   project?: ProjectContainer;
+  renderProjectShell: boolean;
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
@@ -116,14 +137,12 @@ function ProjectLabelsScreen({
   const legacyTitle = `${t("label")} - ${ownerName}/${projectName}`;
 
   if (!project || !labelsQuery.data) {
-    return <title>{legacyTitle}</title>;
+    return renderProjectShell ? <title>{legacyTitle}</title> : null;
   }
 
   return (
     <>
-      <title>{legacyTitle}</title>
-      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
-      <ProjectMenu active="setting" basePath={runtimeConfig.basePath} project={project} />
+      {renderProjectShell ? <title>{legacyTitle}</title> : null}
       <ProjectLabelsBody
         labels={labelsQuery.data.labels}
         project={project}
@@ -1534,14 +1553,6 @@ function CountBadge({
 function enrolledUserCount(project: ProjectContainer) {
   const enrolledUsers = recordField(project).enrolledUsers;
   return Array.isArray(enrolledUsers) ? enrolledUsers.length : 0;
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return booleanField(project.isProtected) ? ownerName : undefined;
 }
 
 function projectMenuSetting(project: ProjectContainer) {

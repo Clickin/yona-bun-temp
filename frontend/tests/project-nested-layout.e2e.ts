@@ -317,6 +317,36 @@ test("project delete to change VCS keeps the legacy project shell DOM nodes moun
   await expectProjectChangeVcsGeometry(page);
 });
 
+test("project change VCS to issue labels keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/changeVCS`);
+  await expect(page.locator("#btnChangeVCS")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectChangeVcsGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/changeVCS$/, "/issue/labelsform")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/issue\/labelsform(?:#|\?|$)/);
+  await expect(page.locator("#subMenuIssueLabel")).toHaveClass(/active/);
+  await expect(page.locator("#copyLabel")).toBeVisible();
+  await expect(page.locator("#frmNewLabel")).toBeVisible();
+  await expect(page.locator("#labelsList")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectLabelsGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("#frmNewLabel")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectLabelsGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -884,6 +914,59 @@ async function expectProjectChangeVcsGeometry(page: Page) {
   expect(metrics.formBottom).toBeGreaterThan(metrics.formTop);
   expect(metrics.actionTop).toBeGreaterThanOrEqual(metrics.formBottom);
   expect(metrics.actionBottom).toBeGreaterThan(metrics.actionTop);
+}
+
+async function expectProjectLabelsGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const gnb = rect(".gnb-outer");
+    const header = rect(".project-header-outer");
+    const menu = rect(".project-menu-outer");
+    const body = rect(".project-page-wrap.label-editor-wrap");
+    const tabs = rect(".project-page-wrap .nav-tabs");
+    const copy = rect("#copyLabel");
+    const create = rect("#frmNewLabel");
+    const list = rect("#labelsList");
+    return {
+      bodyLeft: body.left,
+      bodyRight: body.right,
+      copyBottom: copy.bottom,
+      copyTop: copy.top,
+      createBottom: create.bottom,
+      createTop: create.top,
+      gnbBottom: gnb.bottom,
+      gnbTop: gnb.top,
+      headerBottom: header.bottom,
+      headerTop: header.top,
+      listBottom: list.bottom,
+      listTop: list.top,
+      menuBottom: menu.bottom,
+      menuTop: menu.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.gnbBottom).toBeGreaterThan(metrics.gnbTop);
+  expect(metrics.headerBottom).toBeGreaterThan(metrics.headerTop);
+  expect(metrics.menuBottom).toBeGreaterThan(metrics.menuTop);
+  expect(metrics.bodyLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.bodyRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.copyTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.copyBottom).toBeGreaterThan(metrics.copyTop);
+  expect(metrics.createTop).toBeGreaterThanOrEqual(metrics.copyBottom);
+  expect(metrics.createBottom).toBeGreaterThan(metrics.createTop);
+  expect(metrics.listTop).toBeGreaterThanOrEqual(metrics.createBottom);
+  expect(metrics.listBottom).toBeGreaterThan(metrics.listTop);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
 async function mockProjectHomeAndIssues(page: Page) {
