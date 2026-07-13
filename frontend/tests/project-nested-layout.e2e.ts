@@ -147,6 +147,41 @@ test("project issues to exact commit history keeps the legacy project shell DOM 
   await expectProjectCommitHistoryGeometry(page);
 });
 
+test("project issues to exact single commit detail keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState(
+      {},
+      "",
+      `${location.pathname.replace(/\/issues$/, "/commit/abcdef1234567890")}`,
+    );
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/commit\/abcdef1234567890(?:\?|$)/);
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator(".project-header-outer")).toHaveCount(1);
+  await expect(page.locator(".project-menu-outer")).toHaveCount(1);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitDetailGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectCommitDetailGeometry(page);
+});
+
 test("project issues to exact no-head code root keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -1566,6 +1601,39 @@ async function expectProjectCommitHistoryGeometry(page: Page) {
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
+async function expectProjectCommitDetailGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const menu = rect(".project-menu-outer");
+    const tabs = rect(".code-browse-wrap > .nav.nav-tabs");
+    const diff = rect(".codediff-wrap");
+    const pageWrap = rect(".project-page-wrap");
+    return {
+      diffBottom: diff.bottom,
+      diffTop: diff.top,
+      menuBottom: menu.bottom,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      scrollWidth: document.documentElement.scrollWidth,
+      tabsBottom: tabs.bottom,
+      tabsTop: tabs.top,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(metrics.tabsTop).toBeGreaterThanOrEqual(metrics.menuBottom);
+  expect(metrics.tabsBottom).toBeGreaterThan(metrics.tabsTop);
+  expect(metrics.diffTop).toBeGreaterThanOrEqual(metrics.tabsBottom);
+  expect(metrics.diffBottom).toBeGreaterThan(metrics.diffTop);
+  expect(metrics.pageLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.pageRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
 async function expectProjectFileCommitHistoryGeometry(page: Page) {
   const metrics = await page.evaluate(() => {
     const rect = (selector: string) => {
@@ -2919,6 +2987,30 @@ async function mockProjectHomeAndIssues(
         path: "",
         projectName: "sample",
         selectedBranch: "main",
+      });
+    if (path.endsWith("/projects/admin/sample/commit/abcdef1234567890"))
+      return json({
+        branches: [{ name: "main" }],
+        commit: {
+          authorDate: "Jul 1, 2026",
+          authorEmail: "dev@example.com",
+          authorName: "Dev Author",
+          commentCount: 0,
+          commitId: "abcdef1234567890",
+          commitShortId: "abcdef1",
+          message: "Initial commit\nAdd README",
+          shortMessage: "Initial commit",
+        },
+        files: [],
+        isWatching: false,
+        noHead: false,
+        ownerName: "admin",
+        parentCommit: { commitId: "1234567890abcdef", commitShortId: "1234567" },
+        path: "",
+        permissions: { canComment: true, canUpdateThreadState: true },
+        projectName: "sample",
+        selectedBranch: "main",
+        threads: [],
       });
     if (path.endsWith("/projects/admin/sample/pull-requests"))
       return json({

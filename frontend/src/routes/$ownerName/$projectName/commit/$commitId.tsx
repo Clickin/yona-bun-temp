@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { use, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -27,7 +27,7 @@ import { YonaQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { SiteLayoutShell } from "../../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { ProjectHeader, ProjectMenu } from "../../$projectName";
+import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../../$projectName";
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
@@ -82,16 +82,24 @@ function ProjectCommitDetailRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const routeParams = Route.useParams();
   const search = Route.useSearch();
+  const nestedProjectShell = use(ProjectNestedShellContext);
+
+  const screen = (
+    <ProjectCommitDetailScreen
+      branch={search.branch}
+      nestedProjectShell={nestedProjectShell}
+      path={search.path}
+      routeParams={routeParams}
+      runtimeConfig={runtimeConfig}
+    />
+  );
+
+  if (nestedProjectShell) return screen;
 
   return (
     <YonaQueryProvider>
       <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectCommitDetailScreen
-          branch={search.branch}
-          path={search.path}
-          routeParams={routeParams}
-          runtimeConfig={runtimeConfig}
-        />
+        {screen}
       </LegacyI18nProvider>
     </YonaQueryProvider>
   );
@@ -99,11 +107,13 @@ function ProjectCommitDetailRoute() {
 
 function ProjectCommitDetailScreen({
   branch,
+  nestedProjectShell,
   path,
   routeParams,
   runtimeConfig,
 }: {
   branch: string;
+  nestedProjectShell: boolean;
   path: string;
   routeParams: { commitId: string; ownerName: string; projectName: string };
   runtimeConfig: RuntimeConfig;
@@ -126,17 +136,9 @@ function ProjectCommitDetailScreen({
     return null;
   }
 
-  const projectSearchScope = {
-    organizationName: projectSearchScopeOrganizationName(projectQuery.data, ownerName),
-    ownerName,
-    projectName,
-  };
-
-  return (
-    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+  const body = (
+    <>
       <ProjectCommitDetailTitle commitId={detailQuery.data.commit?.commitId ?? commitId} />
-      <ProjectHeader basePath={runtimeConfig.basePath} project={projectQuery.data} />
-      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={projectQuery.data} />
       <ProjectCommitDetailBody
         currentUser={{
           avatarUrl: stringField(
@@ -153,6 +155,39 @@ function ProjectCommitDetailScreen({
         project={projectQuery.data}
         runtimeConfig={runtimeConfig}
       />
+    </>
+  );
+
+  if (nestedProjectShell) return body;
+
+  return (
+    <ProjectCommitDetailStandaloneShell project={projectQuery.data} runtimeConfig={runtimeConfig}>
+      {body}
+    </ProjectCommitDetailStandaloneShell>
+  );
+}
+
+function ProjectCommitDetailStandaloneShell({
+  children,
+  project,
+  runtimeConfig,
+}: {
+  children: ReactNode;
+  project: ProjectContainer;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { ownerName, projectName } = Route.useParams();
+  const projectSearchScope = {
+    organizationName: projectSearchScopeOrganizationName(project, ownerName),
+    ownerName,
+    projectName,
+  };
+
+  return (
+    <SiteLayoutShell projectSearchScope={projectSearchScope} runtimeConfig={runtimeConfig}>
+      <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
+      <ProjectMenu active="code" basePath={runtimeConfig.basePath} project={project} />
+      {children}
     </SiteLayoutShell>
   );
 }
