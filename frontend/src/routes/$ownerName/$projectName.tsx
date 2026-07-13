@@ -101,6 +101,7 @@ function ProjectHomeRoute() {
   const transferPath = `${homePath}/transfer`;
   const deletePath = `${homePath}/deleteform`;
   const changeVcsPath = `${homePath}/changeVCS`;
+  const labelsPath = `${homePath}/issue/labelsform`;
   const active =
     pathname === homePath
       ? "home"
@@ -128,7 +129,9 @@ function ProjectHomeRoute() {
                             ? "delete"
                             : pathname === changeVcsPath
                               ? "changeVcs"
-                              : null;
+                              : pathname === labelsPath
+                                ? "labels"
+                                : null;
 
   if (!active) {
     return <Outlet />;
@@ -154,6 +157,7 @@ function ProjectHomeRouteShell({
     | "delete"
     | "home"
     | "issue"
+    | "labels"
     | "members"
     | "milestone"
     | "pullRequest"
@@ -288,6 +292,7 @@ function ProjectLayoutScreen({
     | "delete"
     | "home"
     | "issue"
+    | "labels"
     | "members"
     | "milestone"
     | "pullRequest"
@@ -319,19 +324,22 @@ function ProjectLayoutScreen({
                     ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
                     : active === "setting"
                       ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                      : active === "members"
-                        ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                        : active === "delete"
-                          ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                          : active === "changeVcs"
-                            ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                            : `${t("title.branches")} - ${ownerName}/${projectName}`}
+                      : active === "labels"
+                        ? `${t("label")} - ${ownerName}/${projectName}`
+                        : active === "members"
+                          ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                          : active === "delete"
+                            ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                            : active === "changeVcs"
+                              ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                              : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
           active === "delete" ||
           active === "changeVcs" ||
+          active === "labels" ||
           active === "members" ||
           active === "transfer" ||
           active === "webhooks"
