@@ -63,8 +63,7 @@ import {
   searchProjectMentionUsers,
   searchProjectTitleHeads,
 } from "../../../auth-workspace-client";
-import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
-import { YonaQueryProvider } from "../../../query-client";
+import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
@@ -343,19 +342,16 @@ export const Route = createFileRoute("/$ownerName/$projectName/issueform")({
 function ProjectIssueFormRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
+  const formOptionsQuery = useQuery({
+    queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
+    queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+  });
 
   return (
-    <YonaQueryProvider>
-      <LegacyI18nProvider supportedLanguages={runtimeConfig.supportedLanguages}>
-        <ProjectIssueFormShell
-          ownerName={ownerName}
-          projectName={projectName}
-          runtimeConfig={runtimeConfig}
-        >
-          <ProjectIssueFormScreen runtimeConfig={runtimeConfig} />
-        </ProjectIssueFormShell>
-      </LegacyI18nProvider>
-    </YonaQueryProvider>
+    <ProjectIssueFormScreen
+      renderProjectShell={Boolean(formOptionsQuery.error)}
+      runtimeConfig={runtimeConfig}
+    />
   );
 }
 
@@ -388,12 +384,18 @@ function ProjectIssueFormShell({
   );
 }
 
-function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ProjectIssueFormScreen({
+  renderProjectShell,
+  runtimeConfig,
+}: {
+  renderProjectShell: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
   const { ownerName, projectName } = Route.useParams();
   const { t } = useLegacyMessages();
   const search = Route.useSearch();
 
-  return (
+  const content = (
     <>
       <title>{`${t("title.newIssue")} - ${ownerName}/${projectName}`}</title>
       <ProjectIssueFormProjectScreen
@@ -401,9 +403,24 @@ function ProjectIssueFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfi
         projectName={projectName}
         parentIssueId={stringField(search.parentIssueId, "")}
         referCommentId={stringField(search.commentId, "")}
+        renderProjectShell={renderProjectShell}
         runtimeConfig={runtimeConfig}
       />
     </>
+  );
+
+  if (!renderProjectShell) {
+    return content;
+  }
+
+  return (
+    <ProjectIssueFormShell
+      ownerName={ownerName}
+      projectName={projectName}
+      runtimeConfig={runtimeConfig}
+    >
+      {content}
+    </ProjectIssueFormShell>
   );
 }
 
@@ -413,6 +430,7 @@ export function ProjectIssueFormProjectScreen({
   parentIssueId = "",
   projectHeaderRuntimeConfig,
   referCommentId = "",
+  renderProjectShell = true,
   runtimeConfig,
   projectName,
   showSubtaskOptionOnMount = false,
@@ -422,6 +440,7 @@ export function ProjectIssueFormProjectScreen({
   parentIssueId?: string;
   projectHeaderRuntimeConfig?: RuntimeConfig;
   referCommentId?: string;
+  renderProjectShell?: boolean;
   runtimeConfig: RuntimeConfig;
   projectName: string;
   showSubtaskOptionOnMount?: boolean;
@@ -475,7 +494,7 @@ export function ProjectIssueFormProjectScreen({
     return <div className="issue-form-loading" role="status" aria-label={t("common.loading")} />;
   }
 
-  const projectShell = (
+  const projectShell = renderProjectShell ? (
     <>
       <ProjectHeader
         basePath={runtimeConfig.basePath}
@@ -484,7 +503,7 @@ export function ProjectIssueFormProjectScreen({
       />
       <ProjectMenu active="issue" basePath={runtimeConfig.basePath} project={projectQuery.data} />
     </>
-  );
+  ) : null;
 
   if (formOptionsQuery.error instanceof RestApiError && formOptionsQuery.error.status === 401) {
     return (

@@ -20,7 +20,7 @@ import {
 import { apiQueryKeys } from "../../api/query-keys";
 import type { ProjectContainer, ProjectMilestone, YonaUserItem } from "../../api/types";
 import { RestApiError } from "../../api/rest-client";
-import { readSessionBootstrap } from "../../auth-workspace-client";
+import { readProjectIssueFormOptions, readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -106,42 +106,45 @@ function ProjectHomeRoute() {
   const deletePath = `${homePath}/deleteform`;
   const changeVcsPath = `${homePath}/changeVCS`;
   const labelsPath = `${homePath}/issue/labelsform`;
+  const issueFormPath = `${homePath}/issueform`;
   const active =
     pathname === homePath
       ? "home"
       : pathname === issuesPath
         ? "issue"
-        : pathname === branchesPath
-          ? "code"
-          : pathname === milestonesPath
-            ? "milestone"
-            : pathname === newMilestonePath
-              ? "newMilestone"
-              : pathname === postsPath
-                ? "board"
-                : pathname === postFormPath
-                  ? "postform"
-                  : pathname === pullRequestsPath ||
-                      pathname === closedPullRequestsPath ||
-                      pathname === sentPullRequestsPath
-                    ? "pullRequest"
-                    : pathname === reviewsPath
-                      ? "review"
-                      : pathname === settingPath
-                        ? "setting"
-                        : pathname === membersPath
-                          ? "members"
-                          : pathname === webhooksPath
-                            ? "webhooks"
-                            : pathname === transferPath
-                              ? "transfer"
-                              : pathname === deletePath
-                                ? "delete"
-                                : pathname === changeVcsPath
-                                  ? "changeVcs"
-                                  : pathname === labelsPath
-                                    ? "labels"
-                                    : null;
+        : pathname === issueFormPath
+          ? "issueform"
+          : pathname === branchesPath
+            ? "code"
+            : pathname === milestonesPath
+              ? "milestone"
+              : pathname === newMilestonePath
+                ? "newMilestone"
+                : pathname === postsPath
+                  ? "board"
+                  : pathname === postFormPath
+                    ? "postform"
+                    : pathname === pullRequestsPath ||
+                        pathname === closedPullRequestsPath ||
+                        pathname === sentPullRequestsPath
+                      ? "pullRequest"
+                      : pathname === reviewsPath
+                        ? "review"
+                        : pathname === settingPath
+                          ? "setting"
+                          : pathname === membersPath
+                            ? "members"
+                            : pathname === webhooksPath
+                              ? "webhooks"
+                              : pathname === transferPath
+                                ? "transfer"
+                                : pathname === deletePath
+                                  ? "delete"
+                                  : pathname === changeVcsPath
+                                    ? "changeVcs"
+                                    : pathname === labelsPath
+                                      ? "labels"
+                                      : null;
 
   if (!active) {
     return <Outlet />;
@@ -167,6 +170,7 @@ function ProjectHomeRouteShell({
     | "delete"
     | "home"
     | "issue"
+    | "issueform"
     | "labels"
     | "members"
     | "milestone"
@@ -187,6 +191,18 @@ function ProjectHomeRouteShell({
     ...readProjectMembersQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: active === "members",
   });
+  const issueFormOptionsQuery = useQuery({
+    enabled: active === "issueform",
+    queryFn: () => readProjectIssueFormOptions(runtimeConfig, ownerName, projectName),
+    queryKey: ["project", ownerName, projectName, "issues", "form-options"],
+  });
+
+  // The legacy creation endpoint redirects authentication and request failures
+  // through its own standalone response. Keep that branch outside the nested
+  // project shell; the successful form is the only child body owned here.
+  if (active === "issueform" && (query.error || issueFormOptionsQuery.error)) {
+    return <Outlet />;
+  }
 
   if (!query.data) {
     return null;
@@ -304,6 +320,7 @@ function ProjectLayoutScreen({
     | "delete"
     | "home"
     | "issue"
+    | "issueform"
     | "labels"
     | "members"
     | "milestone"
@@ -328,29 +345,31 @@ function ProjectLayoutScreen({
           ? `${projectName} - ${t("menu.home")}`
           : active === "issue"
             ? `${projectName} - ${t("menu.issue")} - ${ownerName}/${projectName}`
-            : active === "milestone"
-              ? `${projectName} - milestone - ${ownerName}/${projectName}`
-              : active === "newMilestone"
-                ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
-                : active === "postform"
-                  ? `${t("post.new")} - ${ownerName}/${projectName}`
-                  : active === "board"
-                    ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
-                    : active === "pullRequest"
-                      ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
-                      : active === "review"
-                        ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
-                        : active === "setting"
-                          ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
-                          : active === "labels"
-                            ? `${t("label")} - ${ownerName}/${projectName}`
-                            : active === "members"
-                              ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
-                              : active === "delete"
-                                ? `${t("project.delete")} - ${ownerName}/${projectName}`
-                                : active === "changeVcs"
-                                  ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
-                                  : `${t("title.branches")} - ${ownerName}/${projectName}`}
+            : active === "issueform"
+              ? `${t("title.newIssue")} - ${ownerName}/${projectName}`
+              : active === "milestone"
+                ? `${projectName} - milestone - ${ownerName}/${projectName}`
+                : active === "newMilestone"
+                  ? `${t("title.newMilestone")} - ${ownerName}/${projectName}`
+                  : active === "postform"
+                    ? `${t("post.new")} - ${ownerName}/${projectName}`
+                    : active === "board"
+                      ? `${projectName} - ${t("menu.board")} - ${ownerName}/${projectName}`
+                      : active === "pullRequest"
+                        ? `${projectName} - ${t("menu.pullRequest")} - ${ownerName}/${projectName}`
+                        : active === "review"
+                          ? `${projectName} - ${t("menu.review")} - ${ownerName}/${projectName}`
+                          : active === "setting"
+                            ? `${t("title.projectSetting")} - ${ownerName}/${projectName}`
+                            : active === "labels"
+                              ? `${t("label")} - ${ownerName}/${projectName}`
+                              : active === "members"
+                                ? `${t("title.projectMembers")} - ${ownerName}/${projectName}`
+                                : active === "delete"
+                                  ? `${t("project.delete")} - ${ownerName}/${projectName}`
+                                  : active === "changeVcs"
+                                    ? `${t("title.projectChangeVCS")} - ${ownerName}/${projectName}`
+                                    : `${t("title.branches")} - ${ownerName}/${projectName}`}
       </title>
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
@@ -359,14 +378,16 @@ function ProjectLayoutScreen({
             ? "milestone"
             : active === "postform"
               ? "board"
-              : active === "delete" ||
-                  active === "changeVcs" ||
-                  active === "labels" ||
-                  active === "members" ||
-                  active === "transfer" ||
-                  active === "webhooks"
-                ? "setting"
-                : active
+              : active === "issueform"
+                ? "issue"
+                : active === "delete" ||
+                    active === "changeVcs" ||
+                    active === "labels" ||
+                    active === "members" ||
+                    active === "transfer" ||
+                    active === "webhooks"
+                  ? "setting"
+                  : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
