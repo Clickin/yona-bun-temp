@@ -147,6 +147,34 @@ test("project issues to exact no-head code root keeps the legacy project shell D
   await expectProjectShellGeometry(page);
 });
 
+test("project issues to exact code branch root keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/issues`);
+  await expect(page.locator(".issue-list-wrap")).toBeVisible();
+  await captureProjectShellNodes(page);
+  await expectProjectShellGeometry(page);
+
+  await page.evaluate(() => {
+    history.pushState({}, "", `${location.pathname.replace(/\/issues$/, "/code/main")}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/code\/main(?:\?|$)/);
+  await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
+  await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".code-browse-wrap .list-wrap")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectShellGeometry(page);
+});
+
 test("project issues to new issue form keeps the legacy project shell DOM nodes mounted", async ({
   page,
 }) => {
@@ -2583,9 +2611,26 @@ async function mockProjectHomeAndIssues(
       });
     if (path.endsWith("/projects/admin/sample/code"))
       return json({
-        branches: [],
+        branches: [{ name: "main" }],
         breadcrumbs: [],
-        entries: [],
+        entries: [
+          {
+            commitDate: "2026-07-13T00:00:00.000Z",
+            commitMessage: "Add source",
+            commitShortId: "abcdef1",
+            kind: "folder",
+            name: "src",
+            path: "src",
+          },
+          {
+            commitDate: "2026-07-13T00:00:00.000Z",
+            commitMessage: "Update README",
+            commitShortId: "1234567",
+            kind: "file",
+            name: "README.md",
+            path: "README.md",
+          },
+        ],
         file: null,
         noHead: codeNoHead,
         ownerName: "admin",

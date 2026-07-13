@@ -130,6 +130,7 @@ function ProjectHomeRoute() {
   const milestoneDetailId = exactProjectMilestoneDetailId(pathname, homePath);
   const milestoneEditId = exactProjectMilestoneEditId(pathname, homePath);
   const postDetailNumber = exactProjectPostNumber(pathname, homePath);
+  const codeBranch = exactProjectCodeBranch(pathname, homePath);
   const newPullRequestPath = `${homePath}/newPullRequestForm`;
   const newForkPath = `${homePath}/newFork`;
   const watchersPath = `${homePath}/watchers`;
@@ -202,7 +203,9 @@ function ProjectHomeRoute() {
                   ? "issueDetail"
                   : postDetailNumber !== null
                     ? "postDetail"
-                    : standardActive;
+                    : codeBranch !== null
+                      ? "code"
+                      : standardActive;
 
   if (!active) {
     return <Outlet />;
@@ -255,6 +258,8 @@ function ProjectHomeRouteShell({
   runtimeConfig: RuntimeConfig;
 }) {
   const { ownerName, projectName } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const codePath = `/${ownerName}/${projectName}/code`;
   const query = useQuery(
     readProjectContainerQueryOptions(runtimeConfig, { ownerName, projectName }),
   );
@@ -476,7 +481,10 @@ function ProjectHomeRouteShell({
 
   // BranchApp only renders the project layout for Git projects. Preserve its
   // site-level bad-request output for other VCS types.
-  if ((active === "code" || active === "pullRequest") && query.data.vcs !== "GIT") {
+  if (
+    (active === "pullRequest" || (active === "code" && pathname === codePath)) &&
+    query.data.vcs !== "GIT"
+  ) {
     return <ProjectBranchesBadRequestRouteShell runtimeConfig={runtimeConfig} />;
   }
 
@@ -810,6 +818,13 @@ function exactProjectPostNumber(pathname: string, homePath: string) {
     pathname,
   );
   return match ? Number(match[1]) : null;
+}
+
+function exactProjectCodeBranch(pathname: string, homePath: string) {
+  const match = new RegExp(`^${homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/code/[^/]+$`).exec(
+    pathname,
+  );
+  return match ? match[0] : null;
 }
 
 function exactProjectPullRequestNumber(pathname: string, homePath: string) {
