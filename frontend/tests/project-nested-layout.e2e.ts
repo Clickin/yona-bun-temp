@@ -637,6 +637,38 @@ test("project issues to valid search keeps the legacy project shell DOM nodes mo
   await expectProjectSearchGeometry(page);
 });
 
+test("project valid search to forbidden keeps the legacy project shell DOM nodes mounted", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHomeAndIssues(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
+  await expect(page.locator(".search-result-wrap .search-list-item")).toHaveCount(1);
+  await captureProjectShellNodes(page);
+
+  await page.locator("#searchKeyword").fill("forbidden");
+  await page.locator("#searchInnerForm").evaluate((form) => {
+    (form as HTMLFormElement).requestSubmit();
+  });
+  await expect(page).toHaveURL(/\/admin\/sample\/search\?keyword=forbidden&searchType=issue$/);
+  await expect(page.locator(".error-wrap > p")).toHaveText("You are not authorized");
+  await expect(page.locator(".project-menu-gruop > li.active")).toHaveCount(1);
+  await expect(
+    page.locator(".project-menu-gruop > li", {
+      has: page.locator("a[href$='/admin/sample']"),
+    }),
+  ).toHaveClass(/active/);
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSearchForbiddenGeometry(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".error-wrap > p")).toBeVisible();
+  await expectProjectShellNodesToPersist(page);
+  await expectProjectSearchForbiddenGeometry(page);
+});
+
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
@@ -748,6 +780,38 @@ async function expectProjectSearchGeometry(page: Page) {
   expect(metrics.resultTop).toBeGreaterThanOrEqual(metrics.searchBoxTop);
   expect(metrics.resultBottom).toBeGreaterThan(metrics.resultTop);
   expect(metrics.resultRight).toBeLessThanOrEqual(metrics.pageRight + 1);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+}
+
+async function expectProjectSearchForbiddenGeometry(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return element.getBoundingClientRect();
+    };
+    const pageWrap = rect(".page-wrap-outer");
+    const error = rect(".error-wrap");
+    return {
+      errorBottom: error.bottom,
+      errorLeft: error.left,
+      errorRight: error.right,
+      errorTop: error.top,
+      pageBottom: pageWrap.bottom,
+      pageLeft: pageWrap.left,
+      pageRight: pageWrap.right,
+      pageTop: pageWrap.top,
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(metrics.pageLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.pageRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  expect(metrics.errorLeft).toBeGreaterThanOrEqual(metrics.pageLeft);
+  expect(metrics.errorRight).toBeLessThanOrEqual(metrics.pageRight + 1);
+  expect(metrics.errorTop).toBeGreaterThanOrEqual(metrics.pageTop);
+  expect(metrics.errorBottom).toBeLessThanOrEqual(metrics.pageBottom + 1);
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
 }
 
@@ -1648,7 +1712,14 @@ async function mockProjectHomeAndIssues(
         totalCount: 0,
         totalPages: 0,
       });
-    if (path.endsWith("/projects/admin/sample/search"))
+    if (path.endsWith("/projects/admin/sample/search")) {
+      if (new URL(route.request().url()).searchParams.get("keyword") === "forbidden") {
+        return route.fulfill({
+          body: JSON.stringify({ error: "forbidden" }),
+          contentType: "application/json",
+          status: 403,
+        });
+      }
       return json({
         context: { organizationName: "", ownerName: "admin", projectName: "sample" },
         counts: {
@@ -1686,6 +1757,7 @@ async function mockProjectHomeAndIssues(
         searchType: "issue",
         totalCount: 1,
       });
+    }
     if (path.endsWith("/owners/admin/projects/sample/watchers"))
       return json({
         ownerName: "admin",

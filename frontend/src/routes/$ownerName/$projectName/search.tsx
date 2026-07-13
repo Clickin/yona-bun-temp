@@ -147,7 +147,7 @@ function ProjectSearchScreen({
       scope: "project",
     });
 
-  if (nestedProjectShell && !searchQuery.data) {
+  if (nestedProjectShell && !searchQuery.data && !isDefaultForbiddenError(searchQuery.error)) {
     return null;
   }
 
@@ -186,6 +186,22 @@ function ProjectSearchScreen({
   }
 
   if (isDefaultForbiddenError(searchQuery.error)) {
+    const body = (
+      <ProjectSearchForbiddenErrorBody
+        isAnonymous={currentSessionQuery.data?.isAnonymous === true}
+        redirectUrl={legacyProjectSearchRedirectUrl(
+          runtimeConfig.basePath,
+          ownerName,
+          projectName,
+          search,
+        )}
+      />
+    );
+
+    if (nestedProjectShell) {
+      return body;
+    }
+
     return (
       <ProjectSearchRouteShell
         ownerName={ownerName}
@@ -200,15 +216,7 @@ function ProjectSearchScreen({
           counts={projectSearchProjectMenuCounts(projectQuery.data)}
           project={projectQuery.data}
         />
-        <ProjectSearchForbiddenErrorBody
-          isAnonymous={currentSessionQuery.data?.isAnonymous === true}
-          redirectUrl={legacyProjectSearchRedirectUrl(
-            runtimeConfig.basePath,
-            ownerName,
-            projectName,
-            search,
-          )}
-        />
+        {body}
       </ProjectSearchRouteShell>
     );
   }

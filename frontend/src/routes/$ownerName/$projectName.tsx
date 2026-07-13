@@ -29,7 +29,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YonaQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { DefaultSearchErrorBody } from "../-search-screen";
+import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
 import { RootAliasNotFound } from "../__root";
 
 const legacyProjectShellLinkActiveOptions = {
@@ -231,6 +231,7 @@ function ProjectHomeRouteShell({
     enabled: active === "search" && projectSearch.valid && Boolean(query.data),
     retry: false,
   });
+  const searchForbidden = isDefaultForbiddenError(searchQuery.error);
   const pullRequestFormQuery = useQuery({
     ...pullRequestCreateFormOptionsQueryOptions(runtimeConfig, {
       ownerName,
@@ -253,6 +254,7 @@ function ProjectHomeRouteShell({
   const preserveForkShellRef = useRef(false);
   const preserveWatchersShellRef = useRef(false);
   const preserveSearchShellRef = useRef(false);
+  const previousSearchHrefRef = useRef(locationHref);
   if (active === "newFork" && previousActiveRef.current !== "newFork") {
     preserveForkShellRef.current = true;
   } else if (active !== "newFork") {
@@ -263,12 +265,20 @@ function ProjectHomeRouteShell({
   } else if (active !== "watchers" || watchersQuery.error) {
     preserveWatchersShellRef.current = false;
   }
-  if (active === "search" && previousActiveRef.current !== "search") {
+  if (
+    active === "search" &&
+    (previousActiveRef.current !== "search" || previousSearchHrefRef.current !== locationHref)
+  ) {
     preserveSearchShellRef.current = true;
-  } else if (active !== "search" || !projectSearch.valid || searchQuery.error) {
+  } else if (
+    active !== "search" ||
+    !projectSearch.valid ||
+    (searchQuery.error && !searchForbidden)
+  ) {
     preserveSearchShellRef.current = false;
   }
   previousActiveRef.current = active;
+  previousSearchHrefRef.current = locationHref;
 
   // The legacy creation endpoint redirects authentication and request failures
   // through its own standalone response. Keep that branch outside the nested
@@ -304,7 +314,7 @@ function ProjectHomeRouteShell({
     active === "search" &&
     (!query.data ||
       !projectSearch.valid ||
-      searchQuery.error ||
+      (searchQuery.error && !searchForbidden) ||
       (!searchQuery.data && !preserveSearchShellRef.current))
   ) {
     return <Outlet />;
@@ -354,6 +364,7 @@ function ProjectHomeRouteShell({
           pullRequestFormQuery.error instanceof RestApiError &&
           pullRequestFormQuery.error.status === 400
         }
+        searchForbidden={searchForbidden}
       />
     </SiteLayoutShell>
   );
@@ -430,6 +441,7 @@ function ProjectLayoutScreen({
   active,
   project,
   pullRequestFormBadRequest,
+  searchForbidden,
 }: {
   active:
     | "board"
@@ -455,6 +467,7 @@ function ProjectLayoutScreen({
     | "webhooks";
   project: ProjectContainer;
   pullRequestFormBadRequest: boolean;
+  searchForbidden: boolean;
 }) {
   const { runtimeConfig } = Route.useRouteContext();
   const { ownerName, projectName } = Route.useParams();
@@ -509,26 +522,28 @@ function ProjectLayoutScreen({
       <ProjectHeader basePath={runtimeConfig.basePath} project={project} />
       <ProjectMenu
         active={
-          active === "watchers" || active === "search"
+          active === "watchers" || (active === "search" && !searchForbidden)
             ? undefined
-            : active === "newMilestone"
-              ? "milestone"
-              : active === "newPullRequest"
-                ? "pullRequest"
-                : active === "newFork"
+            : active === "search"
+              ? "home"
+              : active === "newMilestone"
+                ? "milestone"
+                : active === "newPullRequest"
                   ? "pullRequest"
-                  : active === "postform"
-                    ? "board"
-                    : active === "issueform"
-                      ? "issue"
-                      : active === "delete" ||
-                          active === "changeVcs" ||
-                          active === "labels" ||
-                          active === "members" ||
-                          active === "transfer" ||
-                          active === "webhooks"
-                        ? "setting"
-                        : active
+                  : active === "newFork"
+                    ? "pullRequest"
+                    : active === "postform"
+                      ? "board"
+                      : active === "issueform"
+                        ? "issue"
+                        : active === "delete" ||
+                            active === "changeVcs" ||
+                            active === "labels" ||
+                            active === "members" ||
+                            active === "transfer" ||
+                            active === "webhooks"
+                          ? "setting"
+                          : active
         }
         basePath={runtimeConfig.basePath}
         project={project}
