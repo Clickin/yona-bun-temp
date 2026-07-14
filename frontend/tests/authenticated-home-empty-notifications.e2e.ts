@@ -108,7 +108,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </table>
     </div>
     <div class="guide-toggle">
-      <button class="btn-transparent" id="toggleIntro" type="button"><i class="yobicon-resizev"></i></button>
+      <button id="toggleIntro" type="button"><i class="yobicon-resizev"></i></button>
     </div>
     <div class="page on-fold-intro">
       <div class="row-fluid content-container">

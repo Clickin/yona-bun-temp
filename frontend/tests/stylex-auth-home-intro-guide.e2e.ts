@@ -53,6 +53,8 @@ test("authenticated Home intro guide has bounded global-theme StyleX ownership",
     "authenticatedHomeIntroGuideToggleBorderTopColor",
     "authenticatedHomeIntroGuideToggleBorderTopWidth",
     "authenticatedHomeIntroGuideToggleRadius",
+    "authenticatedHomeIntroGuideToggleSurface",
+    "authenticatedHomeIntroGuideToggleOutline",
     "authenticatedHomeIntroGuideIconFontSize",
   ]) {
     expect(styles).toContain(`globalColors.${token}`);
@@ -64,6 +66,15 @@ test("authenticated Home intro guide has bounded global-theme StyleX ownership",
 
   expect(route).toContain('data-stylex-owner="authenticated-home-intro-guide"');
   expect(route).toContain('data-stylex-owner="authenticated-home-intro-guide-toggle"');
+  const toggleButtonOwner = route.indexOf('id="toggleIntro"');
+  const toggleButtonBlock = route.slice(
+    route.lastIndexOf("<button", toggleButtonOwner),
+    route.indexOf(">", toggleButtonOwner) + 1,
+  );
+  expect(toggleButtonBlock).toContain(
+    "{...stylex.props(authenticatedHomeIntroGuideStyles.toggleButton)}",
+  );
+  expect(toggleButtonBlock).not.toMatch(/\bbtn-transparent\b/u);
   expect(route).not.toContain('className={isIntroVisible ? "site-guide-outer"');
   expect(route).not.toContain("welcome-table");
   expect(route).not.toContain("borderless");
@@ -118,7 +129,7 @@ for (const viewport of [
     await expect(table).toHaveClass(/\btable\b/u);
     await expect(table).not.toHaveClass(/\bborderless\b/u);
     await expect(toggle).not.toHaveClass(/\bguide-toggle\b/u);
-    await expect(button).toHaveClass(/\bbtn-transparent\b/u);
+    await expect(button).not.toHaveClass(/\bbtn-transparent\b/u);
     await expect(guide.locator("h3 > span")).toHaveText("Yoram - 21세기 소프트웨어 개발 플랫폼");
     await expect(table.locator("tr")).toHaveCount(3);
     await expect(table.locator("td")).toHaveText([
@@ -162,12 +173,15 @@ for (const viewport of [
       const iconStyle = getComputedStyle(iconElement);
       return {
         button: {
+          backgroundColor: buttonStyle.backgroundColor,
           borderRadius: buttonStyle.borderRadius,
           borderRight: buttonStyle.borderRight,
           borderTop: buttonStyle.borderTop,
           box: box(buttonElement),
           color: buttonStyle.color,
           display: buttonStyle.display,
+          outlineStyle: buttonStyle.outlineStyle,
+          outlineWidth: buttonStyle.outlineWidth,
           padding: buttonStyle.padding,
         },
         cell: {
@@ -236,11 +250,13 @@ for (const viewport of [
     expect(evidence.toggle.box.width).toBe(evidence.guide.box.width);
     expect(evidence.toggle.box.height).toBeCloseTo(23.078125, 2);
     expect(evidence.button).toMatchObject({
+      backgroundColor: "rgba(0, 0, 0, 0)",
       borderRadius: "0px 0px 6px 6px",
       borderRight: "1px solid rgba(0, 0, 0, 0.1)",
       borderTop: "2px solid rgb(255, 255, 255)",
       color: "rgb(149, 165, 166)",
       display: "inline-block",
+      outlineStyle: "none",
       padding: "0px 25px",
     });
     expect(evidence.button.box.width).toBe(64);
@@ -301,7 +317,15 @@ test("authenticated Home intro StyleX paint is isolated from retired owner class
   const result = await page.locator(GUIDE).evaluate((guide) => {
     const table = guide.querySelector("table") as HTMLElement;
     const toggle = guide.nextElementSibling as HTMLElement;
+    const button = toggle.querySelector("button") as HTMLElement;
     const snapshot = () => ({
+      button: [
+        getComputedStyle(button).backgroundColor,
+        getComputedStyle(button).outlineStyle,
+        getComputedStyle(button).borderRight,
+        getComputedStyle(button).borderTop,
+        getComputedStyle(button).padding,
+      ],
       guide: [getComputedStyle(guide).display, getComputedStyle(guide).margin],
       table: [getComputedStyle(table).borderBottom, getComputedStyle(table).marginBottom],
       toggle: getComputedStyle(toggle).textAlign,
@@ -310,6 +334,7 @@ test("authenticated Home intro StyleX paint is isolated from retired owner class
     guide.classList.add("site-guide-outer");
     table.classList.add("welcome-table");
     toggle.classList.add("guide-toggle");
+    button.classList.add("btn-transparent");
     return { owned, withRetiredClasses: snapshot() };
   });
   expect(result.withRetiredClasses).toEqual(result.owned);

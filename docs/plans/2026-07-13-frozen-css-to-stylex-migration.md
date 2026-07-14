@@ -1154,6 +1154,20 @@ GNB/content canonicalizer drift after the pagination subtree matches, so it is n
 The next owner must be selected from the remaining active consumer inventory. This is not Wave 1
 completion.
 
+The sixty-eighth slice completes the authenticated HOME intro-guide toggle button. The
+existing owner already owns the guide-specific border, radius, color, padding, display, and icon
+size; this completion moves the remaining `btn-transparent` background and outline declarations
+to owner-specific canonical global theme variables and removes that presentation class only from
+`button#toggleIntro`. Generic `.btn-transparent` fallback remains unchanged for many independent
+real consumers, and the Yobicon glyph primitive remains required. The pre-change focused baseline
+passes 5/5 and actual RED is observed after strengthening the contract. Typecheck, Vitest 11/11,
+production build/StyleX verification, TS/TSX-only formatting, and diff checks pass on the
+implementation. Post-change focused Playwright passes 5/5, adjacent authenticated HOME page-wrap
+passes 4/4, and desktop/mobile screenshots were inspected with no visible drift. Chromium reports
+the inactive medium outline width as `3px`, while `outline-style: none` correctly produces no
+rendered outline. The broad authenticated HOME suite passes 27/40; its 13 failures remain unrelated
+pre-existing GNB/sidebar/notification canonicalizer drift and are not counted green for this slice.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

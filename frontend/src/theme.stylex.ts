@@ -300,6 +300,8 @@ export const globalColors = stylex.defineVars({
   authenticatedHomeIntroGuideToggleBorderTopColor: "#ffffff",
   authenticatedHomeIntroGuideToggleBorderTopWidth: "2px",
   authenticatedHomeIntroGuideToggleRadius: "0px 0px 6px 6px",
+  authenticatedHomeIntroGuideToggleSurface: "transparent",
+  authenticatedHomeIntroGuideToggleOutline: "none",
   authenticatedHomeIntroGuideIconFontSize: "12px",
   // Bootstrap 2.3.1 grid + _page.less/_responsive.less: authenticated index outer content grid
   authenticatedHomeContentPageRadius: "20px",

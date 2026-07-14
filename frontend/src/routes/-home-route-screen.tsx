@@ -403,7 +403,7 @@ function HomeScreen({
               data-stylex-owner="authenticated-home-intro-guide-toggle"
             >
               <button
-                className={`btn-transparent ${stylex.props(authenticatedHomeIntroGuideStyles.toggleButton).className}`}
+                {...stylex.props(authenticatedHomeIntroGuideStyles.toggleButton)}
                 id="toggleIntro"
                 type="button"
                 onClick={toggleIntro}
@@ -2271,6 +2271,7 @@ const authenticatedHomeIntroGuideStyles = stylex.create({
     textAlign: globalColors.authenticatedHomeIntroGuideToggleTextAlign,
   },
   toggleButton: {
+    backgroundColor: globalColors.authenticatedHomeIntroGuideToggleSurface,
     borderColor: globalColors.authenticatedHomeIntroGuideToggleBorderColor,
     borderRadius: globalColors.authenticatedHomeIntroGuideToggleRadius,
     borderStyle: globalColors.authenticatedHomeIntroGuideToggleBorderStyle,
@@ -2279,6 +2280,7 @@ const authenticatedHomeIntroGuideStyles = stylex.create({
     borderWidth: globalColors.authenticatedHomeIntroGuideToggleBorderWidth,
     color: globalColors.authenticatedHomeIntroGuideToggleText,
     display: globalColors.authenticatedHomeIntroGuideToggleDisplay,
+    outline: globalColors.authenticatedHomeIntroGuideToggleOutline,
     padding: globalColors.authenticatedHomeIntroGuideTogglePadding,
   },
   icon: {
