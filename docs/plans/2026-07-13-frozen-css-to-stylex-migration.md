@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-six shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-seven shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -980,6 +980,21 @@ matrix passes 16/16 at 1366, 800, and 390px. Computed geometry, clearfix pseudos
 fallback ancestry mutation, class isolation, typecheck, production build/StyleX verification,
 manifest/app.css hash agreement, unchanged generated fallback hash, and diff gates pass. This is
 not Wave 1 completion.
+
+The fifty-seventh verified slice migrates the authenticated HOME series-tab row rendered from
+`common/mySeriesMenuTab.scala.html`. Colocated StyleX owns the list reset and bottom border,
+clearfix pseudos, four floated items, 8px/30px links, active/inactive/hover/focus paint, and the
+max-720 5px inline padding through canonical global theme variables. Runtime `nav`, `nav-tabs`, and
+`active` presentation tokens are removed, and the existing fourth-item relative positioning moves
+from inline style into the same React-owned boundary. Exact copy/order/hrefs and the direct
+`/notifications` action behavior remain unchanged. TanStack's hardcoded active attributes are
+prevented by a URL-neutral undefined search mismatch; focused evidence pins the exact
+`/yona/notifications` href with no query and no generated active marker. Generic tab fallback is
+unchanged for 56 remaining route TSX consumers. Focused RED 1/1 becomes GREEN 7/7, and the
+series-tabs/content-grid/page-wrap/intro matrix passes 23/23 at 1366, 800, and 390px. Computed
+geometry, active/inactive interactions, screenshots, class isolation, typecheck, production
+build/StyleX verification, unchanged app.css/manifest and generated fallback hashes, and diff
+gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

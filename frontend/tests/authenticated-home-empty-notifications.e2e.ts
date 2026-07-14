@@ -850,9 +850,10 @@ test("authenticated home empty notifications matches legacy index notifications 
 
   await page.setViewportSize({ width: 1100, height: 720 });
   const homeStreamTabs = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs',
+    '[data-stylex-owner="authenticated-home-main-stream"] > [data-stylex-owner="authenticated-home-series-tabs"]',
   );
-  await expect(homeStreamTabs.locator("> li").nth(0)).toHaveClass("active");
+  await expect(homeStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
+  await expect(homeStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
   await expect(homeStreamTabs.locator("> li > a")).toHaveText([
     "Notification",
     "My Issues",
@@ -872,7 +873,10 @@ test("authenticated home empty notifications matches legacy index notifications 
   );
   await expect(homeStreamTabs.locator("> li > a.active")).toHaveCount(0);
   for (const tabLink of await homeStreamTabs.locator("> li > a").all()) {
-    await expect(tabLink).not.toHaveAttribute("class");
+    await expect(tabLink).toHaveAttribute(
+      "data-stylex-owner",
+      "authenticated-home-series-tab-link",
+    );
     await expect(tabLink).not.toHaveAttribute("title");
     await expect(tabLink).not.toHaveAttribute("aria-current");
     await expect(tabLink).not.toHaveAttribute("data-status");
@@ -2056,12 +2060,12 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(defaultLandingButton).not.toHaveAttribute("data-toggle");
   await expect(defaultLandingButton).not.toHaveAttribute("data-content");
   await expect(
-    page.locator('[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover'),
+    page.locator('[data-stylex-owner="authenticated-home-series-tabs"] .popover'),
   ).toHaveCount(0);
 
   await defaultLandingButton.hover();
   const defaultLandingPopover = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover.bottom',
+    '[data-stylex-owner="authenticated-home-series-tabs"] .popover.bottom',
   );
   await expect(defaultLandingPopover).toBeVisible();
   await expect(defaultLandingPopover).toHaveClass("popover bottom");
@@ -2072,7 +2076,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   const popoverBoxes = await page.evaluate(() => {
     const button = document.querySelector<HTMLElement>("#setDefaultLoginPage");
     const popover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover.bottom',
+      '[data-stylex-owner="authenticated-home-series-tabs"] .popover.bottom',
     );
     if (!button || !popover) return null;
     const buttonBox = button.getBoundingClientRect();
@@ -2110,9 +2114,10 @@ test("direct notifications route matches legacy Application.notifications empty 
   });
 
   const mainStreamTabs = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs',
+    '[data-stylex-owner="authenticated-home-main-stream"] > [data-stylex-owner="authenticated-home-series-tabs"]',
   );
-  await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass("active");
+  await expect(mainStreamTabs).not.toHaveClass(/(?:^|\s)(?:nav|nav-tabs)(?:\s|$)/u);
+  await expect(mainStreamTabs.locator("> li").nth(0)).not.toHaveClass(/active/u);
   await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/active/u);
   await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/active/u);
   await expect(mainStreamTabs.locator("> li > a")).toHaveText([
@@ -2134,7 +2139,10 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
   await expect(mainStreamTabs.locator("> li > a.active")).toHaveCount(0);
   for (const tabLink of await mainStreamTabs.locator("> li > a").all()) {
-    await expect(tabLink).not.toHaveAttribute("class");
+    await expect(tabLink).toHaveAttribute(
+      "data-stylex-owner",
+      "authenticated-home-series-tab-link",
+    );
     await expect(tabLink).not.toHaveAttribute("title");
     await expect(tabLink).not.toHaveAttribute("aria-current");
     await expect(tabLink).not.toHaveAttribute("data-status");
@@ -2192,7 +2200,7 @@ test("direct notifications route matches legacy Application.notifications empty 
   await mockWorkspaceFiles(page);
   await page.goto(`${basePath}/notifications`);
   const myFilesTab = page.locator(
-    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs a:has-text("My Files")',
+    '[data-stylex-owner="authenticated-home-series-tabs"] a:has-text("My Files")',
   );
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -2704,7 +2712,9 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
     const guideToggleButton = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
     );
-    const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
+    const navLink = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-series-tabs"] > li > a',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -3139,7 +3149,9 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
     const guideToggleButton = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
     );
-    const navLink = document.querySelector<HTMLElement>(".nav-tabs > li > a");
+    const navLink = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-series-tabs"] > li > a',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -3997,14 +4009,6 @@ async function canonicalizeScreenRoots(page: Page) {
                   ))
               ),
           )
-          .filter(
-            (value) =>
-              !(
-                value === "active" &&
-                current.tagName.toLowerCase() === "a" &&
-                current.closest(".main-stream > .nav-tabs")
-              ),
-          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -4174,6 +4178,16 @@ async function canonicalizeHtml(page: Page, html: string) {
           name === "class" &&
           current.matches("div.span8.main-stream") &&
           current.querySelector(":scope > .nav-tabs + .activity-streams") !== null;
+        const isAuthenticatedHomeSeriesTabs =
+          name === "class" &&
+          current.matches("ul.nav.nav-tabs") &&
+          current.parentElement?.matches("div.main-stream") === true &&
+          current.nextElementSibling?.matches(".activity-streams") === true;
+        const isAuthenticatedHomeActiveSeriesTab =
+          name === "class" &&
+          current.matches("li.active:first-child") &&
+          current.parentElement?.parentElement?.matches("div.main-stream") === true &&
+          current.parentElement?.nextElementSibling?.matches(".activity-streams") === true;
         const isAuthenticatedHomeIndexRail =
           name === "class" &&
           current.matches("div.span4.index-menu.right-menu.span-hard-wrap") &&
@@ -4194,33 +4208,40 @@ async function canonicalizeHtml(page: Page, html: string) {
                       ? ["row-fluid"]
                       : isAuthenticatedHomeMainStream
                         ? ["span8"]
-                        : isAuthenticatedHomeIndexRail
-                          ? ["span4", "index-menu", "right-menu", "span-hard-wrap"]
-                          : isSiteLayoutFooterOuter
-                            ? ["page-footer-outer"]
-                            : isSiteLayoutFooterInner
-                              ? ["page-footer"]
-                              : isSiteLayoutFooterProvider
-                                ? ["provider"]
-                                : isSiteLayoutHeader && current.classList.contains("project-header")
-                                  ? ["project-header"]
-                                  : isSiteLayoutHeader
-                                    ? ["gnb-outer"]
-                                    : name === "class" &&
-                                        current.classList.contains("gnb-inner") &&
-                                        current.matches("header.gnb-outer > div.gnb-inner") &&
-                                        current.querySelector('form[name="gnb-search-form"]') !==
-                                          null
-                                      ? ["gnb-inner"]
-                                      : name === "class" &&
-                                          current.classList.contains("gnb-nav") &&
-                                          current.matches(
-                                            "header.gnb-outer > .gnb-inner > ul.gnb-nav",
-                                          ) &&
-                                          current.querySelector('form[name="gnb-search-form"]') !==
-                                            null
-                                        ? ["gnb-nav"]
-                                        : [];
+                        : isAuthenticatedHomeSeriesTabs
+                          ? ["nav", "nav-tabs"]
+                          : isAuthenticatedHomeActiveSeriesTab
+                            ? ["active"]
+                            : isAuthenticatedHomeIndexRail
+                              ? ["span4", "index-menu", "right-menu", "span-hard-wrap"]
+                              : isSiteLayoutFooterOuter
+                                ? ["page-footer-outer"]
+                                : isSiteLayoutFooterInner
+                                  ? ["page-footer"]
+                                  : isSiteLayoutFooterProvider
+                                    ? ["provider"]
+                                    : isSiteLayoutHeader &&
+                                        current.classList.contains("project-header")
+                                      ? ["project-header"]
+                                      : isSiteLayoutHeader
+                                        ? ["gnb-outer"]
+                                        : name === "class" &&
+                                            current.classList.contains("gnb-inner") &&
+                                            current.matches("header.gnb-outer > div.gnb-inner") &&
+                                            current.querySelector(
+                                              'form[name="gnb-search-form"]',
+                                            ) !== null
+                                          ? ["gnb-inner"]
+                                          : name === "class" &&
+                                              current.classList.contains("gnb-nav") &&
+                                              current.matches(
+                                                "header.gnb-outer > .gnb-inner > ul.gnb-nav",
+                                              ) &&
+                                              current.querySelector(
+                                                'form[name="gnb-search-form"]',
+                                              ) !== null
+                                            ? ["gnb-nav"]
+                                            : [];
         if (retiredTokens.length > 0) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(
@@ -4260,14 +4281,6 @@ async function canonicalizeHtml(page: Page, html: string) {
                     current.closest(
                       '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
                     ))
-                ),
-            )
-            .filter(
-              (value) =>
-                !(
-                  value === "active" &&
-                  current.tagName.toLowerCase() === "a" &&
-                  current.closest(".main-stream > .nav-tabs")
                 ),
             )
             .join(" ");

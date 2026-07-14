@@ -427,27 +427,61 @@ function HomeScreen({
                   className={`main-stream ${stylex.props(authenticatedHomeContentGridStyles.main).className}`}
                   data-stylex-owner="authenticated-home-main-stream"
                 >
-                  <ul className="nav nav-tabs">
-                    <li className="active">
-                      <Link {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS} to="/notifications">
+                  <ul
+                    {...stylex.props(authenticatedHomeSeriesTabStyles.list)}
+                    data-stylex-owner="authenticated-home-series-tabs"
+                  >
+                    <li
+                      {...stylex.props(authenticatedHomeSeriesTabStyles.item)}
+                      data-stylex-owner="authenticated-home-series-tab-item"
+                    >
+                      <Link
+                        {...stylex.props(
+                          authenticatedHomeSeriesTabStyles.link,
+                          authenticatedHomeSeriesTabStyles.activeLink,
+                        )}
+                        {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                        data-stylex-owner="authenticated-home-series-tab-link"
+                        search={{ legacyTab: undefined }}
+                        to="/notifications"
+                      >
                         {t("notification")}
                       </Link>
                     </li>
-                    <li>
+                    <li
+                      {...stylex.props(authenticatedHomeSeriesTabStyles.item)}
+                      data-stylex-owner="authenticated-home-series-tab-item"
+                    >
                       <Link
+                        {...stylex.props(authenticatedHomeSeriesTabStyles.link)}
                         {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                        data-stylex-owner="authenticated-home-series-tab-link"
                         to="/user/issues"
                         search={LEGACY_USER_ISSUES_LINK_SEARCH}
                       >
                         {t("issue.myIssue")}
                       </Link>
                     </li>
-                    <li>
-                      <Link {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS} to="/user/files">
+                    <li
+                      {...stylex.props(authenticatedHomeSeriesTabStyles.item)}
+                      data-stylex-owner="authenticated-home-series-tab-item"
+                    >
+                      <Link
+                        {...stylex.props(authenticatedHomeSeriesTabStyles.link)}
+                        {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}
+                        data-stylex-owner="authenticated-home-series-tab-link"
+                        to="/user/files"
+                      >
                         {t("user.files")}
                       </Link>
                     </li>
-                    <li style={{ position: "relative" }}>
+                    <li
+                      {...stylex.props(
+                        authenticatedHomeSeriesTabStyles.item,
+                        authenticatedHomeSeriesTabStyles.actionItem,
+                      )}
+                      data-stylex-owner="authenticated-home-series-tab-action-item"
+                    >
                       {shouldShowDefaultLandingButton ? (
                         <>
                           <button
@@ -1879,6 +1913,105 @@ const authenticatedHomeContentGridStyles = stylex.create({
       [globalBreakpoints.mobile]: globalColors.authenticatedHomeContentRailMobileMinWidth,
     },
     width: globalColors.authenticatedHomeContentRailWidth,
+  },
+});
+
+const authenticatedHomeSeriesTabStyles = stylex.create({
+  list: {
+    borderBottomColor: globalColors.authenticatedHomeSeriesTabsBorderColor,
+    borderBottomStyle: globalColors.authenticatedHomeSeriesTabsBorderStyle,
+    borderBottomWidth: globalColors.authenticatedHomeSeriesTabsBorderWidth,
+    listStyle: globalColors.authenticatedHomeSeriesTabsListStyle,
+    marginBottom: globalColors.authenticatedHomeSeriesTabsMarginBottom,
+    marginLeft: globalColors.authenticatedHomeSeriesTabsZero,
+    padding: globalColors.authenticatedHomeSeriesTabsZero,
+    "::before": {
+      content: globalColors.authenticatedHomeSeriesTabsPseudoContent,
+      display: globalColors.authenticatedHomeSeriesTabsPseudoDisplay,
+      lineHeight: globalColors.authenticatedHomeSeriesTabsZero,
+    },
+    "::after": {
+      clear: globalColors.authenticatedHomeSeriesTabsPseudoClear,
+      content: globalColors.authenticatedHomeSeriesTabsPseudoContent,
+      display: globalColors.authenticatedHomeSeriesTabsPseudoDisplay,
+      lineHeight: globalColors.authenticatedHomeSeriesTabsZero,
+    },
+  },
+  item: {
+    float: globalColors.authenticatedHomeSeriesTabItemFloat,
+    marginBottom: globalColors.authenticatedHomeSeriesTabItemMarginBottom,
+  },
+  actionItem: {
+    position: globalColors.authenticatedHomeSeriesTabActionPosition,
+  },
+  link: {
+    backgroundColor: {
+      default: null,
+      ":hover": globalColors.authenticatedHomeSeriesTabLinkHoverSurface,
+      ":focus": globalColors.authenticatedHomeSeriesTabLinkFocusSurface,
+    },
+    borderBlockEndColor: {
+      default: globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+      ":hover": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderBlockEnd,
+      ":focus": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderBlockEnd,
+    },
+    borderBlockStartColor: {
+      default: globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+      ":hover": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderBlockStart,
+      ":focus": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderBlockStart,
+    },
+    borderInlineColor: {
+      default: globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+      ":hover": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderInline,
+      ":focus": globalColors.authenticatedHomeSeriesTabLinkInteractionBorderInline,
+    },
+    borderRadius: globalColors.authenticatedHomeSeriesTabLinkRadius,
+    borderStyle: globalColors.authenticatedHomeSeriesTabsBorderStyle,
+    borderWidth: globalColors.authenticatedHomeSeriesTabsBorderWidth,
+    color: globalColors.authenticatedHomeSeriesTabLinkText,
+    cursor: globalColors.authenticatedHomeSeriesTabLinkCursor,
+    display: globalColors.authenticatedHomeSeriesTabLinkDisplay,
+    fontWeight: globalColors.authenticatedHomeSeriesTabLinkFontWeight,
+    lineHeight: globalColors.authenticatedHomeSeriesTabLinkLineHeight,
+    marginRight: globalColors.authenticatedHomeSeriesTabLinkMarginRight,
+    paddingBlock: globalColors.authenticatedHomeSeriesTabLinkPaddingBlock,
+    paddingInline: {
+      default: globalColors.authenticatedHomeSeriesTabLinkPaddingInline,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeSeriesTabLinkMobilePaddingInline,
+    },
+    textDecoration: {
+      default: null,
+      ":hover": globalColors.authenticatedHomeSeriesTabLinkTextDecoration,
+      ":focus": globalColors.authenticatedHomeSeriesTabLinkTextDecoration,
+    },
+  },
+  activeLink: {
+    backgroundColor: {
+      default: globalColors.authenticatedHomeSeriesTabActiveSurface,
+      ":hover": globalColors.authenticatedHomeSeriesTabActiveSurface,
+      ":focus": globalColors.authenticatedHomeSeriesTabActiveSurface,
+    },
+    borderBlockEndColor: {
+      default: globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+      ":hover": globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+      ":focus": globalColors.authenticatedHomeSeriesTabsTransparentBorder,
+    },
+    borderBlockStartColor: {
+      default: globalColors.authenticatedHomeSeriesTabsBorderColor,
+      ":hover": globalColors.authenticatedHomeSeriesTabsBorderColor,
+      ":focus": globalColors.authenticatedHomeSeriesTabsBorderColor,
+    },
+    borderInlineColor: {
+      default: globalColors.authenticatedHomeSeriesTabsBorderColor,
+      ":hover": globalColors.authenticatedHomeSeriesTabsBorderColor,
+      ":focus": globalColors.authenticatedHomeSeriesTabsBorderColor,
+    },
+    color: {
+      default: globalColors.authenticatedHomeSeriesTabActiveText,
+      ":hover": globalColors.authenticatedHomeSeriesTabActiveText,
+      ":focus": globalColors.authenticatedHomeSeriesTabActiveText,
+    },
+    cursor: globalColors.authenticatedHomeSeriesTabActiveCursor,
   },
 });
 

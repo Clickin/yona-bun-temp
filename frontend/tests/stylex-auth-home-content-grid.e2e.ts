@@ -118,7 +118,9 @@ for (const viewport of [
     ] as const) {
       await expect(locator).not.toHaveClass(retired);
     }
-    await expect(main.locator(":scope > .nav.nav-tabs")).toHaveCount(1);
+    await expect(
+      main.locator(':scope > [data-stylex-owner="authenticated-home-series-tabs"]'),
+    ).toHaveCount(1);
     await expect(main.locator(":scope > .activity-streams.notification-wrap")).toHaveCount(1);
     await expect(grid.locator(`:scope > ${MAIN} + ${RAIL}`)).toHaveCount(1);
 
@@ -126,7 +128,9 @@ for (const viewport of [
       const pageElement = gridElement.parentElement as HTMLElement;
       const mainElement = gridElement.firstElementChild as HTMLElement;
       const railElement = gridElement.lastElementChild as HTMLElement;
-      const navElement = mainElement.querySelector(".nav-tabs") as HTMLElement;
+      const navElement = mainElement.querySelector(
+        '[data-stylex-owner="authenticated-home-series-tabs"]',
+      ) as HTMLElement;
       const activityElement = mainElement.querySelector(".activity-streams") as HTMLElement;
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
