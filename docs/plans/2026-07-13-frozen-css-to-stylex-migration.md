@@ -1385,6 +1385,12 @@ The ninety-fourth slice migrates the errors-present title strip of `/sites/diagn
 separate error-state owner; no-error title, error pre, and the shared site-admin shell remain
 separate owners or fallback. This is not Wave 1 completion.
 
+The ninety-fifth slice migrates the update-available download action of `/sites/update` from
+`site/update.scala.html`, `_yobiUI.less`, `_mixins.less`, and `_variables.less`. StyleX owns the
+complete former `ybtn ybtn-success` surface through global variables and removes those fallback
+classes only from this external Link; other update branches and the shared shell remain fallback.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

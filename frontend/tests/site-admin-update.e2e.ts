@@ -283,16 +283,20 @@ test("site admin update renders the legacy available-version branch", async ({ p
   const updateSidebarLink = page.locator(".site-setting-nav li.active a");
   await expect(updateSidebarLink).toHaveText("Software Update1");
   await expect(updateSidebarLink.locator(".notification-badge")).toHaveText("1");
-  await expect(page.locator("a.ybtn.ybtn-success")).toHaveText("Download");
-  await expect(page.locator("a.ybtn.ybtn-success")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveText(
+    "Download",
+  );
+  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveAttribute(
     "href",
     "https://example.test/yona-1.1.0",
   );
-  await expect(page.locator("a.ybtn.ybtn-success")).not.toHaveAttribute("target", /.*/);
+  await expect(
+    page.locator('[data-stylex-owner="site-update-download-action"]'),
+  ).not.toHaveAttribute("target", /.*/);
   await expect
     .poll(async () => downloadLinkDom(page))
     .toEqual({
-      className: "ybtn ybtn-success",
+      className: expect.stringMatching(/^(?!.*\bybtn\b).*$/u),
       href: "https://example.test/yona-1.1.0",
       tagName: "A",
       target: null,
@@ -301,8 +305,8 @@ test("site admin update renders the legacy available-version branch", async ({ p
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).not.toContain("<a href={response.releaseUrl");
   expect(routeSource).toContain("const releaseUrl = response.releaseUrl?.trim()");
-  expect(routeSource).not.toContain("href={releaseUrl}");
-  expect(routeSource).toContain("to={releaseUrl}");
+  expect(routeSource).toContain("href={releaseUrl}");
+  expect(routeSource).not.toContain("to={releaseUrl}");
   expect(routeSource).not.toContain("externalReleaseUrl");
   expect(routeSource).not.toContain("as never");
   expect(routeSource).not.toContain("reloadDocument");
@@ -340,7 +344,7 @@ test("site admin update omits the download link when no Yoram release URL exists
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
-  await expect(page.locator("a.ybtn.ybtn-success")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveCount(0);
   await expect(page.getByText("Download", { exact: true })).toHaveCount(0);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).toContain("const releaseUrl = response.releaseUrl?.trim()");
@@ -431,7 +435,7 @@ async function updateAvailableMetrics(page: Page) {
 }
 
 async function downloadLinkDom(page: Page) {
-  return page.locator(".site-setting-wrap a.ybtn.ybtn-success").evaluate((link) => ({
+  return page.locator('[data-stylex-owner="site-update-download-action"]').evaluate((link) => ({
     className: link.getAttribute("class"),
     href: link.getAttribute("href"),
     tagName: link.tagName,

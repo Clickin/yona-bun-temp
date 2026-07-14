@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { siteUpdateQueryOptions, type SiteUpdateResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 const legacySiteSidebarLinkProps = {
@@ -11,6 +13,42 @@ const legacySiteSidebarLinkProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
+const styles = stylex.create({
+  downloadAction: {
+    backgroundColor: {
+      default: globalColors.siteUpdateDownloadActionSurface,
+      ":hover": globalColors.siteUpdateDownloadActionInteractiveSurface,
+      ":focus": globalColors.siteUpdateDownloadActionInteractiveSurface,
+      ":active": globalColors.siteUpdateDownloadActionInteractiveSurface,
+    },
+    borderColor: globalColors.siteUpdateDownloadActionBorderColor,
+    borderRadius: globalColors.siteUpdateDownloadActionBorderRadius,
+    borderStyle: globalColors.siteUpdateDownloadActionBorderStyle,
+    borderWidth: globalColors.siteUpdateDownloadActionBorderWidth,
+    boxShadow: globalColors.siteUpdateDownloadActionBoxShadow,
+    color: globalColors.siteUpdateDownloadActionText,
+    cursor: globalColors.siteUpdateDownloadActionCursor,
+    display: globalColors.siteUpdateDownloadActionDisplay,
+    fontSize: globalColors.siteUpdateDownloadActionFontSize,
+    lineHeight: globalColors.siteUpdateDownloadActionLineHeight,
+    marginBottom: globalColors.siteUpdateDownloadActionMarginBottom,
+    marginLeft: globalColors.siteUpdateDownloadActionMarginLeft,
+    outline: globalColors.siteUpdateDownloadActionOutline,
+    padding: globalColors.siteUpdateDownloadActionPadding,
+    position: globalColors.siteUpdateDownloadActionPosition,
+    textAlign: globalColors.siteUpdateDownloadActionTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteUpdateDownloadActionInteractiveTextDecoration,
+      ":focus": globalColors.siteUpdateDownloadActionInteractiveTextDecoration,
+      ":active": globalColors.siteUpdateDownloadActionInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteUpdateDownloadActionTextShadow,
+    transition: globalColors.siteUpdateDownloadActionTransition,
+    verticalAlign: globalColors.siteUpdateDownloadActionVerticalAlign,
+    whiteSpace: globalColors.siteUpdateDownloadActionWhiteSpace,
+    zIndex: globalColors.siteUpdateDownloadActionZIndex,
+  },
+});
 
 export const Route = createFileRoute("/sites/update")({
   component: SiteUpdateRoute,
@@ -127,7 +165,12 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
           {releaseUrl ? (
             <>
               {" "}
-              <Link to={releaseUrl} className="ybtn ybtn-success">
+              <Link
+                href={releaseUrl}
+                to="/"
+                {...stylex.props(styles.downloadAction)}
+                data-stylex-owner="site-update-download-action"
+              >
                 {t("site.update.download")}
               </Link>
             </>
