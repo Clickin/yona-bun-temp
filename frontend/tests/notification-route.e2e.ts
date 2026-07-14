@@ -82,10 +82,7 @@ test("legacy singular notification browser route renders the raw notification fr
     ),
   );
   expect(await canonicalizeSelector(page, "#notification-more")).toEqual(
-    await canonicalizeHtml(
-      page,
-      '<button id="notification-more" class="ybtn" type="button">More</button>',
-    ),
+    await canonicalizeHtml(page, '<button id="notification-more" type="button">More</button>'),
   );
 
   const metrics = await readFragmentMetrics(page);

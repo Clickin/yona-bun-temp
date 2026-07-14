@@ -2602,7 +2602,7 @@ test("direct notifications route appends legacy notification-more rows", async (
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
         `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
-        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn">More</button></li>`,
+        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button">More</button></li>`,
       ).replaceAll("__BASE_PATH__", basePath),
     ),
   );
@@ -4031,7 +4031,8 @@ async function canonicalizeScreenRoots(page: Page) {
           current.matches('[data-stylex-owner="authenticated-home-page-wrap"]') ||
           current.matches('[data-stylex-owner="authenticated-home-intro-guide"]') ||
           current.matches('[data-stylex-owner="authenticated-home-intro-guide-cta"]') ||
-          current.matches('[data-stylex-owner="authenticated-home-intro-guide-toggle"]'))
+          current.matches('[data-stylex-owner="authenticated-home-intro-guide-toggle"]') ||
+          current.matches('[data-stylex-owner="authenticated-home-notification-pagination"]'))
       ) {
         return "";
       }

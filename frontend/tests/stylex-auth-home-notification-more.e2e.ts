@@ -27,20 +27,53 @@ test("authenticated Home notification pagination has bounded global-theme StyleX
     "authenticatedHomeNotificationPaginationMarginTop",
     "authenticatedHomeNotificationPaginationWidth",
     "authenticatedHomeNotificationPaginationBoxSizing",
+    "authenticatedHomeNotificationPaginationSurface",
+    "authenticatedHomeNotificationPaginationInteractionSurface",
+    "authenticatedHomeNotificationPaginationText",
+    "authenticatedHomeNotificationPaginationInteractionText",
+    "authenticatedHomeNotificationPaginationTextShadow",
+    "authenticatedHomeNotificationPaginationBorderRadius",
+    "authenticatedHomeNotificationPaginationDisplay",
+    "authenticatedHomeNotificationPaginationPadding",
+    "authenticatedHomeNotificationPaginationVerticalAlign",
+    "authenticatedHomeNotificationPaginationCursor",
+    "authenticatedHomeNotificationPaginationLineHeight",
+    "authenticatedHomeNotificationPaginationFontSize",
+    "authenticatedHomeNotificationPaginationTransition",
+    "authenticatedHomeNotificationPaginationOutline",
+    "authenticatedHomeNotificationPaginationPosition",
+    "authenticatedHomeNotificationPaginationZero",
+    "authenticatedHomeNotificationPaginationBorderColor",
+    "authenticatedHomeNotificationPaginationInteractionBorderColor",
+    "authenticatedHomeNotificationPaginationBorderStyle",
+    "authenticatedHomeNotificationPaginationBorderWidth",
+    "authenticatedHomeNotificationPaginationBoxShadow",
+    "authenticatedHomeNotificationPaginationZIndex",
+    "authenticatedHomeNotificationPaginationTextAlign",
+    "authenticatedHomeNotificationPaginationInteractiveTextDecoration",
+    "authenticatedHomeNotificationPaginationWhiteSpace",
   ]) {
     expect(styles).toContain(`globalColors.${token}`);
     expect(theme).toContain(`${token}:`);
   }
   expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%)\b/iu);
   expect(styles).not.toMatch(/:\s*"content-box"/u);
-  expect(
-    route.match(/data-stylex-owner="authenticated-home-notification-pagination"/gu),
-  ).toHaveLength(2);
-  expect(
-    route.match(
-      /className=\{`ybtn \$\{stylex\.props\(authenticatedHomeNotificationPaginationStyles\.button\)\.className\}`\}/gu,
-    ),
-  ).toHaveLength(2);
+  const paginationOwners = [
+    ...route.matchAll(/data-stylex-owner="authenticated-home-notification-pagination"/gu),
+  ];
+  expect(paginationOwners).toHaveLength(2);
+  const paginationButtonBlocks = paginationOwners.map(({ index }) =>
+    route.slice(route.lastIndexOf("<button", index ?? -1), route.indexOf(">", index ?? -1) + 1),
+  );
+  for (const buttonBlock of paginationButtonBlocks) {
+    expect(buttonBlock).toContain(
+      "{...stylex.props(authenticatedHomeNotificationPaginationStyles.button)}",
+    );
+    expect(buttonBlock).not.toMatch(/\bybtn\b/u);
+  }
+  expect(route).not.toContain(
+    "className={`ybtn ${stylex.props(authenticatedHomeNotificationPaginationStyles.button).className}`}",
+  );
   expect(route).not.toContain('style={{ boxSizing: "content-box" }}');
   expect(pageLess).toContain("#notification-more {\n    margin-top: 20px;\n    width: 95%;\n}");
   expect(partial).toContain('id="notification-more" class="ybtn">More</a>');
@@ -59,7 +92,7 @@ for (const routePath of ["/", "/notifications"] as const) {
     await expect(pagination).toHaveText("More");
     await expect(pagination).toHaveAttribute("id", "notification-more");
     await expect(pagination).toHaveAttribute("type", "button");
-    await expect(pagination).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+    await expect(pagination).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
     await expect(pagination).not.toHaveAttribute("style");
     await expect(pagination.locator("xpath=parent::li")).toHaveCount(1);
     await expect(page.locator("a#notification-more")).toHaveCount(0);
@@ -71,16 +104,42 @@ for (const routePath of ["/", "/notifications"] as const) {
       await expect(pagination).toHaveCSS("display", "inline-block");
       await expect(pagination).toHaveCSS("font-size", "14px");
       await expect(pagination).toHaveCSS("line-height", "20px");
+      await expect(pagination).toHaveCSS("text-align", "center");
+      await expect(pagination).toHaveCSS("white-space", "nowrap");
+      await expect(pagination).toHaveCSS("text-shadow", "none");
+      await expect(pagination).toHaveCSS("border-radius", "3px");
+      await expect(pagination).toHaveCSS("vertical-align", "middle");
+      await expect(pagination).toHaveCSS("cursor", "pointer");
+      await expect(pagination).toHaveCSS("transition-property", "all");
+      await expect(pagination).toHaveCSS("transition-duration", "0.3s");
+      await expect(pagination).toHaveCSS("transition-timing-function", "ease");
+      await expect(pagination).toHaveCSS("transition-delay", "0s");
+      await expect(pagination).toHaveCSS("outline-style", "none");
+      await expect(pagination).toHaveCSS("position", "relative");
+      await expect(pagination).toHaveCSS("margin", "20px 0px 0px");
+      await expect(pagination).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px");
+      await expect(pagination).toHaveCSS("z-index", "2");
+      await expect(pagination).toHaveCSS("text-decoration-line", "none");
       await expect(pagination).toHaveCSS("padding", "4px 12px");
       await pagination.hover();
       await expect(pagination).toHaveCSS("background-color", "rgb(241, 241, 241)");
       await expect(pagination).toHaveCSS("border", "1px solid rgba(0, 0, 0, 0.25)");
       await expect(pagination).toHaveCSS("color", "rgb(41, 41, 41)");
+      await expect(pagination).toHaveCSS("text-decoration-line", "none");
       await page.mouse.move(0, 0);
       await pagination.focus();
       await expect(pagination).toHaveCSS("background-color", "rgb(241, 241, 241)");
       await expect(pagination).toHaveCSS("border", "1px solid rgba(0, 0, 0, 0.25)");
       await expect(pagination).toHaveCSS("color", "rgb(41, 41, 41)");
+      await expect(pagination).toHaveCSS("text-decoration-line", "none");
+      await pagination.hover();
+      await page.mouse.down();
+      await expect(pagination).toHaveCSS("background-color", "rgb(241, 241, 241)");
+      await expect(pagination).toHaveCSS("border", "1px solid rgba(0, 0, 0, 0.25)");
+      await expect(pagination).toHaveCSS("color", "rgb(41, 41, 41)");
+      await expect(pagination).toHaveCSS("text-decoration-line", "none");
+      await page.mouse.move(0, 0);
+      await page.mouse.up();
     }
 
     const beforeUrl = page.url();

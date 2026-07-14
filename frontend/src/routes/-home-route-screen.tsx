@@ -304,7 +304,7 @@ function HomeScreen({
             <button
               id="notification-more"
               type="button"
-              className={`ybtn ${stylex.props(authenticatedHomeNotificationPaginationStyles.button).className}`}
+              {...stylex.props(authenticatedHomeNotificationPaginationStyles.button)}
               data-stylex-owner="authenticated-home-notification-pagination"
               onClick={() => {
                 void loadMoreNotifications();
@@ -553,7 +553,7 @@ function HomeScreen({
                         <button
                           id="notification-more"
                           type="button"
-                          className={`ybtn ${stylex.props(authenticatedHomeNotificationPaginationStyles.button).className}`}
+                          {...stylex.props(authenticatedHomeNotificationPaginationStyles.button)}
                           data-stylex-owner="authenticated-home-notification-pagination"
                           onClick={() => {
                             void loadMoreNotifications();
@@ -2600,9 +2600,53 @@ const authenticatedHomeNotificationStyles = stylex.create({
 
 const authenticatedHomeNotificationPaginationStyles = stylex.create({
   button: {
+    backgroundColor: {
+      default: globalColors.authenticatedHomeNotificationPaginationSurface,
+      ":hover": globalColors.authenticatedHomeNotificationPaginationInteractionSurface,
+      ":focus": globalColors.authenticatedHomeNotificationPaginationInteractionSurface,
+      ":active": globalColors.authenticatedHomeNotificationPaginationInteractionSurface,
+    },
+    borderColor: {
+      default: globalColors.authenticatedHomeNotificationPaginationBorderColor,
+      ":hover": globalColors.authenticatedHomeNotificationPaginationInteractionBorderColor,
+      ":focus": globalColors.authenticatedHomeNotificationPaginationInteractionBorderColor,
+      ":active": globalColors.authenticatedHomeNotificationPaginationInteractionBorderColor,
+    },
+    borderRadius: globalColors.authenticatedHomeNotificationPaginationBorderRadius,
+    borderStyle: globalColors.authenticatedHomeNotificationPaginationBorderStyle,
+    borderWidth: globalColors.authenticatedHomeNotificationPaginationBorderWidth,
+    boxShadow: globalColors.authenticatedHomeNotificationPaginationBoxShadow,
     boxSizing: globalColors.authenticatedHomeNotificationPaginationBoxSizing,
+    color: {
+      default: globalColors.authenticatedHomeNotificationPaginationText,
+      ":hover": globalColors.authenticatedHomeNotificationPaginationInteractionText,
+      ":focus": globalColors.authenticatedHomeNotificationPaginationInteractionText,
+      ":active": globalColors.authenticatedHomeNotificationPaginationInteractionText,
+    },
+    cursor: globalColors.authenticatedHomeNotificationPaginationCursor,
+    display: globalColors.authenticatedHomeNotificationPaginationDisplay,
+    fontSize: globalColors.authenticatedHomeNotificationPaginationFontSize,
+    lineHeight: globalColors.authenticatedHomeNotificationPaginationLineHeight,
+    marginBottom: globalColors.authenticatedHomeNotificationPaginationZero,
+    marginLeft: globalColors.authenticatedHomeNotificationPaginationZero,
+    marginRight: globalColors.authenticatedHomeNotificationPaginationZero,
     marginTop: globalColors.authenticatedHomeNotificationPaginationMarginTop,
+    outline: globalColors.authenticatedHomeNotificationPaginationOutline,
+    padding: globalColors.authenticatedHomeNotificationPaginationPadding,
+    position: globalColors.authenticatedHomeNotificationPaginationPosition,
+    textAlign: globalColors.authenticatedHomeNotificationPaginationTextAlign,
+    textDecoration: {
+      default: null,
+      ":hover": globalColors.authenticatedHomeNotificationPaginationInteractiveTextDecoration,
+      ":focus": globalColors.authenticatedHomeNotificationPaginationInteractiveTextDecoration,
+      ":active": globalColors.authenticatedHomeNotificationPaginationInteractiveTextDecoration,
+    },
+    textShadow: globalColors.authenticatedHomeNotificationPaginationTextShadow,
+    transition: globalColors.authenticatedHomeNotificationPaginationTransition,
+    verticalAlign: globalColors.authenticatedHomeNotificationPaginationVerticalAlign,
+    whiteSpace: globalColors.authenticatedHomeNotificationPaginationWhiteSpace,
     width: globalColors.authenticatedHomeNotificationPaginationWidth,
+    zIndex: globalColors.authenticatedHomeNotificationPaginationZIndex,
   },
 });
 

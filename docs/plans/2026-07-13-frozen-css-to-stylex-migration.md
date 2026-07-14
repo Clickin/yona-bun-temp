@@ -1137,6 +1137,23 @@ canonicalize equally, so it is not counted as green. The next safe owner is the 
 HOME notification-pagination buttons' remaining shared `ybtn` primitive. This is not Wave 1
 completion.
 
+The sixty-seventh verified slice completes the two authenticated HOME notification-pagination
+buttons shared by `/`, `/notifications`, and the singular `/notification` fragment. The existing
+StyleX owner keeps the legacy 20px top margin, 95% width, and content-box geometry and now owns the
+complete final `.ybtn` base plus hover/focus/active presentation through owner-specific canonical
+global theme variables. Both React buttons preserve `li > button#notification-more`, `More`, and
+TanStack Query append/removal behavior while dropping `ybtn`. Generic Yobi/app button fallback
+remains unchanged only for its many independent consumers. Immutable frozen `#notification-more`
+still matches the preserved behavior id in the lower layer, but the owner no longer depends on it
+and StyleX wins both declarations. Focused RED is observed and GREEN passes 6/6; the singular route
+passes 2/2 and adjacent content-box geometry passes 1/1. Typecheck, Vitest 11/11, production
+build/StyleX verification, unchanged app.css/manifest `7696a82f...65e`, unchanged frozen fallback
+`6417f445...16f`, TS/TSX-only formatting, desktop/mobile screenshot inspection, frozen hashes, and
+diff gates pass. The broad authenticated-HOME exact-DOM comparison still reaches unrelated existing
+GNB/content canonicalizer drift after the pagination subtree matches, so it is not counted green.
+The next owner must be selected from the remaining active consumer inventory. This is not Wave 1
+completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
