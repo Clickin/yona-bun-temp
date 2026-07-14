@@ -16,6 +16,20 @@ import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 const styles = stylex.create({
+  titleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  title: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
   sendAction: {
     backgroundColor: {
       default: globalColors.siteMailSendActionSurface,
@@ -237,8 +251,14 @@ function MailBody({
 
   return (
     <>
-      <div className="title_area">
-        <h2 className="pull-left">{t("site.sidebar.mailSend")}</h2>
+      <div
+        {...stylex.props(styles.titleArea)}
+        className="title_area"
+        data-stylex-owner="site-mail-title-strip"
+      >
+        <h2 {...stylex.props(styles.title)} className="pull-left">
+          {t("site.sidebar.mailSend")}
+        </h2>
       </div>
       {!response ? <p>{t("common.loading")}</p> : null}
       {response && (errorMessageBySearch || mutation.isError) ? (

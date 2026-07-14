@@ -1409,6 +1409,11 @@ The ninety-eighth slice migrates the default `/sites/mail` send action from `sit
 the mutation submit button; the form wrapper, fields, alerts, title/sidebar/shell, and other ybtn
 consumers remain fallback. This is not Wave 1 completion.
 
+The ninety-ninth slice migrates the common `/sites/mail` title strip from `site/mail.scala.html`
+and `_page.less`. StyleX applies the exact title-area and direct-heading declarations through
+existing global variables while retaining shared fallback classes; form, alerts, send action,
+sidebar/shell, and generic title areas remain fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

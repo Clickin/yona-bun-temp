@@ -738,6 +738,15 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
+        current.closest('[data-stylex-owner="site-mail-title-strip"]') !== null
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||
