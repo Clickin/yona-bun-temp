@@ -1362,6 +1362,13 @@ variables; the title strip, error message/list geometry, no-error state, and sha
 shell remain fallback. Focused desktop/mobile screenshots and the existing diagnostics regression
 retain legacy copy, order, and geometry. This is not Wave 1 completion.
 
+The ninety-first slice migrates the warning surface of `/sites/data` from
+`site/data.scala.html`, `_page.less`, and `_mixins.less`. StyleX owns only the exact inline-block
+warning wrapper and notice text color through global theme variables; title, export/import
+content, form controls, and the shared site-admin shell remain fallback. Focused desktop/mobile
+screenshots and the existing data-settings regression retain legacy copy, order, and geometry.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

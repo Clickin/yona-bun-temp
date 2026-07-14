@@ -144,6 +144,9 @@ export const globalColors = stylex.defineVars({
   siteDiagnosticErrorPreBorderWidth: "1px",
   siteDiagnosticErrorPreBorder: "rgba(0, 0, 0, 0.15)",
   siteDiagnosticErrorPreRadius: "4px",
+  // site/data.scala.html + _page.less `.cu-desc` / `.notice`
+  siteDataWarningDisplay: "inline-block",
+  siteDataWarningText: "#db3a67",
   // _page.less and _responsive.less: .gnb-outer base, project, and mobile states
   globalGnbOuterHeight: "40px",
   globalGnbOuterSurface: "#1b1b1b",

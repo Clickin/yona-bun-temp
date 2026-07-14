@@ -1,11 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { siteUpdateQueryOptions } from "../../api/site-admin";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const styles = stylex.create({
+  warningSurface: { display: globalColors.siteDataWarningDisplay },
+  warning: { color: globalColors.siteDataWarningText },
+});
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -59,15 +66,19 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <h2 className="pull-left">{t("site.sidebar.data")}</h2>
               </div>
 
-              <div className="cu-desc">
+              <div
+                {...stylex.props(styles.warningSurface)}
+                className="cu-desc"
+                data-stylex-owner="site-data-warning-surface"
+              >
                 <ul>
-                  <li className="notice">
+                  <li {...stylex.props(styles.warning)} className="notice">
                     <strong>{t("site.data.warning1")}</strong>
                   </li>
-                  <li className="notice">
+                  <li {...stylex.props(styles.warning)} className="notice">
                     <strong>{t("site.data.warning2")}</strong>
                   </li>
-                  <li className="notice">
+                  <li {...stylex.props(styles.warning)} className="notice">
                     <strong>{t("site.data.warning3")}</strong>
                   </li>
                 </ul>
