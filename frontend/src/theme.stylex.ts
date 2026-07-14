@@ -47,6 +47,18 @@ export const globalColors = stylex.defineVars({
   globalGnbBrandResponsivePseudoAfterMargin: "0px",
   // _page.less: .gnb-nav anchor color transition duration
   globalGnbBrandTransitionDuration: "0.15s",
+  // _page.less: .gnb-inner .gnb-nav layout and Bootstrap 2.3.1 list reset
+  globalGnbNavDisplay: "block",
+  globalGnbNavFloat: "left",
+  globalGnbNavPosition: "static",
+  globalGnbNavZero: "0px",
+  globalGnbNavMarginLeft: "15px",
+  globalGnbNavText: "#a2a2a2",
+  globalGnbNavFontSize: "14px",
+  globalGnbNavFontWeight: "400",
+  globalGnbNavLineHeight: "20px",
+  globalGnbNavListStyle: "none",
+  globalGnbNavBoxSizing: "content-box",
   // _page.less: .gnb-nav li float
   globalGnbNavItemFloat: "left",
   // _page.less: .gnb-nav li position

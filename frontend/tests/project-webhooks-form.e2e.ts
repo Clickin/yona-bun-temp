@@ -1093,8 +1093,8 @@ async function webhookFormMetrics(page: Page) {
 async function readLegacyGnbTexts(page: Page) {
   return page.evaluate(() =>
     [
-      ...Array.from(document.querySelectorAll(".gnb-nav > li > a")).map((node) =>
-        node.textContent?.replace(/\s+/gu, " ").trim(),
+      ...Array.from(document.querySelectorAll('[data-stylex-owner="global-gnb-nav"] > li > a')).map(
+        (node) => node.textContent?.replace(/\s+/gu, " ").trim(),
       ),
       ...Array.from(document.querySelectorAll("#gnb-search-scope-title")).map((node) =>
         node.textContent?.replace(/\s+/gu, " ").trim(),

@@ -864,6 +864,21 @@ generate the visible glyph across many owners. Fresh Edge/local HOME/project but
 geometry and paint agree without compensation. Actual RED 1/9 becomes submit GREEN 9/9 and final
 focused-plus-adjacent test bodies GREEN 43/43. This is not Wave 1 completion.
 
+The forty-ninth verified slice migrates the global `SiteLayoutShell` GNB navigation list and its
+first brand item while preserving the exact `ul > li` skeleton, conditional children, links,
+search behavior, and sibling order. Colocated StyleX owns the Bootstrap list reset, left float,
+15px leading margin, muted 14px/400/20px typography, content-box model, and first-item
+float/relative positioning through canonical global theme variables. The list drops its runtime
+`gnb-nav` class, while the generic frozen/React fallback remains for the four actual restricted,
+secret, reset-password-alias, and public-profile route consumers. Fresh legacy/local HOME and
+project desktop/mobile declarations and relative geometry agree; local organization coverage
+confirms the same owner boundary without overflow. Focused GREEN is 8/8 and the `/restricted`
+fallback regression is 8/8. Thirty-one E2E files move seventy positive runtime locators, while
+thirty-nine full-shell canonicalizers remove only the retired token at the exact SiteLayout nav
+boundary without changing legacy fixtures. Typecheck, foundation, production build/StyleX
+verification, unchanged generated fallback hash, format, lint, diff, and visual gates pass. This is
+not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

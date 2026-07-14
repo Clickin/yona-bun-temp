@@ -1043,12 +1043,11 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
     "class",
     "ybtn ybtn-primary",
   );
-  await expect(page.locator(".gnb-nav")).toContainText("List All");
-  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
-  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/admin/sample/search`,
-  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
+  ).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchScopeButtons = page.locator(
     "[data-stylex-owner=global-gnb-search-scope-item] > button",
@@ -1747,7 +1746,24 @@ async function canonicalizeScreenRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (
         attr.name === "class" &&
         attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
@@ -2038,7 +2054,25 @@ async function canonicalizeHtml(page: Page, html: string) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (
         attr.name === "class" &&
         attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')

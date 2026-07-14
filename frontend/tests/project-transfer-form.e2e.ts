@@ -64,7 +64,7 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
   await expect(page.locator(".gnb-outer")).toHaveClass(/project-header/);
   expect(
-    await page.locator(".gnb-nav > li > a").evaluateAll((anchors) =>
+    await page.locator('[data-stylex-owner="global-gnb-nav"] > li > a').evaluateAll((anchors) =>
       anchors.map((anchor) => ({
         href: anchor.getAttribute("href"),
         text: anchor.textContent?.trim() ?? "",

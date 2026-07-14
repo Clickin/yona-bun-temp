@@ -1237,7 +1237,26 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
 
-    function normalizeAttribute(current: Element, name: string) {
+    function normalizeAttribute(current: Element, name: string): string {
+      if (
+        name === "class" &&
+        current.classList.contains("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = current.getAttribute(name) ?? "";
+        current.setAttribute(
+          name,
+          originalValue
+            .split(/\s+/u)
+            .filter((token) => token !== "gnb-nav")
+            .join(" "),
+        );
+        try {
+          return normalizeAttribute(current, name);
+        } finally {
+          current.setAttribute(name, originalValue);
+        }
+      }
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/u)
@@ -1895,7 +1914,27 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
 
-      function normalizeAttribute(current: Element, name: string) {
+      function normalizeAttribute(current: Element, name: string): string {
+        if (
+          name === "class" &&
+          current.classList.contains("gnb-nav") &&
+          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.querySelector('form[name="gnb-search-form"]') !== null
+        ) {
+          const originalValue = current.getAttribute(name) ?? "";
+          current.setAttribute(
+            name,
+            originalValue
+              .split(/\s+/u)
+              .filter((token) => token !== "gnb-nav")
+              .join(" "),
+          );
+          try {
+            return normalizeAttribute(current, name);
+          } finally {
+            current.setAttribute(name, originalValue);
+          }
+        }
         if (name === "class") {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/u)

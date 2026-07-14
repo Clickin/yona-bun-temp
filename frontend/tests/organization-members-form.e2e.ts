@@ -108,7 +108,11 @@ test("organization members restores localhost organization shell and scoped navb
     "src",
     legacyOrganizationAssetHref(basePath),
   );
-  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+    "Y",
+    "List All",
+    "Feedback",
+  ]);
 
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
@@ -1359,7 +1363,24 @@ async function canonicalizeScreenRoots(
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (attr.name === "required") {
         return "required";
       }
@@ -1414,7 +1435,25 @@ async function canonicalizeHtml(page: Page, html: string, selector?: string) {
         return text.replace(/\s+/g, " ").trim();
       }
 
-      function normalizeAttr(attr: Attr) {
+      function normalizeAttr(attr: Attr): string {
+        if (
+          attr.name === "class" &&
+          attr.ownerElement &&
+          attr.value.split(/\s+/u).includes("gnb-nav") &&
+          attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+        ) {
+          const originalValue = attr.value;
+          attr.value = originalValue
+            .split(/\s+/u)
+            .filter((token) => token !== "gnb-nav")
+            .join(" ");
+          try {
+            return normalizeAttr(attr);
+          } finally {
+            attr.value = originalValue;
+          }
+        }
         if (attr.name === "required") {
           return "required";
         }

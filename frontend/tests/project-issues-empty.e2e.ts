@@ -1512,7 +1512,9 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
   await expect(listAllLink).toHaveText("List All");
   await expect(listAllLink).toHaveAttribute("href", `${basePath}/projects`);
 
-  const feedbackLink = page.locator('.gnb-nav a[target="_blank"]', { hasText: "Feedback" });
+  const feedbackLink = page.locator('[data-stylex-owner="global-gnb-nav"] a[target="_blank"]', {
+    hasText: "Feedback",
+  });
   await expect(feedbackLink).toHaveAttribute(
     "href",
     "https://github.com/yona-projects/yona/issues",
@@ -4856,7 +4858,24 @@ async function canonicalizeScreenRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (
         attr.name === "class" &&
         attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
@@ -4988,7 +5007,25 @@ async function canonicalizeHtml(page: Page, html: string) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (attr.name === "style") {
         return normalizeStyleAttr(attr.value);
       }

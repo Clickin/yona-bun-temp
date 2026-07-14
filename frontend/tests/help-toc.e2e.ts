@@ -374,7 +374,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     .toBe("home-link");
 
   await page.goto(`${basePath}/_help`);
-  const logoLink = page.locator(".gnb-nav .logo-letter");
+  const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveAttribute("href", basePath);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "logo-link";
@@ -951,6 +951,21 @@ async function mockMarkdownHelpIssueForm(page: Page) {
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -976,7 +991,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1009,6 +1026,22 @@ async function canonicalizeScreenRoots(page: Page) {
 async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate(
     ({ markup }) => {
+      function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+        const value = current.getAttribute(name) ?? "";
+        if (
+          name === "class" &&
+          value.split(/\s+/u).includes("gnb-nav") &&
+          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.querySelector('form[name="gnb-search-form"]') !== null
+        ) {
+          return value
+            .split(/\s+/u)
+            .filter((token) => token !== "gnb-nav")
+            .join(" ");
+        }
+        return value;
+      }
+
       function visit(current: Element): string {
         const stableAttributes = [
           "id",
@@ -1034,7 +1067,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map(
+            (name) =>
+              `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+          )
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`

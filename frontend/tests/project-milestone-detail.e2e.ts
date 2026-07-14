@@ -976,14 +976,22 @@ test("project milestone detail 404 milestone API preserves the legacy project-sc
   await expectHeadTitle(page, "Page not found - admin/sample");
   await expect(page.locator(".page-wrap-outer > .project-page-wrap > .error-wrap")).toBeVisible();
   await expect(page.locator(".milesion-wrap")).toHaveCount(0);
-  await expect(page.locator(".gnb-nav a[href$='/projects']")).toHaveText("List All");
   await expect(
-    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+    page.locator("[data-stylex-owner=\"global-gnb-nav\"] a[href$='/projects']"),
+  ).toHaveText("List All");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+    ),
   ).toHaveText("Feedback");
   await expect(
-    page.locator('.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]'),
+    page.locator(
+      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
+    ),
   ).toHaveAttribute("target", "_blank");
-  await expect(page.locator('.gnb-nav form[action$="/admin/sample/search"]')).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form[action$="/admin/sample/search"]'),
+  ).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(
     page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),

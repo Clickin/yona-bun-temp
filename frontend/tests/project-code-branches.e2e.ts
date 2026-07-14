@@ -300,7 +300,9 @@ test("svn project branches route matches legacy badrequest_default site shell", 
     "href",
     `${basePath}/projects`,
   );
-  await expect(page.locator('.gnb-nav a[href*="github.com/yona-projects/yona"]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] a[href*="github.com/yona-projects/yona"]'),
+  ).toHaveCount(0);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
@@ -730,7 +732,24 @@ async function canonicalizeScreenRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (isModernizedSiteLogoHref(attr)) {
         return attr.value.replace(/\/$/u, "");
       }
@@ -840,7 +859,25 @@ async function canonicalizeHtml(page: Page, html: string) {
         .join("")}</${node.tagName.toLowerCase()}>`;
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   }, html);

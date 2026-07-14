@@ -1176,6 +1176,29 @@ const globalGnbProjectListStyles = stylex.create({
   },
 });
 
+const globalGnbNavStyles = stylex.create({
+  nav: {
+    boxSizing: globalColors.globalGnbNavBoxSizing,
+    color: globalColors.globalGnbNavText,
+    display: globalColors.globalGnbNavDisplay,
+    float: globalColors.globalGnbNavFloat,
+    fontSize: globalColors.globalGnbNavFontSize,
+    fontWeight: globalColors.globalGnbNavFontWeight,
+    lineHeight: globalColors.globalGnbNavLineHeight,
+    listStyle: globalColors.globalGnbNavListStyle,
+    marginBottom: globalColors.globalGnbNavZero,
+    marginLeft: globalColors.globalGnbNavMarginLeft,
+    marginRight: globalColors.globalGnbNavZero,
+    marginTop: globalColors.globalGnbNavZero,
+    padding: globalColors.globalGnbNavZero,
+    position: globalColors.globalGnbNavPosition,
+  },
+  brandItem: {
+    float: globalColors.globalGnbNavItemFloat,
+    position: globalColors.globalGnbNavItemPosition,
+  },
+});
+
 const globalGnbBrandLinkStyles = stylex.create({
   root: {
     backgroundColor: globalColors.globalGnbBrandSurface,
@@ -1398,8 +1421,11 @@ export function SiteLayoutShell({
                 />
               </button>
             ) : null}
-            <ul className="gnb-nav">
-              <li>
+            <ul {...stylex.props(globalGnbNavStyles.nav)} data-stylex-owner="global-gnb-nav">
+              <li
+                {...stylex.props(globalGnbNavStyles.brandItem)}
+                data-stylex-owner="global-gnb-brand-item"
+              >
                 <Link
                   activeOptions={{
                     exact: true,

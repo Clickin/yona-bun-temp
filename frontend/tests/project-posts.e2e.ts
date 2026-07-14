@@ -4376,7 +4376,24 @@ async function canonicalizeScreenRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
 
@@ -4446,7 +4463,25 @@ async function canonicalizeHtml(page: Page, html: string) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       return attr.name === "style" ? normalizeStyleAttr(attr.value) : attr.value;
     }
 

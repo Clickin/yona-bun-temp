@@ -186,7 +186,11 @@ test("organization settings form pins the live localhost authenticated generic s
   await page.goto(`${basePath}/organizations/weblabs/settingform`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+    "Y",
+    "List All",
+    "Feedback",
+  ]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(0);
   await expect(page.locator('form.gnb-search-form[name="gnb-search-form"]')).toHaveAttribute(

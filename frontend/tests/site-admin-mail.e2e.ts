@@ -161,7 +161,11 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
   expect(new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
   expect(new URL(page.url()).search).toBe("");
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".gnb-nav a[href]")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
+    "Y",
+    "List All",
+    "Feedback",
+  ]);
   expect(await gnbNavAnchorHrefs(page)).toEqual([
     basePath,
     `${basePath}/projects`,
@@ -497,7 +501,7 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
 });
 
 async function gnbNavAnchorHrefs(page: Page) {
-  return page.locator(".gnb-nav a[href]").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="global-gnb-nav"] a[href]').evaluateAll((links) =>
     links.map((link) => {
       const href = link.getAttribute("href");
       if (!href) {
@@ -641,9 +645,11 @@ async function legacyMailShellMetrics(page: Page) {
     const searchForm = requireElement('form[name="gnb-search-form"]');
     const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const feedbackLink = requireElement(
-      '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const projectsLink = requireElement('.gnb-nav a[href$="/projects"]');
+    const projectsLink = requireElement(
+      '[data-stylex-owner="global-gnb-nav"] a[href$="/projects"]',
+    );
     const navbarRect = navbar.getBoundingClientRect();
     const searchFormRect = searchForm.getBoundingClientRect();
     const searchBoxRect = searchBox.getBoundingClientRect();
@@ -726,6 +732,21 @@ async function canonicalizeScreenRoots(page: Page) {
     );
     return roots.map((root) => visit(root)).join("");
 
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -749,7 +770,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -780,6 +803,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       .map((root) => visit(root))
       .join("");
 
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        current.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -803,7 +842,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`

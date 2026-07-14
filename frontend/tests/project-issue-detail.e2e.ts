@@ -3627,7 +3627,9 @@ test("project issue detail matches live legacy Korean milestone event and mobile
     "개발자님이 마일스톤을 v1.0(으)로 변경했습니다.",
   );
   await expect(page.locator("#event-91 a[title='마일스톤']")).toHaveText("v1.0");
-  await expect(page.locator(".gnb-nav")).toContainText("개발팀에게 문의하기");
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText(
+    "개발팀에게 문의하기",
+  );
 
   const mobileMetrics = await page.evaluate(() => {
     const upload = document.querySelector<HTMLElement>(".write-comment-box .upload-wrap");

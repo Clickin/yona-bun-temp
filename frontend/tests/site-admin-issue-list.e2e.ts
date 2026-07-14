@@ -167,10 +167,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
     .toBe(`${basePath}/sites/issueList`);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+    "Y",
+    "List All",
+    "Feedback",
+  ]);
   await expect(
     page
-      .locator(".gnb-nav > li > a")
+      .locator('[data-stylex-owner="global-gnb-nav"] > li > a')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).resolves.toEqual([
     `${basePath}`,
@@ -1123,9 +1127,11 @@ async function legacyGnbMetrics(page: Page) {
     const gnbInner = requireElement(".gnb-inner");
     const search = requireElement('form[name="gnb-search-form"]');
     const feedbackLink = requireElement(
-      '.gnb-nav > li > a[href="https://github.com/yona-projects/yona/issues"]',
+      '[data-stylex-owner="global-gnb-nav"] > li > a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const listAllLink = requireElement('.gnb-nav > li > a[href$="/projects"]');
+    const listAllLink = requireElement(
+      '[data-stylex-owner="global-gnb-nav"] > li > a[href$="/projects"]',
+    );
     const userMenu = requireElement(".gnb-usermenu");
     const navbarRect = navbar.getBoundingClientRect();
     const gnbInnerRect = gnbInner.getBoundingClientRect();
@@ -1162,6 +1168,21 @@ async function canonicalizeScreenRoots(page: Page) {
     );
     return roots.map((root) => visit(root)).join("");
 
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -1186,7 +1207,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1217,6 +1240,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       .map((root) => visit(root))
       .join("");
 
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        current.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -1241,7 +1280,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`

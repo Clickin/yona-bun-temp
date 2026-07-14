@@ -28,14 +28,14 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
       .evaluate((element) => getComputedStyle(element).backgroundImage),
   ).toContain(`url("${expectedBackgroundUrl}")`);
 
-  const navItems = page.locator(".gnb-nav > li");
+  const navItems = page.locator('[data-stylex-owner="global-gnb-nav"] > li');
+  const brandItem = page.locator('[data-stylex-owner="global-gnb-brand-item"]');
   await expect(navItems).toHaveCount(5);
-  await expect(navItems.nth(0).locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText(
-    "Y",
+  await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText("Y");
+  await expect(brandItem.locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveAttribute(
+    "href",
+    `${BASE_PATH}/`,
   );
-  await expect(
-    navItems.nth(0).locator('[data-stylex-owner="global-gnb-brand-link"]'),
-  ).toHaveAttribute("href", `${BASE_PATH}/`);
   await expect(navItems.nth(1).locator("a")).toHaveText("List All");
   await expect(navItems.nth(1).locator("a")).toHaveAttribute("href", `${BASE_PATH}/projects`);
   await expect(navItems.nth(2)).toHaveAttribute(
@@ -231,7 +231,9 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
 
   await page.goto(`${BASE_PATH}/`);
 
-  await expect(page.locator(".gnb-nav > li").nth(1).locator("a")).toHaveText("List All");
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] > li').nth(1).locator("a"),
+  ).toHaveText("List All");
   await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toHaveText(
     "Yoram repository",
   );
@@ -252,7 +254,9 @@ test("guest session only suppresses List All and its divider", async ({ page }) 
   await mockAuthenticatedHomeData(page, { isGuest: true });
 
   await page.goto(`${BASE_PATH}/`);
-  await expect(page.locator(".gnb-nav > li > a", { hasText: "List All" })).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
+  ).toHaveCount(0);
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
     0,
   );
@@ -264,7 +268,9 @@ test("hide-project-listing config only suppresses List All and its divider", asy
   await mockSession(page, { isAnonymous: true, isGuest: false });
 
   await page.goto(`${BASE_PATH}/`);
-  await expect(page.locator(".gnb-nav > li > a", { hasText: "List All" })).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] > li > a', { hasText: "List All" }),
+  ).toHaveCount(0);
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
     0,
   );
@@ -409,9 +415,9 @@ async function readShellMetrics(page: Page) {
       heroHeading: box(".site-heading"),
       inner: box(".gnb-inner"),
       login: box("#required-logged-in"),
-      listAll: box(".gnb-nav > li:nth-child(2) > a"),
+      listAll: box('[data-stylex-owner="global-gnb-nav"] > li:nth-child(2) > a'),
       logo: box('[data-stylex-owner="global-gnb-brand-link"]'),
-      nav: box(".gnb-nav"),
+      nav: box('[data-stylex-owner="global-gnb-nav"]'),
       navbar: box(".gnb-outer"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
       search: box(".gnb-search-form"),

@@ -1044,7 +1044,9 @@ test("shared shell only renders the configured feedback link", async ({ page }) 
 
   await page.goto(`${basePath}/`);
 
-  const feedbackLink = page.locator(".gnb-nav a", { hasText: "Yoram repository" });
+  const feedbackLink = page.locator('[data-stylex-owner="global-gnb-nav"] a', {
+    hasText: "Yoram repository",
+  });
   await expect(feedbackLink).toHaveAttribute("href", "https://feedback.example.test/yoram");
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
 });
@@ -3886,7 +3888,26 @@ async function canonicalizeScreenRoots(page: Page) {
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
-    function normalizeAttribute(current: Element, name: string) {
+    function normalizeAttribute(current: Element, name: string): string {
+      if (
+        name === "class" &&
+        current.classList.contains("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = current.getAttribute(name) ?? "";
+        current.setAttribute(
+          name,
+          originalValue
+            .split(/\s+/u)
+            .filter((token) => token !== "gnb-nav")
+            .join(" "),
+        );
+        try {
+          return normalizeAttribute(current, name);
+        } finally {
+          current.setAttribute(name, originalValue);
+        }
+      }
       if (name === "class") {
         if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-divider") {
           return 'class="divider"';
@@ -4043,7 +4064,27 @@ async function canonicalizeHtml(page: Page, html: string) {
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
-      function normalizeAttribute(current: Element, name: string) {
+      function normalizeAttribute(current: Element, name: string): string {
+        if (
+          name === "class" &&
+          current.classList.contains("gnb-nav") &&
+          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.querySelector('form[name="gnb-search-form"]') !== null
+        ) {
+          const originalValue = current.getAttribute(name) ?? "";
+          current.setAttribute(
+            name,
+            originalValue
+              .split(/\s+/u)
+              .filter((token) => token !== "gnb-nav")
+              .join(" "),
+          );
+          try {
+            return normalizeAttribute(current, name);
+          } finally {
+            current.setAttribute(name, originalValue);
+          }
+        }
         if (name === "class") {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/)

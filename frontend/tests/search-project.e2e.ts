@@ -331,12 +331,11 @@ test("project search pins the live localhost issue-comment zero-result project s
   await expect(page).toHaveTitle("Search - admin/sample");
   await expectProjectSearchShell(page);
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
-  await expect(page.locator(".gnb-nav")).toContainText("List All");
-  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
-  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/admin/sample/search`,
-  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
+  ).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
@@ -622,10 +621,9 @@ test("org-owned project search exposes legacy project group search scope", async
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("portal");
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".project-menu-outer .project-menu-nav li.active")).toHaveCount(0);
-  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/weblabs/portal/search`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
+  ).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
@@ -637,10 +635,9 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
-  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/organizations/weblabs/search`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
+  ).toHaveAttribute("action", `${basePath}/organizations/weblabs/search`);
 
   await page.locator("#gnb-search-scope-title").click();
   await scopeButtons.filter({ hasText: "All Projects" }).click();
@@ -648,10 +645,9 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search?keyword=missing&searchType=review`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
-  await expect(page.locator(".gnb-nav form.gnb-search-form")).toHaveAttribute(
-    "action",
-    `${basePath}/search`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-nav"] form.gnb-search-form'),
+  ).toHaveAttribute("action", `${basePath}/search`);
 
   const layout = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
@@ -699,8 +695,8 @@ async function expectProjectSearchShell(page: Page) {
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
   await expect(page.locator(".page-wrap-outer")).toBeVisible();
-  await expect(page.locator(".gnb-nav")).toContainText("List All");
-  await expect(page.locator(".gnb-nav")).toContainText("Feedback");
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("List All");
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"]')).toContainText("Feedback");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const rootOrder = await page
     .locator(
@@ -1102,7 +1098,24 @@ async function canonicalizeScreenRoots(page: Page) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (isModernizedTanStackRouterHref(attr)) {
         return "#";
       }
@@ -1301,7 +1314,25 @@ async function canonicalizeHtml(page: Page, html: string) {
       return text.replace(/\s+/g, " ").trim();
     }
 
-    function normalizeAttr(attr: Attr) {
+    function normalizeAttr(attr: Attr): string {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("gnb-nav") &&
+        attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+      ) {
+        const originalValue = attr.value;
+        attr.value = originalValue
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+        try {
+          return normalizeAttr(attr);
+        } finally {
+          attr.value = originalValue;
+        }
+      }
       if (isModernizedTanStackRouterHref(attr)) {
         return "#";
       }

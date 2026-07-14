@@ -294,6 +294,21 @@ async function readMobileVerifiedMetrics(page: Page) {
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const value = current.getAttribute(name) ?? "";
+      if (
+        name === "class" &&
+        value.split(/\s+/u).includes("gnb-nav") &&
+        current.matches('[data-stylex-owner="global-gnb-nav"]')
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "gnb-nav")
+          .join(" ");
+      }
+      return value;
+    }
+
     function visit(current: Element): string {
       const stableAttributes = [
         "id",
@@ -318,7 +333,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map(
+          (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+        )
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -357,6 +374,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       return elements.map((element) => visit(element)).join("");
 
+      function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+        const value = current.getAttribute(name) ?? "";
+        if (
+          name === "class" &&
+          value.split(/\s+/u).includes("gnb-nav") &&
+          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.querySelector('form[name="gnb-search-form"]') !== null
+        ) {
+          return value
+            .split(/\s+/u)
+            .filter((token) => token !== "gnb-nav")
+            .join(" ");
+        }
+        return value;
+      }
+
       function visit(current: Element): string {
         const stableAttributes = [
           "id",
@@ -381,7 +414,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map(
+            (name) =>
+              `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
+          )
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`

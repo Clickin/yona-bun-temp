@@ -185,7 +185,11 @@ test("organization project search exact missing state pins the live localhost gu
 
   await expect(page).toHaveTitle("Search");
   await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
-  await expect(page.locator(".gnb-nav > li > a")).toHaveText(["Y", "List All", "Feedback"]);
+  await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
+    "Y",
+    "List All",
+    "Feedback",
+  ]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
     "action",
