@@ -99,7 +99,7 @@ const EXPECTED_DATA_SCREEN = `
         </div>
         <h3>Export</h3>
         <p>All data read from DB will be exported to a file.</p>
-        <a href="__BASE_PATH__/sites/export" class="ybtn ybtn-primary"><strong>Export</strong></a>
+        <a href="__BASE_PATH__/sites/export" class=""><strong>Export</strong></a>
         <h3>Import</h3>
         <p>Replace existing data with exported yobi data file.</p>
         <form action="__BASE_PATH__/sites/import" method="post" enctype="multipart/form-data">
@@ -155,9 +155,9 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  const exportLink = page.locator("a.ybtn.ybtn-primary", { hasText: "Export" });
+  const exportLink = page.locator('[data-stylex-owner="site-data-export-action"]');
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
-  await expect(exportLink).toHaveAttribute("class", "ybtn ybtn-primary");
+  await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(exportLink).toHaveText("Export");
   await expect(page.locator('form[action$="/sites/import"]')).toHaveAttribute(
     "enctype",
@@ -250,10 +250,10 @@ test("site admin data export link preserves legacy download href", async ({ page
   await mockMailOptions(page);
 
   await page.goto(`${basePath}/sites/data`);
-  const exportLink = page.locator("a.ybtn.ybtn-primary", { hasText: "Export" });
+  const exportLink = page.locator('[data-stylex-owner="site-data-export-action"]');
 
   await expect(exportLink).toHaveAttribute("href", `${basePath}/sites/export`);
-  await expect(exportLink).toHaveAttribute("class", "ybtn ybtn-primary");
+  await expect(exportLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
   await expect(exportLink).toHaveText("Export");
 });
 
@@ -386,7 +386,7 @@ async function readSiteDataMetrics(page: Page) {
     const notice = requireElement(".cu-desc .notice");
     const titleArea = requireElement(".title_area");
     const title = requireElement(".title_area h2");
-    const exportButton = requireElement("a.ybtn.ybtn-primary");
+    const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
     const rowRect = row.getBoundingClientRect();
     const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
     const navItemStyle = getComputedStyle(navItem);
@@ -457,7 +457,7 @@ async function readSiteDataContainmentMetrics(page: Page) {
     const cuDesc = requireElement(".cu-desc");
     const exportTitle = requireElement(".span10 > h3:nth-of-type(1)");
     const exportCopy = requireElement(".span10 > p:nth-of-type(1)");
-    const exportButton = requireElement("a.ybtn.ybtn-primary");
+    const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
     const importTitle = requireElement(".span10 > h3:nth-of-type(2)");
     const importCopy = requireElement(".span10 > p:nth-of-type(2)");
     const importForm = requireElement('form[action$="/sites/import"]');
@@ -540,7 +540,8 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.closest('[data-stylex-owner="site-data-warning-surface"]') ||
-          current.closest('[data-stylex-owner="site-data-title-strip"]'))
+          current.closest('[data-stylex-owner="site-data-title-strip"]') ||
+          current.closest('[data-stylex-owner="site-data-export-action"]'))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)

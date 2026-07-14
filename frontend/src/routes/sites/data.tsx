@@ -26,6 +26,45 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  exportAction: {
+    backgroundColor: {
+      default: globalColors.siteDataExportActionSurface,
+      ":hover": globalColors.siteDataExportActionInteractiveSurface,
+      ":focus": globalColors.siteDataExportActionInteractiveSurface,
+      ":active": globalColors.siteDataExportActionInteractiveSurface,
+    },
+    borderColor: {
+      default: globalColors.siteDataExportActionBorderColor,
+      ":hover": globalColors.siteDataExportActionBorderColor,
+      ":focus": globalColors.siteDataExportActionBorderColor,
+      ":active": globalColors.siteDataExportActionBorderColor,
+    },
+    borderRadius: globalColors.siteDataExportActionBorderRadius,
+    borderStyle: globalColors.siteDataExportActionBorderStyle,
+    borderWidth: globalColors.siteDataExportActionBorderWidth,
+    boxShadow: globalColors.siteDataExportActionBoxShadow,
+    color: globalColors.siteDataExportActionText,
+    cursor: globalColors.siteDataExportActionCursor,
+    display: globalColors.siteDataExportActionDisplay,
+    fontSize: globalColors.siteDataExportActionFontSize,
+    lineHeight: globalColors.siteDataExportActionLineHeight,
+    marginBottom: globalColors.siteDataExportActionMarginBottom,
+    marginLeft: globalColors.siteDataExportActionMarginLeft,
+    outline: globalColors.siteDataExportActionOutline,
+    padding: globalColors.siteDataExportActionPadding,
+    position: globalColors.siteDataExportActionPosition,
+    textAlign: globalColors.siteDataExportActionTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteDataExportActionInteractiveTextDecoration,
+      ":focus": globalColors.siteDataExportActionInteractiveTextDecoration,
+      ":active": globalColors.siteDataExportActionInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteDataExportActionTextShadow,
+    transition: globalColors.siteDataExportActionTransition,
+    verticalAlign: globalColors.siteDataExportActionVerticalAlign,
+    whiteSpace: globalColors.siteDataExportActionWhiteSpace,
+    zIndex: globalColors.siteDataExportActionZIndex,
+  },
 });
 
 const legacySiteSidebarLinkProps = {
@@ -111,7 +150,8 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 href={exportDataHref}
                 to={exportDataPath}
                 reloadDocument
-                className="ybtn ybtn-primary"
+                {...stylex.props(styles.exportAction)}
+                data-stylex-owner="site-data-export-action"
               >
                 <strong>{t("site.data.export")}</strong>
               </Link>

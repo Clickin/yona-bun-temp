@@ -1375,6 +1375,11 @@ theme variables; warning, export/import content, form controls, and the shared s
 remain fallback. Focused desktop/mobile screenshots and the existing data-settings regression
 retain legacy copy, order, and geometry. This is not Wave 1 completion.
 
+The ninety-third slice migrates the export action of `/sites/data` from `site/data.scala.html`,
+`_yobiUI.less`, `_mixins.less`, and `_variables.less`. StyleX owns the complete former
+`ybtn ybtn-primary` surface through global variables and removes those fallback classes only from
+this Link; import controls and the shared shell remain fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
