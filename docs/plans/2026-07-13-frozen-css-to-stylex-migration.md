@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty-one shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1041,6 +1041,23 @@ other real consumers. Fresh live and local desktop/mobile screenshots agree on p
 width/y drift. Focused RED 6/6 becomes GREEN 6/6, the affected notification matrix passes 23/23,
 and Vitest 11/11, typecheck, production build/StyleX verification, unchanged app/fallback hashes,
 lint/format, visual inspection, and diff gates pass. This is not Wave 1 completion.
+
+The sixty-first verified slice migrates the authenticated HOME default-login-page action and its
+hover/focus guidance surface rendered from `common/mySeriesMenuTab.scala.html` on
+`/notifications`. Colocated StyleX owns the complete button base/hover/focus/mobile-hidden state
+and the React-rendered bottom guidance box, title, content, and arrow through canonical global
+theme variables. Runtime `ybtn`, `hide-in-mobile`, `popover`, `bottom`, `arrow`, `popover-title`,
+and `popover-content` presentation tokens plus the inline positioning bridge are removed from
+this owner; shared fallback remains active only for other real consumers. Bootstrap's plugin
+temporarily places the tip before reading `offsetWidth`; React translates that visible generated
+behavior with intrinsic `max-content` sizing capped by the frozen `276px` maximum, not a fixed
+width or numeric compensation. Fresh live desktop evidence and local screenshots agree on the
+30px button, 280px guidance border box, 35px title, 49.2px content, arrow geometry, and paint.
+The local owner is uniformly 1px above live because of an already-upstream HOME shell baseline,
+while its internal and relative geometry is exact; mobile keeps the button in the DOM at zero
+geometry. Focused RED 5/5 becomes GREEN 5/5, adjacent series-tabs passes 7/7, and typecheck,
+production build/StyleX verification, unchanged app/fallback hashes, lint/format, visual
+inspection, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

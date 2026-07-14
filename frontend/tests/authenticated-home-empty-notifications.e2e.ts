@@ -138,7 +138,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
 const EXPECTED_DIRECT_NOTIFICATIONS = EXPECTED_AUTHENTICATED_HOME.replace(
   `<li></li>
           </ul>`,
-  `<li><button id="setDefaultLoginPage" class="ybtn hide-in-mobile" type="button" title="Set to default page">Set to default page</button></li>
+  `<li><button id="setDefaultLoginPage" type="button" title="Set to default page">Set to default page</button></li>
           </ul>`,
 );
 
@@ -2067,7 +2067,11 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
   const defaultLandingButton = page.locator("#setDefaultLoginPage");
   await expect(defaultLandingButton).toHaveText("Set to default page");
-  await expect(defaultLandingButton).toHaveAttribute("class", "ybtn hide-in-mobile");
+  await expect(defaultLandingButton).toHaveAttribute(
+    "data-stylex-owner",
+    "authenticated-home-default-login-action",
+  );
+  await expect(defaultLandingButton).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
   await expect(defaultLandingButton).toHaveAttribute("type", "button");
   await expect(defaultLandingButton).not.toHaveAttribute("data-url");
   await expect(defaultLandingButton).toHaveAttribute("title", "Set to default page");
@@ -2081,18 +2085,24 @@ test("direct notifications route matches legacy Application.notifications empty 
 
   await defaultLandingButton.hover();
   const defaultLandingPopover = page.locator(
-    '[data-stylex-owner="authenticated-home-series-tabs"] .popover.bottom',
+    '[data-stylex-owner="authenticated-home-default-login-popover"]',
   );
   await expect(defaultLandingPopover).toBeVisible();
-  await expect(defaultLandingPopover).toHaveClass("popover bottom");
-  await expect(defaultLandingPopover.locator(".popover-title")).toHaveText("Set to default page");
-  await expect(defaultLandingPopover.locator(".popover-content")).toHaveText(
-    "Make current page the index page when logged in",
-  );
+  await expect(defaultLandingPopover).not.toHaveClass(/(?:^|\s)(?:popover|bottom)(?:\s|$)/u);
+  await expect(
+    defaultLandingPopover.locator(
+      '[data-stylex-owner="authenticated-home-default-login-popover-title"]',
+    ),
+  ).toHaveText("Set to default page");
+  await expect(
+    defaultLandingPopover.locator(
+      '[data-stylex-owner="authenticated-home-default-login-popover-content"]',
+    ),
+  ).toHaveText("Make current page the index page when logged in");
   const popoverBoxes = await page.evaluate(() => {
     const button = document.querySelector<HTMLElement>("#setDefaultLoginPage");
     const popover = document.querySelector<HTMLElement>(
-      '[data-stylex-owner="authenticated-home-series-tabs"] .popover.bottom',
+      '[data-stylex-owner="authenticated-home-default-login-popover"]',
     );
     if (!button || !popover) return null;
     const buttonBox = button.getBoundingClientRect();
@@ -2111,7 +2121,11 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(defaultLandingPopover).toHaveCount(0);
   await defaultLandingButton.focus();
   await expect(defaultLandingPopover).toBeVisible();
-  await expect(defaultLandingPopover.locator(".popover-title")).toHaveText("Set to default page");
+  await expect(
+    defaultLandingPopover.locator(
+      '[data-stylex-owner="authenticated-home-default-login-popover-title"]',
+    ),
+  ).toHaveText("Set to default page");
   await defaultLandingButton.evaluate((button) => button.blur());
   await expect(defaultLandingPopover).toHaveCount(0);
 
@@ -2194,7 +2208,9 @@ test("direct notifications route matches legacy Application.notifications empty 
   expect(setDefaultButtonSource).not.toContain("data-placement");
   expect(setDefaultButtonSource).not.toContain("data-toggle");
   expect(setDefaultButtonSource).not.toContain("data-content");
-  expect(mainStreamTabSource).toContain('className="popover bottom"');
+  expect(mainStreamTabSource).toContain(
+    'data-stylex-owner="authenticated-home-default-login-popover"',
+  );
   expect(mainStreamTabSource).toContain("onMouseEnter={showDefaultLandingPopover}");
   expect(mainStreamTabSource).toContain("onFocus={showDefaultLandingPopover}");
 

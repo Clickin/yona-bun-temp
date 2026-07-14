@@ -83,16 +83,6 @@ const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
     "data-status": undefined,
   },
 };
-const SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE: React.CSSProperties = {
-  display: "block",
-  left: "50%",
-  marginTop: "10px",
-  minWidth: "190px",
-  pointerEvents: "none",
-  position: "absolute",
-  top: "100%",
-  transform: "translateX(-50%)",
-};
 const HOME_SIDEBAR_POPOVER_STYLE: React.CSSProperties = {
   display: "block",
   left: "100%",
@@ -485,11 +475,15 @@ function HomeScreen({
                       {shouldShowDefaultLandingButton ? (
                         <>
                           <button
+                            {...stylex.props(
+                              authenticatedHomeDefaultLoginActionStyles.button,
+                              isDefaultLandingButtonHidden &&
+                                authenticatedHomeDefaultLoginActionStyles.hidden,
+                            )}
                             id="setDefaultLoginPage"
                             type="button"
-                            className="ybtn hide-in-mobile"
+                            data-stylex-owner="authenticated-home-default-login-action"
                             title={defaultLandingButtonTitle}
-                            style={isDefaultLandingButtonHidden ? { display: "none" } : undefined}
                             onBlur={hideDefaultLandingPopover}
                             onClick={() => {
                               hideDefaultLandingPopover();
@@ -503,13 +497,26 @@ function HomeScreen({
                           </button>
                           {isDefaultLandingPopoverVisible && !isDefaultLandingButtonHidden ? (
                             <div
-                              className="popover bottom"
+                              {...stylex.props(authenticatedHomeDefaultLoginActionStyles.popover)}
+                              data-stylex-owner="authenticated-home-default-login-popover"
                               role="tooltip"
-                              style={SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE}
                             >
-                              <div className="arrow" />
-                              <h3 className="popover-title">{defaultLandingButtonTitle}</h3>
-                              <div className="popover-content">{defaultLandingButtonContent}</div>
+                              <div
+                                {...stylex.props(authenticatedHomeDefaultLoginActionStyles.arrow)}
+                                data-stylex-owner="authenticated-home-default-login-popover-arrow"
+                              />
+                              <h3
+                                {...stylex.props(authenticatedHomeDefaultLoginActionStyles.title)}
+                                data-stylex-owner="authenticated-home-default-login-popover-title"
+                              >
+                                {defaultLandingButtonTitle}
+                              </h3>
+                              <div
+                                {...stylex.props(authenticatedHomeDefaultLoginActionStyles.content)}
+                                data-stylex-owner="authenticated-home-default-login-popover-content"
+                              >
+                                {defaultLandingButtonContent}
+                              </div>
                             </div>
                           ) : null}
                         </>
@@ -2089,6 +2096,131 @@ const authenticatedHomeSeriesTabStyles = stylex.create({
       ":focus": globalColors.authenticatedHomeSeriesTabActiveText,
     },
     cursor: globalColors.authenticatedHomeSeriesTabActiveCursor,
+  },
+});
+
+const authenticatedHomeDefaultLoginActionStyles = stylex.create({
+  button: {
+    backgroundColor: {
+      default: globalColors.authenticatedHomeDefaultLoginButtonSurface,
+      ":hover": globalColors.authenticatedHomeDefaultLoginButtonInteractionSurface,
+      ":focus": globalColors.authenticatedHomeDefaultLoginButtonInteractionSurface,
+    },
+    borderColor: {
+      default: globalColors.authenticatedHomeDefaultLoginButtonBorderColor,
+      ":hover": globalColors.authenticatedHomeDefaultLoginButtonInteractionBorderColor,
+      ":focus": globalColors.authenticatedHomeDefaultLoginButtonInteractionBorderColor,
+    },
+    borderRadius: globalColors.authenticatedHomeDefaultLoginButtonRadius,
+    borderStyle: globalColors.authenticatedHomeDefaultLoginButtonBorderStyle,
+    borderWidth: globalColors.authenticatedHomeDefaultLoginButtonBorderWidth,
+    boxShadow: globalColors.authenticatedHomeDefaultLoginButtonShadow,
+    boxSizing: globalColors.authenticatedHomeDefaultLoginButtonBoxSizing,
+    color: {
+      default: globalColors.authenticatedHomeDefaultLoginButtonText,
+      ":hover": globalColors.authenticatedHomeDefaultLoginButtonInteractionText,
+      ":focus": globalColors.authenticatedHomeDefaultLoginButtonInteractionText,
+    },
+    cursor: globalColors.authenticatedHomeDefaultLoginButtonCursor,
+    display: {
+      default: globalColors.authenticatedHomeDefaultLoginButtonDisplay,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeDefaultLoginButtonMobileDisplay,
+    },
+    fontFamily: globalColors.authenticatedHomeDefaultLoginButtonFontFamily,
+    fontSize: globalColors.authenticatedHomeDefaultLoginButtonFontSize,
+    fontWeight: globalColors.authenticatedHomeDefaultLoginButtonFontWeight,
+    lineHeight: globalColors.authenticatedHomeDefaultLoginButtonLineHeight,
+    margin: globalColors.authenticatedHomeDefaultLoginZero,
+    outline: globalColors.authenticatedHomeDefaultLoginButtonOutline,
+    padding: globalColors.authenticatedHomeDefaultLoginButtonPadding,
+    position: globalColors.authenticatedHomeDefaultLoginButtonPosition,
+    textAlign: globalColors.authenticatedHomeDefaultLoginButtonTextAlign,
+    textDecoration: {
+      default: null,
+      ":hover": globalColors.authenticatedHomeDefaultLoginButtonTextDecoration,
+      ":focus": globalColors.authenticatedHomeDefaultLoginButtonTextDecoration,
+    },
+    textShadow: globalColors.authenticatedHomeDefaultLoginButtonTextShadow,
+    transition: globalColors.authenticatedHomeDefaultLoginButtonTransition,
+    verticalAlign: globalColors.authenticatedHomeDefaultLoginButtonVerticalAlign,
+    whiteSpace: globalColors.authenticatedHomeDefaultLoginButtonWhiteSpace,
+    zIndex: globalColors.authenticatedHomeDefaultLoginButtonZIndex,
+  },
+  hidden: {
+    display: globalColors.authenticatedHomeDefaultLoginButtonMobileDisplay,
+  },
+  popover: {
+    backgroundClip: globalColors.authenticatedHomeDefaultLoginPopoverBackgroundClip,
+    backgroundColor: globalColors.authenticatedHomeDefaultLoginPopoverSurface,
+    borderColor: globalColors.authenticatedHomeDefaultLoginPopoverBorderColor,
+    borderRadius: globalColors.authenticatedHomeDefaultLoginPopoverRadius,
+    borderStyle: globalColors.authenticatedHomeDefaultLoginButtonBorderStyle,
+    borderWidth: globalColors.authenticatedHomeDefaultLoginButtonBorderWidth,
+    boxShadow: globalColors.authenticatedHomeDefaultLoginPopoverShadow,
+    boxSizing: globalColors.authenticatedHomeDefaultLoginButtonBoxSizing,
+    color: globalColors.authenticatedHomeDefaultLoginPopoverText,
+    display: globalColors.authenticatedHomeDefaultLoginPopoverDisplay,
+    fontFamily: globalColors.authenticatedHomeDefaultLoginButtonFontFamily,
+    fontSize: globalColors.authenticatedHomeDefaultLoginPopoverFontSize,
+    fontWeight: globalColors.authenticatedHomeDefaultLoginPopoverFontWeight,
+    left: globalColors.authenticatedHomeDefaultLoginPopoverLeft,
+    lineHeight: globalColors.authenticatedHomeDefaultLoginPopoverLineHeight,
+    marginTop: globalColors.authenticatedHomeDefaultLoginPopoverMarginTop,
+    maxWidth: globalColors.authenticatedHomeDefaultLoginPopoverMaxWidth,
+    opacity: globalColors.authenticatedHomeDefaultLoginPopoverOpacity,
+    padding: globalColors.authenticatedHomeDefaultLoginPopoverPadding,
+    position: globalColors.authenticatedHomeDefaultLoginPopoverPosition,
+    textAlign: globalColors.authenticatedHomeDefaultLoginPopoverTextAlign,
+    top: globalColors.authenticatedHomeDefaultLoginPopoverTop,
+    transform: globalColors.authenticatedHomeDefaultLoginPopoverTransform,
+    whiteSpace: globalColors.authenticatedHomeDefaultLoginPopoverWhiteSpace,
+    // bootstrap.js:1187-1200 measures the temporary top/left-zero tip before placement.
+    width: globalColors.authenticatedHomeDefaultLoginPopoverIntrinsicWidth,
+    zIndex: globalColors.authenticatedHomeDefaultLoginPopoverZIndex,
+  },
+  arrow: {
+    borderBottomColor: globalColors.authenticatedHomeDefaultLoginPopoverArrowBorderColor,
+    borderColor: globalColors.authenticatedHomeDefaultLoginPopoverArrowTransparent,
+    borderStyle: globalColors.authenticatedHomeDefaultLoginButtonBorderStyle,
+    borderTopWidth: globalColors.authenticatedHomeDefaultLoginZero,
+    borderWidth: globalColors.authenticatedHomeDefaultLoginPopoverArrowSize,
+    display: globalColors.authenticatedHomeDefaultLoginPopoverDisplay,
+    height: globalColors.authenticatedHomeDefaultLoginZero,
+    left: globalColors.authenticatedHomeDefaultLoginPopoverArrowLeft,
+    marginLeft: globalColors.authenticatedHomeDefaultLoginPopoverArrowMarginLeft,
+    position: globalColors.authenticatedHomeDefaultLoginPopoverPosition,
+    top: globalColors.authenticatedHomeDefaultLoginPopoverArrowTop,
+    width: globalColors.authenticatedHomeDefaultLoginZero,
+    "::after": {
+      borderBottomColor: globalColors.authenticatedHomeDefaultLoginPopoverArrowInnerBorderColor,
+      borderColor: globalColors.authenticatedHomeDefaultLoginPopoverArrowTransparent,
+      borderStyle: globalColors.authenticatedHomeDefaultLoginButtonBorderStyle,
+      borderTopWidth: globalColors.authenticatedHomeDefaultLoginZero,
+      borderWidth: globalColors.authenticatedHomeDefaultLoginPopoverArrowInnerSize,
+      content: globalColors.authenticatedHomeDefaultLoginPopoverArrowContent,
+      display: globalColors.authenticatedHomeDefaultLoginPopoverDisplay,
+      height: globalColors.authenticatedHomeDefaultLoginZero,
+      marginLeft: globalColors.authenticatedHomeDefaultLoginPopoverArrowInnerMarginLeft,
+      position: globalColors.authenticatedHomeDefaultLoginPopoverPosition,
+      top: globalColors.authenticatedHomeDefaultLoginPopoverArrowInnerTop,
+      width: globalColors.authenticatedHomeDefaultLoginZero,
+    },
+  },
+  title: {
+    backgroundColor: globalColors.authenticatedHomeDefaultLoginPopoverTitleSurface,
+    borderBottomColor: globalColors.authenticatedHomeDefaultLoginPopoverTitleBorderColor,
+    borderBottomStyle: globalColors.authenticatedHomeDefaultLoginButtonBorderStyle,
+    borderBottomWidth: globalColors.authenticatedHomeDefaultLoginButtonBorderWidth,
+    borderRadius: globalColors.authenticatedHomeDefaultLoginPopoverTitleRadius,
+    fontSize: globalColors.authenticatedHomeDefaultLoginPopoverTitleFontSize,
+    fontWeight: globalColors.authenticatedHomeDefaultLoginPopoverFontWeight,
+    lineHeight: globalColors.authenticatedHomeDefaultLoginPopoverTitleLineHeight,
+    margin: globalColors.authenticatedHomeDefaultLoginZero,
+    padding: globalColors.authenticatedHomeDefaultLoginPopoverTitlePadding,
+  },
+  content: {
+    lineHeight: globalColors.authenticatedHomeDefaultLoginPopoverContentLineHeight,
+    padding: globalColors.authenticatedHomeDefaultLoginPopoverContentPadding,
   },
 });
 

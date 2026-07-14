@@ -287,16 +287,22 @@ test("notifications keeps the React-owned default-login action behavior outside 
   const button = action.locator("#setDefaultLoginPage");
   await expect(action).toHaveCSS("position", "relative");
   await expect(button).toHaveText("기본 페이지로 지정");
-  await expect(button).toHaveClass("ybtn hide-in-mobile");
+  await expect(button).toHaveAttribute(
+    "data-stylex-owner",
+    "authenticated-home-default-login-action",
+  );
+  await expect(button).not.toHaveClass(/(?:^|\s)(?:ybtn|hide-in-mobile)(?:\s|$)/u);
   await expect(button).not.toHaveAttribute("data-toggle");
   await button.hover();
-  const popup = action.locator(".popover.bottom");
+  const popup = action.locator('[data-stylex-owner="authenticated-home-default-login-popover"]');
   await expect(popup).toBeVisible();
-  await expect(popup).not.toHaveAttribute("data-stylex-owner");
-  await expect(popup.locator(".popover-title")).toHaveText("기본 페이지로 지정");
-  await expect(popup.locator(".popover-content")).toHaveText(
-    "현재 페이지를 로그인 후 표시되는 기본 인덱스 페이지로 지정합니다",
-  );
+  await expect(popup).not.toHaveClass(/(?:^|\s)(?:popover|bottom)(?:\s|$)/u);
+  await expect(
+    popup.locator('[data-stylex-owner="authenticated-home-default-login-popover-title"]'),
+  ).toHaveText("기본 페이지로 지정");
+  await expect(
+    popup.locator('[data-stylex-owner="authenticated-home-default-login-popover-content"]'),
+  ).toHaveText("현재 페이지를 로그인 후 표시되는 기본 인덱스 페이지로 지정합니다");
   await page.mouse.move(1, 1);
   await expect(popup).toHaveCount(0);
   await button.click();
