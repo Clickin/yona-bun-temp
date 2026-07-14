@@ -1,10 +1,12 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
 import type { YoramRecord } from "../api/types";
 import { YoramQueryProvider } from "../query-client";
 import { type RuntimeConfig, prefixBasePath } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 
 export const Route = createFileRoute("/restricted")({
   component: RestrictedRoute,
@@ -55,9 +57,17 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <header className="gnb-outer">
         <div className="gnb-inner">
-          <div className="pin" data-placement="bottom" title="Sidebar">
-            <i className="yobicon-arrow-left" />
-            <i className="yobicon-arrow-right" />
+          <div
+            {...stylex.props(restrictedSidebarPinStyles.root)}
+            data-stylex-owner="restricted-sidebar-pin"
+            title="Sidebar"
+          >
+            <i
+              className={`yobicon-arrow-left ${stylex.props(restrictedSidebarPinStyles.icon).className}`}
+            />
+            <i
+              className={`yobicon-arrow-right ${stylex.props(restrictedSidebarPinStyles.icon, restrictedSidebarPinStyles.visibleIcon).className}`}
+            />
           </div>
           <ul className="gnb-nav">
             <li>
@@ -120,6 +130,58 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     </>
   );
 }
+
+const restrictedSidebarPinStyles = stylex.create({
+  root: {
+    appearance: "none",
+    backgroundColor: globalColors.globalSidebarOpenPinSurface,
+    borderBottomColor: globalColors.globalSidebarOpenPinText,
+    borderBottomStyle: "none",
+    borderBottomWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderLeftColor: globalColors.globalSidebarOpenPinText,
+    borderLeftStyle: "none",
+    borderLeftWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderRadius: globalColors.globalSidebarOpenPinRadius,
+    borderRightColor: globalColors.globalSidebarOpenPinText,
+    borderRightStyle: "none",
+    borderRightWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderTopColor: globalColors.globalSidebarOpenPinText,
+    borderTopStyle: "none",
+    borderTopWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: globalColors.globalSidebarOpenPinText,
+    cursor: {
+      default: "auto",
+      ":hover": "pointer",
+    },
+    display: "inline-block",
+    fontSize: globalColors.globalSidebarOpenPinFontSize,
+    left: globalColors.globalSidebarOpenPinLeft,
+    lineHeight: globalColors.globalSidebarOpenPinLineHeight,
+    margin: globalColors.globalSidebarOpenPinMargin,
+    padding: globalColors.globalSidebarOpenPinPadding,
+    position: "absolute",
+    textAlign: "start",
+    top: globalColors.globalSidebarOpenPinTop,
+  },
+  icon: {
+    color: {
+      default: "inherit",
+      ":hover": globalColors.globalSidebarOpenPinInteractionText,
+    },
+    cursor: {
+      default: "inherit",
+      ":hover": "pointer",
+    },
+    display: "none",
+    fontSize: globalColors.globalSidebarOpenPinFontSize,
+    padding: globalColors.globalSidebarOpenPinIconPadding,
+  },
+  visibleIcon: {
+    display: "block",
+  },
+});
 
 function asRecord(value: unknown): YoramRecord | undefined {
   return typeof value === "object" && value !== null ? (value as YoramRecord) : undefined;

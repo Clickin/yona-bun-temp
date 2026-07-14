@@ -737,6 +737,22 @@ that class contract. The unused React `.pin-move-*` duplicates are deleted. Exis
 locators and exact-DOM canonicalizers move narrowly to the stable owner while preserving the
 legacy fixture class and all other DOM comparison. This is not Wave 1 completion.
 
+The thirty-ninth verified style-ownership slice migrates the separate GNB Sidebar pin rendered by
+`RestrictedScreen`. The route preserves `restricted.scala.html` through `siteLayout.scala.html` and
+the common navbar's DIV/two-arrow/title order, while colocated StyleX takes the complete `_page.less`
+pin presentation. It reuses the existing canonical `globalSidebarOpenPin*` variables, introduces no
+route token or dark value, removes the plugin-only placement attribute and presentation class, and
+narrows exact-DOM normalization to this owner boundary. Desktop 1366×900 and mobile 390×844 local
+evidence match the fresh live common-navbar component at `25×26 @ -6,6`, including arrow geometry,
+paint, typography, padding, and actual-icon hover; both owner crops are byte-identical. Runtime
+`.pin` consumers are now zero, so the
+entire 42-line React bridge is deleted; removing StyleX classes exposes unstyled output and proves
+that no fallback remains. Focused/full restricted E2E passes 12/12, StyleX foundation 3/3, and the
+typecheck plus production build/verifier are green. The standalone route's pre-existing inert click
+behavior remains a recorded functional parity gap until a real shared React sidebar boundary exists;
+no route-local navigation architecture is invented in this styling slice. This is not Wave 1
+completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

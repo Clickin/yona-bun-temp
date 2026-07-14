@@ -610,48 +610,6 @@ body:has(.legacy-framed-shell.is-open) {
   line-height: 16px;
 }
 
-.pin {
-  position: absolute;
-  top: 6px;
-  left: -6px;
-  display: inline-block;
-  padding: 0 1px;
-  margin-right: 5px;
-  color: #3e2723;
-  font-size: 18px;
-  line-height: 18px;
-  text-align: left;
-  background-color: #03a9f4;
-  border: 0;
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  box-shadow: none;
-  appearance: none;
-}
-
-.pin i.yobicon-arrow-right,
-.pin i.yobicon-arrow-left {
-  display: none;
-  padding: 4px 0 4px 5px;
-}
-
-.pin i.yobicon-arrow-right {
-  display: inline-block;
-}
-
-.pin:hover,
-.pin i:hover {
-  color: #fff;
-  cursor: pointer;
-}
-
-.pin:hover,
-.pin:focus {
-  background-color: #03a9f4;
-  border: 0;
-  box-shadow: none;
-}
-
 .gnb-outer {
   box-sizing: border-box;
   height: 40px;

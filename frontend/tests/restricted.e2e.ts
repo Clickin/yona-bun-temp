@@ -77,9 +77,9 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
     "src",
     "https://www.youtube.com/embed/9bZkp7q19f0",
   );
-  const sidebarPin = page.locator(".gnb-inner > .pin");
+  const sidebarPin = page.locator('[data-stylex-owner="restricted-sidebar-pin"]');
   await expect(sidebarPin).not.toHaveAttribute("data-toggle");
-  await expect(sidebarPin).toHaveAttribute("data-placement", "bottom");
+  await expect(sidebarPin).not.toHaveAttribute("data-placement");
   await expect(sidebarPin).toHaveAttribute("title", "Sidebar");
 
   const actual = await canonicalizeScreenRoots(page);
@@ -195,8 +195,9 @@ test("restricted route source keeps the approved plain Yoram footer attribution"
 });
 
 test("restricted route source drops route-owned tooltip initializer marker", async () => {
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="pin"');
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-placement="bottom"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-stylex-owner="restricted-sidebar-pin"');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('className="pin"');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('data-placement="bottom"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain('title="Sidebar"');
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
 });
@@ -402,7 +403,8 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => normalizeAttribute(current, name))
+        .filter(Boolean)
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -421,6 +423,29 @@ async function canonicalizeScreenRoots(page: Page) {
         .join("");
 
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function normalizeAttribute(current: Element, name: string) {
+      if (
+        (name === "data-toggle" || name === "data-placement") &&
+        current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+      ) {
+        return "";
+      }
+      if (
+        name === "class" &&
+        current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+      ) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter(
+            (value) =>
+              value && value !== "pin" && !value.startsWith("x") && !value.includes("restricted__"),
+          )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
   });
 }
@@ -458,7 +483,8 @@ async function canonicalizeHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -477,6 +503,32 @@ async function canonicalizeHtml(page: Page, html: string) {
           .join("");
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          (name === "data-toggle" || name === "data-placement") &&
+          current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+        ) {
+          return "";
+        }
+        if (
+          name === "class" &&
+          current.closest('.pin, [data-stylex-owner="restricted-sidebar-pin"]')
+        ) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter(
+              (value) =>
+                value &&
+                value !== "pin" &&
+                !value.startsWith("x") &&
+                !value.includes("restricted__"),
+            )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
     },
     { markup: html },
