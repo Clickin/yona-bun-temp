@@ -48,6 +48,23 @@ const styles = stylex.create({
     whiteSpace: globalColors.siteUpdateDownloadActionWhiteSpace,
     zIndex: globalColors.siteUpdateDownloadActionZIndex,
   },
+  errorPre: {
+    fontFamily: globalColors.siteDiagnosticErrorPreFontFamily,
+    color: globalColors.siteDiagnosticErrorPreText,
+    display: globalColors.siteDiagnosticErrorPreDisplay,
+    padding: globalColors.siteDiagnosticErrorPrePadding,
+    margin: globalColors.siteDiagnosticErrorPreMargin,
+    fontSize: globalColors.siteDiagnosticErrorPreFontSize,
+    lineHeight: globalColors.siteDiagnosticErrorPreLineHeight,
+    wordBreak: globalColors.siteDiagnosticErrorPreWordBreak,
+    overflowWrap: globalColors.siteDiagnosticErrorPreWordWrap,
+    whiteSpace: globalColors.siteDiagnosticErrorPreWhiteSpace,
+    backgroundColor: globalColors.siteDiagnosticErrorPreSurface,
+    borderStyle: globalColors.siteDiagnosticErrorPreBorderStyle,
+    borderWidth: globalColors.siteDiagnosticErrorPreBorderWidth,
+    borderColor: globalColors.siteDiagnosticErrorPreBorder,
+    borderRadius: globalColors.siteDiagnosticErrorPreRadius,
+  },
 });
 
 export const Route = createFileRoute("/sites/update")({
@@ -186,7 +203,9 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
       {response.error ? (
         <>
           <p>{t("site.update.error")}</p>
-          <pre>{response.error}</pre>
+          <pre {...stylex.props(styles.errorPre)} data-stylex-owner="site-update-error-pre">
+            {response.error}
+          </pre>
         </>
       ) : null}
     </>

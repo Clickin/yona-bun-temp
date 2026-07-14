@@ -1391,6 +1391,12 @@ complete former `ybtn ybtn-success` surface through global variables and removes
 classes only from this external Link; other update branches and the shared shell remain fallback.
 This is not Wave 1 completion.
 
+The ninety-sixth slice migrates the errors-present direct `<pre>` of `/sites/update` from
+`site/update.scala.html` and Bootstrap 2.3.1 `code, pre`/`pre` rules. StyleX applies the complete
+evidenced preformatted exception surface through existing global variables without removing any
+legacy class; error copy, title, sidebar, other update branches, and generic pre consumers remain
+fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
