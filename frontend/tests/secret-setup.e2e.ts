@@ -628,7 +628,23 @@ async function expectLegacyAnchor(
   await expect(link).toHaveAttribute("href", expected.href);
   await expect(link).toHaveText(expected.text);
   if (expected.className) {
-    await expect(link).toHaveAttribute("class", expected.className);
+    expect(
+      await link.evaluate((element, expectedClassName) => {
+        const owner = element.closest('[data-stylex-owner="secret-setup"]');
+        const classes = Array.from(element.classList);
+        const expectedClasses = expectedClassName.split(" ");
+        return (
+          expectedClasses.every((className) => classes.includes(className)) &&
+          (!owner ||
+            classes.every(
+              (className) =>
+                expectedClasses.includes(className) ||
+                className.startsWith("x") ||
+                className.includes("__styles."),
+            ))
+        );
+      }, expected.className),
+    ).toBe(true);
   } else {
     await expect(link).not.toHaveAttribute("class", /.+/u);
   }
@@ -769,7 +785,17 @@ async function canonicalizeScreenRoots(page: Page) {
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
-        .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+        .map((name) => {
+          const value =
+            name === "class" && current.closest('[data-stylex-owner="secret-setup"]')
+              ? Array.from(current.classList)
+                  .filter(
+                    (className) => !className.startsWith("x") && !className.includes("__styles."),
+                  )
+                  .join(" ")
+              : (current.getAttribute(name) ?? "");
+          return `${name}=${JSON.stringify(value)}`;
+        })
         .join(" ");
       const open = attrs
         ? `<${current.tagName.toLowerCase()} ${attrs}>`

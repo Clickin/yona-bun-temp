@@ -1322,6 +1322,12 @@ a global theme variable sourced from `_common.less`; standard-password and socia
 their existing output, while other `.center-txt` consumers remain fallback consumers. Focused and
 existing signup regressions are GREEN 5/5. This is not Wave 1 completion.
 
+The eighty-fifth slice migrates the initial administrator setup surface in `/secret` from
+`welcome/secret.scala.html`. StyleX owns only that template's inline secret-wrapper, logo, and
+warning-box declarations through global theme variables; the setup form, mutation, and not-found
+state retain their existing output. Focused desktop/mobile and existing setup regressions verify
+the legacy containing-block geometry. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

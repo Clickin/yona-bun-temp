@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
@@ -9,6 +10,7 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
@@ -21,6 +23,27 @@ const legacyLinkActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+
+const styles = stylex.create({
+  wrap: { textAlign: globalColors.secretSetupWrapTextAlign },
+  logo: {
+    display: globalColors.secretSetupLogoDisplay,
+    textAlign: globalColors.secretSetupLogoTextAlign,
+    overflow: globalColors.secretSetupLogoOverflow,
+    width: globalColors.secretSetupLogoWidth,
+    height: globalColors.secretSetupLogoHeight,
+    lineHeight: globalColors.secretSetupLogoLineHeight,
+    fontSize: globalColors.secretSetupLogoFontSize,
+    color: globalColors.secretSetupLogoText,
+    backgroundColor: globalColors.secretSetupLogoSurface,
+    margin: globalColors.secretSetupLogoMargin,
+    ":hover": { color: globalColors.secretSetupLogoText },
+  },
+  box: { width: globalColors.secretSetupBoxWidth, margin: globalColors.secretSetupBoxMargin },
+});
+const secretWrapClassName = stylex.props(styles.wrap).className;
+const secretLogoClassName = stylex.props(styles.logo).className;
+const secretBoxClassName = stylex.props(styles.box).className;
 
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
@@ -106,14 +129,26 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">
-            <div className="secret-wrap">
-              <Link to="/" activeProps={legacyLinkActiveProps} className="logo">
+            <div
+              className={`secret-wrap ${secretWrapClassName}`}
+              data-stylex-owner="secret-setup"
+              data-stylex-part="secret-setup-wrap"
+            >
+              <Link
+                to="/"
+                activeProps={legacyLinkActiveProps}
+                className={`logo ${secretLogoClassName}`}
+                data-stylex-part="secret-setup-logo"
+              >
                 <span>{siteName}</span>
               </Link>
 
               <h3>{welcome}</h3>
 
-              <div className="alert alert-block secret-box">
+              <div
+                className={`alert alert-block secret-box ${secretBoxClassName}`}
+                data-stylex-part="secret-setup-box"
+              >
                 <h4>{t("app.welcome.warning.title")}</h4>
                 {t("app.welcome.warning.desc")}
               </div>
