@@ -21,7 +21,14 @@ test("authenticated side-nav shell uses global StyleX color variables", () => {
   expect(ownerSource).toContain("globalColors.sidenavText");
   expect(ownerSource).toContain("globalColors.sidenavBorder");
   expect(ownerSource).toContain("globalColors.sidenavShadow");
+  expect(ownerSource).toContain("globalColors.sidenavBaseTop");
+  expect(ownerSource).toContain("globalColors.sidenavAdminAffixTop");
+  expect(ownerSource).not.toContain('top: "40px"');
+  expect(ownerSource).not.toContain('top: "84px"');
+  expect(routeSource).toContain("sidenavUsesAdminAffixTop");
   expect(themeSource).toContain("stylex.defineVars");
+  expect(themeSource).toContain('sidenavBaseTop: "40px"');
+  expect(themeSource).toContain('sidenavAdminAffixTop: "84px"');
 
   for (const color of [
     "#fff",
@@ -40,8 +47,24 @@ test("authenticated side-nav shell uses global StyleX color variables", () => {
 });
 
 for (const viewport of [
-  { label: "desktop", width: 1366, height: 900 },
-  { label: "mobile", width: 390, height: 844 },
+  {
+    affix: { height: 43, width: 1366, x: 0, y: 0 },
+    closedShell: { width: 0, x: 1366, y: 84 },
+    header: { height: 40, width: 1366, x: 0, y: 43 },
+    label: "desktop",
+    openShell: { width: 362, x: 1004, y: 84 },
+    width: 1366,
+    height: 900,
+  },
+  {
+    affix: { height: 66, width: 390, x: 0, y: 0 },
+    closedShell: { width: 0, x: 390, y: 84 },
+    header: { height: 40, width: 390, x: 0, y: 66 },
+    label: "mobile",
+    openShell: { width: 392, x: -2, y: 84 },
+    width: 390,
+    height: 844,
+  },
 ]) {
   test(`authenticated side-nav shell preserves ${viewport.label} open and closed parity`, async ({
     page,
@@ -58,21 +81,27 @@ for (const viewport of [
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
 
     const closed = await readShellEvidence(shell);
+    const closedLayout = await readLayoutEvidence(page);
     console.log(`authenticated-sidenav-${viewport.label}-closed`, JSON.stringify(closed));
-    await saveScreenshot(
-      page,
-      `stylex-authenticated-sidenav-${viewport.label}-closed-${closed.hasOwner ? "after" : "before"}.png`,
-    );
+    expect(closed.styles.top).toBe("84px");
+    expectBox(closedLayout.affix, viewport.affix);
+    expectBox(closedLayout.header, viewport.header);
+    expectShellBox(closedLayout.shell, viewport.closedShell);
 
     await toggle.click();
     await expect(shell).toHaveClass(/sidenav-open/);
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     const open = await readShellEvidence(shell);
+    const openLayout = await readLayoutEvidence(page);
     console.log(`authenticated-sidenav-${viewport.label}-open`, JSON.stringify(open));
     await saveScreenshot(
       page,
-      `stylex-authenticated-sidenav-${viewport.label}-open-${open.hasOwner ? "after" : "before"}.png`,
+      `stylex-authenticated-sidenav-affix-top-local-${viewport.label}.png`,
     );
+    expect(open.styles.top).toBe("84px");
+    expectBox(openLayout.affix, viewport.affix);
+    expectBox(openLayout.header, viewport.header);
+    expectShellBox(openLayout.shell, viewport.openShell);
 
     expect(open.hasOwner).toBe(true);
     expect(closed.styles).toEqual({
@@ -85,7 +114,7 @@ for (const viewport of [
       overflowY: "auto",
       position: "absolute",
       right: "0px",
-      top: "40px",
+      top: "84px",
       width: "0px",
       zIndex: "999",
     });
@@ -110,13 +139,35 @@ for (const viewport of [
 
     await removeStyleXClass(shell);
     const fallbackOpen = await readShellEvidence(shell);
-    expect(fallbackOpen.styles).toEqual(open.styles);
-    expect(fallbackOpen.geometry).toEqual(open.geometry);
+    expect(fallbackOpen.styles).toEqual({ ...open.styles, top: "40px" });
+    expect(fallbackOpen.geometry.x).toBe(open.geometry.x);
+    expect(fallbackOpen.geometry.y).toBe(40);
+    expect(fallbackOpen.geometry.width).toBe(open.geometry.width);
     await restoreClass(shell);
   });
 }
 
-async function installAuthenticatedHome(page: Page) {
+test("non-admin authenticated home and shared shell callers keep the base side-nav top", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await installAuthenticatedHome(page, { isSiteAdmin: false });
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".admin-logged-in-affix")).toHaveCount(0);
+  await expect(page.locator("#mySidenav")).toHaveCSS("top", "40px");
+
+  await installAuthenticatedHome(page, { isSiteAdmin: true });
+  await page.goto(`${BASE_PATH}/projects`);
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator("#mySidenav")).toHaveCSS("top", "40px");
+});
+
+async function installAuthenticatedHome(
+  page: Page,
+  { isSiteAdmin = true }: { isSiteAdmin?: boolean } = {},
+) {
   await page.addInitScript((basePath) => {
     (
       window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
@@ -138,7 +189,7 @@ async function installAuthenticatedHome(page: Page) {
         isAnonymous: false,
         isConfirmed: true,
         isGuest: false,
-        isSiteAdmin: true,
+        isSiteAdmin,
         loginId: "admin",
         userLabel: "Site Admin",
       },
@@ -162,6 +213,42 @@ async function installAuthenticatedHome(page: Page) {
       },
     }),
   );
+  await page.route("**/api/v1/projects?*", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { items: [], pageNum: 1, totalPages: 1 },
+    }),
+  );
+}
+
+async function readLayoutEvidence(page: Page) {
+  return page.evaluate(() => {
+    const box = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!element) throw new Error(`Missing layout selector: ${selector}`);
+      const rect = element.getBoundingClientRect();
+      return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+    };
+    return {
+      affix: box(".admin-logged-in-affix"),
+      header: box(".gnb-outer"),
+      shell: box("#mySidenav"),
+    };
+  });
+}
+
+function expectBox(
+  actual: { height: number; width: number; x: number; y: number },
+  expected: { height: number; width: number; x: number; y: number },
+) {
+  expect(actual).toEqual(expected);
+}
+
+function expectShellBox(
+  actual: { width: number; x: number; y: number },
+  expected: { width: number; x: number; y: number },
+) {
+  expect({ width: actual.width, x: actual.x, y: actual.y }).toEqual(expected);
 }
 
 async function readShellEvidence(shell: Locator) {

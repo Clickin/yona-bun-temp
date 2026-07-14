@@ -329,7 +329,7 @@ function HomeScreen({
 
   if (isAuthenticated) {
     return (
-      <SiteLayoutShell runtimeConfig={runtimeConfig}>
+      <SiteLayoutShell runtimeConfig={runtimeConfig} sidenavUsesAdminAffixTop>
         <HomeFlashToast message={flashMessage} />
         <div className="page-wrap-outer">
           <div className="page-wrap">
@@ -689,12 +689,14 @@ export function SiteLayoutShell({
   children,
   projectSearchScope,
   runtimeConfig,
+  sidenavUsesAdminAffixTop = false,
 }: {
   activeMenu?: "projects";
   children: React.ReactNode;
   projectSearchScope?: { organizationName?: string; ownerName?: string; projectName?: string };
   runtimeConfig: RuntimeConfig;
   showLegacyProjectHeaderLinks?: boolean;
+  sidenavUsesAdminAffixTop?: boolean;
 }) {
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
@@ -936,6 +938,7 @@ export function SiteLayoutShell({
                 basePath={runtimeConfig.basePath}
                 runtimeConfig={runtimeConfig}
                 session={session ?? {}}
+                sidenavUsesAdminAffixTop={sidenavUsesAdminAffixTop && shouldRenderSiteAdminAffix}
                 workspace={navbarWorkspaceQuery.data}
               />
             )}
@@ -2901,7 +2904,7 @@ const authenticatedSidenavShellStyles = stylex.create({
     overflowY: "auto",
     position: "absolute",
     right: 0,
-    top: "40px",
+    top: globalColors.sidenavBaseTop,
     width: 0,
     zIndex: 999,
   },
@@ -2913,6 +2916,9 @@ const authenticatedSidenavShellStyles = stylex.create({
       default: "360px",
       "@media (max-width: 720px)": "100vw",
     },
+  },
+  adminAffixTop: {
+    top: globalColors.sidenavAdminAffixTop,
   },
 });
 
@@ -3017,11 +3023,13 @@ function AuthenticatedSiteUserMenu({
   basePath,
   runtimeConfig,
   session,
+  sidenavUsesAdminAffixTop,
   workspace,
 }: {
   basePath: string;
   runtimeConfig: RuntimeConfig;
   session: YoramRecord;
+  sidenavUsesAdminAffixTop: boolean;
   workspace: YoramRecord | undefined;
 }) {
   const { t } = useLegacyMessages();
@@ -3065,7 +3073,7 @@ function AuthenticatedSiteUserMenu({
     <>
       <div
         id="mySidenav"
-        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
+        className={`${isSidebarOpen ? "sidenav sidenav-open" : "sidenav"} ${stylex.props(authenticatedSidenavShellStyles.shell, sidenavUsesAdminAffixTop && authenticatedSidenavShellStyles.adminAffixTop, isSidebarOpen && authenticatedSidenavShellStyles.open).className}`}
         data-stylex-owner="authenticated-site-sidenav-shell"
       >
         <div

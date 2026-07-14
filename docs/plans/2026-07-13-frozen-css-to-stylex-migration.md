@@ -688,6 +688,22 @@ fallback. The dropdown-container class remains only for its actual container/men
 separate authenticated sidenav admin-affix top placement remains the next shell-state owner; this
 slice adds no vertical offset. This is not Wave 1 completion.
 
+The thirty-sixth verified slice completes the authenticated HOME site-admin sidenav top state.
+Legacy `_usermenu.less` supplies the shared `40px` base while
+`index/notifications.scala.html` moves only the HOME site-admin state to `84px` when the admin
+affix is present. Both values now come from semantic variables in the canonical global StyleX
+theme; no route-local raw value, dark value, or toggle is introduced. `HomeScreen` alone opts into
+the state, and `SiteLayoutShell` additionally requires its existing site-admin affix condition,
+so non-admin HOME and shared callers such as `/projects` retain the `40px` base. Fresh Edge/en-US
+live/local evidence agrees at 1366×900 on the affix `1366×43 @ 0,0`, header `1366×40 @ 0,43`,
+closed sidenav `x1366/y84/w0`, and open sidenav `x1004/y84/w362`; at 390×844 it agrees on the
+affix `390×66 @ 0,0`, header `390×40 @ 0,66`, closed sidenav `x390/y84/w0`, and open sidenav
+`x-2/y84/w392`, including the intentional legacy mobile overlap. Removing the StyleX owner state
+returns `top` and `y` from `84px` to the immutable legacy `40px` base, while x/width and the other
+shell declarations remain unchanged. The existing lower rule is deletion evidence, not a
+fallback for the `84px` state; no new fallback or numeric compensation was added. This is not
+Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

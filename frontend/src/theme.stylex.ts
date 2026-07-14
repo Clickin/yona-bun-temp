@@ -1,6 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const globalColors = stylex.defineVars({
+  // _usermenu.less: #mySidenav top
+  sidenavBaseTop: "40px",
+  // index/notifications.scala.html: site-admin affix side-nav top
+  sidenavAdminAffixTop: "84px",
   // _usermenu.less: #mySidenav background-color
   sidenavSurface: "#ffffff",
   // _usermenu.less: .sidenav color
