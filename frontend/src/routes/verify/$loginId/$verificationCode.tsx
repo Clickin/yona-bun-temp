@@ -1,10 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { verifyUser } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { globalColors } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
+
+const styles = stylex.create({
+  taglineWrap: {
+    textAlign: globalColors.resetPasswordTaglineTextAlign,
+    marginTop: globalColors.resetPasswordTaglineMarginTop,
+    marginBottom: globalColors.resetPasswordTaglineMarginBottom,
+    paddingTop: globalColors.resetPasswordTaglinePaddingTop,
+  },
+  title: {
+    display: globalColors.resetPasswordTitleDisplay,
+    fontFamily: globalColors.resetPasswordTitleFontFamily,
+    fontSize: globalColors.resetPasswordTitleFontSize,
+    lineHeight: globalColors.resetPasswordTitleLineHeight,
+    fontWeight: globalColors.resetPasswordTitleFontWeight,
+  },
+  tagline: {
+    marginTop: globalColors.resetPasswordTaglineCopyMarginTop,
+    fontSize: globalColors.resetPasswordTaglineFontSize,
+    color: globalColors.resetPasswordTaglineColor,
+  },
+});
 
 export const Route = createFileRoute("/verify/$loginId/$verificationCode")({
   component: VerifyUserRoute,
@@ -63,11 +86,19 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <title>{legacyBrowserTitle}</title>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page full">
-          <div className="center-wrap tag-line-wrap reset-password">
-            <h1 className="title">{t("user.verified")}</h1>
+          <div
+            {...stylex.props(styles.taglineWrap)}
+            className="center-wrap tag-line-wrap reset-password"
+            data-stylex-owner="verified-user-success"
+          >
+            <h1 {...stylex.props(styles.title)} className="title">
+              {t("user.verified")}
+            </h1>
             <p>{verifiedLoginId}</p>
             <hr />
-            <p className="tag-line">{t("user.verified.detail")}</p>
+            <p {...stylex.props(styles.tagline)} className="tag-line">
+              {t("user.verified.detail")}
+            </p>
           </div>
         </div>
       </SiteLayoutShell>

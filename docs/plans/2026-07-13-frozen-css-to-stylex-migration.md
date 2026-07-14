@@ -1341,6 +1341,13 @@ Bootstrap table, button, progress, span, and icon primitives remain fallback con
 fixed span layout intentionally overflows at 390px, so focused mobile parity pins owner-relative
 containment rather than introducing a responsive compensation. This is not Wave 1 completion.
 
+The eighty-eighth slice migrates successful `/verify/:loginId/:verificationCode` output from
+`user/verified.scala.html` and the reset-password branch of `_page.less`. StyleX owns the exact
+tag-line wrapper, title, and tagline declarations through existing global theme variables; pending
+loading, invalid verification, the SiteLayout shell, and reset/login consumers remain fallback
+states. Focused desktop/mobile screenshots and the existing verification regression retain the
+legacy copy, order, and geometry. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

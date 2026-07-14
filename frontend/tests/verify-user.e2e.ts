@@ -297,6 +297,12 @@ async function readMobileVerifiedMetrics(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (name === "class" && current.closest('[data-stylex-owner="verified-user-success"]')) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
+          .join(" ");
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
