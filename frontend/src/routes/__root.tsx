@@ -13,6 +13,7 @@ import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -76,6 +77,62 @@ const styles = stylex.create({
   rootEventBoundary: {
     "--yoram-stylex-root-boundary": "stylex",
     display: "contents",
+  },
+  rootToastContainer: {
+    position: globalColors.rootYoramToastContainerPosition,
+    right: globalColors.rootYoramToastContainerRight,
+    bottom: globalColors.rootYoramToastContainerBottom,
+    zIndex: globalColors.rootYoramToastContainerZIndex,
+    margin: globalColors.rootYoramToastContainerMargin,
+    overflow: globalColors.rootYoramToastContainerOverflow,
+  },
+  rootToast: {
+    position: globalColors.rootYoramToastPosition,
+    boxSizing: globalColors.rootYoramToastBoxSizing,
+    width: globalColors.rootYoramToastWidth,
+    padding: globalColors.rootYoramToastPadding,
+    margin: globalColors.rootYoramToastMargin,
+    fontSize: globalColors.rootYoramToastFontSize,
+    fontWeight: globalColors.rootYoramToastFontWeight,
+    color: globalColors.rootYoramToastColor,
+    wordBreak: globalColors.rootYoramToastWordBreak,
+    overflowWrap: globalColors.rootYoramToastWordWrap,
+    outline: globalColors.rootYoramToastOutline,
+    backgroundColor: globalColors.rootYoramToastSurface,
+    borderRadius: globalColors.rootYoramToastRadius,
+    boxShadow: globalColors.rootYoramToastShadow,
+    opacity: globalColors.rootYoramToastOpacity,
+    transitionDuration: globalColors.rootYoramToastTransitionDuration,
+  },
+  rootToastDismiss: {
+    position: globalColors.rootYoramToastDismissPosition,
+    top: globalColors.rootYoramToastDismissTop,
+    left: globalColors.rootYoramToastDismissLeft,
+  },
+  rootToastDismissButton: {
+    color: globalColors.rootYoramToastDismissColor,
+    fontSize: globalColors.rootYoramToastDismissFontSize,
+    fontWeight: globalColors.rootYoramToastDismissFontWeight,
+    backgroundColor: globalColors.rootYoramToastDismissSurface,
+    borderStyle: globalColors.rootYoramToastDismissBorderStyle,
+    borderWidth: globalColors.rootYoramToastDismissBorderWidth,
+    padding: globalColors.rootYoramToastDismissPadding,
+    outline: globalColors.rootYoramToastDismissOutline,
+  },
+  rootToastSpacer: {
+    display: globalColors.rootYoramToastSpacerDisplay,
+    width: globalColors.rootYoramToastSpacerWidth,
+    height: globalColors.rootYoramToastSpacerHeight,
+    verticalAlign: globalColors.rootYoramToastSpacerVerticalAlign,
+  },
+  rootToastMessage: {
+    display: globalColors.rootYoramToastMessageDisplay,
+    width: globalColors.rootYoramToastMessageWidth,
+    margin: globalColors.rootYoramToastMessageMargin,
+    fontSize: globalColors.rootYoramToastMessageFontSize,
+    verticalAlign: globalColors.rootYoramToastMessageVerticalAlign,
+    wordBreak: globalColors.rootYoramToastMessageWordBreak,
+    overflowWrap: globalColors.rootYoramToastMessageWordWrap,
   },
 });
 
@@ -210,7 +267,11 @@ function RootResetShell() {
               onDismiss={closeRootShellModal}
             />
           </LegacyI18nProvider>
-          <div id="yobiToasts" className="yobiToasts">
+          <div
+            {...stylex.props(styles.rootToastContainer)}
+            id="yobiToasts"
+            data-stylex-owner="root-toast-container"
+          >
             {rootToast ? (
               <RootYoramToast
                 durationMs={rootToast.durationMs}
@@ -306,15 +367,22 @@ function RootYoramToast({
   }, [durationMs, onDismiss]);
 
   return (
-    <div className="toast" tabIndex={-1}>
-      <div className="btn-dismiss">
-        <button type="button" className="btn-transparent" onClick={onDismiss}>
+    <div
+      {...stylex.props(styles.rootToast)}
+      tabIndex={-1}
+      data-stylex-owner="root-yoram-toast"
+      data-stylex-part="toast"
+    >
+      <div {...stylex.props(styles.rootToastDismiss)} data-stylex-part="toast-dismiss">
+        <button {...stylex.props(styles.rootToastDismissButton)} type="button" onClick={onDismiss}>
           &times;
         </button>
       </div>
-      <div className="center-text">
-        <span className="v" />
-        <div className="msg">{message}</div>
+      <div>
+        <span {...stylex.props(styles.rootToastSpacer)} />
+        <div {...stylex.props(styles.rootToastMessage)} data-stylex-part="toast-message">
+          {message}
+        </div>
       </div>
     </div>
   );

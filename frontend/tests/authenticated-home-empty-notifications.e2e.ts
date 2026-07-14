@@ -998,23 +998,25 @@ test("authenticated home flash renders legacy toast without route-local notify s
     page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
   ).toContainText("No notification has been received.");
 
-  const toast = page.locator(".yobiToasts .toast", {
+  const toast = page.locator('[data-stylex-owner="root-yoram-toast"]', {
     hasText:
       "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
   });
   await expect(toast).toBeVisible();
-  await expect(toast.locator(".msg")).toHaveText(
+  await expect(toast.locator('[data-stylex-part="toast-message"]')).toHaveText(
     "Sign-up request has been sent. Site admin will review and accept your request. Thanks.",
   );
-  await toast.locator("button.btn-transparent").click();
+  await toast.locator("button").click();
   await expect(toast).toHaveCount(0);
 
   await page.goto(`${basePath}/?verify=sent`);
-  const verificationToast = page.locator(".yobiToasts .toast", {
+  const verificationToast = page.locator('[data-stylex-owner="root-yoram-toast"]', {
     hasText: "User verification mail was sent.",
   });
   await expect(verificationToast).toBeVisible();
-  await expect(verificationToast.locator(".msg")).toHaveText("User verification mail was sent.");
+  await expect(verificationToast.locator('[data-stylex-part="toast-message"]')).toHaveText(
+    "User verification mail was sent.",
+  );
 });
 
 test("authenticated shell renders legacy custom navbar link before my issues", async ({ page }) => {

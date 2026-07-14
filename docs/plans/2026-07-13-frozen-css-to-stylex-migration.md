@@ -1168,6 +1168,19 @@ the inactive medium outline width as `3px`, while `outline-style: none` correctl
 rendered outline. The broad authenticated HOME suite passes 27/40; its 13 failures remain unrelated
 pre-existing GNB/sidebar/notification canonicalizer drift and are not counted green for this slice.
 
+The sixty-ninth slice completes the global root-shell `RootYoramToast` visible state. It is a
+single-owner wave: `#yobiToasts`, its toast surface, dismiss control, spacer, and message are
+migrated together because their frozen `_yobiUI.less` selectors are mutually dependent; the
+separate root modal and the inert `text/x-jquery-tmpl` compatibility markup are excluded. Fresh
+live legacy Edge evidence at 1366×900 and 390×844 fixes the 450×70 toast, its exact paint, final
+opacity, and the intentional mobile left clipping. StyleX owns every selector-declared runtime
+value through canonical global theme variables, removes runtime `yobiToasts`, `toast`,
+`btn-dismiss`, `btn-transparent`, `center-text`, `v`, and `msg` presentation classes only inside
+this state, and preserves the root React timer/click dismissal behavior. Actual RED becomes
+focused GREEN 5/5; desktop/mobile full-page screenshots were inspected against the live baseline,
+with typecheck, Vitest, production build/StyleX verification, frozen hashes, format, and diff gates
+recorded before the wave commit.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
