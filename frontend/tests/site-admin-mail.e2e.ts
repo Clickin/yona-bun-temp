@@ -577,7 +577,7 @@ async function mailFormMetrics(page: Page) {
     const subjectInput = requireElement('#mailForm input[name="subject"]');
     const bodyTextarea = requireElement("#body");
     const buttonWrap = requireElement(".mail-btn-wrap");
-    const button = requireElement(".mail-btn-wrap .ybtn-primary");
+    const button = requireElement('[data-stylex-owner="site-mail-send-action"]');
 
     const rowRect = row.getBoundingClientRect();
     const sidebarRect = sidebar.getBoundingClientRect();
@@ -733,6 +733,9 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (name === "class" && current.matches('[data-stylex-owner="site-mail-send-action"]')) {
+        return "";
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -815,6 +818,13 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
+      const isMailSendAction =
+        name === "class" &&
+        current.matches(".mail-btn-wrap > button.ybtn.ybtn-primary") &&
+        current.querySelector(":scope > strong") !== null;
+      if (isMailSendAction) {
+        return "";
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&

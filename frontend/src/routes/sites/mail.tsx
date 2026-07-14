@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { Fragment, type ReactNode, useState } from "react";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
@@ -11,7 +12,50 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const styles = stylex.create({
+  sendAction: {
+    backgroundColor: {
+      default: globalColors.siteMailSendActionSurface,
+      ":hover": globalColors.siteMailSendActionInteractiveSurface,
+      ":focus": globalColors.siteMailSendActionInteractiveSurface,
+      ":active": globalColors.siteMailSendActionInteractiveSurface,
+    },
+    borderColor: {
+      default: globalColors.siteMailSendActionBorderColor,
+      ":hover": globalColors.siteMailSendActionBorderColor,
+      ":focus": globalColors.siteMailSendActionBorderColor,
+      ":active": globalColors.siteMailSendActionBorderColor,
+    },
+    borderRadius: globalColors.siteMailSendActionBorderRadius,
+    borderStyle: globalColors.siteMailSendActionBorderStyle,
+    borderWidth: globalColors.siteMailSendActionBorderWidth,
+    boxShadow: globalColors.siteMailSendActionBoxShadow,
+    color: globalColors.siteMailSendActionText,
+    cursor: globalColors.siteMailSendActionCursor,
+    display: globalColors.siteMailSendActionDisplay,
+    fontSize: globalColors.siteMailSendActionFontSize,
+    lineHeight: globalColors.siteMailSendActionLineHeight,
+    marginBottom: globalColors.siteMailSendActionMarginBottom,
+    marginLeft: globalColors.siteMailSendActionMarginLeft,
+    outline: globalColors.siteMailSendActionOutline,
+    padding: globalColors.siteMailSendActionPadding,
+    position: globalColors.siteMailSendActionPosition,
+    textAlign: globalColors.siteMailSendActionTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteMailSendActionInteractiveTextDecoration,
+      ":focus": globalColors.siteMailSendActionInteractiveTextDecoration,
+      ":active": globalColors.siteMailSendActionInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteMailSendActionTextShadow,
+    transition: globalColors.siteMailSendActionTransition,
+    verticalAlign: globalColors.siteMailSendActionVerticalAlign,
+    whiteSpace: globalColors.siteMailSendActionWhiteSpace,
+    zIndex: globalColors.siteMailSendActionZIndex,
+  },
+});
 
 interface SiteMailRouteSearch {
   errorMessage?: string;
@@ -286,7 +330,11 @@ function MailBody({
           </div>
 
           <div className="span12 mail-btn-wrap">
-            <button type="submit" className="ybtn ybtn-primary">
+            <button
+              {...stylex.props(styles.sendAction)}
+              data-stylex-owner="site-mail-send-action"
+              type="submit"
+            >
               <strong>{t("site.mail.send")}</strong>
             </button>
           </div>

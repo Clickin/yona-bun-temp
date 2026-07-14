@@ -1403,6 +1403,12 @@ declarations through existing global variables while retaining the shared fallba
 available/current/no-update/error bodies, title descendant navigation, sidebar, shell, and generic
 title areas remain fallback. This is not Wave 1 completion.
 
+The ninety-eighth slice migrates the default `/sites/mail` send action from `site/mail.scala.html`,
+`_yobiUI.less`, `_mixins.less`, and `_variables.less`. StyleX owns the complete former
+`ybtn ybtn-primary` surface through global variables and removes those fallback classes only from
+the mutation submit button; the form wrapper, fields, alerts, title/sidebar/shell, and other ybtn
+consumers remain fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
