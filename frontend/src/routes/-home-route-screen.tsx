@@ -824,15 +824,22 @@ export function SiteLayoutShell({
           <div className="gnb-inner">
             {!showLeftSidebar ? (
               <button
+                {...stylex.props(globalSidebarOpenPinStyles.root)}
                 aria-controls="sidebar"
                 aria-expanded="false"
-                className="pin"
+                data-stylex-owner="global-sidebar-open-pin"
                 onClick={handleLeftSidebarOpen}
                 title="Sidebar"
                 type="button"
               >
-                <i className="yobicon-arrow-left" aria-hidden="true" />
-                <i className="yobicon-arrow-right" aria-hidden="true" />
+                <i
+                  className={`yobicon-arrow-left ${stylex.props(globalSidebarOpenPinStyles.icon).className}`}
+                  aria-hidden="true"
+                />
+                <i
+                  className={`yobicon-arrow-right ${stylex.props(globalSidebarOpenPinStyles.icon, globalSidebarOpenPinStyles.visibleIcon).className}`}
+                  aria-hidden="true"
+                />
               </button>
             ) : null}
             <ul className="gnb-nav">
@@ -2892,6 +2899,61 @@ const authenticatedSidenavAccountActionStyles = stylex.create({
     ":hover": {
       backgroundColor: globalColors.sidenavLogoutHover,
     },
+  },
+});
+
+const globalSidebarOpenPinStyles = stylex.create({
+  root: {
+    appearance: "none",
+    backgroundColor: globalColors.globalSidebarOpenPinSurface,
+    borderBottomColor: globalColors.globalSidebarOpenPinText,
+    borderBottomStyle: "none",
+    borderBottomWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderLeftColor: globalColors.globalSidebarOpenPinText,
+    borderLeftStyle: "none",
+    borderLeftWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderRadius: globalColors.globalSidebarOpenPinRadius,
+    borderRightColor: globalColors.globalSidebarOpenPinText,
+    borderRightStyle: "none",
+    borderRightWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderTopColor: globalColors.globalSidebarOpenPinText,
+    borderTopStyle: "none",
+    borderTopWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: {
+      default: globalColors.globalSidebarOpenPinText,
+      ":focus": globalColors.globalSidebarOpenPinInteractionText,
+    },
+    cursor: {
+      default: "auto",
+      ":hover": "pointer",
+    },
+    display: "inline-block",
+    fontSize: globalColors.globalSidebarOpenPinFontSize,
+    left: globalColors.globalSidebarOpenPinLeft,
+    lineHeight: globalColors.globalSidebarOpenPinLineHeight,
+    margin: globalColors.globalSidebarOpenPinMargin,
+    padding: globalColors.globalSidebarOpenPinPadding,
+    position: "absolute",
+    textAlign: "start",
+    top: globalColors.globalSidebarOpenPinTop,
+  },
+  icon: {
+    color: {
+      default: "inherit",
+      ":hover": globalColors.globalSidebarOpenPinInteractionText,
+    },
+    cursor: {
+      default: "inherit",
+      ":hover": "pointer",
+    },
+    display: "none",
+    fontSize: globalColors.globalSidebarOpenPinFontSize,
+    padding: globalColors.globalSidebarOpenPinIconPadding,
+  },
+  visibleIcon: {
+    display: "block",
   },
 });
 

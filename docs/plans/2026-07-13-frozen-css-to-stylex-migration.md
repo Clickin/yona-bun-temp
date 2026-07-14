@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-seven shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-eight shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -720,6 +720,22 @@ than an equal lower rule. The exact-DOM canonicalizer now ignores generated Styl
 migration policy requires and narrowly normalizes only the affix classes retired here plus the
 already-ledgered authenticated account-action classes retired in slice thirty-four; visible DOM,
 copy, links, order, and other attributes remain compared. This is not Wave 1 completion.
+
+The thirty-eighth verified slice migrates the global GNB Sidebar open pin rendered by
+`SiteLayoutShell`. The Scala navbar and `_page.less` remain the DOM and declaration source:
+StyleX now owns the semantic button reset, absolute/content-box placement, right-side radius,
+surface/text paint, 18px root typography with the inherited 20px line height, both arrow display
+states, icon padding, pointer hover, white icon hover, and keyboard-focus state. Every concrete
+paint and numeric value is defined in the canonical global theme. Fresh Edge legacy and local
+evidence agrees at both 1366×900 and 390×844 on the `25×26 @ -6,6` pin and visible
+`23×26 @ -5,6` right arrow; source-authored `inline-block` blockifies to the same computed
+`block`, and the element screenshots are visually identical. The owner drops `.pin`, so removing
+its generated StyleX classes exposes a static, unpainted button and proves that no declaration for
+this owner comes from fallback. The shared React `.pin` bridge remains only because
+`frontend/src/routes/restricted.tsx` is a separate active legacy consumer; its focused test keeps
+that class contract. The unused React `.pin-move-*` duplicates are deleted. Existing runtime
+locators and exact-DOM canonicalizers move narrowly to the stable owner while preserving the
+legacy fixture class and all other DOM comparison. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

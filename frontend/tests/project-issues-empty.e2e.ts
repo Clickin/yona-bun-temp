@@ -4835,7 +4835,7 @@ async function canonicalizeScreenRoots(page: Page) {
             .sort((left, right) => left.name.localeCompare(right.name))
             .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
             .join(" ");
-      const tagName = node.matches("button.pin")
+      const tagName = node.matches('[data-stylex-owner="global-sidebar-open-pin"]')
         ? "div"
         : stateTabLink
           ? "button"
@@ -4851,6 +4851,21 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      ) {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (className) =>
+              className &&
+              className !== "pin" &&
+              !className.startsWith("x") &&
+              !className.includes("-home-route-screen__"),
+          )
+          .join(" ");
+      }
       if (attr.name === "style") {
         return normalizeStyleAttr(attr.value);
       }
@@ -4899,12 +4914,16 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-toggle",
       ]);
       const reactOwnedNavbarAttribute =
-        ((node.matches("button.pin") || node.matches("#sidebar-open-btn > button")) &&
+        ((isGlobalSidebarOpenPin(node) || node.matches("#sidebar-open-btn > button")) &&
           (attr.name === "aria-controls" || attr.name === "aria-expanded")) ||
-        (node.matches("button.pin") && attr.name === "type") ||
-        (node.closest("button.pin") !== null && attr.name === "aria-hidden");
+        (isGlobalSidebarOpenPin(node) &&
+          (attr.name === "type" || attr.name === "data-stylex-owner")) ||
+        (node.closest('[data-stylex-owner="global-sidebar-open-pin"]') !== null &&
+          attr.name === "aria-hidden");
       if (
         attr.name.startsWith("data-v-") ||
+        (attr.name === "data-style-src" &&
+          node.closest('[data-stylex-owner="global-sidebar-open-pin"]')) ||
         pluginOnlyAttributes.has(attr.name) ||
         attr.name === "state" ||
         reactOwnedNavbarAttribute ||
@@ -4916,6 +4935,10 @@ async function canonicalizeScreenRoots(page: Page) {
         return false;
       }
       return attr.name !== "class" || normalizeAttr(attr) !== "";
+    }
+
+    function isGlobalSidebarOpenPin(node: Element | null) {
+      return node?.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') === true;
     }
   });
 }

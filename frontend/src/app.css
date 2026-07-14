@@ -610,14 +610,6 @@ body:has(.legacy-framed-shell.is-open) {
   line-height: 16px;
 }
 
-.pin-move-to-right {
-  left: 270px;
-}
-
-.pin-move-to-default-position {
-  left: -2px;
-}
-
 .pin {
   position: absolute;
   top: 6px;

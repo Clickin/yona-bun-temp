@@ -1721,7 +1721,14 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-placement" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            !(node.matches(".pin") && attr.name === "type") &&
+            !(
+              attr.name === "data-style-src" &&
+              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
+            ) &&
+            !(
+              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-stylex-owner")
+            ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
@@ -1739,6 +1746,21 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      ) {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (className) =>
+              className &&
+              className !== "pin" &&
+              !className.startsWith("x") &&
+              !className.includes("-home-route-screen__"),
+          )
+          .join(" ");
+      }
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
@@ -1750,7 +1772,9 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
+      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        ? "legacy-pin-control"
+        : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {
@@ -1781,7 +1805,14 @@ async function canonicalizeLocator(page: Page, selector: string) {
             attr.name !== "data-placement" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            !(node.matches(".pin") && attr.name === "type") &&
+            !(
+              attr.name === "data-style-src" &&
+              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
+            ) &&
+            !(
+              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-stylex-owner")
+            ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
@@ -1799,6 +1830,21 @@ async function canonicalizeLocator(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      ) {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (className) =>
+              className &&
+              className !== "pin" &&
+              !className.startsWith("x") &&
+              !className.includes("-home-route-screen__"),
+          )
+          .join(" ");
+      }
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
@@ -1810,7 +1856,9 @@ async function canonicalizeLocator(page: Page, selector: string) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
+      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        ? "legacy-pin-control"
+        : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {
@@ -1964,7 +2012,14 @@ async function canonicalizeHtml(page: Page, html: string) {
             attr.name !== "data-placement" &&
             attr.name !== "role" &&
             attr.name !== "tabindex" &&
-            !(node.matches(".pin") && attr.name === "type") &&
+            !(
+              attr.name === "data-style-src" &&
+              node.closest('[data-stylex-owner="global-sidebar-open-pin"]')
+            ) &&
+            !(
+              node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]') &&
+              (attr.name === "type" || attr.name === "data-stylex-owner")
+            ) &&
             (isProjectSettingMenuAnchor(node) ||
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
@@ -1982,6 +2037,21 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (
+        attr.name === "class" &&
+        attr.ownerElement?.closest('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+      ) {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (className) =>
+              className &&
+              className !== "pin" &&
+              !className.startsWith("x") &&
+              !className.includes("-home-route-screen__"),
+          )
+          .join(" ");
+      }
       if (attr.name === "style") {
         return attr.value.replace(/\s+/g, "").replace(/;$/, "").replaceAll('"', "'");
       }
@@ -1993,7 +2063,9 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function canonicalTagName(node: Element) {
-      return node.matches(".pin") ? "legacy-pin-control" : node.tagName.toLowerCase();
+      return node.matches('.pin, [data-stylex-owner="global-sidebar-open-pin"]')
+        ? "legacy-pin-control"
+        : node.tagName.toLowerCase();
     }
 
     function isProjectSettingMenuAnchor(node: Element) {

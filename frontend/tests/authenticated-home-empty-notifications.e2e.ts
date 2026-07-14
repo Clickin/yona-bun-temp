@@ -1088,7 +1088,10 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
   );
 
   const shellTooltipMetadata = [
-    { locator: page.locator(".gnb-inner > .pin"), title: "Sidebar" },
+    {
+      locator: page.locator('[data-stylex-owner="global-sidebar-open-pin"]'),
+      title: "Sidebar",
+    },
     {
       locator: page.locator(".gnb-usermenu > li.gnb-usermenu-item").first(),
       title: "Shortcut (A)",
@@ -1587,7 +1590,7 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
     ).__leftFramedSidebarSpaSentinel = "alive";
   });
 
-  const openPin = page.locator(".gnb-inner > .pin");
+  const openPin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
   await expect(openPin).toHaveJSProperty("tagName", "BUTTON");
   await expect(openPin).toHaveAttribute("type", "button");
   await expect(openPin).toHaveAttribute("title", "Sidebar");
@@ -2757,7 +2760,9 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
 async function readDesktopClosedLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const main = document.querySelector<HTMLElement>(".legacy-framed-main");
-    const pin = document.querySelector<HTMLElement>(".gnb-inner > .pin");
+    const pin = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-sidebar-open-pin"]',
+    );
     if (!main || !pin) {
       throw new Error("Expected closed legacy framed sidebar metric targets are missing.");
     }

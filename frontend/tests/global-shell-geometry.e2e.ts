@@ -82,7 +82,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   expect(metrics.heroHeading.x).toBe(metrics.heroCover.x);
   expect(metrics.heroHeading.right).toBe(metrics.heroCover.right);
 
-  const pin = page.locator(".pin");
+  const pin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
   await expect(pin).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-right")).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-left")).toBeHidden();
@@ -397,7 +397,7 @@ async function readShellMetrics(page: Page) {
       logo: box(".gnb-nav .logo-letter"),
       nav: box(".gnb-nav"),
       navbar: box(".gnb-outer"),
-      pin: box(".pin"),
+      pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
       search: box(".gnb-search-form"),
       signup: box(".gnb-usermenu .ybtn-success"),
       userMenu: box(".gnb-usermenu"),

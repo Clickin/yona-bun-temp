@@ -95,7 +95,7 @@ for (const viewport of [
     expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe(
       "false",
     );
-    const openPin = page.locator(".gnb-inner > .pin");
+    const openPin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
     await openPin.click();
     await expect(
       page.getByRole("complementary", { name: "Sidebar" }).getByRole("button", {

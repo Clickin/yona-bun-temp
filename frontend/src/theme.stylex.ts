@@ -175,6 +175,30 @@ export const globalColors = stylex.defineVars({
   leftSidebarClosePinText: "#3e2723",
   // _page.less: .pin-in-sidebar icon hover and React button focus color
   leftSidebarClosePinInteractionText: "#ffffff",
+  // _page.less: .pin background-color
+  globalSidebarOpenPinSurface: "#03a9f4",
+  // _page.less: .pin color
+  globalSidebarOpenPinText: "#3e2723",
+  // _page.less: .pin i:hover and React button focus color
+  globalSidebarOpenPinInteractionText: "#ffffff",
+  // _page.less: .pin left
+  globalSidebarOpenPinLeft: "-6px",
+  // _page.less: .pin top
+  globalSidebarOpenPinTop: "6px",
+  // _page.less: .pin margin-right
+  globalSidebarOpenPinMargin: "0 5px 0 0",
+  // _page.less: .pin padding
+  globalSidebarOpenPinPadding: "0 1px",
+  // _page.less: .pin font-size
+  globalSidebarOpenPinFontSize: "18px",
+  // Bootstrap 2.3.1 button inherited line-height
+  globalSidebarOpenPinLineHeight: "20px",
+  // _page.less: .pin right-side border radii
+  globalSidebarOpenPinRadius: "0 3px 3px 0",
+  // Bootstrap button reset plus _page.less: .pin borderless DIV surface
+  globalSidebarOpenPinBorderWidth: "0px",
+  // _page.less: .pin i.yobicon-arrow-left/right padding
+  globalSidebarOpenPinIconPadding: "4px 0 4px 5px",
   // layout_framed.scala.html: #sidebar-bottom color
   leftSidebarFooterText: "#808080",
   // layout_framed.scala.html: #sidebar-bottom .yobicon-hearts color
