@@ -1310,6 +1310,12 @@ and the responsive signup popover rules; React retains legacy-equivalent validat
 placement. Confirmation, social-only, and independent popover consumers retain fallback output.
 Focused and existing signup regressions are GREEN 5/5. This is not Wave 1 completion.
 
+The eighty-third slice migrates the email-verification-enabled standalone `/users/loginform`
+helper from `user/login.scala.html`. StyleX owns the complete `.email-verification-help` typography
+and spacing through global theme variables sourced from `_page.less`; disabled and social-only login
+states retain their existing output. Focused and existing login regressions are GREEN 5/5. This is
+not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

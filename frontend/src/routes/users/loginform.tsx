@@ -101,6 +101,12 @@ const styles = stylex.create({
     lineHeight: globalColors.standaloneLoginActionLineHeight,
     overflow: globalColors.standaloneLoginActionOverflow,
   },
+  verificationHelp: {
+    fontWeight: globalColors.standaloneLoginVerificationHelpFontWeight,
+    padding: globalColors.standaloneLoginVerificationHelpPadding,
+    marginBottom: globalColors.standaloneLoginVerificationHelpMarginBottom,
+    fontSize: globalColors.standaloneLoginVerificationHelpFontSize,
+  },
 });
 
 const standaloneLoginClassName = stylex.props(styles.standaloneLogin).className;
@@ -115,6 +121,7 @@ const submitClassName = stylex.props(styles.submit).className;
 const rememberMeClassName = stylex.props(styles.rememberMe).className;
 const checkboxClassName = stylex.props(styles.checkbox).className;
 const actionRowClassName = stylex.props(styles.actionRow).className;
+const verificationHelpClassName = stylex.props(styles.verificationHelp).className;
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
@@ -225,7 +232,11 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             data-stylex-part="standalone-login-form-wrap"
           >
             {capabilities?.emailVerificationEnabled === true ? (
-              <div className="email-verification-help">
+              <div
+                className={verificationHelpClassName}
+                data-stylex-owner="standalone-login-verification-help"
+                data-stylex-part="standalone-login-verification-help-message"
+              >
                 {t("notification.confirm.mail.will.be.sent")}
               </div>
             ) : null}

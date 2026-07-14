@@ -197,6 +197,11 @@ export const globalColors = stylex.defineVars({
   standaloneLoginCheckboxMarginTop: "4px",
   standaloneLoginActionLineHeight: "22px",
   standaloneLoginActionOverflow: "auto",
+  // user/login.scala.html + _page.less: standalone email-verification helper
+  standaloneLoginVerificationHelpFontWeight: "700",
+  standaloneLoginVerificationHelpPadding: "5px",
+  standaloneLoginVerificationHelpMarginBottom: "10px",
+  standaloneLoginVerificationHelpFontSize: "16px",
 
   // user/resetPassword.scala.html + _page.less + _responsive.less: valid-token reset only
   resetPasswordTaglineTextAlign: "center",
