@@ -87,6 +87,19 @@ const styles = stylex.create({
     boxSizing: globalColors.resetPasswordSubmitBoxSizing,
     width: globalColors.resetPasswordSubmitWidth,
   },
+  badRequest: {
+    "--yoram-stylex-reset-password-bad-request": "stylex",
+  },
+  badRequestErrorWrap: {
+    padding: globalColors.resetPasswordBadRequestErrorWrapPadding,
+    textAlign: globalColors.resetPasswordBadRequestErrorWrapTextAlign,
+  },
+  badRequestMessage: {
+    margin: globalColors.resetPasswordBadRequestMessageMargin,
+    fontWeight: globalColors.resetPasswordBadRequestMessageFontWeight,
+    fontSize: globalColors.resetPasswordBadRequestMessageFontSize,
+    color: globalColors.resetPasswordBadRequestMessageText,
+  },
 });
 
 const validTokenResetClassName = stylex.props(styles.validTokenReset).className;
@@ -97,6 +110,9 @@ const formWrapClassName = stylex.props(styles.formWrap).className;
 const passwordInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
 const buttonRowClassName = stylex.props(styles.buttonRow).className;
 const submitClassName = stylex.props(styles.submit).className;
+const badRequestClassName = stylex.props(styles.badRequest).className;
+const badRequestErrorWrapClassName = stylex.props(styles.badRequestErrorWrap).className;
+const badRequestMessageClassName = stylex.props(styles.badRequestMessage).className;
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
@@ -367,11 +383,22 @@ function BadRequestPage({
   const { t } = useLegacyMessages();
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <div className="page-wrap-outer reset-password-bad-request">
+      <div
+        className={`page-wrap-outer reset-password-bad-request ${badRequestClassName}`}
+        data-stylex-owner="reset-password-bad-request"
+      >
         <div className="project-page-wrap">
-          <div className="error-wrap">
+          <div
+            className={`error-wrap ${badRequestErrorWrapClassName}`}
+            data-stylex-part="reset-password-bad-request-error-wrap"
+          >
             <i className="ico-404" />
-            <p>{message}</p>
+            <p
+              className={badRequestMessageClassName}
+              data-stylex-part="reset-password-bad-request-message"
+            >
+              {message}
+            </p>
             <Link
               to=".."
               activeOptions={legacyAnchorActiveOptions}

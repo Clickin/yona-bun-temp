@@ -1291,6 +1291,11 @@ its own state owner. Prefilled values and React dismissal remain intact; anonymo
 and no-alert states stay separate. Focused and existing regressions are GREEN 5/5. This is not
 Wave 1 completion.
 
+The eightieth slice migrates invalid-token `/resetPassword?error=invalid&s=…` bad-request output
+from `error/badrequest_default.scala.html`. StyleX owns only its error wrapper/message from
+`_page.less`; shared `ico-404` and `ybtn ybtn-info` Home primitives remain real fallback consumers.
+Focused and existing reset regressions are GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

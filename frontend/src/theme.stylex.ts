@@ -237,6 +237,13 @@ export const globalColors = stylex.defineVars({
   resetPasswordSubmitDisplay: "block",
   resetPasswordSubmitBoxSizing: "border-box",
   resetPasswordSubmitWidth: "100%",
+  // error/badrequest_default.scala.html + _page.less `.error-wrap`: reset invalid-token state
+  resetPasswordBadRequestErrorWrapPadding: "100px 0px",
+  resetPasswordBadRequestErrorWrapTextAlign: "center",
+  resetPasswordBadRequestMessageMargin: "30px 0px",
+  resetPasswordBadRequestMessageFontWeight: "700",
+  resetPasswordBadRequestMessageFontSize: "16px",
+  resetPasswordBadRequestMessageText: "#898989",
 
   // site/lostPassword.scala.html + _page.less + _responsive.less: anonymous email-request baseline only
   lostPasswordTaglineTextAlign: "center",
