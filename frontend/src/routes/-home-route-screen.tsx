@@ -420,11 +420,11 @@ function HomeScreen({
               data-stylex-owner="authenticated-home-content-page"
             >
               <div
-                className={`content-container ${stylex.props(authenticatedHomeContentGridStyles.grid).className}`}
+                {...stylex.props(authenticatedHomeContentGridStyles.grid)}
                 data-stylex-owner="authenticated-home-content-grid"
               >
                 <div
-                  className={`main-stream ${stylex.props(authenticatedHomeContentGridStyles.main).className}`}
+                  {...stylex.props(authenticatedHomeContentGridStyles.main)}
                   data-stylex-owner="authenticated-home-main-stream"
                 >
                   <ul
@@ -517,7 +517,7 @@ function HomeScreen({
                     </li>
                   </ul>
                   <ul
-                    className={`activity-streams ${stylex.props(authenticatedHomeNotificationStyles.list).className}`}
+                    {...stylex.props(authenticatedHomeNotificationStyles.list)}
                     data-stylex-owner="authenticated-home-notification-list"
                   >
                     {notificationItems.length === 0 ? (
@@ -637,6 +637,12 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
   const [hasOverflow, setHasOverflow] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [expandedMinHeight, setExpandedMinHeight] = React.useState<string | undefined>();
+  const notificationTypeTokens = notification.typeIcon.split(" ");
+  const notificationGlyph = notificationTypeTokens[0] || "megaphone";
+  const isUpdated =
+    notification.eventType === "ISSUE_BODY_CHANGED" || notification.eventType === "COMMENT_UPDATED";
+  const avatarClassName = `avatar-wrap smaller ${stylex.props(authenticatedHomeNotificationRowStyles.avatar).className}`;
+  const authorClassName = stylex.props(authenticatedHomeNotificationRowStyles.author).className;
 
   React.useLayoutEffect(() => {
     const messageWrap = messageWrapRef.current;
@@ -677,15 +683,58 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
   }
 
   return (
-    <li className="notification-stream">
-      <div className={`stream-type ${notification.typeIcon}`}>
-        <i className={`yobicon-${notification.typeIcon}`} />
+    <li
+      {...stylex.props(authenticatedHomeNotificationRowStyles.row)}
+      data-stylex-owner="authenticated-home-notification-row"
+    >
+      <div
+        {...stylex.props(
+          authenticatedHomeNotificationRowStyles.type,
+          isUpdated && authenticatedHomeNotificationRowStyles.updated,
+          !isUpdated &&
+            notificationTypeTokens.includes("closed") &&
+            authenticatedHomeNotificationRowStyles.closed,
+          !isUpdated &&
+            notificationTypeTokens.includes("changed") &&
+            authenticatedHomeNotificationRowStyles.changed,
+          !isUpdated &&
+            notificationTypeTokens.includes("rejected") &&
+            authenticatedHomeNotificationRowStyles.rejected,
+          !isUpdated &&
+            notificationTypeTokens.includes("warning") &&
+            authenticatedHomeNotificationRowStyles.warning,
+          !isUpdated &&
+            notificationTypeTokens.includes("merged") &&
+            authenticatedHomeNotificationRowStyles.merged,
+          !isUpdated &&
+            notificationTypeTokens.includes("comment2") &&
+            authenticatedHomeNotificationRowStyles.comment,
+          !isUpdated &&
+            notificationTypeTokens.includes("info") &&
+            authenticatedHomeNotificationRowStyles.info,
+          !isUpdated &&
+            notificationTypeTokens.includes("list-alt") &&
+            authenticatedHomeNotificationRowStyles.list,
+          !isUpdated &&
+            notificationTypeTokens.includes("ellipsis-horizontal") &&
+            authenticatedHomeNotificationRowStyles.ellipsis,
+        )}
+        data-stylex-owner="authenticated-home-notification-type"
+      >
+        {isUpdated ? "Edit" : <i className={`yobicon-${notificationGlyph}`} />}
       </div>
       {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
       {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_notifications.scala.html uses a clickable plain div here. */}
-      <div className="stream-desc" onClick={handleLearnMoreClick}>
-        <div className="stream-info">
-          <div className="title">
+      <div
+        {...stylex.props(authenticatedHomeNotificationRowStyles.desc)}
+        data-stylex-owner="authenticated-home-notification-desc"
+        onClick={handleLearnMoreClick}
+      >
+        <div data-stylex-owner="authenticated-home-notification-info">
+          <div
+            {...stylex.props(authenticatedHomeNotificationRowStyles.title)}
+            data-stylex-owner="authenticated-home-notification-title"
+          >
             {notification.targetHref ? (
               <Link to={notification.targetHref} {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS}>
                 {notification.targetTitle}
@@ -695,30 +744,47 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
             )}
           </div>
           <div
-            className={isExpanded ? "message-wrap" : "message-wrap nowrap"}
+            {...stylex.props(
+              authenticatedHomeNotificationRowStyles.messageWrap,
+              !isExpanded && authenticatedHomeNotificationRowStyles.collapsedMessage,
+            )}
+            data-stylex-owner="authenticated-home-notification-message-wrap"
             id={`message-${notification.id}`}
             ref={messageWrapRef}
             style={expandedMinHeight ? { minHeight: expandedMinHeight } : undefined}
           >
-            <div className="message" ref={messageRef}>
+            <div
+              {...stylex.props(authenticatedHomeNotificationRowStyles.message)}
+              data-stylex-owner="authenticated-home-notification-message"
+              ref={messageRef}
+            >
               <LegacyNotificationMessage message={notification.message} />
             </div>
           </div>
           {hasOverflow ? (
-            <div className="more" style={isExpanded ? { display: "none" } : undefined}>
+            <div
+              {...stylex.props(
+                authenticatedHomeNotificationRowStyles.more,
+                isExpanded && authenticatedHomeNotificationRowStyles.hiddenMore,
+              )}
+              data-stylex-owner="authenticated-home-notification-more"
+            >
               ...
             </div>
           ) : null}
-          <div className="meta">
+          <div
+            {...stylex.props(authenticatedHomeNotificationRowStyles.meta)}
+            data-stylex-owner="authenticated-home-notification-meta"
+          >
             <Link
               to="/$user"
               params={{ user: notification.actor.loginId }}
               search={LEGACY_USER_LINK_SEARCH}
-              className="avatar-wrap smaller"
+              className={avatarClassName}
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
               activeProps={{
                 "aria-current": undefined,
-                className: "avatar-wrap smaller",
+                className: avatarClassName,
                 "data-status": undefined,
               }}
             >
@@ -728,18 +794,23 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
               to="/$user"
               params={{ user: notification.actor.loginId }}
               search={LEGACY_USER_LINK_SEARCH}
-              className="author"
+              className={authorClassName}
+              data-stylex-owner="authenticated-home-notification-author"
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
               activeProps={{
                 "aria-current": undefined,
-                className: "author",
+                className: authorClassName,
                 "data-status": undefined,
               }}
             >
               {notification.actor.displayName}
             </Link>
             @{notification.actor.loginId}
-            <span className="ago pull-right" title={notification.createdAt}>
+            <span
+              {...stylex.props(authenticatedHomeNotificationRowStyles.ago)}
+              data-stylex-owner="authenticated-home-notification-ago"
+              title={notification.createdAt}
+            >
               {notification.createdLabel}
             </span>
           </div>
@@ -2036,6 +2107,113 @@ const authenticatedHomeNotificationStyles = stylex.create({
     fontSize: globalColors.authenticatedHomeNotificationEmptyFontSize,
     padding: globalColors.authenticatedHomeNotificationEmptyPadding,
     textAlign: globalColors.authenticatedHomeNotificationEmptyTextAlign,
+  },
+});
+
+const authenticatedHomeNotificationRowStyles = stylex.create({
+  row: {
+    borderBottomColor: globalColors.authenticatedHomeNotificationRowText,
+    borderBottomStyle: globalColors.authenticatedHomeNotificationRowBorderStyle,
+    borderBottomWidth: globalColors.authenticatedHomeNotificationRowBorder,
+    clear: globalColors.authenticatedHomeNotificationRowClear,
+    color: globalColors.authenticatedHomeNotificationRowText,
+    cursor: globalColors.authenticatedHomeNotificationRowCursor,
+    padding: globalColors.authenticatedHomeNotificationRowPadding,
+    position: globalColors.authenticatedHomeNotificationRowPosition,
+    backgroundColor: {
+      default: null,
+      ":hover": globalColors.authenticatedHomeNotificationRowHoverSurface,
+    },
+  },
+  type: {
+    color: globalColors.authenticatedHomeNotificationTypeBaseText,
+    display: globalColors.authenticatedHomeNotificationTypeDisplay,
+    fontSize: globalColors.authenticatedHomeNotificationTypeFontSize,
+    fontWeight: globalColors.authenticatedHomeNotificationTypeFontWeight,
+    lineHeight: globalColors.authenticatedHomeNotificationTypeLineHeight,
+    marginTop: globalColors.authenticatedHomeNotificationTypeMarginTop,
+    padding: globalColors.authenticatedHomeNotificationTypePadding,
+    textAlign: globalColors.authenticatedHomeNotificationTypeTextAlign,
+    verticalAlign: globalColors.authenticatedHomeNotificationTypeVerticalAlign,
+  },
+  updated: {
+    backgroundColor: globalColors.authenticatedHomeNotificationUpdatedSurface,
+    borderColor: globalColors.authenticatedHomeNotificationUpdatedText,
+    borderRadius: globalColors.authenticatedHomeNotificationUpdatedRadius,
+    borderStyle: globalColors.authenticatedHomeNotificationUpdatedBorderStyle,
+    borderWidth: globalColors.authenticatedHomeNotificationUpdatedBorder,
+    color: globalColors.authenticatedHomeNotificationUpdatedText,
+    fontSize: globalColors.authenticatedHomeNotificationUpdatedFontSize,
+    fontWeight: globalColors.authenticatedHomeNotificationTypeFontWeight,
+    padding: globalColors.authenticatedHomeNotificationUpdatedPadding,
+    width: globalColors.authenticatedHomeNotificationUpdatedWidth,
+  },
+  closed: { color: globalColors.authenticatedHomeNotificationTypeClosedText },
+  changed: { color: globalColors.authenticatedHomeNotificationTypeChangedText },
+  rejected: { color: globalColors.authenticatedHomeNotificationTypeRejectedText },
+  warning: { color: globalColors.authenticatedHomeNotificationTypeWarningText },
+  merged: { color: globalColors.authenticatedHomeNotificationTypeMergedText },
+  comment: { color: globalColors.authenticatedHomeNotificationTypeCommentText },
+  info: { color: globalColors.authenticatedHomeNotificationTypeInfoText },
+  list: { color: globalColors.authenticatedHomeNotificationTypeListText },
+  ellipsis: { color: globalColors.authenticatedHomeNotificationTypeEllipsisText },
+  desc: {
+    display: globalColors.authenticatedHomeNotificationTypeDisplay,
+    padding: globalColors.authenticatedHomeNotificationDescPadding,
+    width: globalColors.authenticatedHomeNotificationDescWidth,
+  },
+  title: {
+    color: globalColors.authenticatedHomeNotificationTitleText,
+    fontSize: globalColors.authenticatedHomeNotificationTitleFontSize,
+    fontWeight: globalColors.authenticatedHomeNotificationTitleFontWeight,
+    overflow: globalColors.authenticatedHomeNotificationTitleOverflow,
+    textOverflow: globalColors.authenticatedHomeNotificationTitleTextOverflow,
+    whiteSpace: globalColors.authenticatedHomeNotificationTitleWhiteSpace,
+  },
+  messageWrap: {
+    color: globalColors.authenticatedHomeNotificationMessageText,
+    fontSize: globalColors.authenticatedHomeNotificationMessageFontSize,
+    lineHeight: globalColors.authenticatedHomeNotificationMessageLineHeight,
+    marginTop: globalColors.authenticatedHomeNotificationMessageMarginTop,
+    minHeight: globalColors.authenticatedHomeNotificationMessageMinHeight,
+    overflow: globalColors.authenticatedHomeNotificationTitleOverflow,
+    transition: globalColors.authenticatedHomeNotificationMessageTransition,
+  },
+  collapsedMessage: {
+    maxHeight: globalColors.authenticatedHomeNotificationMessageMaxHeight,
+  },
+  message: {
+    lineHeight: globalColors.authenticatedHomeNotificationMessageLineHeight,
+    wordBreak: globalColors.authenticatedHomeNotificationMessageWordBreak,
+  },
+  more: {
+    backgroundColor: globalColors.authenticatedHomeNotificationMoreSurface,
+    borderRadius: globalColors.authenticatedHomeNotificationMoreRadius,
+    color: globalColors.authenticatedHomeNotificationMessageText,
+    display: globalColors.authenticatedHomeNotificationTypeDisplay,
+    lineHeight: globalColors.authenticatedHomeNotificationMoreLineHeight,
+    padding: globalColors.authenticatedHomeNotificationMorePadding,
+  },
+  hiddenMore: {
+    display: globalColors.authenticatedHomeNotificationMoreHiddenDisplay,
+  },
+  meta: {
+    color: globalColors.authenticatedHomeNotificationMetaText,
+    fontSize: globalColors.authenticatedHomeNotificationMetaFontSize,
+    marginTop: globalColors.authenticatedHomeNotificationMetaMarginTop,
+  },
+  avatar: {
+    marginTop: globalColors.authenticatedHomeNotificationAvatarMarginTop,
+  },
+  author: {
+    color: {
+      default: globalColors.authenticatedHomeNotificationAuthorText,
+      ":hover": globalColors.authenticatedHomeNotificationAuthorHoverText,
+    },
+    fontWeight: globalColors.authenticatedHomeNotificationTypeFontWeight,
+  },
+  ago: {
+    float: globalColors.authenticatedHomeNotificationAgoFloat,
   },
 });
 

@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+const NOTIFICATION_ROW = '[data-stylex-owner="authenticated-home-notification-row"]';
+const NOTIFICATION_DESC = '[data-stylex-owner="authenticated-home-notification-desc"]';
+const NOTIFICATION_TITLE = '[data-stylex-owner="authenticated-home-notification-title"]';
+const NOTIFICATION_MESSAGE = '[data-stylex-owner="authenticated-home-notification-message"]';
+const NOTIFICATION_MORE = '[data-stylex-owner="authenticated-home-notification-more"]';
+const NOTIFICATION_META = '[data-stylex-owner="authenticated-home-notification-meta"]';
+const NOTIFICATION_AUTHOR = '[data-stylex-owner="authenticated-home-notification-author"]';
+
 const EXPECTED_AUTHENTICATED_HOME = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -2252,7 +2260,7 @@ test("direct notifications route matches legacy populated notification row DOM",
   ]);
 
   await page.goto(`${basePath}/notifications`);
-  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(1);
   await expect(page.locator(".warning-none")).toHaveCount(0);
 
   const actual = await canonicalizeScreenRoots(page);
@@ -2292,9 +2300,9 @@ test("direct notifications route matches legacy populated notification row DOM",
     titleFontSize: "14px",
     titleFontWeight: "700",
   });
-  const notificationTitle = page.locator(".notification-stream .title a");
-  const notificationAvatar = page.locator(".notification-stream .avatar-wrap");
-  const notificationAuthor = page.locator(".notification-stream .author");
+  const notificationTitle = page.locator(`${NOTIFICATION_TITLE} a`);
+  const notificationAvatar = page.locator(`${NOTIFICATION_META} .avatar-wrap`);
+  const notificationAuthor = page.locator(NOTIFICATION_AUTHOR);
   await expect(notificationTitle).toHaveText("Issue #1 updated");
   await expect(notificationTitle).toHaveAttribute("href", `${basePath}/admin/sample/issue/1`);
   await expect(notificationTitle).not.toHaveAttribute("class");
@@ -2302,10 +2310,11 @@ test("direct notifications route matches legacy populated notification row DOM",
   await expect(notificationTitle).not.toHaveAttribute("aria-current");
   await expect(notificationTitle).not.toHaveAttribute("data-status");
   await expect(notificationAvatar).toHaveAttribute("href", `${basePath}/admin`);
-  await expect(notificationAvatar).toHaveAttribute("class", "avatar-wrap smaller");
+  await expect(notificationAvatar).toHaveClass(/\bavatar-wrap\b/u);
+  await expect(notificationAvatar).toHaveClass(/\bsmaller\b/u);
   await expect(notificationAuthor).toHaveText("Site Admin");
   await expect(notificationAuthor).toHaveAttribute("href", `${basePath}/admin`);
-  await expect(notificationAuthor).toHaveAttribute("class", "author");
+  await expect(notificationAuthor).not.toHaveClass(/\bauthor\b/u);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileNotificationStreamMetrics(page)).toEqual({
     avatarDisplay: "inline-block",
@@ -2346,7 +2355,7 @@ test("authenticated home renders notification newlines as escaped React nodes", 
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/`);
-  const message = page.locator(".notification-stream .message");
+  const message = page.locator(NOTIFICATION_MESSAGE);
   await expect(message.locator("br")).toHaveCount(3);
   expect(
     await message.evaluate((element) =>
@@ -2394,7 +2403,7 @@ test("direct notifications route keeps React-owned learn-more behavior without l
       if (
         type === "click" &&
         this instanceof Element &&
-        this.matches(".notification-stream .stream-desc")
+        this.matches('[data-stylex-owner="authenticated-home-notification-desc"]')
       ) {
         (
           window as Window &
@@ -2425,16 +2434,16 @@ test("direct notifications route keeps React-owned learn-more behavior without l
   ]);
 
   await page.goto(`${basePath}/notifications`);
-  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(1);
   const beforeUrl = page.url();
-  const streamDesc = page.locator(".notification-stream .stream-desc");
+  const streamDesc = page.locator(NOTIFICATION_DESC);
   const messageWrap = page.locator("#message-42");
 
   await expect(streamDesc).not.toHaveAttribute("data-target");
   await expect(streamDesc).not.toHaveAttribute("data-toggle");
   await expect(streamDesc).not.toHaveAttribute("role");
   await expect(streamDesc).not.toHaveAttribute("tabindex");
-  await expect(messageWrap).toHaveClass(/nowrap/);
+  await expect(messageWrap).toHaveCSS("max-height", "200px");
   await expect(messageWrap).not.toHaveAttribute("style", /min-height/u);
   await expect
     .poll(() =>
@@ -2449,26 +2458,26 @@ test("direct notifications route keeps React-owned learn-more behavior without l
       ),
     )
     .toEqual([]);
-  await page.locator(".notification-stream .title a").evaluate((anchor) => {
+  await page.locator(`${NOTIFICATION_TITLE} a`).evaluate((anchor) => {
     anchor.addEventListener("click", (event) => event.preventDefault(), { once: true });
     anchor.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
   });
-  await expect(messageWrap).toHaveClass(/nowrap/);
-  await page.locator(".notification-stream .avatar-wrap img").evaluate((image) => {
+  await expect(messageWrap).toHaveCSS("max-height", "200px");
+  await page.locator(`${NOTIFICATION_META} .avatar-wrap img`).evaluate((image) => {
     image.closest("a")?.addEventListener("click", (event) => event.preventDefault(), {
       once: true,
     });
     image.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
   });
-  await expect(messageWrap).toHaveClass(/nowrap/);
+  await expect(messageWrap).toHaveCSS("max-height", "200px");
 
-  await page.locator(".notification-stream .message").click();
-  await expect(messageWrap).not.toHaveClass(/nowrap/);
+  await page.locator(NOTIFICATION_MESSAGE).click();
+  await expect(messageWrap).toHaveCSS("max-height", "none");
   await expect
     .poll(() => messageWrap.evaluate((element) => element.style.minHeight))
     .toMatch(/px$/u);
-  await page.locator(".notification-stream .message").click();
-  await expect(messageWrap).toHaveClass(/nowrap/);
+  await page.locator(NOTIFICATION_MESSAGE).click();
+  await expect(messageWrap).toHaveCSS("max-height", "200px");
   await expect.poll(() => messageWrap.evaluate((element) => element.style.minHeight)).toBe("");
   expect(page.url()).toBe(beforeUrl);
 
@@ -2509,17 +2518,17 @@ test("direct notifications route shows legacy overflowing row more marker", asyn
   ]);
 
   await page.goto(`${basePath}/notifications`);
-  await expect(page.locator(".notification-stream")).toHaveCount(1);
-  const more = page.locator(".notification-stream .more");
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(1);
+  const more = page.locator(NOTIFICATION_MORE);
   const messageWrap = page.locator("#message-42");
 
   await expect(more).toHaveText("...");
   await expect(more).toBeVisible();
-  await page.locator(".notification-stream .message").click();
-  await expect(messageWrap).not.toHaveClass(/nowrap/);
+  await page.locator(NOTIFICATION_MESSAGE).click();
+  await expect(messageWrap).toHaveCSS("max-height", "none");
   await expect(more).toBeHidden();
-  await page.locator(".notification-stream .message").click();
-  await expect(messageWrap).toHaveClass(/nowrap/);
+  await page.locator(NOTIFICATION_MESSAGE).click();
+  await expect(messageWrap).toHaveCSS("max-height", "200px");
   await expect(more).toBeVisible();
 });
 
@@ -2538,7 +2547,7 @@ test("direct notifications route appends legacy notification-more rows", async (
   });
 
   await page.goto(`${basePath}/notifications`);
-  await expect(page.locator(".notification-stream")).toHaveCount(20);
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(20);
   const notificationMore = page.locator("button[type='button'].ybtn#notification-more");
   await expect(notificationMore).toBeVisible();
   await expect(notificationMore).toHaveText("More");
@@ -2580,10 +2589,8 @@ test("direct notifications route appends legacy notification-more rows", async (
 
   const beforeUrl = page.url();
   await notificationMore.click();
-  await expect(page.locator(".notification-stream")).toHaveCount(21);
-  await expect(page.locator(".notification-stream", { hasText: "Issue #21 updated" })).toHaveCount(
-    1,
-  );
+  await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(21);
+  await expect(page.locator(NOTIFICATION_ROW, { hasText: "Issue #21 updated" })).toHaveCount(1);
   await expect(page.locator("#notification-more")).toHaveCount(0);
   await expect(page.locator("button[type='button'].ybtn#notification-more")).toHaveCount(0);
   expect(page.url()).toBe(beforeUrl);
@@ -2632,7 +2639,7 @@ test("authenticated home notification-more keeps legacy content-box geometry", a
 async function readNotificationMoreGeometry(page: Page) {
   return page.locator("#notification-more").evaluate((button) => {
     const parent = button.parentElement;
-    const list = button.closest(".activity-streams");
+    const list = button.closest('[data-stylex-owner="authenticated-home-notification-list"]');
     if (!parent || !list) throw new Error("notification-more container is missing");
     const buttonBox = button.getBoundingClientRect();
     const listBox = list.getBoundingClientRect();
@@ -2719,7 +2726,9 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
     const mainStream = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-main-stream"]',
     );
-    const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
+    const activityStreams = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-list"]',
+    );
     const guideToggleButton = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
     );
@@ -3155,7 +3164,9 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
     const mainStream = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-main-stream"]',
     );
-    const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
+    const activityStreams = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-list"]',
+    );
     const warning = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-notification-empty"]',
     );
@@ -3233,14 +3244,30 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
 
 async function readDesktopNotificationStreamMetrics(page: Page) {
   return page.evaluate(() => {
-    const stream = document.querySelector<HTMLElement>(".notification-stream");
-    const streamType = document.querySelector<HTMLElement>(".notification-stream .stream-type");
-    const streamDesc = document.querySelector<HTMLElement>(".notification-stream .stream-desc");
-    const title = document.querySelector<HTMLElement>(".notification-stream .title");
-    const messageWrap = document.querySelector<HTMLElement>(".notification-stream .message-wrap");
-    const meta = document.querySelector<HTMLElement>(".notification-stream .meta");
-    const avatar = document.querySelector<HTMLElement>(".notification-stream .avatar-wrap");
-    const ago = document.querySelector<HTMLElement>(".notification-stream .ago");
+    const stream = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-row"]',
+    );
+    const streamType = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-type"]',
+    );
+    const streamDesc = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-desc"]',
+    );
+    const title = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-title"]',
+    );
+    const messageWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-message-wrap"]',
+    );
+    const meta = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-meta"]',
+    );
+    const avatar = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-meta"] .avatar-wrap',
+    );
+    const ago = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-ago"]',
+    );
     if (
       !stream ||
       !streamType ||
@@ -3295,13 +3322,27 @@ async function readDesktopNotificationStreamMetrics(page: Page) {
 
 async function readMobileNotificationStreamMetrics(page: Page) {
   return page.evaluate(() => {
-    const stream = document.querySelector<HTMLElement>(".notification-stream");
-    const streamType = document.querySelector<HTMLElement>(".notification-stream .stream-type");
-    const streamDesc = document.querySelector<HTMLElement>(".notification-stream .stream-desc");
-    const title = document.querySelector<HTMLElement>(".notification-stream .title");
-    const messageWrap = document.querySelector<HTMLElement>(".notification-stream .message-wrap");
-    const meta = document.querySelector<HTMLElement>(".notification-stream .meta");
-    const avatar = document.querySelector<HTMLElement>(".notification-stream .avatar-wrap");
+    const stream = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-row"]',
+    );
+    const streamType = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-type"]',
+    );
+    const streamDesc = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-desc"]',
+    );
+    const title = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-title"]',
+    );
+    const messageWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-message-wrap"]',
+    );
+    const meta = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-meta"]',
+    );
+    const avatar = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-meta"] .avatar-wrap',
+    );
     if (!stream || !streamType || !streamDesc || !title || !messageWrap || !meta || !avatar) {
       throw new Error("Expected mobile notification stream metric targets are missing.");
     }
@@ -4142,6 +4183,38 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       function normalizeAttribute(current: Element, name: string): string {
         const value = current.getAttribute(name) ?? "";
+        if (name === "class" && current.closest("li.notification-stream")) {
+          const retiredNotificationTokens = new Set([
+            "notification-stream",
+            "stream-type",
+            "updated",
+            "closed",
+            "changed",
+            "rejected",
+            "warning",
+            "merged",
+            "comment2",
+            "info",
+            "list-alt",
+            "ellipsis-horizontal",
+            "stream-desc",
+            "stream-info",
+            "title",
+            "message-wrap",
+            "nowrap",
+            "message",
+            "more",
+            "meta",
+            "author",
+            "ago",
+            "pull-right",
+          ]);
+          const className = value
+            .split(/\s+/u)
+            .filter((token) => token && !retiredNotificationTokens.has(token))
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

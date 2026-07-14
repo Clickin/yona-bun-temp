@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-eight shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-nine shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1011,6 +1011,22 @@ and the notification/content-grid/series-tabs/page-wrap/intro matrix passes 27/2
 class isolation, global-theme ownership, typecheck, production build/StyleX verification,
 manifest/app.css hash agreement, unchanged generated fallback hash, lint/format, and diff gates
 pass. This is not Wave 1 completion.
+
+The fifty-ninth verified slice migrates the populated authenticated HOME notification row family
+rendered from `index/partial_notifications.scala.html` at `/` and `/notifications`. Colocated
+StyleX owns the row, event/status type, title, message collapse, More indicator, avatar spacing,
+author, and timestamp declarations through canonical variables in `frontend/src/theme.stylex.ts`.
+The missing legacy `ISSUE_BODY_CHANGED`/`COMMENT_UPDATED` `Edit` badge branch is restored with
+React rendering, while React state retains message expansion and TanStack Router retains links.
+Runtime row presentation tokens and the now-zero-consumer 94-line `app.css` bridge are removed;
+only shared avatar and Yobicon primitives remain. With the last populated descendant migrated,
+the HOME grid/list also retires `content-container`, `main-stream`, and `activity-streams` without
+removing their generic fallback for other consumers. Fresh live seeded desktop/mobile evidence
+pins paint, cascade order, wrapping, expansion, pagination, and geometry; no compensation is added
+for the separately recorded surrounding-shell width/y drift or the existing 1px local Yobicon
+line-box difference. Focused verification passes 5/5, the combined affected HOME matrix passes,
+and typecheck, production build/StyleX verification, screenshots, lint/format, manifest agreement,
+unchanged generated fallback hash, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

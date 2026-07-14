@@ -42,8 +42,8 @@ test("authenticated Home empty notification has bounded global-theme StyleX owne
   const markupStart = route.indexOf('data-stylex-owner="authenticated-home-notification-list"');
   const markupEnd = route.indexOf("{notificationHasMore ?", markupStart);
   const markup = route.slice(route.lastIndexOf("<ul", markupStart), markupEnd);
-  expect(markup).toContain("className={`activity-streams ");
-  expect(markup).not.toMatch(/\b(?:notification-wrap|unstyled|warning-none)\b/u);
+  expect(markup).toContain("{...stylex.props(authenticatedHomeNotificationStyles.list)}");
+  expect(markup).not.toMatch(/\b(?:activity-streams|notification-wrap|unstyled|warning-none)\b/u);
   expect(markup).toContain('data-stylex-owner="authenticated-home-notification-empty"');
   expect(markup).toContain('className="yobicon-danger"');
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams .warning-none {");
@@ -52,7 +52,7 @@ test("authenticated Home empty notification has bounded global-theme StyleX owne
   expect(appCss).toContain(".unstyled {");
   expect(appCss).toContain(".warning-none {");
   expect(appCss).toContain(".content-container .main-stream .activity-streams {");
-  expect(appCss).toContain(".notification-stream {");
+  expect(appCss).not.toContain(".notification-stream {");
   expect(bootstrap).toContain("ul.unstyled,\nol.unstyled {");
   expect(yobi).toContain(".notification-stream {");
 });
@@ -73,8 +73,7 @@ for (const viewport of [
     const list = page.locator(LIST);
     const empty = page.locator(EMPTY);
     await expect(list).toHaveCount(1);
-    await expect(list).toHaveClass(/\bactivity-streams\b/u);
-    await expect(list).not.toHaveClass(/\b(?:notification-wrap|unstyled)\b/u);
+    await expect(list).not.toHaveClass(/\b(?:activity-streams|notification-wrap|unstyled)\b/u);
     await expect(empty).toHaveCount(1);
     await expect(empty).not.toHaveClass(/\bwarning-none\b/u);
     await expect(list.locator(`:scope > ${EMPTY}`)).toHaveCount(1);
@@ -137,31 +136,19 @@ for (const viewport of [
   });
 }
 
-test("authenticated Home notification list keeps populated activity-stream fallback ancestry", async ({
+test("authenticated Home notification list retires populated activity-stream fallback ancestry", async ({
   page,
 }) => {
   await installAuthenticatedHome(page, true);
   await page.goto(`${BASE_PATH}/notifications`);
   const list = page.locator(LIST);
-  await expect(list).toHaveClass(/\bactivity-streams\b/u);
-  await expect(list.locator(":scope > li.notification-stream")).toHaveCount(1);
-  const colors = await list.evaluate((listElement) => {
-    const streamType = listElement.querySelector<HTMLElement>(".stream-type.info");
-    if (!streamType) {
-      throw new Error("Expected populated info notification stream type.");
-    }
-    const color = () => getComputedStyle(streamType).color;
-    const retained = color();
-    listElement.classList.remove("activity-streams");
-    const withoutAncestry = color();
-    listElement.classList.add("activity-streams");
-    return { restored: color(), retained, withoutAncestry };
-  });
-  expect(colors).toEqual({
-    restored: "rgb(153, 153, 153)",
-    retained: "rgb(153, 153, 153)",
-    withoutAncestry: "rgb(76, 175, 80)",
-  });
+  await expect(list).not.toHaveClass(/\bactivity-streams\b/u);
+  await expect(
+    list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
+  ).toHaveCount(1);
+  await expect(
+    list.locator('[data-stylex-owner="authenticated-home-notification-type"]'),
+  ).toHaveCSS("color", "rgb(153, 153, 153)");
 });
 
 async function installAuthenticatedHome(page: Page, populated = false) {

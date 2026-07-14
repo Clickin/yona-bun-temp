@@ -77,8 +77,7 @@ test("authenticated Home content grid has bounded global-theme StyleX ownership"
   ]) {
     expect(ownerMarkup).not.toMatch(new RegExp(`className=[^\\n]*\\b${retired}\\b`, "u"));
   }
-  expect(ownerMarkup).toContain("className={`content-container ");
-  expect(ownerMarkup).toContain("className={`main-stream ");
+  expect(ownerMarkup).not.toMatch(/className=[^\n]*\b(?:content-container|main-stream)\b/u);
 
   expect(appCss).toContain(".content-container .main-stream {");
   expect(appCss).toContain(".content-container .main-stream .activity-streams {");
@@ -108,8 +107,8 @@ for (const viewport of [
     await expect(grid).toHaveCount(1);
     await expect(main).toHaveCount(1);
     await expect(rail).toHaveCount(1);
-    await expect(grid).toHaveClass(/\bcontent-container\b/u);
-    await expect(main).toHaveClass(/\bmain-stream\b/u);
+    await expect(grid).not.toHaveClass(/\bcontent-container\b/u);
+    await expect(main).not.toHaveClass(/\bmain-stream\b/u);
     for (const [locator, retired] of [
       [pageOwner, /(?:^|\s)(?:page|on-fold-intro)(?:\s|$)/u],
       [grid, /(?:^|\s)row-fluid(?:\s|$)/u],
@@ -133,7 +132,9 @@ for (const viewport of [
       const navElement = mainElement.querySelector(
         '[data-stylex-owner="authenticated-home-series-tabs"]',
       ) as HTMLElement;
-      const activityElement = mainElement.querySelector(".activity-streams") as HTMLElement;
+      const activityElement = mainElement.querySelector(
+        '[data-stylex-owner="authenticated-home-notification-list"]',
+      ) as HTMLElement;
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
         return {

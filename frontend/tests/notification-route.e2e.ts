@@ -61,15 +61,19 @@ test("legacy singular notification browser route renders the raw notification fr
   await page.goto(`${basePath}/notification?from=0&limit=20`);
 
   await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
-  await expect(page.locator(".notification-stream")).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-row"]'),
+  ).toHaveCount(1);
   await expect(page.locator("#notification-more")).toBeVisible();
   await expect(
     page.locator(
-      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .main-stream > .nav-tabs, #setDefaultLoginPage",
+      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, [data-stylex-owner=authenticated-home-main-stream], #setDefaultLoginPage",
     ),
   ).toHaveCount(0);
 
-  expect(await canonicalizeSelector(page, ".notification-stream")).toEqual(
+  expect(
+    await canonicalizeSelector(page, '[data-stylex-owner="authenticated-home-notification-row"]'),
+  ).toEqual(
     await canonicalizeHtml(
       page,
       EXPECTED_AUTHENTICATED_NOTIFICATION_ITEM.replaceAll("__BASE_PATH__", basePath),
@@ -104,7 +108,9 @@ test("legacy singular notification browser route keeps the anonymous warning fra
 
   await expect(page).toHaveURL(`${basePath}/notification?from=0&limit=20`);
   await expect(page.locator(".warning-none")).toContainText("No notification has been received.");
-  await expect(page.locator(".notification-stream, #notification-more")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-row"], #notification-more'),
+  ).toHaveCount(0);
   await expect(
     page.locator(
       "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage",
@@ -192,7 +198,7 @@ async function readFragmentMetrics(page: Page) {
     const outletHost = main?.querySelector<HTMLElement>(":scope > div") ?? main;
     const firstFragmentNode =
       outletHost?.querySelector<HTMLElement>(
-        ":scope > .notification-stream, :scope > .warning-none",
+        ':scope > [data-stylex-owner="authenticated-home-notification-row"], :scope > .warning-none',
       ) ?? null;
     if (!firstFragmentNode || !main || !outletHost) {
       throw new Error("Expected singular notification fragment targets are missing.");
@@ -242,11 +248,6 @@ async function canonicalizeSelector(page: Page, selector: string) {
         "src",
         "target",
         "title",
-        "data-toggle",
-        "data-placement",
-        "data-trigger",
-        "data-content",
-        "data-target",
       ];
       const attrs = stableAttributes
         .filter((name) => current.hasAttribute(name))
@@ -276,7 +277,16 @@ async function canonicalizeSelector(page: Page, selector: string) {
       if (name === "class") {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
-          .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter(
+            (value, index, values) =>
+              value &&
+              values.indexOf(value) === index &&
+              (value === "avatar-wrap" ||
+                value === "smaller" ||
+                value === "ybtn" ||
+                value === "warning-none" ||
+                value.startsWith("yobicon-")),
+          )
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -310,11 +320,6 @@ async function canonicalizeHtml(page: Page, html: string) {
           "src",
           "target",
           "title",
-          "data-toggle",
-          "data-placement",
-          "data-trigger",
-          "data-content",
-          "data-target",
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
@@ -344,7 +349,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (name === "class") {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/)
-            .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter(
+              (value, index, values) =>
+                value &&
+                values.indexOf(value) === index &&
+                (value === "avatar-wrap" ||
+                  value === "smaller" ||
+                  value === "ybtn" ||
+                  value === "warning-none" ||
+                  value.startsWith("yobicon-")),
+            )
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }
