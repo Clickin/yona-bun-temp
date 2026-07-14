@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-three user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-four user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -654,6 +654,22 @@ Edge/en-US legacy and local evidence agrees on the desktop `270×44` and mobile 
 rows, exact Account/Log out/label geometry, clearfix pseudos, label paint, hover/navigation/pin
 behavior, and no viewport overflow. No declaration owned by this account row remains fallback.
 This is not Wave 1 completion.
+
+The thirty-fourth verified slice completes the authenticated right sidenav account row after a
+fresh Edge/en-US live-legacy comparison superseded its earlier source-only bridge assumptions.
+The rendered legacy row has no ten-pixel padding or muted row color: it is a 100%-wide,
+content-box, right-aligned 21px row with Bootstrap's zero-size clearfix pseudos. StyleX now owns
+that row primitive, the 12px menu spacing, and the complete logout label surface, one-pixel
+radius, white text, normal weight, 14px line height, no-wrap, baseline, semantic text shadow, and
+violet hover. The label surface/text/shadow values are semantic variables in the canonical global
+theme; no dark value or toggle is introduced. The runtime owner emits none of `row-fluid`,
+`user-menu-wrap`, `user-menu`, `logout`, or `label`, and two explicit whitespace nodes preserve
+the Scala template's exact inline gaps. Fresh live/local metrics agree on desktop `350×21` and
+mobile `390×21` rows and every relative action position and computed declaration. No declaration
+owned by this account row remains fallback; the same global selectors remain active only for
+anonymous and other actual consumers. The local top-menu button bridge still paints above part of
+the open sidenav because of its separate non-legacy stacking declarations; that independent owner
+is the next follow-up and receives no compensation here. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

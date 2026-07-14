@@ -163,7 +163,9 @@ async function readFrameEvidence(
     (element, targets) => {
       const [profileElement, favoriteTabElement, favoriteElement] = targets as HTMLElement[];
       const shell = element.closest("#mySidenav");
-      const accountRow = profileElement.closest(".user-menu-wrap");
+      const accountRow = profileElement.closest(
+        '[data-stylex-owner="authenticated-sidenav-account-actions"]',
+      );
       const tabs = favoriteTabElement.closest("ul");
       const tabContent = tabs?.nextElementSibling;
       if (!shell || !accountRow || !tabs || !tabContent) {

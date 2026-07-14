@@ -7,6 +7,12 @@ export const globalColors = stylex.defineVars({
   sidenavText: "#000000",
   // app.css: .sidenav .user-menu-wrap color (legacy _page.less: .sidebar counterpart)
   sidenavAccountText: "#808080",
+  // _usermenu.less: .logout color in the authenticated right side-nav
+  sidenavAccountLogoutText: "#ffffff",
+  // Bootstrap 2.3.1 .label background-color in the authenticated right side-nav
+  sidenavAccountLogoutSurface: "#999999",
+  // Bootstrap 2.3.1 .label text-shadow in the authenticated right side-nav
+  sidenavAccountLogoutTextShadow: "0 -1px 0 rgba(0, 0, 0, 0.25)",
   // _usermenu.less: @violet used by .logout:hover
   sidenavLogoutHover: "#9c27b0",
   // yona.Usermenu.js: openSidebar border

@@ -2853,10 +2853,19 @@ const authenticatedSidenavContentFrameStyles = stylex.create({
 
 const authenticatedSidenavAccountActionStyles = stylex.create({
   row: {
-    boxSizing: "border-box",
-    color: globalColors.sidenavAccountText,
-    padding: "10px",
     textAlign: "right",
+    width: "100%",
+    "::before": {
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
   },
   menu: {
     color: globalColors.sidenavText,
@@ -2866,6 +2875,15 @@ const authenticatedSidenavAccountActionStyles = stylex.create({
     padding: "3px",
   },
   logout: {
+    backgroundColor: globalColors.sidenavAccountLogoutSurface,
+    borderRadius: "1px",
+    color: globalColors.sidenavAccountLogoutText,
+    display: "inline-block",
+    fontWeight: "normal",
+    lineHeight: "14px",
+    textShadow: globalColors.sidenavAccountLogoutTextShadow,
+    verticalAlign: "baseline",
+    whiteSpace: "nowrap",
     ":hover": {
       backgroundColor: globalColors.sidenavLogoutHover,
     },
@@ -3049,12 +3067,10 @@ function AuthenticatedSiteUserMenu({
           data-stylex-owner="authenticated-sidenav-content-frame"
         >
           <div
-            className={`row-fluid user-menu-wrap ${stylex.props(authenticatedSidenavAccountActionStyles.row).className}`}
+            {...stylex.props(authenticatedSidenavAccountActionStyles.row)}
             data-stylex-owner="authenticated-sidenav-account-actions"
           >
-            <span
-              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
-            >
+            <span {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}>
               <Link
                 activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                 activeProps={{
@@ -3068,10 +3084,8 @@ function AuthenticatedSiteUserMenu({
               >
                 {t("userinfo.profile")}
               </Link>
-            </span>
-            <span
-              className={`user-menu ${stylex.props(authenticatedSidenavAccountActionStyles.menu).className}`}
-            >
+            </span>{" "}
+            <span {...stylex.props(authenticatedSidenavAccountActionStyles.menu)}>
               <Link
                 activeProps={{
                   "aria-current": undefined,
@@ -3082,10 +3096,13 @@ function AuthenticatedSiteUserMenu({
               >
                 {t("userinfo.accountSetting")}
               </Link>
-            </span>
+            </span>{" "}
             <Link to={LEGACY_AUTHENTICATED_LOGOUT_PATH} reloadDocument>
               <span
-                className={`user-menu logout label ${stylex.props(authenticatedSidenavAccountActionStyles.menu, authenticatedSidenavAccountActionStyles.logout).className}`}
+                {...stylex.props(
+                  authenticatedSidenavAccountActionStyles.menu,
+                  authenticatedSidenavAccountActionStyles.logout,
+                )}
               >
                 {t("title.logout")}
               </span>

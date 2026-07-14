@@ -1,50 +1,68 @@
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
 
-test("authenticated side-nav account actions use global StyleX color variables", () => {
-  const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
-  const ownerSource = routeSource.slice(
-    routeSource.indexOf("const authenticatedSidenavAccountActionStyles"),
-    routeSource.indexOf("const authenticatedSidenavShellStyles"),
-  );
+test("authenticated side-nav account actions have complete global-theme StyleX ownership", () => {
+  const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const styleStart = route.indexOf("const authenticatedSidenavAccountActionStyles");
+  const styleEnd = route.indexOf("const authenticatedSidenavShellStyles", styleStart);
+  const styles = route.slice(styleStart, styleEnd);
 
-  expect(ownerSource).toContain("stylex.create");
-  expect(routeSource).toContain('data-stylex-owner="authenticated-sidenav-account-actions"');
-  expect(ownerSource).toContain("globalColors.sidenavText");
-  expect(ownerSource).toContain("globalColors.sidenavAccountText");
-  expect(ownerSource).toContain("globalColors.sidenavLogoutHover");
-  expect(ownerSource).not.toContain("fontWeight");
-  expect(ownerSource).not.toContain("textOnAccent");
-  expect(themeSource).toContain("stylex.defineVars");
-
-  for (const color of [
-    "gray",
-    "grey",
-    "#808080",
-    "white",
-    "#fff",
-    "#ffffff",
-    "black",
-    "#000",
-    "#000000",
-    "#9c27b0",
+  expect(styles).toContain("stylex.create");
+  expect(styles).toContain("globalColors.sidenavText");
+  expect(styles).toContain("globalColors.sidenavLogoutHover");
+  for (const token of [
+    "sidenavAccountLogoutText",
+    "sidenavAccountLogoutSurface",
+    "sidenavAccountLogoutTextShadow",
   ]) {
-    expect(ownerSource.toLowerCase()).not.toContain(color);
+    expect(styles).toContain(`globalColors.${token}`);
+    expect(theme).toContain(`${token}:`);
   }
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+
+  const ownerMarker = route.indexOf('data-stylex-owner="authenticated-sidenav-account-actions"');
+  const ownerStart = route.lastIndexOf("<div", ownerMarker);
+  const ownerEnd = route.indexOf("<ul", ownerMarker);
+  const owner = route.slice(ownerStart, ownerEnd);
+  expect(owner.match(/\{" "\}/gu)).toHaveLength(2);
+  expect(owner).not.toContain("row-fluid user-menu-wrap");
+  expect(owner).not.toContain("className={`user-menu");
+  expect(owner).not.toContain("user-menu logout label");
+  expect(owner).toContain("reloadDocument");
 });
 
 for (const viewport of [
-  { label: "desktop", width: 1366, height: 900 },
-  { label: "mobile", width: 390, height: 844 },
+  {
+    geometry: {
+      account: { left: 230.03125, width: 52.625 },
+      logout: { left: 296.25, rightInset: 5, width: 48.75 },
+      profile: { left: 174.125, width: 42.3125 },
+      row: { height: 21, width: 350 },
+    },
+    height: 900,
+    label: "desktop",
+    width: 1366,
+  },
+  {
+    geometry: {
+      account: { left: 270.03125, width: 52.625 },
+      logout: { left: 336.25, rightInset: 5, width: 48.75 },
+      profile: { left: 214.125, width: 42.3125 },
+      row: { height: 21, width: 390 },
+    },
+    height: 844,
+    label: "mobile",
+    width: 390,
+  },
 ]) {
-  test(`authenticated side-nav account actions preserve ${viewport.label} parity`, async ({
+  test(`authenticated side-nav account actions preserve ${viewport.label} legacy parity`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -57,84 +75,83 @@ for (const viewport of [
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    const profile = page.getByRole("link", { name: "Profile", exact: true });
-    const account = page.getByRole("link", { name: "Account", exact: true });
-    const logout = page.getByRole("link", { name: "Log out", exact: true });
-    const row = profile.locator("xpath=../..");
-    const profileSpan = profile.locator("xpath=..");
-    const accountSpan = account.locator("xpath=..");
-    const logoutSpan = logout.locator("xpath=span");
+    const owner = page.locator(
+      '#mySidenav [data-stylex-owner="authenticated-sidenav-account-actions"]',
+    );
+    await expect(owner).toBeVisible();
+    const profile = owner.getByRole("link", { name: "Profile", exact: true });
+    const account = owner.getByRole("link", { name: "Account", exact: true });
+    const logout = owner.getByRole("link", { name: "Log out", exact: true });
 
     await expect(profile).toHaveAttribute("href", `${BASE_PATH}/admin`);
     await expect(account).toHaveAttribute("href", `${BASE_PATH}/user/editform`);
     await expect(logout).toHaveAttribute("href", `${BASE_PATH}/users/logout`);
-    await expect(row).toContainText("ProfileAccountLog out");
 
-    const beforeHover = await readAccountActionEvidence(row, profileSpan, accountSpan, logoutSpan);
-    console.log(`authenticated-account-actions-${viewport.label}`, JSON.stringify(beforeHover));
+    const evidence = await readAccountActionEvidence(owner);
     await saveScreenshot(
-      page,
-      `stylex-authenticated-sidenav-account-actions-${viewport.label}-${beforeHover.hasOwner ? "after" : "before"}.png`,
+      owner,
+      `stylex-authenticated-sidenav-account-primitives-local-${viewport.label}.png`,
     );
-
-    const hoverBackground = await forceHoverAndReadBackground(page, "#mySidenav .logout");
-
-    expect(beforeHover.hasOwner).toBe(true);
-    expect(beforeHover.rowStyles).toEqual({
-      boxSizing: "border-box",
-      color: "rgb(128, 128, 128)",
-      padding: "10px",
-      textAlign: "right",
+    expect(evidence).toEqual({
+      actionOrder: ["SPAN", "SPAN", "A"],
+      geometry: viewport.geometry,
+      legacyClasses: [],
+      order: ["Profile", "Account", "Log out"],
+      owner: "authenticated-sidenav-account-actions",
+      styles: {
+        account: {
+          color: "rgb(0, 0, 0)",
+          display: "inline",
+          fontSize: "12px",
+          lineHeight: "20px",
+          marginLeft: "5px",
+          marginRight: "5px",
+          padding: "3px",
+        },
+        logout: {
+          backgroundColor: "rgb(153, 153, 153)",
+          borderRadius: "1px",
+          color: "rgb(255, 255, 255)",
+          display: "inline-block",
+          fontSize: "12px",
+          fontWeight: "400",
+          lineHeight: "14px",
+          marginLeft: "5px",
+          marginRight: "5px",
+          padding: "3px",
+          textShadow: "rgba(0, 0, 0, 0.25) 0px -1px 0px",
+          verticalAlign: "baseline",
+          whiteSpace: "nowrap",
+        },
+        profile: {
+          color: "rgb(0, 0, 0)",
+          display: "inline",
+          fontSize: "12px",
+          lineHeight: "20px",
+          marginLeft: "5px",
+          marginRight: "5px",
+          padding: "3px",
+        },
+        row: {
+          boxSizing: "content-box",
+          color: "rgb(0, 0, 0)",
+          padding: "0px",
+          pseudos: {
+            after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+            before: { clear: "none", content: '""', display: "table", lineHeight: "0px" },
+          },
+          textAlign: "right",
+        },
+      },
+      whitespacePairs: ["profile-account", "account-logout"],
     });
-    expect(beforeHover.profileStyles).toEqual({
-      color: "rgb(0, 0, 0)",
-      fontSize: "12px",
-      marginLeft: "5px",
-      marginRight: "5px",
-      padding: "3px",
-    });
-    expect(beforeHover.accountStyles).toEqual(beforeHover.profileStyles);
-    // Bootstrap `.label` still owns its primitive box/text declarations, while legacy
-    // `.logout !important` still owns color and font weight; StyleX owns only hover here.
-    expect(beforeHover.logoutStyles).toEqual({
-      ...beforeHover.profileStyles,
-      backgroundColor: "rgb(153, 153, 153)",
-      borderRadius: "3px",
-      color: "rgb(255, 255, 255)",
-      display: "inline-block",
-      fontSize: "12px",
-      fontWeight: "400",
-      lineHeight: "14px",
-      textShadow: "rgba(0, 0, 0, 0.25) 0px -1px 0px",
-      verticalAlign: "baseline",
-      whiteSpace: "nowrap",
-    });
-    expect(hoverBackground).toBe("rgb(156, 39, 176)");
-    expect(beforeHover.order).toEqual(["Profile", "Account", "Log out"]);
-    expect(beforeHover.geometry.profile.right).toBeLessThanOrEqual(
-      beforeHover.geometry.account.left,
-    );
-    expect(beforeHover.geometry.account.right).toBeLessThanOrEqual(
-      beforeHover.geometry.logout.left,
-    );
-    expect(beforeHover.geometry.row.left).toBeGreaterThanOrEqual(beforeHover.geometry.shell.left);
-    if (viewport.width > 720) {
-      expect(beforeHover.geometry.row.right).toBeLessThanOrEqual(beforeHover.geometry.shell.right);
-    } else {
-      expect(beforeHover.geometry.row.right - beforeHover.geometry.shell.right).toBe(9);
-      expect(beforeHover.geometry.logout.right).toBeLessThanOrEqual(viewport.width);
-    }
-    expect(beforeHover.geometry.row.top).toBeGreaterThanOrEqual(beforeHover.geometry.shell.top);
-    expect(beforeHover.viewport).toEqual({ scrollWidth: viewport.width, width: viewport.width });
 
-    await removeStyleXClasses(row, [profileSpan, accountSpan, logoutSpan]);
-    await clearForcedHover(page, "#mySidenav .logout");
-    const fallback = await readAccountActionEvidence(row, profileSpan, accountSpan, logoutSpan);
-    expect(fallback.rowStyles).toEqual(beforeHover.rowStyles);
-    expect(fallback.profileStyles).toEqual(beforeHover.profileStyles);
-    expect(fallback.accountStyles).toEqual(beforeHover.accountStyles);
-    expect(fallback.logoutStyles).toEqual(beforeHover.logoutStyles);
-    expect(await forceHoverAndReadBackground(page, "#mySidenav .logout")).toBe(hoverBackground);
+    expect(
+      await forceHoverAndReadBackground(
+        page,
+        '#mySidenav [data-stylex-owner="authenticated-sidenav-account-actions"] > a > span',
+      ),
+    ).toBe("rgb(156, 39, 176)");
   });
 }
 
@@ -186,87 +203,104 @@ async function installAuthenticatedHome(page: Page) {
   );
 }
 
-async function readAccountActionEvidence(
-  row: Locator,
-  profile: Locator,
-  account: Locator,
-  logout: Locator,
-) {
-  return row.evaluate(
-    (element, elements) => {
-      const [profileElement, accountElement, logoutElement] = elements as HTMLElement[];
-      const styleValues = (target: HTMLElement) => {
-        const style = getComputedStyle(target);
-        return {
-          color: style.color,
-          fontSize: style.fontSize,
-          marginLeft: style.marginLeft,
-          marginRight: style.marginRight,
-          padding: style.padding,
-        };
-      };
-      const box = (target: Element) => {
-        const rect = target.getBoundingClientRect();
-        return { bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top };
-      };
-      const rowStyle = getComputedStyle(element);
-      const logoutStyle = getComputedStyle(logoutElement);
-      const shell = element.closest("#mySidenav");
-      if (!shell) throw new Error("Side-nav shell is missing");
+async function readAccountActionEvidence(owner: Locator) {
+  return owner.evaluate((element) => {
+    const profileElement = element.children[0] as HTMLElement;
+    const accountElement = element.children[1] as HTMLElement;
+    const logoutAnchor = element.children[2] as HTMLElement;
+    const logoutElement = logoutAnchor.firstElementChild as HTMLElement;
+    const styleValues = (target: HTMLElement) => {
+      const style = getComputedStyle(target);
       return {
-        accountStyles: styleValues(accountElement),
-        geometry: {
-          account: box(accountElement),
-          logout: box(logoutElement),
-          profile: box(profileElement),
-          row: box(element),
-          shell: box(shell),
+        color: style.color,
+        display: style.display,
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
+        marginLeft: style.marginLeft,
+        marginRight: style.marginRight,
+        padding: style.padding,
+      };
+    };
+    const box = (target: Element) => {
+      const rect = target.getBoundingClientRect();
+      return { height: rect.height, left: rect.left, right: rect.right, width: rect.width };
+    };
+    const rowStyle = getComputedStyle(element);
+    const rowBeforeStyle = getComputedStyle(element, "::before");
+    const rowAfterStyle = getComputedStyle(element, "::after");
+    const logoutStyle = getComputedStyle(logoutElement);
+    const rowBox = box(element);
+    const relativeBox = (target: Element) => {
+      const targetBox = box(target);
+      return { left: targetBox.left - rowBox.left, width: targetBox.width };
+    };
+    const pseudoStyle = (style: CSSStyleDeclaration) => ({
+      clear: style.clear,
+      content: style.content,
+      display: style.display,
+      lineHeight: style.lineHeight,
+    });
+    const whitespacePairs = Array.from(element.childNodes)
+      .filter((node) => node.nodeType === Node.TEXT_NODE && /^\s+$/u.test(node.textContent ?? ""))
+      .map((node) => {
+        if (node.previousSibling === profileElement && node.nextSibling === accountElement) {
+          return "profile-account";
+        }
+        if (node.previousSibling === accountElement && node.nextSibling === logoutAnchor) {
+          return "account-logout";
+        }
+        return "unexpected";
+      });
+    return {
+      actionOrder: Array.from(element.children, (child) => child.tagName),
+      geometry: {
+        account: relativeBox(accountElement),
+        logout: {
+          ...relativeBox(logoutElement),
+          rightInset: rowBox.right - box(logoutElement).right,
         },
-        hasOwner:
-          element.getAttribute("data-stylex-owner") === "authenticated-sidenav-account-actions",
-        logoutStyles: {
+        profile: relativeBox(profileElement),
+        row: { height: rowBox.height, width: rowBox.width },
+      },
+      legacyClasses: ["row-fluid", "user-menu-wrap", "user-menu", "logout", "label"].filter(
+        (className) =>
+          [element, ...element.querySelectorAll("*")].some((target) =>
+            target.classList.contains(className),
+          ),
+      ),
+      order: Array.from(element.querySelectorAll("a")).map((link) => link.textContent?.trim()),
+      owner: element.getAttribute("data-stylex-owner"),
+      styles: {
+        account: styleValues(accountElement),
+        logout: {
           ...styleValues(logoutElement),
           backgroundColor: logoutStyle.backgroundColor,
           borderRadius: logoutStyle.borderRadius,
-          display: logoutStyle.display,
           fontWeight: logoutStyle.fontWeight,
-          lineHeight: logoutStyle.lineHeight,
           textShadow: logoutStyle.textShadow,
           verticalAlign: logoutStyle.verticalAlign,
           whiteSpace: logoutStyle.whiteSpace,
         },
-        order: Array.from(element.querySelectorAll("a")).map((link) => link.textContent?.trim()),
-        profileStyles: styleValues(profileElement),
-        rowStyles: {
+        profile: styleValues(profileElement),
+        row: {
           boxSizing: rowStyle.boxSizing,
           color: rowStyle.color,
           padding: rowStyle.padding,
+          pseudos: {
+            after: pseudoStyle(rowAfterStyle),
+            before: pseudoStyle(rowBeforeStyle),
+          },
           textAlign: rowStyle.textAlign,
         },
-        viewport: { scrollWidth: document.documentElement.scrollWidth, width: innerWidth },
-      };
-    },
-    [await profile.elementHandle(), await account.elementHandle(), await logout.elementHandle()],
-  );
+      },
+      whitespacePairs,
+    };
+  });
 }
 
-async function saveScreenshot(page: Page, filename: string) {
+async function saveScreenshot(owner: Locator, filename: string) {
   mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
-  await page.screenshot({ fullPage: true, path: resolve(SCREENSHOT_DIRECTORY, filename) });
-}
-
-async function removeStyleXClasses(row: Locator, spans: Locator[]) {
-  await row.evaluate(
-    (element, targets) => {
-      element.className = "row-fluid user-menu-wrap";
-      for (const target of targets as HTMLElement[]) {
-        target.className = target.classList.contains("logout")
-          ? "user-menu logout label"
-          : "user-menu";
-      }
-    },
-    await Promise.all(spans.map((span) => span.elementHandle())),
-  );
+  await owner.screenshot({ path: resolve(SCREENSHOT_DIRECTORY, filename) });
 }
 
 async function forceHoverAndReadBackground(page: Page, selector: string) {
@@ -281,14 +315,4 @@ async function forceHoverAndReadBackground(page: Page, selector: string) {
     .evaluate((element) => getComputedStyle(element).backgroundColor);
   await session.detach();
   return background;
-}
-
-async function clearForcedHover(page: Page, selector: string) {
-  const session = await page.context().newCDPSession(page);
-  await session.send("DOM.enable");
-  await session.send("CSS.enable");
-  const { root } = await session.send("DOM.getDocument");
-  const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector });
-  await session.send("CSS.forcePseudoState", { forcedPseudoClasses: [], nodeId });
-  await session.detach();
 }
