@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, useNavigate, useRouter } from "@tanstack/react-router";
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { readAuthUiCapabilitiesRest, registerWithPasswordRest } from "../../api/auth";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
@@ -9,6 +10,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
@@ -17,6 +19,111 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   signupRequireConfirm?: boolean;
   socialLoginOnly?: boolean;
 };
+
+const styles = stylex.create({
+  standaloneSignup: {
+    "--yoram-stylex-standalone-signup": "stylex",
+  },
+  taglineWrap: {
+    textAlign: globalColors.standaloneSignupTaglineTextAlign,
+    marginTop: globalColors.standaloneSignupTaglineMarginTop,
+    marginBottom: globalColors.standaloneSignupTaglineMarginBottom,
+    paddingTop: globalColors.standaloneSignupTaglinePaddingTop,
+  },
+  title: {
+    display: globalColors.standaloneSignupTitleDisplay,
+    fontFamily: globalColors.standaloneSignupTitleFontFamily,
+    fontSize: globalColors.standaloneSignupTitleFontSize,
+    lineHeight: globalColors.standaloneSignupTitleLineHeight,
+    fontWeight: globalColors.standaloneSignupTitleFontWeight,
+  },
+  tagline: {
+    marginTop: globalColors.standaloneSignupTaglineCopyMarginTop,
+    fontSize: globalColors.standaloneSignupTaglineFontSize,
+    color: globalColors.standaloneSignupTaglineColor,
+  },
+  formWrap: {
+    position: globalColors.standaloneSignupFormPosition,
+    width: {
+      default: globalColors.standaloneSignupFormWidth,
+      "@media (max-width: 767px)": globalColors.standaloneSignupFormResponsiveWidth,
+    },
+    margin: globalColors.standaloneSignupFormMargin,
+  },
+  definitionList: {
+    margin: globalColors.standaloneSignupDefinitionListMargin,
+    padding: globalColors.standaloneSignupDefinitionListPadding,
+  },
+  labelTerm: {
+    margin: globalColors.standaloneSignupLabelTermMargin,
+    padding: globalColors.standaloneSignupLabelTermPadding,
+  },
+  labelDefinition: {
+    margin: globalColors.standaloneSignupLabelDefinitionMargin,
+    padding: globalColors.standaloneSignupLabelDefinitionPadding,
+  },
+  label: {
+    fontWeight: globalColors.standaloneSignupLabelFontWeight,
+    marginRight: globalColors.standaloneSignupLabelMarginRight,
+  },
+  textInput: {
+    width: {
+      default: globalColors.standaloneSignupInputWidth,
+      "@media (max-width: 767px)": globalColors.standaloneSignupInputResponsiveWidth,
+    },
+    height: globalColors.standaloneSignupInputHeight,
+    marginBottom: globalColors.standaloneSignupInputMarginBottom,
+    fontSize: globalColors.standaloneSignupInputFontSize,
+    fontWeight: globalColors.standaloneSignupInputFontWeight,
+    borderStyle: globalColors.standaloneSignupInputBorderStyle,
+    borderBottomColor: globalColors.standaloneSignupInputBorderBottomColor,
+    borderBottomStyle: globalColors.standaloneSignupInputBorderBottomStyle,
+    borderBottomWidth: globalColors.standaloneSignupInputBorderBottomWidth,
+    borderRadius: globalColors.standaloneSignupInputBorderRadius,
+    ":focus": {
+      borderBottomColor: globalColors.standaloneSignupInputFocusBorderBottomColor,
+      outline: globalColors.standaloneSignupInputFocusOutline,
+      boxShadow: globalColors.standaloneSignupInputFocusBoxShadow,
+    },
+  },
+  passwordInput: {
+    marginBottom: globalColors.standaloneSignupPasswordMarginBottom,
+  },
+  buttonRow: {
+    display: globalColors.standaloneSignupButtonRowDisplay,
+    textAlign: globalColors.standaloneSignupButtonRowTextAlign,
+    margin: globalColors.standaloneSignupButtonRowMargin,
+  },
+  submit: {
+    display: globalColors.standaloneSignupSubmitDisplay,
+    boxSizing: globalColors.standaloneSignupSubmitBoxSizing,
+    width: globalColors.standaloneSignupSubmitWidth,
+  },
+  actionRow: {
+    textAlign: globalColors.standaloneSignupActionTextAlign,
+    color: globalColors.standaloneSignupActionColor,
+  },
+  loginLink: {
+    color: globalColors.standaloneSignupLoginLinkColor,
+    fontWeight: globalColors.standaloneSignupLoginLinkFontWeight,
+  },
+});
+
+const standaloneSignupClassName = stylex.props(styles.standaloneSignup).className;
+const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
+const titleClassName = stylex.props(styles.title).className;
+const taglineClassName = stylex.props(styles.tagline).className;
+const formWrapClassName = stylex.props(styles.formWrap).className;
+const definitionListClassName = stylex.props(styles.definitionList).className;
+const labelTermClassName = stylex.props(styles.labelTerm).className;
+const labelDefinitionClassName = stylex.props(styles.labelDefinition).className;
+const labelClassName = stylex.props(styles.label).className;
+const textInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
+const passwordTextInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
+const buttonRowClassName = stylex.props(styles.buttonRow).className;
+const submitClassName = stylex.props(styles.submit).className;
+const actionRowClassName = stylex.props(styles.actionRow).className;
+const loginLinkClassName = stylex.props(styles.loginLink).className;
 
 export const Route = createFileRoute("/users/signupform")({
   component: SignupFormRoute,
@@ -50,6 +157,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const capabilities = capabilitiesQuery.data as AuthUiCapabilities | undefined;
   const socialLoginOnly = capabilities?.socialLoginOnly === true;
   const signupRequireConfirm = capabilities?.signupRequireConfirm === true;
+  const standardPasswordSignup = !socialLoginOnly && !signupRequireConfirm;
   const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.signupFor", { args: [siteName] });
 
@@ -102,12 +210,32 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <title>{t("title.signup")}</title>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
-        <div className="page full">
-          <div className="center-wrap tag-line-wrap signup">
-            <h1 className="title">
+        <div
+          className={
+            standardPasswordSignup ? `page full ${standaloneSignupClassName}` : "page full"
+          }
+          data-stylex-owner={standardPasswordSignup ? "standalone-signup-form" : undefined}
+        >
+          <div
+            className={
+              standardPasswordSignup
+                ? `center-wrap tag-line-wrap signup ${taglineWrapClassName}`
+                : "center-wrap tag-line-wrap signup"
+            }
+            data-stylex-part={standardPasswordSignup ? "standalone-signup-tagline" : undefined}
+          >
+            <h1
+              className={standardPasswordSignup ? `title ${titleClassName}` : "title"}
+              data-stylex-part={standardPasswordSignup ? "standalone-signup-title" : undefined}
+            >
               <HighlightedLegacyMessage message={title} />
             </h1>
-            <p className="tag-line">{t("app.description")}</p>
+            <p
+              className={standardPasswordSignup ? `tag-line ${taglineClassName}` : "tag-line"}
+              data-stylex-part={standardPasswordSignup ? "standalone-signup-copy" : undefined}
+            >
+              {t("app.description")}
+            </p>
           </div>
 
           {signupRequireConfirm ? (
@@ -123,7 +251,14 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           ) : null}
 
-          <div className="signup-form-wrap frm-wrap">
+          <div
+            className={
+              standardPasswordSignup
+                ? `signup-form-wrap frm-wrap ${formWrapClassName}`
+                : "signup-form-wrap frm-wrap"
+            }
+            data-stylex-part={standardPasswordSignup ? "standalone-signup-form-wrap" : undefined}
+          >
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/users/signup")}
               method="post"
@@ -134,17 +269,30 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
               ) : (
                 <>
-                  <dl>
-                    <dt>
-                      <label htmlFor="loginId">{t("user.signupId")}</label>
+                  <dl
+                    className={standardPasswordSignup ? definitionListClassName : undefined}
+                    data-stylex-part={
+                      standardPasswordSignup ? "standalone-signup-fields" : undefined
+                    }
+                  >
+                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
+                      <label
+                        className={standardPasswordSignup ? labelClassName : undefined}
+                        htmlFor="loginId"
+                      >
+                        {t("user.signupId")}
+                      </label>
                     </dt>
-                    <dd>
+                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="loginId"
                         ref={loginIdRef}
                         type="text"
                         name="loginId"
-                        className="text password"
+                        className={standardPasswordSignup ? textInputClassName : "text password"}
+                        data-stylex-part={
+                          standardPasswordSignup ? "standalone-signup-login-id" : undefined
+                        }
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleLoginIdBlur}
@@ -152,29 +300,45 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover message={fieldErrors.loginId} />
                     </dd>
 
-                    <dt>
-                      <label htmlFor="uname">{t("user.name")}</label>
+                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
+                      <label
+                        className={standardPasswordSignup ? labelClassName : undefined}
+                        htmlFor="uname"
+                      >
+                        {t("user.name")}
+                      </label>
                     </dt>
-                    <dd>
+                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="uname"
                         type="text"
                         name="name"
-                        className="text password"
+                        className={standardPasswordSignup ? textInputClassName : "text password"}
+                        data-stylex-part={
+                          standardPasswordSignup ? "standalone-signup-name" : undefined
+                        }
                         placeholder=""
                         autoComplete="off"
                       />
                     </dd>
 
-                    <dt>
-                      <label htmlFor="email">{t("user.email")}</label>
+                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
+                      <label
+                        className={standardPasswordSignup ? labelClassName : undefined}
+                        htmlFor="email"
+                      >
+                        {t("user.email")}
+                      </label>
                     </dt>
-                    <dd>
+                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="email"
                         type="text"
                         name="email"
-                        className="text password"
+                        className={standardPasswordSignup ? textInputClassName : "text password"}
+                        data-stylex-part={
+                          standardPasswordSignup ? "standalone-signup-email" : undefined
+                        }
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleEmailBlur}
@@ -182,15 +346,25 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover message={fieldErrors.email} />
                     </dd>
 
-                    <dt>
-                      <label htmlFor="password">{t("user.password")}</label>
+                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
+                      <label
+                        className={standardPasswordSignup ? labelClassName : undefined}
+                        htmlFor="password"
+                      >
+                        {t("user.password")}
+                      </label>
                     </dt>
-                    <dd>
+                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="password"
                         type="password"
                         name="password"
-                        className="text password"
+                        className={
+                          standardPasswordSignup ? passwordTextInputClassName : "text password"
+                        }
+                        data-stylex-part={
+                          standardPasswordSignup ? "standalone-signup-password" : undefined
+                        }
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handlePasswordKeyUp}
@@ -198,15 +372,25 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover message={fieldErrors.password} />
                     </dd>
 
-                    <dt>
-                      <label htmlFor="retypedPassword">{t("validation.retypePassword")}</label>
+                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
+                      <label
+                        className={standardPasswordSignup ? labelClassName : undefined}
+                        htmlFor="retypedPassword"
+                      >
+                        {t("validation.retypePassword")}
+                      </label>
                     </dt>
-                    <dd>
+                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="retypedPassword"
                         type="password"
                         name="retypedPassword"
-                        className="text password"
+                        className={
+                          standardPasswordSignup ? passwordTextInputClassName : "text password"
+                        }
+                        data-stylex-part={
+                          standardPasswordSignup ? "standalone-signup-retyped-password" : undefined
+                        }
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handleRetypedPasswordKeyUp}
@@ -216,19 +400,43 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   </dl>
 
                   {submitError ? <div className="error-message">{submitError}</div> : null}
-                  <div className="btns-row">
+                  <div
+                    className={
+                      standardPasswordSignup ? `btns-row ${buttonRowClassName}` : "btns-row"
+                    }
+                    data-stylex-part={
+                      standardPasswordSignup ? "standalone-signup-submit-row" : undefined
+                    }
+                  >
                     <button
                       type="submit"
-                      className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      className={
+                        standardPasswordSignup
+                          ? `ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`
+                          : "ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      }
+                      data-stylex-part={
+                        standardPasswordSignup ? "standalone-signup-submit" : undefined
+                      }
                       disabled={registerMutation.isPending}
                     >
                       {t("user.signupBtn")}
                     </button>
                   </div>
 
-                  <div className="act-row">
+                  <div
+                    className={standardPasswordSignup ? `act-row ${actionRowClassName}` : "act-row"}
+                    data-stylex-part={
+                      standardPasswordSignup ? "standalone-signup-actions" : undefined
+                    }
+                  >
                     {t("user.isAlreadySignupUser")}{" "}
-                    <Link to="/users/loginform" className="go-login">
+                    <Link
+                      to="/users/loginform"
+                      className={
+                        standardPasswordSignup ? `go-login ${loginLinkClassName}` : "go-login"
+                      }
+                    >
                       {t("title.login")}
                     </Link>
                   </div>

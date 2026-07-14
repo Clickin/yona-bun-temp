@@ -1205,6 +1205,19 @@ provider-visible state; local output keeps the exact 400px desktop form and 95% 
 geometry without numeric compensation. Focused RED became GREEN 4/4 with mutation, fallback,
 desktop/mobile paint, screenshot, and no-overflow coverage. This is not Wave 1 completion.
 
+The seventy-second slice migrates the anonymous `/users/signupform` standard password state from
+`user/signup.scala.html`. StyleX owns the tagline/title/copy, wrapper, labels, standard inputs and
+focus state, password spacing, submit row/button, and login action through canonical global theme
+variables sourced from `_page.less` and `_responsive.less`. The confirmation and social-only
+branches remain outside this owner. Standard inputs drop the legacy `text password` presentation
+classes so StyleX, including its composed password-input margin, actually owns the migrated values.
+The max-767 form width, `dl` alignment, and validation-popover rules remain frozen fallbacks only
+for real confirmation/validation consumers. Live legacy desktop/mobile captures and local output
+agree on the 400px desktop form, 95% mobile form, 40% mobile inputs, and no-overflow geometry.
+Focused RED became GREEN 5/5 for source/global-theme ownership, DOM/copy/order, validation and
+registration payload, excluded branches, desktop/mobile paint, screenshots, and no overflow. This
+is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

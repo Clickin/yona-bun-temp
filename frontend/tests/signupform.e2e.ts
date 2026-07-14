@@ -28,7 +28,9 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   expect(
     await routeRoot.locator(":scope > *").evaluateAll((elements) =>
       elements.map((element) => ({
-        className: element.className,
+        className: Array.from(element.classList)
+          .filter((className) => !className.startsWith("x") && !className.includes("__styles."))
+          .join(" "),
         tagName: element.tagName,
       })),
     ),
@@ -54,7 +56,6 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
     await form.locator("input").evaluateAll((inputs) =>
       inputs.map((input) => ({
         autocomplete: input.getAttribute("autocomplete"),
-        className: input.className,
         id: input.id,
         name: input.getAttribute("name"),
         type: input.getAttribute("type"),
@@ -63,40 +64,44 @@ test("signup form preserves the legacy visible DOM and desktop/mobile geometry",
   ).toEqual([
     {
       autocomplete: "off",
-      className: "text password",
       id: "loginId",
       name: "loginId",
       type: "text",
     },
     {
       autocomplete: "off",
-      className: "text password",
       id: "uname",
       name: "name",
       type: "text",
     },
     {
       autocomplete: "off",
-      className: "text password",
       id: "email",
       name: "email",
       type: "text",
     },
     {
       autocomplete: "off",
-      className: "text password",
       id: "password",
       name: "password",
       type: "password",
     },
     {
       autocomplete: "off",
-      className: "text password",
       id: "retypedPassword",
       name: "retypedPassword",
       type: "password",
     },
   ]);
+  expect(
+    await form
+      .locator("input")
+      .evaluateAll((inputs) =>
+        inputs.every(
+          (input) => !input.classList.contains("text") && !input.classList.contains("password"),
+        ),
+      ),
+  ).toBe(true);
   await expect(form.locator("button[type='submit']")).toHaveText("Sign up");
   await expect(form.locator(".act-row")).toHaveText("Already signed up? Log in");
   await expect(form.locator(".go-login")).toHaveAttribute("href", appPath("/users/loginform"));
