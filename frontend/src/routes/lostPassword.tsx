@@ -75,6 +75,52 @@ const styles = stylex.create({
     boxSizing: globalColors.lostPasswordSubmitBoxSizing,
     width: globalColors.lostPasswordSubmitWidth,
   },
+  successAlert: {
+    padding: globalColors.lostPasswordSuccessAlertPadding,
+    marginBottom: globalColors.lostPasswordSuccessAlertMarginBottom,
+    textShadow: globalColors.lostPasswordSuccessAlertTextShadow,
+    backgroundColor: globalColors.lostPasswordSuccessAlertSurface,
+    borderColor: globalColors.lostPasswordSuccessAlertBorderColor,
+    borderStyle: globalColors.lostPasswordSuccessAlertBorderStyle,
+    borderWidth: globalColors.lostPasswordSuccessAlertBorderWidth,
+    borderRadius: globalColors.lostPasswordSuccessAlertBorderRadius,
+    color: globalColors.lostPasswordSuccessAlertText,
+  },
+  successAlertHeading: {
+    margin: globalColors.lostPasswordSuccessAlertHeadingMargin,
+    fontSize: globalColors.lostPasswordSuccessAlertHeadingFontSize,
+    color: globalColors.lostPasswordSuccessAlertHeadingText,
+  },
+  successAlertDismiss: {
+    float: globalColors.lostPasswordSuccessAlertDismissFloat,
+    position: globalColors.lostPasswordSuccessAlertDismissPosition,
+    top: globalColors.lostPasswordSuccessAlertDismissTop,
+    right: globalColors.lostPasswordSuccessAlertDismissRight,
+    padding: globalColors.lostPasswordSuccessAlertDismissPadding,
+    fontSize: globalColors.lostPasswordSuccessAlertDismissFontSize,
+    fontWeight: globalColors.lostPasswordSuccessAlertDismissFontWeight,
+    lineHeight: globalColors.lostPasswordSuccessAlertDismissLineHeight,
+    color: globalColors.lostPasswordSuccessAlertDismissText,
+    textShadow: globalColors.lostPasswordSuccessAlertDismissTextShadow,
+    opacity: globalColors.lostPasswordSuccessAlertDismissOpacity,
+    cursor: globalColors.lostPasswordSuccessAlertDismissCursor,
+    backgroundColor: globalColors.lostPasswordSuccessAlertDismissSurface,
+    borderStyle: globalColors.lostPasswordSuccessAlertDismissBorderStyle,
+    borderWidth: globalColors.lostPasswordSuccessAlertDismissBorderWidth,
+    appearance: globalColors.lostPasswordSuccessAlertDismissAppearance,
+    ":hover": {
+      color: globalColors.lostPasswordSuccessAlertDismissHoverText,
+      textDecoration: globalColors.lostPasswordSuccessAlertDismissHoverTextDecoration,
+      cursor: globalColors.lostPasswordSuccessAlertDismissHoverCursor,
+      opacity: globalColors.lostPasswordSuccessAlertDismissHoverOpacity,
+    },
+    ":focus": {
+      color: globalColors.lostPasswordSuccessAlertDismissHoverText,
+      textDecoration: globalColors.lostPasswordSuccessAlertDismissHoverTextDecoration,
+      cursor: globalColors.lostPasswordSuccessAlertDismissHoverCursor,
+      opacity: globalColors.lostPasswordSuccessAlertDismissHoverOpacity,
+    },
+  },
 });
 
 const anonymousBaselineClassName = stylex.props(styles.anonymousBaseline).className;
@@ -85,6 +131,9 @@ const formWrapClassName = stylex.props(styles.formWrap).className;
 const textInputClassName = stylex.props(styles.textInput).className;
 const buttonRowClassName = stylex.props(styles.buttonRow).className;
 const submitClassName = stylex.props(styles.submit).className;
+const successAlertClassName = stylex.props(styles.successAlert).className;
+const successAlertHeadingClassName = stylex.props(styles.successAlertHeading).className;
+const successAlertDismissClassName = stylex.props(styles.successAlertDismiss).className;
 
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRoute,
@@ -135,6 +184,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       ? sessionQuery.data.emailAddress
       : "";
   const anonymousBaseline = sessionQuery.data?.isAnonymous === true && !isSent && !errorMessage;
+  const anonymousRequestedSuccess =
+    sessionQuery.data?.isAnonymous === true && isSent && !errorMessage && !isSuccessAlertDismissed;
   // Requesting a reset email does not change cached session or auth state.
   // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const requestMutation = useMutation({
@@ -195,16 +246,22 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           }
           data-stylex-part={anonymousBaseline ? "lost-password-form-wrap" : undefined}
         >
-          {isSent && !isSuccessAlertDismissed ? (
-            <div className="alert alert-success">
+          {anonymousRequestedSuccess ? (
+            <div className={successAlertClassName} data-stylex-owner="lost-password-success-alert">
               <button
                 type="button"
-                className="close"
+                className={successAlertDismissClassName}
+                data-stylex-part="lost-password-success-alert-dismiss"
                 onClick={() => setIsSuccessAlertDismissed(true)}
               >
                 &times;
               </button>
-              <h4>{t("site.mail.sended")}</h4>
+              <h4
+                className={successAlertHeadingClassName}
+                data-stylex-part="lost-password-success-alert-heading"
+              >
+                {t("site.mail.sended")}
+              </h4>
             </div>
           ) : null}
 

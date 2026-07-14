@@ -1242,6 +1242,19 @@ desktop form and 95% mobile form/input geometry; the en-US mobile title wraps as
 regression specifies. Focused RED became GREEN 5/5 and the existing route regression passes 5/5.
 This is not Wave 1 completion.
 
+The seventy-fifth slice migrates only the anonymous requested-success `/lostPassword?requested=1`
+alert from `site/lostPassword.scala.html`. StyleX owns the dependent Bootstrap 2.3.1 success
+surface, heading, and dismiss button through canonical global theme variables, including the
+legacy `_page.less` 15px login-alert heading override; React retains the existing query state and
+dismissal event. The request form, error alert, and authenticated prefill remain separate states.
+The success owner removes its `alert`, `alert-success`, and `close` presentation classes because
+it directly owns every concrete declaration; the frozen shared Bootstrap fallback stays for its
+many independent consumers. The legacy server's success flash could not be reproduced through a
+query-only visit without sending a reset request, so Scala/Bootstrap evidence and local
+before/after browser screenshots establish the exact `400px` desktop and `370.5px` mobile alert
+geometry. Focused RED became GREEN 5/5 and the existing route regression passes 5/5. This is not
+Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
