@@ -1444,6 +1444,13 @@ declarations through existing global variables while retaining shared fallback c
 actions, sidebar/shell, and generic title areas remain fallback or separate owners. This is not
 Wave 1 completion.
 
+The one-hundred-fifth slice migrates the projects-recipient `/sites/massmail` text-input margin
+from `site/massMail.scala.html` and `_page.less`. StyleX owns only the exact direct input margin
+through a global variable while retaining the `span3` and all Bootstrap text-input fallback
+declarations; radio controls, project wrapper/typeahead/tags, add and mail actions, title,
+sidebar/shell, and generic inputs remain fallback or separate owners. This is not Wave 1
+completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

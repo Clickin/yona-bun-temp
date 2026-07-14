@@ -76,6 +76,9 @@ const styles = stylex.create({
     whiteSpace: globalColors.siteMassMailWriteActionWhiteSpace,
     zIndex: globalColors.siteMassMailWriteActionZIndex,
   },
+  projectInput: {
+    margin: globalColors.siteMassMailProjectInputMargin,
+  },
 });
 
 export const Route = createFileRoute("/sites/massmail")({
@@ -300,6 +303,8 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       >
         <div className="controls">
           <input
+            {...stylex.props(styles.projectInput)}
+            data-stylex-owner="site-massmail-project-input"
             id="input-project"
             type="text"
             className="span3"

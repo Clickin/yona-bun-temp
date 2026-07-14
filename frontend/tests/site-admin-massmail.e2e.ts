@@ -643,6 +643,15 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
+        current.matches('[data-stylex-owner="site-massmail-project-input"]')
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||

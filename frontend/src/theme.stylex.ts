@@ -247,6 +247,8 @@ export const globalColors = stylex.defineVars({
   siteMassMailWriteActionBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)",
   siteMassMailWriteActionZIndex: "2",
   siteMassMailWriteActionInteractiveTextDecoration: "none",
+  // site/massMail.scala.html + _page.less `.mess-mail-wrap input[type="text"]`
+  siteMassMailProjectInputMargin: "0px",
   // site/mail.scala.html + Bootstrap `.alert` and `.alert-success`
   siteMailSuccessAlertPadding: "8px 35px 8px 14px",
   siteMailSuccessAlertMarginBottom: "20px",
