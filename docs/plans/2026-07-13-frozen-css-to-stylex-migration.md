@@ -1303,6 +1303,13 @@ and `_yobiUI.less`; React retains the legacy-equivalent validation and calculate
 No-token and independent popover consumers retain fallback output. Focused and existing reset
 regressions are GREEN 5/5. This is not Wave 1 completion.
 
+The eighty-second slice migrates standard `/users/signupform` validation-error output from
+`user/signup.scala.html` and `yobi.user.SignUp.js`. StyleX owns the complete left popover surface,
+arrow, and message through global theme variables sourced from Bootstrap 2.3.1, `_yobiUI.less`,
+and the responsive signup popover rules; React retains legacy-equivalent validation and calculated
+placement. Confirmation, social-only, and independent popover consumers retain fallback output.
+Focused and existing signup regressions are GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

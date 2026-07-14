@@ -124,7 +124,9 @@ test.describe("StyleX standalone signup form", () => {
     );
 
     await owner.getByRole("button", { name: "Sign up" }).click();
-    await expect(owner.locator(".popover.in")).toHaveCount(4);
+    await expect(
+      owner.locator('[data-stylex-owner="standalone-signup-validation-popover"]'),
+    ).toHaveCount(4);
     expect(requests).toEqual([]);
 
     await owner.locator('[data-stylex-part="standalone-signup-login-id"]').fill("door");

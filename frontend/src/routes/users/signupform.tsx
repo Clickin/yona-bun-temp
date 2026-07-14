@@ -107,6 +107,64 @@ const styles = stylex.create({
     color: globalColors.standaloneSignupLoginLinkColor,
     fontWeight: globalColors.standaloneSignupLoginLinkFontWeight,
   },
+  validationPopover: {
+    position: globalColors.standaloneSignupValidationPopoverPosition,
+    top: "var(--yoram-stylex-validation-popover-top)",
+    left: {
+      default: "var(--yoram-stylex-validation-popover-left)",
+      "@media (max-width: 767px)": globalColors.standaloneSignupValidationPopoverMobileLeft,
+    },
+    zIndex: globalColors.standaloneSignupValidationPopoverZIndex,
+    display: globalColors.standaloneSignupValidationPopoverDisplay,
+    maxWidth: globalColors.standaloneSignupValidationPopoverMaxWidth,
+    padding: globalColors.standaloneSignupValidationPopoverPadding,
+    textAlign: globalColors.standaloneSignupValidationPopoverTextAlign,
+    whiteSpace: globalColors.standaloneSignupValidationPopoverWhiteSpace,
+    backgroundColor: globalColors.standaloneSignupValidationPopoverSurface,
+    borderColor: globalColors.standaloneSignupValidationPopoverBorderColor,
+    borderStyle: globalColors.standaloneSignupValidationPopoverBorderStyle,
+    borderWidth: globalColors.standaloneSignupValidationPopoverBorderWidth,
+    borderRadius: globalColors.standaloneSignupValidationPopoverRadius,
+    boxShadow: globalColors.standaloneSignupValidationPopoverShadow,
+    backgroundClip: globalColors.standaloneSignupValidationPopoverBackgroundClip,
+    lineHeight: globalColors.standaloneSignupValidationPopoverLineHeight,
+    marginLeft: globalColors.standaloneSignupValidationPopoverLeftMargin,
+  },
+  validationPopoverArrow: {
+    position: globalColors.standaloneSignupValidationPopoverArrowPosition,
+    display: globalColors.standaloneSignupValidationPopoverArrowDisplay,
+    width: globalColors.standaloneSignupValidationPopoverArrowZero,
+    height: globalColors.standaloneSignupValidationPopoverArrowZero,
+    borderColor: globalColors.standaloneSignupValidationPopoverArrowBorderColor,
+    borderStyle: globalColors.standaloneSignupValidationPopoverArrowBorderStyle,
+    borderWidth: globalColors.standaloneSignupValidationPopoverArrowBorderWidth,
+    top: globalColors.standaloneSignupValidationPopoverArrowTop,
+    right: globalColors.standaloneSignupValidationPopoverArrowRight,
+    marginTop: globalColors.standaloneSignupValidationPopoverArrowMarginTop,
+    borderLeftColor: globalColors.standaloneSignupValidationPopoverArrowLeftBorderColor,
+    borderRightWidth: globalColors.standaloneSignupValidationPopoverArrowRightBorderWidth,
+    "::after": {
+      position: globalColors.standaloneSignupValidationPopoverArrowPosition,
+      display: globalColors.standaloneSignupValidationPopoverArrowDisplay,
+      width: globalColors.standaloneSignupValidationPopoverArrowZero,
+      height: globalColors.standaloneSignupValidationPopoverArrowZero,
+      borderColor: globalColors.standaloneSignupValidationPopoverArrowBorderColor,
+      borderStyle: globalColors.standaloneSignupValidationPopoverArrowBorderStyle,
+      borderWidth: globalColors.standaloneSignupValidationPopoverArrowAfterBorderWidth,
+      content: globalColors.standaloneSignupValidationPopoverArrowAfterContent,
+      right: globalColors.standaloneSignupValidationPopoverArrowAfterRight,
+      bottom: globalColors.standaloneSignupValidationPopoverArrowAfterBottom,
+      borderLeftColor: globalColors.standaloneSignupValidationPopoverArrowAfterLeftBorderColor,
+      borderRightWidth: globalColors.standaloneSignupValidationPopoverArrowAfterRightBorderWidth,
+    },
+  },
+  validationPopoverContent: {
+    padding: globalColors.standaloneSignupValidationPopoverContentPadding,
+    lineHeight: globalColors.standaloneSignupValidationPopoverContentLineHeight,
+    width: {
+      "@media (max-width: 767px)": globalColors.standaloneSignupValidationPopoverContentMobileWidth,
+    },
+  },
 });
 
 const standaloneSignupClassName = stylex.props(styles.standaloneSignup).className;
@@ -146,7 +204,11 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const router = useRouter();
+  const formWrapRef = React.useRef<HTMLDivElement>(null);
   const loginIdRef = React.useRef<HTMLInputElement>(null);
+  const emailRef = React.useRef<HTMLInputElement>(null);
+  const passwordRef = React.useRef<HTMLInputElement>(null);
+  const retypedPasswordRef = React.useRef<HTMLInputElement>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Partial<Record<SignupField, string>>>({});
   const [submitError, setSubmitError] = React.useState("");
   const sessionQuery = useQuery(currentSessionQueryOptions(runtimeConfig));
@@ -252,6 +314,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           ) : null}
 
           <div
+            ref={formWrapRef}
             className={
               standardPasswordSignup
                 ? `signup-form-wrap frm-wrap ${formWrapClassName}`
@@ -297,7 +360,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         autoComplete="off"
                         onBlur={handleLoginIdBlur}
                       />
-                      <FieldPopover message={fieldErrors.loginId} />
+                      <FieldPopover
+                        containerRef={formWrapRef}
+                        message={fieldErrors.loginId}
+                        standardPasswordSignup={standardPasswordSignup}
+                        targetRef={loginIdRef}
+                        validationFor="loginId"
+                      />
                     </dd>
 
                     <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
@@ -333,6 +402,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="email"
+                        ref={emailRef}
                         type="text"
                         name="email"
                         className={standardPasswordSignup ? textInputClassName : "text password"}
@@ -343,7 +413,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         autoComplete="off"
                         onBlur={handleEmailBlur}
                       />
-                      <FieldPopover message={fieldErrors.email} />
+                      <FieldPopover
+                        containerRef={formWrapRef}
+                        message={fieldErrors.email}
+                        standardPasswordSignup={standardPasswordSignup}
+                        targetRef={emailRef}
+                        validationFor="email"
+                      />
                     </dd>
 
                     <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
@@ -357,6 +433,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="password"
+                        ref={passwordRef}
                         type="password"
                         name="password"
                         className={
@@ -369,7 +446,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         autoComplete="off"
                         onKeyUp={handlePasswordKeyUp}
                       />
-                      <FieldPopover message={fieldErrors.password} />
+                      <FieldPopover
+                        containerRef={formWrapRef}
+                        message={fieldErrors.password}
+                        standardPasswordSignup={standardPasswordSignup}
+                        targetRef={passwordRef}
+                        validationFor="password"
+                      />
                     </dd>
 
                     <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
@@ -383,6 +466,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
                       <input
                         id="retypedPassword"
+                        ref={retypedPasswordRef}
                         type="password"
                         name="retypedPassword"
                         className={
@@ -395,7 +479,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         autoComplete="off"
                         onKeyUp={handleRetypedPasswordKeyUp}
                       />
-                      <FieldPopover message={fieldErrors.retypedPassword} />
+                      <FieldPopover
+                        containerRef={formWrapRef}
+                        message={fieldErrors.retypedPassword}
+                        standardPasswordSignup={standardPasswordSignup}
+                        targetRef={retypedPasswordRef}
+                        validationFor="retypedPassword"
+                      />
                     </dd>
                   </dl>
 
@@ -601,12 +691,80 @@ async function readLegacyExistence(runtimeConfig: RuntimeConfig, path: string) {
   return (await response.json()) as { isExist?: boolean; isReserved?: boolean };
 }
 
-function FieldPopover({ message }: { message?: string }) {
+function FieldPopover({
+  containerRef,
+  message,
+  standardPasswordSignup,
+  targetRef,
+  validationFor,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  message?: string;
+  standardPasswordSignup: boolean;
+  targetRef: React.RefObject<HTMLInputElement | null>;
+  validationFor: SignupField;
+}) {
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [position, setPosition] = React.useState({ left: "0px", top: "0px" });
+
+  React.useLayoutEffect(() => {
+    if (!message || !standardPasswordSignup) {
+      return;
+    }
+
+    const updatePosition = () => {
+      const container = containerRef.current;
+      const target = targetRef.current;
+      const popover = popoverRef.current;
+      if (!container || !target || !popover) {
+        return;
+      }
+      const containerBox = container.getBoundingClientRect();
+      const targetBox = target.getBoundingClientRect();
+      const popoverBox = popover.getBoundingClientRect();
+      setPosition({
+        left: `${targetBox.left - containerBox.left - popoverBox.width}px`,
+        top: `${targetBox.top - containerBox.top + (targetBox.height - popoverBox.height) / 2}px`,
+      });
+    };
+
+    updatePosition();
+  }, [containerRef, message, standardPasswordSignup, targetRef]);
+
   if (!message) return null;
+  if (!standardPasswordSignup) {
+    return (
+      <div className="popover left in">
+        <div className="arrow"></div>
+        <div className="popover-content">{message}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="popover left in">
-      <div className="arrow"></div>
-      <div className="popover-content">{message}</div>
+    <div
+      {...stylex.props(styles.validationPopover)}
+      ref={popoverRef}
+      data-stylex-owner="standalone-signup-validation-popover"
+      data-stylex-part="validation-popover-surface"
+      data-stylex-validation-for={validationFor}
+      style={
+        {
+          "--yoram-stylex-validation-popover-left": position.left,
+          "--yoram-stylex-validation-popover-top": position.top,
+        } as React.CSSProperties
+      }
+    >
+      <div
+        {...stylex.props(styles.validationPopoverArrow)}
+        data-stylex-part="validation-popover-arrow"
+      />
+      <div
+        {...stylex.props(styles.validationPopoverContent)}
+        data-stylex-part="validation-popover-content"
+      >
+        {message}
+      </div>
     </div>
   );
 }
