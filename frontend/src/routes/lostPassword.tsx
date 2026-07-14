@@ -241,6 +241,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   const stylexFormState = anonymousBaseline || authenticatedNoAlert;
   const anonymousRequestedSuccess =
     sessionQuery.data?.isAnonymous === true && isSent && !errorMessage && !isSuccessAlertDismissed;
+  const authenticatedRequestedSuccess =
+    sessionQuery.data?.isAnonymous === false && isSent && !errorMessage && !isSuccessAlertDismissed;
   const anonymousVisibleError =
     sessionQuery.data?.isAnonymous === true && Boolean(errorMessage) && !isErrorAlertDismissed;
   // Requesting a reset email does not change cached session or auth state.
@@ -340,22 +342,34 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           }
         >
           {isSent && !isSuccessAlertDismissed ? (
-            anonymousRequestedSuccess ? (
+            anonymousRequestedSuccess || authenticatedRequestedSuccess ? (
               <div
                 className={successAlertClassName}
-                data-stylex-owner="lost-password-success-alert"
+                data-stylex-owner={
+                  anonymousRequestedSuccess
+                    ? "lost-password-success-alert"
+                    : "lost-password-authenticated-success-alert"
+                }
               >
                 <button
                   type="button"
                   className={successAlertDismissClassName}
-                  data-stylex-part="lost-password-success-alert-dismiss"
+                  data-stylex-part={
+                    anonymousRequestedSuccess
+                      ? "lost-password-success-alert-dismiss"
+                      : "lost-password-authenticated-success-alert-dismiss"
+                  }
                   onClick={() => setIsSuccessAlertDismissed(true)}
                 >
                   &times;
                 </button>
                 <h4
                   className={successAlertHeadingClassName}
-                  data-stylex-part="lost-password-success-alert-heading"
+                  data-stylex-part={
+                    anonymousRequestedSuccess
+                      ? "lost-password-success-alert-heading"
+                      : "lost-password-authenticated-success-alert-heading"
+                  }
                 >
                   {t("site.mail.sended")}
                 </h4>

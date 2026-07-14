@@ -1276,6 +1276,15 @@ fallback DOM without this owner. Focused GREEN 5/5 verifies values, request payl
 desktop/mobile geometry/paint/screenshots, and owner exclusion; existing route regression is GREEN
 5/5. This is not Wave 1 completion.
 
+The seventy-eighth slice migrates authenticated `/lostPassword?requested=1` success alert state.
+It reuses the canonical anonymous-success StyleX surface, heading, and dismiss declarations under
+its own authenticated stable owner, while preserving the prefilled form values and React dismissal.
+Anonymous success, authenticated no-alert prefill, and all error states remain separate owners or
+fallback states. No theme value is duplicated; the authenticated alert alone drops its legacy
+presentation classes once the reused StyleX declarations own all concrete output. Focused GREEN
+5/5 verifies prefill values, copy/order/dismissal, desktop/mobile paint/geometry/screenshots, and
+all state exclusions; existing route regression is GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
