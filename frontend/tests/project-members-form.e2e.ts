@@ -1050,7 +1050,9 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons.nth(0)).toHaveText("This Project");
   await expect(searchScopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/);
   await expect(searchScopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/);

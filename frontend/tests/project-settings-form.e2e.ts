@@ -959,7 +959,9 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(
     page.locator('.gnb-search-form a[href="#"][data-toggle="search-scope"]'),
   ).toHaveCount(0);
-  const scopeControls = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
+  const scopeControls = page.locator(
+    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+  );
   await expect(scopeControls).toHaveCount(2);
   await expect(scopeControls.nth(0)).toHaveText("This Project");
   await expect(scopeControls.nth(1)).toHaveText("All Projects");
@@ -967,8 +969,8 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(scopeControls.nth(1)).not.toHaveAttribute("data-action", /.+/);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .btn-group")).toHaveClass("btn-group open");
-  await expect(page.locator(".gnb-search-form .dropdown-menu")).toBeVisible();
+  await expect(page.locator("#gnb-search-scope-title")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-menu]")).toBeVisible();
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -1013,7 +1015,9 @@ test("org-owned project settings exposes legacy group search scope without leavi
   await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
 
-  const scopeControls = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
+  const scopeControls = page.locator(
+    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+  );
   await expect(scopeControls).toHaveCount(3);
   await expect(scopeControls).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeControls.nth(0)).not.toHaveAttribute("data-action", /.+/);
@@ -1024,7 +1028,7 @@ test("org-owned project settings exposes legacy group search scope without leavi
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
   });
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .btn-group")).toHaveClass("btn-group open");
+  await expect(page.locator("#gnb-search-scope-title")).toHaveAttribute("aria-expanded", "true");
   await scopeControls.nth(1).click();
   await expect(searchForm).toHaveAttribute("action", `${basePath}/organizations/weblabs/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");

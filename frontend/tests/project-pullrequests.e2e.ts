@@ -176,14 +176,13 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "All Projects"]);
   await expect
     .poll(() =>
       page
-        .locator('.gnb-search-form button[data-toggle="search-scope"]')
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
         .evaluateAll((elements) =>
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
@@ -217,7 +216,7 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
@@ -238,14 +237,13 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "All Projects"]);
   await expect
     .poll(() =>
       page
-        .locator('.gnb-search-form button[data-toggle="search-scope"]')
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
         .evaluateAll((elements) =>
           elements.map((element) => element.getAttribute("data-action") ?? ""),
         ),
@@ -280,7 +278,7 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectSentPullRequestsLocation(page, `${basePath}/admin/sample/sentPullRequests`, "empty");
@@ -752,14 +750,12 @@ test("protected org-owned project pull request restores legacy title and search-
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu.flat.right")).toBeVisible();
-  await expect(page.locator('.gnb-search-form button[data-toggle="search-scope"]')).toHaveText([
-    "This Project",
-    "This Group",
-    "All Projects",
-  ]);
+  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-menu]")).toBeVisible();
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "This Group", "All Projects"]);
 
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect
     .poll(() =>
@@ -771,7 +767,7 @@ test("protected org-owned project pull request restores legacy title and search-
     .toBe(`${basePath}/organizations/weblabs/search`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect
     .poll(() =>
@@ -783,7 +779,7 @@ test("protected org-owned project pull request restores legacy title and search-
     .toBe(`${basePath}/search`);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(0).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
@@ -814,12 +810,14 @@ test("protected org-owned project closed pull request restores project search-sc
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect
     .poll(() =>
-      page.locator('.gnb-search-form button[data-toggle="search-scope"]').evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            action: element.getAttribute("data-action") ?? "",
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
@@ -842,7 +840,7 @@ test("protected org-owned project closed pull request restores project search-sc
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -851,13 +849,13 @@ test("protected org-owned project closed pull request restores project search-sc
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(0).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -887,12 +885,14 @@ test("protected org-owned project sent pull request restores project search-scop
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect
     .poll(() =>
-      page.locator('.gnb-search-form button[data-toggle="search-scope"]').evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            action: element.getAttribute("data-action") ?? "",
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { action: `${basePath}/weblabs/portal/search`, text: "This Project" },
@@ -915,7 +915,7 @@ test("protected org-owned project sent pull request restores project search-scop
   expect(headerMetrics.input.right).toBeLessThanOrEqual(headerMetrics.searchBox.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -924,13 +924,13 @@ test("protected org-owned project sent pull request restores project search-scop
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator('.gnb-search-form button[data-toggle="search-scope"]').nth(0).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(0).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",

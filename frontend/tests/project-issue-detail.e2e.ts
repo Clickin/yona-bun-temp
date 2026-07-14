@@ -1038,25 +1038,25 @@ test("project issue detail renders protected org-owned localhost shell state", a
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect
-    .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) => elements.map((element) => element.textContent?.trim() ?? "")),
-    )
-    .toEqual(["This Project", "This Group", "All Projects"]);
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
-  await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
+  await scopeButtons.nth(1).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/organizations/weblabs/search`,
   );
 
-  await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
+  await scopeButtons.nth(2).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");

@@ -356,31 +356,37 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
 
   const currentUrl = `${basePath}/admin/sample/commits/main/README.md?page=2`;
-  const projectScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Project" });
-  const groupScope = page.locator('[data-toggle="search-scope"]', { hasText: "This Group" });
-  const allScope = page.locator('[data-toggle="search-scope"]', { hasText: "All Projects" });
-  await expect(projectScope).toHaveAttribute("data-action", `${basePath}/admin/sample/search`);
-  await expect(groupScope).toHaveAttribute("data-action", `${basePath}/organizations/admin/search`);
-  await expect(allScope).toHaveAttribute("data-action", `${basePath}/search`);
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  const projectScope = scopeButtons.filter({ hasText: "This Project" });
+  const groupScope = scopeButtons.filter({ hasText: "This Group" });
+  const allScope = scopeButtons.filter({ hasText: "All Projects" });
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await groupScope.click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/organizations/admin/search`,
   );
   await expect(page).toHaveURL(currentUrl);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await allScope.click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(currentUrl);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await projectScope.click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,

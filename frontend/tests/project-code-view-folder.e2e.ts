@@ -46,11 +46,10 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
   );
   await expect(page.locator('form.gnb-search-form input[name="searchType"]')).toHaveValue("auto");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .dropdown-menu li")).toHaveCount(2);
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  await expect(page.locator("[data-stylex-owner=global-gnb-search-scope-item]")).toHaveCount(2);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "All Projects"]);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
   await expect(page.locator(".code-viewer-wrap .listitem")).toHaveCount(2);

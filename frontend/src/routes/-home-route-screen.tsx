@@ -684,6 +684,269 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbSearchScopeStyles = stylex.create({
+  scope: {
+    display: globalColors.globalGnbSearchScopeDisplay,
+    fontSize: globalColors.globalGnbSearchScopeFontSize,
+    position: globalColors.globalGnbSearchScopePosition,
+    verticalAlign: globalColors.globalGnbSearchScopeVerticalAlign,
+    whiteSpace: globalColors.globalGnbSearchScopeWhiteSpace,
+  },
+  toggle: {
+    appearance: globalColors.globalGnbSearchScopeToggleAppearance,
+    backgroundColor: {
+      default: globalColors.globalGnbSearchScopeToggleSurface,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionSurface,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionSurface,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionSurface,
+    },
+    borderBottomColor: {
+      default: globalColors.globalGnbSearchScopeToggleBorder,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    },
+    borderBottomStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+    borderBottomWidth: globalColors.globalGnbSearchScopeToggleBorderWidth,
+    borderLeftColor: {
+      default: globalColors.globalGnbSearchScopeToggleBorder,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    },
+    borderLeftStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+    borderLeftWidth: globalColors.globalGnbSearchScopeToggleBorderWidth,
+    borderRadius: globalColors.globalGnbSearchScopeToggleRadius,
+    borderRightColor: {
+      default: globalColors.globalGnbSearchScopeToggleBorder,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    },
+    borderRightStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+    borderRightWidth: globalColors.globalGnbSearchScopeToggleBorderWidth,
+    borderTopColor: {
+      default: globalColors.globalGnbSearchScopeToggleBorder,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    },
+    borderTopStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+    borderTopWidth: globalColors.globalGnbSearchScopeToggleBorderWidth,
+    boxShadow: globalColors.globalGnbSearchScopeToggleShadow,
+    boxSizing: globalColors.globalGnbSearchScopeToggleBoxSizing,
+    color: {
+      default: globalColors.globalGnbSearchScopeToggleText,
+      ":hover": globalColors.globalGnbSearchScopeToggleInteractionText,
+      ":focus": globalColors.globalGnbSearchScopeToggleInteractionText,
+      ":active": globalColors.globalGnbSearchScopeToggleInteractionText,
+    },
+    cursor: globalColors.globalGnbSearchScopeToggleCursor,
+    display: globalColors.globalGnbSearchScopeToggleDisplay,
+    fontFamily: globalColors.globalGnbSearchScopeToggleFontFamily,
+    fontSize: globalColors.globalGnbSearchScopeToggleFontSize,
+    lineHeight: globalColors.globalGnbSearchScopeToggleLineHeight,
+    margin: globalColors.globalGnbSearchScopeZero,
+    outline: globalColors.globalGnbSearchScopeToggleOutline,
+    paddingBlock: globalColors.globalGnbSearchScopeTogglePaddingBlock,
+    paddingInline: globalColors.globalGnbSearchScopeTogglePaddingInline,
+    position: globalColors.globalGnbSearchScopeTogglePosition,
+    textAlign: globalColors.globalGnbSearchScopeToggleTextAlign,
+    textDecoration: globalColors.globalGnbSearchScopeToggleTextDecoration,
+    transitionDuration: globalColors.globalGnbSearchScopeToggleTransitionDuration,
+    transitionProperty: globalColors.globalGnbSearchScopeToggleTransitionProperty,
+    transitionTimingFunction: globalColors.globalGnbSearchScopeToggleTransitionTiming,
+    verticalAlign: globalColors.globalGnbSearchScopeToggleVerticalAlign,
+    whiteSpace: globalColors.globalGnbSearchScopeToggleWhiteSpace,
+    zIndex: globalColors.globalGnbSearchScopeToggleZIndex,
+    "::after": {
+      borderBottomColor: globalColors.globalGnbSearchScopeTransparent,
+      borderBottomStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+      borderBottomWidth: globalColors.globalGnbSearchScopeZero,
+      borderLeftColor: globalColors.globalGnbSearchScopeTransparent,
+      borderLeftStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+      borderLeftWidth: globalColors.globalGnbSearchScopeCaretSize,
+      borderRightColor: globalColors.globalGnbSearchScopeTransparent,
+      borderRightStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+      borderRightWidth: globalColors.globalGnbSearchScopeCaretSize,
+      borderTopColor: globalColors.globalGnbSearchScopeCaretColor,
+      borderTopStyle: globalColors.globalGnbSearchScopeToggleBorderStyle,
+      borderTopWidth: globalColors.globalGnbSearchScopeCaretSize,
+      content: globalColors.globalGnbSearchScopeCaretContent,
+      display: globalColors.globalGnbSearchScopeCaretDisplay,
+      height: globalColors.globalGnbSearchScopeZero,
+      marginLeft: globalColors.globalGnbSearchScopeCaretMarginLeft,
+      verticalAlign: globalColors.globalGnbSearchScopeCaretVerticalAlign,
+      width: globalColors.globalGnbSearchScopeZero,
+    },
+  },
+  openToggle: {
+    backgroundColor: globalColors.globalGnbSearchScopeToggleInteractionSurface,
+    borderBottomColor: globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    borderLeftColor: globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    borderRightColor: globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    borderTopColor: globalColors.globalGnbSearchScopeToggleInteractionBorder,
+    boxShadow: globalColors.globalGnbSearchScopeToggleOpenShadow,
+    color: globalColors.globalGnbSearchScopeToggleInteractionText,
+  },
+  menu: {
+    backfaceVisibility: globalColors.globalGnbSearchScopeMenuBackfaceVisibility,
+    backgroundClip: globalColors.globalGnbSearchScopeMenuBackgroundClip,
+    backgroundColor: globalColors.globalGnbSearchScopeMenuSurface,
+    borderBottomColor: globalColors.globalGnbSearchScopeMenuBorder,
+    borderBottomStyle: globalColors.globalGnbSearchScopeMenuBorderStyle,
+    borderBottomWidth: globalColors.globalGnbSearchScopeMenuBorderWidth,
+    borderLeftColor: globalColors.globalGnbSearchScopeMenuBorder,
+    borderLeftStyle: globalColors.globalGnbSearchScopeMenuBorderStyle,
+    borderLeftWidth: globalColors.globalGnbSearchScopeMenuBorderWidth,
+    borderRadius: globalColors.globalGnbSearchScopeMenuRadius,
+    borderRightColor: globalColors.globalGnbSearchScopeMenuBorder,
+    borderRightStyle: globalColors.globalGnbSearchScopeMenuBorderStyle,
+    borderRightWidth: globalColors.globalGnbSearchScopeMenuBorderWidth,
+    borderTopColor: globalColors.globalGnbSearchScopeMenuBorder,
+    borderTopStyle: globalColors.globalGnbSearchScopeMenuBorderStyle,
+    borderTopWidth: globalColors.globalGnbSearchScopeMenuBorderWidth,
+    boxShadow: globalColors.globalGnbSearchScopeMenuShadow,
+    boxSizing: globalColors.globalGnbSearchScopeMenuBoxSizing,
+    color: globalColors.globalGnbSearchScopeMenuText,
+    display: globalColors.globalGnbSearchScopeMenuDisplay,
+    float: globalColors.globalGnbSearchScopeMenuFloat,
+    fontSize: globalColors.globalGnbSearchScopeMenuFontSize,
+    left: globalColors.globalGnbSearchScopeMenuLeft,
+    listStyle: globalColors.globalGnbSearchScopeMenuListStyle,
+    marginBottom: globalColors.globalGnbSearchScopeZero,
+    marginLeft: globalColors.globalGnbSearchScopeZero,
+    marginRight: globalColors.globalGnbSearchScopeZero,
+    marginTop: globalColors.globalGnbSearchScopeMenuClosedMarginTop,
+    minWidth: globalColors.globalGnbSearchScopeMenuMinWidth,
+    opacity: globalColors.globalGnbSearchScopeMenuClosedOpacity,
+    overflow: globalColors.globalGnbSearchScopeMenuOverflow,
+    paddingBottom: globalColors.globalGnbSearchScopeMenuPaddingBottom,
+    paddingLeft: globalColors.globalGnbSearchScopeZero,
+    paddingRight: globalColors.globalGnbSearchScopeZero,
+    paddingTop: globalColors.globalGnbSearchScopeMenuPaddingTop,
+    position: globalColors.globalGnbSearchScopeMenuPosition,
+    right: globalColors.globalGnbSearchScopeMenuRight,
+    top: globalColors.globalGnbSearchScopeMenuTop,
+    transitionDuration: globalColors.globalGnbSearchScopeMenuTransitionDuration,
+    transitionProperty: globalColors.globalGnbSearchScopeMenuTransitionProperty,
+    transitionTimingFunction: globalColors.globalGnbSearchScopeMenuTransitionTiming,
+    visibility: globalColors.globalGnbSearchScopeMenuClosedVisibility,
+    zIndex: globalColors.globalGnbSearchScopeMenuZIndex,
+    "::before": {
+      borderBottomColor: globalColors.globalGnbSearchScopeMenuBorder,
+      borderBottomStyle: globalColors.globalGnbSearchScopeArrowBorderSolid,
+      borderBottomWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderLeftColor: globalColors.globalGnbSearchScopeTransparent,
+      borderLeftStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderLeftWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderRightColor: globalColors.globalGnbSearchScopeTransparent,
+      borderRightStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderRightWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderTopColor: globalColors.globalGnbSearchScopeTransparent,
+      borderTopStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderTopWidth: globalColors.globalGnbSearchScopeZero,
+      content: globalColors.globalGnbSearchScopeCaretContent,
+      height: globalColors.globalGnbSearchScopeZero,
+      position: globalColors.globalGnbSearchScopeArrowPosition,
+      right: globalColors.globalGnbSearchScopeArrowRight,
+      top: globalColors.globalGnbSearchScopeArrowBeforeTop,
+      width: globalColors.globalGnbSearchScopeZero,
+      zIndex: globalColors.globalGnbSearchScopeArrowZIndex,
+    },
+    "::after": {
+      borderBottomColor: globalColors.globalGnbSearchScopeMenuSurface,
+      borderBottomStyle: globalColors.globalGnbSearchScopeArrowBorderSolid,
+      borderBottomWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderLeftColor: globalColors.globalGnbSearchScopeTransparent,
+      borderLeftStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderLeftWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderRightColor: globalColors.globalGnbSearchScopeTransparent,
+      borderRightStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderRightWidth: globalColors.globalGnbSearchScopeArrowSideSize,
+      borderTopColor: globalColors.globalGnbSearchScopeTransparent,
+      borderTopStyle: globalColors.globalGnbSearchScopeArrowBorderDashed,
+      borderTopWidth: globalColors.globalGnbSearchScopeZero,
+      content: globalColors.globalGnbSearchScopeCaretContent,
+      height: globalColors.globalGnbSearchScopeZero,
+      position: globalColors.globalGnbSearchScopeArrowPosition,
+      right: globalColors.globalGnbSearchScopeArrowRight,
+      top: globalColors.globalGnbSearchScopeArrowAfterTop,
+      width: globalColors.globalGnbSearchScopeZero,
+      zIndex: globalColors.globalGnbSearchScopeArrowZIndex,
+    },
+  },
+  openMenu: {
+    marginTop: globalColors.globalGnbSearchScopeMenuOpenMarginTop,
+    opacity: globalColors.globalGnbSearchScopeMenuOpenOpacity,
+    visibility: globalColors.globalGnbSearchScopeMenuOpenVisibility,
+  },
+  item: {
+    backgroundColor: globalColors.globalGnbSearchScopeMenuSurface,
+    clear: globalColors.globalGnbSearchScopeItemClear,
+    color: globalColors.globalGnbSearchScopeItemText,
+    display: globalColors.globalGnbSearchScopeItemDisplay,
+    float: globalColors.globalGnbSearchScopeItemFloat,
+    marginBottom: globalColors.globalGnbSearchScopeItemMarginBottom,
+    marginLeft: globalColors.globalGnbSearchScopeItemMarginInline,
+    marginRight: globalColors.globalGnbSearchScopeItemMarginInline,
+    marginTop: globalColors.globalGnbSearchScopeZero,
+    position: globalColors.globalGnbSearchScopeItemPosition,
+    whiteSpace: globalColors.globalGnbSearchScopeItemWhiteSpace,
+  },
+  button: {
+    appearance: globalColors.globalGnbSearchScopeButtonAppearance,
+    backgroundColor: {
+      default: globalColors.globalGnbSearchScopeTransparent,
+      ":hover": globalColors.globalGnbSearchScopeMenuInteractionSurface,
+      ":focus": globalColors.globalGnbSearchScopeMenuInteractionSurface,
+    },
+    borderBottomStyle: globalColors.globalGnbSearchScopeButtonBorderStyle,
+    borderBottomWidth: globalColors.globalGnbSearchScopeZero,
+    borderLeftStyle: globalColors.globalGnbSearchScopeButtonBorderStyle,
+    borderLeftWidth: globalColors.globalGnbSearchScopeZero,
+    borderRadius: {
+      default: globalColors.globalGnbSearchScopeButtonRadius,
+      ":hover": globalColors.globalGnbSearchScopeButtonInteractionRadius,
+      ":focus": globalColors.globalGnbSearchScopeButtonInteractionRadius,
+      ":active": globalColors.globalGnbSearchScopeButtonInteractionRadius,
+    },
+    borderRightStyle: globalColors.globalGnbSearchScopeButtonBorderStyle,
+    borderRightWidth: globalColors.globalGnbSearchScopeZero,
+    borderTopStyle: globalColors.globalGnbSearchScopeButtonBorderStyle,
+    borderTopWidth: globalColors.globalGnbSearchScopeZero,
+    boxSizing: globalColors.globalGnbSearchScopeButtonBoxSizing,
+    color: {
+      default: globalColors.globalGnbSearchScopeItemText,
+      ":hover": globalColors.globalGnbSearchScopeMenuInteractionText,
+      ":focus": globalColors.globalGnbSearchScopeMenuInteractionText,
+    },
+    cursor: globalColors.globalGnbSearchScopeButtonCursor,
+    display: globalColors.globalGnbSearchScopeButtonDisplay,
+    fontFamily: globalColors.globalGnbSearchScopeButtonFontFamily,
+    fontSize: globalColors.globalGnbSearchScopeButtonFontSize,
+    lineHeight: globalColors.globalGnbSearchScopeButtonLineHeight,
+    margin: globalColors.globalGnbSearchScopeZero,
+    outline: globalColors.globalGnbSearchScopeButtonOutline,
+    paddingLeft: globalColors.globalGnbSearchScopeButtonPaddingLeft,
+    paddingRight: globalColors.globalGnbSearchScopeButtonPaddingRight,
+    textAlign: globalColors.globalGnbSearchScopeButtonTextAlign,
+    textDecoration: globalColors.globalGnbSearchScopeButtonTextDecoration,
+    transitionDuration: globalColors.globalGnbSearchScopeButtonTransitionDuration,
+    transitionProperty: globalColors.globalGnbSearchScopeButtonTransitionProperty,
+    transitionTimingFunction: globalColors.globalGnbSearchScopeButtonTransitionTiming,
+    width: globalColors.globalGnbSearchScopeButtonWidth,
+  },
+  middleButton: {
+    paddingBottom: globalColors.globalGnbSearchScopeButtonMiddlePaddingBottom,
+    paddingTop: globalColors.globalGnbSearchScopeButtonMiddlePaddingTop,
+  },
+  edgeButton: {
+    paddingBottom: globalColors.globalGnbSearchScopeButtonEdgePaddingBottom,
+    paddingTop: globalColors.globalGnbSearchScopeButtonEdgePaddingTop,
+  },
+});
+
 const globalGnbSearchFormStyles = stylex.create({
   item: {
     float: globalColors.globalGnbNavItemFloat,
@@ -1087,35 +1350,80 @@ export function SiteLayoutShell({
                   <input type="hidden" name="searchType" value="auto" />
                   {hasScopedSearch ? (
                     <div
-                      className={isSearchScopeMenuOpen ? "btn-group open" : "btn-group"}
+                      {...stylex.props(globalGnbSearchScopeStyles.scope)}
+                      data-stylex-owner="global-gnb-search-scope"
                       onBlur={handleSearchScopeBlur}
                     >
                       <button
-                        className="ybtn dropdown-toggle"
-                        type="button"
+                        {...stylex.props(
+                          globalGnbSearchScopeStyles.toggle,
+                          isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openToggle,
+                        )}
+                        aria-expanded={isSearchScopeMenuOpen}
+                        aria-haspopup="menu"
+                        data-stylex-owner="global-gnb-search-scope-toggle"
                         id="gnb-search-scope-title"
                         onClick={handleSearchScopeToggleClick}
+                        type="button"
                       >
-                        {gnbSearchScopeTitle}
+                        {gnbSearchScopeTitle}{" "}
                       </button>
-                      <ul className="dropdown-menu flat right">
+                      <ul
+                        {...stylex.props(
+                          globalGnbSearchScopeStyles.menu,
+                          isSearchScopeMenuOpen && globalGnbSearchScopeStyles.openMenu,
+                        )}
+                        data-stylex-owner="global-gnb-search-scope-menu"
+                      >
                         {projectSearchAction ? (
-                          <li>
-                            <button type="button" onClick={handleSearchScopeItemClick("project")}>
+                          <li
+                            {...stylex.props(globalGnbSearchScopeStyles.item)}
+                            data-stylex-owner="global-gnb-search-scope-item"
+                          >
+                            <button
+                              {...stylex.props(
+                                globalGnbSearchScopeStyles.button,
+                                globalGnbSearchScopeStyles.edgeButton,
+                              )}
+                              onClick={handleSearchScopeItemClick("project")}
+                              type="button"
+                            >
                               {t("search.scope.project")}
                             </button>
                           </li>
                         ) : null}
                         {projectSearchAction && groupSearchAction ? (
-                          <li>
-                            <button type="button" onClick={handleSearchScopeItemClick("group")}>
+                          <li
+                            {...stylex.props(globalGnbSearchScopeStyles.item)}
+                            data-stylex-owner="global-gnb-search-scope-item"
+                          >
+                            <button
+                              {...stylex.props(
+                                globalGnbSearchScopeStyles.button,
+                                shouldRenderAllProjectsSearchScope
+                                  ? globalGnbSearchScopeStyles.middleButton
+                                  : globalGnbSearchScopeStyles.edgeButton,
+                              )}
+                              onClick={handleSearchScopeItemClick("group")}
+                              type="button"
+                            >
                               {t("search.scope.group")}
                             </button>
                           </li>
                         ) : null}
                         {shouldRenderAllProjectsSearchScope ? (
-                          <li>
-                            <button type="button" onClick={handleSearchScopeItemClick("all")}>
+                          <li
+                            {...stylex.props(globalGnbSearchScopeStyles.item)}
+                            data-stylex-owner="global-gnb-search-scope-item"
+                          >
+                            <button
+                              {...stylex.props(
+                                globalGnbSearchScopeStyles.button,
+                                globalGnbSearchScopeStyles.edgeButton,
+                              )}
+                              onClick={handleSearchScopeItemClick("all")}
+                              type="button"
+                            >
                               {t("search.scope.all")}
                             </button>
                           </li>

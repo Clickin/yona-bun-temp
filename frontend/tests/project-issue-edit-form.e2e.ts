@@ -100,7 +100,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
   const issueEditFormUrl = page.url();
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
   await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/u);
@@ -711,7 +711,7 @@ test("project issue edit form exposes legacy group search scope when org data ex
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
 
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-action", /.+/u);
   await expect(scopeButtons.nth(0)).not.toHaveAttribute("data-toggle", /.+/u);

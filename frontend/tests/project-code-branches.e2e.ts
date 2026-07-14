@@ -41,15 +41,9 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect
-    .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
-    )
-    .toEqual([`${basePath}/admin/sample/search`, `${basePath}/search`]);
+  await expect(
+    page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button'),
+  ).toHaveText(["This Project", "All Projects"]);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -205,36 +199,30 @@ test("project code branches restores protected project shell parity for weblabs/
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  await expect
-    .poll(() =>
-      page
-        .locator(".gnb-search-form [data-toggle='search-scope']")
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getAttribute("data-action") ?? ""),
-        ),
-    )
-    .toEqual([
-      `${basePath}/weblabs/portal/search`,
-      `${basePath}/organizations/weblabs/search`,
-      `${basePath}/search`,
-    ]);
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
+  await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".code-browse-wrap > .nav.nav-tabs > li")).toHaveCount(3);
 
-  await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
+  await scopeButtons.nth(1).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/organizations/weblabs/search`,
   );
 
-  await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
-  await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
+  await scopeButtons.nth(2).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(scopeToggle).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
   expect(await readProjectBranchesShellMetrics(page)).toEqual({

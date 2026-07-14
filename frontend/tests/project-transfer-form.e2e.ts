@@ -274,7 +274,7 @@ test("project transfer exposes legacy group search scope for organization-owned 
   await expect(page.locator("#subMenuProjectTransfer")).toHaveClass("active");
   await expect(page.locator("#btnTransfer")).toBeVisible();
 
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await scopeButtons.evaluateAll((buttons) =>

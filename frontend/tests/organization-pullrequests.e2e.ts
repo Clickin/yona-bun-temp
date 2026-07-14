@@ -162,7 +162,9 @@ test("organization pull request aggregate pins the live localhost guest shell ti
   expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["All Projects"]);
 });
 
 test("organization pull request breadcrumb organization link keeps legacy href with SPA transition", async ({

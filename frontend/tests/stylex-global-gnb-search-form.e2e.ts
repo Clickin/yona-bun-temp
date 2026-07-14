@@ -61,12 +61,13 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
   for (const selector of [
     ".gnb-search-form .search-box {",
     '.gnb-search-form input[type="text"] {',
-    ".gnb-search-form .dropdown-toggle {",
-    ".gnb-search-form .dropdown-menu > li {",
     ".gnb-search-form .search-box button {",
   ]) {
     expect(appCss).toContain(selector);
   }
+  expect(appCss).not.toContain(".gnb-search-form .dropdown-toggle {");
+  expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li {");
+  expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li > button");
 });
 
 test("frozen global GNB search sources stay byte-identical", () => {
@@ -217,7 +218,9 @@ test("scoped search remains React-owned and submits the legacy GET payload", asy
   await expect(form).toHaveAttribute("action", `${BASE_PATH}/admin/sample/search`);
   await expect(scopeTitle).toHaveText("This Project");
   await scopeTitle.click();
-  const scopeButtons = form.locator(".dropdown-menu > li > button");
+  const scopeButtons = form.locator(
+    '[data-stylex-owner="global-gnb-search-scope-menu"] > [data-stylex-owner="global-gnb-search-scope-item"] > button',
+  );
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await scopeButtons.nth(1).click();
   await expect(form).toHaveAttribute("action", `${BASE_PATH}/organizations/weblabs/search`);

@@ -123,7 +123,9 @@ test("organization home pins the live localhost guest shell title and search-sco
   expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["All Projects"]);
 });
 
 test("organization home header renders and posts legacy enrollment utility for guest organizations", async ({

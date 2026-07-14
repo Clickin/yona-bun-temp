@@ -157,7 +157,7 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   await expect(page.locator("#subMenuIssueLabel.active > a")).toBeVisible();
 
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons).toHaveCount(2);
   await expect
@@ -265,7 +265,7 @@ test("project labels exposes group search scope when project org data exists", a
 
   await page.goto(labelsPageUrl);
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons).toHaveCount(3);
   await expect

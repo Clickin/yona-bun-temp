@@ -259,7 +259,9 @@ test("organization project search exact missing state pins the live localhost gu
   expect(metrics.category.right).toBeLessThanOrEqual(metrics.resultTitle.left + 1);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["All Projects"]);
 });
 
 test("organization project search preserves the legacy two-column layout geometry", async ({

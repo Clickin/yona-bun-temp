@@ -250,7 +250,9 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   );
   await expect(page.locator("#issues .nav-tabs li.active a")).toContainText("Open1");
   await expect(page.locator(".post-list-wrap .post-item")).toHaveCount(1);
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(
     page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
@@ -983,10 +985,9 @@ test("project milestone detail 404 milestone API preserves the legacy project-sc
   ).toHaveAttribute("target", "_blank");
   await expect(page.locator('.gnb-nav form[action$="/admin/sample/search"]')).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "All Projects"]);
   await expect(
     page.locator('.gnb-search-form [data-toggle="search-scope"], .gnb-search-form [data-action]'),
   ).toHaveCount(0);

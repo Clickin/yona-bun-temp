@@ -298,7 +298,7 @@ test("project pull request overview exposes legacy project-header search scope",
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
   await expect(page.locator(".gnb-search-form [data-action]")).toHaveCount(0);

@@ -482,7 +482,9 @@ test("organization issue aggregate pins the live localhost guest shell title and
   expect(metrics.searchBox.right).toBeLessThanOrEqual(metrics.navbar.right);
 
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText(["All Projects"]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["All Projects"]);
 });
 
 test("organization issue row converted links keep SPA marker for detail and hash navigation", async ({

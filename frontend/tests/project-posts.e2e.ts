@@ -678,12 +678,14 @@ test("project board list renders protected org-owned localhost shell state", asy
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
-        elements.map((element) => ({
-          dataAction: element.getAttribute("data-action"),
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            dataAction: element.getAttribute("data-action"),
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { dataAction: null, text: "This Project" },
@@ -692,7 +694,7 @@ test("project board list renders protected org-owned localhost shell state", asy
     ]);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -700,7 +702,7 @@ test("project board list renders protected org-owned localhost shell state", asy
   );
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
@@ -1315,7 +1317,9 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(searchScopeButtons).toHaveCount(2);
   for (const button of await searchScopeButtons.all()) {
@@ -1554,12 +1558,14 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form [data-toggle='search-scope']").evaluateAll((elements) =>
-        elements.map((element) => ({
-          dataAction: element.getAttribute("data-action"),
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            dataAction: element.getAttribute("data-action"),
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { dataAction: null, text: "This Project" },
@@ -1569,7 +1575,7 @@ test("project board detail renders protected org-owned localhost shell state", a
 
   const beforeUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -1578,13 +1584,13 @@ test("project board detail renders protected org-owned localhost shell state", a
   await expect(page).toHaveURL(beforeUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(beforeUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form [data-toggle='search-scope']").first().click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -3507,10 +3513,10 @@ async function boardDetailMetrics(page: Page) {
       gnbClassName: navbar.className,
       gnbSearchAction: searchForm.getAttribute("action"),
       gnbSearchScopeDataActions: Array.from(
-        document.querySelectorAll(".gnb-search-form [data-toggle='search-scope']"),
+        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
       ).map((searchScope) => searchScope.getAttribute("data-action")),
       gnbSearchScopeLabels: Array.from(
-        document.querySelectorAll(".gnb-search-form [data-toggle='search-scope']"),
+        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
       ).map((searchScope) => searchScope.textContent?.trim() ?? ""),
       gnbSearchScopeTitle: scope.textContent?.trim() ?? null,
       headerMarginBottom: headerStyle.marginBottom,

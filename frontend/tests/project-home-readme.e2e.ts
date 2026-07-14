@@ -141,7 +141,9 @@ test("protected org-owned project home uses legacy project and group search scop
     "action",
     `${basePath}/weblabs/portal/search`,
   );
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await searchScopeButtons.evaluateAll((buttons) =>

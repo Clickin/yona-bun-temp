@@ -51,12 +51,14 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form .dropdown-menu button").evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            action: element.getAttribute("data-action") ?? "",
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { action: "", text: "This Project" },
@@ -65,7 +67,7 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
 
   const fileUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form .dropdown-menu button").nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(fileUrl);
@@ -167,12 +169,14 @@ test("project code text file includes legacy group search scope when project has
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect
     .poll(() =>
-      page.locator(".gnb-search-form .dropdown-menu button").evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
+      page
+        .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
+        .evaluateAll((elements) =>
+          elements.map((element) => ({
+            action: element.getAttribute("data-action") ?? "",
+            text: element.textContent?.trim() ?? "",
+          })),
+        ),
     )
     .toEqual([
       { action: "", text: "This Project" },
@@ -182,7 +186,7 @@ test("project code text file includes legacy group search scope when project has
 
   const fileUrl = page.url();
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form .dropdown-menu button").nth(1).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
@@ -191,13 +195,13 @@ test("project code text file includes legacy group search scope when project has
   await expect(page).toHaveURL(fileUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form .dropdown-menu button").nth(2).click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").nth(2).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page).toHaveURL(fileUrl);
 
   await page.locator("#gnb-search-scope-title").click();
-  await page.locator(".gnb-search-form .dropdown-menu button").first().click();
+  await page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button").first().click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",

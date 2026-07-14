@@ -80,7 +80,7 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopes = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const searchScopes = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopes).toHaveText(["This Project", "All Projects"]);
   await expect
     .poll(() =>
@@ -181,7 +181,7 @@ test("project fork form exposes group and all-project search scopes without leav
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const searchScopes = page.locator(".gnb-search-form .dropdown-menu > li > button");
+  const searchScopes = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(searchScopes).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect
     .poll(() =>

@@ -406,7 +406,7 @@ test("project pull request changes uses legacy project-scoped GNB search shell",
     "Pull request",
   );
 
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu.flat.right button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await page.locator("#gnb-search-scope-title").click();

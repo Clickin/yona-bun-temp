@@ -283,7 +283,7 @@ test("project milestone edit form uses legacy project-scoped GNB search shell", 
   await expect(shell.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
 
-  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.nth(0)).toHaveAttribute("type", "button");
   await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
@@ -334,7 +334,7 @@ test("project milestone edit form exposes group search scope when project org da
   await page.goto(editFormUrl);
   await expect(page.locator("#milestone-form")).toBeVisible();
   const shell = milestoneEditScopedShell(page);
-  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu > li > button");
+  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons.nth(1)).toHaveAttribute("type", "button");
   await expect(scopeButtons.nth(1)).not.toHaveAttribute("data-action", /.+/u);

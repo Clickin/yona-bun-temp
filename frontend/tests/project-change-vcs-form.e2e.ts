@@ -43,11 +43,9 @@ test("protected weblabs portal change-VCS keeps the legacy group shell from its 
 
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await page.locator("#gnb-search-scope-title").click();
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
-    "This Project",
-    "This Group",
-    "All Projects",
-  ]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".project-breadcrumb .project-protected")).toHaveText("G");
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("2");
   await expect(page.locator(".project-util-wrap .down-arrow")).toHaveText("Unwatch");
@@ -261,10 +259,9 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   );
   await expect(page.locator(".project-setting .project-menu-count")).toHaveText("2");
   await expect(page.locator("#subMenuProjectMember .num-badge")).toHaveText("2");
-  await expect(page.locator(".gnb-search-form .dropdown-menu button")).toHaveText([
-    "This Project",
-    "All Projects",
-  ]);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+  ).toHaveText(["This Project", "All Projects"]);
 
   expect(await readLegacyAnchorStates(page, ".gnb-nav > li > a")).toEqual([
     {
@@ -504,7 +501,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
   await expect(page.locator("#subMenuProjectChangeVCS")).toHaveClass("active");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
 
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   expect(
     await scopeButtons.evaluateAll((buttons) =>

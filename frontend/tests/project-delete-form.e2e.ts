@@ -1029,7 +1029,9 @@ async function readLegacyAnchorSnapshots(page: Page, selector: string) {
 
 async function readLegacyGnbTexts(page: Page) {
   return page
-    .locator(".gnb-nav a, .gnb-search-form .dropdown-menu button, #gnb-search-scope-title")
+    .locator(
+      ".gnb-nav a, [data-stylex-owner=global-gnb-search-scope-item] > button, #gnb-search-scope-title",
+    )
     .evaluateAll((elements) =>
       elements.map((element) => (element.textContent ?? "").replace(/\s+/g, " ").trim()),
     );

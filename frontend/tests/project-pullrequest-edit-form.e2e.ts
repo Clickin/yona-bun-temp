@@ -81,7 +81,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
-  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();
@@ -446,7 +446,7 @@ test("project pull request edit form exposes group search scope when project org
     "Pull request",
   );
   const shell = pullRequestEditScopedShell(page);
-  const scopeButtons = shell.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  const scopeButtons = shell.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
 
   await shell.locator("#gnb-search-scope-title").click();

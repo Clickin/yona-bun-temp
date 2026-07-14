@@ -166,25 +166,14 @@ test("project code history uses legacy project-scoped GNB search shell", async (
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect
-    .poll(() =>
-      scopeButtons.evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
-    )
-    .toEqual([
-      { action: `${basePath}/admin/sample/search`, text: "This Project" },
-      { action: `${basePath}/organizations/admin/search`, text: "This Group" },
-      { action: `${basePath}/search`, text: "All Projects" },
-    ]);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(1).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, historyPageUrl);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -192,14 +181,18 @@ test("project code history uses legacy project-scoped GNB search shell", async (
     `${basePath}/organizations/admin/search`,
   );
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(2).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, historyPageUrl);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(0).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, historyPageUrl);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -635,28 +628,14 @@ async function assertProjectCodeHistorySearchShell(
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
-  const scopeButtons = page.locator('.gnb-search-form [data-toggle="search-scope"]');
+  const scopeToggle = page.locator("#gnb-search-scope-title");
+  const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
-  await expect
-    .poll(() =>
-      scopeButtons.evaluateAll((elements) =>
-        elements.map((element) => ({
-          action: element.getAttribute("data-action") ?? "",
-          text: element.textContent?.trim() ?? "",
-        })),
-      ),
-    )
-    .toEqual([
-      {
-        action: `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
-        text: "This Project",
-      },
-      { action: `${input.basePath}/organizations/${input.groupName}/search`, text: "This Group" },
-      { action: `${input.basePath}/search`, text: "All Projects" },
-    ]);
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(1).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, input.expectedPath);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -664,8 +643,10 @@ async function assertProjectCodeHistorySearchShell(
     `${input.basePath}/organizations/${input.groupName}/search`,
   );
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(2).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, input.expectedPath);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -673,8 +654,10 @@ async function assertProjectCodeHistorySearchShell(
     `${input.basePath}/search`,
   );
 
-  await page.locator("#gnb-search-scope-title").click();
+  await scopeToggle.click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "true");
   await scopeButtons.nth(0).click();
+  await expect(scopeToggle).toHaveAttribute("aria-expanded", "false");
   await expectHistoryRoutePath(page, input.expectedPath);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(

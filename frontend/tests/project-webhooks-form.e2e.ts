@@ -1099,9 +1099,9 @@ async function readLegacyGnbTexts(page: Page) {
       ...Array.from(document.querySelectorAll("#gnb-search-scope-title")).map((node) =>
         node.textContent?.replace(/\s+/gu, " ").trim(),
       ),
-      ...Array.from(document.querySelectorAll(".gnb-search-form .dropdown-menu button")).map(
-        (node) => node.textContent?.replace(/\s+/gu, " ").trim(),
-      ),
+      ...Array.from(
+        document.querySelectorAll("[data-stylex-owner=global-gnb-search-scope-item] > button"),
+      ).map((node) => node.textContent?.replace(/\s+/gu, " ").trim()),
     ].filter((value): value is string => Boolean(value)),
   );
 }

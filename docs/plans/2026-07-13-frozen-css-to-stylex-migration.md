@@ -813,6 +813,19 @@ evidence agrees on HOME `112×30`, project `231.625×30`, and attached-but-hidde
 HOME/project/organization. Actual RED 9/10 becomes focused GREEN 10/10, with Feedback regression
 10/10. This is not Wave 1 completion.
 
+The forty-fifth verified slice migrates the complete scoped-search selector inside that form:
+wrapper, toggle, open/closed menu, items, buttons, caret, and arrows. The project/group/all copy,
+order, form-action changes, blur behavior, and template whitespace before the caret remain exact,
+while React state/events and stable owner/ARIA boundaries replace Bootstrap's runtime open/class
+contract. Canonical global theme variables own every concrete value and preserve the live project
+`119.625×30` toggle, `162×80` menu, 32/28/32 three-item geometry, exact asymmetric padding and
+interaction paint; the organization state preserves its `162×46` single-item menu. Runtime
+`btn-group open ybtn dropdown-toggle dropdown-menu flat right` classes and the 30-line scoped
+React bridge are removed. Generic dropdown fallback remains for other actual consumers, while
+outer `gnb-search-form`/`input-prepend` remain only for responsive hiding and unmigrated inner
+controls. Actual RED 6/7 becomes focused plus outer GREEN 17/17. The next safe owner is the inner
+`.search-box.select`, followed by its input and submit controls. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

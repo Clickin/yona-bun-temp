@@ -616,7 +616,9 @@ test("protected org-owned project issue list exposes legacy group search scope a
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  const scopeButtons = page.locator('.gnb-search-form .dropdown-menu button[type="button"]');
+  const scopeButtons = page.locator(
+    '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
+  );
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
   await expect(page.locator(".gnb-search-form [data-action]")).toHaveCount(0);
@@ -1514,7 +1516,9 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
     "https://github.com/yona-projects/yona/issues",
   );
 
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(searchScopeButtons).toHaveCount(2);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -1525,7 +1529,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator('.gnb-search-form .dropdown-menu button[type="button"]', {
+    .locator('[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]', {
       hasText: "All Projects",
     })
     .click();
@@ -1534,7 +1538,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator('.gnb-search-form .dropdown-menu button[type="button"]', {
+    .locator('[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]', {
       hasText: "This Project",
     })
     .click();

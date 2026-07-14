@@ -219,7 +219,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator(".gnb-search-form .dropdown-menu button")
+    .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
     .filter({ hasText: "This Group" })
     .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
@@ -230,7 +230,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
 
   await page.locator("#gnb-search-scope-title").click();
   await page
-    .locator(".gnb-search-form .dropdown-menu button")
+    .locator("[data-stylex-owner=global-gnb-search-scope-item] > button")
     .filter({ hasText: "All Projects" })
     .click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("All Projects");

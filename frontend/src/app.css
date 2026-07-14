@@ -776,36 +776,6 @@ body:has(.legacy-framed-shell.is-open) {
   width: 200px;
 }
 
-.gnb-search-form .dropdown-toggle {
-  background-color: #f7f7f7;
-  border-radius: 3px 0 0 3px;
-}
-
-.gnb-search-form .dropdown-menu > li {
-  display: block;
-  clear: both;
-  float: none;
-}
-
-.gnb-search-form .dropdown-menu > li > a,
-.gnb-search-form .dropdown-menu > li > button {
-  display: block;
-  width: 100%;
-  padding: 5px 10px;
-  line-height: 20px;
-  color: #333;
-  text-align: left;
-  background: transparent;
-  border: 0;
-}
-
-.gnb-search-form .dropdown-menu > li > button:hover,
-.gnb-search-form .dropdown-menu > li > button:focus {
-  color: #fff;
-  text-decoration: none;
-  background-color: #51aacc;
-}
-
 .gnb-search-form .search-box button {
   min-height: auto;
   padding: 0;

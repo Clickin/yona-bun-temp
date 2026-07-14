@@ -205,7 +205,9 @@ test("protected org-owned project watchers expose legacy project-header search s
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
-  const searchScopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeButtons = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeButtons).toHaveCount(3);
   expect(
     await searchScopeButtons.evaluateAll((buttons) =>

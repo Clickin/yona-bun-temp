@@ -338,7 +338,7 @@ test("project search pins the live localhost issue-comment zero-result project s
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "All Projects"]);
   await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu")).toContainText("Log in");
@@ -627,7 +627,7 @@ test("org-owned project search exposes legacy project group search scope", async
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect(scopeButtons.locator("[data-toggle], [data-action]")).toHaveCount(0);
 

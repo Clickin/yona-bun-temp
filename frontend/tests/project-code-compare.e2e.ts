@@ -92,7 +92,7 @@ test("project code compare uses legacy project-scoped GNB search shell", async (
   await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
-  const scopeButtons = page.locator(".gnb-search-form .dropdown-menu button");
+  const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);
   await expect
     .poll(() =>

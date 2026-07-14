@@ -393,7 +393,9 @@ test("project pull request create form restores legacy shell parity for project 
 
     const searchScopeTexts = (
       await page
-        .locator("#gnb-search-scope-title, .gnb-search-form .dropdown-menu > li > button")
+        .locator(
+          "#gnb-search-scope-title, [data-stylex-owner=global-gnb-search-scope-item] > button",
+        )
         .allTextContents()
     )
       .map((value) => value.replace(/\s+/gu, " ").trim())

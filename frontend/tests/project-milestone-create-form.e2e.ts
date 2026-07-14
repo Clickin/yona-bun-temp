@@ -44,7 +44,7 @@ test("project milestone create form restores the legacy protected project header
   await expect(searchForm).toHaveAttribute("action", `${basePath}${PROJECT_SEARCH_PATH}`);
 
   await scopeToggle.click();
-  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(scopeItems).toHaveCount(3);
   await expect(scopeItems.nth(0)).toHaveText("This Project");
   await expect(scopeItems.nth(1)).toHaveText("This Group");

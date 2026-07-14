@@ -86,7 +86,9 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
     searchScopeContainedInHeader: true,
   });
   await page.locator("#gnb-search-scope-title").click();
-  const searchScopeItems = page.locator(".gnb-search-form .dropdown-menu button");
+  const searchScopeItems = page.locator(
+    "[data-stylex-owner=global-gnb-search-scope-item] > button",
+  );
   await expect(searchScopeItems).toHaveText(["This Project", "This Group", "All Projects"]);
   await searchScopeItems.nth(1).click();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");

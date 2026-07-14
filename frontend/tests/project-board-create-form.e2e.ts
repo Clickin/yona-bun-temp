@@ -54,7 +54,7 @@ test("project board create form restores legacy admin project shell", async ({ p
 
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(scopeToggle).toHaveText("This Project");
   await expect(scopeItems).toHaveCount(2);
@@ -96,7 +96,7 @@ test("project board create form restores legacy group-owned project shell", asyn
 
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
-  const scopeItems = page.locator(".gnb-search-form .dropdown-menu.flat.right li button");
+  const scopeItems = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
   await expect(searchForm).toHaveAttribute("action", `${basePath}/weblabs/portal/search`);
   await expect(scopeToggle).toHaveText("This Project");
   await expect(scopeItems).toHaveCount(3);
