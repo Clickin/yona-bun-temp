@@ -778,6 +778,17 @@ and 390×844 on the exact `63.015625×37` box, interaction paint, and 8px active
 RED becomes GREEN 8/8. Generic GNB item/link rules remain only for real sibling consumers, and the
 divider is unchanged as a separate owner. This is not Wave 1 completion.
 
+The forty-second verified slice migrates the conditional GNB divider immediately after List All.
+The empty Scala `li`, condition, and sibling order remain exact, while colocated StyleX owns its
+float/position, transparent auto box, 12px/40px typography, and complete muted `|` pseudo-element
+at opacity 0.35. Existing canonical transparent, muted-text, and 40px variables are reused; only
+the evidenced divider font size and opacity are added to the global theme. The owner drops the
+presentation `divider` class, reducing runtime `.gnb-nav .divider` consumers to zero and deleting
+the corresponding seven-line React bridge. The separate `.gnb-usermenu .divider` rules remain for
+three real user-menu consumers. Fresh Edge HOME/projects desktop and mobile measurements agree
+with local on the exact `3.109375×40` owner and pseudo paint; focused RED 8/10 becomes GREEN
+10/10. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

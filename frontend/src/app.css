@@ -727,23 +727,16 @@ body:has(.legacy-framed-shell.is-open) {
   opacity: 1;
 }
 
-.gnb-nav .divider,
 .gnb-usermenu .divider {
   width: auto;
   height: auto;
   background: transparent;
 }
 
-.gnb-nav .divider {
-  font-size: 12px;
-  line-height: 40px;
-}
-
 .gnb-usermenu .divider {
   line-height: 30px;
 }
 
-.gnb-nav .divider::after,
 .gnb-usermenu .divider::after {
   content: "|";
   opacity: 0.35;

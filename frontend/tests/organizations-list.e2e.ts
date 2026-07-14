@@ -588,6 +588,7 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr) {
       const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
+      if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")
         return "show-progress-bar";
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;

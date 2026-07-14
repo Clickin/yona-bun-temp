@@ -684,6 +684,25 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbProjectListDividerStyles = stylex.create({
+  root: {
+    backgroundColor: globalColors.transparent,
+    backgroundImage: "none",
+    color: globalColors.textMuted,
+    float: "left",
+    fontSize: globalColors.globalGnbProjectListDividerFontSize,
+    height: "auto",
+    lineHeight: globalColors.globalGnbBrandHeight,
+    position: "relative",
+    width: "auto",
+    "::after": {
+      color: globalColors.textMuted,
+      content: '"|"',
+      opacity: globalColors.globalGnbProjectListDividerOpacity,
+    },
+  },
+});
+
 const globalGnbProjectListStyles = stylex.create({
   item: {
     color: globalColors.textMuted,
@@ -988,7 +1007,10 @@ export function SiteLayoutShell({
                       {t("title.list")}
                     </Link>
                   </li>
-                  <li className="divider"></li>
+                  <li
+                    {...stylex.props(globalGnbProjectListDividerStyles.root)}
+                    data-stylex-owner="global-gnb-project-list-divider"
+                  />
                 </>
               ) : null}
               {feedbackUrl ? (

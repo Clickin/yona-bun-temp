@@ -59,6 +59,10 @@ export const globalColors = stylex.defineVars({
   globalGnbProjectListTriangleZero: "0px",
   // _page.less: .gnb-nav inherited font-size
   globalGnbBrandFontSize: "14px",
+  // _page.less: .gnb-nav li.divider font-size
+  globalGnbProjectListDividerFontSize: "12px",
+  // _page.less: .gnb-nav li.divider::after opacity
+  globalGnbProjectListDividerOpacity: "0.35",
   // _page.less: .gnb-inner .logo-letter bold font-weight
   globalGnbBrandFontWeight: "700",
   // _usermenu.less: #mySidenav top

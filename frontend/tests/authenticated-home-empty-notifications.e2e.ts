@@ -3888,6 +3888,9 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
+        if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-divider") {
+          return 'class="divider"';
+        }
         if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-link") {
           return 'class="show-progress-bar"';
         }

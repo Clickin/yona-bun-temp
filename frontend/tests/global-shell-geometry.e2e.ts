@@ -38,7 +38,10 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   ).toHaveAttribute("href", `${BASE_PATH}/`);
   await expect(navItems.nth(1).locator("a")).toHaveText("List All");
   await expect(navItems.nth(1).locator("a")).toHaveAttribute("href", `${BASE_PATH}/projects`);
-  await expect(navItems.nth(2)).toHaveClass("divider");
+  await expect(navItems.nth(2)).toHaveAttribute(
+    "data-stylex-owner",
+    "global-gnb-project-list-divider",
+  );
   await expect(navItems.nth(3).locator("a")).toHaveText("Feedback");
   await expect(navItems.nth(3).locator("a")).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
   await expect(navItems.nth(3).locator("a")).toHaveAttribute("target", "_blank");
@@ -62,6 +65,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   );
   await expect.poll(() => sessionRequestPaths).toEqual([`${BASE_PATH}/api/v1/session`]);
   await assertOwnedShellHasNoPluginHooks(page);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
 
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
@@ -185,6 +189,7 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
 
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
 
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
@@ -245,7 +250,9 @@ test("guest session only suppresses List All and its divider", async ({ page }) 
 
   await page.goto(`${BASE_PATH}/`);
   await expect(page.locator(".gnb-nav > li > a", { hasText: "List All" })).toHaveCount(0);
-  await expect(page.locator(".gnb-nav > li.divider")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    0,
+  );
   await expect(page.locator(".gnb-nav > li > a", { hasText: "Feedback" })).toBeVisible();
 });
 
@@ -255,7 +262,9 @@ test("hide-project-listing config only suppresses List All and its divider", asy
 
   await page.goto(`${BASE_PATH}/`);
   await expect(page.locator(".gnb-nav > li > a", { hasText: "List All" })).toHaveCount(0);
-  await expect(page.locator(".gnb-nav > li.divider")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
+    0,
+  );
   await expect(page.locator(".gnb-nav > li > a", { hasText: "Feedback" })).toBeVisible();
 });
 
@@ -391,7 +400,7 @@ async function readShellMetrics(page: Page) {
     };
 
     return {
-      divider: box(".gnb-nav > li.divider"),
+      divider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
       feedback: box(".gnb-nav > li:nth-child(4) > a"),
       heroCover: box(".siteintro-cover"),
       heroHeading: box(".site-heading"),
