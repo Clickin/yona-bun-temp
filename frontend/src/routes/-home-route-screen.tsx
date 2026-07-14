@@ -415,9 +415,18 @@ function HomeScreen({
                 />
               </button>
             </div>
-            <div className="page on-fold-intro">
-              <div className="row-fluid content-container">
-                <div className="span8 main-stream">
+            <div
+              {...stylex.props(authenticatedHomeContentGridStyles.page)}
+              data-stylex-owner="authenticated-home-content-page"
+            >
+              <div
+                className={`content-container ${stylex.props(authenticatedHomeContentGridStyles.grid).className}`}
+                data-stylex-owner="authenticated-home-content-grid"
+              >
+                <div
+                  className={`main-stream ${stylex.props(authenticatedHomeContentGridStyles.main).className}`}
+                  data-stylex-owner="authenticated-home-main-stream"
+                >
                   <ul className="nav nav-tabs">
                     <li className="active">
                       <Link {...LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS} to="/notifications">
@@ -501,7 +510,10 @@ function HomeScreen({
                     ) : null}
                   </ul>
                 </div>
-                <div className="span4 index-menu right-menu span-hard-wrap" />
+                <div
+                  {...stylex.props(authenticatedHomeContentGridStyles.rail)}
+                  data-stylex-owner="authenticated-home-index-rail"
+                />
               </div>
             </div>
           </div>
@@ -1820,6 +1832,53 @@ const authenticatedHomePageWrapStyles = stylex.create({
     backgroundColor: globalColors.authenticatedHomePageWrapSurface,
     boxSizing: globalColors.authenticatedHomePageWrapBoxSizing,
     margin: globalColors.authenticatedHomePageWrapMargin,
+  },
+});
+
+const authenticatedHomeContentGridStyles = stylex.create({
+  page: {
+    borderBottomLeftRadius: globalColors.authenticatedHomeContentPageRadius,
+    borderBottomRightRadius: globalColors.authenticatedHomeContentPageRadius,
+    padding: globalColors.authenticatedHomeContentZero,
+  },
+  grid: {
+    width: globalColors.authenticatedHomeContentGridWidth,
+    "::before": {
+      content: globalColors.authenticatedHomeContentGridPseudoContent,
+      display: globalColors.authenticatedHomeContentGridPseudoDisplay,
+      lineHeight: globalColors.authenticatedHomeContentZero,
+    },
+    "::after": {
+      clear: globalColors.authenticatedHomeContentGridPseudoClear,
+      content: globalColors.authenticatedHomeContentGridPseudoContent,
+      display: globalColors.authenticatedHomeContentGridPseudoDisplay,
+      lineHeight: globalColors.authenticatedHomeContentZero,
+    },
+  },
+  main: {
+    boxSizing: globalColors.authenticatedHomeContentColumnBoxSizing,
+    display: globalColors.authenticatedHomeContentColumnDisplay,
+    float: globalColors.authenticatedHomeContentColumnFloat,
+    marginBottom: globalColors.authenticatedHomeContentMainMarginBottom,
+    marginLeft: globalColors.authenticatedHomeContentZero,
+    minHeight: globalColors.authenticatedHomeContentColumnMinHeight,
+    width: {
+      default: globalColors.authenticatedHomeContentMainWidth,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeContentMainMobileWidth,
+    },
+  },
+  rail: {
+    boxSizing: globalColors.authenticatedHomeContentColumnBoxSizing,
+    display: globalColors.authenticatedHomeContentColumnDisplay,
+    float: globalColors.authenticatedHomeContentColumnFloat,
+    marginLeft: globalColors.authenticatedHomeContentRailMarginLeft,
+    marginTop: globalColors.authenticatedHomeContentRailMarginTop,
+    minHeight: globalColors.authenticatedHomeContentColumnMinHeight,
+    minWidth: {
+      default: globalColors.authenticatedHomeContentZero,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeContentRailMobileMinWidth,
+    },
+    width: globalColors.authenticatedHomeContentRailWidth,
   },
 });
 

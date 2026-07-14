@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-five shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-six shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -965,6 +965,21 @@ GREEN 5/5, combined intro/page-wrap verification is 10/10 at desktop and 390px, 
 localStorage persistence, computed paint, screenshots, class isolation, typecheck, production
 build/StyleX verification, manifest/app.css hashes, format, lint, and diff gates pass. This is not
 Wave 1 completion.
+
+The fifty-sixth verified slice migrates the authenticated HOME outer content grid: the page
+surface, fluid-row clearfix, 8/4 main-and-rail columns, gutter, and max-720 responsive state.
+Colocated StyleX reproduces Bootstrap 2.3.1's `65.95744680851064%` and
+`31.914893617021278%` columns with the `2.127659574468085%` gutter through canonical global theme
+variables. It removes the stale React-only max-900 `main-stream` full-width bridge, restoring the
+legacy two-column layout at 800px; mobile keeps the frozen rail cascade of the span percentage plus
+`min-width: 95%` without compensation. Runtime `page`, `on-fold-intro`, `row-fluid`, `span8`,
+`span4`, `index-menu`, `right-menu`, and `span-hard-wrap` tokens are retired. Only
+`content-container` and `main-stream` remain because notification descendants still actively
+consume that ancestry. Focused RED 1/1 becomes GREEN 6/6, and the content-grid/page-wrap/intro
+matrix passes 16/16 at 1366, 800, and 390px. Computed geometry, clearfix pseudos, screenshots,
+fallback ancestry mutation, class isolation, typecheck, production build/StyleX verification,
+manifest/app.css hash agreement, unchanged generated fallback hash, and diff gates pass. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

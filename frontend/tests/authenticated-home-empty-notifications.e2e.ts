@@ -849,7 +849,9 @@ test("authenticated home empty notifications matches legacy index notifications 
   });
 
   await page.setViewportSize({ width: 1100, height: 720 });
-  const homeStreamTabs = page.locator(".main-stream > .nav-tabs");
+  const homeStreamTabs = page.locator(
+    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs',
+  );
   await expect(homeStreamTabs.locator("> li").nth(0)).toHaveClass("active");
   await expect(homeStreamTabs.locator("> li > a")).toHaveText([
     "Notification",
@@ -2053,10 +2055,14 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(defaultLandingButton).not.toHaveAttribute("data-placement");
   await expect(defaultLandingButton).not.toHaveAttribute("data-toggle");
   await expect(defaultLandingButton).not.toHaveAttribute("data-content");
-  await expect(page.locator(".main-stream > .nav-tabs .popover")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover'),
+  ).toHaveCount(0);
 
   await defaultLandingButton.hover();
-  const defaultLandingPopover = page.locator(".main-stream > .nav-tabs .popover.bottom");
+  const defaultLandingPopover = page.locator(
+    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover.bottom',
+  );
   await expect(defaultLandingPopover).toBeVisible();
   await expect(defaultLandingPopover).toHaveClass("popover bottom");
   await expect(defaultLandingPopover.locator(".popover-title")).toHaveText("Set to default page");
@@ -2065,7 +2071,9 @@ test("direct notifications route matches legacy Application.notifications empty 
   );
   const popoverBoxes = await page.evaluate(() => {
     const button = document.querySelector<HTMLElement>("#setDefaultLoginPage");
-    const popover = document.querySelector<HTMLElement>(".main-stream > .nav-tabs .popover.bottom");
+    const popover = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs .popover.bottom',
+    );
     if (!button || !popover) return null;
     const buttonBox = button.getBoundingClientRect();
     const popoverBox = popover.getBoundingClientRect();
@@ -2101,7 +2109,9 @@ test("direct notifications route matches legacy Application.notifications empty 
     siteGuideOuterMargin: "40px 0px 0px",
   });
 
-  const mainStreamTabs = page.locator(".main-stream > .nav-tabs");
+  const mainStreamTabs = page.locator(
+    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs',
+  );
   await expect(mainStreamTabs.locator("> li").nth(0)).toHaveClass("active");
   await expect(mainStreamTabs.locator("> li").nth(1)).not.toHaveClass(/active/u);
   await expect(mainStreamTabs.locator("> li").nth(2)).not.toHaveClass(/active/u);
@@ -2132,7 +2142,10 @@ test("direct notifications route matches legacy Application.notifications empty 
 
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const mainStreamTabSource = routeSource.slice(
-    routeSource.indexOf('<div className="span8 main-stream">'),
+    routeSource.lastIndexOf(
+      "<div",
+      routeSource.indexOf('data-stylex-owner="authenticated-home-main-stream"'),
+    ),
     routeSource.indexOf('<ul className="activity-streams notification-wrap unstyled">'),
   );
   const setDefaultButtonSource = routeSource.slice(
@@ -2178,7 +2191,9 @@ test("direct notifications route matches legacy Application.notifications empty 
 
   await mockWorkspaceFiles(page);
   await page.goto(`${basePath}/notifications`);
-  const myFilesTab = page.locator('.main-stream > .nav-tabs a:has-text("My Files")');
+  const myFilesTab = page.locator(
+    '[data-stylex-owner="authenticated-home-main-stream"] > .nav-tabs a:has-text("My Files")',
+  );
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "notifications-my-files-tab";
@@ -2682,7 +2697,9 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-page-wrap-outer"]',
     );
-    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const mainStream = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-main-stream"]',
+    );
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
     const guideToggleButton = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
@@ -2755,7 +2772,9 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
     const siteGuideOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide"]',
     );
-    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const mainStream = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-main-stream"]',
+    );
     const defaultLandingButton = document.querySelector<HTMLElement>("#setDefaultLoginPage");
     if (!pageWrapOuter || !siteGuideOuter || !mainStream) {
       throw new Error("Expected mobile authenticated home metric targets are missing.");
@@ -3112,7 +3131,9 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-page-wrap-outer"]',
     );
-    const mainStream = document.querySelector<HTMLElement>(".main-stream");
+    const mainStream = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-main-stream"]',
+    );
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
     const warning = document.querySelector<HTMLElement>(".warning-none");
     const guideToggleButton = document.querySelector<HTMLElement>(
@@ -4141,6 +4162,22 @@ async function canonicalizeHtml(page: Page, html: string) {
           name === "class" &&
           current.matches("div.guide-toggle") &&
           current.querySelector(":scope > #toggleIntro") !== null;
+        const isAuthenticatedHomeContentPage =
+          name === "class" &&
+          current.matches("div.page.on-fold-intro") &&
+          current.querySelector(":scope > .row-fluid.content-container") !== null;
+        const isAuthenticatedHomeContentGrid =
+          name === "class" &&
+          current.matches("div.row-fluid.content-container") &&
+          current.querySelector(":scope > .span8.main-stream + .span4.index-menu") !== null;
+        const isAuthenticatedHomeMainStream =
+          name === "class" &&
+          current.matches("div.span8.main-stream") &&
+          current.querySelector(":scope > .nav-tabs + .activity-streams") !== null;
+        const isAuthenticatedHomeIndexRail =
+          name === "class" &&
+          current.matches("div.span4.index-menu.right-menu.span-hard-wrap") &&
+          current.parentElement?.matches(".row-fluid.content-container") === true;
         const retiredTokens = isAuthenticatedHomePageWrapOuter
           ? ["page-wrap-outer"]
           : isAuthenticatedHomePageWrap
@@ -4151,27 +4188,39 @@ async function canonicalizeHtml(page: Page, html: string) {
                 ? ["welcome-table", "borderless"]
                 : isAuthenticatedHomeIntroGuideToggle
                   ? ["guide-toggle"]
-                  : isSiteLayoutFooterOuter
-                    ? ["page-footer-outer"]
-                    : isSiteLayoutFooterInner
-                      ? ["page-footer"]
-                      : isSiteLayoutFooterProvider
-                        ? ["provider"]
-                        : isSiteLayoutHeader && current.classList.contains("project-header")
-                          ? ["project-header"]
-                          : isSiteLayoutHeader
-                            ? ["gnb-outer"]
-                            : name === "class" &&
-                                current.classList.contains("gnb-inner") &&
-                                current.matches("header.gnb-outer > div.gnb-inner") &&
-                                current.querySelector('form[name="gnb-search-form"]') !== null
-                              ? ["gnb-inner"]
-                              : name === "class" &&
-                                  current.classList.contains("gnb-nav") &&
-                                  current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                                  current.querySelector('form[name="gnb-search-form"]') !== null
-                                ? ["gnb-nav"]
-                                : [];
+                  : isAuthenticatedHomeContentPage
+                    ? ["page", "on-fold-intro"]
+                    : isAuthenticatedHomeContentGrid
+                      ? ["row-fluid"]
+                      : isAuthenticatedHomeMainStream
+                        ? ["span8"]
+                        : isAuthenticatedHomeIndexRail
+                          ? ["span4", "index-menu", "right-menu", "span-hard-wrap"]
+                          : isSiteLayoutFooterOuter
+                            ? ["page-footer-outer"]
+                            : isSiteLayoutFooterInner
+                              ? ["page-footer"]
+                              : isSiteLayoutFooterProvider
+                                ? ["provider"]
+                                : isSiteLayoutHeader && current.classList.contains("project-header")
+                                  ? ["project-header"]
+                                  : isSiteLayoutHeader
+                                    ? ["gnb-outer"]
+                                    : name === "class" &&
+                                        current.classList.contains("gnb-inner") &&
+                                        current.matches("header.gnb-outer > div.gnb-inner") &&
+                                        current.querySelector('form[name="gnb-search-form"]') !==
+                                          null
+                                      ? ["gnb-inner"]
+                                      : name === "class" &&
+                                          current.classList.contains("gnb-nav") &&
+                                          current.matches(
+                                            "header.gnb-outer > .gnb-inner > ul.gnb-nav",
+                                          ) &&
+                                          current.querySelector('form[name="gnb-search-form"]') !==
+                                            null
+                                        ? ["gnb-nav"]
+                                        : [];
         if (retiredTokens.length > 0) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(

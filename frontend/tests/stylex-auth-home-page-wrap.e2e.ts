@@ -75,7 +75,9 @@ for (const viewport of [
       inner.locator(':scope > [data-stylex-owner="authenticated-home-intro-guide"]'),
     ).toContainText("Welcome to Yoram");
     await expect(
-      inner.locator(':scope > [data-stylex-owner="authenticated-home-intro-guide-toggle"] + .page'),
+      inner.locator(
+        ':scope > [data-stylex-owner="authenticated-home-intro-guide-toggle"] + [data-stylex-owner="authenticated-home-content-page"]',
+      ),
     ).toHaveCount(1);
 
     const evidence = await outer.evaluate((outerElement) => {
