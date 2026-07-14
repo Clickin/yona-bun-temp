@@ -42,9 +42,10 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
     "data-stylex-owner",
     "global-gnb-project-list-divider",
   );
-  await expect(navItems.nth(3).locator("a")).toHaveText("Feedback");
-  await expect(navItems.nth(3).locator("a")).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
-  await expect(navItems.nth(3).locator("a")).toHaveAttribute("target", "_blank");
+  const feedbackLink = navItems.nth(3).locator('[data-stylex-owner="global-gnb-feedback-link"]');
+  await expect(feedbackLink).toHaveText("Yoram repository");
+  await expect(feedbackLink).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
+  await expect(feedbackLink).toHaveAttribute("target", "_blank");
   await expect(navItems.nth(4).locator("form.gnb-search-form")).toBeVisible();
   await expect(navItems.nth(4).locator("form.gnb-search-form")).toHaveAttribute(
     "action",
@@ -231,7 +232,9 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await page.goto(`${BASE_PATH}/`);
 
   await expect(page.locator(".gnb-nav > li").nth(1).locator("a")).toHaveText("List All");
-  await expect(page.locator(".gnb-nav > li").nth(3).locator("a")).toHaveText("Feedback");
+  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toHaveText(
+    "Yoram repository",
+  );
   await assertOwnedShellHasNoPluginHooks(page);
 
   const sidebar = page.locator("#mySidenav");
@@ -253,7 +256,7 @@ test("guest session only suppresses List All and its divider", async ({ page }) 
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
     0,
   );
-  await expect(page.locator(".gnb-nav > li > a", { hasText: "Feedback" })).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toBeVisible();
 });
 
 test("hide-project-listing config only suppresses List All and its divider", async ({ page }) => {
@@ -265,7 +268,7 @@ test("hide-project-listing config only suppresses List All and its divider", asy
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toHaveCount(
     0,
   );
-  await expect(page.locator(".gnb-nav > li > a", { hasText: "Feedback" })).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-gnb-feedback-link"]')).toBeVisible();
 });
 
 async function installRuntimeConfig(page: Page, overrides: Record<string, unknown> = {}) {
@@ -401,7 +404,7 @@ async function readShellMetrics(page: Page) {
 
     return {
       divider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
-      feedback: box(".gnb-nav > li:nth-child(4) > a"),
+      feedback: box('[data-stylex-owner="global-gnb-feedback-link"]'),
       heroCover: box(".siteintro-cover"),
       heroHeading: box(".site-heading"),
       inner: box(".gnb-inner"),

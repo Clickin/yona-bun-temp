@@ -789,6 +789,19 @@ three real user-menu consumers. Fresh Edge HOME/projects desktop and mobile meas
 with local on the exact `3.109375×40` owner and pseudo paint; focused RED 8/10 becomes GREEN
 10/10. This is not Wave 1 completion.
 
+The forty-third verified slice migrates the configured `SiteLayoutShell` GNB Feedback item and
+external link. The Scala `li > a` skeleton, condition, sibling order, configured URL, and `_blank`
+behavior remain intact, while colocated StyleX owns item float/position and the link's muted
+paint, inline box, 40px line height, 10px padding, decoration, transition, and settled white
+hover/focus. Every new concrete value is defined in the canonical global theme, reusing existing
+GNB dimensions and semantic colors without a dark value or numeric compensation. No dedicated
+Feedback fallback existed; generic `.gnb-nav` rules remain only for the following search owner
+and other real route-shell consumers. Fresh Edge evidence fixes the legacy desktop/mobile
+declarations and 37px link height. Local HOME/projects/organizations preserve those styles;
+their existing approved `Yoram repository` identity copy has a different natural width than
+legacy `Feedback`, which remains an intentional copy deviation rather than a styling offset.
+Actual RED 9/10 becomes focused GREEN 10/10. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

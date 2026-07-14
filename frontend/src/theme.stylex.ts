@@ -47,6 +47,18 @@ export const globalColors = stylex.defineVars({
   globalGnbBrandResponsivePseudoAfterMargin: "0px",
   // _page.less: .gnb-nav anchor color transition duration
   globalGnbBrandTransitionDuration: "0.15s",
+  // _page.less: .gnb-nav li float
+  globalGnbFeedbackItemFloat: "left",
+  // _page.less: .gnb-nav li position
+  globalGnbFeedbackItemPosition: "relative",
+  // Bootstrap 2.3.1 anchor display
+  globalGnbFeedbackLinkDisplay: "inline",
+  // _page.less: .gnb-nav li a float
+  globalGnbFeedbackLinkFloat: "none",
+  // _page.less: .gnb-nav li a text-decoration
+  globalGnbFeedbackTextDecoration: "none",
+  // _page.less: .gnb-nav li a transition property
+  globalGnbFeedbackTransitionProperty: "color",
   // _page.less: .gnb-nav li.active::before bottom
   globalGnbProjectListTriangleBottom: "-5px",
   // _page.less: .gnb-nav li.active::before margin-left

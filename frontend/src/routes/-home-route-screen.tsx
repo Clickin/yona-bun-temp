@@ -684,6 +684,31 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbFeedbackStyles = stylex.create({
+  item: {
+    float: globalColors.globalGnbFeedbackItemFloat,
+    position: globalColors.globalGnbFeedbackItemPosition,
+  },
+  link: {
+    color: globalColors.textMuted,
+    display: globalColors.globalGnbFeedbackLinkDisplay,
+    float: globalColors.globalGnbFeedbackLinkFloat,
+    lineHeight: globalColors.globalGnbBrandHeight,
+    padding: globalColors.globalGnbBrandPaddingInline,
+    textDecoration: globalColors.globalGnbFeedbackTextDecoration,
+    transitionDuration: globalColors.globalGnbBrandTransitionDuration,
+    transitionProperty: globalColors.globalGnbFeedbackTransitionProperty,
+    ":hover": {
+      color: globalColors.textOnAccent,
+      textDecoration: globalColors.globalGnbFeedbackTextDecoration,
+    },
+    ":focus": {
+      color: globalColors.textOnAccent,
+      textDecoration: globalColors.globalGnbFeedbackTextDecoration,
+    },
+  },
+});
+
 const globalGnbProjectListDividerStyles = stylex.create({
   root: {
     backgroundColor: globalColors.transparent,
@@ -1014,8 +1039,17 @@ export function SiteLayoutShell({
                 </>
               ) : null}
               {feedbackUrl ? (
-                <li>
-                  <Link to={feedbackUrl} target="_blank">
+                <li
+                  {...stylex.props(globalGnbFeedbackStyles.item)}
+                  data-stylex-owner="global-gnb-feedback-item"
+                >
+                  <Link
+                    href={feedbackUrl}
+                    to={feedbackUrl}
+                    target="_blank"
+                    {...stylex.props(globalGnbFeedbackStyles.link)}
+                    data-stylex-owner="global-gnb-feedback-link"
+                  >
                     {t("title.yobi.feedback")}
                   </Link>
                 </li>
