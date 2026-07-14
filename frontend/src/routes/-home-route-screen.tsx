@@ -331,8 +331,14 @@ function HomeScreen({
     return (
       <SiteLayoutShell runtimeConfig={runtimeConfig} sidenavUsesAdminAffixTop>
         <HomeFlashToast message={flashMessage} />
-        <div className="page-wrap-outer">
-          <div className="page-wrap">
+        <div
+          {...stylex.props(authenticatedHomePageWrapStyles.outer)}
+          data-stylex-owner="authenticated-home-page-wrap-outer"
+        >
+          <div
+            {...stylex.props(authenticatedHomePageWrapStyles.inner)}
+            data-stylex-owner="authenticated-home-page-wrap"
+          >
             <div className={isIntroVisible ? "site-guide-outer" : "site-guide-outer hide"}>
               <h3>
                 <span>{`${t("app.welcome", { args: [siteName] })} - ${t("app.description")}`}</span>
@@ -1710,6 +1716,29 @@ const framedSiteShellStyles = stylex.create({
       default: globalColors.framedSiteMainAutoWidth,
       "@media (max-width: 720px)": globalColors.framedSiteWidth,
     },
+  },
+});
+
+const authenticatedHomePageWrapStyles = stylex.create({
+  outer: {
+    boxSizing: globalColors.authenticatedHomePageWrapOuterBoxSizing,
+    marginTop: globalColors.authenticatedHomePageWrapOuterMarginTop,
+    minHeight: globalColors.authenticatedHomePageWrapOuterMinHeight,
+    minWidth: {
+      default: globalColors.authenticatedHomePageWrapOuterZero,
+      "@media (max-width: 720px)": globalColors.authenticatedHomePageWrapOuterMobileMinWidth,
+    },
+    paddingBlock: globalColors.authenticatedHomePageWrapOuterZero,
+    paddingInline: {
+      default: globalColors.authenticatedHomePageWrapOuterPaddingInline,
+      "@media (max-width: 720px)": globalColors.authenticatedHomePageWrapOuterZero,
+    },
+    width: globalColors.authenticatedHomePageWrapOuterWidth,
+  },
+  inner: {
+    backgroundColor: globalColors.authenticatedHomePageWrapSurface,
+    boxSizing: globalColors.authenticatedHomePageWrapBoxSizing,
+    margin: globalColors.authenticatedHomePageWrapMargin,
   },
 });
 

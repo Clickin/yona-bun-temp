@@ -56,6 +56,17 @@ export const globalColors = stylex.defineVars({
   framedSiteMainOverflowY: "auto",
   framedSiteMobilePosition: "relative",
   framedSiteMobileDisplay: "block",
+  // _page.less and _responsive.less: authenticated index .page-wrap-outer/.page-wrap
+  authenticatedHomePageWrapOuterMinHeight: "450px",
+  authenticatedHomePageWrapOuterMarginTop: "10px",
+  authenticatedHomePageWrapOuterWidth: "100%",
+  authenticatedHomePageWrapOuterPaddingInline: "10px",
+  authenticatedHomePageWrapOuterZero: "0px",
+  authenticatedHomePageWrapOuterMobileMinWidth: "10px",
+  authenticatedHomePageWrapOuterBoxSizing: "border-box",
+  authenticatedHomePageWrapSurface: "#ffffff",
+  authenticatedHomePageWrapMargin: "0px auto",
+  authenticatedHomePageWrapBoxSizing: "content-box",
   // _page.less: .gnb-inner layout with the live legacy box model
   globalGnbInnerBoxSizing: "content-box",
   globalGnbInnerWidth: "98%",

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-three shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-four shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -940,6 +940,17 @@ uncompensated here. Source RED becomes focused GREEN 5/5, combined main/sidebar 
 is 8/8, and the affected authenticated geometry case is 1/1. Typecheck, scoped lint/format, frozen
 and manifest hashes, live/local screenshots, isolation, interaction, and diff gates pass. This is
 not Wave 1 completion.
+
+The fifty-fourth verified slice migrates only the authenticated HOME `page-wrap-outer > page-wrap`
+pair rendered by `HomeScreen`. Colocated StyleX owns the frozen 450px minimum height, 10px top
+margin, full-width border box, desktop/intermediate 10px horizontal inset, max-720 zero inset and
+10px minimum width, plus the centered white content-box inner surface. Every concrete value and the
+shared 720px media boundary comes from canonical global `frontend/src/theme.stylex.ts`. The two
+runtime presentation classes are removed from this owner; generic fallback remains unchanged for
+96 outer-class and 10 exact inner-class consumers elsewhere. Focused HOME verification passes 5/5
+at 1366, 800, and 600px, including computed geometry, class isolation, DOM order, intro interaction,
+and screenshots. Typecheck, production build/StyleX verification, unchanged generated fallback
+hash, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
