@@ -1101,7 +1101,9 @@ async function markdownHelpMetrics(page: Page) {
 async function projectShellMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
-    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const searchBox = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const projectMenu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !searchBox || !projectHeader || !projectMenu) {

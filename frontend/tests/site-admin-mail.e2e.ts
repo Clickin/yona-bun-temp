@@ -639,7 +639,7 @@ async function legacyMailShellMetrics(page: Page) {
 
     const navbar = requireElement(".gnb-outer");
     const searchForm = requireElement('form[name="gnb-search-form"]');
-    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const feedbackLink = requireElement(
       '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
     );

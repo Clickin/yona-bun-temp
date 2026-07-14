@@ -201,7 +201,7 @@ test("organization settings form pins the live localhost authenticated generic s
   const shellMetrics = await page.evaluate(() => {
     const navbar = document.querySelector("header.gnb-outer");
     const searchForm = document.querySelector("form.gnb-search-form");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = document.querySelector(".project-header-outer");
     const logoWrap = document.querySelector(".setting-box.left .logo-wrap");
     if (!(navbar instanceof HTMLElement)) {
@@ -211,7 +211,7 @@ test("organization settings form pins the live localhost authenticated generic s
       throw new Error("Missing form.gnb-search-form");
     }
     if (!(searchBox instanceof HTMLElement)) {
-      throw new Error("Missing .gnb-search-form .search-box");
+      throw new Error("Missing global GNB search box owner");
     }
     if (!(projectHeader instanceof HTMLElement)) {
       throw new Error("Missing .project-header-outer");

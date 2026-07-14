@@ -955,7 +955,7 @@ test("project settings navbar search scope matches legacy projectLayout common n
   await expect(searchForm).toHaveAttribute("action", `${basePath}/admin/sample/search`);
   await expect(searchForm.locator('input[name="searchType"]')).toHaveValue("auto");
   const searchBox = searchForm.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(
@@ -1967,7 +1967,7 @@ async function navbarSearchContainmentMetrics(page: Page) {
     const navbar = requireElement(".gnb-outer");
     const form = requireElement('form[name="gnb-search-form"]');
     const scope = requireElement("#gnb-search-scope-title");
-    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const input = requireElement('[data-stylex-owner="global-gnb-search-input"]');
     const navbarRect = navbar.getBoundingClientRect();
     const formRect = form.getBoundingClientRect();

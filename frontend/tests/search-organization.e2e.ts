@@ -214,7 +214,7 @@ test("organization project search exact missing state pins the live localhost gu
     const projectHeader = document.querySelector(".project-header-outer");
     const projectHeaderAvatar = document.querySelector(".project-header-avatar img");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const category = document.querySelector(".search-category-wrap");
     const resultTitle = document.querySelector(".search-result-title");
     if (!(navbar instanceof HTMLElement)) {
@@ -230,7 +230,7 @@ test("organization project search exact missing state pins the live localhost gu
       throw new Error("Missing #gnb-search-scope-title");
     }
     if (!(searchBox instanceof HTMLElement)) {
-      throw new Error("Missing .gnb-search-form .search-box");
+      throw new Error("Missing global GNB search box owner");
     }
     if (!(category instanceof HTMLElement)) {
       throw new Error("Missing .search-category-wrap");

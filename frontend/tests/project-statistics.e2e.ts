@@ -407,7 +407,7 @@ async function assertStatisticsProjectSearchShell(
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const scopeControls = page.locator(
     '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
@@ -455,7 +455,7 @@ async function readStatisticsSearchMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer.project-header");
     const form = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");
     const input = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
     const submit = document.querySelector('.gnb-search-form button[type="submit"]');

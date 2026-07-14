@@ -573,7 +573,7 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
@@ -2120,7 +2120,9 @@ async function readCommitDetailNavbarMetrics(page: Page) {
     const header = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const search = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const missing = Object.entries({ form, header, scope, search })
       .filter(([, element]) => !element)
       .map(([name]) => name);

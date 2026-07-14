@@ -671,7 +671,9 @@ async function readProjectBoardCreateShellBoxes(page: Page) {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const searchBox = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const searchInput = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-input"]',
     );

@@ -684,6 +684,32 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbSearchSubmitStyles = stylex.create({
+  submit: {
+    appearance: globalColors.globalGnbSearchSubmitAppearance,
+    backgroundColor: globalColors.globalGnbSearchSubmitBackground,
+    borderColor: globalColors.globalGnbSearchSubmitColor,
+    borderStyle: globalColors.globalGnbSearchSubmitBorderStyle,
+    borderWidth: globalColors.globalGnbSearchSubmitZero,
+    boxShadow: globalColors.globalGnbSearchSubmitShadow,
+    boxSizing: globalColors.globalGnbSearchSubmitBoxSizing,
+    color: globalColors.globalGnbSearchSubmitColor,
+    cursor: globalColors.globalGnbSearchSubmitCursor,
+    display: globalColors.globalGnbSearchSubmitDisplay,
+    fontFamily: globalColors.globalGnbSearchSubmitFontFamily,
+    fontSize: globalColors.globalGnbSearchSubmitFontSize,
+    fontWeight: globalColors.globalGnbSearchSubmitFontWeight,
+    lineHeight: globalColors.globalGnbSearchSubmitLineHeight,
+    margin: globalColors.globalGnbSearchSubmitMargin,
+    minHeight: globalColors.globalGnbSearchSubmitMinHeight,
+    outlineStyle: globalColors.globalGnbSearchSubmitOutlineStyle,
+    outlineWidth: globalColors.globalGnbSearchSubmitZero,
+    padding: globalColors.globalGnbSearchSubmitPadding,
+    textAlign: globalColors.globalGnbSearchSubmitTextAlign,
+    verticalAlign: globalColors.globalGnbSearchSubmitVerticalAlign,
+  },
+});
+
 const globalGnbSearchInputStyles = stylex.create({
   input: {
     backgroundColor: globalColors.globalGnbSearchInputBackground,
@@ -1525,12 +1551,10 @@ export function SiteLayoutShell({
                     </div>
                   ) : null}
                   <div
-                    className={`search-box ${
-                      stylex.props(
-                        globalGnbSearchBoxStyles.box,
-                        hasScopedSearch && globalGnbSearchBoxStyles.scoped,
-                      ).className
-                    }`}
+                    {...stylex.props(
+                      globalGnbSearchBoxStyles.box,
+                      hasScopedSearch && globalGnbSearchBoxStyles.scoped,
+                    )}
                     data-stylex-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
@@ -1542,8 +1566,12 @@ export function SiteLayoutShell({
                       name="keyword"
                       type="text"
                     />
-                    <button type="submit">
-                      <i className="yobicon-search" />
+                    <button
+                      {...stylex.props(globalGnbSearchSubmitStyles.submit)}
+                      data-stylex-owner="global-gnb-search-submit"
+                      type="submit"
+                    >
+                      <i className="yobicon-search" data-stylex-owner="global-gnb-search-icon" />
                     </button>
                   </div>
                 </form>

@@ -746,18 +746,6 @@ body:has(.legacy-framed-shell.is-open) {
   color: #788ba7;
 }
 
-.gnb-search-form .search-box button {
-  min-height: auto;
-  padding: 0;
-  margin: 5px;
-  background: transparent;
-  border: 0;
-  outline: 0 none;
-  box-shadow: none;
-  color: #333;
-  font-size: 12px;
-}
-
 .dropdown-menu {
   position: absolute;
   top: 100%;

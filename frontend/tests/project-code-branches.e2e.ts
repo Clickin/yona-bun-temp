@@ -41,7 +41,7 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(
     page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button'),
@@ -201,7 +201,7 @@ test("project code branches restores protected project shell parity for weblabs/
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const scopeToggle = page.locator("#gnb-search-scope-title");
   const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
@@ -633,7 +633,7 @@ async function readProjectBranchesShellMetrics(page: Page) {
   return page.evaluate(() => {
     const gnb = requireElement(".gnb-outer");
     const navbar = requireElement(".gnb-inner");
-    const search = requireElement(".gnb-search-form .search-box");
+    const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");
     const pageWrap = requireElement(".page-wrap-outer");

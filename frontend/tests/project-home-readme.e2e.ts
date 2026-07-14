@@ -1643,7 +1643,7 @@ async function projectHomeNavbarSearchMetrics(page: Page) {
     const navbar = rect(".gnb-outer");
     const form = rect('form[name="gnb-search-form"]');
     const scope = rect("#gnb-search-scope-title");
-    const search = rect(".gnb-search-form .search-box");
+    const search = rect('[data-stylex-owner="global-gnb-search-box"]');
 
     return {
       formLeft: form.left,

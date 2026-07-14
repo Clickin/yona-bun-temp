@@ -1203,7 +1203,7 @@ async function projectListNavbarMetrics(page: Page) {
     const feedback = requireElement(
       '.gnb-nav a[href="https://github.com/yona-projects/yona/issues"]',
     );
-    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const navbarRect = navbar.getBoundingClientRect();
     const feedbackRect = feedback.getBoundingClientRect();
     const searchBoxRect = searchBox.getBoundingClientRect();

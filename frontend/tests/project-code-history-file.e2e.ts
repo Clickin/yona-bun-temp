@@ -396,7 +396,7 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer.project-header");
     const form = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");
     if (!navbar || !form || !searchBox || !scopeButton) {
       return null;

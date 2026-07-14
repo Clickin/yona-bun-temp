@@ -41,16 +41,17 @@ test("global GNB search box has complete global-theme StyleX ownership", () => {
   const marker = route.indexOf('data-stylex-owner="global-gnb-search-box"');
   const markup = route.slice(route.lastIndexOf("<div", marker), route.indexOf("</div>", marker));
   expect(marker).toBeGreaterThanOrEqual(0);
-  expect(markup).toMatch(/className=\{`search-box \$\{\s*stylex\.props\(/u);
+  expect(markup).toContain("{...stylex.props(");
   expect(markup).toContain("globalGnbSearchBoxStyles.box");
   expect(markup).toContain("hasScopedSearch && globalGnbSearchBoxStyles.scoped");
+  expect(markup).not.toMatch(/(?:^|[\s"'`])search-box(?:[\s"'`]|$)/u);
   expect(markup).not.toMatch(/(?:^|[\s"'`])select(?:[\s"'`]|$)/u);
   expect(markup.indexOf('name="keyword"')).toBeLessThan(markup.indexOf('type="submit"'));
 
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
   expect(appCss).not.toContain(".gnb-search-form .search-box.select {");
   expect(appCss).not.toContain('.gnb-search-form input[type="text"] {');
-  expect(appCss).toContain(".gnb-search-form .search-box button {");
+  expect(appCss).not.toContain(".gnb-search-form .search-box button {");
 });
 
 test("frozen global GNB search-box sources stay byte-identical", () => {
@@ -95,12 +96,13 @@ for (const state of [
     if (state.kind === "project") await mockProject(page);
     if (state.kind === "organization") await mockOrganization(page);
     await page.goto(`${BASE_PATH}${state.path}`);
+    await page.evaluate(() => document.fonts.load("12px yobicon"));
     await page.evaluate(() => document.fonts.ready);
 
     const box = page.locator(BOX);
     const form = page.locator(FORM);
     await expect(box).toBeVisible();
-    await expect(box).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+    await expect(box).not.toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
     await expect(box).not.toHaveClass(/(?:^|\s)select(?:\s|$)/u);
     await expect(form.locator(BOX)).toHaveCount(1);
     if (state.scoped) {
@@ -187,13 +189,13 @@ test("search-box DOM order and legacy GET form behavior remain intact", async ({
     const url = new URL(request.url());
     return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
   });
-  await box.locator('button[type="submit"]').click({ noWaitAfter: true });
+  await box.locator('[data-stylex-owner="global-gnb-search-submit"]').click({ noWaitAfter: true });
   const requestUrl = new URL((await requestPromise).url());
   expect(requestUrl.searchParams.get("searchType")).toBe("auto");
   expect(requestUrl.searchParams.get("keyword")).toBe("needle");
 });
 
-test("owned wrapper is isolated while search-box remains only for descendant fallback", async ({
+test("owned wrapper is isolated after the retired search-box class is removed", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1366 });
@@ -202,7 +204,6 @@ test("owned wrapper is isolated while search-box remains only for descendant fal
   await page.goto(`${BASE_PATH}/admin/sample`);
 
   const evidence = await page.locator(BOX).evaluate((box) => {
-    const button = box.querySelector("button")!;
     const snapshot = () => {
       const style = getComputedStyle(box);
       return {
@@ -216,33 +217,29 @@ test("owned wrapper is isolated while search-box remains only for descendant fal
       };
     };
     const owned = snapshot();
-    const retainedClassName = box.className;
-    const descendantFallbackMargin = getComputedStyle(button).margin;
+    const ownedClassName = box.className;
     box.parentElement!.className = "";
     box.parentElement!.parentElement!.className = "";
     const isolated = snapshot();
-    box.classList.remove("search-box");
-    const strippedDescendantMargin = getComputedStyle(button).margin;
+    box.classList.add("search-box");
+    const withRetiredClass = snapshot();
     return {
-      descendantFallbackMargin,
       isolated,
       owned,
-      retainedClassName,
-      strippedDescendantMargin,
+      ownedClassName,
+      withRetiredClass,
     };
   });
 
   expect(evidence.isolated).toEqual(evidence.owned);
-  expect(evidence.retainedClassName).toContain("search-box");
-  expect(evidence.retainedClassName).not.toMatch(/(?:^|\s)select(?:\s|$)/u);
-  expect(evidence.descendantFallbackMargin).toBe("5px");
-  expect(evidence.strippedDescendantMargin).not.toBe("5px");
+  expect(evidence.withRetiredClass).toEqual(evidence.owned);
+  expect(evidence.ownedClassName).not.toMatch(/(?:^|\s)(?:search-box|select)(?:\s|$)/u);
 });
 
 async function readBoxEvidence(box: Locator) {
   return box.evaluate((node) => {
     const input = node.querySelector("input")!;
-    const button = node.querySelector("button")!;
+    const button = node.querySelector('[data-stylex-owner="global-gnb-search-submit"]')!;
     const nodeBox = node.getBoundingClientRect();
     const inputBox = input.getBoundingClientRect();
     const buttonBox = button.getBoundingClientRect();

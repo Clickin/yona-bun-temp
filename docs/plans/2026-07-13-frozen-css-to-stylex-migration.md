@@ -851,6 +851,19 @@ drift changes absolute x independently of this owner and receives no compensatio
 becomes focused-plus-adjacent GREEN 34/34. The next safe owner is the submit button and icon. This
 is not Wave 1 completion.
 
+The forty-eighth verified slice migrates the global GNB search submit button while preserving the
+exact `button > i.yobicon-search` skeleton, child order, GET payload, and interaction behavior.
+Colocated StyleX owns the evidenced transparent `12×20` button, 5px margin, zero padding/border/
+outline, black paint, shadow reset, 12px/400/20px typography, pointer, native button appearance,
+border-box, centered text, and middle alignment through canonical global theme variables. The
+12-line React button bridge and SiteLayoutShell-only `search-box` class are removed. Frozen
+`.search-box*` selectors remain only for the separate `/restricted` consumer; `gnb-search-form`
+remains for max-720 hiding. Yobicon stays as the actual global font/glyph primitive rather than a
+button fallback because its `@font-face`, shared icon declarations, and `.yobicon-search::before`
+generate the visible glyph across many owners. Fresh Edge/local HOME/project button and icon
+geometry and paint agree without compensation. Actual RED 1/9 becomes submit GREEN 9/9 and final
+focused-plus-adjacent test bodies GREEN 43/43. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

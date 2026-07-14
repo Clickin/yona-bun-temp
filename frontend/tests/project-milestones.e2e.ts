@@ -215,7 +215,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator(".gnb-search-form [data-toggle='search-scope']")).toHaveCount(0);
 
@@ -660,7 +660,7 @@ async function readProtectedPortalMilestoneShellMetrics(page: Page) {
   return page.evaluate(() => {
     const gnb = requireElement(".gnb-outer");
     const navbar = requireElement(".gnb-inner");
-    const search = requireElement(".gnb-search-form .search-box");
+    const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");
     const pageWrap = requireElement(".page-wrap-outer");

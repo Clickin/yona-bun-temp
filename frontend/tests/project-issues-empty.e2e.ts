@@ -616,7 +616,7 @@ test("protected org-owned project issue list exposes legacy group search scope a
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
-  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bsearch-box\b/u);
   await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const scopeButtons = page.locator(
     '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
@@ -686,7 +686,7 @@ test("protected org-owned project issue list keeps legacy gnb and issue-row geom
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
     const searchForm = document.querySelector(".gnb-search-form");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const issueRow = document.querySelector("#issue-item-2");
     const issueTitle = document.querySelector("#issue-item-2 .title-wrap");
     const issueMeta = document.querySelector("#issue-item-2 .infos");

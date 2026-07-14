@@ -60,7 +60,7 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
 
   expect(appCss).not.toMatch(/\.gnb-search-form\s*\{[^}]*\}/u);
   expect(appCss).not.toContain('.gnb-search-form input[type="text"] {');
-  expect(appCss).toContain(".gnb-search-form .search-box button {");
+  expect(appCss).not.toContain(".gnb-search-form .search-box button {");
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
   expect(appCss).not.toContain(".gnb-search-form .search-box.select {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-toggle {");
@@ -135,6 +135,7 @@ for (const state of [
     if (state.kind === "project") await mockProject(page);
     if (state.kind === "organization") await mockOrganization(page);
     await page.goto(`${BASE_PATH}${state.path}`);
+    await page.evaluate(() => document.fonts.load("12px yobicon"));
     await page.evaluate(() => document.fonts.ready);
 
     const item = page.locator(ITEM);
@@ -237,7 +238,7 @@ test("scoped search remains React-owned and submits the legacy GET payload", asy
     const url = new URL(request.url());
     return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
   });
-  await form.locator('button[type="submit"]').click({ noWaitAfter: true });
+  await form.locator('[data-stylex-owner="global-gnb-search-submit"]').click({ noWaitAfter: true });
   const requestUrl = new URL((await requestPromise).url());
   expect(requestUrl.searchParams.get("searchType")).toBe("auto");
   expect(requestUrl.searchParams.get("keyword")).toBe("needle");

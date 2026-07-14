@@ -162,7 +162,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   const shellBoxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const listAllLink = document.querySelector('.gnb-nav a[href$="/projects"]');
     if (
       !(navbar instanceof HTMLElement) ||

@@ -362,7 +362,7 @@ test("project search pins the live localhost issue-comment zero-result project s
     const navbar = document.querySelector(".gnb-outer");
     const form = document.querySelector(".gnb-search-form");
     const scope = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const searchInput = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
     const category = document.querySelector(".search-category-wrap");
     const searchTitle = document.querySelector(".search-result-title");
@@ -657,7 +657,7 @@ test("org-owned project search exposes legacy project group search scope", async
     const navbar = document.querySelector(".gnb-outer");
     const form = document.querySelector(".gnb-search-form");
     const scope = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const searchInput = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
     const projectHeader = document.querySelector(".project-header-outer");
     const projectMenu = document.querySelector(".project-menu-outer");

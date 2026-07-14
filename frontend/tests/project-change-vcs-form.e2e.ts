@@ -1093,7 +1093,7 @@ async function readProjectChangeVcsShellMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = requireElement(".gnb-outer");
     const projectMenu = requireElement(".project-menu-outer");
-    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const searchScope = requireElement("#gnb-search-scope-title");
     const navbarBox = navbar.getBoundingClientRect();
     const projectMenuBox = projectMenu.getBoundingClientRect();

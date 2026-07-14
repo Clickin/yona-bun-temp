@@ -181,7 +181,7 @@ test("organization delete form restores localhost organization shell and scoped 
   const boxes = await page.evaluate(() => {
     const navbar = document.querySelector(".gnb-outer");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     if (!navbar || !scopeButton || !searchBox) {
       return null;
     }

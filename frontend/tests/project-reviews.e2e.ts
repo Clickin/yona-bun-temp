@@ -79,7 +79,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   expect(await projectHeaderMetrics(page)).toEqual({
     headerClassName: "gnb-outer project-header",
     searchAction: `${projectBasePath}/search`,
-    searchBoxHasDescendantFallbackClass: true,
+    searchBoxHasRetiredLegacyClass: false,
     searchBoxHasRetiredSelectClass: false,
     searchBoxOwner: "global-gnb-search-box",
     searchBoxContainedInHeader: true,
@@ -661,7 +661,7 @@ async function projectHeaderMetrics(page: Page) {
     return {
       headerClassName: header.className,
       searchAction: searchForm.getAttribute("action"),
-      searchBoxHasDescendantFallbackClass: searchBox.classList.contains("search-box"),
+      searchBoxHasRetiredLegacyClass: searchBox.classList.contains("search-box"),
       searchBoxHasRetiredSelectClass: searchBox.classList.contains("select"),
       searchBoxOwner: searchBox.getAttribute("data-stylex-owner"),
       searchBoxContainedInHeader:

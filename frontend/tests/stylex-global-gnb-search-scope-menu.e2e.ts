@@ -67,6 +67,7 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
   expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li > button");
   expect(appCss).toContain(".dropdown-menu {");
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
+  expect(appCss).not.toContain(".gnb-search-form .search-box button {");
 });
 
 test("frozen search-scope sources stay byte-identical", () => {

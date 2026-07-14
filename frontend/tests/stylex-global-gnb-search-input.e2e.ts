@@ -7,6 +7,7 @@ const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const BOX = '[data-stylex-owner="global-gnb-search-box"]';
 const FORM = '[data-stylex-owner="global-gnb-search-form"]';
 const INPUT = '[data-stylex-owner="global-gnb-search-input"]';
+const SUBMIT = '[data-stylex-owner="global-gnb-search-submit"]';
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
@@ -210,7 +211,7 @@ test("owned input is isolated and preserves legacy GET payload behavior", async 
     const url = new URL(request.url());
     return url.pathname === `${BASE_PATH}/admin/sample/search` && url.searchParams.has("keyword");
   });
-  await form.locator('button[type="submit"]').click({ noWaitAfter: true });
+  await form.locator(SUBMIT).click({ noWaitAfter: true });
   const requestUrl = new URL((await requestPromise).url());
   expect(requestUrl.searchParams.get("searchType")).toBe("auto");
   expect(requestUrl.searchParams.get("keyword")).toBe("needle");

@@ -138,7 +138,7 @@ test("organization pull request aggregate pins the live localhost guest shell ti
   const metrics = await page.evaluate(() => {
     const navbar = document.querySelector("header.gnb-outer");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const searchBox = document.querySelector(".gnb-search-form .search-box");
+    const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     if (!(navbar instanceof HTMLElement)) {
       throw new Error("Missing header.gnb-outer");
     }
@@ -146,7 +146,7 @@ test("organization pull request aggregate pins the live localhost guest shell ti
       throw new Error("Missing #gnb-search-scope-title");
     }
     if (!(searchBox instanceof HTMLElement)) {
-      throw new Error("Missing .gnb-search-form .search-box");
+      throw new Error("Missing global GNB search box owner");
     }
     return {
       navbar: navbar.getBoundingClientRect(),

@@ -4565,7 +4565,9 @@ async function keymapModalMetrics(page: Page) {
 async function protectedIssueShellMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer");
-    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box");
+    const search = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const board = document.querySelector<HTMLElement>(".project-page-wrap.board-view");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !search || !board || !menu) {
