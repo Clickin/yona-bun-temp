@@ -632,6 +632,15 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const isMassMailRecipientRadio = current.matches(
+        '[data-stylex-owner="site-massmail-recipient-radios"], [data-stylex-owner="site-massmail-recipient-radios"] > input[type="radio"]',
+      );
+      if (name === "class" && isMassMailRecipientRadio) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
       if (name === "class" && current.matches('[data-stylex-owner="site-massmail-write-action"]')) {
         return "";
       }
@@ -756,6 +765,19 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
+      const isMassMailRecipientRadio =
+        name === "class" &&
+        value.split(/\s+/u).includes("radio") &&
+        current.matches(
+          '.mess-mail-wrap > label.radio[for="mailtoAll"], .mess-mail-wrap > label.radio[for="mailtoPrj"]',
+        ) &&
+        current.querySelector(':scope > input[type="radio"][name="mailingType"]') !== null;
+      if (isMassMailRecipientRadio) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "radio")
+          .join(" ");
+      }
       const isMassMailWriteAction =
         name === "class" &&
         current.matches(".mess-mail-wrap > button#write-email.ybtn.ybtn-primary") &&

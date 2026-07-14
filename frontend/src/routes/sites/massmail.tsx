@@ -123,6 +123,14 @@ const styles = stylex.create({
   projectInput: {
     margin: globalColors.siteMassMailProjectInputMargin,
   },
+  recipientRadio: {
+    minHeight: globalColors.siteMassMailRecipientRadioMinHeight,
+    paddingLeft: globalColors.siteMassMailRecipientRadioPaddingLeft,
+  },
+  recipientRadioInput: {
+    float: globalColors.siteMassMailRecipientRadioInputFloat,
+    marginLeft: globalColors.siteMassMailRecipientRadioInputMarginLeft,
+  },
 });
 
 export const Route = createFileRoute("/sites/massmail")({
@@ -316,8 +324,13 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
   return (
     <div className="mess-mail-wrap">
-      <label className="radio" htmlFor="mailtoAll">
+      <label
+        {...stylex.props(styles.recipientRadio)}
+        data-stylex-owner="site-massmail-recipient-radios"
+        htmlFor="mailtoAll"
+      >
         <input
+          {...stylex.props(styles.recipientRadioInput)}
           type="radio"
           name="mailingType"
           id="mailtoAll"
@@ -328,8 +341,13 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         />
         {t("site.massMail.toAll")}
       </label>
-      <label className="radio" htmlFor="mailtoPrj">
+      <label
+        {...stylex.props(styles.recipientRadio)}
+        data-stylex-owner="site-massmail-recipient-radios"
+        htmlFor="mailtoPrj"
+      >
         <input
+          {...stylex.props(styles.recipientRadioInput)}
           type="radio"
           name="mailingType"
           id="mailtoPrj"

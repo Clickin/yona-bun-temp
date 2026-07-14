@@ -1459,6 +1459,13 @@ first-child margin exception does not apply. Radio controls, input/wrapper/typea
 action, title/sidebar/shell, and all other ybtn consumers remain fallback or separate owners.
 This is not Wave 1 completion.
 
+The one-hundred-seventh slice migrates the default/projects-recipient `/sites/massmail` radio
+pair from `site/massMail.scala.html` and Bootstrap 2.3.1 `.radio`. StyleX owns only the exact
+radio-label and direct-radio-input declarations, removing `radio` solely from the pair; generic
+Bootstrap label display and margin, control-group/inline variants, project controls, actions,
+title/sidebar/shell, and other radio/checkbox consumers remain fallback or separate owners. This
+is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
