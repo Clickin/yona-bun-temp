@@ -20,6 +20,9 @@ test("authenticated Home intro guide has bounded global-theme StyleX ownership",
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
+  const guideStart = route.indexOf('data-stylex-owner="authenticated-home-intro-guide-table"');
+  const guideBodyStart = route.indexOf("<tbody>", guideStart);
+  const guideBody = route.slice(guideBodyStart, route.indexOf("</tbody>", guideBodyStart));
 
   for (const token of [
     "authenticatedHomeIntroGuideMargin",
@@ -83,7 +86,10 @@ test("authenticated Home intro guide has bounded global-theme StyleX ownership",
   for (const retainedPrimitive of [".btn-transparent {", ".ybtn {", ".ybtn-success,"]) {
     expect(appCss).toContain(retainedPrimitive);
   }
-  expect(route).toContain("ybtn ybtn-success");
+  expect(
+    route.match(/data-stylex-owner="authenticated-home-intro-guide-cta"/gu) ?? [],
+  ).toHaveLength(3);
+  expect(guideBody).not.toMatch(/\bybtn(?:-success)?\b/u);
   expect(route).toContain("yobicon-resizev");
   expect(bootstrapCss).toContain(".table {");
   expect(yobiconCss).toContain(".yobicon-resizev:before {");

@@ -356,7 +356,8 @@ function HomeScreen({
                       <Link
                         to={LEGACY_GUIDE_NEW_PROJECT_PATH}
                         reloadDocument
-                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
+                        {...stylex.props(authenticatedHomeIntroGuideStyles.cta)}
+                        data-stylex-owner="authenticated-home-intro-guide-cta"
                       >
                         {t("button.newProject")}
                       </Link>
@@ -369,7 +370,8 @@ function HomeScreen({
                     <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
                       <Link
                         to="/organizations/new"
-                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
+                        {...stylex.props(authenticatedHomeIntroGuideStyles.cta)}
+                        data-stylex-owner="authenticated-home-intro-guide-cta"
                       >
                         {t("title.newOrganization")}
                       </Link>
@@ -383,7 +385,8 @@ function HomeScreen({
                       <Link
                         to="/projects"
                         activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
-                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
+                        {...stylex.props(authenticatedHomeIntroGuideStyles.cta)}
+                        data-stylex-owner="authenticated-home-intro-guide-cta"
                       >
                         {t("title.projectList")}
                       </Link>
@@ -2230,8 +2233,39 @@ const authenticatedHomeIntroGuideStyles = stylex.create({
     fontSize: globalColors.authenticatedHomeIntroGuideCellFontSize,
     verticalAlign: globalColors.authenticatedHomeIntroGuideCellVerticalAlign,
   },
-  link: {
+  cta: {
+    backgroundColor: {
+      default: globalColors.authenticatedHomeIntroGuideCtaSurface,
+      ":hover": globalColors.authenticatedHomeIntroGuideCtaHoverSurface,
+      ":focus": globalColors.authenticatedHomeIntroGuideCtaHoverSurface,
+      ":active": globalColors.authenticatedHomeIntroGuideCtaHoverSurface,
+    },
+    borderColor: globalColors.authenticatedHomeIntroGuideCtaBorderColor,
+    borderRadius: globalColors.authenticatedHomeIntroGuideCtaBorderRadius,
+    borderStyle: globalColors.authenticatedHomeIntroGuideCtaBorderStyle,
+    borderWidth: globalColors.authenticatedHomeIntroGuideCtaBorderWidth,
+    boxShadow: globalColors.authenticatedHomeIntroGuideCtaBoxShadow,
+    color: globalColors.authenticatedHomeIntroGuideCtaText,
+    cursor: globalColors.authenticatedHomeIntroGuideCtaCursor,
+    display: globalColors.authenticatedHomeIntroGuideCtaDisplay,
+    fontSize: globalColors.authenticatedHomeIntroGuideCtaFontSize,
+    lineHeight: globalColors.authenticatedHomeIntroGuideCtaLineHeight,
+    margin: globalColors.authenticatedHomeIntroGuideCtaMargin,
+    outline: globalColors.authenticatedHomeIntroGuideCtaOutline,
+    padding: globalColors.authenticatedHomeIntroGuideCtaPadding,
+    position: globalColors.authenticatedHomeIntroGuideCtaPosition,
+    textAlign: globalColors.authenticatedHomeIntroGuideCtaTextAlign,
+    textDecoration: {
+      ":hover": globalColors.authenticatedHomeIntroGuideCtaInteractiveTextDecoration,
+      ":focus": globalColors.authenticatedHomeIntroGuideCtaInteractiveTextDecoration,
+      ":active": globalColors.authenticatedHomeIntroGuideCtaInteractiveTextDecoration,
+    },
+    textShadow: globalColors.authenticatedHomeIntroGuideCtaTextShadow,
+    transition: globalColors.authenticatedHomeIntroGuideCtaTransition,
+    verticalAlign: globalColors.authenticatedHomeIntroGuideCtaVerticalAlign,
+    whiteSpace: globalColors.authenticatedHomeIntroGuideCtaWhiteSpace,
     width: globalColors.authenticatedHomeIntroGuideLinkWidth,
+    zIndex: globalColors.authenticatedHomeIntroGuideCtaZIndex,
   },
   toggle: {
     textAlign: globalColors.authenticatedHomeIntroGuideToggleTextAlign,

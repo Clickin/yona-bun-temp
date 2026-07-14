@@ -4030,6 +4030,7 @@ async function canonicalizeScreenRoots(page: Page) {
           current.matches('[data-stylex-owner="authenticated-home-page-wrap-outer"]') ||
           current.matches('[data-stylex-owner="authenticated-home-page-wrap"]') ||
           current.matches('[data-stylex-owner="authenticated-home-intro-guide"]') ||
+          current.matches('[data-stylex-owner="authenticated-home-intro-guide-cta"]') ||
           current.matches('[data-stylex-owner="authenticated-home-intro-guide-toggle"]'))
       ) {
         return "";
@@ -4268,6 +4269,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           current.querySelector(":scope > h3 + table.welcome-table") !== null;
         const isAuthenticatedHomeIntroGuideTable =
           name === "class" && current.matches("div.site-guide-outer > table.welcome-table");
+        const isAuthenticatedHomeIntroGuideCta =
+          name === "class" &&
+          current.matches(
+            "div.site-guide-outer > table.welcome-table td:first-child > a.ybtn.ybtn-success",
+          ) &&
+          ["/projects/new", "/organizations/new", "/projects"].some((path) =>
+            (current.getAttribute("href") ?? "").endsWith(path),
+          );
         const isAuthenticatedHomeIntroGuideToggle =
           name === "class" &&
           current.matches("div.guide-toggle") &&
@@ -4381,6 +4390,10 @@ async function canonicalizeHtml(page: Page, html: string) {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/)
             .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter(
+              (value) =>
+                !(isAuthenticatedHomeIntroGuideCta && ["ybtn", "ybtn-success"].includes(value)),
+            )
             .filter((value) => !value.startsWith("x") && !value.includes("-home-route-screen__"))
             .filter(
               (value) =>

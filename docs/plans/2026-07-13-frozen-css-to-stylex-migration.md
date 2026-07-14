@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty-four shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty-six shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1119,6 +1119,23 @@ verification, unchanged app.css/manifest `7696a82f...65e`, unchanged frozen fall
 `6417f445...16f`, formatting, screenshots, visual inspection, and diff gates pass. Broader shell
 and exact-DOM runs retain failures before or outside this owner and are not counted as green.
 This is not Wave 1 completion.
+
+The sixty-sixth verified slice migrates the three authenticated HOME intro-guide CTA Links
+rendered from `index/notifications.scala.html`. Colocated StyleX owns the guide-specific 85%
+width and the complete selector-declared `.ybtn` plus `.ybtn-success` base/hover/focus/active
+presentation through canonical global theme variables. The Links preserve their copy, order, and
+`/projects/new`, `/organizations/new`, and `/projects` navigation while dropping both presentation
+classes. Generic Yobi button fallback remains unchanged for its other real consumers, and no
+fallback selector now matches these three owners. At 1366px the fluid table produces three exact
+`233.71875×30` CTAs; at the 390px viewport/client-380 state all three remain `136.890625×30`.
+Focused RED 3/3 becomes GREEN 3/3, and the unchanged intro-guide/page-wrap adjacent set passes
+10/10. Typecheck, Vitest 11/11, production build/StyleX verification, unchanged app.css/manifest
+`7696a82f...65e`, unchanged frozen fallback `6417f445...16f`, TS/TSX-only formatting,
+desktop/mobile screenshot inspection, and diff gates pass. The broad exact-DOM test reaches an
+unrelated previously recorded GNB/content canonicalizer mismatch after the three CTA anchors
+canonicalize equally, so it is not counted as green. The next safe owner is the two authenticated
+HOME notification-pagination buttons' remaining shared `ybtn` primitive. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 
