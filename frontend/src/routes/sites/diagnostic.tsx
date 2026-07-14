@@ -24,6 +24,20 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  errorTitleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  errorHeading: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
   errorPre: {
     fontFamily: globalColors.siteDiagnosticErrorPreFontFamily,
     color: globalColors.siteDiagnosticErrorPreText,
@@ -92,14 +106,20 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
             </div>
             <div className="span10">
               <div
-                {...(hasNoDiagnosticErrors ? stylex.props(styles.noErrorTitleArea) : {})}
+                {...(hasNoDiagnosticErrors
+                  ? stylex.props(styles.noErrorTitleArea)
+                  : stylex.props(styles.errorTitleArea))}
                 className="title_area"
                 data-stylex-owner={
-                  hasNoDiagnosticErrors ? "site-diagnostic-no-error-title" : undefined
+                  hasNoDiagnosticErrors
+                    ? "site-diagnostic-no-error-title"
+                    : "site-diagnostic-error-title"
                 }
               >
                 <h2
-                  {...(hasNoDiagnosticErrors ? stylex.props(styles.noErrorHeading) : {})}
+                  {...(hasNoDiagnosticErrors
+                    ? stylex.props(styles.noErrorHeading)
+                    : stylex.props(styles.errorHeading))}
                   className="pull-left"
                 >
                   <LegacyMessage messageKey="site.sidebar.diagnostics" />

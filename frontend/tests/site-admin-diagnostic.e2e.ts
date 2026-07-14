@@ -516,6 +516,7 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]') ||
+          current.closest('[data-stylex-owner="site-diagnostic-error-title"]') ||
           current.closest('[data-stylex-owner="site-diagnostic-error-pre"]'))
       ) {
         return (current.getAttribute(name) ?? "")

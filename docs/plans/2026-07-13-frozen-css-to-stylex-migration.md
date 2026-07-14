@@ -1380,6 +1380,11 @@ The ninety-third slice migrates the export action of `/sites/data` from `site/da
 `ybtn ybtn-primary` surface through global variables and removes those fallback classes only from
 this Link; import controls and the shared shell remain fallback. This is not Wave 1 completion.
 
+The ninety-fourth slice migrates the errors-present title strip of `/sites/diagnostic` from
+`site/diagnostic.scala.html` and `_page.less`. It reuses the exact title declarations through a
+separate error-state owner; no-error title, error pre, and the shared site-admin shell remain
+separate owners or fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
