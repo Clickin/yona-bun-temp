@@ -1194,6 +1194,17 @@ for independent consumers. Focused RED became GREEN 5/5 with exact desktop `462�
 and mobile `392×378 @0/84.39` dialog measurements, no document overflow, stable screenshots,
 and inspected desktop/mobile output. This is not Wave 1 completion.
 
+The seventy-first slice migrates the anonymous standalone `/users/loginform` standard-password
+state from `user/login.scala.html`. It moves the login tagline/title/copy, form wrapper, text
+inputs, primary submit row/button, and remember/action row to StyleX variables sourced from
+`_page.less` and `_responsive.less`; the existing React/TanStack mutation, redirect, and error
+state remain intact. OAuth provider controls, the social-login-only branch, and shared
+`login-form-wrap`/button selectors remain lower-layer fallback consumers because they are used
+by other login/signup/reset states. Live legacy desktop/mobile captures confirm the standard
+provider-visible state; local output keeps the exact 400px desktop form and 95% mobile fallback
+geometry without numeric compensation. Focused RED became GREEN 4/4 with mutation, fallback,
+desktop/mobile paint, screenshot, and no-overflow coverage. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

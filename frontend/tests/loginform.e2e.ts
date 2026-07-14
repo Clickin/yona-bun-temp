@@ -813,9 +813,9 @@ test("password-reset login flash matches legacy common/scripts.scala.html notifi
   });
 
   await expect(page).toHaveURL(`${basePath}/users/loginform?password=reset`);
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
-    "Please log in with the new password!",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="root-yoram-toast"] [data-stylex-part="toast-message"]'),
+  ).toHaveText("Please log in with the new password!");
   await expect
     .poll(() =>
       page.evaluate(
@@ -880,13 +880,13 @@ test("root yobi toast renders legacy shell DOM through React context without par
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.goto(`${basePath}/users/loginform?password=reset`);
 
-  await expect(page.locator("#yobiToasts .toast")).toHaveCount(1);
-  await expect(page.locator("#yobiToasts .btn-dismiss button")).toHaveText("×");
-  await expect(page.locator("#yobiToasts .toast .center-text .v")).toHaveCount(1);
-  await expect(page.locator("#yobiToasts .toast .msg")).toHaveText(
+  const toast = page.locator('[data-stylex-owner="root-yoram-toast"]');
+  await expect(toast).toHaveCount(1);
+  await expect(toast.locator('[data-stylex-part="toast-dismiss"] button')).toHaveText("×");
+  await expect(toast.locator('[data-stylex-part="toast-message"]')).toHaveText(
     "Please log in with the new password!",
   );
-  expect(await page.locator("#yobiToasts .toast .msg").innerHTML()).toBe(
+  expect(await toast.locator('[data-stylex-part="toast-message"]').innerHTML()).toBe(
     "Please log in with the new password!",
   );
   expect(await page.locator("#tplYobiToast").textContent()).toContain('<div class="msg"></div>');
@@ -896,7 +896,8 @@ test("root yobi toast renders legacy shell DOM through React context without par
   expect(rootSource).toContain("<RootYoramToast");
   expect(rootSource).toContain("ROOT_YOBI_TOAST_DURATION_MS = 5000");
   expect(rootSource).toContain("durationMs={rootToast.durationMs}");
-  expect(rootSource).toContain('<div className="msg">{message}</div>');
+  expect(rootSource).toContain('data-stylex-owner="root-yoram-toast"');
+  expect(rootSource).toContain('data-stylex-part="toast-message"');
   expect(loginSource).toContain("useRootToast");
   expect(loginSource).toContain('setRootToast({ key: "loginform-password-reset", message });');
   expect(rootSource).not.toContain("scanNotifySources");

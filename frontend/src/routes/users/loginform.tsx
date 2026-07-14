@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, useRouter } from "@tanstack/react-router";
 import { readAuthUiCapabilitiesRest, signInWithPasswordRest } from "../../api/auth";
@@ -9,6 +10,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
 
@@ -24,6 +26,95 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   passwordPlaceholder?: string;
   socialLoginOnly?: boolean;
 };
+
+const styles = stylex.create({
+  standaloneLogin: {
+    "--yoram-stylex-standalone-login": "stylex",
+  },
+  taglineWrap: {
+    textAlign: globalColors.standaloneLoginTaglineTextAlign,
+    marginTop: globalColors.standaloneLoginTaglineMarginTop,
+    marginBottom: globalColors.standaloneLoginTaglineMarginBottom,
+    paddingTop: globalColors.standaloneLoginTaglinePaddingTop,
+  },
+  title: {
+    display: globalColors.standaloneLoginTitleDisplay,
+    fontFamily: globalColors.standaloneLoginTitleFontFamily,
+    fontSize: globalColors.standaloneLoginTitleFontSize,
+    lineHeight: globalColors.standaloneLoginTitleLineHeight,
+    fontWeight: globalColors.standaloneLoginTitleFontWeight,
+  },
+  tagline: {
+    marginTop: globalColors.standaloneLoginTaglineCopyMarginTop,
+    fontSize: globalColors.standaloneLoginTaglineFontSize,
+    color: globalColors.standaloneLoginTaglineColor,
+  },
+  formWrap: {
+    position: globalColors.standaloneLoginFormPosition,
+    width: {
+      default: globalColors.standaloneLoginFormWidth,
+      "@media (max-width: 767px)": globalColors.standaloneLoginFormResponsiveWidth,
+    },
+    margin: globalColors.standaloneLoginFormMargin,
+  },
+  textInput: {
+    width: {
+      default: globalColors.standaloneLoginInputWidth,
+      "@media (max-width: 767px)": globalColors.standaloneLoginInputResponsiveWidth,
+    },
+    height: globalColors.standaloneLoginInputHeight,
+    marginBottom: globalColors.standaloneLoginInputMarginBottom,
+    fontSize: globalColors.standaloneLoginInputFontSize,
+    fontWeight: globalColors.standaloneLoginInputFontWeight,
+    borderStyle: globalColors.standaloneLoginInputBorderStyle,
+    borderBottomColor: globalColors.standaloneLoginInputBorderBottomColor,
+    borderBottomStyle: globalColors.standaloneLoginInputBorderBottomStyle,
+    borderBottomWidth: globalColors.standaloneLoginInputBorderBottomWidth,
+    borderRadius: globalColors.standaloneLoginInputBorderRadius,
+    ":focus": {
+      borderBottomColor: globalColors.standaloneLoginInputFocusBorderBottomColor,
+      outline: globalColors.standaloneLoginInputFocusOutline,
+      boxShadow: globalColors.standaloneLoginInputFocusBoxShadow,
+    },
+  },
+  passwordInput: {
+    marginBottom: globalColors.standaloneLoginPasswordMarginBottom,
+  },
+  buttonRow: {
+    display: globalColors.standaloneLoginButtonRowDisplay,
+    textAlign: globalColors.standaloneLoginButtonRowTextAlign,
+    margin: globalColors.standaloneLoginButtonRowMargin,
+  },
+  submit: {
+    display: globalColors.standaloneLoginSubmitDisplay,
+    boxSizing: globalColors.standaloneLoginSubmitBoxSizing,
+    width: globalColors.standaloneLoginSubmitWidth,
+  },
+  rememberMe: {
+    marginTop: globalColors.standaloneLoginRememberMarginTop,
+  },
+  checkbox: {
+    marginLeft: globalColors.standaloneLoginCheckboxMarginLeft,
+    marginTop: globalColors.standaloneLoginCheckboxMarginTop,
+  },
+  actionRow: {
+    lineHeight: globalColors.standaloneLoginActionLineHeight,
+    overflow: globalColors.standaloneLoginActionOverflow,
+  },
+});
+
+const standaloneLoginClassName = stylex.props(styles.standaloneLogin).className;
+const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
+const titleClassName = stylex.props(styles.title).className;
+const taglineClassName = stylex.props(styles.tagline).className;
+const formWrapClassName = stylex.props(styles.formWrap).className;
+const textInputClassName = stylex.props(styles.textInput).className;
+const passwordInputClassName = stylex.props(styles.passwordInput).className;
+const buttonRowClassName = stylex.props(styles.buttonRow).className;
+const submitClassName = stylex.props(styles.submit).className;
+const rememberMeClassName = stylex.props(styles.rememberMe).className;
+const checkboxClassName = stylex.props(styles.checkbox).className;
+const actionRowClassName = stylex.props(styles.actionRow).className;
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
@@ -114,14 +205,25 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <title>{t("title.login")}</title>
-        <div className="page full">
-          <div className="center-wrap tag-line-wrap login">
-            <h1 className="title">
+        <div
+          className={`page full ${standaloneLoginClassName}`}
+          data-stylex-owner="standalone-login-form"
+        >
+          <div
+            className={`center-wrap tag-line-wrap login ${taglineWrapClassName}`}
+            data-stylex-part="standalone-login-tagline"
+          >
+            <h1 className={`title ${titleClassName}`} data-stylex-part="standalone-login-title">
               <HighlightedLegacyMessage message={title} />
             </h1>
-            <p className="tag-line">{t("app.description")}</p>
+            <p className={`tag-line ${taglineClassName}`} data-stylex-part="standalone-login-copy">
+              {t("app.description")}
+            </p>
           </div>
-          <div className="login-form-wrap frm-wrap">
+          <div
+            className={`login-form-wrap frm-wrap ${formWrapClassName}`}
+            data-stylex-part="standalone-login-form-wrap"
+          >
             {capabilities?.emailVerificationEnabled === true ? (
               <div className="email-verification-help">
                 {t("notification.confirm.mail.will.be.sent")}
@@ -143,7 +245,8 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         id="loginIdOrEmailD"
                         name="loginIdOrEmail"
                         type="text"
-                        className="text email"
+                        className={`text email ${textInputClassName}`}
+                        data-stylex-part="standalone-login-identifier"
                         autoComplete="off"
                         placeholder={loginIdPlaceholder}
                       />
@@ -153,17 +256,26 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                         id="password"
                         name="password"
                         type="password"
-                        className="text password"
+                        className={`text password ${textInputClassName} ${passwordInputClassName}`}
+                        data-stylex-part="standalone-login-password"
                         autoComplete="off"
                         placeholder={passwordPlaceholder}
                       />
                     </dd>
                   </dl>
-                  {submitError ? <div className="error-message">{submitError}</div> : null}
-                  <div className="btns-row">
+                  {submitError ? (
+                    <div className="error-message" data-stylex-part="standalone-login-error">
+                      {submitError}
+                    </div>
+                  ) : null}
+                  <div
+                    className={`btns-row ${buttonRowClassName}`}
+                    data-stylex-part="standalone-login-submit-row"
+                  >
                     <button
                       type="submit"
-                      className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                      className={`ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`}
+                      data-stylex-part="standalone-login-submit"
                       disabled={signInMutation.isPending}
                     >
                       {t("button.login")}
@@ -185,13 +297,17 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 ))}
               </div>
               {!socialLoginOnly ? (
-                <div className="act-row mt5">
-                  <div className="remember-me-wrap pull-left">
+                <div
+                  className={`act-row mt5 ${actionRowClassName}`}
+                  data-stylex-part="standalone-login-actions"
+                >
+                  <div className={`remember-me-wrap pull-left ${rememberMeClassName}`}>
                     <input
                       id="remember-me"
                       type="checkbox"
                       name="rememberMe"
-                      className="checkbox"
+                      className={`checkbox ${checkboxClassName}`}
+                      data-stylex-part="standalone-login-remember-checkbox"
                       defaultChecked
                     />
                     <label htmlFor="remember-me" className="bg-checkbox">
