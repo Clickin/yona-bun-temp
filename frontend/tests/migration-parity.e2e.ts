@@ -243,6 +243,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
+      if (name === "class" && current.closest('[data-stylex-owner="migration-disabled-shell"]')) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
+          .join(" ");
+      }
       if (
         name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&

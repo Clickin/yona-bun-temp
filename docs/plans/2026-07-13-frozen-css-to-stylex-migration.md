@@ -1334,6 +1334,13 @@ declarations through global theme variables; the page shell and footer remain fa
 Focused default and failed-secret desktop/mobile assertions retain copy, SPA navigation, geometry,
 and screenshots. This is not Wave 1 completion.
 
+The eighty-seventh slice migrates the disabled migration selection shell in `/migration` from
+`migration/home.scala.html` and `_migration.less`. StyleX owns only the route-local title, board,
+selection-pane, search, and list declarations through global theme variables; global shell and
+Bootstrap table, button, progress, span, and icon primitives remain fallback consumers. The legacy
+fixed span layout intentionally overflows at 390px, so focused mobile parity pins owner-relative
+containment rather than introducing a responsive compensation. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
