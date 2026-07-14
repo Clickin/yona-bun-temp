@@ -302,16 +302,23 @@ test("project settings matches legacy project/setting.scala.html DOM", async ({ 
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       )
-      .evaluateAll((roots) => roots.map((root) => root.className)),
+      .evaluateAll((roots) =>
+        roots.map((root) =>
+          root.getAttribute("data-stylex-owner") === "site-footer" &&
+          !root.classList.contains("page-footer-outer")
+            ? "site-footer"
+            : root.className,
+        ),
+      ),
   ).toEqual([
     "unsupported hidden",
     "gnb-outer project-header",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
 
   expect(await projectHeaderMetrics(page)).toEqual({
@@ -1750,7 +1757,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");

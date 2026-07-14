@@ -1655,15 +1655,45 @@ export function SiteLayoutShell({
           </div>
         </header>
         {children}
-        <footer className="page-footer-outer">
-          <div className="page-footer">
-            <span className="provider">Yoram authors</span>
+        <footer {...stylex.props(siteFooterStyles.outer)} data-stylex-owner="site-footer">
+          <div {...stylex.props(siteFooterStyles.inner)} data-stylex-owner="site-footer-inner">
+            <span
+              {...stylex.props(siteFooterStyles.provider)}
+              data-stylex-owner="site-footer-provider"
+            >
+              Yoram authors
+            </span>
           </div>
         </footer>
       </div>
     </div>
   );
 }
+
+const siteFooterStyles = stylex.create({
+  outer: {
+    backgroundColor: globalColors.siteFooterSurface,
+    boxSizing: globalColors.siteFooterBoxSizing,
+    minWidth: {
+      default: globalColors.siteFooterZero,
+      "@media (max-width: 720px)": globalColors.siteFooterMobileMinWidth,
+    },
+    padding: globalColors.siteFooterPadding,
+  },
+  inner: {
+    boxSizing: globalColors.siteFooterBoxSizing,
+    lineHeight: globalColors.siteFooterInnerLineHeight,
+    margin: globalColors.siteFooterInnerMargin,
+    textAlign: globalColors.siteFooterInnerTextAlign,
+    width: globalColors.siteFooterInnerWidth,
+  },
+  provider: {
+    color: globalColors.siteFooterProviderText,
+    fontFamily: globalColors.siteFooterProviderFontFamily,
+    fontSize: globalColors.siteFooterProviderFontSize,
+    marginLeft: globalColors.siteFooterProviderMarginLeft,
+  },
+});
 
 const leftSidebarOuterShellStyles = stylex.create({
   shell: {

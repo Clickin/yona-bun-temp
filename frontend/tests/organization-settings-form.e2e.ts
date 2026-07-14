@@ -156,16 +156,23 @@ test("organization settings form matches legacy organization/setting.scala.html 
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       )
-      .evaluateAll((roots) => roots.map((root) => root.className)),
+      .evaluateAll((roots) =>
+        roots.map((root) =>
+          root.getAttribute("data-stylex-owner") === "site-footer" &&
+          !root.classList.contains("page-footer-outer")
+            ? "site-footer"
+            : root.className,
+        ),
+      ),
   ).toEqual([
     "unsupported hidden",
     "gnb-outer",
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
 
   expect(await canonicalizeScreenRoot(page, ".page-wrap-outer")).toEqual(

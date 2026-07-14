@@ -1241,7 +1241,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]'))
+          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
+          current.matches('[data-stylex-owner="site-footer"]') ||
+          current.matches('[data-stylex-owner="site-footer-inner"]') ||
+          current.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1283,7 +1286,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1416,7 +1419,7 @@ async function canonicalizeScreenAndToastRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, .page-footer-outer, #yobiToasts",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer], #yobiToasts",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1681,9 +1684,11 @@ async function readDesktopLoginMetrics(page: Page) {
     const buttonRow = document.querySelector<HTMLElement>(".login-form-wrap .btns-row");
     const actRow = document.querySelector<HTMLElement>(".login-form-wrap .act-row");
     const checkbox = document.querySelector<HTMLElement>("#remember-me");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>(
+      "[data-stylex-owner=site-footer-provider]",
+    );
     if (
       !gnbOuter ||
       !gnbInner ||
@@ -1929,22 +1934,41 @@ async function canonicalizeHtml(page: Page, html: string) {
           current.classList.contains("gnb-outer") &&
           current.matches("header.gnb-outer") &&
           current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
-        const retiredToken =
-          isSiteLayoutHeader && current.classList.contains("project-header")
-            ? "project-header"
-            : isSiteLayoutHeader
-              ? "gnb-outer"
-              : name === "class" &&
-                  current.classList.contains("gnb-inner") &&
-                  current.matches("header.gnb-outer > div.gnb-inner") &&
-                  current.querySelector('form[name="gnb-search-form"]') !== null
-                ? "gnb-inner"
-                : name === "class" &&
-                    current.classList.contains("gnb-nav") &&
-                    current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                    current.querySelector('form[name="gnb-search-form"]') !== null
-                  ? "gnb-nav"
-                  : null;
+        const isSiteLayoutFooterOuter =
+          name === "class" &&
+          value.split(/\s+/u).includes("page-footer-outer") &&
+          current.matches("footer.page-footer-outer") &&
+          current.querySelector(":scope > div.page-footer > span.provider") !== null;
+        const isSiteLayoutFooterInner =
+          name === "class" &&
+          value.split(/\s+/u).includes("page-footer") &&
+          current.matches("footer.page-footer-outer > div.page-footer") &&
+          current.querySelector(":scope > span.provider") !== null;
+        const isSiteLayoutFooterProvider =
+          name === "class" &&
+          value.split(/\s+/u).includes("provider") &&
+          current.matches("footer.page-footer-outer > div.page-footer > span.provider");
+        const retiredToken = isSiteLayoutFooterOuter
+          ? "page-footer-outer"
+          : isSiteLayoutFooterInner
+            ? "page-footer"
+            : isSiteLayoutFooterProvider
+              ? "provider"
+              : isSiteLayoutHeader && current.classList.contains("project-header")
+                ? "project-header"
+                : isSiteLayoutHeader
+                  ? "gnb-outer"
+                  : name === "class" &&
+                      current.classList.contains("gnb-inner") &&
+                      current.matches("header.gnb-outer > div.gnb-inner") &&
+                      current.querySelector('form[name="gnb-search-form"]') !== null
+                    ? "gnb-inner"
+                    : name === "class" &&
+                        current.classList.contains("gnb-nav") &&
+                        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                        current.querySelector('form[name="gnb-search-form"]') !== null
+                      ? "gnb-nav"
+                      : null;
         if (retiredToken) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(

@@ -669,7 +669,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");

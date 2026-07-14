@@ -212,7 +212,7 @@ async function readMigrationMetrics(page: Page) {
     const destination = document.querySelector<HTMLElement>(".destination-project.span4");
     const progress = document.querySelector<HTMLElement>(".progress .span10");
     const systemMsg = document.querySelector<HTMLElement>("#system-msg");
-    const footer = document.querySelector<HTMLElement>(".page-footer-outer");
+    const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     if (!gnbOuter || !row || !source || !destination || !progress || !systemMsg || !footer) {
       throw new Error("Expected migration metric targets are missing.");
     }
@@ -235,7 +235,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          current.matches('[data-stylex-owner="global-gnb-outer"]'))
+          current.matches('[data-stylex-owner="global-gnb-outer"]') ||
+          current.matches('[data-stylex-owner="site-footer"]') ||
+          current.matches('[data-stylex-owner="site-footer-inner"]') ||
+          current.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -303,7 +306,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .yobi-migration, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .yobi-migration, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -320,22 +323,41 @@ async function canonicalizeHtml(page: Page, html: string) {
           value.split(/\s+/u).includes("gnb-outer") &&
           current.matches("header.gnb-outer") &&
           current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
-        const retiredToken =
-          isSiteLayoutHeader && value.split(/\s+/u).includes("project-header")
-            ? "project-header"
-            : isSiteLayoutHeader
-              ? "gnb-outer"
-              : name === "class" &&
-                  value.split(/\s+/u).includes("gnb-inner") &&
-                  current.matches("header.gnb-outer > div.gnb-inner") &&
-                  current.querySelector('form[name="gnb-search-form"]') !== null
-                ? "gnb-inner"
-                : name === "class" &&
-                    value.split(/\s+/u).includes("gnb-nav") &&
-                    current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                    current.querySelector('form[name="gnb-search-form"]') !== null
-                  ? "gnb-nav"
-                  : null;
+        const isSiteLayoutFooterOuter =
+          name === "class" &&
+          value.split(/\s+/u).includes("page-footer-outer") &&
+          current.matches("footer.page-footer-outer") &&
+          current.querySelector(":scope > div.page-footer > span.provider") !== null;
+        const isSiteLayoutFooterInner =
+          name === "class" &&
+          value.split(/\s+/u).includes("page-footer") &&
+          current.matches("footer.page-footer-outer > div.page-footer") &&
+          current.querySelector(":scope > span.provider") !== null;
+        const isSiteLayoutFooterProvider =
+          name === "class" &&
+          value.split(/\s+/u).includes("provider") &&
+          current.matches("footer.page-footer-outer > div.page-footer > span.provider");
+        const retiredToken = isSiteLayoutFooterOuter
+          ? "page-footer-outer"
+          : isSiteLayoutFooterInner
+            ? "page-footer"
+            : isSiteLayoutFooterProvider
+              ? "provider"
+              : isSiteLayoutHeader && value.split(/\s+/u).includes("project-header")
+                ? "project-header"
+                : isSiteLayoutHeader
+                  ? "gnb-outer"
+                  : name === "class" &&
+                      value.split(/\s+/u).includes("gnb-inner") &&
+                      current.matches("header.gnb-outer > div.gnb-inner") &&
+                      current.querySelector('form[name="gnb-search-form"]') !== null
+                    ? "gnb-inner"
+                    : name === "class" &&
+                        value.split(/\s+/u).includes("gnb-nav") &&
+                        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                        current.querySelector('form[name="gnb-search-form"]') !== null
+                      ? "gnb-nav"
+                      : null;
         if (retiredToken) {
           return value
             .split(/\s+/u)

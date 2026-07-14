@@ -81,9 +81,16 @@ test("project search matches legacy search/result.scala.html project empty revie
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       )
-      .evaluateAll((roots) => roots.map((root) => root.className)),
+      .evaluateAll((roots) =>
+        roots.map((root) =>
+          root.getAttribute("data-stylex-owner") === "site-footer" &&
+          !root.classList.contains("page-footer-outer")
+            ? "site-footer"
+            : root.className,
+        ),
+      ),
   ).toEqual([
     "unsupported hidden",
     "gnb-outer project-header",
@@ -91,7 +98,7 @@ test("project search matches legacy search/result.scala.html project empty revie
     "project-menu-outer",
     "site-breadcrumb-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "review", "missing");
@@ -471,7 +478,7 @@ test("project search renders legacy error/forbidden.scala.html shell for anonymo
       "project-header-outer",
       "project-menu-outer",
       "page-wrap-outer",
-      "page-footer-outer",
+      "site-footer",
     ],
   });
   await expect(page.locator(".project-menu-outer .project-menu-gruop > li.active")).toHaveCount(1);
@@ -526,7 +533,7 @@ test("project search renders legacy error/internalServerError_default.scala.html
       "unsupported hidden",
       "gnb-outer project-header",
       "page-wrap-outer",
-      "page-footer-outer",
+      "site-footer",
     ],
   });
   await expect(page.locator(".error-wrap .ico-404")).toHaveCount(1);
@@ -706,9 +713,16 @@ async function expectProjectSearchShell(page: Page) {
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const rootOrder = await page
     .locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
     )
-    .evaluateAll((roots) => roots.map((root) => root.className));
+    .evaluateAll((roots) =>
+      roots.map((root) =>
+        root.getAttribute("data-stylex-owner") === "site-footer" &&
+        !root.classList.contains("page-footer-outer")
+          ? "site-footer"
+          : root.className,
+      ),
+    );
   expect(rootOrder).toEqual([
     "unsupported hidden",
     "gnb-outer project-header",
@@ -716,7 +730,7 @@ async function expectProjectSearchShell(page: Page) {
     "project-menu-outer",
     "site-breadcrumb-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
   await expect(page.locator(".site-breadcrumb-inner h3")).toHaveText("Search");
 }
@@ -1042,7 +1056,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1108,7 +1122,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         attr.name === "class" &&
         (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -1335,24 +1352,46 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.ownerElement.matches("header.gnb-outer") &&
         attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
           null;
-      const retiredToken =
-        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
-          ? "project-header"
-          : isSiteLayoutHeader
-            ? "gnb-outer"
-            : attr.name === "class" &&
-                attr.ownerElement &&
-                attr.value.split(/\s+/u).includes("gnb-inner") &&
-                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-              ? "gnb-inner"
-              : attr.name === "class" &&
-                  attr.ownerElement &&
-                  attr.value.split(/\s+/u).includes("gnb-nav") &&
-                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                ? "gnb-nav"
-                : null;
+      const isSiteLayoutFooterOuter =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("page-footer-outer") &&
+        attr.ownerElement.matches("footer.page-footer-outer") &&
+        attr.ownerElement.querySelector(":scope > div.page-footer > span.provider") !== null;
+      const isSiteLayoutFooterInner =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("page-footer") &&
+        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer") &&
+        attr.ownerElement.querySelector(":scope > span.provider") !== null;
+      const isSiteLayoutFooterProvider =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("provider") &&
+        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer > span.provider");
+      const retiredToken = isSiteLayoutFooterOuter
+        ? "page-footer-outer"
+        : isSiteLayoutFooterInner
+          ? "page-footer"
+          : isSiteLayoutFooterProvider
+            ? "provider"
+            : isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+              ? "project-header"
+              : isSiteLayoutHeader
+                ? "gnb-outer"
+                : attr.name === "class" &&
+                    attr.ownerElement &&
+                    attr.value.split(/\s+/u).includes("gnb-inner") &&
+                    attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                    attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                  ? "gnb-inner"
+                  : attr.name === "class" &&
+                      attr.ownerElement &&
+                      attr.value.split(/\s+/u).includes("gnb-nav") &&
+                      attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                      attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                    ? "gnb-nav"
+                    : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -1534,8 +1573,15 @@ async function expectProjectSearchErrorShell(
   expect(
     await page
       .locator(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       )
-      .evaluateAll((roots) => roots.map((root) => root.className)),
+      .evaluateAll((roots) =>
+        roots.map((root) =>
+          root.getAttribute("data-stylex-owner") === "site-footer" &&
+          !root.classList.contains("page-footer-outer")
+            ? "site-footer"
+            : root.className,
+        ),
+      ),
   ).toEqual(options.expectedRootOrder);
 }

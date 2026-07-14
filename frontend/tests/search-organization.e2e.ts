@@ -13,7 +13,7 @@ const ROOT_CLASS_NAMES = [
   "project-menu-outer",
   "site-breadcrumb-outer",
   "page-wrap-outer",
-  "page-footer-outer",
+  "site-footer",
 ];
 
 test("organization project search keeps the legacy organization shell with button-driven category switches and SPA submit navigation", async ({
@@ -347,7 +347,7 @@ test("organization search without required query keeps the legacy bad-request sh
     "unsupported hidden",
     "gnb-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".site-breadcrumb-outer")).toHaveCount(0);
@@ -392,7 +392,7 @@ test("organization search forbidden keeps the legacy organization shell without 
     "project-header-outer",
     "project-menu-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
   await expect.poll(() => searchApi.count).toBeGreaterThanOrEqual(1);
 });
@@ -420,7 +420,7 @@ test("organization search internal server error keeps the legacy default error s
     "unsupported hidden",
     "gnb-outer",
     "page-wrap-outer",
-    "page-footer-outer",
+    "site-footer",
   ]);
   await expect.poll(() => searchApi.count).toBeGreaterThanOrEqual(1);
 });
@@ -633,9 +633,16 @@ async function mockOrganizationSearch(
 async function screenRootClassNames(page: Page) {
   return page
     .locator(
-      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
     )
-    .evaluateAll((roots) => roots.map((root) => root.className));
+    .evaluateAll((roots) =>
+      roots.map((root) =>
+        root.getAttribute("data-stylex-owner") === "site-footer" &&
+        !root.classList.contains("page-footer-outer")
+          ? "site-footer"
+          : root.className,
+      ),
+    );
 }
 
 function expectedHomeHref(basePath: string) {

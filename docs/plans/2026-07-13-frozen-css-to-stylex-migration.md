@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-eight shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-two shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -909,6 +909,20 @@ production build/StyleX verification, frozen and generated fallback hashes, form
 visual gates pass. The independent `/restricted` run still has four whole-route rendering failures
 after its four source guards pass, so it is not claimed as a green browser fallback gate. This is
 not Wave 1 completion.
+
+The fifty-second verified slice migrates the `SiteLayoutShell` footer while preserving the exact
+`footer > div > span` skeleton and the currently approved visible copy. Colocated StyleX owns the
+final frozen cascade: white content-box surface, 10px all-side padding, max-720 10px minimum width,
+100% centered inner line box, and the provider's Verdana 9px typography, 4px leading margin, and
+`#333` text through canonical global theme variables. SiteLayout drops its three presentation
+classes. Six independent route files still render seven generic footer nodes, so their fallback
+rules remain; only the now-zero-consumer provider-link React bridge is deleted. Focused RED then
+GREEN is 5/5, and the UI-kit mobile fallback geometry test passes. Forty-six E2E files move only
+actual SiteLayout footer selectors and paired exact-DOM canonicalizers to stable owners without
+changing legacy fixtures. Typecheck, foundation, production build/StyleX verification, frozen and
+generated fallback hashes, format, diff, and fresh live/local visual gates pass. Broader runs stop
+on existing route, fixture, or approved-copy differences before or outside this owner and are not
+claimed green. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

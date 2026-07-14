@@ -1847,7 +1847,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1887,7 +1887,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         attr.name === "class" &&
         (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
-          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="site-footer-provider"]'))
       ) {
         return "";
       }
@@ -2040,24 +2043,46 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.ownerElement.matches("header.gnb-outer") &&
         attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
           null;
-      const retiredToken =
-        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
-          ? "project-header"
-          : isSiteLayoutHeader
-            ? "gnb-outer"
-            : attr.name === "class" &&
-                attr.ownerElement &&
-                attr.value.split(/\s+/u).includes("gnb-inner") &&
-                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-              ? "gnb-inner"
-              : attr.name === "class" &&
-                  attr.ownerElement &&
-                  attr.value.split(/\s+/u).includes("gnb-nav") &&
-                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-                ? "gnb-nav"
-                : null;
+      const isSiteLayoutFooterOuter =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("page-footer-outer") &&
+        attr.ownerElement.matches("footer.page-footer-outer") &&
+        attr.ownerElement.querySelector(":scope > div.page-footer > span.provider") !== null;
+      const isSiteLayoutFooterInner =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("page-footer") &&
+        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer") &&
+        attr.ownerElement.querySelector(":scope > span.provider") !== null;
+      const isSiteLayoutFooterProvider =
+        attr.name === "class" &&
+        attr.ownerElement &&
+        attr.value.split(/\s+/u).includes("provider") &&
+        attr.ownerElement.matches("footer.page-footer-outer > div.page-footer > span.provider");
+      const retiredToken = isSiteLayoutFooterOuter
+        ? "page-footer-outer"
+        : isSiteLayoutFooterInner
+          ? "page-footer"
+          : isSiteLayoutFooterProvider
+            ? "provider"
+            : isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+              ? "project-header"
+              : isSiteLayoutHeader
+                ? "gnb-outer"
+                : attr.name === "class" &&
+                    attr.ownerElement &&
+                    attr.value.split(/\s+/u).includes("gnb-inner") &&
+                    attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                    attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                  ? "gnb-inner"
+                  : attr.name === "class" &&
+                      attr.ownerElement &&
+                      attr.value.split(/\s+/u).includes("gnb-nav") &&
+                      attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                      attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                    ? "gnb-nav"
+                    : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue

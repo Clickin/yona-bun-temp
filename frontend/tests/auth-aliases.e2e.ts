@@ -158,14 +158,14 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
 async function canonicalizeIndexRoots(page: Page) {
   return canonicalizeRoots(
     page,
-    ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, .page-footer-outer",
+    ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, [data-stylex-owner=site-footer]",
   );
 }
 
 async function canonicalizeAuthPublicRoots(page: Page) {
   return canonicalizeRoots(
     page,
-    ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, .page-footer-outer",
+    ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, [data-stylex-owner=site-footer]",
   );
 }
 
@@ -242,9 +242,11 @@ async function readDesktopIndexMetrics(page: Page) {
     const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
     const featureIcon = document.querySelector<HTMLElement>(".feature-image");
     const featureInfo = document.querySelector<HTMLElement>(".feature-info");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>(
+      "[data-stylex-owner=site-footer-provider]",
+    );
     if (
       !siteIntroCover ||
       !gnbOuter ||
@@ -311,9 +313,11 @@ async function readMobileIndexMetrics(page: Page) {
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
     const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
-    const pageFooter = document.querySelector<HTMLElement>(".page-footer");
-    const pageFooterOuter = document.querySelector<HTMLElement>(".page-footer-outer");
-    const provider = document.querySelector<HTMLElement>(".page-footer-outer .provider");
+    const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
+    const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
+    const provider = document.querySelector<HTMLElement>(
+      "[data-stylex-owner=site-footer-provider]",
+    );
     if (
       !siteIntroCover ||
       !gnbOuter ||
