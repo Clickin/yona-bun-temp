@@ -1328,6 +1328,12 @@ warning-box declarations through global theme variables; the setup form, mutatio
 state retain their existing output. Focused desktop/mobile and existing setup regressions verify
 the legacy containing-block geometry. This is not Wave 1 completion.
 
+The eighty-sixth slice migrates the standalone restart notice in `/restart` from
+`welcome/restart.scala.html`. StyleX owns the template's inline wrapper, logo, hover, and notice
+declarations through global theme variables; the page shell and footer remain fallback consumers.
+Focused default and failed-secret desktop/mobile assertions retain copy, SPA navigation, geometry,
+and screenshots. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

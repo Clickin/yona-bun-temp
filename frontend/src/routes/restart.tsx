@@ -1,12 +1,46 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
+import { globalColors } from "../theme.stylex";
 
 const legacyLogoLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
   "data-status": undefined,
 };
+
+const styles = stylex.create({
+  restartNotice: {
+    "--yoram-stylex-restart-notice": "stylex",
+  },
+  wrap: {
+    padding: globalColors.restartNoticeWrapPadding,
+    textAlign: globalColors.secretSetupWrapTextAlign,
+  },
+  logo: {
+    display: globalColors.secretSetupLogoDisplay,
+    textAlign: globalColors.secretSetupLogoTextAlign,
+    overflow: globalColors.secretSetupLogoOverflow,
+    width: globalColors.secretSetupLogoWidth,
+    height: globalColors.secretSetupLogoHeight,
+    lineHeight: globalColors.secretSetupLogoLineHeight,
+    fontSize: globalColors.secretSetupLogoFontSize,
+    color: globalColors.secretSetupLogoText,
+    backgroundColor: globalColors.secretSetupLogoSurface,
+    margin: globalColors.secretSetupLogoMargin,
+    ":hover": { color: globalColors.secretSetupLogoText },
+  },
+  box: {
+    width: globalColors.secretSetupBoxWidth,
+    margin: globalColors.secretSetupBoxMargin,
+  },
+});
+
+const restartNoticeClassName = stylex.props(styles.restartNotice).className;
+const restartWrapClassName = stylex.props(styles.wrap).className;
+const restartLogoClassName = stylex.props(styles.logo).className;
+const restartBoxClassName = stylex.props(styles.box).className;
 
 export const Route = createFileRoute("/restart")({
   component: RestartRoute,
@@ -40,18 +74,26 @@ function RestartScreen({ siteName }: { siteName: string }) {
       <div className="page-wrap-outer">
         <div className="container page-wrap">
           <div className="page">
-            <div className="secret-wrap">
+            <div
+              className={`secret-wrap ${restartNoticeClassName} ${restartWrapClassName}`}
+              data-stylex-owner="restart-notice"
+              data-stylex-part="restart-notice-wrap"
+            >
               <Link
                 to="/"
                 activeOptions={{ exact: true, explicitUndefined: true }}
                 activeProps={legacyLogoLinkActiveProps}
-                className="logo"
+                className={`logo ${restartLogoClassName}`}
+                data-stylex-part="restart-notice-logo"
               >
                 <span>{siteName}</span>
               </Link>
 
-              <h3>{t("app.restart.welcome")}</h3>
-              <p className="secret-box txt-center">
+              <h3 data-stylex-part="restart-notice-heading">{t("app.restart.welcome")}</h3>
+              <p
+                className={`secret-box txt-center ${restartBoxClassName}`}
+                data-stylex-part="restart-notice-copy"
+              >
                 {t("app.restart.notice")}
                 {hasFailedToUpdateSecret ? t("app.restart.updateSecretYourself") : null}
               </p>
