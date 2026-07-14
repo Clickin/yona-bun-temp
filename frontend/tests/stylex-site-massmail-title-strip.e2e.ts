@@ -10,6 +10,7 @@ async function mockSession(page: Page) {
   const fulfillSession = (route: Route) =>
     route.fulfill({
       contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-site-massmail-title-strip" },
       json: { isAnonymous: false, isSiteAdmin: true },
     });
   await page.route("**/api/v1/session", fulfillSession);
@@ -47,12 +48,45 @@ test.describe("StyleX site massmail title strip", () => {
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
 
+  test("composes generated classes with the legacy title classes", async ({ page }) => {
+    const owner = await openMassMail(page);
+    const classPresence = await owner.evaluate((element) => {
+      const heading = element.querySelector("h2");
+      const hasGeneratedClass = (node: Element | null) =>
+        [...(node?.classList ?? [])].some((token) => /^x[a-z0-9_-]{5,}$/iu.test(token));
+      return {
+        headingHasGeneratedClass: hasGeneratedClass(heading),
+        headingHasPullLeft: heading?.classList.contains("pull-left") ?? false,
+        ownerHasGeneratedClass: hasGeneratedClass(element),
+        ownerHasTitleArea: element.classList.contains("title_area"),
+      };
+    });
+    expect(classPresence).toEqual({
+      headingHasGeneratedClass: true,
+      headingHasPullLeft: true,
+      ownerHasGeneratedClass: true,
+      ownerHasTitleArea: true,
+    });
+  });
+
   test("keeps the legacy heading first in default and pending mass-mail states", async ({
     page,
   }) => {
     await mockSession(page);
-    await page.route("**/api/v1/site/mail-list", async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+    let releaseMailListResponse = () => {};
+    const mailListRequest = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" && new URL(request.url()).pathname.endsWith("/site/mail-list"),
+    );
+    const mailListResponse = new Promise<void>((resolve) => {
+      releaseMailListResponse = resolve;
+    });
+    await page.route("**/site/mail-list**", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.fallback();
+        return;
+      }
+      await mailListResponse;
       await route.fulfill({ json: { recipients: ["maintainer@example.com"] } });
     });
     await page.addInitScript(() => {
@@ -69,9 +103,12 @@ test.describe("StyleX site massmail title strip", () => {
         .evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "DIV"]);
     await expect(owner.locator("button, input, .mess-mail-wrap")).toHaveCount(0);
-    await action.click();
+    const actionClick = action.click({ noWaitAfter: true });
+    await mailListRequest;
     await expect(action).toBeDisabled();
     await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Send mass mails");
+    releaseMailListResponse();
+    await actionClick;
     await expect(action).toBeEnabled();
   });
 
@@ -111,20 +148,25 @@ test.describe("StyleX site massmail title strip", () => {
     }
   });
 
-  test("isolates generated StyleX classes to the title and write-action owners", async ({
-    page,
-  }) => {
+  test("isolates generated StyleX classes to explicit mass-mail owners", async ({ page }) => {
     await openMassMail(page);
+    const migratedOwnerSelector = [
+      '[data-stylex-owner="site-massmail-title-strip"]',
+      '[data-stylex-owner="site-massmail-recipient-radios"]',
+      '[data-stylex-owner="site-massmail-project-wrapper"]',
+      '[data-stylex-owner="site-massmail-project-input"]',
+      '[data-stylex-owner="site-massmail-select-project-action"]',
+      '[data-stylex-owner="site-massmail-selected-project-tag"]',
+      '[data-stylex-owner="site-massmail-write-action"]',
+    ].join(", ");
 
-    const generatedOutsideOwners = await page.evaluate((selector) =>
-      Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
-        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-        .filter(
-          (element) =>
-            element.closest(selector) === null &&
-            element.closest('[data-stylex-owner="site-massmail-write-action"]') === null,
-        )
-        .map((element) => element.tagName),
+    const generatedOutsideOwners = await page.evaluate(
+      (selector) =>
+        Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+          .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+          .filter((element) => element.closest(selector) === null)
+          .map((element) => element.tagName),
+      migratedOwnerSelector,
     );
     expect(generatedOutsideOwners).toEqual([]);
   });

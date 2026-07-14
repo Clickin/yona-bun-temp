@@ -1479,6 +1479,12 @@ margin from `site/massMail.scala.html` and Bootstrap 2.3.1 `.control-group`. Sty
 legend/form-horizontal variants, project children, actions, title/sidebar/shell, and generic
 control groups remain fallback or separate owners. This is not Wave 1 completion.
 
+The one-hundred-tenth slice repairs the `/sites/massmail` title strip and project-input StyleX
+class composition. The legacy fallback classes `title_area`, `pull-left`, and `span3` now coexist
+with actual generated classes, so the previously recorded StyleX declarations take effect. No
+selector or declaration scope changes; remaining surfaces remain fallback or separate owners.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

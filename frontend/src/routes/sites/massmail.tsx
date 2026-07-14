@@ -150,6 +150,9 @@ const styles = stylex.create({
   },
 });
 
+const titleAreaStyleProps = stylex.props(styles.titleArea);
+const titleStyleProps = stylex.props(styles.title);
+const projectInputStyleProps = stylex.props(styles.projectInput);
 const projectWrapperStyleProps = stylex.props(styles.projectWrapper);
 
 export const Route = createFileRoute("/sites/massmail")({
@@ -191,11 +194,11 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
             </div>
             <div className="span10">
               <div
-                {...stylex.props(styles.titleArea)}
-                className="title_area"
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
                 data-stylex-owner="site-massmail-title-strip"
               >
-                <h2 {...stylex.props(styles.title)} className="pull-left">
+                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
                   <LegacyMessage messageKey="title.massMail" />
                 </h2>
               </div>
@@ -386,11 +389,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       >
         <div className="controls">
           <input
-            {...stylex.props(styles.projectInput)}
+            {...projectInputStyleProps}
             data-stylex-owner="site-massmail-project-input"
             id="input-project"
             type="text"
-            className="span3"
+            className={`span3 ${projectInputStyleProps.className ?? ""}`}
             autoComplete="off"
             placeholder={t("project.name")}
             ref={projectInputRef}
