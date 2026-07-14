@@ -131,6 +131,20 @@ const styles = stylex.create({
     float: globalColors.siteMassMailRecipientRadioInputFloat,
     marginLeft: globalColors.siteMassMailRecipientRadioInputMarginLeft,
   },
+  selectedProjectTag: {
+    backgroundColor: globalColors.siteMassMailSelectedProjectTagSurface,
+    borderRadius: globalColors.siteMassMailSelectedProjectTagBorderRadius,
+    color: globalColors.siteMassMailSelectedProjectTagText,
+    display: globalColors.siteMassMailSelectedProjectTagDisplay,
+    fontSize: globalColors.siteMassMailSelectedProjectTagFontSize,
+    fontWeight: globalColors.siteMassMailSelectedProjectTagFontWeight,
+    lineHeight: globalColors.siteMassMailSelectedProjectTagLineHeight,
+    marginRight: globalColors.siteMassMailSelectedProjectTagMarginRight,
+    padding: globalColors.siteMassMailSelectedProjectTagPadding,
+    textShadow: globalColors.siteMassMailSelectedProjectTagTextShadow,
+    verticalAlign: globalColors.siteMassMailSelectedProjectTagVerticalAlign,
+    whiteSpace: globalColors.siteMassMailSelectedProjectTagWhiteSpace,
+  },
 });
 
 export const Route = createFileRoute("/sites/massmail")({
@@ -429,7 +443,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         </div>
         <div id="selected-projects">
           {selectedProjects.map((project) => (
-            <span className="label label-info" style={{ marginRight: "5px" }} key={project.id}>
+            <span
+              {...stylex.props(styles.selectedProjectTag)}
+              data-stylex-owner="site-massmail-selected-project-tag"
+              key={project.id}
+            >
               {project.name}{" "}
               <button
                 type="button"

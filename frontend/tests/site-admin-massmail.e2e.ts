@@ -125,6 +125,8 @@ const EXPECTED_MASSMAIL_SCREEN = `
   </div>
 </footer>
 `;
+const selectedProjectTagSelector =
+  '#selected-projects [data-stylex-owner="site-massmail-selected-project-tag"]';
 
 test("site admin mass mail matches legacy site/massMail.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -293,14 +295,15 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   );
   await page.keyboard.press("Enter");
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveText("o x");
+  await expect(page.locator(selectedProjectTagSelector)).toHaveText("o x");
   await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
-  await expect(page.locator("#selected-projects .label a[href]")).toHaveCount(0);
-  await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveAttribute(
-    "type",
-    "button",
+  await expect(page.locator(`${selectedProjectTagSelector} a[href]`)).toHaveCount(0);
+  await expect(
+    page.locator(`${selectedProjectTagSelector} .selected-project-remove`),
+  ).toHaveAttribute("type", "button");
+  await expect(page.locator(`${selectedProjectTagSelector} .selected-project-remove`)).toHaveText(
+    "x",
   );
-  await expect(page.locator("#selected-projects .label .selected-project-remove")).toHaveText("x");
   expect(await massMailProjectMetrics(page)).toEqual({
     addButtonHeight: 30,
     inputMarginBottom: 0,
@@ -315,23 +318,23 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   });
 
   await page.locator("#mailtoPrj").click();
-  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+  await expect(page.locator(selectedProjectTagSelector)).toHaveCount(0);
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator(selectedProjectTagSelector)).toHaveText("admin/projectYobi x");
 
   await page.locator("#input-project").fill("yona/docs");
   await page.keyboard.press("Enter");
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveText([
+  await expect(page.locator(selectedProjectTagSelector)).toHaveText([
     "admin/projectYobi x",
     "yona/docs x",
   ]);
 
-  await page.locator("#selected-projects .label .selected-project-remove").first().click();
+  await page.locator(`${selectedProjectTagSelector} .selected-project-remove`).first().click();
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveText("yona/docs x");
+  await expect(page.locator(selectedProjectTagSelector)).toHaveText("yona/docs x");
 
   await page.locator("#write-email").click();
   await expect(page.locator("#write-email")).toBeDisabled();
@@ -347,7 +350,7 @@ test("site admin mass mail project selection and mailto follow legacy JS flow", 
   await page.locator("#mailtoAll").click();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
   await expect(page.locator("#input-project")).toHaveValue("");
-  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+  await expect(page.locator(selectedProjectTagSelector)).toHaveCount(0);
 
   await page.locator("#write-email").click();
   await expect
@@ -369,11 +372,11 @@ test("site admin mass mail typeahead click fills input before explicit add", asy
   await page.locator(".typeahead.dropdown-menu button").first().click();
 
   await expect(page.locator("#input-project")).toHaveValue("admin/projectYobi");
-  await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+  await expect(page.locator(selectedProjectTagSelector)).toHaveCount(0);
   await expect(page.locator(".typeahead.dropdown-menu")).toHaveCount(0);
 
   await page.locator("#select-project").click();
-  await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+  await expect(page.locator(selectedProjectTagSelector)).toHaveText("admin/projectYobi x");
   await expect(page.locator("#input-project")).toHaveValue("");
 });
 
@@ -481,7 +484,9 @@ async function massMailProjectMetrics(page: Page) {
     const projectWrap = requireElement("#project-list-wrap");
     const input = requireElement("#input-project");
     const addButton = requireElement("#select-project");
-    const selectedLabel = requireElement("#selected-projects .label");
+    const selectedLabel = requireElement(
+      '#selected-projects [data-stylex-owner="site-massmail-selected-project-tag"]',
+    );
 
     const projectWrapStyle = getComputedStyle(projectWrap);
     const inputStyle = getComputedStyle(input);
@@ -632,6 +637,15 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-massmail-selected-project-tag"]')
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
       const isMassMailRecipientRadio = current.matches(
         '[data-stylex-owner="site-massmail-recipient-radios"], [data-stylex-owner="site-massmail-recipient-radios"] > input[type="radio"]',
       );
@@ -765,6 +779,16 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
+      const isMassMailSelectedProjectTag =
+        name === "class" &&
+        current.matches("#selected-projects > span.label.label-info") &&
+        current.querySelector(":scope > a, :scope > button.selected-project-remove") !== null;
+      if (isMassMailSelectedProjectTag) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "label" && token !== "label-info")
+          .join(" ");
+      }
       const isMassMailRecipientRadio =
         name === "class" &&
         value.split(/\s+/u).includes("radio") &&

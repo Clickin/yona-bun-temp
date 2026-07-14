@@ -1466,6 +1466,13 @@ Bootstrap label display and margin, control-group/inline variants, project contr
 title/sidebar/shell, and other radio/checkbox consumers remain fallback or separate owners. This
 is not Wave 1 completion.
 
+The one-hundred-eighth slice migrates the projects-recipient `/sites/massmail` selected-project
+tag from `yobi.site.MassMail.js` and Bootstrap 2.3.1 `.label`/`.label-info`. StyleX owns the
+complete applicable generated-span surface and explicit JS margin through global variables,
+removing `label label-info` only from each dynamic tag; the React-owned remove button, generic
+tags/labels, typeahead/project controls, actions, title/sidebar/shell, and inapplicable empty/href
+variants remain fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
