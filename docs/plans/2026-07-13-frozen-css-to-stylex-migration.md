@@ -1414,6 +1414,12 @@ and `_page.less`. StyleX applies the exact title-area and direct-heading declara
 existing global variables while retaining shared fallback classes; form, alerts, send action,
 sidebar/shell, and generic title areas remain fallback or separate owners. This is not Wave 1 completion.
 
+The one-hundredth slice migrates successful `/sites/mail` alert from `site/mail.scala.html` and
+Bootstrap 2.3.1 `.alert`/`.alert-success` rules. StyleX owns the complete base and success alert
+surface through global variables while retaining alert fallback classes; error/not-configured alerts,
+form, send action, title/sidebar/shell, and generic alerts remain fallback or separate owners.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

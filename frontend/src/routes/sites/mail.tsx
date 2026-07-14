@@ -69,6 +69,17 @@ const styles = stylex.create({
     whiteSpace: globalColors.siteMailSendActionWhiteSpace,
     zIndex: globalColors.siteMailSendActionZIndex,
   },
+  successAlert: {
+    padding: globalColors.siteMailSuccessAlertPadding,
+    marginBottom: globalColors.siteMailSuccessAlertMarginBottom,
+    textShadow: globalColors.siteMailSuccessAlertTextShadow,
+    backgroundColor: globalColors.siteMailSuccessAlertSurface,
+    borderColor: globalColors.siteMailSuccessAlertBorderColor,
+    borderStyle: globalColors.siteMailSuccessAlertBorderStyle,
+    borderWidth: globalColors.siteMailSuccessAlertBorderWidth,
+    borderRadius: globalColors.siteMailSuccessAlertBorderRadius,
+    color: globalColors.siteMailSuccessAlertText,
+  },
 });
 
 interface SiteMailRouteSearch {
@@ -271,7 +282,15 @@ function MailBody({
           </p>
         </div>
       ) : null}
-      {response && sent ? <div className="alert alert-success">{t("site.mail.sended")}</div> : null}
+      {response && sent ? (
+        <div
+          {...stylex.props(styles.successAlert)}
+          className="alert alert-success"
+          data-stylex-owner="site-mail-success-alert"
+        >
+          {t("site.mail.sended")}
+        </div>
+      ) : null}
       {response && response.notConfiguredItems.length > 0 ? (
         <div className="alert alert-error">
           <p>{t("site.mail.notConfigured", { args: ["/admin/mailconf"] })}</p>

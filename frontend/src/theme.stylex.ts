@@ -222,6 +222,16 @@ export const globalColors = stylex.defineVars({
   siteMailSendActionBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)",
   siteMailSendActionZIndex: "2",
   siteMailSendActionInteractiveTextDecoration: "none",
+  // site/mail.scala.html + Bootstrap `.alert` and `.alert-success`
+  siteMailSuccessAlertPadding: "8px 35px 8px 14px",
+  siteMailSuccessAlertMarginBottom: "20px",
+  siteMailSuccessAlertTextShadow: "0px 1px 0px rgba(255, 255, 255, 0.5)",
+  siteMailSuccessAlertSurface: "#dff0d8",
+  siteMailSuccessAlertBorderColor: "#d6e9c6",
+  siteMailSuccessAlertBorderStyle: "solid",
+  siteMailSuccessAlertBorderWidth: "1px",
+  siteMailSuccessAlertBorderRadius: "4px",
+  siteMailSuccessAlertText: "#468847",
   // _page.less and _responsive.less: .gnb-outer base, project, and mobile states
   globalGnbOuterHeight: "40px",
   globalGnbOuterSurface: "#1b1b1b",
