@@ -1316,6 +1316,12 @@ and spacing through global theme variables sourced from `_page.less`; disabled a
 states retain their existing output. Focused and existing login regressions are GREEN 5/5. This is
 not Wave 1 completion.
 
+The eighty-fourth slice migrates the signup-confirmation notice in `/users/signupform` from
+`user/signup.scala.html`. StyleX owns the confirmation-only `text-align:center` declaration through
+a global theme variable sourced from `_common.less`; standard-password and social-only states retain
+their existing output, while other `.center-txt` consumers remain fallback consumers. Focused and
+existing signup regressions are GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

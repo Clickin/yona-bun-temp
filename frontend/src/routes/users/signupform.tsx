@@ -107,6 +107,9 @@ const styles = stylex.create({
     color: globalColors.standaloneSignupLoginLinkColor,
     fontWeight: globalColors.standaloneSignupLoginLinkFontWeight,
   },
+  confirmationNotice: {
+    textAlign: globalColors.standaloneSignupConfirmationNoticeTextAlign,
+  },
   validationPopover: {
     position: globalColors.standaloneSignupValidationPopoverPosition,
     top: "var(--yoram-stylex-validation-popover-top)",
@@ -182,6 +185,7 @@ const buttonRowClassName = stylex.props(styles.buttonRow).className;
 const submitClassName = stylex.props(styles.submit).className;
 const actionRowClassName = stylex.props(styles.actionRow).className;
 const loginLinkClassName = stylex.props(styles.loginLink).className;
+const confirmationNoticeClassName = stylex.props(styles.confirmationNotice).className;
 
 export const Route = createFileRoute("/users/signupform")({
   component: SignupFormRoute,
@@ -301,9 +305,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
 
           {signupRequireConfirm ? (
-            <div className="center-txt">
-              <p>{t("title.signupConfirmDesc")}</p>
-              <p>
+            <div
+              className={confirmationNoticeClassName}
+              data-stylex-owner="standalone-signup-confirmation-notice"
+              data-stylex-part="signup-confirmation-notice"
+            >
+              <p data-stylex-part="signup-confirmation-primary">{t("title.signupConfirmDesc")}</p>
+              <p data-stylex-part="signup-confirmation-contact">
                 <ObfuscatedContactMessage
                   message={lookupLegacyMessage(language, "title.signupConfirmDesc2", {
                     args: [String(capabilities?.defaultAdminContact ?? "")],

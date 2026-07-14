@@ -176,7 +176,11 @@ test.describe("StyleX standalone signup form", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
-    await expect(owner).toHaveScreenshot("stylex-standalone-signup-form-desktop.png");
+    await page.reload();
+    const cleanOwner = page.locator('[data-stylex-owner="standalone-signup-form"]');
+    await expect(cleanOwner).toBeVisible();
+    await cleanOwner.locator('[data-stylex-part="standalone-signup-login-id"]').focus();
+    await expect(cleanOwner).toHaveScreenshot("stylex-standalone-signup-form-desktop.png");
     await page.screenshot({
       fullPage: true,
       path: "../output/playwright/stylex-standalone-signup-form-desktop.png",
@@ -213,9 +217,13 @@ test.describe("StyleX standalone signup form", () => {
     await page.goto(`${basePath}/users/signupform`);
     await expect(page.locator('[data-stylex-owner="standalone-signup-form"]')).toHaveCount(0);
     await expect(page.locator('[data-stylex-part^="standalone-signup-"]')).toHaveCount(0);
-    await expect(page.locator(".center-txt p").first()).toHaveText(
-      "Administrator admission is required for activation.",
+    const confirmationNotice = page.locator(
+      '[data-stylex-owner="standalone-signup-confirmation-notice"]',
     );
+    await expect(confirmationNotice).toBeVisible();
+    await expect(
+      confirmationNotice.locator('[data-stylex-part="signup-confirmation-primary"]'),
+    ).toHaveText("Administrator admission is required for activation.");
 
     await page.unroute("**/api/v1/auth/capabilities");
     await mockAnonymousSignup(page, { socialLoginOnly: true });

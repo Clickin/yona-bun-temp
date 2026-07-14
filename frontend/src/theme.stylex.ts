@@ -443,6 +443,9 @@ export const globalColors = stylex.defineVars({
   standaloneSignupLoginLinkColor: "#5c5c5c",
   standaloneSignupLoginLinkFontWeight: "700",
 
+  // user/signup.scala.html + _common.less `.center-txt`: signup confirmation notice only
+  standaloneSignupConfirmationNoticeTextAlign: "center",
+
   // user/signup.scala.html + yobi.user.SignUp.js + Bootstrap 2.3.1 + _yobiUI.less: standard signup validation popover
   standaloneSignupValidationPopoverPosition: "absolute",
   standaloneSignupValidationPopoverZIndex: "1010",
