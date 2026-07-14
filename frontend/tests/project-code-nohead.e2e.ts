@@ -186,7 +186,7 @@ async function mockProjectCodeNoHead(page: Page) {
 }
 
 async function assertProjectSearchShell(page: Page, basePath: string) {
-  await expect(page.locator(".gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -250,7 +250,7 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
   await expect(page).toHaveURL(currentUrl);
 
   const boxes = await page.evaluate(() => {
-    const navbar = document.querySelector(".gnb-outer.project-header");
+    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");

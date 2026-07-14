@@ -70,7 +70,7 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   await page.goto(`${projectReviewsPath}?state=open&filter=comment`);
 
   await expect(page).toHaveTitle("portal - Review - weblabs/portal");
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -649,7 +649,7 @@ async function nativeClickListenerCount(page: Page, selector: string) {
 
 async function projectHeaderMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = requireElement(".gnb-outer");
+    const header = requireElement("[data-stylex-owner=global-gnb-outer]");
     const searchForm = requireElement<HTMLFormElement>('form[name="gnb-search-form"]');
     const searchScope = requireElement<HTMLButtonElement>("#gnb-search-scope-title");
     const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');

@@ -12,7 +12,7 @@ test("direct issue create route renders the legacy New issue title for the selec
   await page.goto(`${basePath}/user/issues/new`);
 
   await expect(page).toHaveTitle("New issue - admin/sample");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("sample");
   await expect(page.locator("#issue-form")).toHaveAttribute(
@@ -30,7 +30,7 @@ test("direct mine issue create route renders the legacy New issue title for the 
   await page.goto(`${basePath}/user/issues/new/mine`);
 
   await expect(page).toHaveTitle("New issue - admin/inbox");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-breadcrumb .project-author")).toHaveText("admin");
   await expect(page.locator(".project-breadcrumb .project-name")).toHaveText("inbox");
   await expect(page.locator("#issue-form")).toHaveAttribute(

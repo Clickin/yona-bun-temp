@@ -384,7 +384,9 @@ async function assertOwnedShellHasNoPluginHooks(page: Page) {
     "data-target",
     "data-trigger",
   ]) {
-    await expect(page.locator(`.gnb-outer [${attribute}]`)).toHaveCount(0);
+    await expect(page.locator(`[data-stylex-owner=global-gnb-outer] [${attribute}]`)).toHaveCount(
+      0,
+    );
   }
 }
 
@@ -418,7 +420,7 @@ async function readShellMetrics(page: Page) {
       listAll: box('[data-stylex-owner="global-gnb-nav"] > li:nth-child(2) > a'),
       logo: box('[data-stylex-owner="global-gnb-brand-link"]'),
       nav: box('[data-stylex-owner="global-gnb-nav"]'),
-      navbar: box(".gnb-outer"),
+      navbar: box("[data-stylex-owner=global-gnb-outer]"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
       search: box(".gnb-search-form"),
       signup: box(".gnb-usermenu .ybtn-success"),

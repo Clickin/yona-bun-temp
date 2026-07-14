@@ -1032,7 +1032,9 @@ test("project issue detail renders protected org-owned localhost shell state", a
   await page.goto(`${basePath}/weblabs/portal/issue/1`);
   await expect(page).toHaveTitle("Portal protected project smoke check");
 
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -4566,7 +4568,7 @@ async function keymapModalMetrics(page: Page) {
 
 async function protectedIssueShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const search = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-box"]',
     );

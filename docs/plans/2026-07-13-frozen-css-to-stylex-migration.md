@@ -894,6 +894,22 @@ pairs move to the stable owner without changing legacy fixtures. Typecheck, foun
 build/StyleX verification, frozen and unchanged fallback hashes, lint, format, diff, and visual
 gates pass. This is not Wave 1 completion.
 
+The fifty-first verified slice migrates the `SiteLayoutShell` GNB outer header while preserving
+the exact `header > inner` skeleton and every owned child, route, interaction, and order. Colocated
+StyleX owns the legacy 40px border-box, dark surface, 10px inline padding, max-720 10px minimum
+width, and project/organization absolute full-width translucent state through canonical global
+theme variables. The owner deliberately adds neither a text color that legacy does not declare
+nor the React-only max-900 minimum-width expansion. SiteLayout drops `gnb-outer` and
+`project-header`; the zero-consumer project bridge and logo-pseudo branches are deleted, while the
+generic fallback stays for five independent route consumers. Focused outer GREEN is 9/9, the
+outer/inner/brand set is 24/24, and adjacent nav is 8/8 across HOME/project/organization desktop
+and mobile states. Eighty-three existing E2E files move actual locators, class assertions, and full-shell
+canonicalizers to the stable owner without changing legacy fixtures. Typecheck, foundation,
+production build/StyleX verification, frozen and generated fallback hashes, format, diff, and
+visual gates pass. The independent `/restricted` run still has four whole-route rendering failures
+after its four source guards pass, so it is not claimed as a green browser fallback gate. This is
+not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

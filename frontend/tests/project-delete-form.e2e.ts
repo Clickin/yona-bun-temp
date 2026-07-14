@@ -161,7 +161,9 @@ test("project delete form matches legacy project/delete.scala.html DOM", async (
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
   await expect(page.locator("#alertDeletion")).toHaveClass(/hide/);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -304,7 +306,9 @@ test("project delete form localhost legacy portal shell is restored", async ({ p
   await expect(page).toHaveTitle("Delete project - weblabs/portal");
   await expect(page.locator("#btnDelete")).toBeVisible();
   await expect(page.locator("#btnDelete")).not.toHaveAttribute("data-toggle", "modal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -1387,7 +1391,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1420,7 +1424,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]')
+        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
       ) {
         return "";
       }
@@ -1489,20 +1494,31 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
-      const retiredToken =
+      const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-inner") &&
-        attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : attr.name === "class" &&
-              attr.ownerElement &&
-              attr.value.split(/\s+/u).includes("gnb-nav") &&
-              attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        attr.value.split(/\s+/u).includes("gnb-outer") &&
+        attr.ownerElement.matches("header.gnb-outer") &&
+        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
+          null;
+      const retiredToken =
+        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : attr.name === "class" &&
+                attr.ownerElement &&
+                attr.value.split(/\s+/u).includes("gnb-inner") &&
+                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : attr.name === "class" &&
+                  attr.ownerElement &&
+                  attr.value.split(/\s+/u).includes("gnb-nav") &&
+                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue

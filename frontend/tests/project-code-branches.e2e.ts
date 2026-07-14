@@ -34,7 +34,9 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
   await expect(page.locator(".commit .date").nth(1)).toHaveAttribute("title", "Jul 2, 2026");
   await expect(page.locator(".pullrequest-state")).toHaveAttribute("title", "Open");
   await expect(page.locator(".pullrequest-state")).toHaveText("pullRequest-3");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -194,7 +196,9 @@ test("project code branches restores protected project shell parity for weblabs/
   await page.goto(`${basePath}/weblabs/portal/branches`);
 
   await expect(page).toHaveTitle("Branches - weblabs/portal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -292,7 +296,9 @@ test("svn project branches route matches legacy badrequest_default site shell", 
   await page.goto(`${basePath}/admin/svnplayground/branches`);
 
   await expect(page).toHaveTitle("This request is only supported in a git project.");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
     "List All",
   );
@@ -633,7 +639,7 @@ async function readBranchListMetrics(page: Page) {
 
 async function readProjectBranchesShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement(".gnb-outer");
+    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
     const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
     const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
@@ -667,7 +673,7 @@ async function readProjectBranchesShellMetrics(page: Page) {
 
 async function readBranchesBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");
@@ -698,7 +704,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -735,7 +741,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]')
+        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
       ) {
         return "";
       }
@@ -866,20 +873,31 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
-      const retiredToken =
+      const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-inner") &&
-        attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : attr.name === "class" &&
-              attr.ownerElement &&
-              attr.value.split(/\s+/u).includes("gnb-nav") &&
-              attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        attr.value.split(/\s+/u).includes("gnb-outer") &&
+        attr.ownerElement.matches("header.gnb-outer") &&
+        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
+          null;
+      const retiredToken =
+        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : attr.name === "class" &&
+                attr.ownerElement &&
+                attr.value.split(/\s+/u).includes("gnb-inner") &&
+                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : attr.name === "class" &&
+                  attr.ownerElement &&
+                  attr.value.split(/\s+/u).includes("gnb-nav") &&
+                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue

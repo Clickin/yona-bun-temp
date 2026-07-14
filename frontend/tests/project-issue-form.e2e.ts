@@ -2184,7 +2184,7 @@ async function issueFormMetrics(page: Page) {
       return element.getBoundingClientRect();
     };
     const admin = required('[data-stylex-owner="site-admin-affix"]');
-    const gnb = required(".gnb-outer");
+    const gnb = required("[data-stylex-owner=global-gnb-outer]");
     const header = required(".project-header-outer");
     const menu = required(".project-menu-outer");
     const form = required("#issue-form");

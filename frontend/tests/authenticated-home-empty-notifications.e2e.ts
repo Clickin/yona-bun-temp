@@ -1514,7 +1514,7 @@ test("authenticated home create dropdown new issue link preserves legacy href an
   await newIssueLink.click();
 
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new`);
-  await expect(page.locator("header.gnb-outer")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1558,7 +1558,7 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
   await personalInboxLink.click();
 
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/user/issues/new/mine`);
-  await expect(page.locator("header.gnb-outer")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect
     .poll(() =>
       page.evaluate(
@@ -2672,7 +2672,7 @@ async function readLocalStorageValue(page: Page, key: string) {
 
 async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
@@ -3088,7 +3088,7 @@ async function readSidebarRecentIssueTabMetrics(page: Page) {
 
 async function readDesktopAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
@@ -3843,7 +3843,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, .admin-logged-in-affix, [data-stylex-owner="site-admin-affix"], .gnb-outer, .page-wrap-outer, .page-footer-outer',
+        '.unsupported, .admin-logged-in-affix, [data-stylex-owner="site-admin-affix"], [data-stylex-owner=global-gnb-outer], .page-wrap-outer, .page-footer-outer',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -3889,7 +3889,11 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string): string {
-      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+      if (
+        name === "class" &&
+        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          current.matches('[data-stylex-owner="global-gnb-outer"]'))
+      ) {
         return "";
       }
       if (
@@ -4068,18 +4072,27 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string): string {
-        const retiredToken =
+        const isSiteLayoutHeader =
           name === "class" &&
-          current.classList.contains("gnb-inner") &&
-          current.matches("header.gnb-outer > div.gnb-inner") &&
-          current.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-inner"
-            : name === "class" &&
-                current.classList.contains("gnb-nav") &&
-                current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                current.querySelector('form[name="gnb-search-form"]') !== null
-              ? "gnb-nav"
-              : null;
+          current.classList.contains("gnb-outer") &&
+          current.matches("header.gnb-outer") &&
+          current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
+        const retiredToken =
+          isSiteLayoutHeader && current.classList.contains("project-header")
+            ? "project-header"
+            : isSiteLayoutHeader
+              ? "gnb-outer"
+              : name === "class" &&
+                  current.classList.contains("gnb-inner") &&
+                  current.matches("header.gnb-outer > div.gnb-inner") &&
+                  current.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-inner"
+                : name === "class" &&
+                    current.classList.contains("gnb-nav") &&
+                    current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                    current.querySelector('form[name="gnb-search-form"]') !== null
+                  ? "gnb-nav"
+                  : null;
         if (retiredToken) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(

@@ -148,7 +148,7 @@ test("project labels uses legacy project-scoped GNB search shell", async ({ page
   await mockProjectLabels(page);
 
   await page.goto(labelsPageUrl);
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -1795,7 +1795,7 @@ async function categoryTypeaheadMetrics(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

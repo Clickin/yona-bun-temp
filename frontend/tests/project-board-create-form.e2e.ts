@@ -47,7 +47,9 @@ test("project board create form restores legacy admin project shell", async ({ p
   await page.goto(`${basePath}/admin/sample/postform`);
 
   await expect(page).toHaveTitle("New - admin/sample");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
@@ -89,7 +91,9 @@ test("project board create form restores legacy group-owned project shell", asyn
   await page.goto(`${basePath}/weblabs/portal/postform`);
 
   await expect(page).toHaveTitle("New - weblabs/portal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Board");
@@ -668,7 +672,7 @@ async function mockProjectBoardCreateForm(
 
 async function readProjectBoardCreateShellBoxes(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

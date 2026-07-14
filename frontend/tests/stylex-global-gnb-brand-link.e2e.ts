@@ -120,7 +120,8 @@ for (const state of [
     }
 
     const evidence = await readEvidence(owner);
-    expect(evidence.headerClass).toBe(state.project ? "gnb-outer project-header" : "gnb-outer");
+    expect(evidence.headerOwner).toBe("global-gnb-outer");
+    expect(evidence.headerHasLegacyClass).toBe(false);
     expect(evidence.style).toEqual({
       backgroundColor: "rgb(255, 87, 34)",
       backgroundPosition: "11px 10px",
@@ -223,10 +224,10 @@ test("global GNB brand link paint and pseudo geometry do not depend on legacy lo
     before: { content: "none", display: "inline" },
     style: {
       backgroundColor: "rgba(0, 0, 0, 0)",
-      color: "rgb(128, 49, 49)",
+      color: "rgb(162, 162, 162)",
       height: "auto",
       opacity: "1",
-      padding: "10px",
+      padding: "0px",
       width: "auto",
     },
   });
@@ -249,7 +250,9 @@ async function readEvidence(owner: Locator) {
     return {
       after: pseudo(after),
       before: pseudo(before),
-      headerClass: header.className,
+      headerHasLegacyClass:
+        header.classList.contains("gnb-outer") || header.classList.contains("project-header"),
+      headerOwner: header.getAttribute("data-stylex-owner"),
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       style: {
         backgroundColor: style.backgroundColor,

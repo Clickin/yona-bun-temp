@@ -251,7 +251,9 @@ test("project change-VCS form matches legacy project/change_vcs.scala.html DOM",
   await expect(page).toHaveTitle("Repository Change - admin/sample");
   await expect(page.locator("#btnChangeVCS")).toBeVisible();
   await expect(page.locator("#alertChangeVCS")).toHaveClass(/hide/);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -489,7 +491,7 @@ test("project change-VCS protected project shell exposes legacy group search sco
 
   await page.goto(changeVcsUrl);
   await expect(page).toHaveTitle("Repository Change - admin/sample");
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -1091,7 +1093,7 @@ test("project change-VCS header favorite star has no route-local native listener
 
 async function readProjectChangeVcsShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement(".gnb-outer");
+    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
     const projectMenu = requireElement(".project-menu-outer");
     const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const searchScope = requireElement("#gnb-search-scope-title");

@@ -208,7 +208,9 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   await expect(page).toHaveTitle("portal - milestone - weblabs/portal");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
   await expect(page.locator("ul.milestones > li.milestone")).toHaveCount(2);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -658,7 +660,7 @@ async function readMilestoneListMetrics(page: Page) {
 
 async function readProtectedPortalMilestoneShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement(".gnb-outer");
+    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
     const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
     const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");

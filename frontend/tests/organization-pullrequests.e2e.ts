@@ -118,7 +118,7 @@ test("organization pull request aggregate pins the live localhost guest shell ti
   await page.goto(`${basePath}/organizations/weblabs/pullrequests?filter=fix`);
 
   await expect(page).toHaveTitle("weblabs");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
@@ -140,7 +140,7 @@ test("organization pull request aggregate pins the live localhost guest shell ti
   ]);
 
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header.gnb-outer");
+    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     if (!(navbar instanceof HTMLElement)) {
@@ -720,7 +720,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -752,7 +752,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]')
+        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
       ) {
         return "";
       }
@@ -813,20 +814,31 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
-      const retiredToken =
+      const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-inner") &&
-        attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : attr.name === "class" &&
-              attr.ownerElement &&
-              attr.value.split(/\s+/u).includes("gnb-nav") &&
-              attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        attr.value.split(/\s+/u).includes("gnb-outer") &&
+        attr.ownerElement.matches("header.gnb-outer") &&
+        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
+          null;
+      const retiredToken =
+        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : attr.name === "class" &&
+                attr.ownerElement &&
+                attr.value.split(/\s+/u).includes("gnb-inner") &&
+                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : attr.name === "class" &&
+                  attr.ownerElement &&
+                  attr.value.split(/\s+/u).includes("gnb-nav") &&
+                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue

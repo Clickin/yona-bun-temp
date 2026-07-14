@@ -41,7 +41,9 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
   await mockProjectCodeFile(page, codeRequests, "README.txt");
 
   await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -731,7 +733,9 @@ async function fileViewMetrics(page: Page) {
 
 async function readCodeFileNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const header = document.querySelector<HTMLElement>(
+      "header[data-stylex-owner=global-gnb-outer]",
+    );
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const search = document.querySelector<HTMLElement>(

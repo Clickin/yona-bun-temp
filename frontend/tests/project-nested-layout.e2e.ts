@@ -60,7 +60,7 @@ test("project issues to watchers keeps the legacy project shell DOM nodes mounte
   await expect(page).toHaveURL(/\/admin\/sample\/watchers(?:\?|$)/);
   await expect(page.locator(".members.project .member")).toHaveCount(2);
   await expect(page.locator(".project-menu-gruop > li.active")).toHaveCount(0);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -179,7 +179,7 @@ test("project issues to exact single commit detail keeps the legacy project shel
   await expect(page).toHaveURL(/\/admin\/sample\/commit\/abcdef1234567890(?:\?|$)/);
   await expect(page.locator(".codediff-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -218,7 +218,7 @@ test("project issues to exact compare range keeps the legacy project shell DOM n
     "@abcdef1234567890..1234567890abcdef",
   );
   await expect(page.locator(".project-menu-gruop .code-menu")).toHaveClass(/active/);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -436,7 +436,7 @@ test("project issues to issue detail keeps the legacy project shell DOM nodes mo
       has: page.locator("a[href$='/admin/sample/issues']"),
     }),
   ).toHaveClass(/active/);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -466,7 +466,7 @@ test("project issue detail to edit form keeps the legacy project shell DOM nodes
   await expect(page).toHaveURL(/\/admin\/sample\/issue\/11\/editform(?:\?|$)/);
   await expect(page.locator("#issue-form")).toBeVisible();
   await expect(page.locator("#editor-body-body")).toBeVisible();
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
@@ -524,7 +524,7 @@ test("project milestones to milestone detail keeps the legacy project shell DOM 
   await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5(?:\?|$)/);
   await expect(page.locator(".milesion-wrap h4 .title")).toHaveText("v1.0");
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -551,7 +551,7 @@ test("project milestone detail to edit form keeps the legacy project shell DOM n
   await expect(page).toHaveURL(/\/admin\/sample\/milestone\/5\/editform(?:\?|$)/);
   await expect(page.locator("#milestone-form")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -610,7 +610,7 @@ test("project posts to post detail and missing post keep the legacy project shel
   await expect(page.locator(".board-header .title")).toContainText("Sample post");
   await expect(page.locator("#post-body-3 .markdown-wrap")).toContainText("Sample post body");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -652,7 +652,7 @@ test("project post detail to exact post edit form keeps the legacy project shell
   await expect(page).toHaveURL(/\/admin\/sample\/post\/3\/editform(?:\?|$)/);
   await expect(page.locator("form.nm #title")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Board");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -677,7 +677,7 @@ test("project post detail to exact post edit form keeps the legacy project shell
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
 });
 
 test("missing post edit form keeps the legacy site-only error shell", async ({ page }) => {
@@ -690,7 +690,7 @@ test("missing post edit form keeps the legacy site-only error shell", async ({ p
   );
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
 });
 
 test("project posts to new post form keeps the legacy project shell DOM nodes mounted", async ({
@@ -842,7 +842,7 @@ test("project pull requests to new pull request form keeps the legacy project sh
       has: page.locator("a[href$='/admin/sample/pullRequests']"),
     }),
   ).toHaveClass(/active/);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -875,7 +875,7 @@ test("project pull requests to fork owner keeps the legacy project shell DOM nod
     "href",
     `${basePath}/admin/sample/pullRequests`,
   );
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -910,7 +910,7 @@ test("project pull requests to pull request overview and missing detail keep the
   await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9(?:\?|$)/);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -950,7 +950,7 @@ test("project pull request overview to edit form keeps the legacy project shell 
   await expect(page.locator("form.nm")).toBeVisible();
   await expect(page.locator("#title")).toHaveValue("Initial title");
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -980,7 +980,7 @@ test("project pull request overview to default changes keeps the legacy project 
   await expect(page).toHaveURL(/\/admin\/sample\/pullRequest\/9\/changes(?:\?|$)/);
   await expect(page.locator(".codediff-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -1012,7 +1012,7 @@ test("project pull request default changes to a specific commit keeps the legacy
   );
   await expect(page.locator(".codediff-wrap")).toBeVisible();
   await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText("Pull request");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -1045,7 +1045,7 @@ test("project pull request specific changes keeps the project shell for project-
     await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
       "Pull request",
     );
-    await expect(page.locator(".gnb-outer")).toHaveCount(1);
+    await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expectProjectShellNodesToPersist(page);
@@ -1179,7 +1179,7 @@ test("project settings alias to canonical settings form keeps the legacy project
   await expect(page.locator("#saveSetting")).toBeVisible();
   await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/active/);
   await expect(page.locator(".project-setting li")).toHaveClass(/active/);
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expectProjectShellNodesToPersist(page);
@@ -1392,7 +1392,7 @@ test("project valid search to forbidden keeps the legacy project shell DOM nodes
 async function captureProjectShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
-      gnb: document.querySelector(".gnb-outer"),
+      gnb: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       header: document.querySelector(".project-header-outer"),
       menu: document.querySelector(".project-menu-outer"),
     };
@@ -1404,7 +1404,7 @@ async function captureProjectShellNodes(page: Page) {
 async function captureProjectHeaderOnlyShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
-      gnb: document.querySelector(".gnb-outer"),
+      gnb: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       header: document.querySelector(".project-header-outer"),
     };
     if (!shell.gnb || !shell.header) throw new Error("Missing project header-only layout shell");
@@ -1422,7 +1422,7 @@ async function expectProjectHeaderOnlyShellNodesToPersist(page: Page) {
         ).__projectHeaderOnlyShell;
         return Boolean(
           previous &&
-          previous.gnb === document.querySelector(".gnb-outer") &&
+          previous.gnb === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
           previous.header === document.querySelector(".project-header-outer"),
         );
       }),
@@ -1439,7 +1439,7 @@ async function expectProjectShellNodesToPersist(page: Page) {
         ).__projectLayoutShell;
         return Boolean(
           previous &&
-          previous.gnb === document.querySelector(".gnb-outer") &&
+          previous.gnb === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
           previous.header === document.querySelector(".project-header-outer") &&
           previous.menu === document.querySelector(".project-menu-outer"),
         );
@@ -1455,7 +1455,7 @@ async function expectProjectShellGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -1601,7 +1601,7 @@ async function expectProjectStatisticsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const pageWrap = rect(".project-page-wrap");
     const heading = rect(".project-page-wrap h1");
@@ -1640,7 +1640,7 @@ async function expectProjectBranchesGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -1812,7 +1812,7 @@ async function expectProjectMilestonesGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -1923,7 +1923,7 @@ async function expectProjectMilestoneCreateGeometry(page: Page) {
     };
     const body = rect(".project-page-wrap");
     const form = rect("#milestone-form");
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const title = rect("#title");
@@ -1968,7 +1968,7 @@ async function expectProjectPostFormGeometry(page: Page) {
     };
     const body = rect(".project-page-wrap");
     const form = rect(".project-page-wrap form.nm");
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const title = rect("#title");
@@ -2018,7 +2018,7 @@ async function expectProjectIssueFormGeometry(page: Page) {
     };
     const body = rect(".project-page-wrap");
     const form = rect("#issue-form");
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const title = rect("#title");
@@ -2066,7 +2066,7 @@ async function expectProjectIssueDetailGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap.board-view");
@@ -2170,7 +2170,7 @@ async function expectProjectPostsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".post-list.project-page-wrap");
@@ -2258,7 +2258,7 @@ async function expectProjectPullRequestsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2338,7 +2338,7 @@ async function expectProjectPullRequestEditGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const form = rect(".content-wrap.frm-wrap form.nm");
@@ -2405,7 +2405,7 @@ async function expectProjectPullRequestCreateGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".content-wrap.frm-wrap");
@@ -2450,7 +2450,7 @@ async function expectProjectReviewsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2497,7 +2497,7 @@ async function expectProjectSettingsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2538,7 +2538,7 @@ async function expectProjectMembersGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2581,7 +2581,7 @@ async function expectProjectWebhooksGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap.webhook-editor-wrap");
@@ -2627,7 +2627,7 @@ async function expectProjectTransferGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2673,7 +2673,7 @@ async function expectProjectDeleteGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2719,7 +2719,7 @@ async function expectProjectChangeVcsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap");
@@ -2765,7 +2765,7 @@ async function expectProjectLabelsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const header = rect(".project-header-outer");
     const menu = rect(".project-menu-outer");
     const body = rect(".project-page-wrap.label-editor-wrap");

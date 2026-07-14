@@ -377,7 +377,7 @@ test("project pull request create form restores legacy shell parity for project 
     await expect
       .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
       .toBe(scenario.title);
-    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-breadcrumb .project-author")).toContainText(
@@ -1100,7 +1100,9 @@ async function markdownHelpMetrics(page: Page) {
 
 async function projectShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>(
+      "header[data-stylex-owner=global-gnb-outer]",
+    );
     const searchBox = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-box"]',
     );

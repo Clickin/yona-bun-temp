@@ -37,7 +37,7 @@ test("project code branch root folder matches legacy code/view.scala.html DOM", 
       ),
     )
     .toContain("Code - admin/sample");
-  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator("form.gnb-search-form")).toHaveAttribute(
@@ -581,7 +581,7 @@ async function folderViewMetrics(page: Page) {
 
 async function shellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const searchForm = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeButton = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");

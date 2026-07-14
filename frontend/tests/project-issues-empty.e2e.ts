@@ -609,7 +609,9 @@ test("protected org-owned project issue list exposes legacy group search scope a
 
   await page.goto(`${basePath}/weblabs/portal/issues`);
   await expect(page).toHaveTitle("portal - Issue - weblabs/portal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -684,7 +686,7 @@ test("protected org-owned project issue list keeps legacy gnb and issue-row geom
   await page.goto(`${basePath}/weblabs/portal/issues`);
   await expect(page.locator("#issue-item-2")).toBeVisible();
   const boxes = await page.evaluate(() => {
-    const navbar = document.querySelector(".gnb-outer");
+    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const searchForm = document.querySelector(".gnb-search-form");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const issueRow = document.querySelector("#issue-item-2");
@@ -1569,7 +1571,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await expect(page.locator(".project-menu-gruop > li.active .menu-name")).toHaveText("Issue");
   const shellBoxes = await page.evaluate(() => {
-    const gnb = document.querySelector(".gnb-outer.project-header");
+    const gnb = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const header = document.querySelector(".project-header-outer");
     const menu = document.querySelector(".project-menu-outer");
     const pageWrap = document.querySelector(".page-wrap-outer");
@@ -2911,7 +2913,9 @@ test("project issue list mass update dropdown opens through route-local React st
 
   await expect(page.locator("#mass-update-form .btn.dropdown-toggle.medium")).toHaveCount(5);
   await expect(page.locator("#mass-update-form button[data-toggle='dropdown']")).toHaveCount(0);
-  await expect(page.locator(".gnb-outer button[data-toggle='dropdown']")).toHaveCount(0);
+  await expect(
+    page.locator("[data-stylex-owner=global-gnb-outer] button[data-toggle='dropdown']"),
+  ).toHaveCount(0);
   await expect(page.locator("#state > button")).toHaveClass(/btn dropdown-toggle medium/u);
   await expect(page.locator("#state > button")).not.toHaveAttribute("data-toggle", "dropdown");
   await page.locator("#state > button").click();
@@ -4813,7 +4817,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -4861,7 +4865,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]')
+        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
       ) {
         return "";
       }
@@ -5014,20 +5019,31 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
-      const retiredToken =
+      const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-inner") &&
-        attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : attr.name === "class" &&
-              attr.ownerElement &&
-              attr.value.split(/\s+/u).includes("gnb-nav") &&
-              attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        attr.value.split(/\s+/u).includes("gnb-outer") &&
+        attr.ownerElement.matches("header.gnb-outer") &&
+        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
+          null;
+      const retiredToken =
+        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : attr.name === "class" &&
+                attr.ownerElement &&
+                attr.value.split(/\s+/u).includes("gnb-inner") &&
+                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : attr.name === "class" &&
+                  attr.ownerElement &&
+                  attr.value.split(/\s+/u).includes("gnb-nav") &&
+                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue

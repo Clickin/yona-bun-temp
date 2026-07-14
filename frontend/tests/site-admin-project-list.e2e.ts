@@ -1052,13 +1052,17 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+      if (
+        name === "class" &&
+        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          current.matches('[data-stylex-owner="global-gnb-outer"]'))
+      ) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
@@ -1133,7 +1137,7 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
       ),
       (element) => element.getAttribute("class"),
     ),
@@ -1227,7 +1231,7 @@ async function projectListMetrics(page: Page) {
 
 async function projectListNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement(".gnb-outer");
+    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
     const feedback = requireElement(
       '[data-stylex-owner="global-gnb-nav"] a[href="https://github.com/yona-projects/yona/issues"]',
     );
@@ -1269,18 +1273,27 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
-      const retiredToken =
+      const isSiteLayoutHeader =
         name === "class" &&
-        value.split(/\s+/u).includes("gnb-inner") &&
-        current.matches("header.gnb-outer > div.gnb-inner") &&
-        current.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : name === "class" &&
-              value.split(/\s+/u).includes("gnb-nav") &&
-              current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              current.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        value.split(/\s+/u).includes("gnb-outer") &&
+        current.matches("header.gnb-outer") &&
+        current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
+      const retiredToken =
+        isSiteLayoutHeader && value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : name === "class" &&
+                value.split(/\s+/u).includes("gnb-inner") &&
+                current.matches("header.gnb-outer > div.gnb-inner") &&
+                current.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : name === "class" &&
+                  value.split(/\s+/u).includes("gnb-nav") &&
+                  current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  current.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         return value
           .split(/\s+/u)

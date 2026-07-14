@@ -156,7 +156,7 @@ test("organization settings form matches legacy organization/setting.scala.html 
   expect(
     await page
       .locator(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       )
       .evaluateAll((roots) => roots.map((root) => root.className)),
   ).toEqual([
@@ -192,7 +192,7 @@ test("organization settings form pins the live localhost authenticated generic s
     "Feedback",
   ]);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(0);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(0);
   await expect(page.locator('form.gnb-search-form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/search`,
@@ -203,7 +203,7 @@ test("organization settings form pins the live localhost authenticated generic s
   );
 
   const shellMetrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header.gnb-outer");
+    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
     const searchForm = document.querySelector("form.gnb-search-form");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = document.querySelector(".project-header-outer");

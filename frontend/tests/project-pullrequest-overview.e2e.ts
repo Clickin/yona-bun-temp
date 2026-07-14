@@ -288,7 +288,9 @@ test("project pull request overview exposes legacy project-header search scope",
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9`);
   await expect(page.locator(".board-header.issue .title")).toContainText("#9 Initial title");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -427,7 +429,7 @@ async function firstHeadTitleText(page: Page) {
 
 async function pullRequestOverviewNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const search = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-box"]',

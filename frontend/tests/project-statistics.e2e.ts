@@ -403,7 +403,9 @@ async function assertStatisticsProjectSearchShell(
     projectAction: string;
   },
 ) {
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
@@ -453,7 +455,7 @@ async function assertStatisticsProjectSearchShell(
 
 async function readStatisticsSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector(".gnb-outer.project-header");
+    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector(".gnb-search-form");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const scopeButton = document.querySelector("#gnb-search-scope-title");

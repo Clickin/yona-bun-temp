@@ -37,7 +37,7 @@ test("project milestone create form restores the legacy protected project header
   await expect(page).toHaveTitle(
     `${LEGACY_NEW_MILESTONE_TITLE} - ${LEGACY_PROJECT_OWNER}/${LEGACY_PROJECT_NAME}`,
   );
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   const searchForm = page.locator("form.gnb-search-form");
   const scopeToggle = page.locator("#gnb-search-scope-title");
   await expect(scopeToggle).toHaveText("This Project");
@@ -621,7 +621,7 @@ async function readMilestoneActionWhitespace(page: Page) {
 
 async function readProtectedProjectHeaderMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const searchBox = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-box"]',
     );
@@ -637,7 +637,7 @@ async function readProtectedProjectHeaderMetrics(page: Page) {
 
 async function readProtectedProjectHeaderBoxes(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

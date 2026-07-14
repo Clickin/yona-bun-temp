@@ -74,7 +74,9 @@ test("project fork form matches legacy git/fork.scala.html DOM", async ({ page }
   await expect(page.locator(".project-util-wrap .watch-btn")).toBeVisible();
   await expect(page.locator(".project-util-wrap .watcher-count")).toHaveText("1");
   await expect(page.locator(".project-menu-gruop > li")).toHaveCount(7);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -173,7 +175,9 @@ test("project fork form exposes group and all-project search scopes without leav
 
   await page.goto(`${basePath}/admin/sample/newFork`);
 
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator("#helpMessage")).toBeVisible();
   await expect(page.locator(".content-wrap.frm-wrap form")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
@@ -250,7 +254,9 @@ test("project fork non-git access renders the legacy bad-request site shell", as
   await expect
     .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
     .toBe("This request is only supported in a git project.");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", `${basePath}/search`);
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
@@ -1050,7 +1056,7 @@ async function forkCloneProgressMetrics(page: Page) {
 
 async function projectForkBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");
@@ -1079,7 +1085,7 @@ async function projectForkBadRequestMetrics(page: Page) {
 
 async function projectForkHeaderSearchScopeMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = form?.querySelector<HTMLElement>(

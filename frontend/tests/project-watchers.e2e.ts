@@ -198,7 +198,9 @@ test("protected org-owned project watchers expose legacy project-header search s
   await expect(page.getByText("This projects watcher list.")).toBeVisible();
   await expect(page).toHaveTitle("Watcher list - weblabs/portal");
 
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -540,7 +542,7 @@ async function readDesktopWatchersMetrics(page: Page) {
 
 async function readProtectedPortalWatchersShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement(".gnb-outer");
+    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
     const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
     const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");

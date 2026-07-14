@@ -157,8 +157,8 @@ test("project code history uses legacy project-scoped GNB search shell", async (
   });
 
   await page.goto(historyPageUrl);
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
-  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -619,8 +619,8 @@ async function assertProjectCodeHistorySearchShell(
     projectName: string;
   },
 ) {
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
-  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${input.basePath}/${input.ownerName}/${input.projectName}/search`,
@@ -765,7 +765,7 @@ async function historyLayoutMetrics(page: Page) {
 
 async function historyNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

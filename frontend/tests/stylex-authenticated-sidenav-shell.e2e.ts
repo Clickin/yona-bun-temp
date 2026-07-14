@@ -231,7 +231,7 @@ async function readLayoutEvidence(page: Page) {
     };
     return {
       affix: box('[data-stylex-owner="site-admin-affix"]'),
-      header: box(".gnb-outer"),
+      header: box("[data-stylex-owner=global-gnb-outer]"),
       shell: box("#mySidenav"),
     };
   });

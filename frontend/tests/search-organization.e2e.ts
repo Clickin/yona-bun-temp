@@ -35,7 +35,7 @@ test("organization project search keeps the legacy organization shell with butto
   expect(titleState).toEqual({ documentTitle: "Search", headTitle: "Search" });
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator(".site-breadcrumb-outer h3")).toHaveText("Search");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   expect(await screenRootClassNames(page)).toEqual(ROOT_CLASS_NAMES);
 
@@ -184,7 +184,7 @@ test("organization project search exact missing state pins the live localhost gu
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=missing&searchType=project`);
 
   await expect(page).toHaveTitle("Search");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
@@ -214,7 +214,7 @@ test("organization project search exact missing state pins the live localhost gu
   );
 
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector("header.gnb-outer");
+    const navbar = document.querySelector("header[data-stylex-owner=global-gnb-outer]");
     const projectHeader = document.querySelector(".project-header-outer");
     const projectHeaderAvatar = document.querySelector(".project-header-avatar img");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
@@ -377,7 +377,7 @@ test("organization search forbidden keeps the legacy organization shell without 
 
   await page.goto(`${basePath}/organizations/weblabs/search?keyword=blocked&searchType=project`);
 
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Group");
   await expect(page.locator(".project-header-outer")).toBeVisible();
   await expect(page.locator(".project-menu-outer")).toBeVisible();
@@ -633,7 +633,7 @@ async function mockOrganizationSearch(
 async function screenRootClassNames(page: Page) {
   return page
     .locator(
-      ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+      ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
     )
     .evaluateAll((roots) => roots.map((root) => root.className));
 }

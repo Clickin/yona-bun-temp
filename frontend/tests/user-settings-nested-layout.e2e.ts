@@ -149,7 +149,7 @@ async function captureUserSettingsShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
       breadcrumb: document.querySelector(".site-breadcrumb-outer"),
-      gnb: document.querySelector(".gnb-outer"),
+      gnb: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       pageWrap: document.querySelector(".page-wrap-outer"),
       tabs: document.querySelector(".page-wrap > .nav-tabs"),
     };
@@ -168,7 +168,7 @@ async function expectUserSettingsShellNodesToPersist(page: Page) {
           .__userSettingsShell;
         return Boolean(
           previous &&
-          previous.gnb === document.querySelector(".gnb-outer") &&
+          previous.gnb === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
           previous.breadcrumb === document.querySelector(".site-breadcrumb-outer") &&
           previous.pageWrap === document.querySelector(".page-wrap-outer") &&
           previous.tabs === document.querySelector(".page-wrap > .nav-tabs"),
@@ -186,7 +186,7 @@ async function expectUserSettingsGeometry(page: Page) {
       return element.getBoundingClientRect();
     };
     const breadcrumb = rect(".site-breadcrumb-outer");
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = rect(".page-wrap-outer");
     const tabs = rect(".page-wrap > .nav-tabs");
     const body = rect(

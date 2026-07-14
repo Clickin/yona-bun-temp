@@ -70,7 +70,7 @@ test("project pull request edit form matches legacy git/edit.scala.html core DOM
       .first()
       .evaluate((title) => title.textContent),
   ).toBe("Edit pull request - admin/sample");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   const shell = pullRequestEditScopedShell(page);
   await expect(shell).toBeVisible();
   await expect(shell.locator(".gnb-search-form")).toHaveAttribute(
@@ -471,7 +471,7 @@ test("project pull request edit form keeps the project shell for project-scoped 
   ] as const) {
     await mockProjectPullRequestEditForm(page, patchRequests, { formErrorStatus: status });
     await page.goto(`${basePath}/admin/sample/pullRequest/7/editform?status=${status}`);
-    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
@@ -722,7 +722,7 @@ function expectPullRequestEditConflictConfirmUsesRouteOwnedModal() {
 }
 
 function pullRequestEditScopedShell(page: Page) {
-  return page.locator("header.gnb-outer.project-header");
+  return page.locator("header[data-stylex-owner=global-gnb-outer]");
 }
 
 function pullRequestEditMarkdownEditor(page: Page) {
@@ -735,7 +735,7 @@ function pullRequestEditMarkdownEditor(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

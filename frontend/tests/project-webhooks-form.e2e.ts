@@ -119,7 +119,9 @@ test("project webhooks matches legacy project/webhooks.scala.html empty DOM", as
       })),
   ).resolves.toEqual({ className: "radio inline", textContent: " | " });
   await expect(page.locator("#webhooksList")).toContainText("No webhook exists.");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -267,7 +269,9 @@ test("project webhooks localhost legacy portal success shell is restored", async
   await page.goto(`${basePath}/weblabs/portal/webhooks`);
   await expect(page).toHaveTitle("Webhooks - weblabs/portal");
   await expect(page.locator("#formNewWebhook")).toBeVisible();
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,

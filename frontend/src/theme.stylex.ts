@@ -19,6 +19,17 @@ export const globalColors = stylex.defineVars({
   siteAdminAffixDetailFontSize: "10px",
   // _common.less: .small-font normal font-weight
   siteAdminAffixDetailFontWeight: "400",
+  // _page.less and _responsive.less: .gnb-outer base, project, and mobile states
+  globalGnbOuterHeight: "40px",
+  globalGnbOuterSurface: "#1b1b1b",
+  globalGnbOuterPaddingInline: "10px",
+  globalGnbOuterZero: "0px",
+  globalGnbOuterBoxSizing: "border-box",
+  globalGnbOuterProjectSurface: "rgba(0, 0, 0, 0.35)",
+  globalGnbOuterProjectPosition: "absolute",
+  globalGnbOuterProjectWidth: "100%",
+  globalGnbOuterProjectZIndex: "1000",
+  globalGnbOuterMobileMinWidth: "10px",
   // _page.less: .gnb-inner layout with the live legacy box model
   globalGnbInnerBoxSizing: "content-box",
   globalGnbInnerWidth: "98%",

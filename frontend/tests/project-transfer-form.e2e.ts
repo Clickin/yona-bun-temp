@@ -62,7 +62,9 @@ test("project transfer form matches legacy project/transfer.scala.html DOM", asy
 
   await page.goto(`${basePath}/admin/sample/transfer`);
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
-  await expect(page.locator(".gnb-outer")).toHaveClass(/project-header/);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   expect(
     await page.locator('[data-stylex-owner="global-gnb-nav"] > li > a').evaluateAll((anchors) =>
       anchors.map((anchor) => ({
@@ -262,7 +264,7 @@ test("project transfer exposes legacy group search scope for organization-owned 
 
   await page.goto(transferFormUrl);
   await expect(page).toHaveTitle("Project Transfer - admin/sample");
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -1056,7 +1058,7 @@ async function readDesktopTransferMetrics(page: Page) {
 
 async function readProjectTransferShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = requireElement(".gnb-outer");
+    const navbar = requireElement("[data-stylex-owner=global-gnb-outer]");
     const projectHeader = requireElement(".project-header-outer");
     const searchScope = requireElement("#gnb-search-scope-title");
     const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');

@@ -360,7 +360,7 @@ test("project milestone edit form 404 keeps the legacy project-scoped not-found 
   await page.goto(`${basePath}/admin/sample/milestone/404/editform`);
 
   await expect(page).toHaveTitle("Page not found - admin/sample");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Milestone");
@@ -582,7 +582,7 @@ function acceptNextAlert(page: Page) {
 }
 
 function milestoneEditScopedShell(page: Page) {
-  return page.locator("header.gnb-outer.project-header").last();
+  return page.locator("header[data-stylex-owner=global-gnb-outer]").last();
 }
 
 async function readMilestoneEditFormMetrics(page: Page) {
@@ -727,7 +727,9 @@ function milestoneEditMarkdownEditor(page: Page) {
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const shells = document.querySelectorAll<HTMLElement>("header.gnb-outer.project-header");
+    const shells = document.querySelectorAll<HTMLElement>(
+      "header[data-stylex-owner=global-gnb-outer]",
+    );
     const navbar = shells.item(shells.length - 1);
     const form = navbar?.querySelector<HTMLElement>(".gnb-search-form");
     const scope = navbar?.querySelector<HTMLElement>("#gnb-search-scope-title");

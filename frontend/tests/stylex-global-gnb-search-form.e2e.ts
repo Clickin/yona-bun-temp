@@ -201,7 +201,7 @@ for (const state of [
       expect(evidence.formBox.top - evidence.itemBox.top).toBe(5);
     }
     await saveScreenshot(
-      state.width <= 720 ? page.locator("header.gnb-outer") : item,
+      state.width <= 720 ? page.locator("header[data-stylex-owner=global-gnb-outer]") : item,
       `stylex-global-gnb-search-form-${state.label.replaceAll(" ", "-")}.png`,
     );
   });

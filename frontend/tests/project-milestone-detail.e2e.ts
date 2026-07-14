@@ -236,7 +236,7 @@ test("project milestone detail exposes legacy group search scope for org-owned p
   await expect(page).toHaveTitle("v1.0 - weblabs/portal");
   await expectHeadTitle(page, "v1.0 - weblabs/portal");
   await expect(page).toHaveURL(`${basePath}/weblabs/portal/milestone/5?state=open`);
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -1988,7 +1988,7 @@ async function milestoneDetailShellMetrics(page: Page) {
 
 async function milestoneDetailGnbSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const input = document.querySelector<HTMLElement>(

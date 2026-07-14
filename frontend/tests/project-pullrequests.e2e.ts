@@ -170,7 +170,9 @@ test("project closed pull request empty list matches legacy git/list.scala.html 
 
   await page.goto(`${basePath}/admin/sample/closedPullRequests?filter=empty`);
   expectClosedPullRequestsLocation(page, `${basePath}/admin/sample/closedPullRequests`, "empty");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -231,7 +233,9 @@ test("project sent pull request empty list matches legacy git/list.scala.html DO
 
   await page.goto(`${basePath}/admin/sample/sentPullRequests?filter=empty`);
   expectSentPullRequestsLocation(page, `${basePath}/admin/sample/sentPullRequests`, "empty");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -730,7 +734,7 @@ test("protected org-owned project pull request restores legacy title and search-
 
   await page.goto(`${basePath}/weblabs/portal/pullRequests?filter=empty`);
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator("#search")).toBeVisible();
   await expect(page.locator(".error-wrap")).toHaveText("No pull requests have been received");
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
@@ -800,7 +804,9 @@ test("protected org-owned project closed pull request restores project search-sc
   await page.goto(`${basePath}/weblabs/portal/closedPullRequests?filter=empty`);
   expectClosedPullRequestsLocation(page, `${basePath}/weblabs/portal/closedPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -874,7 +880,9 @@ test("protected org-owned project sent pull request restores project search-scop
   await page.goto(`${basePath}/weblabs/portal/sentPullRequests?filter=empty`);
   expectSentPullRequestsLocation(page, `${basePath}/weblabs/portal/sentPullRequests`, "empty");
   await expect(page).toHaveTitle("portal - Pull request - weblabs/portal");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/weblabs/portal/search`,
@@ -965,7 +973,9 @@ test("svn project pull request route matches legacy badrequest_default site shel
 
   await page.goto(`${basePath}/admin/svnplayground/pullRequests`);
   await expect(page).toHaveTitle("This request is only supported in a git project.");
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
     "List All",
   );
@@ -1023,7 +1033,9 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   await page.goto(`${basePath}/admin/svnplayground/closedPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
@@ -1083,7 +1095,9 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/sentPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
   await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
   await expect(page.locator(".error-wrap i.ico-404")).toBeHidden();
@@ -1142,7 +1156,7 @@ async function svnPullRequestErrorMetrics(page: Page) {
     };
     const button = rect(".error-wrap .ybtn");
     const error = rect(".error-wrap");
-    const gnb = rect(".gnb-outer");
+    const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const illustration = rect(".error-wrap i.ico-404");
     const message = rect(".error-wrap p");
     const pageWrap = rect(".page-wrap-outer");
@@ -1833,7 +1847,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, .page-footer-outer",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1872,7 +1886,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttr(attr: Attr): string {
       if (
         attr.name === "class" &&
-        attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]')
+        (attr.ownerElement?.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          attr.ownerElement?.matches('[data-stylex-owner="global-gnb-outer"]'))
       ) {
         return "";
       }
@@ -2018,20 +2033,31 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function normalizeAttr(attr: Attr): string {
-      const retiredToken =
+      const isSiteLayoutHeader =
         attr.name === "class" &&
         attr.ownerElement &&
-        attr.value.split(/\s+/u).includes("gnb-inner") &&
-        attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
-        attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-          ? "gnb-inner"
-          : attr.name === "class" &&
-              attr.ownerElement &&
-              attr.value.split(/\s+/u).includes("gnb-nav") &&
-              attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-              attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-nav"
-            : null;
+        attr.value.split(/\s+/u).includes("gnb-outer") &&
+        attr.ownerElement.matches("header.gnb-outer") &&
+        attr.ownerElement.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !==
+          null;
+      const retiredToken =
+        isSiteLayoutHeader && attr.value.split(/\s+/u).includes("project-header")
+          ? "project-header"
+          : isSiteLayoutHeader
+            ? "gnb-outer"
+            : attr.name === "class" &&
+                attr.ownerElement &&
+                attr.value.split(/\s+/u).includes("gnb-inner") &&
+                attr.ownerElement.matches("header.gnb-outer > div.gnb-inner") &&
+                attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-inner"
+              : attr.name === "class" &&
+                  attr.ownerElement &&
+                  attr.value.split(/\s+/u).includes("gnb-nav") &&
+                  attr.ownerElement.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                  attr.ownerElement.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-nav"
+                : null;
       if (retiredToken) {
         const originalValue = attr.value;
         attr.value = originalValue
@@ -2257,7 +2283,7 @@ async function pullRequestSearchMetrics(page: Page) {
 
 async function pullRequestHeaderSearchScopeMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = form?.querySelector<HTMLElement>(
@@ -2289,7 +2315,7 @@ async function pullRequestHeaderSearchScopeMetrics(page: Page) {
 
 async function pullRequestBadRequestMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>(".gnb-outer");
+    const header = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer");
     const errorWrap = document.querySelector<HTMLElement>(".error-wrap");
     const message = errorWrap?.querySelector<HTMLElement>("p");

@@ -64,7 +64,7 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
   expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
   await expect(page).toHaveTitle(canonicalTitle);
   expect(await page.locator("head title").allTextContents()).toContain(canonicalTitle);
-  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
   await expect(page.locator(".signup-btn a")).toHaveAttribute(
     "href",
@@ -156,11 +156,17 @@ test("root not-found shell source uses Link semantics for legacy navigation anch
 });
 
 async function canonicalizeIndexRoots(page: Page) {
-  return canonicalizeRoots(page, ".unsupported, .gnb-outer, .siteintro-bg, .page-footer-outer");
+  return canonicalizeRoots(
+    page,
+    ".unsupported, [data-stylex-owner=global-gnb-outer], .siteintro-bg, .page-footer-outer",
+  );
 }
 
 async function canonicalizeAuthPublicRoots(page: Page) {
-  return canonicalizeRoots(page, ".unsupported, .gnb-outer, .page.full, .page-footer-outer");
+  return canonicalizeRoots(
+    page,
+    ".unsupported, [data-stylex-owner=global-gnb-outer], .page.full, .page-footer-outer",
+  );
 }
 
 async function canonicalizeRoots(page: Page, selector: string) {
@@ -227,7 +233,7 @@ async function canonicalizeRoots(page: Page, selector: string) {
 async function readDesktopIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(".site-heading");
@@ -301,7 +307,7 @@ async function readDesktopIndexMetrics(page: Page) {
 async function readMobileIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
+    const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
     const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");

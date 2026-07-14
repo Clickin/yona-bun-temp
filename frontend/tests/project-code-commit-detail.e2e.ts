@@ -566,7 +566,9 @@ test("project commit detail restores legacy project GNB search scope", async ({ 
   await mockProjectCommitDetail(page, detailRequests);
 
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
-  await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -2117,7 +2119,9 @@ test("project SVN commit detail branch dropdown uses route-local state", async (
 
 async function readCommitDetailNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const header = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const header = document.querySelector<HTMLElement>(
+      "header[data-stylex-owner=global-gnb-outer]",
+    );
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const search = document.querySelector<HTMLElement>(

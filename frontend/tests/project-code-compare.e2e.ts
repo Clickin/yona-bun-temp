@@ -35,7 +35,7 @@ test("project code compare no-change state matches legacy code/compare.scala.htm
 
   await page.goto(`${basePath}/admin/sample/compare/abcdef1234567890..1234567890abcdef`);
   await expect(page).toHaveTitle("abcdef1234567890..1234567890abcdef - admin/sample");
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
@@ -82,8 +82,8 @@ test("project code compare uses legacy project-scoped GNB search shell", async (
   );
 
   await page.goto(compareUrl);
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
-  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -328,7 +328,9 @@ async function mockProjectCompare(
 
 async function compareNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>(
+      "header[data-stylex-owner=global-gnb-outer]",
+    );
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

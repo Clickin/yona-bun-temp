@@ -64,7 +64,9 @@ test("legacy singular notification browser route renders the raw notification fr
   await expect(page.locator(".notification-stream")).toHaveCount(1);
   await expect(page.locator("#notification-more")).toBeVisible();
   await expect(
-    page.locator(".gnb-outer, .page-wrap-outer, .main-stream > .nav-tabs, #setDefaultLoginPage"),
+    page.locator(
+      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .main-stream > .nav-tabs, #setDefaultLoginPage",
+    ),
   ).toHaveCount(0);
 
   expect(await canonicalizeSelector(page, ".notification-stream")).toEqual(
@@ -104,7 +106,9 @@ test("legacy singular notification browser route keeps the anonymous warning fra
   await expect(page.locator(".warning-none")).toContainText("No notification has been received.");
   await expect(page.locator(".notification-stream, #notification-more")).toHaveCount(0);
   await expect(
-    page.locator(".gnb-outer, .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage"),
+    page.locator(
+      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg, #setDefaultLoginPage",
+    ),
   ).toHaveCount(0);
   expect(await canonicalizeSelector(page, ".warning-none")).toEqual(
     await canonicalizeHtml(page, EXPECTED_ANONYMOUS_NOTIFICATION_FRAGMENT),
@@ -181,7 +185,9 @@ async function mockAuthenticatedNotifications(
 
 async function readFragmentMetrics(page: Page) {
   return page.evaluate(() => {
-    const shell = document.querySelector(".gnb-outer, .page-wrap-outer, .siteintro-bg");
+    const shell = document.querySelector(
+      "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, .siteintro-bg",
+    );
     const main = document.querySelector<HTMLElement>("#main");
     const outletHost = main?.querySelector<HTMLElement>(":scope > div") ?? main;
     const firstFragmentNode =

@@ -76,7 +76,9 @@ for (const viewport of [
     await expect(owner).not.toHaveClass(/admin-logged-in-affix/);
     await expect(detail).not.toHaveClass(/small-font/);
     expect(
-      await owner.evaluate((element) => element.nextElementSibling?.matches("header.gnb-outer")),
+      await owner.evaluate((element) =>
+        element.nextElementSibling?.matches("header[data-stylex-owner=global-gnb-outer]"),
+      ),
     ).toBe(true);
 
     const evidence = await readAffixEvidence(owner);

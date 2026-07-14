@@ -1176,6 +1176,28 @@ const globalGnbProjectListStyles = stylex.create({
   },
 });
 
+const globalGnbOuterStyles = stylex.create({
+  root: {
+    backgroundColor: globalColors.globalGnbOuterSurface,
+    boxSizing: globalColors.globalGnbOuterBoxSizing,
+    height: globalColors.globalGnbOuterHeight,
+    minWidth: {
+      default: globalColors.globalGnbOuterZero,
+      "@media (max-width: 720px)": globalColors.globalGnbOuterMobileMinWidth,
+    },
+    paddingBlock: globalColors.globalGnbOuterZero,
+    paddingInline: globalColors.globalGnbOuterPaddingInline,
+  },
+  project: {
+    backgroundColor: globalColors.globalGnbOuterProjectSurface,
+    paddingBlock: globalColors.globalGnbOuterZero,
+    paddingInline: globalColors.globalGnbOuterZero,
+    position: globalColors.globalGnbOuterProjectPosition,
+    width: globalColors.globalGnbOuterProjectWidth,
+    zIndex: globalColors.globalGnbOuterProjectZIndex,
+  },
+});
+
 const globalGnbInnerStyles = stylex.create({
   root: {
     boxSizing: globalColors.globalGnbInnerBoxSizing,
@@ -1409,7 +1431,13 @@ export function SiteLayoutShell({
             </span>
           </div>
         ) : null}
-        <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
+        <header
+          {...stylex.props(
+            globalGnbOuterStyles.root,
+            hasScopedSearch && globalGnbOuterStyles.project,
+          )}
+          data-stylex-owner="global-gnb-outer"
+        >
           <div {...stylex.props(globalGnbInnerStyles.root)} data-stylex-owner="global-gnb-inner">
             {!showLeftSidebar ? (
               <button

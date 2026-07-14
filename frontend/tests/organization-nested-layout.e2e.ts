@@ -13,7 +13,7 @@ test("organization home to boards keeps the legacy shell nodes mounted", async (
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -39,7 +39,7 @@ test("organization home to boards keeps the legacy shell nodes mounted", async (
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -64,7 +64,7 @@ test("organization boards to issues keeps the legacy shell nodes mounted", async
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -90,7 +90,7 @@ test("organization boards to issues keeps the legacy shell nodes mounted", async
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -117,7 +117,7 @@ test("organization issues to pull requests keeps the legacy shell nodes mounted"
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -144,7 +144,7 @@ test("organization issues to pull requests keeps the legacy shell nodes mounted"
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -170,7 +170,7 @@ test("organization pull requests to members keeps the legacy shell nodes mounted
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -197,7 +197,7 @@ test("organization pull requests to members keeps the legacy shell nodes mounted
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -222,7 +222,7 @@ test("organization members to settings keeps the legacy shell nodes mounted", as
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -248,7 +248,7 @@ test("organization members to settings keeps the legacy shell nodes mounted", as
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -274,7 +274,7 @@ test("organization settings to delete form keeps the legacy shell nodes mounted"
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -300,7 +300,7 @@ test("organization settings to delete form keeps the legacy shell nodes mounted"
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -327,7 +327,7 @@ test("organization pull requests to closed pull requests keeps the legacy shell 
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -352,7 +352,7 @@ test("organization pull requests to closed pull requests keeps the legacy shell 
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -378,7 +378,7 @@ test("organization closed pull requests to search keeps the legacy shell nodes m
     (
       window as Window & typeof globalThis & { __organizationNestedLayoutNodes?: unknown }
     ).__organizationNestedLayoutNodes = {
-      header: document.querySelector(".gnb-outer"),
+      header: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       organizationHeader: document.querySelector(".project-header-outer"),
       organizationMenu: document.querySelector(".project-menu-outer"),
     };
@@ -407,7 +407,7 @@ test("organization closed pull requests to search keeps the legacy shell nodes m
       ).__organizationNestedLayoutNodes;
       return Boolean(
         saved &&
-        saved.header === document.querySelector(".gnb-outer") &&
+        saved.header === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
         saved.organizationHeader === document.querySelector(".project-header-outer") &&
         saved.organizationMenu === document.querySelector(".project-menu-outer"),
       );
@@ -421,7 +421,7 @@ test("organization closed pull requests to search keeps the legacy shell nodes m
 
 async function expectShellContainment(page: Page) {
   const metrics = await page.evaluate(() => {
-    const navbar = document.querySelector(".gnb-outer");
+    const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const organizationHeader = document.querySelector(".project-header-outer");
     const organizationMenu = document.querySelector(".project-menu-outer");
     const body = document.querySelector(".page-wrap-outer");

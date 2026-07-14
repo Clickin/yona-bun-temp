@@ -91,7 +91,7 @@ test("project issue edit form matches legacy issue/edit.scala.html core form DOM
     .poll(() => page.evaluate(() => document.head.querySelector("title")?.textContent ?? ""))
     .toBe("Edit issue - admin/sample");
   await expect(page.locator("#issue-form")).toBeVisible();
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -429,7 +429,7 @@ test("project issue edit form not found renders legacy project error shell", asy
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
 
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-outer")).toHaveCount(1);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Issue");
@@ -449,7 +449,7 @@ test("project issue edit form keeps non-404 fallback outside the project shell",
 
   await page.goto(`${basePath}/admin/sample/issue/1/editform`);
 
-  await expect(page.locator(".gnb-outer")).toHaveCount(1);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
   await expect(page.locator(".project-header-outer")).toHaveCount(0);
   await expect(page.locator(".project-menu-outer")).toHaveCount(0);
   await expect(page.locator("#issue-form")).toHaveCount(0);
@@ -702,7 +702,7 @@ test("project issue edit form exposes legacy group search scope when org data ex
 
   await page.goto(issueEditFormUrl);
   await expect(page.locator("#issue-form")).toBeVisible();
-  await expect(page.locator(".gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -1109,7 +1109,7 @@ async function mockProjectIssueEditForm(
 
 async function navbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

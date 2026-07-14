@@ -135,7 +135,9 @@ test("protected org-owned project home uses legacy project and group search scop
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/weblabs/portal`);
-  await expect(page.locator(".gnb-outer")).toHaveClass(/project-header/);
+  await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).not.toHaveClass(
+    /(?:^|\s)(?:gnb-outer|project-header)(?:\s|$)/u,
+  );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
   await expect(page.locator('form[name="gnb-search-form"]')).toHaveAttribute(
     "action",
@@ -1640,7 +1642,7 @@ async function projectHomeNavbarSearchMetrics(page: Page) {
   return page.evaluate(() => {
     const rect = (selector: string) =>
       (document.querySelector(selector) as HTMLElement).getBoundingClientRect();
-    const navbar = rect(".gnb-outer");
+    const navbar = rect("[data-stylex-owner=global-gnb-outer]");
     const form = rect('form[name="gnb-search-form"]');
     const scope = rect("#gnb-search-scope-title");
     const search = rect('[data-stylex-owner="global-gnb-search-box"]');

@@ -395,8 +395,8 @@ test("project pull request changes uses legacy project-scoped GNB search shell",
 
   await page.goto(changesPageUrl);
   await expect(page.locator(".commitInfo .ago")).toHaveAttribute("title", "Jul 4, 2026");
-  await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
-  await expect(page.locator("header.gnb-outer.project-header")).toBeVisible();
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
+  await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".gnb-search-form")).toHaveAttribute(
     "action",
     `${basePath}/admin/sample/search`,
@@ -460,7 +460,7 @@ test("project pull request default changes keeps the project shell for project-s
   ] as const) {
     await mockPullRequestChanges(page, { changesErrorStatus: status });
     await page.goto(`${basePath}/admin/sample/pullRequest/9/changes?status=${status}`);
-    await expect(page.locator("header.gnb-outer.project-header")).toHaveCount(1);
+    await expect(page.locator("header[data-stylex-owner=global-gnb-outer]")).toHaveCount(1);
     await expect(page.locator(".project-header-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-outer")).toHaveCount(1);
     await expect(page.locator(".project-menu-gruop li.active .menu-name")).toHaveText(
@@ -1759,7 +1759,7 @@ async function pullRequestChangesShellMetrics(page: Page) {
 
 async function pullRequestChangesNavbarMetrics(page: Page) {
   return page.evaluate(() => {
-    const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
+    const navbar = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const searchBox = document.querySelector<HTMLElement>(

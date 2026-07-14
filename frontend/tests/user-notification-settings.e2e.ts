@@ -481,7 +481,11 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttribute(current: Element, name: string): string {
-      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+      if (
+        name === "class" &&
+        (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
+          current.matches('[data-stylex-owner="global-gnb-outer"]'))
+      ) {
         return "";
       }
       if (
@@ -508,7 +512,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        ".unsupported, .gnb-outer, .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, .page-footer-outer",
       ),
     )
       .map((root) => visit(root))
@@ -575,18 +579,27 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttribute(current: Element, name: string): string {
-        const retiredToken =
+        const isSiteLayoutHeader =
           name === "class" &&
-          current.classList.contains("gnb-inner") &&
-          current.matches("header.gnb-outer > div.gnb-inner") &&
-          current.querySelector('form[name="gnb-search-form"]') !== null
-            ? "gnb-inner"
-            : name === "class" &&
-                current.classList.contains("gnb-nav") &&
-                current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
-                current.querySelector('form[name="gnb-search-form"]') !== null
-              ? "gnb-nav"
-              : null;
+          current.classList.contains("gnb-outer") &&
+          current.matches("header.gnb-outer") &&
+          current.querySelector(':scope > div.gnb-inner form[name="gnb-search-form"]') !== null;
+        const retiredToken =
+          isSiteLayoutHeader && current.classList.contains("project-header")
+            ? "project-header"
+            : isSiteLayoutHeader
+              ? "gnb-outer"
+              : name === "class" &&
+                  current.classList.contains("gnb-inner") &&
+                  current.matches("header.gnb-outer > div.gnb-inner") &&
+                  current.querySelector('form[name="gnb-search-form"]') !== null
+                ? "gnb-inner"
+                : name === "class" &&
+                    current.classList.contains("gnb-nav") &&
+                    current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                    current.querySelector('form[name="gnb-search-form"]') !== null
+                  ? "gnb-nav"
+                  : null;
         if (retiredToken) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(
