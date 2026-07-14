@@ -426,23 +426,6 @@ select:focus {
   color: #b13427;
 }
 
-.admin-logged-in-affix {
-  z-index: 1000;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px;
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  background-color: #ad0000;
-}
-
-.admin-logged-in-affix .small-font {
-  font-size: 11px;
-  font-weight: normal;
-}
-
 .secret-box,
 .secret-page .secret-box {
   width: 50vw;

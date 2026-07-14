@@ -813,9 +813,11 @@ export function SiteLayoutShell({
           </div>
         </div>
         {shouldRenderSiteAdminAffix ? (
-          <div className="admin-logged-in-affix">
+          <div {...stylex.props(siteAdminAffixStyles.root)} data-stylex-owner="site-admin-affix">
             {t("user.siteAdminLoggedInAffix")}{" "}
-            <span className="small-font">{t("user.siteAdminLoggedInAffix.maxim")}</span>
+            <span {...stylex.props(siteAdminAffixStyles.detail)}>
+              {t("user.siteAdminLoggedInAffix.maxim")}
+            </span>
           </div>
         ) : null}
         <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
@@ -2890,6 +2892,27 @@ const authenticatedSidenavAccountActionStyles = stylex.create({
     ":hover": {
       backgroundColor: globalColors.sidenavLogoutHover,
     },
+  },
+});
+
+const siteAdminAffixStyles = stylex.create({
+  root: {
+    backgroundColor: globalColors.siteAdminAffixSurface,
+    boxSizing: "border-box",
+    color: globalColors.siteAdminAffixText,
+    fontSize: globalColors.siteAdminAffixFontSize,
+    fontWeight: globalColors.siteAdminAffixFontWeight,
+    padding: globalColors.siteAdminAffixPadding,
+    textAlign: "center",
+    width: {
+      default: globalColors.siteAdminAffixWidth,
+      "@media (max-width: 720px)": "auto",
+    },
+    zIndex: globalColors.siteAdminAffixZIndex,
+  },
+  detail: {
+    fontSize: globalColors.siteAdminAffixDetailFontSize,
+    fontWeight: globalColors.siteAdminAffixDetailFontWeight,
   },
 });
 

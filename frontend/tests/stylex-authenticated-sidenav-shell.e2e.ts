@@ -154,13 +154,13 @@ test("non-admin authenticated home and shared shell callers keep the base side-n
   await installAuthenticatedHome(page, { isSiteAdmin: false });
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator(".admin-logged-in-affix")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toHaveCount(0);
   await expect(page.locator("#mySidenav")).toHaveCSS("top", "40px");
 
   await installAuthenticatedHome(page, { isSiteAdmin: true });
   await page.goto(`${BASE_PATH}/projects`);
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator("#mySidenav")).toHaveCSS("top", "40px");
 });
 
@@ -230,7 +230,7 @@ async function readLayoutEvidence(page: Page) {
       return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
     };
     return {
-      affix: box(".admin-logged-in-affix"),
+      affix: box('[data-stylex-owner="site-admin-affix"]'),
       header: box(".gnb-outer"),
       shell: box("#mySidenav"),
     };

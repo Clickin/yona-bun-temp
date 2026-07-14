@@ -1,6 +1,24 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const globalColors = stylex.defineVars({
+  // _page.less: .admin-logged-in-affix background-color
+  siteAdminAffixSurface: "#ad0000",
+  // _variables.less: @yobi-white used by .admin-logged-in-affix
+  siteAdminAffixText: "#ffffff",
+  // _page.less: .admin-logged-in-affix padding
+  siteAdminAffixPadding: "10px",
+  // _page.less: .admin-logged-in-affix desktop width
+  siteAdminAffixWidth: "100%",
+  // _page.less: .admin-logged-in-affix font-size
+  siteAdminAffixFontSize: "20px",
+  // _page.less: .admin-logged-in-affix bold font-weight
+  siteAdminAffixFontWeight: "700",
+  // _page.less: .admin-logged-in-affix z-index
+  siteAdminAffixZIndex: "1000",
+  // _common.less: .small-font font-size
+  siteAdminAffixDetailFontSize: "10px",
+  // _common.less: .small-font normal font-weight
+  siteAdminAffixDetailFontWeight: "400",
   // _usermenu.less: #mySidenav top
   sidenavBaseTop: "40px",
   // index/notifications.scala.html: site-admin affix side-nav top

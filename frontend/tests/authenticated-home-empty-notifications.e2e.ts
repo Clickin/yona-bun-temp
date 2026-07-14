@@ -914,8 +914,11 @@ test("authenticated home empty notifications matches legacy index notifications 
     .toBe("gnb-site-admin");
 
   await page.goto(`${basePath}/`);
-  const profileLink = page.locator("#mySidenav .user-menu a", { hasText: "Profile" });
-  const accountLink = page.locator("#mySidenav .user-menu a", { hasText: "Account" });
+  const accountActions = page.locator(
+    '#mySidenav [data-stylex-owner="authenticated-sidenav-account-actions"]',
+  );
+  const profileLink = accountActions.locator("a", { hasText: "Profile" });
+  const accountLink = accountActions.locator("a", { hasText: "Account" });
   await expect(profileLink).toHaveAttribute("href", `${basePath}/admin`);
   await expect(accountLink).toHaveAttribute("href", `${basePath}/user/editform`);
   await page.evaluate(() => {
@@ -3834,7 +3837,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, .admin-logged-in-affix, .gnb-outer, .page-wrap-outer, .page-footer-outer",
+        '.unsupported, .admin-logged-in-affix, [data-stylex-owner="site-admin-affix"], .gnb-outer, .page-wrap-outer, .page-footer-outer',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -3884,6 +3887,26 @@ async function canonicalizeScreenRoots(page: Page) {
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)
+          .filter((value) => !value.startsWith("x") && !value.includes("-home-route-screen__"))
+          .filter(
+            (value) =>
+              value !== "admin-logged-in-affix" &&
+              !(value === "small-font" && current.parentElement?.matches(".admin-logged-in-affix")),
+          )
+          .filter(
+            (value) =>
+              !(
+                (["row-fluid", "user-menu-wrap"].includes(value) &&
+                  current.matches(
+                    '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                  )) ||
+                (["user-menu", "logout", "label"].includes(value) &&
+                  current.tagName.toLowerCase() === "span" &&
+                  current.closest(
+                    '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                  ))
+              ),
+          )
           .filter(
             (value) =>
               !(
@@ -4015,6 +4038,28 @@ async function canonicalizeHtml(page: Page, html: string) {
           const className = (current.getAttribute(name) ?? "")
             .split(/\s+/)
             .filter((value, index, values) => value && values.indexOf(value) === index)
+            .filter((value) => !value.startsWith("x") && !value.includes("-home-route-screen__"))
+            .filter(
+              (value) =>
+                value !== "admin-logged-in-affix" &&
+                !(
+                  value === "small-font" && current.parentElement?.matches(".admin-logged-in-affix")
+                ),
+            )
+            .filter(
+              (value) =>
+                !(
+                  (["row-fluid", "user-menu-wrap"].includes(value) &&
+                    current.matches(
+                      '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                    )) ||
+                  (["user-menu", "logout", "label"].includes(value) &&
+                    current.tagName.toLowerCase() === "span" &&
+                    current.closest(
+                      '.row-fluid.user-menu-wrap, [data-stylex-owner="authenticated-sidenav-account-actions"]',
+                    ))
+                ),
+            )
             .filter(
               (value) =>
                 !(

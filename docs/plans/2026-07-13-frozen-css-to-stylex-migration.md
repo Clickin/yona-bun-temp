@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-five user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-seven shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -703,6 +703,23 @@ returns `top` and `y` from `84px` to the immutable legacy `40px` base, while x/w
 shell declarations remain unchanged. The existing lower rule is deletion evidence, not a
 fallback for the `84px` state; no new fallback or numeric compensation was added. This is not
 Wave 1 completion.
+
+The thirty-seventh verified slice migrates the visible site-admin affix surface rendered by
+`SiteLayoutShell`. StyleX now owns the exact `_page.less` z-index, box model, desktop width,
+padding, white text, 20px/700 centered typography, and `#ad0000` surface; it also owns the
+`_common.less` 10px/400 detail text and the max-720 `_responsive.less` `width:auto` state. Every
+concrete paint and numeric value is defined in the canonical global theme, with no dark values or
+toggle. The React owner drops the presentation-only `admin-logged-in-affix` and `small-font`
+classes, so the frozen responsive `!important` rule cannot continue to win and no declaration of
+this surface remains fallback. The duplicate React `app.css` bridge is deleted; frozen legacy
+sources remain unchanged and cannot match the owner. Fresh Edge/en-US live/local evidence agrees
+on the desktop `1366×43 @ 0,0` surface and header at `y43`, and the mobile `390×66 @ 0,0` wrapped
+surface and header at `y66`, including exact paint and child typography. Removing both StyleX
+classes exposes an unstyled transparent, zero-padding element, proving actual ownership rather
+than an equal lower rule. The exact-DOM canonicalizer now ignores generated StyleX classes as the
+migration policy requires and narrowly normalizes only the affix classes retired here plus the
+already-ledgered authenticated account-action classes retired in slice thirty-four; visible DOM,
+copy, links, order, and other attributes remain compared. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

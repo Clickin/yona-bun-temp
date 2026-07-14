@@ -2183,7 +2183,7 @@ async function issueFormMetrics(page: Page) {
       }
       return element.getBoundingClientRect();
     };
-    const admin = required(".admin-logged-in-affix");
+    const admin = required('[data-stylex-owner="site-admin-affix"]');
     const gnb = required(".gnb-outer");
     const header = required(".project-header-outer");
     const menu = required(".project-menu-outer");

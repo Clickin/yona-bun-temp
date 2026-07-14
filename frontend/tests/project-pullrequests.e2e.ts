@@ -1018,7 +1018,7 @@ test("svn closed pull request route reuses the ko-KR legacy badrequest site shel
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/svnplayground/closedPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
-  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
@@ -1078,7 +1078,7 @@ test("svn sent pull request route reuses the ko-KR legacy badrequest site shell"
   await page.goto(`${basePath}/admin/svnplayground/sentPullRequests`);
   await expect(page).toHaveURL(`${basePath}/admin/svnplayground/sentPullRequests`);
   await expect(page).toHaveTitle("GIT 프로젝트에서만 지원하는 요청입니다.");
-  await expect(page.locator(".admin-logged-in-affix")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
   await expect(page.locator(".project-header-outer, .project-menu-outer")).toHaveCount(0);
   await expect(page.locator(".error-wrap i.ico-404")).toHaveCount(1);
