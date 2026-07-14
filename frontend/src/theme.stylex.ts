@@ -19,6 +19,12 @@ export const globalColors = stylex.defineVars({
   siteAdminAffixDetailFontSize: "10px",
   // _common.less: .small-font normal font-weight
   siteAdminAffixDetailFontWeight: "400",
+  // _page.less: .gnb-inner layout with the live legacy box model
+  globalGnbInnerBoxSizing: "content-box",
+  globalGnbInnerWidth: "98%",
+  globalGnbInnerHeight: "40px",
+  globalGnbInnerMargin: "0px auto",
+  globalGnbInnerText: "#788ba7",
   // _page.less: .gnb-inner .logo-letter background
   globalGnbBrandSurface: "#ff5722",
   // _page.less: .gnb-inner .logo-letter color

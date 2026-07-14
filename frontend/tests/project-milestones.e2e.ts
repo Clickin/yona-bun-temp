@@ -659,7 +659,7 @@ async function readMilestoneListMetrics(page: Page) {
 async function readProtectedPortalMilestoneShellMetrics(page: Page) {
   return page.evaluate(() => {
     const gnb = requireElement(".gnb-outer");
-    const navbar = requireElement(".gnb-inner");
+    const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
     const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
     const projectMenu = requireElement(".project-menu-outer");

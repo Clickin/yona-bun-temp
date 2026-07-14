@@ -228,7 +228,7 @@ async function readDesktopIndexMetrics(page: Page) {
   return page.evaluate(() => {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const signup = document.querySelector<HTMLElement>(".signup-btn");

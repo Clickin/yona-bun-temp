@@ -413,7 +413,7 @@ async function readShellMetrics(page: Page) {
       feedback: box('[data-stylex-owner="global-gnb-feedback-link"]'),
       heroCover: box(".siteintro-cover"),
       heroHeading: box(".site-heading"),
-      inner: box(".gnb-inner"),
+      inner: box('[data-stylex-owner="global-gnb-inner"]'),
       login: box("#required-logged-in"),
       listAll: box('[data-stylex-owner="global-gnb-nav"] > li:nth-child(2) > a'),
       logo: box('[data-stylex-owner="global-gnb-brand-link"]'),

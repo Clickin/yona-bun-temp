@@ -346,6 +346,9 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+        return "";
+      }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
@@ -424,18 +427,25 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string): string {
-        if (
+        const retiredToken =
           name === "class" &&
-          current.classList.contains("gnb-nav") &&
-          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.classList.contains("gnb-inner") &&
+          current.matches("header.gnb-outer > div.gnb-inner") &&
           current.querySelector('form[name="gnb-search-form"]') !== null
-        ) {
+            ? "gnb-inner"
+            : name === "class" &&
+                current.classList.contains("gnb-nav") &&
+                current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                current.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-nav"
+              : null;
+        if (retiredToken) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(
             name,
             originalValue
               .split(/\s+/u)
-              .filter((token) => token !== "gnb-nav")
+              .filter((token) => token !== retiredToken)
               .join(" "),
           );
           try {

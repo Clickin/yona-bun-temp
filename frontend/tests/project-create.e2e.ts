@@ -537,6 +537,9 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+        return "";
+      }
       const value = current.getAttribute(name) ?? "";
       if (
         name === "class" &&
@@ -673,15 +676,22 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
-      if (
+      const retiredToken =
         name === "class" &&
-        value.split(/\s+/u).includes("gnb-nav") &&
-        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+        value.split(/\s+/u).includes("gnb-inner") &&
+        current.matches("header.gnb-outer > div.gnb-inner") &&
         current.querySelector('form[name="gnb-search-form"]') !== null
-      ) {
+          ? "gnb-inner"
+          : name === "class" &&
+              value.split(/\s+/u).includes("gnb-nav") &&
+              current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+              current.querySelector('form[name="gnb-search-form"]') !== null
+            ? "gnb-nav"
+            : null;
+      if (retiredToken) {
         return value
           .split(/\s+/u)
-          .filter((token) => token !== "gnb-nav")
+          .filter((token) => token !== retiredToken)
           .join(" ");
       }
       return value;

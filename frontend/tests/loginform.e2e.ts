@@ -1238,6 +1238,9 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class" && current.matches('[data-stylex-owner="global-gnb-inner"]')) {
+        return "";
+      }
       if (
         name === "class" &&
         current.classList.contains("gnb-nav") &&
@@ -1662,7 +1665,7 @@ async function readRootLoginDialogLayout(page: Page) {
 async function readDesktopLoginMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const tagLineWrap = document.querySelector<HTMLElement>(".tag-line-wrap.login");
     const title = document.querySelector<HTMLElement>(".tag-line-wrap .title");
@@ -1738,7 +1741,7 @@ async function readDesktopLoginMetrics(page: Page) {
 
 async function readMobileLoginMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const formWrap = document.querySelector<HTMLElement>(".login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginIdOrEmailD");
@@ -1915,18 +1918,25 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttribute(current: Element, name: string): string {
-        if (
+        const retiredToken =
           name === "class" &&
-          current.classList.contains("gnb-nav") &&
-          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+          current.classList.contains("gnb-inner") &&
+          current.matches("header.gnb-outer > div.gnb-inner") &&
           current.querySelector('form[name="gnb-search-form"]') !== null
-        ) {
+            ? "gnb-inner"
+            : name === "class" &&
+                current.classList.contains("gnb-nav") &&
+                current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                current.querySelector('form[name="gnb-search-form"]') !== null
+              ? "gnb-nav"
+              : null;
+        if (retiredToken) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(
             name,
             originalValue
               .split(/\s+/u)
-              .filter((token) => token !== "gnb-nav")
+              .filter((token) => token !== retiredToken)
               .join(" "),
           );
           try {

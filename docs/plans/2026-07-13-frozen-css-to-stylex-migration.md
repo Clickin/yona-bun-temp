@@ -879,6 +879,21 @@ boundary without changing legacy fixtures. Typecheck, foundation, production bui
 verification, unchanged generated fallback hash, format, lint, diff, and visual gates pass. This is
 not Wave 1 completion.
 
+The fiftieth verified slice migrates the `SiteLayoutShell` GNB inner wrapper while preserving the
+exact header/inner nesting and all already-owned child order and behavior. Colocated StyleX owns
+the live-legacy 98% width, 40px height, `0 auto` centering, `#788ba7` inherited text color, and
+content-box model through canonical global theme variables. Fresh legacy evidence showed that the
+React bridge's border-box and clearfix pseudo do not exist in legacy and do not affect measured
+geometry, so the SiteLayout owner deliberately returns to content-box with no pseudo instead of
+copying that bridge. The runtime `gnb-inner` class is removed only from SiteLayout; generic root,
+descendant, responsive, and clearfix fallback stays for the four independent route consumers.
+HOME/project desktop and mobile geometry agrees exactly, organization fixtures preserve the same
+width formula and containment, and focused plus `/restricted` fallback tests pass 17/17. Fourteen
+runtime locators, one actual closest check, and thirty-nine existing local full-shell canonicalizer
+pairs move to the stable owner without changing legacy fixtures. Typecheck, foundation, production
+build/StyleX verification, frozen and unchanged fallback hashes, lint, format, diff, and visual
+gates pass. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

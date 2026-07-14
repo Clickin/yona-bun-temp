@@ -1176,6 +1176,16 @@ const globalGnbProjectListStyles = stylex.create({
   },
 });
 
+const globalGnbInnerStyles = stylex.create({
+  root: {
+    boxSizing: globalColors.globalGnbInnerBoxSizing,
+    color: globalColors.globalGnbInnerText,
+    height: globalColors.globalGnbInnerHeight,
+    margin: globalColors.globalGnbInnerMargin,
+    width: globalColors.globalGnbInnerWidth,
+  },
+});
+
 const globalGnbNavStyles = stylex.create({
   nav: {
     boxSizing: globalColors.globalGnbNavBoxSizing,
@@ -1400,7 +1410,7 @@ export function SiteLayoutShell({
           </div>
         ) : null}
         <header className={hasScopedSearch ? "gnb-outer project-header" : "gnb-outer"}>
-          <div className="gnb-inner">
+          <div {...stylex.props(globalGnbInnerStyles.root)} data-stylex-owner="global-gnb-inner">
             {!showLeftSidebar ? (
               <button
                 {...stylex.props(globalSidebarOpenPinStyles.root)}
