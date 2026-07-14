@@ -82,7 +82,7 @@ test("authenticated Home content grid has bounded global-theme StyleX ownership"
 
   expect(appCss).toContain(".content-container .main-stream {");
   expect(appCss).toContain(".content-container .main-stream .activity-streams {");
-  expect(appCss).toContain(".content-container .main-stream .activity-streams .warning-none {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams .warning-none {");
   expect(appCss).not.toContain("  .main-stream,\n  .content-container .main-stream {");
   expect(projectRoute).toContain('className="main-stream" style={{ width: "100%" }}');
 });
@@ -121,7 +121,9 @@ for (const viewport of [
     await expect(
       main.locator(':scope > [data-stylex-owner="authenticated-home-series-tabs"]'),
     ).toHaveCount(1);
-    await expect(main.locator(":scope > .activity-streams.notification-wrap")).toHaveCount(1);
+    await expect(
+      main.locator(':scope > [data-stylex-owner="authenticated-home-notification-list"]'),
+    ).toHaveCount(1);
     await expect(grid.locator(`:scope > ${MAIN} + ${RAIL}`)).toHaveCount(1);
 
     const evidence = await grid.evaluate((gridElement) => {
@@ -250,48 +252,6 @@ for (const viewport of [
     });
   });
 }
-
-test("authenticated Home content grid retains only active notification ancestry fallback", async ({
-  page,
-}) => {
-  await page.setViewportSize({ height: 900, width: 1366 });
-  await installAuthenticatedHome(page);
-  await page.goto(`${BASE_PATH}/`);
-  const grid = page.locator(GRID);
-  await expect(grid).toBeVisible();
-
-  const evidence = await grid.evaluate((gridElement) => {
-    const main = gridElement.firstElementChild as HTMLElement;
-    const activity = main.querySelector(".activity-streams") as HTMLElement;
-    const warning = activity.querySelector(".warning-none") as HTMLElement;
-    const snapshot = () => ({
-      activityMargin: getComputedStyle(activity).margin,
-      mainMarginBottom: getComputedStyle(main).marginBottom,
-      warningBackground: getComputedStyle(warning).backgroundColor,
-      warningPadding: getComputedStyle(warning).padding,
-      warningRadius: getComputedStyle(warning).borderRadius,
-    });
-    const retained = snapshot();
-    gridElement.classList.remove("content-container");
-    const withoutRequiredAncestry = snapshot();
-    gridElement.classList.add("content-container");
-    return { retained, withoutRequiredAncestry };
-  });
-  expect(evidence.retained).toEqual({
-    activityMargin: "0px",
-    mainMarginBottom: "15px",
-    warningBackground: "rgb(139, 139, 139)",
-    warningPadding: "15px 20px",
-    warningRadius: "6px",
-  });
-  expect(evidence.withoutRequiredAncestry).toEqual({
-    activityMargin: "0px",
-    mainMarginBottom: "15px",
-    warningBackground: "rgb(212, 212, 212)",
-    warningPadding: "0px",
-    warningRadius: "0px",
-  });
-});
 
 test("authenticated Home content grid paint is isolated from retired presentation classes", async ({
   page,

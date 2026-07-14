@@ -794,8 +794,12 @@ test("authenticated home empty notifications matches legacy index notifications 
   await expect(
     page.locator('[data-stylex-owner="authenticated-home-page-wrap-outer"]'),
   ).toBeVisible();
-  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
-  await expect(page.locator(".warning-none")).toContainText("No notification");
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-list"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
+  ).toContainText("No notification");
   await expect(
     page.locator(
       ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
@@ -981,9 +985,9 @@ test("authenticated home flash renders legacy toast without route-local notify s
   expect(routeSource).not.toContain("new URLSearchParams(window.location.search)");
 
   await page.goto(`${basePath}/?signup=requested`);
-  await expect(page.locator(".activity-streams.notification-wrap .warning-none")).toContainText(
-    "No notification has been received.",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
+  ).toContainText("No notification has been received.");
 
   const toast = page.locator(".yobiToasts .toast", {
     hasText:
@@ -2031,8 +2035,12 @@ test("direct notifications route matches legacy Application.notifications empty 
   await expect(
     page.locator('[data-stylex-owner="authenticated-home-page-wrap-outer"]'),
   ).toBeVisible();
-  await expect(page.locator(".activity-streams.notification-wrap")).toBeVisible();
-  await expect(page.locator(".warning-none")).toContainText("No notification");
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-list"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-empty"]'),
+  ).toContainText("No notification");
   await expect(
     page.locator(
       ".myOrganizationList, .myProjectList, .myRecentIssueList, #usermenu-tab-content-list",
@@ -2154,7 +2162,10 @@ test("direct notifications route matches legacy Application.notifications empty 
       "<div",
       routeSource.indexOf('data-stylex-owner="authenticated-home-main-stream"'),
     ),
-    routeSource.indexOf('<ul className="activity-streams notification-wrap unstyled">'),
+    routeSource.lastIndexOf(
+      "<ul",
+      routeSource.indexOf('data-stylex-owner="authenticated-home-notification-list"'),
+    ),
   );
   const setDefaultButtonSource = routeSource.slice(
     routeSource.indexOf('id="setDefaultLoginPage"'),
@@ -3145,7 +3156,9 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
       '[data-stylex-owner="authenticated-home-main-stream"]',
     );
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
-    const warning = document.querySelector<HTMLElement>(".warning-none");
+    const warning = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="authenticated-home-notification-empty"]',
+    );
     const guideToggleButton = document.querySelector<HTMLElement>(
       '[data-stylex-owner="authenticated-home-intro-guide-toggle"] button',
     );
@@ -4188,6 +4201,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           current.matches("li.active:first-child") &&
           current.parentElement?.parentElement?.matches("div.main-stream") === true &&
           current.parentElement?.nextElementSibling?.matches(".activity-streams") === true;
+        const isAuthenticatedHomeNotificationList =
+          name === "class" &&
+          current.matches("ul.activity-streams.notification-wrap.unstyled") &&
+          current.parentElement?.matches("div.main-stream") === true;
+        const isAuthenticatedHomeNotificationEmpty =
+          name === "class" &&
+          current.matches("div.warning-none") &&
+          current.parentElement?.matches("ul.activity-streams.notification-wrap.unstyled") === true;
         const isAuthenticatedHomeIndexRail =
           name === "class" &&
           current.matches("div.span4.index-menu.right-menu.span-hard-wrap") &&
@@ -4212,36 +4233,42 @@ async function canonicalizeHtml(page: Page, html: string) {
                           ? ["nav", "nav-tabs"]
                           : isAuthenticatedHomeActiveSeriesTab
                             ? ["active"]
-                            : isAuthenticatedHomeIndexRail
-                              ? ["span4", "index-menu", "right-menu", "span-hard-wrap"]
-                              : isSiteLayoutFooterOuter
-                                ? ["page-footer-outer"]
-                                : isSiteLayoutFooterInner
-                                  ? ["page-footer"]
-                                  : isSiteLayoutFooterProvider
-                                    ? ["provider"]
-                                    : isSiteLayoutHeader &&
-                                        current.classList.contains("project-header")
-                                      ? ["project-header"]
-                                      : isSiteLayoutHeader
-                                        ? ["gnb-outer"]
-                                        : name === "class" &&
-                                            current.classList.contains("gnb-inner") &&
-                                            current.matches("header.gnb-outer > div.gnb-inner") &&
-                                            current.querySelector(
-                                              'form[name="gnb-search-form"]',
-                                            ) !== null
-                                          ? ["gnb-inner"]
-                                          : name === "class" &&
-                                              current.classList.contains("gnb-nav") &&
-                                              current.matches(
-                                                "header.gnb-outer > .gnb-inner > ul.gnb-nav",
-                                              ) &&
-                                              current.querySelector(
-                                                'form[name="gnb-search-form"]',
-                                              ) !== null
-                                            ? ["gnb-nav"]
-                                            : [];
+                            : isAuthenticatedHomeNotificationList
+                              ? ["notification-wrap", "unstyled"]
+                              : isAuthenticatedHomeNotificationEmpty
+                                ? ["warning-none"]
+                                : isAuthenticatedHomeIndexRail
+                                  ? ["span4", "index-menu", "right-menu", "span-hard-wrap"]
+                                  : isSiteLayoutFooterOuter
+                                    ? ["page-footer-outer"]
+                                    : isSiteLayoutFooterInner
+                                      ? ["page-footer"]
+                                      : isSiteLayoutFooterProvider
+                                        ? ["provider"]
+                                        : isSiteLayoutHeader &&
+                                            current.classList.contains("project-header")
+                                          ? ["project-header"]
+                                          : isSiteLayoutHeader
+                                            ? ["gnb-outer"]
+                                            : name === "class" &&
+                                                current.classList.contains("gnb-inner") &&
+                                                current.matches(
+                                                  "header.gnb-outer > div.gnb-inner",
+                                                ) &&
+                                                current.querySelector(
+                                                  'form[name="gnb-search-form"]',
+                                                ) !== null
+                                              ? ["gnb-inner"]
+                                              : name === "class" &&
+                                                  current.classList.contains("gnb-nav") &&
+                                                  current.matches(
+                                                    "header.gnb-outer > .gnb-inner > ul.gnb-nav",
+                                                  ) &&
+                                                  current.querySelector(
+                                                    'form[name="gnb-search-form"]',
+                                                  ) !== null
+                                                ? ["gnb-nav"]
+                                                : [];
         if (retiredTokens.length > 0) {
           const originalValue = current.getAttribute(name) ?? "";
           current.setAttribute(

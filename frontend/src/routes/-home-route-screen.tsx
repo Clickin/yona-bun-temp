@@ -516,9 +516,15 @@ function HomeScreen({
                       ) : null}
                     </li>
                   </ul>
-                  <ul className="activity-streams notification-wrap unstyled">
+                  <ul
+                    className={`activity-streams ${stylex.props(authenticatedHomeNotificationStyles.list).className}`}
+                    data-stylex-owner="authenticated-home-notification-list"
+                  >
                     {notificationItems.length === 0 ? (
-                      <div className="warning-none">
+                      <div
+                        {...stylex.props(authenticatedHomeNotificationStyles.empty)}
+                        data-stylex-owner="authenticated-home-notification-empty"
+                      >
                         <i className="yobicon-danger" />
                         {t("notification.none")}
                       </div>
@@ -2012,6 +2018,24 @@ const authenticatedHomeSeriesTabStyles = stylex.create({
       ":focus": globalColors.authenticatedHomeSeriesTabActiveText,
     },
     cursor: globalColors.authenticatedHomeSeriesTabActiveCursor,
+  },
+});
+
+const authenticatedHomeNotificationStyles = stylex.create({
+  list: {
+    listStyle: globalColors.authenticatedHomeNotificationListStyle,
+    margin: globalColors.authenticatedHomeNotificationZero,
+    padding: globalColors.authenticatedHomeNotificationZero,
+  },
+  empty: {
+    backgroundColor: globalColors.authenticatedHomeNotificationEmptySurface,
+    borderRadius: globalColors.authenticatedHomeNotificationEmptyRadius,
+    borderStyle: globalColors.authenticatedHomeNotificationEmptyBorderStyle,
+    borderWidth: globalColors.authenticatedHomeNotificationEmptyBorderWidth,
+    color: globalColors.authenticatedHomeNotificationEmptyText,
+    fontSize: globalColors.authenticatedHomeNotificationEmptyFontSize,
+    padding: globalColors.authenticatedHomeNotificationEmptyPadding,
+    textAlign: globalColors.authenticatedHomeNotificationEmptyTextAlign,
   },
 });
 

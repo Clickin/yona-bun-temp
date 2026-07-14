@@ -152,6 +152,17 @@ export const globalColors = stylex.defineVars({
   authenticatedHomeSeriesTabActiveText: "#555555",
   authenticatedHomeSeriesTabActiveSurface: "#ffffff",
   authenticatedHomeSeriesTabActiveCursor: "default",
+  // Bootstrap 2.3.1 ul.unstyled + _page.less: authenticated Home notification list/empty state
+  authenticatedHomeNotificationZero: "0px",
+  authenticatedHomeNotificationListStyle: "none",
+  authenticatedHomeNotificationEmptyPadding: "15px 20px",
+  authenticatedHomeNotificationEmptyText: "#ffffff",
+  authenticatedHomeNotificationEmptyFontSize: "16px",
+  authenticatedHomeNotificationEmptyTextAlign: "center",
+  authenticatedHomeNotificationEmptySurface: "#8b8b8b",
+  authenticatedHomeNotificationEmptyBorderStyle: "none",
+  authenticatedHomeNotificationEmptyBorderWidth: "0px",
+  authenticatedHomeNotificationEmptyRadius: "6px",
   // _page.less: .gnb-inner layout with the live legacy box model
   globalGnbInnerBoxSizing: "content-box",
   globalGnbInnerWidth: "98%",

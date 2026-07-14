@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-seven shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-eight shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -995,6 +995,22 @@ series-tabs/content-grid/page-wrap/intro matrix passes 23/23 at 1366, 800, and 3
 geometry, active/inactive interactions, screenshots, class isolation, typecheck, production
 build/StyleX verification, unchanged app.css/manifest and generated fallback hashes, and diff
 gates pass. This is not Wave 1 completion.
+
+The fifty-eighth verified slice migrates the authenticated HOME notification list container and
+its zero-result warning rendered from `index/notifications.scala.html` and
+`partial_notifications.scala.html`. Colocated StyleX owns the Bootstrap list reset and frozen
+`_page.less` warning padding, white text, 16px centered type, `#8b8b8b` surface, zero border, and
+6px radius through canonical global theme variables. Runtime `notification-wrap`, `unstyled`, and
+`warning-none` presentation tokens are removed only from this owner, and the now-zero-consumer
+ten-line nested warning bridge is deleted from `app.css`; the exact `ul > div` output skeleton,
+copy, and `yobicon-danger` primitive remain. `activity-streams` stays because populated frozen
+descendants still consume it, proven non-vacuously by an `info` icon color mutation when the
+ancestry is removed and restored. An authenticated live empty fragment provides 1366, 800, and
+390px geometry/paint evidence without modifying account data. Focused RED 2/5 becomes GREEN 5/5,
+and the notification/content-grid/series-tabs/page-wrap/intro matrix passes 27/27. Screenshots,
+class isolation, global-theme ownership, typecheck, production build/StyleX verification,
+manifest/app.css hash agreement, unchanged generated fallback hash, lint/format, and diff gates
+pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -64,7 +64,11 @@ test("authenticated Home series tabs have bounded global-theme StyleX ownership"
   expect(styles).not.toMatch(/:\s*"(?:block|left|relative|solid|none|pointer|default)"/u);
 
   const markupStart = route.indexOf('data-stylex-owner="authenticated-home-series-tabs"');
-  const markupEnd = route.indexOf('<ul className="activity-streams', markupStart);
+  const notificationOwner = route.indexOf(
+    'data-stylex-owner="authenticated-home-notification-list"',
+    markupStart,
+  );
+  const markupEnd = route.lastIndexOf("<ul", notificationOwner);
   const markup = route.slice(route.lastIndexOf("<ul", markupStart), markupEnd);
   expect(markup).not.toMatch(/className=[^\n]*(?:\bnav\b|\bnav-tabs\b|\bactive\b)/u);
   expect(markup).not.toContain('style={{ position: "relative" }}');
