@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty-one shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty-two shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1057,6 +1057,20 @@ The local owner is uniformly 1px above live because of an already-upstream HOME 
 while its internal and relative geometry is exact; mobile keeps the button in the DOM at zero
 geometry. Focused RED 5/5 becomes GREEN 5/5, adjacent series-tabs passes 7/7, and typecheck,
 production build/StyleX verification, unchanged app/fallback hashes, lint/format, visual
+inspection, and diff gates pass. This is not Wave 1 completion.
+
+The sixty-second verified slice migrates the anonymous HOME feature introduction block rendered
+from `index/partial_intro.scala.html`. Colocated StyleX owns the heading, six-item list, row
+clearfix, item grid, icons, titles, descriptions, border, and max-720 single-column layout through
+canonical global theme variables. The feature presentation classes are removed from this owner,
+and its 77-line `app.css` bridge is deleted; only the outer Bootstrap row and the Yobicon glyph
+font remain real fallback consumers. The Scala inter-item whitespace is preserved so desktop
+inline-block geometry remains exact. Fresh Korean live desktop and mobile evidence matches the
+local owner geometry, paint, copy, order, and glyph primitives, while English copy/order is also
+verified. Focused RED 4/4 becomes GREEN 4/4; the adjacent mobile landing case passes, and the broad
+desktop exact-DOM case retains only pre-existing shell canonicalizer drift outside this owner.
+Typecheck, production build/StyleX verification, manifest agreement at app.css
+`1c8002a8...a32`, unchanged frozen fallback `6417f445...16f`, lint/format, screenshots, visual
 inspection, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives

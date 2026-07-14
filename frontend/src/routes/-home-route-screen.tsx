@@ -599,21 +599,56 @@ function HomeScreen({
             </div>
           </div>
         </div>
-        <div className="feature">
-          <h2>
-            <span>{t("title.features")}</span>
+        <div
+          {...stylex.props(anonymousHomeFeatureStyles.feature)}
+          data-stylex-owner="anonymous-home-feature"
+        >
+          <h2
+            {...stylex.props(anonymousHomeFeatureStyles.heading)}
+            data-stylex-owner="anonymous-home-feature-heading"
+          >
+            <span
+              {...stylex.props(anonymousHomeFeatureStyles.headingText)}
+              data-stylex-owner="anonymous-home-feature-heading-text"
+            >
+              {t("title.features")}
+            </span>
           </h2>
-          <ul className="feature-wrap row">
+          <ul
+            {...stylex.props(anonymousHomeFeatureStyles.list)}
+            data-stylex-owner="anonymous-home-feature-list"
+          >
             {features.map(([iconClassName, title, description]) => (
-              <li key={iconClassName}>
-                <div className="feature-image">
-                  <i className={iconClassName} />
-                </div>
-                <div className="feature-info">
-                  <h3 className="feature-title">{title}</h3>
-                  <p className="feature-desc">{description}</p>
-                </div>
-              </li>
+              <React.Fragment key={iconClassName}>
+                <li
+                  {...stylex.props(anonymousHomeFeatureStyles.item)}
+                  data-stylex-owner="anonymous-home-feature-item"
+                >
+                  <div
+                    {...stylex.props(anonymousHomeFeatureStyles.icon)}
+                    data-stylex-owner="anonymous-home-feature-icon"
+                  >
+                    <i className={iconClassName} />
+                  </div>
+                  <div
+                    {...stylex.props(anonymousHomeFeatureStyles.info)}
+                    data-stylex-owner="anonymous-home-feature-info"
+                  >
+                    <h3
+                      {...stylex.props(anonymousHomeFeatureStyles.title)}
+                      data-stylex-owner="anonymous-home-feature-title"
+                    >
+                      {title}
+                    </h3>
+                    <p
+                      {...stylex.props(anonymousHomeFeatureStyles.description)}
+                      data-stylex-owner="anonymous-home-feature-description"
+                    >
+                      {description}
+                    </p>
+                  </div>
+                </li>{" "}
+              </React.Fragment>
             ))}
           </ul>
         </div>
@@ -1840,6 +1875,107 @@ export function SiteLayoutShell({
     </div>
   );
 }
+
+const anonymousHomeFeatureStyles = stylex.create({
+  feature: {
+    borderBottomColor: globalColors.anonymousHomeFeatureBorderColor,
+    borderBottomStyle: globalColors.anonymousHomeFeatureBorderStyle,
+    borderBottomWidth: globalColors.anonymousHomeFeatureBorderWidth,
+    boxSizing: globalColors.anonymousHomeFeatureBoxSizing,
+    clear: globalColors.anonymousHomeFeatureClear,
+    color: globalColors.anonymousHomeFeatureText,
+    fontFamily: globalColors.anonymousHomeFeatureFontFamily,
+    fontSize: globalColors.anonymousHomeFeatureBaseFontSize,
+    lineHeight: globalColors.anonymousHomeFeatureBaseLineHeight,
+    margin: globalColors.anonymousHomeFeatureMargin,
+    maxWidth: globalColors.anonymousHomeFeatureMaxWidth,
+    padding: globalColors.anonymousHomeFeaturePadding,
+    position: globalColors.anonymousHomeFeaturePosition,
+    textAlign: globalColors.anonymousHomeFeatureTextAlign,
+  },
+  heading: {
+    display: globalColors.anonymousHomeFeatureHeadingDisplay,
+    fontSize: globalColors.anonymousHomeFeatureHeadingFontSize,
+    fontWeight: globalColors.anonymousHomeFeatureHeadingFontWeight,
+    lineHeight: globalColors.anonymousHomeFeatureHeadingLineHeight,
+    margin: globalColors.anonymousHomeFeatureHeadingMargin,
+    padding: globalColors.anonymousHomeFeatureHeadingPadding,
+    zIndex: globalColors.anonymousHomeFeatureHeadingZIndex,
+  },
+  headingText: {
+    backgroundColor: globalColors.anonymousHomeFeatureSurface,
+    display: globalColors.anonymousHomeFeatureHeadingTextDisplay,
+    padding: globalColors.anonymousHomeFeatureHeadingTextPadding,
+  },
+  list: {
+    display: globalColors.anonymousHomeFeatureListDisplay,
+    listStyle: globalColors.anonymousHomeFeatureListStyle,
+    margin: globalColors.anonymousHomeFeatureListMargin,
+    overflow: globalColors.anonymousHomeFeatureListOverflow,
+    padding: globalColors.anonymousHomeFeatureListPadding,
+    width: {
+      default: globalColors.anonymousHomeFeatureListWidth,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeFeatureListMobileWidth,
+    },
+    "::before": {
+      content: globalColors.anonymousHomeFeatureListPseudoContent,
+      display: globalColors.anonymousHomeFeatureListPseudoDisplay,
+      lineHeight: globalColors.anonymousHomeFeatureListPseudoLineHeight,
+    },
+    "::after": {
+      clear: globalColors.anonymousHomeFeatureListPseudoClear,
+      content: globalColors.anonymousHomeFeatureListPseudoContent,
+      display: globalColors.anonymousHomeFeatureListPseudoDisplay,
+      lineHeight: globalColors.anonymousHomeFeatureListPseudoLineHeight,
+    },
+  },
+  item: {
+    boxSizing: globalColors.anonymousHomeFeatureItemBoxSizing,
+    display: globalColors.anonymousHomeFeatureItemDisplay,
+    marginLeft: {
+      default: globalColors.anonymousHomeFeatureItemMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeFeatureMobileItemMarginLeft,
+    },
+    marginTop: {
+      default: globalColors.anonymousHomeFeatureItemMarginTop,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeFeatureMobileItemMarginTop,
+    },
+    position: globalColors.anonymousHomeFeaturePosition,
+    width: {
+      default: globalColors.anonymousHomeFeatureItemWidth,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeFeatureMobileItemWidth,
+    },
+  },
+  icon: {
+    color: globalColors.anonymousHomeFeaturePrimary,
+    fontSize: globalColors.anonymousHomeFeatureIconFontSize,
+    left: globalColors.anonymousHomeFeatureIconLeft,
+    position: globalColors.anonymousHomeFeatureIconPosition,
+    textAlign: globalColors.anonymousHomeFeatureIconTextAlign,
+    top: globalColors.anonymousHomeFeatureIconTop,
+  },
+  info: {
+    display: globalColors.anonymousHomeFeatureInfoDisplay,
+    height: globalColors.anonymousHomeFeatureInfoHeight,
+    marginLeft: globalColors.anonymousHomeFeatureInfoMarginLeft,
+  },
+  title: {
+    fontSize: globalColors.anonymousHomeFeatureTitleFontSize,
+    fontWeight: globalColors.anonymousHomeFeatureTitleFontWeight,
+    lineHeight: globalColors.anonymousHomeFeatureTitleLineHeight,
+    margin: globalColors.anonymousHomeFeatureTitleMargin,
+    padding: globalColors.anonymousHomeFeatureTitlePadding,
+    textAlign: globalColors.anonymousHomeFeatureContentTextAlign,
+  },
+  description: {
+    fontSize: globalColors.anonymousHomeFeatureDescriptionFontSize,
+    fontWeight: globalColors.anonymousHomeFeatureDescriptionFontWeight,
+    lineHeight: globalColors.anonymousHomeFeatureDescriptionLineHeight,
+    margin: globalColors.anonymousHomeFeatureDescriptionMargin,
+    padding: globalColors.anonymousHomeFeatureDescriptionPadding,
+    textAlign: globalColors.anonymousHomeFeatureContentTextAlign,
+  },
+});
 
 const framedSiteShellStyles = stylex.create({
   shell: {

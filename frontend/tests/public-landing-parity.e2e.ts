@@ -64,49 +64,49 @@ const EXPECTED_PUBLIC_LANDING = `
       </div>
     </div>
   </div>
-  <div class="feature">
+  <div>
     <h2><span>Key features</span></h2>
-    <ul class="feature-wrap row">
+    <ul>
       <li>
-        <div class="feature-image"><i class="yobicon-cgicenter"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Project / Organization</h3>
-          <p class="feature-desc">Work based on projects/organizations supported by proper roles</p>
+        <div><i class="yobicon-cgicenter"></i></div>
+        <div>
+          <h3>Project / Organization</h3>
+          <p>Work based on projects/organizations supported by proper roles</p>
         </div>
       </li>
       <li>
-        <div class="feature-image"><i class="yobicon-code"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Code management</h3>
-          <p class="feature-desc">Your code is safely stored in a version controlled system.</p>
+        <div><i class="yobicon-code"></i></div>
+        <div>
+          <h3>Code management</h3>
+          <p>Your code is safely stored in a version controlled system.</p>
         </div>
       </li>
       <li>
-        <div class="feature-image"><i class="yobicon-articles"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Issue tracker</h3>
-          <p class="feature-desc">Yoram provides an issue tracker to help you deal with your issues more easily and clearly.</p>
+        <div><i class="yobicon-articles"></i></div>
+        <div>
+          <h3>Issue tracker</h3>
+          <p>Yoram provides an issue tracker to help you deal with your issues more easily and clearly.</p>
         </div>
       </li>
       <li>
-        <div class="feature-image"><i class="yobicon-lock"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Private repositories</h3>
-          <p class="feature-desc">Keep your code private at your private repositories.</p>
+        <div><i class="yobicon-lock"></i></div>
+        <div>
+          <h3>Private repositories</h3>
+          <p>Keep your code private at your private repositories.</p>
         </div>
       </li>
       <li>
-        <div class="feature-image"><i class="yobicon-preview"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Code review</h3>
-          <p class="feature-desc">Review all changes in the code with your team before merging. Code discussion will help improve your code.</p>
+        <div><i class="yobicon-preview"></i></div>
+        <div>
+          <h3>Code review</h3>
+          <p>Review all changes in the code with your team before merging. Code discussion will help improve your code.</p>
         </div>
       </li>
       <li>
-        <div class="feature-image"><i class="yobicon-friends"></i></div>
-        <div class="feature-info">
-          <h3 class="feature-title">Team play</h3>
-          <p class="feature-desc">Yoram provides a simple and easy team management tool to help you build teams for projects.</p>
+        <div><i class="yobicon-friends"></i></div>
+        <div>
+          <h3>Team play</h3>
+          <p>Yoram provides a simple and easy team management tool to help you build teams for projects.</p>
         </div>
       </li>
     </ul>
@@ -261,10 +261,18 @@ async function readDesktopLandingMetrics(page: Page) {
     const logo = document.querySelector<HTMLElement>(".logo-letter");
     const heading = document.querySelector<HTMLElement>(".site-heading");
     const signup = document.querySelector<HTMLElement>(".signup-btn");
-    const feature = document.querySelector<HTMLElement>(".feature");
-    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
-    const featureIcon = document.querySelector<HTMLElement>(".feature-image");
-    const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    const feature = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature"]',
+    );
+    const featureItem = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-item"]',
+    );
+    const featureIcon = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-icon"]',
+    );
+    const featureInfo = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-info"]',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -334,8 +342,12 @@ async function readMobileLandingMetrics(page: Page) {
     const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const heading = document.querySelector<HTMLElement>(".site-heading");
-    const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
-    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const featureWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-list"]',
+    );
+    const featureItem = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-item"]',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -433,7 +445,14 @@ async function canonicalizeScreenRoots(page: Page) {
         "data-login",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(
+              name === "class" &&
+              current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature")
+            ),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )
