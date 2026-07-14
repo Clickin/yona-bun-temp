@@ -1015,6 +1015,28 @@ const leftSidebarAccountActionStyles = stylex.create({
   },
 });
 
+const leftSidebarProfileIdentityStyles = stylex.create({
+  avatar: {
+    backgroundColor: globalColors.leftSidebarProfileAvatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
+    height: "20px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "20px",
+  },
+  image: {
+    verticalAlign: "top",
+    width: "100%",
+  },
+  label: {
+    display: {
+      default: "inline",
+      "@media (max-width: 720px)": "none",
+    },
+  },
+});
+
 const leftSidebarClosePinStyles = stylex.create({
   button: {
     appearance: "none",
@@ -1142,14 +1164,19 @@ function LegacyFramedSidebar({
               className: undefined,
               "data-status": undefined,
             }}
+            data-stylex-owner="left-sidebar-profile-identity"
             params={{ user: loginId }}
             search={LEGACY_USER_LINK_SEARCH}
             to="/$user"
           >
-            <span className="avatar-wrap smaller">
-              <img alt="" src={avatarUrl} />
-            </span>
-            <span className="caret-text hide-in-mobile">{userLabel}</span>
+            <span {...stylex.props(leftSidebarProfileIdentityStyles.avatar)}>
+              <img
+                {...stylex.props(leftSidebarProfileIdentityStyles.image)}
+                alt=""
+                src={avatarUrl}
+              />
+            </span>{" "}
+            <span {...stylex.props(leftSidebarProfileIdentityStyles.label)}>{userLabel}</span>{" "}
           </Link>
         </span>
         <span {...stylex.props(leftSidebarAccountActionStyles.menu)}>

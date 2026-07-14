@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-one user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-two user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -626,6 +626,21 @@ thumb primitives remain separate shared owners, not fallback declarations for th
 Edge/en-US live legacy and local evidence agrees on desktop `270×232` and mobile
 `317.6875×202` shells, exact focus/empty states, four subtab transitions, filtering, scrollbar
 styles, and no viewport overflow. This is not Wave 1 completion.
+
+The thirty-second verified slice migrates the framed left account row's profile identity. StyleX
+owns the 20px avatar box, avatar image sizing/alignment, and desktop-inline/max-720-hidden user
+label. The avatar surface is an evidenced semantic variable in the canonical global theme; no dark
+value or toggle is introduced. The owner emits none of `avatar-wrap`, `smaller`, `caret-text`, or
+`hide-in-mobile`, while preserving the Scala template's two inline whitespace nodes and the
+existing TanStack profile navigation. The shared avatar and responsive classes remain globally
+active only for their many actual consumers elsewhere and are not fallback for this owner.
+Fresh Edge/en-US legacy and local owner evidence agrees on the desktop `92.109375×16` link,
+20×20 avatar/image, `64.921875×16` label, and the mobile `23.59375×16` avatar-only link with no
+viewport overflow. A separate pre-existing account-row skeleton gap remains: legacy whitespace
+places Log out `3.59375px` after the Account span, while the current adjacent account-actions owner
+does not emit that text node. This slice does not compensate across owner boundaries; restoring
+that exact Scala sibling whitespace is the next account-actions follow-up. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 

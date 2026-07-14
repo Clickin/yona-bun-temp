@@ -111,6 +111,8 @@ export const globalColors = stylex.defineVars({
   leftSidebarAccountText: "#808080",
   // _page.less: .sidebar .user-menu-wrap a:hover color
   leftSidebarAccountHoverText: "#ffffff",
+  // _yobiUI.less: .avatar-wrap background in the left sidebar profile identity
+  leftSidebarProfileAvatarSurface: "#dddddd",
   // _usermenu.less: .logout color
   leftSidebarAccountLogoutText: "#ffffff",
   // Bootstrap 2.3.1 .label background-color

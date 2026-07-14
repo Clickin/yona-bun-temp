@@ -27,7 +27,8 @@ for (const viewport of [
     const logout = owner.getByRole("link", { exact: true, name: "Log out" });
     const logoutLabel = logout.locator(":scope > span.label");
     const pin = owner.getByRole("button", { name: "Sidebar" });
-    const caret = profile.locator(".caret-text.hide-in-mobile");
+    const profileOwner = owner.locator('[data-stylex-owner="left-sidebar-profile-identity"]');
+    const label = profileOwner.locator(":scope > span").nth(1);
 
     await saveScreenshot(
       owner,
@@ -48,8 +49,8 @@ for (const viewport of [
         presentationClasses: [],
       },
       retainedClasses: {
-        avatar: ["avatar-wrap", "smaller"],
-        caret: ["caret-text", "hide-in-mobile"],
+        avatar: [],
+        caret: [],
         logout: ["label"],
         row: ["row-fluid"],
       },
@@ -90,8 +91,12 @@ for (const viewport of [
     await expect(logout).toHaveAttribute("href", `${BASE_PATH}/users/logout`);
     await expect(pin).toHaveAttribute("aria-controls", "sidebar");
     await expect(pin).toHaveAttribute("aria-expanded", "true");
-    if (viewport.label === "mobile") await expect(caret).toBeHidden();
-    else await expect(caret).toBeVisible();
+    await expect(profileOwner).toHaveAttribute(
+      "data-stylex-owner",
+      "left-sidebar-profile-identity",
+    );
+    if (viewport.label === "mobile") await expect(label).toBeHidden();
+    else await expect(label).toBeVisible();
 
     await profile.hover();
     await expect(profile).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -145,13 +150,12 @@ test("left sidebar account actions have complete global-theme StyleX ownership",
   expect(owner).not.toContain('className="user-menu-wrap"');
   expect(owner).not.toContain('className="user-menu"');
   expect(owner).not.toContain('className="user-menu logout label"');
-  for (const retainedClass of [
-    "row-fluid",
-    "avatar-wrap smaller",
-    "caret-text hide-in-mobile",
-    "label",
-  ]) {
+  for (const retainedClass of ["row-fluid", "label"]) {
     expect(owner).toContain(retainedClass);
+  }
+  expect(owner).toContain('data-stylex-owner="left-sidebar-profile-identity"');
+  for (const removedClass of ["avatar-wrap", "smaller", "caret-text", "hide-in-mobile"]) {
+    expect(owner).not.toContain(removedClass);
   }
   expect(owner).toContain('data-stylex-owner="left-sidebar-close-pin"');
   expect(owner).toContain("reloadDocument");
@@ -163,8 +167,11 @@ async function readEvidence(owner: Locator) {
     const accountElement = element.children[1].querySelector("a") as HTMLElement;
     const logoutElement = element.children[2] as HTMLElement;
     const logoutLabelElement = logoutElement.firstElementChild as HTMLElement;
-    const avatarElement = profileElement.querySelector(".avatar-wrap.smaller") as HTMLElement;
-    const caretElement = profileElement.querySelector(".caret-text.hide-in-mobile") as HTMLElement;
+    const profileOwner = element.querySelector(
+      '[data-stylex-owner="left-sidebar-profile-identity"]',
+    ) as HTMLElement;
+    const avatarElement = profileOwner.children[0] as HTMLElement;
+    const caretElement = profileOwner.children[1] as HTMLElement;
     const pinElement = element.querySelector(
       '[data-stylex-owner="left-sidebar-close-pin"]',
     ) as HTMLElement;
