@@ -586,6 +586,10 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
   });
   await page.goto(`${basePath}/users/login?from=legacy`);
 
+  await expect(page.locator("#loginDialog")).toHaveAttribute(
+    "data-stylex-owner",
+    "root-login-dialog",
+  );
   await expect(page.locator("#loginDialog")).toHaveClass(/loginDialog/u);
   await expect(page.locator(`#loginDialog a[href="${basePath}/lostPassword"]`)).toHaveText(
     "Reset password",
@@ -650,6 +654,10 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
 
   await expect(page.locator("#loginDialog")).toBeVisible();
   await expect(page.locator("#loginDialog")).toHaveClass("modal hide loginDialog in");
+  await expect(page.locator("#loginDialog")).toHaveAttribute(
+    "data-stylex-owner",
+    "root-login-dialog",
+  );
   await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "false");
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
   await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
@@ -734,8 +742,9 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function LegacySelect2Assets"),
   );
   expect(rootLoginDialogSource).toContain(
-    'className={visible ? "modal hide loginDialog in" : "modal hide loginDialog"}',
+    'className={[visible ? "modal hide loginDialog in" : "modal hide loginDialog", rootLoginDialogClassName]}',
   );
+  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog"');
   expect(rootLoginDialogSource).toContain('style={visible ? { display: "block" } : undefined}');
   expect(rootLoginDialogSource).toContain("tabIndex={-1}");
   expect(rootLoginDialogSource).toContain('role="dialog"');
@@ -990,7 +999,7 @@ function expectedLoginScreen(
 
 function expectedRootLoginDialog(basePath: string, formBody: string) {
   return `
-<div id="loginDialog" class="modal hide loginDialog in" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false">
+<div id="loginDialog" class="modal hide loginDialog in" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog">
   <div class="modal-body">
     <div class="pull-right">
       <button type="button" class="close" aria-hidden="true">×</button>
@@ -1929,6 +1938,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttribute(current: Element, name: string): string {
+        const value = current.getAttribute(name) ?? "";
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

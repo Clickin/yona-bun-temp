@@ -72,7 +72,6 @@ const RootLoginDialogContext = React.createContext<(() => boolean) | null>(null)
 const ROOT_YOBI_TOAST_DURATION_MS = 5000;
 const GITHUB_OAUTH_LOGO_PATH =
   "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59 0.4 0.07 0.55-0.17 0.55-0.38 0-0.19-0.01-0.82-0.01-1.49-2.01 0.37-2.53-0.49-2.69-0.94-0.09-0.23-0.48-0.94-0.82-1.13-0.28-0.15-0.68-0.52-0.01-0.53 0.63-0.01 1.08 0.58 1.23 0.82 0.72 1.21 1.87 0.87 2.33 0.66 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.64-0.89-3.64-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82 0.64-0.18 1.32-0.27 2-0.27 0.68 0 1.36 0.09 2 0.27 1.53-1.04 2.2-0.82 2.2-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.27 0.82 2.15 0 3.07-1.87 3.75-3.65 3.95 0.29 0.25 0.54 0.73 0.54 1.48 0 1.07-0.01 1.93-0.01 2.2 0 0.21 0.15 0.46 0.55 0.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z";
-const ROOT_LOGIN_DIALOG_INPUT_STYLE = { boxSizing: "content-box", minHeight: 0 } as const;
 const styles = stylex.create({
   rootEventBoundary: {
     "--yoram-stylex-root-boundary": "stylex",
@@ -134,7 +133,68 @@ const styles = stylex.create({
     wordBreak: globalColors.rootYoramToastMessageWordBreak,
     overflowWrap: globalColors.rootYoramToastMessageWordWrap,
   },
+  // common/loginDialog.scala.html + _page.less: root login dialog only
+  rootLoginDialog: {
+    width: {
+      default: globalColors.rootLoginDialogWidth,
+      "@media (max-width: 767px)": globalColors.rootLoginDialogResponsiveWidth,
+    },
+    marginLeft: {
+      default: globalColors.rootLoginDialogMarginLeft,
+      "@media (max-width: 767px)": globalColors.rootLoginDialogResponsiveMarginLeft,
+    },
+  },
+  rootLoginDialogForm: {
+    margin: globalColors.rootLoginDialogFormMargin,
+    width: {
+      "@media (max-width: 767px)": globalColors.rootLoginDialogFormResponsiveWidth,
+    },
+  },
+  rootLoginDialogInput: {
+    boxShadow: globalColors.rootLoginDialogInputBoxShadow,
+  },
+  rootLoginDialogTextInput: {
+    boxSizing: globalColors.rootLoginDialogInputBoxSizing,
+    minHeight: globalColors.rootLoginDialogInputMinHeight,
+    width: {
+      "@media (max-width: 767px)": globalColors.rootLoginDialogInputResponsiveWidth,
+    },
+  },
+  rootLoginDialogError: {
+    display: globalColors.rootLoginDialogErrorDisplay,
+    marginBottom: globalColors.rootLoginDialogErrorMarginBottom,
+    color: globalColors.rootLoginDialogErrorColor,
+  },
+  rootLoginDialogErrorIcon: {
+    verticalAlign: globalColors.rootLoginDialogErrorIconVerticalAlign,
+    marginRight: globalColors.rootLoginDialogErrorIconMarginRight,
+    fontSize: globalColors.rootLoginDialogErrorIconFontSize,
+  },
+  rootLoginDialogCheckbox: {
+    marginTop: globalColors.rootLoginDialogCheckboxMarginTop,
+  },
+  rootLoginDialogRememberLabel: {
+    display: globalColors.rootLoginDialogRememberLabelDisplay,
+  },
+  rootLoginDialogButtonRow: {
+    width: globalColors.rootLoginDialogButtonRowWidth,
+  },
+  rootLoginDialogSubmit: {
+    width: globalColors.rootLoginDialogSubmitWidth,
+  },
 });
+const rootLoginDialogClassName = stylex.props(styles.rootLoginDialog).className;
+const rootLoginDialogFormClassName = stylex.props(styles.rootLoginDialogForm).className;
+const rootLoginDialogInputClassName = stylex.props(styles.rootLoginDialogInput).className;
+const rootLoginDialogTextInputClassName = stylex.props(styles.rootLoginDialogTextInput).className;
+const rootLoginDialogErrorClassName = stylex.props(styles.rootLoginDialogError).className;
+const rootLoginDialogErrorIconClassName = stylex.props(styles.rootLoginDialogErrorIcon).className;
+const rootLoginDialogCheckboxClassName = stylex.props(styles.rootLoginDialogCheckbox).className;
+const rootLoginDialogRememberLabelClassName = stylex.props(
+  styles.rootLoginDialogRememberLabel,
+).className;
+const rootLoginDialogButtonRowClassName = stylex.props(styles.rootLoginDialogButtonRow).className;
+const rootLoginDialogSubmitClassName = stylex.props(styles.rootLoginDialogSubmit).className;
 
 export function useRootToast() {
   const setRootToast = React.use(RootToastContext);
@@ -321,7 +381,16 @@ function RootResetShell() {
           )}
           {rootShellModal ? (
             // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Bootstrap 2 dismisses through the backdrop; root key capture provides Escape dismissal.
-            <div className="modal-backdrop in" onClick={closeRootShellModal}></div>
+            <div
+              className="modal-backdrop in"
+              data-stylex-owner={
+                rootShellModal === "loginDialog" ? "root-login-dialog-backdrop" : undefined
+              }
+              data-stylex-part={
+                rootShellModal === "loginDialog" ? "login-dialog-backdrop" : undefined
+              }
+              onClick={closeRootShellModal}
+            ></div>
           ) : null}
         </>
       )}
@@ -532,28 +601,49 @@ function RootLoginDialog({
   return (
     <div
       id="loginDialog"
-      className={visible ? "modal hide loginDialog in" : "modal hide loginDialog"}
+      className={[
+        visible ? "modal hide loginDialog in" : "modal hide loginDialog",
+        rootLoginDialogClassName,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={visible ? { display: "block" } : undefined}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
+      data-stylex-owner="root-login-dialog"
     >
       <div className="modal-body">
         <div className="pull-right">
           {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy common/loginDialog.scala.html renders aria-hidden on the focusable close button. */}
-          <button type="button" className="close" aria-hidden="true" onClick={onDismiss}>
+          <button
+            type="button"
+            className="close"
+            aria-hidden="true"
+            data-stylex-part="login-dialog-close"
+            onClick={onDismiss}
+          >
             &times;
           </button>
         </div>
         <form
           action={prefixBasePath(basePath, "/users/login")}
           method="post"
-          className="frm-wrap login-form-wrap"
+          className={["frm-wrap login-form-wrap", rootLoginDialogFormClassName]
+            .filter(Boolean)
+            .join(" ")}
+          data-stylex-part="login-dialog-form"
           onSubmit={onSubmit}
           key={resetNonce}
         >
           {socialLoginOnly ? (
-            <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+            <div
+              className={["btns-row nm", rootLoginDialogButtonRowClassName]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {t("app.warn.support.social.login.only")}
+            </div>
           ) : (
             <>
               <dl>
@@ -562,8 +652,13 @@ function RootLoginDialog({
                     id="loginIdOrEmailD"
                     name="loginIdOrEmail"
                     type="text"
-                    className="text email"
-                    style={ROOT_LOGIN_DIALOG_INPUT_STYLE}
+                    className={[
+                      "text email",
+                      rootLoginDialogInputClassName,
+                      rootLoginDialogTextInputClassName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                     autoComplete="off"
                     placeholder={t("user.login.key")}
                     ref={inputRef}
@@ -576,8 +671,13 @@ function RootLoginDialog({
                     id="passwordD"
                     name="password"
                     type="password"
-                    className="text password"
-                    style={ROOT_LOGIN_DIALOG_INPUT_STYLE}
+                    className={[
+                      "text password",
+                      rootLoginDialogInputClassName,
+                      rootLoginDialogTextInputClassName,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                     autoComplete="off"
                     placeholder={t("user.password")}
                     value={state.password}
@@ -585,18 +685,36 @@ function RootLoginDialog({
                   />
                 </dd>
               </dl>
-              <div className="error" style={state.errorMessage ? { display: "block" } : undefined}>
-                <i className="yobicon-error" />
+              <div
+                className={["error", rootLoginDialogErrorClassName].filter(Boolean).join(" ")}
+                style={state.errorMessage ? { display: "block" } : undefined}
+              >
+                <i
+                  className={["yobicon-error", rootLoginDialogErrorIconClassName]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
                 <span className="error-message">{state.errorMessage ?? ""}</span>
               </div>
-              <div className="btns-row nm">
-                <button type="submit" className="ybtn ybtn-primary fullsize">
+              <div
+                className={["btns-row nm", rootLoginDialogButtonRowClassName]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <button
+                  type="submit"
+                  className={["ybtn ybtn-primary fullsize", rootLoginDialogSubmitClassName]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   {t("button.login")}
                 </button>
               </div>
             </>
           )}
-          <div className="btns-row nm">
+          <div
+            className={["btns-row nm", rootLoginDialogButtonRowClassName].filter(Boolean).join(" ")}
+          >
             {socialProviders.length > 0 && !socialLoginOnly ? (
               <div className="social-login-title-line"> {t("title.or")} </div>
             ) : null}
@@ -615,11 +733,22 @@ function RootLoginDialog({
                   id="remember-meD"
                   type="checkbox"
                   name="rememberMe"
-                  className="checkbox"
+                  className={[
+                    "checkbox",
+                    rootLoginDialogInputClassName,
+                    rootLoginDialogCheckboxClassName,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                   checked={state.rememberMe}
                   onChange={(event) => onRememberMeChange(event.target.checked)}
                 />
-                <label htmlFor="remember-meD" className="bg-checkbox">
+                <label
+                  htmlFor="remember-meD"
+                  className={["bg-checkbox", rootLoginDialogRememberLabelClassName]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   {t("title.rememberMe")}
                 </label>
               </div>

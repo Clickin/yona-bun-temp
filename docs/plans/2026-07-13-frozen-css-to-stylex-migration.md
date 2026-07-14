@@ -1181,6 +1181,19 @@ focused GREEN 5/5; desktop/mobile full-page screenshots were inspected against t
 with typecheck, Vitest, production build/StyleX verification, frozen hashes, format, and diff gates
 recorded before the wave commit.
 
+The seventieth slice migrates the anonymous root-shell `RootLoginDialog` state opened from the
+root Login CTA. `common/loginDialog.scala.html`, `_page.less`, `_responsive.less`, and
+`common/yobi.LoginDialog.js` establish the exact dialog/form output and behavior evidence;
+React continues to own opening, focus, submit, error, Escape, close, and backdrop events. The
+dialog, form, inputs, error, checkbox/label, submit row, and stable dialog/backdrop parts now
+have StyleX ownership backed only by canonical global theme variables. `RootYoramDialog` is
+excluded because no current root transition opens it. The `loginDialog` class remains on this
+one runtime dialog only: its frozen max-767 responsive selector has active `!important` values
+and is therefore a genuine fallback consumer. Generic Bootstrap modal/form/button rules remain
+for independent consumers. Focused RED became GREEN 5/5 with exact desktop `462×378 @453/90`
+and mobile `392×378 @0/84.39` dialog measurements, no document overflow, stable screenshots,
+and inspected desktop/mobile output. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

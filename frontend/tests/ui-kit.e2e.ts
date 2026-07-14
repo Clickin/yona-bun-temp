@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LEGACY_UIKIT_TEMPLATE = readFileSync(
   fileURLToPath(new URL("../../yona-original/app/views/help/UIKit.scala.html", import.meta.url)),
@@ -29,6 +29,18 @@ const SELECT2_TEMPLATE_IDS = [
   "tplSelect2ProjectsWithoutAvatar",
   "tplSelect2FormatIssues",
 ];
+
+async function expectRootLoginDialogState(dialog: Locator, visible: boolean) {
+  await expect(dialog).toHaveAttribute("data-stylex-owner", "root-login-dialog");
+  await expect(dialog).toHaveClass(/(?:^|\s)modal(?:\s|$)/);
+  await expect(dialog).toHaveClass(/(?:^|\s)hide(?:\s|$)/);
+  await expect(dialog).toHaveClass(/(?:^|\s)loginDialog(?:\s|$)/);
+  if (visible) {
+    await expect(dialog).toHaveClass(/(?:^|\s)in(?:\s|$)/);
+  } else {
+    await expect(dialog).not.toHaveClass(/(?:^|\s)in(?:\s|$)/);
+  }
+}
 
 test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -243,9 +255,12 @@ test("root shell owns login dialog state without delegated document modal mutati
   expect(ROOT_ROUTE_SOURCE).toContain("submitRootLoginDialogForm");
   expect(ROOT_ROUTE_SOURCE).toContain("onClickCapture={handleRootShellClick}");
   expect(ROOT_ROUTE_SOURCE).toContain("onSubmit={handleRootLoginDialogSubmit}");
-  expect(ROOT_ROUTE_SOURCE).toContain(
-    '{rootShellModal ? <div className="modal-backdrop in"></div> : null}',
-  );
+  expect(ROOT_ROUTE_SOURCE).toContain('className="modal-backdrop in"');
+  expect(ROOT_ROUTE_SOURCE).toContain("data-stylex-owner={");
+  expect(ROOT_ROUTE_SOURCE).toContain('"root-login-dialog-backdrop"');
+  expect(ROOT_ROUTE_SOURCE).toContain("data-stylex-part={");
+  expect(ROOT_ROUTE_SOURCE).toContain('"login-dialog-backdrop"');
+  expect(ROOT_ROUTE_SOURCE).toContain("onClick={closeRootShellModal}");
 });
 
 test("UI kit route owns original-message demo state", async () => {
@@ -384,10 +399,10 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
   const dialog = page.locator("#loginDialog");
   await expect(dialog).toHaveClass(/modal/);
   await expect(dialog).toHaveClass(/hide/);
-  await expect(dialog).toHaveClass(/loginDialog/);
+  await expectRootLoginDialogState(dialog, false);
   await expect(dialog.locator("form.frm-wrap.login-form-wrap")).toHaveAttribute(
     "action",
-    "/users/login",
+    `${basePath}/users/login`,
   );
   await expect(dialog.locator("form.frm-wrap.login-form-wrap")).toHaveAttribute("method", "post");
   await expect(dialog.locator("#loginIdOrEmailD")).toHaveAttribute("name", "loginIdOrEmail");
@@ -490,7 +505,7 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
 
   await page.locator("#login-required-fixture").click();
 
-  await expect(dialog).toHaveClass("modal hide loginDialog in");
+  await expectRootLoginDialogState(dialog, true);
   await expect(dialog).toHaveAttribute("aria-hidden", "false");
   await expect(dialog).toHaveCSS("display", "block");
   await expect(dialog.locator("#loginIdOrEmailD")).toBeFocused();
@@ -512,7 +527,7 @@ test("standalone UI kit root shell opens legacy login dialog from data-login req
   });
 
   await dialog.locator(".pull-right .close").click();
-  await expect(dialog).toHaveClass("modal hide loginDialog");
+  await expectRootLoginDialogState(dialog, false);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 });
 
@@ -565,7 +580,7 @@ test("standalone UI kit login dialog shows legacy AJAX failure error", async ({ 
   await dialog.locator("#remember-meD").uncheck();
   await dialog.locator("button[type=submit]").click();
 
-  await expect(dialog).toHaveClass("modal hide loginDialog in");
+  await expectRootLoginDialogState(dialog, true);
   await expect(dialog.locator("#loginIdOrEmailD")).toHaveValue("bad-user");
   await expect(dialog.locator("#passwordD")).toHaveValue("bad-password");
   await expect(dialog.locator(".error")).toBeVisible();
@@ -686,12 +701,12 @@ test("standalone UI kit root shell does not open synthetic data-toggle modals", 
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
   await page.locator("#login-dialog-trigger").click();
-  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expectRootLoginDialogState(loginDialog, false);
   await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
   await page.locator("#href-login-dialog-trigger").click();
-  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expectRootLoginDialogState(loginDialog, false);
   await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
@@ -701,10 +716,10 @@ test("standalone UI kit root shell does not open synthetic data-toggle modals", 
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 
   await page.locator("#login-required-fixture").click();
-  await expect(loginDialog).toHaveClass("modal hide loginDialog in");
+  await expectRootLoginDialogState(loginDialog, true);
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await loginDialog.locator(".pull-right .close").click();
-  await expect(loginDialog).toHaveClass("modal hide loginDialog");
+  await expectRootLoginDialogState(loginDialog, false);
   await expect(loginDialog).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(0);
 

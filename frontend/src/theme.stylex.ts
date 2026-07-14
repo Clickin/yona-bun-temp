@@ -131,6 +131,28 @@ export const globalColors = stylex.defineVars({
   rootYoramToastMessageWordBreak: "break-all",
   rootYoramToastMessageWordWrap: "break-word",
 
+  // common/loginDialog.scala.html + _page.less + _responsive.less: RootLoginDialog runtime
+  rootLoginDialogWidth: "460px",
+  rootLoginDialogMarginLeft: "-230px",
+  rootLoginDialogResponsiveMarginLeft: "0px",
+  rootLoginDialogResponsiveWidth: "100%",
+  rootLoginDialogFormMargin: "20px auto",
+  rootLoginDialogFormResponsiveWidth: "inherit",
+  rootLoginDialogInputBoxSizing: "content-box",
+  rootLoginDialogInputMinHeight: "0px",
+  rootLoginDialogInputBoxShadow: "none",
+  rootLoginDialogInputResponsiveWidth: "95%",
+  rootLoginDialogErrorDisplay: "none",
+  rootLoginDialogErrorMarginBottom: "20px",
+  rootLoginDialogErrorColor: "#e74c3c",
+  rootLoginDialogErrorIconVerticalAlign: "middle",
+  rootLoginDialogErrorIconMarginRight: "5px",
+  rootLoginDialogErrorIconFontSize: "13px",
+  rootLoginDialogCheckboxMarginTop: "4px",
+  rootLoginDialogRememberLabelDisplay: "inline-block",
+  rootLoginDialogButtonRowWidth: "auto",
+  rootLoginDialogSubmitWidth: "100%",
+
   // Bootstrap 2.3.1 bootstrap.css: anonymous Home outer `.row`
   anonymousHomeIntroOuterMargin: "0px 0px 0px -20px",
   anonymousHomeIntroOuterPseudoContent: '""',
