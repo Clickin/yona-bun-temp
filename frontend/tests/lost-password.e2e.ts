@@ -153,14 +153,20 @@ test("lost-password query alerts keep legacy order and React-owned dismissal", a
   await expect(formWrap.locator(":scope > form")).toBeVisible();
 
   await page.goto(appPath("/lostPassword?error=invalid"));
-  const errorAlert = formWrap.locator(":scope > .alert.alert-error");
+  const errorAlert = formWrap.locator(':scope > [data-stylex-owner="lost-password-error-alert"]');
   await expect(errorAlert).toBeVisible();
   await expect(errorAlert.locator("h4")).toHaveText("Failed to send mail.");
   await expect(errorAlert).toContainText("Invalid password reset request");
   await expect(errorAlert).not.toContainText(/^invalid$/u);
   await expect(errorAlert.locator("[data-dismiss]")).toHaveCount(0);
-  expect(await directChildOrder(formWrap)).toEqual(["alert alert-error", "FORM"]);
-  await errorAlert.locator(".close").click();
+  expect(
+    await formWrap
+      .locator(":scope > *")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("data-stylex-owner") ?? element.tagName),
+      ),
+  ).toEqual(["lost-password-error-alert", "FORM"]);
+  await errorAlert.locator('[data-stylex-part="lost-password-error-alert-dismiss"]').click();
   await expect(errorAlert).toHaveCount(0);
   await expect(formWrap.locator(":scope > form")).toBeVisible();
 });
@@ -215,18 +221,24 @@ test("lost-password API error stays before the form and dismisses without naviga
   await page.locator(".page.full .login-form-wrap button[type='submit']").click();
 
   const formWrap = page.locator(".page.full > .login-form-wrap");
-  const alert = formWrap.locator(":scope > .alert.alert-error");
+  const alert = formWrap.locator(':scope > [data-stylex-owner="lost-password-error-alert"]');
   await expect(alert).toBeVisible();
   await expect(alert.locator("h4")).toHaveText("Failed to send mail.");
   await expect(alert).toContainText("Invalid password reset request");
-  expect(await directChildOrder(formWrap)).toEqual(["alert alert-error", "FORM"]);
+  expect(
+    await formWrap
+      .locator(":scope > *")
+      .evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute("data-stylex-owner") ?? element.tagName),
+      ),
+  ).toEqual(["lost-password-error-alert", "FORM"]);
   await expect(page).toHaveURL(initialUrl);
   expect(
     await page.evaluate(
       () => (window as Window & { __lostPasswordSpaSentinel?: string }).__lostPasswordSpaSentinel,
     ),
   ).toBe("alive");
-  await alert.locator(".close").click();
+  await alert.locator('[data-stylex-part="lost-password-error-alert-dismiss"]').click();
   await expect(alert).toHaveCount(0);
   await expect(formWrap.locator(":scope > form")).toBeVisible();
 });

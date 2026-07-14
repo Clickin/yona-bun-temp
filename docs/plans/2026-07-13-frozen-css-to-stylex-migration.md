@@ -1255,6 +1255,17 @@ before/after browser screenshots establish the exact `400px` desktop and `370.5p
 geometry. Focused RED became GREEN 5/5 and the existing route regression passes 5/5. This is not
 Wave 1 completion.
 
+The seventy-sixth slice migrates the anonymous visible `/lostPassword?error=invalid` alert and
+the same alert reached by a failed reset-request mutation. It owns the dependent Bootstrap 2.3.1
+error surface, heading, inherited error copy, and dismiss button through canonical global theme
+variables; React retains query/mutation error selection and dismissal. Baseline, requested-success,
+and authenticated prefill states remain separate. Authenticated success/error alerts deliberately
+retain their full legacy fallback DOM because this owner is anonymous-only. The owner removes
+`alert`, `alert-error`, and `close` only from its anonymous state; frozen Bootstrap fallback stays
+for authenticated alerts and all independent consumers. Source and local browser screenshots prove
+the exact `400px` desktop and `370.5px` mobile geometry, with focused GREEN 5/5 and existing route
+regression GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
