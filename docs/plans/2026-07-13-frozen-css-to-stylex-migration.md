@@ -1473,6 +1473,12 @@ removing `label label-info` only from each dynamic tag; the React-owned remove b
 tags/labels, typeahead/project controls, actions, title/sidebar/shell, and inapplicable empty/href
 variants remain fallback or separate owners. This is not Wave 1 completion.
 
+The one-hundred-ninth slice migrates the projects-recipient `/sites/massmail` project wrapper
+margin from `site/massMail.scala.html` and Bootstrap 2.3.1 `.control-group`. StyleX owns its exact
+10px margin and preserves the `hide` state class alongside the generated class; validation,
+legend/form-horizontal variants, project children, actions, title/sidebar/shell, and generic
+control groups remain fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

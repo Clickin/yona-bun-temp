@@ -681,6 +681,15 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
+        current.matches('[data-stylex-owner="site-massmail-project-wrapper"]')
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !/^x[a-z0-9_-]{5,}$/iu.test(token))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||
@@ -800,6 +809,17 @@ async function canonicalizeHtml(page: Page, html: string) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== "radio")
+          .join(" ");
+      }
+      const isMassMailProjectWrapper =
+        name === "class" &&
+        value.split(/\s+/u).includes("control-group") &&
+        current.matches(".mess-mail-wrap > #project-list-wrap.control-group.hide") &&
+        current.querySelector(":scope > .controls > #input-project") !== null;
+      if (isMassMailProjectWrapper) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "control-group")
           .join(" ");
       }
       const isMassMailWriteAction =

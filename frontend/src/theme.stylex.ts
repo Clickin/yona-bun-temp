@@ -276,6 +276,8 @@ export const globalColors = stylex.defineVars({
   siteMassMailSelectProjectActionInteractiveTextDecoration: "none",
   // site/massMail.scala.html + _page.less `.mess-mail-wrap input[type="text"]`
   siteMassMailProjectInputMargin: "0px",
+  // site/massMail.scala.html + Bootstrap `.control-group` projects-recipient wrapper
+  siteMassMailProjectWrapperMarginBottom: "10px",
   // site/massMail.scala.html + Bootstrap `.radio` direct recipient labels
   siteMassMailRecipientRadioMinHeight: "20px",
   siteMassMailRecipientRadioPaddingLeft: "20px",

@@ -123,6 +123,9 @@ const styles = stylex.create({
   projectInput: {
     margin: globalColors.siteMassMailProjectInputMargin,
   },
+  projectWrapper: {
+    marginBottom: globalColors.siteMassMailProjectWrapperMarginBottom,
+  },
   recipientRadio: {
     minHeight: globalColors.siteMassMailRecipientRadioMinHeight,
     paddingLeft: globalColors.siteMassMailRecipientRadioPaddingLeft,
@@ -146,6 +149,8 @@ const styles = stylex.create({
     whiteSpace: globalColors.siteMassMailSelectedProjectTagWhiteSpace,
   },
 });
+
+const projectWrapperStyleProps = stylex.props(styles.projectWrapper);
 
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
@@ -373,7 +378,9 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         {t("site.massMail.toProjects")}
       </label>
       <div
-        className="control-group hide"
+        {...projectWrapperStyleProps}
+        className={`hide ${projectWrapperStyleProps.className ?? ""}`}
+        data-stylex-owner="site-massmail-project-wrapper"
         id="project-list-wrap"
         style={mailingType === "projects" ? { display: "block" } : undefined}
       >
