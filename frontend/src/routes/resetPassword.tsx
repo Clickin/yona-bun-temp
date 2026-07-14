@@ -87,6 +87,57 @@ const styles = stylex.create({
     boxSizing: globalColors.resetPasswordSubmitBoxSizing,
     width: globalColors.resetPasswordSubmitWidth,
   },
+  validationPopover: {
+    "--yoram-stylex-reset-password-validation-popover": "stylex",
+    position: globalColors.resetPasswordValidationPopoverPosition,
+    zIndex: globalColors.resetPasswordValidationPopoverZIndex,
+    display: globalColors.resetPasswordValidationPopoverDisplay,
+    maxWidth: globalColors.resetPasswordValidationPopoverMaxWidth,
+    padding: globalColors.resetPasswordValidationPopoverPadding,
+    marginLeft: globalColors.resetPasswordValidationPopoverMarginLeft,
+    textAlign: globalColors.resetPasswordValidationPopoverTextAlign,
+    whiteSpace: globalColors.resetPasswordValidationPopoverWhiteSpace,
+    backgroundColor: globalColors.resetPasswordValidationPopoverSurface,
+    borderColor: globalColors.resetPasswordValidationPopoverBorder,
+    borderStyle: globalColors.resetPasswordValidationPopoverBorderStyle,
+    borderWidth: globalColors.resetPasswordValidationPopoverBorderWidth,
+    borderRadius: globalColors.resetPasswordValidationPopoverRadius,
+    boxShadow: globalColors.resetPasswordValidationPopoverShadow,
+    backgroundClip: globalColors.resetPasswordValidationPopoverBackgroundClip,
+    lineHeight: globalColors.resetPasswordValidationPopoverLineHeight,
+  },
+  validationPopoverArrow: {
+    position: globalColors.resetPasswordValidationPopoverArrowPosition,
+    display: globalColors.resetPasswordValidationPopoverArrowDisplay,
+    width: globalColors.resetPasswordValidationPopoverArrowWidth,
+    height: globalColors.resetPasswordValidationPopoverArrowHeight,
+    borderColor: globalColors.resetPasswordValidationPopoverArrowTransparent,
+    borderStyle: globalColors.resetPasswordValidationPopoverArrowBorderStyle,
+    borderWidth: globalColors.resetPasswordValidationPopoverArrowBorderWidth,
+    top: globalColors.resetPasswordValidationPopoverArrowTop,
+    right: globalColors.resetPasswordValidationPopoverArrowRight,
+    marginTop: globalColors.resetPasswordValidationPopoverArrowMarginTop,
+    borderLeftColor: globalColors.resetPasswordValidationPopoverArrowBorder,
+    borderRightWidth: globalColors.resetPasswordValidationPopoverArrowBorderRightWidth,
+    "::after": {
+      content: globalColors.resetPasswordValidationPopoverArrowAfterContent,
+      position: globalColors.resetPasswordValidationPopoverArrowPosition,
+      display: globalColors.resetPasswordValidationPopoverArrowDisplay,
+      width: globalColors.resetPasswordValidationPopoverArrowWidth,
+      height: globalColors.resetPasswordValidationPopoverArrowHeight,
+      borderColor: globalColors.resetPasswordValidationPopoverArrowTransparent,
+      borderStyle: globalColors.resetPasswordValidationPopoverArrowBorderStyle,
+      borderWidth: globalColors.resetPasswordValidationPopoverArrowAfterBorderWidth,
+      right: globalColors.resetPasswordValidationPopoverArrowAfterRight,
+      bottom: globalColors.resetPasswordValidationPopoverArrowAfterBottom,
+      borderLeftColor: globalColors.resetPasswordValidationPopoverArrowAfterSurface,
+      borderRightWidth: globalColors.resetPasswordValidationPopoverArrowBorderRightWidth,
+    },
+  },
+  validationPopoverContent: {
+    padding: globalColors.resetPasswordValidationPopoverContentPadding,
+    lineHeight: globalColors.resetPasswordValidationPopoverContentLineHeight,
+  },
   badRequest: {
     "--yoram-stylex-reset-password-bad-request": "stylex",
   },
@@ -110,6 +161,9 @@ const formWrapClassName = stylex.props(styles.formWrap).className;
 const passwordInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
 const buttonRowClassName = stylex.props(styles.buttonRow).className;
 const submitClassName = stylex.props(styles.submit).className;
+const validationPopoverClassName = stylex.props(styles.validationPopover).className;
+const validationPopoverArrowClassName = stylex.props(styles.validationPopoverArrow).className;
+const validationPopoverContentClassName = stylex.props(styles.validationPopoverContent).className;
 const badRequestClassName = stylex.props(styles.badRequest).className;
 const badRequestErrorWrapClassName = stylex.props(styles.badRequestErrorWrap).className;
 const badRequestMessageClassName = stylex.props(styles.badRequestMessage).className;
@@ -239,7 +293,11 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   autoComplete="off"
                   onBlur={validateCurrentForm}
                 />
-                <FieldPopover anchorRef={passwordInputRef} message={fieldErrors.password} />
+                <FieldPopover
+                  anchorRef={passwordInputRef}
+                  message={fieldErrors.password}
+                  stylexOwned={validTokenReset}
+                />
               </dd>
               <dd>
                 <input
@@ -256,6 +314,7 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 <FieldPopover
                   anchorRef={retypedPasswordInputRef}
                   message={fieldErrors.retypedPassword}
+                  stylexOwned={validTokenReset}
                 />
               </dd>
             </dl>
@@ -334,9 +393,11 @@ function validateResetPasswordForm(
 function FieldPopover({
   anchorRef,
   message,
+  stylexOwned,
 }: {
   anchorRef: React.RefObject<HTMLInputElement | null>;
   message?: string;
+  stylexOwned: boolean;
 }) {
   const popoverRef = React.useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = React.useState<{ left: number; top: number } | null>(null);
@@ -355,6 +416,32 @@ function FieldPopover({
   }, [anchorRef, message]);
 
   if (!message) return null;
+  const position = {
+    left: placement ? `${placement.left}px` : "-154px",
+    top: placement ? `${placement.top}px` : "0",
+  };
+  if (stylexOwned) {
+    return (
+      <div
+        ref={popoverRef}
+        className={validationPopoverClassName}
+        data-stylex-owner="reset-password-validation-popover"
+        data-stylex-part="reset-password-validation-popover-surface"
+        style={position}
+      >
+        <div
+          className={validationPopoverArrowClassName}
+          data-stylex-part="reset-password-validation-popover-arrow"
+        ></div>
+        <div
+          className={validationPopoverContentClassName}
+          data-stylex-part="reset-password-validation-popover-content"
+        >
+          {message}
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       ref={popoverRef}

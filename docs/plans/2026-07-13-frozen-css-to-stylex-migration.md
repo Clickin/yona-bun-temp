@@ -1296,6 +1296,13 @@ from `error/badrequest_default.scala.html`. StyleX owns only its error wrapper/m
 `_page.less`; shared `ico-404` and `ybtn ybtn-info` Home primitives remain real fallback consumers.
 Focused and existing reset regressions are GREEN 5/5. This is not Wave 1 completion.
 
+The eighty-first slice migrates valid-token `/resetPassword?s=…` validation-error output from
+`user/resetPassword.scala.html` and `yobi.resetPassword.js`. StyleX owns the complete left
+popover surface, arrow, and message through global theme variables sourced from Bootstrap 2.3.1
+and `_yobiUI.less`; React retains the legacy-equivalent validation and calculated placement.
+No-token and independent popover consumers retain fallback output. Focused and existing reset
+regressions are GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

@@ -96,7 +96,12 @@ test.describe("StyleX valid-token reset password form", () => {
     await expect(owner.locator("input.text, input.password")).toHaveCount(0);
 
     await owner.getByRole("button", { name: "Confirm" }).click();
-    await expect(owner.locator(".popover.in")).toHaveCount(2);
+    await expect(
+      owner.locator('[data-stylex-owner="reset-password-validation-popover"]'),
+    ).toHaveCount(2);
+    await expect(
+      owner.locator('[data-stylex-part="reset-password-validation-popover-content"]'),
+    ).toHaveText(["Required field!", "Required field!"]);
     expect(requests).toEqual([]);
 
     await owner.locator('[data-stylex-part="reset-password-password"]').fill("new-pass");
@@ -200,7 +205,7 @@ test.describe("StyleX valid-token reset password form", () => {
     await page.goto(`${basePath}/resetPassword?error=invalid&s=stylex-reset-token`);
 
     await expect(page.locator('[data-stylex-owner="reset-password-form"]')).toHaveCount(0);
-    await expect(page.locator('[data-stylex-part^="reset-password-"]')).toHaveCount(0);
+    await expect(page.locator('[data-stylex-part="reset-password-password"]')).toHaveCount(0);
     await expect(page.locator(".reset-password-bad-request .error-wrap p")).toHaveText(
       "Wrong url to reset password.",
     );
