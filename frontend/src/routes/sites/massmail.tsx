@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useMemo, useRef, useState } from "react";
 import { listProjectsQueryOptions } from "../../api/org-project";
 import { readSiteMailListRest, siteUpdateQueryOptions } from "../../api/site-admin";
@@ -7,6 +8,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type SelectedProject = {
@@ -19,6 +21,48 @@ const legacySiteSidebarLinkProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 const legacyMassMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
+
+const styles = stylex.create({
+  writeAction: {
+    backgroundColor: {
+      default: globalColors.siteMassMailWriteActionSurface,
+      ":hover": globalColors.siteMassMailWriteActionInteractiveSurface,
+      ":focus": globalColors.siteMassMailWriteActionInteractiveSurface,
+      ":active": globalColors.siteMassMailWriteActionInteractiveSurface,
+    },
+    borderColor: {
+      default: globalColors.siteMassMailWriteActionBorderColor,
+      ":hover": globalColors.siteMassMailWriteActionBorderColor,
+      ":focus": globalColors.siteMassMailWriteActionBorderColor,
+      ":active": globalColors.siteMassMailWriteActionBorderColor,
+    },
+    borderRadius: globalColors.siteMassMailWriteActionBorderRadius,
+    borderStyle: globalColors.siteMassMailWriteActionBorderStyle,
+    borderWidth: globalColors.siteMassMailWriteActionBorderWidth,
+    boxShadow: globalColors.siteMassMailWriteActionBoxShadow,
+    color: globalColors.siteMassMailWriteActionText,
+    cursor: globalColors.siteMassMailWriteActionCursor,
+    display: globalColors.siteMassMailWriteActionDisplay,
+    fontSize: globalColors.siteMassMailWriteActionFontSize,
+    lineHeight: globalColors.siteMassMailWriteActionLineHeight,
+    marginBottom: globalColors.siteMassMailWriteActionMarginBottom,
+    marginLeft: globalColors.siteMassMailWriteActionMarginLeft,
+    outline: globalColors.siteMassMailWriteActionOutline,
+    padding: globalColors.siteMassMailWriteActionPadding,
+    position: globalColors.siteMassMailWriteActionPosition,
+    textAlign: globalColors.siteMassMailWriteActionTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteMassMailWriteActionInteractiveTextDecoration,
+      ":focus": globalColors.siteMassMailWriteActionInteractiveTextDecoration,
+      ":active": globalColors.siteMassMailWriteActionInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteMassMailWriteActionTextShadow,
+    transition: globalColors.siteMassMailWriteActionTransition,
+    verticalAlign: globalColors.siteMassMailWriteActionVerticalAlign,
+    whiteSpace: globalColors.siteMassMailWriteActionWhiteSpace,
+    zIndex: globalColors.siteMassMailWriteActionZIndex,
+  },
+});
 
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
@@ -320,7 +364,8 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <button
         id="write-email"
         type="submit"
-        className="ybtn ybtn-primary"
+        {...stylex.props(styles.writeAction)}
+        data-stylex-owner="site-massmail-write-action"
         disabled={mailListMutation.isPending}
         onClick={() => mailListMutation.mutate()}
       >

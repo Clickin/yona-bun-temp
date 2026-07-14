@@ -108,7 +108,7 @@ const EXPECTED_MASSMAIL_SCREEN = `
             </div>
             <div id="selected-projects"></div>
           </div>
-          <button id="write-email" type="submit" class="ybtn ybtn-primary">
+          <button id="write-email" type="submit">
             <strong>Write</strong>
           </button>
         </div>
@@ -632,6 +632,9 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (name === "class" && current.matches('[data-stylex-owner="site-massmail-write-action"]')) {
+        return "";
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -732,6 +735,13 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
+      const isMassMailWriteAction =
+        name === "class" &&
+        current.matches(".mess-mail-wrap > button#write-email.ybtn.ybtn-primary") &&
+        current.querySelector(":scope > strong") !== null;
+      if (isMassMailWriteAction) {
+        return "";
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&

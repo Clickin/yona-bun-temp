@@ -1432,6 +1432,12 @@ global error-alert values while retaining fallback classes; the search/mutation 
 success alert, form, send action, title/sidebar/shell, and generic alerts remain separate owners
 or fallback. This is not Wave 1 completion.
 
+The one-hundred-third slice migrates the default `/sites/massmail` Write email action from
+`site/massMail.scala.html`, `_yobiUI.less`, `_mixins.less`, and `_variables.less`. StyleX owns the
+complete former `ybtn ybtn-primary` surface through global variables and removes those fallback
+classes only from this action; radio/project selection controls, the add-project button, title,
+sidebar/shell, and other ybtn consumers remain fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
