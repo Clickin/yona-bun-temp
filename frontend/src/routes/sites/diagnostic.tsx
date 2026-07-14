@@ -24,6 +24,23 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  errorPre: {
+    fontFamily: globalColors.siteDiagnosticErrorPreFontFamily,
+    color: globalColors.siteDiagnosticErrorPreText,
+    display: globalColors.siteDiagnosticErrorPreDisplay,
+    padding: globalColors.siteDiagnosticErrorPrePadding,
+    margin: globalColors.siteDiagnosticErrorPreMargin,
+    fontSize: globalColors.siteDiagnosticErrorPreFontSize,
+    lineHeight: globalColors.siteDiagnosticErrorPreLineHeight,
+    wordBreak: globalColors.siteDiagnosticErrorPreWordBreak,
+    overflowWrap: globalColors.siteDiagnosticErrorPreWordWrap,
+    whiteSpace: globalColors.siteDiagnosticErrorPreWhiteSpace,
+    backgroundColor: globalColors.siteDiagnosticErrorPreSurface,
+    borderStyle: globalColors.siteDiagnosticErrorPreBorderStyle,
+    borderWidth: globalColors.siteDiagnosticErrorPreBorderWidth,
+    borderColor: globalColors.siteDiagnosticErrorPreBorder,
+    borderRadius: globalColors.siteDiagnosticErrorPreRadius,
+  },
 });
 
 const legacySiteSidebarLinkProps = {
@@ -162,10 +179,10 @@ function DiagnosticBody({
   return (
     <>
       <p>{t("site.diagnostic.errorFound", { args: [String(diagnosticErrors.length)] })}</p>
-      <ul>
+      <ul data-stylex-owner="site-diagnostic-error-pre">
         {diagnosticErrors.map((error) => (
           <li key={error}>
-            <pre>{error}</pre>
+            <pre {...stylex.props(styles.errorPre)}>{error}</pre>
           </li>
         ))}
       </ul>

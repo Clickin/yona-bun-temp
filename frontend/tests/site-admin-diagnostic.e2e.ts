@@ -515,7 +515,8 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
-        current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]')
+        (current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]') ||
+          current.closest('[data-stylex-owner="site-diagnostic-error-pre"]'))
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)

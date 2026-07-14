@@ -1355,6 +1355,13 @@ error title/body/pre, shared site-admin shell, sidebar, and layout primitives re
 Focused desktop/mobile screenshots and the existing diagnostics regression retain legacy copy,
 order, and geometry. This is not Wave 1 completion.
 
+The ninetieth slice migrates the error `<pre>` blocks of `/sites/diagnostic` from
+`site/diagnostic.scala.html` and Bootstrap 2.3.1. StyleX owns the exact direct error-pre
+typography, wrapping, surface, border, radius, and box declarations through global theme
+variables; the title strip, error message/list geometry, no-error state, and shared site-admin
+shell remain fallback. Focused desktop/mobile screenshots and the existing diagnostics regression
+retain legacy copy, order, and geometry. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
