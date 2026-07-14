@@ -1504,7 +1504,7 @@ test("standard project-owned issue list restores legacy common/navbar.scala.html
 
   await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
 
-  const listAllLink = page.locator(".gnb-nav .show-progress-bar");
+  const listAllLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
   await expect(listAllLink).toHaveText("List All");
   await expect(listAllLink).toHaveAttribute("href", `${basePath}/projects`);
 

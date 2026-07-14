@@ -301,8 +301,10 @@ test("svn project branches route matches legacy badrequest_default site shell", 
 
   await expect(page).toHaveTitle("This request is only supported in a git project.");
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer");
-  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveText("List All");
-  await expect(page.locator(".gnb-nav a.show-progress-bar")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveText(
+    "List All",
+  );
+  await expect(page.locator('[data-stylex-owner="global-gnb-project-list-link"]')).toHaveAttribute(
     "href",
     `${basePath}/projects`,
   );

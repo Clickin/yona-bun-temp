@@ -47,6 +47,16 @@ export const globalColors = stylex.defineVars({
   globalGnbBrandResponsivePseudoAfterMargin: "0px",
   // _page.less: .gnb-nav anchor color transition duration
   globalGnbBrandTransitionDuration: "0.15s",
+  // _page.less: .gnb-nav li.active::before bottom
+  globalGnbProjectListTriangleBottom: "-5px",
+  // _page.less: .gnb-nav li.active::before margin-left
+  globalGnbProjectListTriangleOffset: "-8px",
+  // _page.less: .gnb-nav li.active::before left
+  globalGnbProjectListTrianglePosition: "50%",
+  // _page.less: .gnb-nav li.active::before border width
+  globalGnbProjectListTriangleSize: "8px",
+  // _page.less: .gnb-nav li.active::before zero-sized box
+  globalGnbProjectListTriangleZero: "0px",
   // _page.less: .gnb-nav inherited font-size
   globalGnbBrandFontSize: "14px",
   // _page.less: .gnb-inner .logo-letter bold font-weight

@@ -684,6 +684,52 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbProjectListStyles = stylex.create({
+  item: {
+    color: globalColors.textMuted,
+    float: "left",
+    position: "relative",
+  },
+  activeItem: {
+    color: globalColors.textOnAccent,
+    "::before": {
+      borderColor: globalColors.transparent,
+      borderBottomColor: globalColors.textOnAccent,
+      borderBottomStyle: "solid",
+      borderLeftStyle: "outset",
+      borderRightStyle: "outset",
+      borderTopStyle: "outset",
+      borderWidth: globalColors.globalGnbProjectListTriangleSize,
+      bottom: globalColors.globalGnbProjectListTriangleBottom,
+      content: '" "',
+      height: globalColors.globalGnbProjectListTriangleZero,
+      left: globalColors.globalGnbProjectListTrianglePosition,
+      marginLeft: globalColors.globalGnbProjectListTriangleOffset,
+      overflow: "hidden",
+      position: "absolute",
+      width: globalColors.globalGnbProjectListTriangleZero,
+    },
+  },
+  link: {
+    color: "inherit",
+    display: "inline",
+    float: "none",
+    lineHeight: globalColors.globalGnbBrandHeight,
+    padding: globalColors.globalGnbBrandPaddingInline,
+    textDecoration: "none",
+    transitionDuration: globalColors.globalGnbBrandTransitionDuration,
+    transitionProperty: "color",
+    ":hover": {
+      color: globalColors.textOnAccent,
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: "inherit",
+      textDecoration: "none",
+    },
+  },
+});
+
 const globalGnbBrandLinkStyles = stylex.create({
   root: {
     backgroundColor: globalColors.globalGnbBrandSurface,
@@ -924,13 +970,20 @@ export function SiteLayoutShell({
               </li>
               {shouldRenderProjectListingLink ? (
                 <>
-                  <li className={activeMenu === "projects" ? "active" : undefined}>
+                  <li
+                    {...stylex.props(
+                      globalGnbProjectListStyles.item,
+                      activeMenu === "projects" && globalGnbProjectListStyles.activeItem,
+                    )}
+                    data-stylex-owner="global-gnb-project-list-item"
+                  >
                     <Link
                       activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                       activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
                       to="/projects"
                       search={LEGACY_PROJECTS_LINK_SEARCH}
-                      className="show-progress-bar"
+                      {...stylex.props(globalGnbProjectListStyles.link)}
+                      data-stylex-owner="global-gnb-project-list-link"
                     >
                       {t("title.list")}
                     </Link>

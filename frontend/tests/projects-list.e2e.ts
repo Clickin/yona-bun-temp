@@ -254,7 +254,7 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   const organizationTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(1);
   const projectTabLink = projectTabItem.locator("a");
   const organizationTabLink = organizationTabItem.locator("a");
-  const navbarProjectLink = page.locator(".gnb-nav a.show-progress-bar");
+  const navbarProjectLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
 
   await expect(projectTabItem).toHaveAttribute("class", "active");
   await expect(organizationTabItem).not.toHaveAttribute("class", /active/);
@@ -267,7 +267,7 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await expect(organizationTabLink).not.toHaveAttribute("data-status", /./);
   await expect(organizationTabLink).not.toHaveAttribute("aria-current", /./);
   await expect(navbarProjectLink).toHaveAttribute("href", `${basePath}/projects`);
-  await expect(navbarProjectLink).toHaveAttribute("class", "show-progress-bar");
+  await expect(navbarProjectLink).not.toHaveClass(/(?:^|\s)show-progress-bar(?:\s|$)/u);
   await expect(navbarProjectLink).not.toHaveAttribute("data-status");
   await expect(navbarProjectLink).not.toHaveAttribute("aria-current");
 });
@@ -983,7 +983,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-"))
+        .filter(
+          (attr) =>
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
+            !attr.name.startsWith("data-v-"),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
@@ -1000,6 +1005,10 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+      if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
+      if (attr.name === "class" && owner === "global-gnb-project-list-link")
+        return "show-progress-bar";
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });

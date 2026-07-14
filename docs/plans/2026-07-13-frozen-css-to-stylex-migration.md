@@ -767,6 +767,17 @@ navigation checks pass. Focused RED 5/5 becomes GREEN 6/6. The broad global-shel
 their independent missing site-intro asset response and shared mobile-nav width drift after the
 focused owner assertions pass. This is not Wave 1 completion.
 
+The forty-first verified slice migrates the conditional `SiteLayoutShell` GNB List All item and
+link. The Scala item/link/order and PROJECTS active state remain intact, while colocated StyleX
+owns the complete item position, anchor paint/box/transition/hover/focus, and active triangle.
+Existing global muted/white colors and GNB dimensions are reused; only the five frozen triangle
+measurements are added to the canonical global theme. The owner drops the presentation `active`
+class and legacy progress-bar hook because React and TanStack Router own state and navigation.
+Fresh authenticated Edge live/local HOME, projects, and organizations checks agree at 1366×900
+and 390×844 on the exact `63.015625×37` box, interaction paint, and 8px active triangle; focused
+RED becomes GREEN 8/8. Generic GNB item/link rules remain only for real sibling consumers, and the
+divider is unchanged as a separate owner. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

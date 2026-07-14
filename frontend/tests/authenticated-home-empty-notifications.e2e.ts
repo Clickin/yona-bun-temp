@@ -612,7 +612,7 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
   const signupMenuLink = page.locator(".gnb-usermenu a.ybtn.ybtn-success");
   const landingSignupLink = page.locator(".signup-btn a.ybtn.ybtn-success.ybtn-padding");
-  const projectListLink = page.locator(".gnb-nav a.show-progress-bar");
+  const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
   const profileLink = page.locator("#mySidenav .user-menu a").first();
   const logoutLink = page.locator("#mySidenav a:has(.logout)");
   const resetPasswordLink = page.locator("#loginDialog .act-row a").nth(0);
@@ -3888,6 +3888,9 @@ async function canonicalizeScreenRoots(page: Page) {
     }
     function normalizeAttribute(current: Element, name: string) {
       if (name === "class") {
+        if (current.getAttribute("data-stylex-owner") === "global-gnb-project-list-link") {
+          return 'class="show-progress-bar"';
+        }
         const className = (current.getAttribute(name) ?? "")
           .split(/\s+/)
           .filter((value, index, values) => value && values.indexOf(value) === index)

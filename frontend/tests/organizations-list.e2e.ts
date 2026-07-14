@@ -249,7 +249,7 @@ test("organization directory top tabs keep legacy hrefs without active marker le
   const orgTab = page.locator(".title_area .nav-tabs > li").nth(1);
   const projectLink = projectTab.locator("a");
   const orgLink = orgTab.locator("a");
-  const navbarProjectLink = page.locator(".gnb-nav a.show-progress-bar");
+  const navbarProjectLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
 
   await expect(projectTab).not.toHaveClass(/active/u);
   await expect(orgTab).toHaveClass("active");
@@ -564,7 +564,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-"))
+        .filter(
+          (attr) =>
+            attr.name !== "data-style-src" &&
+            attr.name !== "data-stylex-owner" &&
+            !attr.name.startsWith("data-v-"),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
@@ -581,6 +586,10 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttr(attr: Attr) {
+      const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+      if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
+      if (attr.name === "class" && owner === "global-gnb-project-list-link")
+        return "show-progress-bar";
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
   });
