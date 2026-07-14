@@ -684,6 +684,66 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbBrandLinkStyles = stylex.create({
+  root: {
+    backgroundColor: globalColors.globalGnbBrandSurface,
+    backgroundPosition: globalColors.globalGnbBrandBackgroundPosition,
+    backgroundRepeat: "no-repeat",
+    borderRadius: globalColors.globalGnbBrandRadius,
+    color: globalColors.globalGnbBrandText,
+    display: "inline",
+    float: "none",
+    fontSize: globalColors.globalGnbBrandFontSize,
+    fontWeight: globalColors.globalGnbBrandFontWeight,
+    height: globalColors.globalGnbBrandHeight,
+    lineHeight: globalColors.globalGnbBrandHeight,
+    opacity: globalColors.globalGnbBrandOpacity,
+    outlineStyle: "none",
+    paddingBlock: globalColors.globalGnbBrandPaddingBlock,
+    paddingInline: globalColors.globalGnbBrandPaddingInline,
+    textDecoration: "none",
+    transitionDuration: globalColors.globalGnbBrandTransitionDuration,
+    transitionProperty: "color",
+    width: globalColors.globalGnbBrandWidth,
+    ":hover": {
+      color: globalColors.textOnAccent,
+      opacity: globalColors.globalGnbBrandInteractionOpacity,
+      outlineStyle: "none",
+      textDecoration: "none",
+    },
+    ":focus": {
+      color: globalColors.globalGnbBrandText,
+      opacity: globalColors.globalGnbBrandOpacity,
+      outlineStyle: "none",
+      textDecoration: "none",
+    },
+    "::before": {
+      content: '" "',
+      float: "left",
+      height: globalColors.globalGnbBrandHeight,
+      width: globalColors.globalGnbBrandPseudoWidth,
+    },
+    "::after": {
+      content: '" "',
+      float: "left",
+      height: globalColors.globalGnbBrandHeight,
+      marginLeft: {
+        default: globalColors.globalGnbBrandPseudoAfterMargin,
+        "@media (max-width: 720px)": globalColors.globalGnbBrandResponsivePseudoAfterMargin,
+      },
+      width: globalColors.globalGnbBrandPseudoWidth,
+    },
+  },
+  projectHeader: {
+    "::after": {
+      display: "none",
+    },
+    "::before": {
+      display: "none",
+    },
+  },
+});
+
 export function SiteLayoutShell({
   activeMenu,
   children,
@@ -729,6 +789,10 @@ export function SiteLayoutShell({
     : null;
   const allProjectsSearchAction = prefixBasePath(runtimeConfig.basePath, "/search");
   const hasScopedSearch = Boolean(projectSearchAction || groupSearchAction);
+  const globalGnbBrandLinkClassName = stylex.props(
+    globalGnbBrandLinkStyles.root,
+    hasScopedSearch && globalGnbBrandLinkStyles.projectHeader,
+  ).className;
   const shouldRenderProjectListingLink = runtimeConfig.hideProjectListing !== true && !isGuest;
   const shouldRenderAllProjectsSearchScope =
     (runtimeConfig.hideProjectListing !== true && !isGuest) || isSiteAdmin;
@@ -851,12 +915,8 @@ export function SiteLayoutShell({
                     includeHash: true,
                     includeSearch: true,
                   }}
-                  activeProps={{
-                    "aria-current": undefined,
-                    className: undefined,
-                    "data-status": undefined,
-                  }}
-                  className="logo logo-letter"
+                  className={globalGnbBrandLinkClassName}
+                  data-stylex-owner="global-gnb-brand-link"
                   to="/"
                 >
                   Y

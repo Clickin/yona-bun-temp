@@ -454,21 +454,19 @@ for (const defaultLandingCase of DEFAULT_LANDING_CASES) {
   });
 }
 
-test("shared shell logo keeps legacy navbar link with normal TanStack Link ownership", async ({
-  page,
-}) => {
+test("shared shell logo keeps navbar Link with StyleX ownership", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedEmptyNotifications(page);
 
   await page.goto(`${basePath}/`);
 
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
+  const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
   await expect(logoLink).toHaveText("Y");
   await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
-  await expect(logoLink).toHaveAttribute("class", "logo logo-letter");
-  await expect(logoLink).not.toHaveAttribute("aria-current");
-  await expect(logoLink).not.toHaveAttribute("data-status");
+  await expect(logoLink).not.toHaveClass(/(?:^|\s)(?:logo|logo-letter)(?:\s|$)/u);
+  await expect(logoLink).toHaveAttribute("aria-current", "page");
+  await expect(logoLink).toHaveAttribute("data-status", "active");
 
   await page.goto(`${basePath}/notifications`);
   await page.evaluate(() => {
@@ -476,7 +474,7 @@ test("shared shell logo keeps legacy navbar link with normal TanStack Link owner
       window as Window & { __authenticatedHomeLogoSpaMarker?: string }
     ).__authenticatedHomeLogoSpaMarker = "logo";
   });
-  await page.locator(".gnb-nav a.logo.logo-letter").click();
+  await page.locator('[data-stylex-owner="global-gnb-brand-link"]').click();
   await expect
     .poll(() => new URL(page.url()).pathname)
     .toMatch(new RegExp(`^${escapeRegExp(basePath)}/?$`, "u"));
@@ -497,7 +495,8 @@ test("shared shell logo keeps legacy navbar link with normal TanStack Link owner
   expect(routeSource).not.toContain("reactJsx");
   expect(routeSource).not.toContain("legacyHref");
   expect(routeSource).toContain("<Link\n                activeOptions={{");
-  expect(routeSource).toContain('className="logo logo-letter"');
+  expect(routeSource).toContain('data-stylex-owner="global-gnb-brand-link"');
+  expect(routeSource).toContain("globalGnbBrandLinkStyles = stylex.create");
   expect(routeSource).toContain('to="/"');
   expect(routeSource).not.toContain(["use", "Link", "Props"].join(""));
   expect(routeSource).not.toContain(["Legacy", "Href", "Anchor"].join(""));
@@ -2673,7 +2672,7 @@ async function readDesktopAuthenticatedNotificationShellMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const mainStream = document.querySelector<HTMLElement>(".main-stream");
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");
@@ -3089,7 +3088,7 @@ async function readDesktopAuthenticatedHomeMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
     const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const mainStream = document.querySelector<HTMLElement>(".main-stream");
     const activityStreams = document.querySelector<HTMLElement>(".activity-streams");

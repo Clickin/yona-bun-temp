@@ -753,6 +753,20 @@ behavior remains a recorded functional parity gap until a real shared React side
 no route-local navigation architecture is invented in this styling slice. This is not Wave 1
 completion.
 
+The fortieth verified slice migrates the `SiteLayoutShell` GNB brand link. The common navbar's
+first `Y` anchor remains a TanStack `Link` in the same sibling position, while colocated StyleX
+owns the complete shared anchor, `.logo`, and `.logo-letter` presentation: surface/text paint,
+padding, 14px/700 typography, 40px line box, radius, opacity, transition, hover/focus, both
+pseudo-elements, max-720 after-margin state, and project-header pseudo suppression. All concrete
+paint and numeric values are canonical global theme variables, with the existing white accent
+text reused and no dark value or toggle. The owner drops `logo` and `logo-letter`; the same rules
+remain only for the separate `/restricted` consumer, while `.gnb-nav a` remains a justified shared
+lower rule for real sibling links. Fresh Edge HOME desktop/mobile base crops are byte-identical to
+local, and HOME/project-header computed geometry, paint, interaction, responsive, pseudo, and SPA
+navigation checks pass. Focused RED 5/5 becomes GREEN 6/6. The broad global-shell cases retain
+their independent missing site-intro asset response and shared mobile-nav width drift after the
+focused owner assertions pass. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

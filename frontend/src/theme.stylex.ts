@@ -19,6 +19,38 @@ export const globalColors = stylex.defineVars({
   siteAdminAffixDetailFontSize: "10px",
   // _common.less: .small-font normal font-weight
   siteAdminAffixDetailFontWeight: "400",
+  // _page.less: .gnb-inner .logo-letter background
+  globalGnbBrandSurface: "#ff5722",
+  // _page.less: .gnb-inner .logo-letter color
+  globalGnbBrandText: "#803131",
+  // _page.less: .gnb-inner .logo width
+  globalGnbBrandWidth: "44px",
+  // _page.less: .gnb-inner .logo height and .gnb-nav anchor line-height
+  globalGnbBrandHeight: "40px",
+  // _page.less: .gnb-inner .logo-letter vertical padding
+  globalGnbBrandPaddingBlock: "6px",
+  // _page.less: .gnb-inner .logo-letter horizontal padding
+  globalGnbBrandPaddingInline: "10px",
+  // _page.less: .gnb-inner .logo-letter border-radius
+  globalGnbBrandRadius: "2px",
+  // _page.less: .gnb-inner .logo-letter opacity
+  globalGnbBrandOpacity: "0.7",
+  // _page.less: .gnb-inner .logo-letter:hover opacity
+  globalGnbBrandInteractionOpacity: "1",
+  // _page.less: .gnb-inner .logo background-position
+  globalGnbBrandBackgroundPosition: "11px 10px",
+  // _page.less: .gnb-inner .logo pseudo-element width
+  globalGnbBrandPseudoWidth: "1px",
+  // _page.less: .gnb-inner .logo::after margin-left
+  globalGnbBrandPseudoAfterMargin: "40px",
+  // _responsive.less: max-720 .gnb-inner .logo::after inherited margin-left
+  globalGnbBrandResponsivePseudoAfterMargin: "0px",
+  // _page.less: .gnb-nav anchor color transition duration
+  globalGnbBrandTransitionDuration: "0.15s",
+  // _page.less: .gnb-nav inherited font-size
+  globalGnbBrandFontSize: "14px",
+  // _page.less: .gnb-inner .logo-letter bold font-weight
+  globalGnbBrandFontWeight: "700",
   // _usermenu.less: #mySidenav top
   sidenavBaseTop: "40px",
   // index/notifications.scala.html: site-admin affix side-nav top

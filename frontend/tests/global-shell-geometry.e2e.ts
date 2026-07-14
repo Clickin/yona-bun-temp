@@ -30,8 +30,12 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
 
   const navItems = page.locator(".gnb-nav > li");
   await expect(navItems).toHaveCount(5);
-  await expect(navItems.nth(0).locator(".logo-letter")).toHaveText("Y");
-  await expect(navItems.nth(0).locator(".logo-letter")).toHaveAttribute("href", `${BASE_PATH}/`);
+  await expect(navItems.nth(0).locator('[data-stylex-owner="global-gnb-brand-link"]')).toHaveText(
+    "Y",
+  );
+  await expect(
+    navItems.nth(0).locator('[data-stylex-owner="global-gnb-brand-link"]'),
+  ).toHaveAttribute("href", `${BASE_PATH}/`);
   await expect(navItems.nth(1).locator("a")).toHaveText("List All");
   await expect(navItems.nth(1).locator("a")).toHaveAttribute("href", `${BASE_PATH}/projects`);
   await expect(navItems.nth(2)).toHaveClass("divider");
@@ -394,7 +398,7 @@ async function readShellMetrics(page: Page) {
       inner: box(".gnb-inner"),
       login: box("#required-logged-in"),
       listAll: box(".gnb-nav > li:nth-child(2) > a"),
-      logo: box(".gnb-nav .logo-letter"),
+      logo: box('[data-stylex-owner="global-gnb-brand-link"]'),
       nav: box(".gnb-nav"),
       navbar: box(".gnb-outer"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
