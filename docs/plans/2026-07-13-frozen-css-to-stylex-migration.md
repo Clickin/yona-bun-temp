@@ -1266,6 +1266,16 @@ for authenticated alerts and all independent consumers. Source and local browser
 the exact `400px` desktop and `370.5px` mobile geometry, with focused GREEN 5/5 and existing route
 regression GREEN 5/5. This is not Wave 1 completion.
 
+The seventy-seventh slice migrates the authenticated no-alert `/lostPassword` prefilled form from
+the same `site/lostPassword.scala.html` skeleton. It reuses the existing canonical lost-password
+global variables to own the tagline/title/copy, wrapper, prefilled Login ID/email fields and focus
+state, and submit row/button, while React retains the existing session-derived default values and
+request mutation. The Scala `!currentUser.isAnonymous` value branch is preserved exactly. Anonymous
+baseline and all success/error alerts remain separate; authenticated alerts retain their legacy
+fallback DOM without this owner. Focused GREEN 5/5 verifies values, request payload, focus,
+desktop/mobile geometry/paint/screenshots, and owner exclusion; existing route regression is GREEN
+5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

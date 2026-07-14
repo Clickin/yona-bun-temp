@@ -19,6 +19,9 @@ const styles = stylex.create({
   anonymousBaseline: {
     "--yoram-stylex-lost-password": "stylex",
   },
+  authenticatedPrefill: {
+    "--yoram-stylex-lost-password-authenticated-prefill": "stylex",
+  },
   taglineWrap: {
     textAlign: globalColors.lostPasswordTaglineTextAlign,
     marginTop: globalColors.lostPasswordTaglineMarginTop,
@@ -170,6 +173,7 @@ const styles = stylex.create({
 });
 
 const anonymousBaselineClassName = stylex.props(styles.anonymousBaseline).className;
+const authenticatedPrefillClassName = stylex.props(styles.authenticatedPrefill).className;
 const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
 const titleClassName = stylex.props(styles.title).className;
 const taglineClassName = stylex.props(styles.tagline).className;
@@ -233,6 +237,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
       ? sessionQuery.data.emailAddress
       : "";
   const anonymousBaseline = sessionQuery.data?.isAnonymous === true && !isSent && !errorMessage;
+  const authenticatedNoAlert = sessionQuery.data?.isAnonymous === false && !isSent && !errorMessage;
+  const stylexFormState = anonymousBaseline || authenticatedNoAlert;
   const anonymousRequestedSuccess =
     sessionQuery.data?.isAnonymous === true && isSent && !errorMessage && !isSuccessAlertDismissed;
   const anonymousVisibleError =
@@ -264,26 +270,56 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{browserTitle}</title>
       <div
-        className={anonymousBaseline ? `page full ${anonymousBaselineClassName}` : "page full"}
-        data-stylex-owner={anonymousBaseline ? "lost-password-form" : undefined}
+        className={
+          anonymousBaseline
+            ? `page full ${anonymousBaselineClassName}`
+            : authenticatedNoAlert
+              ? `page full ${authenticatedPrefillClassName}`
+              : "page full"
+        }
+        data-stylex-owner={
+          anonymousBaseline
+            ? "lost-password-form"
+            : authenticatedNoAlert
+              ? "lost-password-authenticated-prefill"
+              : undefined
+        }
       >
         <div
           className={
-            anonymousBaseline
+            stylexFormState
               ? `center-wrap tag-line-wrap reset-password ${taglineWrapClassName}`
               : "center-wrap tag-line-wrap reset-password"
           }
-          data-stylex-part={anonymousBaseline ? "lost-password-tagline" : undefined}
+          data-stylex-part={
+            anonymousBaseline
+              ? "lost-password-tagline"
+              : authenticatedNoAlert
+                ? "lost-password-authenticated-prefill-tagline"
+                : undefined
+          }
         >
           <h1
-            className={anonymousBaseline ? `title ${titleClassName}` : "title"}
-            data-stylex-part={anonymousBaseline ? "lost-password-title" : undefined}
+            className={stylexFormState ? `title ${titleClassName}` : "title"}
+            data-stylex-part={
+              anonymousBaseline
+                ? "lost-password-title"
+                : authenticatedNoAlert
+                  ? "lost-password-authenticated-prefill-title"
+                  : undefined
+            }
           >
             <HighlightedLegacyMessage message={title} />
           </h1>
           <p
-            className={anonymousBaseline ? `tag-line ${taglineClassName}` : "tag-line"}
-            data-stylex-part={anonymousBaseline ? "lost-password-copy" : undefined}
+            className={stylexFormState ? `tag-line ${taglineClassName}` : "tag-line"}
+            data-stylex-part={
+              anonymousBaseline
+                ? "lost-password-copy"
+                : authenticatedNoAlert
+                  ? "lost-password-authenticated-prefill-copy"
+                  : undefined
+            }
           >
             {t("app.description")}
           </p>
@@ -291,11 +327,17 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
 
         <div
           className={
-            anonymousBaseline
+            stylexFormState
               ? `login-form-wrap frm-wrap ${formWrapClassName}`
               : "login-form-wrap frm-wrap"
           }
-          data-stylex-part={anonymousBaseline ? "lost-password-form-wrap" : undefined}
+          data-stylex-part={
+            anonymousBaseline
+              ? "lost-password-form-wrap"
+              : authenticatedNoAlert
+                ? "lost-password-authenticated-prefill-form-wrap"
+                : undefined
+          }
         >
           {isSent && !isSuccessAlertDismissed ? (
             anonymousRequestedSuccess ? (
@@ -380,8 +422,14 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="loginId"
                   required
                   placeholder={t("user.loginId")}
-                  className={anonymousBaseline ? textInputClassName : "text"}
-                  data-stylex-part={anonymousBaseline ? "lost-password-login-id" : undefined}
+                  className={stylexFormState ? textInputClassName : "text"}
+                  data-stylex-part={
+                    anonymousBaseline
+                      ? "lost-password-login-id"
+                      : authenticatedNoAlert
+                        ? "lost-password-authenticated-prefill-login-id"
+                        : undefined
+                  }
                   {...(shouldPrefillCurrentUser ? { defaultValue: currentUserLoginId } : {})}
                 />
               </dd>
@@ -392,25 +440,43 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="emailAddress"
                   required
                   placeholder={t("user.email")}
-                  className={anonymousBaseline ? textInputClassName : "text"}
-                  data-stylex-part={anonymousBaseline ? "lost-password-email" : undefined}
+                  className={stylexFormState ? textInputClassName : "text"}
+                  data-stylex-part={
+                    anonymousBaseline
+                      ? "lost-password-email"
+                      : authenticatedNoAlert
+                        ? "lost-password-authenticated-prefill-email"
+                        : undefined
+                  }
                   {...(shouldPrefillCurrentUser ? { defaultValue: currentUserEmail } : {})}
                 />
               </dd>
             </dl>
 
             <div
-              className={anonymousBaseline ? `btns-row ${buttonRowClassName}` : "btns-row"}
-              data-stylex-part={anonymousBaseline ? "lost-password-submit-row" : undefined}
+              className={stylexFormState ? `btns-row ${buttonRowClassName}` : "btns-row"}
+              data-stylex-part={
+                anonymousBaseline
+                  ? "lost-password-submit-row"
+                  : authenticatedNoAlert
+                    ? "lost-password-authenticated-prefill-submit-row"
+                    : undefined
+              }
             >
               <button
                 type="submit"
                 className={
-                  anonymousBaseline
+                  stylexFormState
                     ? `ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`
                     : "ybtn ybtn-primary ybtn-large ybtn-fullsize"
                 }
-                data-stylex-part={anonymousBaseline ? "lost-password-submit" : undefined}
+                data-stylex-part={
+                  anonymousBaseline
+                    ? "lost-password-submit"
+                    : authenticatedNoAlert
+                      ? "lost-password-authenticated-prefill-submit"
+                      : undefined
+                }
                 disabled={requestMutation.isPending}
               >
                 {t("button.confirm")}
