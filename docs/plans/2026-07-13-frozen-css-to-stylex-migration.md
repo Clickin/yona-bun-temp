@@ -1420,6 +1420,12 @@ surface through global variables while retaining alert fallback classes; error/n
 form, send action, title/sidebar/shell, and generic alerts remain fallback or separate owners.
 This is not Wave 1 completion.
 
+The one-hundred-first slice migrates error `/sites/mail?errorMessage=…` alert from
+`site/mail.scala.html` and Bootstrap 2.3.1 `.alert`/`.alert-error` rules. StyleX owns the complete
+base and error alert surface through global variables while retaining alert fallback classes;
+success/not-configured alerts, form, send action, title/sidebar/shell, and generic alerts remain
+fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

@@ -80,6 +80,17 @@ const styles = stylex.create({
     borderRadius: globalColors.siteMailSuccessAlertBorderRadius,
     color: globalColors.siteMailSuccessAlertText,
   },
+  errorAlert: {
+    padding: globalColors.siteMailErrorAlertPadding,
+    marginBottom: globalColors.siteMailErrorAlertMarginBottom,
+    textShadow: globalColors.siteMailErrorAlertTextShadow,
+    backgroundColor: globalColors.siteMailErrorAlertSurface,
+    borderColor: globalColors.siteMailErrorAlertBorderColor,
+    borderStyle: globalColors.siteMailErrorAlertBorderStyle,
+    borderWidth: globalColors.siteMailErrorAlertBorderWidth,
+    borderRadius: globalColors.siteMailErrorAlertBorderRadius,
+    color: globalColors.siteMailErrorAlertText,
+  },
 });
 
 interface SiteMailRouteSearch {
@@ -273,7 +284,11 @@ function MailBody({
       </div>
       {!response ? <p>{t("common.loading")}</p> : null}
       {response && (errorMessageBySearch || mutation.isError) ? (
-        <div className="alert alert-error">
+        <div
+          {...stylex.props(styles.errorAlert)}
+          className="alert alert-error"
+          data-stylex-owner="site-mail-error-alert"
+        >
           <p>{t("site.mail.fail")}</p>
           <p>
             {errorMessageBySearch
