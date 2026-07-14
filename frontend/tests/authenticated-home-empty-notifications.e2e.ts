@@ -1612,10 +1612,9 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
   const leftSidebar = page.locator("#sidebar");
   const closePin = leftSidebar.getByRole("button", { name: "Sidebar" });
   await expect(leftSidebar).toBeVisible();
-  await expect(leftSidebar.locator(".avatar-wrap img")).toHaveAttribute(
-    "src",
-    `${basePath}/legacy-assets/images/default-avatar-34.png`,
-  );
+  await expect(
+    leftSidebar.locator('[data-stylex-owner="left-sidebar-profile-identity"] img'),
+  ).toHaveAttribute("src", `${basePath}/legacy-assets/images/default-avatar-34.png`);
   await expect(page.locator(".gnb-usermenu .avatar-wrap img")).toHaveAttribute(
     "src",
     `${basePath}/legacy-assets/images/default-avatar-34.png`,
@@ -2762,7 +2761,7 @@ async function readMobileAuthenticatedHomeMetrics(page: Page) {
 
 async function readDesktopClosedLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
-    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
+    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
     const pin = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-sidebar-open-pin"]',
     );
@@ -2786,11 +2785,13 @@ async function readDesktopClosedLeftSidebarMetrics(page: Page) {
 async function readDesktopOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const sidebar = document.querySelector<HTMLElement>("#sidebar");
-    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
+    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
     const pin = document.querySelector<HTMLElement>(
       '#sidebar [data-stylex-owner="left-sidebar-close-pin"]',
     );
-    const leftAvatar = document.querySelector<HTMLImageElement>("#sidebar .avatar-wrap img");
+    const leftAvatar = document.querySelector<HTMLImageElement>(
+      '#sidebar [data-stylex-owner="left-sidebar-profile-identity"] img',
+    );
     const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
     if (!sidebar || !main || !pin || !leftAvatar || !rightAvatar) {
       throw new Error("Expected open legacy framed sidebar metric targets are missing.");
@@ -2821,8 +2822,10 @@ async function readDesktopOpenLeftSidebarMetrics(page: Page) {
 async function readMobileOpenLeftSidebarMetrics(page: Page) {
   return page.evaluate(() => {
     const sidebar = document.querySelector<HTMLElement>("#sidebar");
-    const main = document.querySelector<HTMLElement>(".legacy-framed-main");
-    const leftAvatar = document.querySelector<HTMLImageElement>("#sidebar .avatar-wrap img");
+    const main = document.querySelector<HTMLElement>('[data-stylex-owner="framed-site-main"]');
+    const leftAvatar = document.querySelector<HTMLImageElement>(
+      '#sidebar [data-stylex-owner="left-sidebar-profile-identity"] img',
+    );
     const rightAvatar = document.querySelector<HTMLImageElement>(".gnb-usermenu .avatar-wrap img");
     if (!sidebar || !main || !leftAvatar || !rightAvatar) {
       throw new Error("Expected mobile legacy framed sidebar metric targets are missing.");

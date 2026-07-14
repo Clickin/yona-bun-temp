@@ -1404,7 +1404,11 @@ export function SiteLayoutShell({
   };
 
   return (
-    <div className={showLeftSidebar ? "legacy-framed-shell is-open" : "legacy-framed-shell"}>
+    <div
+      {...stylex.props(framedSiteShellStyles.shell, showLeftSidebar && framedSiteShellStyles.open)}
+      data-sidebar-open={showLeftSidebar ? "true" : "false"}
+      data-stylex-owner="framed-site-shell"
+    >
       {showLeftSidebar ? (
         <LegacyFramedSidebar
           activeTab={activeLeftSidebarTab}
@@ -1417,7 +1421,13 @@ export function SiteLayoutShell({
           workspace={navbarWorkspaceQuery.data}
         />
       ) : null}
-      <div className="legacy-framed-main">
+      <div
+        {...stylex.props(
+          framedSiteShellStyles.main,
+          showLeftSidebar && framedSiteShellStyles.mainOpen,
+        )}
+        data-stylex-owner="framed-site-main"
+      >
         <div className="unsupported hidden">
           <div className="unsupported-inner">
             <p id="unsupported-content" />
@@ -1669,6 +1679,39 @@ export function SiteLayoutShell({
     </div>
   );
 }
+
+const framedSiteShellStyles = stylex.create({
+  shell: {
+    minWidth: globalColors.framedSiteMinWidth,
+    width: globalColors.framedSiteWidth,
+  },
+  open: {
+    display: {
+      default: globalColors.framedSiteOpenDisplay,
+      "@media (max-width: 720px)": globalColors.framedSiteMobileDisplay,
+    },
+    height: globalColors.framedSiteOpenHeight,
+    overflow: globalColors.framedSiteOpenOverflow,
+    position: {
+      default: null,
+      "@media (max-width: 720px)": globalColors.framedSiteMobilePosition,
+    },
+  },
+  main: {
+    backgroundColor: globalColors.framedSiteMainSurface,
+    minWidth: globalColors.framedSiteMinWidth,
+    width: globalColors.framedSiteWidth,
+  },
+  mainOpen: {
+    flex: globalColors.framedSiteMainFlex,
+    height: globalColors.framedSiteOpenHeight,
+    overflowY: globalColors.framedSiteMainOverflowY,
+    width: {
+      default: globalColors.framedSiteMainAutoWidth,
+      "@media (max-width: 720px)": globalColors.framedSiteWidth,
+    },
+  },
+});
 
 const siteFooterStyles = stylex.create({
   outer: {

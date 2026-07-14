@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-two shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-three shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -923,6 +923,23 @@ changing legacy fixtures. Typecheck, foundation, production build/StyleX verific
 generated fallback hashes, format, diff, and fresh live/local visual gates pass. Broader runs stop
 on existing route, fixture, or approved-copy differences before or outside this owner and are not
 claimed green. This is not Wave 1 completion.
+
+The fifty-third verified slice migrates the outer `SiteLayoutShell` framed wrapper and its direct
+main pane, the React SPA boundary that replaces `layout_framed.scala.html`'s body/sidebar/iframe
+composition. Colocated StyleX owns the current evidence-backed base widths and white main surface,
+desktop open flex/viewport/overflow behavior, flexible auto-width scrolling main, and max-720
+relative/block/full-width state through canonical global theme variables. Runtime
+`legacy-framed-shell`, `is-open`, and `legacy-framed-main` presentation classes and their shell/main
+`app.css` blocks are removed. Only a stable-owner `body:has(...)` scroll-lock bridge remains because
+colocated component StyleX cannot target the document body and the open state actively consumes it.
+Fresh authenticated live evidence fixes the desktop main at `1095×900 @ x271` and the mobile main
+at `390×844 @ x0`; local owners reproduce both boundaries without horizontal overflow. The same
+fresh mobile capture shows legacy sidebar width 271px versus the already-migrated flattened React
+sidebar's 318.6875px, correcting older evidence and leaving that separate upstream owner gap
+uncompensated here. Source RED becomes focused GREEN 5/5, combined main/sidebar owner verification
+is 8/8, and the affected authenticated geometry case is 1/1. Typecheck, scoped lint/format, frozen
+and manifest hashes, live/local screenshots, isolation, interaction, and diff gates pass. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

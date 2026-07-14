@@ -44,6 +44,18 @@ export const globalColors = stylex.defineVars({
   siteFooterProviderFontFamily: "Verdana",
   siteFooterProviderFontSize: "9px",
   siteFooterProviderText: "#333333",
+  // layout_framed.scala.html flattening of .framed-body, .main, #mainFrame, and mobile height
+  framedSiteWidth: "100%",
+  framedSiteMinWidth: "0px",
+  framedSiteMainSurface: "#ffffff",
+  framedSiteOpenDisplay: "flex",
+  framedSiteOpenHeight: "100vh",
+  framedSiteOpenOverflow: "hidden",
+  framedSiteMainFlex: "1 1 auto",
+  framedSiteMainAutoWidth: "auto",
+  framedSiteMainOverflowY: "auto",
+  framedSiteMobilePosition: "relative",
+  framedSiteMobileDisplay: "block",
   // _page.less: .gnb-inner layout with the live legacy box model
   globalGnbInnerBoxSizing: "content-box",
   globalGnbInnerWidth: "98%",

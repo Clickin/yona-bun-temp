@@ -104,7 +104,7 @@ for (const viewport of [
       }.png`,
     );
 
-    const frame = page.locator(".legacy-framed-main");
+    const frame = page.locator('[data-stylex-owner="framed-site-main"]');
     const openFrame = await frame.evaluate((element) => {
       const box = element.getBoundingClientRect();
       return { height: box.height, width: box.width, x: box.x, y: box.y };
