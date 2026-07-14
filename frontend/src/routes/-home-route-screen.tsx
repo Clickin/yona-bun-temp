@@ -2965,7 +2965,13 @@ const authenticatedSiteUserMenuStyles = stylex.create({
     padding: "0 10px",
   },
   dropdownToggle: {
+    backgroundColor: globalColors.transparent,
+    borderStyle: "none",
+    borderWidth: 0,
+    color: "inherit",
+    cursor: "pointer",
     display: "inline-block",
+    font: "inherit",
     lineHeight: "30px",
     textDecoration: "none",
     transition: "all 0.15s ease",
@@ -3241,7 +3247,12 @@ function AuthenticatedSiteUserMenu({
         >
           <button
             type="button"
-            className={`gnb-dropdown-toggle ${stylex.props(authenticatedSiteUserMenuStyles.dropdownButton, authenticatedSiteUserMenuStyles.dropdownToggle).className}`}
+            className={
+              stylex.props(
+                authenticatedSiteUserMenuStyles.dropdownButton,
+                authenticatedSiteUserMenuStyles.dropdownToggle,
+              ).className
+            }
             title={`${t("user.menu")}, ${t("title.shortcut")} (F)`}
             aria-controls="mySidenav"
             aria-expanded={isSidebarOpen}
@@ -3249,7 +3260,7 @@ function AuthenticatedSiteUserMenu({
           >
             <span className="avatar-wrap smaller">
               <img src={avatarUrl} alt="" />
-            </span>
+            </span>{" "}
             <span
               className={`caret ${stylex.props(authenticatedSiteUserMenuStyles.caret).className}`}
             ></span>
@@ -3261,10 +3272,16 @@ function AuthenticatedSiteUserMenu({
         >
           <button
             type="button"
-            className={`gnb-dropdown-toggle dropdwon-box-btn ${stylex.props(authenticatedSiteUserMenuStyles.dropdownButton, authenticatedSiteUserMenuStyles.dropdownToggle, authenticatedSiteUserMenuStyles.createButton).className}`}
+            className={
+              stylex.props(
+                authenticatedSiteUserMenuStyles.dropdownButton,
+                authenticatedSiteUserMenuStyles.dropdownToggle,
+                authenticatedSiteUserMenuStyles.createButton,
+              ).className
+            }
             onClick={handleCreateMenuToggleClick}
           >
-            <i className="yobicon-plus"></i>
+            <i className="yobicon-plus"></i>{" "}
             <span
               className={`caret ${stylex.props(authenticatedSiteUserMenuStyles.caret).className}`}
             ></span>

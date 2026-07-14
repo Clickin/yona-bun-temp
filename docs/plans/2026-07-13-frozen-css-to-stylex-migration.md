@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty-four user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-five user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -670,6 +670,23 @@ owned by this account row remains fallback; the same global selectors remain act
 anonymous and other actual consumers. The local top-menu button bridge still paints above part of
 the open sidenav because of its separate non-legacy stacking declarations; that independent owner
 is the next follow-up and receives no compensation here. This is not Wave 1 completion.
+
+The thirty-fifth verified slice completes the two authenticated top-right menu button primitives.
+StyleX now owns the native-button reset (`transparent` background, zero border, inherited color
+and font, pointer cursor) together with the already colocated display, line height, transition,
+hover/focus, caret, and create-action surface. The transparent value reuses the canonical global
+theme; no new raw color, dark value, or toggle is introduced. Both buttons drop
+`gnb-dropdown-toggle`, and the create button also drops `dropdwon-box-btn`; two explicit whitespace
+nodes restore the exact Scala sibling spacing before each caret. Their dead React-only `app.css`
+button-padding and toggle/caret/create bridge blocks are deleted. This also removes the non-legacy
+`position: relative`/`z-index: 1000` bridge, restoring the live legacy `static`/`auto` stacking
+behavior without compensation. Fresh Edge/en-US live/local evidence agrees at both viewports on
+the `243.5625×40` owner, the `56.796875×30` avatar toggle at relative `125.96875,5`, the
+`50.796875×30` create toggle at relative `192.765625,5`, both whitespace nodes, exact reset and
+paint declarations, and route-local interactions. No declaration owned by either button remains
+fallback. The dropdown-container class remains only for its actual container/menu consumers. The
+separate authenticated sidenav admin-affix top placement remains the next shell-state owner; this
+slice adds no vertical offset. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -57,12 +57,12 @@ const EXPECTED_AUTHENTICATED_HOME = `
       </li>
       <li class="divider"></li>
       <li class="gnb-usermenu-dropdown sidebar-open-btn" id="sidebar-open-btn">
-        <button class="gnb-dropdown-toggle" type="button" title="User menu, Shortcut (F)">
+        <button type="button" title="User menu, Shortcut (F)">
           <span class="avatar-wrap smaller"><img src="__BASE_PATH__/legacy-assets/images/default-avatar-34.png"></span><span class="caret"></span>
         </button>
       </li>
       <li class="gnb-usermenu-dropdown">
-        <button class="gnb-dropdown-toggle dropdwon-box-btn" type="button">
+        <button type="button">
           <i class="yobicon-plus"></i><span class="caret"></span>
         </button>
         <ul class="dropdown-menu flat right">
@@ -1092,7 +1092,7 @@ test("authenticated shared shell drops route-owned tooltip initializers but keep
     },
     { locator: page.locator(".gnb-usermenu a.usermenu-icon-button"), title: "Site administration" },
     {
-      locator: page.locator("#sidebar-open-btn .gnb-dropdown-toggle"),
+      locator: page.getByRole("button", { name: "User menu, Shortcut (F)" }),
       title: "User menu, Shortcut (F)",
     },
   ];
@@ -1112,7 +1112,7 @@ test("authenticated root sidebar favorite tab matches legacy index/myOrganizatio
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await expect(page.locator("#usermenu-tab-content-list #organizations")).toBeVisible();
   await expect(page.locator("#usermenu-tab-content-list .org-li")).toHaveCount(2);
@@ -1170,7 +1170,7 @@ test("authenticated sidebar translates legacy favorite search and organization b
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.evaluate(() => {
     (window as Window & { __sidebarFavoriteSpaSentinel?: string }).__sidebarFavoriteSpaSentinel =
@@ -1355,33 +1355,27 @@ test("authenticated root user menu toggles stay route-local buttons without navi
 
   await page.goto(`${basePath}/`);
   const initialUrl = page.url();
-  const sidebarToggle = page.locator("#sidebar-open-btn .gnb-dropdown-toggle");
-  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
-  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const sidebarToggle = page.getByRole("button", { name: "User menu, Shortcut (F)" });
+  const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
+  const createToggle = createMenu.locator(":scope > button");
 
   await expect(sidebarToggle).toHaveJSProperty("tagName", "BUTTON");
   await expect(sidebarToggle).toHaveAttribute("type", "button");
-  await expect(page.locator("#sidebar-open-btn a.gnb-dropdown-toggle")).toHaveCount(0);
+  await expect(sidebarToggle).not.toHaveClass(/gnb-dropdown-toggle/);
   await expect(sidebarToggle).not.toHaveAttribute("href", "javascript:void(0);");
 
   await expect(createToggle).toHaveJSProperty("tagName", "BUTTON");
   await expect(createToggle).toHaveAttribute("type", "button");
   await expect(createToggle).not.toHaveAttribute("data-toggle");
-  await expect(createToggle).toHaveClass(/gnb-dropdown-toggle/);
-  await expect(createToggle).toHaveClass(/dropdwon-box-btn/);
-  await expect(createMenu.locator("a.gnb-dropdown-toggle.dropdwon-box-btn")).toHaveCount(0);
+  await expect(createToggle).not.toHaveClass(/gnb-dropdown-toggle/);
+  await expect(createToggle).not.toHaveClass(/dropdwon-box-btn/);
+  await expect(createMenu.locator(":scope > a")).toHaveCount(0);
   await expect(page.locator(".gnb-usermenu a[href^='javascript:']")).toHaveCount(0);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
       "home-user-menu-toggles";
   });
-
-  await sidebarToggle.click();
-  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  expect(page.url()).toBe(initialUrl);
-  await sidebarToggle.click();
-  await expect(page.locator("#mySidenav")).not.toHaveClass(/sidenav-open/);
-  expect(page.url()).toBe(initialUrl);
 
   await expect(createMenu.locator(".dropdown-menu")).toBeHidden();
   await createToggle.click();
@@ -1403,6 +1397,10 @@ test("authenticated root user menu toggles stay route-local buttons without navi
       ),
     )
     .toBe("home-user-menu-toggles");
+
+  await sidebarToggle.click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  expect(page.url()).toBe(initialUrl);
   expect(await authenticatedHomeDropdownBubbleClicks(page)).toEqual([]);
 });
 
@@ -1434,7 +1432,8 @@ test("shared shell keeps dropdown ownership inside route-local handlers", () => 
   expect(authenticatedUserMenuSource).toContain("handleCreateMenuBlur");
   expect(authenticatedUserMenuSource).toContain("event.preventDefault();");
   expect(authenticatedUserMenuSource).toContain("event.stopPropagation();");
-  expect(authenticatedUserMenuSource).toContain('className="gnb-dropdown-toggle dropdwon-box-btn"');
+  expect(authenticatedUserMenuSource).not.toContain("gnb-dropdown-toggle");
+  expect(authenticatedUserMenuSource).not.toContain("dropdwon-box-btn");
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="tooltip"');
   expect(authenticatedUserMenuSource).not.toContain('data-placement="bottom"');
   expect(authenticatedUserMenuSource).not.toContain('data-toggle="dropdown"');
@@ -1490,8 +1489,9 @@ test("authenticated home create dropdown new issue link preserves legacy href an
 
   await page.goto(`${basePath}/`);
 
-  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
-  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
+  const createToggle = createMenu.locator(":scope > button");
   const newIssueLink = createMenu.locator(".dropdown-menu a", { hasText: /^New issue$/ });
 
   await expect(createToggle).not.toHaveAttribute("data-toggle");
@@ -1531,8 +1531,9 @@ test("authenticated home create dropdown personal inbox link preserves legacy hr
 
   await page.goto(`${basePath}/`);
 
-  const createMenu = page.locator(".gnb-usermenu-dropdown:has(.dropdwon-box-btn)");
-  const createToggle = createMenu.locator(".gnb-dropdown-toggle.dropdwon-box-btn");
+  const userMenu = page.locator('[data-stylex-owner="authenticated-site-user-menu"]');
+  const createMenu = userMenu.locator(":scope > li.gnb-usermenu-dropdown").last();
+  const createToggle = createMenu.locator(":scope > button");
   const personalInboxLink = createMenu.locator(".dropdown-menu a", {
     hasText: /^New issue - personal inbox$/,
   });
@@ -1655,11 +1656,9 @@ test("authenticated left framed sidebar matches legacy desktop and mobile geomet
   });
 
   expect(await page.evaluate(() => localStorage.getItem("shallWeOpenLeftNavigation"))).toBe("true");
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await expect(leftSidebar).toBeVisible();
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
-  await expect(page.locator("#mySidenav")).not.toHaveClass(/sidenav-open/);
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await readMobileOpenLeftSidebarMetrics(page)).toEqual({
@@ -1826,7 +1825,7 @@ test("authenticated root sidebar project tab matches legacy index/myProjectList 
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await expect(page.locator("#mySidenav .nav.nav-tabs.nm a[href^='#']")).toHaveCount(0);
   await expect(page.locator("#mySidenav .nav.nav-tabs.nm button")).toHaveText([
@@ -1947,7 +1946,7 @@ test("authenticated root sidebar recent issue tab matches legacy index/myRecentI
   await mockWorkspaceSidebarProjects(page);
 
   await page.goto(`${basePath}/`);
-  await page.locator("#sidebar-open-btn .gnb-dropdown-toggle").click();
+  await page.getByRole("button", { name: "User menu, Shortcut (F)" }).click();
   await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
   await page.locator(".myRecentIssueList button").click();
   await expect(page.locator("#usermenu-tab-content-list #recentlyVisitedIssues")).toBeVisible();
@@ -3262,11 +3261,19 @@ async function installAuthenticatedHomeDropdownBubbleAudit(page: Page) {
       if (!(event.target instanceof Element)) {
         return;
       }
-      if (event.target.closest("#sidebar-open-btn .gnb-dropdown-toggle")) {
+      if (
+        event.target.closest(
+          '[data-stylex-owner="authenticated-site-user-menu"] > #sidebar-open-btn > button',
+        )
+      ) {
         dropdownClicks.push("sidebar-toggle");
         return;
       }
-      if (event.target.closest(".gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn")) {
+      if (
+        event.target.closest(
+          '[data-stylex-owner="authenticated-site-user-menu"] > li.gnb-usermenu-dropdown > button:not([title])',
+        )
+      ) {
         dropdownClicks.push("create-toggle");
       }
     });

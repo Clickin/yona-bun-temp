@@ -9,6 +9,7 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 test.use({ locale: "en-US" });
 
 test("authenticated user menu owns its legacy declarations through global StyleX variables", () => {
+  const appSource = readFileSync("src/app.css", "utf8");
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
   const ownerSource = routeSource.slice(
@@ -22,6 +23,12 @@ test("authenticated user menu owns its legacy declarations through global StyleX
   expect(ownerSource).toContain("globalColors.navigationDivider");
   expect(ownerSource).toContain("globalColors.navigationDropdownText");
   expect(ownerSource).toContain("globalColors.navigationCreateAction");
+  expect(ownerSource).toContain("backgroundColor: globalColors.transparent");
+  expect(ownerSource).toContain('borderStyle: "none"');
+  expect(ownerSource).toContain("borderWidth: 0");
+  expect(ownerSource).toContain('color: "inherit"');
+  expect(ownerSource).toContain('cursor: "pointer"');
+  expect(ownerSource).toContain('font: "inherit"');
   expect(ownerSource).toContain("globalColors.textMuted");
   expect(ownerSource).toContain("globalColors.textOnDarkHover");
   expect(themeSource).toContain("stylex.defineVars");
@@ -46,6 +53,15 @@ test("authenticated user menu owns its legacy declarations through global StyleX
   expect(ownerSource).not.toContain("classList");
   expect(ownerSource).not.toContain("dangerouslySetInnerHTML");
   expect(ownerSource).not.toContain("counterBadge");
+
+  const menuMarker = ownerSource.indexOf('data-stylex-owner="authenticated-site-user-menu"');
+  const menuStart = ownerSource.lastIndexOf("<ul", menuMarker);
+  const menu = ownerSource.slice(menuStart);
+  expect(menu.match(/\{" "\}/gu)).toHaveLength(2);
+  expect(menu).not.toContain("gnb-dropdown-toggle");
+  expect(menu).not.toContain("dropdwon-box-btn");
+  expect(appSource).not.toContain(".gnb-usermenu-dropdown .gnb-dropdown-toggle");
+  expect(appSource).not.toContain(".gnb-usermenu-dropdown > button");
 });
 
 test("authenticated user-menu frozen sources stay byte-identical", () => {
@@ -122,24 +138,24 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
   await expect(sidebarToggle).toHaveAttribute("aria-expanded", "false");
   await expect(createToggle).toHaveAttribute("type", "button");
 
-  const before = await readMenuEvidence(menu, myIssues, siteAdmin, sidebarToggle, createToggle);
+  const before = await readMenuEvidence(menu);
   console.log("authenticated-user-menu-desktop", JSON.stringify(before));
-  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
-  await page.screenshot({
-    fullPage: true,
-    path: resolve(
-      SCREENSHOT_DIRECTORY,
-      `stylex-authenticated-user-menu-desktop-${before.hasOwner ? "after" : "before"}.png`,
-    ),
-  });
 
   expect(before.hasOwner).toBe(true);
   expect(before.styles).toEqual({
     adminFontSize: "16px",
     createBackgroundColor: "rgb(243, 108, 34)",
+    createBorderTopWidth: "0px",
     createBorderRadius: "3px",
     createColor: "rgb(255, 255, 255)",
+    createCursor: "pointer",
+    createDisplay: "inline-block",
+    createFontSize: "14px",
+    createFontWeight: "400",
+    createLineHeight: "30px",
     createPadding: "0px 10px",
+    createPosition: "static",
+    createZIndex: "auto",
     dividerAfterColor: "rgb(120, 139, 167)",
     dividerAfterContent: '"|"',
     dividerAfterOpacity: "0.35",
@@ -159,39 +175,40 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
     menuListStyle: "none",
     menuPadding: "0px",
     toggleDisplay: "inline-block",
+    toggleBackgroundColor: "rgba(0, 0, 0, 0)",
+    toggleBorderTopWidth: "0px",
+    toggleColor: "rgb(239, 239, 239)",
+    toggleCursor: "pointer",
+    toggleFontSize: "14px",
+    toggleFontWeight: "400",
     toggleLineHeight: "30px",
     togglePadding: "0px 10px",
+    togglePosition: "static",
     toggleTransitionDuration: "0.15s",
+    toggleZIndex: "auto",
   });
+  expect(before.buttonPresentationClasses).toEqual([[], []]);
+  expect(before.buttonWhitespace).toEqual([true, true]);
   assertContainedAndOrdered(before.geometry, 1366);
-  expectBox(before.geometry.menu, { height: 40, width: 235.97, x: 1106.56, y: 43 });
-  expectBox(before.geometry.myIssues, { height: 27, width: 84.19, x: 1106.56, y: 49 });
-  expectBox(before.geometry.admin, { height: 28, width: 35.19, x: 1194.05, y: 49 });
-  expectBox(before.geometry.sidebar, { height: 30, width: 53, x: 1232.53, y: 48 });
-  expectBox(before.geometry.create, { height: 30, width: 47, x: 1295.53, y: 48 });
+  expectBox(before.geometry.menu, { height: 40, width: 243.56, x: 1098.97, y: 43 });
+  expectBox(before.geometry.myIssues, { height: 27, width: 84.19, x: 1098.97, y: 49 });
+  expectBox(before.geometry.admin, { height: 28, width: 35.19, x: 1186.45, y: 49 });
+  expectBox(before.geometry.sidebar, { height: 30, width: 56.8, x: 1224.94, y: 48 });
+  expectBox(before.geometry.create, { height: 30, width: 50.8, x: 1291.73, y: 48 });
 
   await myIssues.hover();
   await expect(myIssues).toHaveCSS("color", "rgb(252, 252, 252)");
   await sidebarToggle.hover();
   await expect(sidebarToggle).toHaveCSS("color", "rgb(93, 187, 224)");
-  expect(await caretBorderColor(sidebarToggle)).toBe("rgb(93, 187, 224)");
   await sidebarToggle.focus();
   await expect(sidebarToggle).toHaveCSS("color", "rgb(93, 187, 224)");
   await createToggle.hover();
   await expect(createToggle).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(createToggle).toHaveCSS("background-color", "rgb(243, 108, 34)");
-  expect(await caretBorderColor(createToggle)).toBe("rgb(255, 255, 255)");
   await createToggle.focus();
   await expect(createToggle).toHaveCSS("color", "rgb(255, 255, 255)");
 
   const initialUrl = page.url();
-  await sidebarToggle.click();
-  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  await expect(sidebarToggle).toHaveAttribute("aria-expanded", "true");
-  expect(page.url()).toBe(initialUrl);
-  await sidebarToggle.click();
-  await expect(page.locator("#mySidenav")).not.toHaveClass(/sidenav-open/);
-
   await createToggle.click();
   const createLinks = menu.getByRole("link").filter({ visible: true });
   await expect(createLinks).toContainText([
@@ -205,12 +222,26 @@ test("StyleX owns the authenticated desktop top-right menu and keeps React inter
   await expect(menu.getByRole("link", { name: "New Group", exact: true })).toBeVisible();
   expect(page.url()).toBe(initialUrl);
   await createToggle.click();
+  await expect(page.getByRole("link", { name: "New issue", exact: true })).toBeHidden();
 
-  await removeStyleXClasses(menu);
-  const fallback = await readMenuEvidence(menu, myIssues, siteAdmin, sidebarToggle, createToggle);
+  await removeNonButtonStyleXClasses(menu);
+  const fallback = await readMenuEvidence(menu);
   expect(fallback.styles).toEqual(before.styles);
   expect(fallback.geometry).toEqual(before.geometry);
   await restoreClasses(menu);
+
+  await sidebarToggle.click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  await expect(sidebarToggle).toHaveAttribute("aria-expanded", "true");
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      SCREENSHOT_DIRECTORY,
+      "stylex-authenticated-top-menu-button-reset-local-desktop.png",
+    ),
+  });
+  expect(page.url()).toBe(initialUrl);
 });
 
 test("StyleX preserves the authenticated 390px menu, responsive color, and containment", async ({
@@ -224,51 +255,80 @@ test("StyleX preserves the authenticated 390px menu, responsive color, and conta
   await expect(page.locator("body")).toHaveCSS("color", "rgb(51, 51, 51)");
 
   const menu = topRightMenu(page);
-  const myIssues = menu.getByRole("link", { name: "My Issues", exact: true });
-  const siteAdmin = menu.locator('a[title="Site administration"]');
   const buttons = menu.getByRole("button");
   const sidebarToggle = buttons.nth(0);
   const createToggle = buttons.nth(1);
-  const evidence = await readMenuEvidence(menu, myIssues, siteAdmin, sidebarToggle, createToggle);
+  const evidence = await readMenuEvidence(menu);
   console.log("authenticated-user-menu-mobile", JSON.stringify(evidence));
-
-  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
-  await page.screenshot({
-    fullPage: true,
-    path: resolve(
-      SCREENSHOT_DIRECTORY,
-      `stylex-authenticated-user-menu-mobile-${evidence.hasOwner ? "after" : "before"}.png`,
-    ),
-  });
 
   expect(evidence.hasOwner).toBe(true);
   expect(evidence.styles.itemColor).toBe("rgb(93, 187, 224)");
   expect(evidence.styles.linkColor).toBe("rgb(162, 162, 162)");
   expect(evidence.styles.dropdownColor).toBe("rgb(93, 187, 224)");
   expect(evidence.styles.createBackgroundColor).toBe("rgb(243, 108, 34)");
+  expect(evidence.styles.togglePosition).toBe("static");
+  expect(evidence.styles.toggleZIndex).toBe("auto");
+  expect(evidence.styles.createPosition).toBe("static");
+  expect(evidence.styles.createZIndex).toBe("auto");
+  expect(evidence.buttonPresentationClasses).toEqual([[], []]);
+  expect(evidence.buttonWhitespace).toEqual([true, true]);
   assertContainedAndOrdered(evidence.geometry, 390);
-  expectBox(evidence.geometry.menu, { height: 40, width: 235.97, x: 140.33, y: 66 });
-  expectBox(evidence.geometry.myIssues, { height: 27, width: 84.19, x: 140.33, y: 72 });
-  expectBox(evidence.geometry.admin, { height: 28, width: 35.19, x: 227.81, y: 72 });
-  expectBox(evidence.geometry.sidebar, { height: 30, width: 53, x: 266.3, y: 71 });
-  expectBox(evidence.geometry.create, { height: 30, width: 47, x: 329.3, y: 71 });
+  expectRelativeBox(evidence.geometry.menu, evidence.geometry.menu, {
+    height: 40,
+    width: 243.56,
+    x: 0,
+    y: 0,
+  });
+  expectRelativeBox(evidence.geometry.myIssues, evidence.geometry.menu, {
+    height: 27,
+    width: 84.19,
+    x: 0,
+    y: 6,
+  });
+  expectRelativeBox(evidence.geometry.admin, evidence.geometry.menu, {
+    height: 28,
+    width: 35.19,
+    x: 87.48,
+    y: 6,
+  });
+  expectRelativeBox(evidence.geometry.sidebar, evidence.geometry.menu, {
+    height: 30,
+    width: 56.8,
+    x: 125.97,
+    y: 5,
+  });
+  expectRelativeBox(evidence.geometry.create, evidence.geometry.menu, {
+    height: 30,
+    width: 50.8,
+    x: 192.77,
+    y: 5,
+  });
 
   const initialUrl = page.url();
-  await sidebarToggle.click();
-  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
-  expect(page.url()).toBe(initialUrl);
-  await sidebarToggle.click();
   await createToggle.click();
-  await expect(page.getByRole("link", { name: "Create new project", exact: true })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Create new project", exact: true })).toBeVisible();
   await createToggle.click();
+  await expect(menu.getByRole("link", { name: "Create new project", exact: true })).toBeHidden();
 
-  await removeStyleXClasses(menu);
-  const fallback = await readMenuEvidence(menu, myIssues, siteAdmin, sidebarToggle, createToggle);
+  await removeNonButtonStyleXClasses(menu);
+  const fallback = await readMenuEvidence(menu);
   expect(fallback.styles.itemColor).toBe("rgb(93, 187, 224)");
   expect(fallback.styles.dropdownColor).toBe("rgb(93, 187, 224)");
   expect(fallback.styles.createBackgroundColor).toBe("rgb(243, 108, 34)");
   expect(fallback.geometry).toEqual(evidence.geometry);
   await restoreClasses(menu);
+
+  await sidebarToggle.click();
+  await expect(page.locator("#mySidenav")).toHaveClass(/sidenav-open/);
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      SCREENSHOT_DIRECTORY,
+      "stylex-authenticated-top-menu-button-reset-local-mobile.png",
+    ),
+  });
+  expect(page.url()).toBe(initialUrl);
 });
 
 function topRightMenu(page: Page) {
@@ -326,13 +386,7 @@ async function installAuthenticatedHome(page: Page) {
   });
 }
 
-async function readMenuEvidence(
-  menu: Locator,
-  myIssues: Locator,
-  siteAdmin: Locator,
-  sidebarToggle: Locator,
-  createToggle: Locator,
-) {
+async function readMenuEvidence(menu: Locator) {
   return menu.evaluate((element) => {
     const items = Array.from(element.children) as HTMLElement[];
     const links = Array.from(element.querySelectorAll("a")) as HTMLElement[];
@@ -364,7 +418,21 @@ async function readMenuEvidence(
     const dropdownStyle = getComputedStyle(items[4]);
     const toggleStyle = getComputedStyle(sidebarButton);
     const createStyle = getComputedStyle(createButton);
+    const hasWhitespaceBetweenChildren = (button: HTMLElement) =>
+      Array.from(button.childNodes).some(
+        (node) =>
+          node.nodeType === Node.TEXT_NODE &&
+          /^\s+$/u.test(node.textContent ?? "") &&
+          node.previousSibling === button.firstElementChild &&
+          node.nextSibling === button.lastElementChild,
+      );
     return {
+      buttonPresentationClasses: buttons.map((button) =>
+        ["gnb-dropdown-toggle", "dropdwon-box-btn"].filter((className) =>
+          button.classList.contains(className),
+        ),
+      ),
+      buttonWhitespace: buttons.map(hasWhitespaceBetweenChildren),
       geometry: {
         admin: box(adminLink),
         create: box(createButton),
@@ -376,9 +444,17 @@ async function readMenuEvidence(
       styles: {
         adminFontSize: adminStyle.fontSize,
         createBackgroundColor: createStyle.backgroundColor,
+        createBorderTopWidth: createStyle.borderTopWidth,
         createBorderRadius: createStyle.borderRadius,
         createColor: createStyle.color,
+        createCursor: createStyle.cursor,
+        createDisplay: createStyle.display,
+        createFontSize: createStyle.fontSize,
+        createFontWeight: createStyle.fontWeight,
+        createLineHeight: createStyle.lineHeight,
         createPadding: createStyle.padding,
+        createPosition: createStyle.position,
+        createZIndex: createStyle.zIndex,
         dividerAfterColor: dividerAfterStyle.color,
         dividerAfterContent: dividerAfterStyle.content,
         dividerAfterOpacity: dividerAfterStyle.opacity,
@@ -397,20 +473,21 @@ async function readMenuEvidence(
         menuFloat: menuStyle.cssFloat,
         menuListStyle: menuStyle.listStyleType,
         menuPadding: menuStyle.padding,
+        toggleBackgroundColor: toggleStyle.backgroundColor,
+        toggleBorderTopWidth: toggleStyle.borderTopWidth,
+        toggleColor: toggleStyle.color,
+        toggleCursor: toggleStyle.cursor,
         toggleDisplay: toggleStyle.display,
+        toggleFontSize: toggleStyle.fontSize,
+        toggleFontWeight: toggleStyle.fontWeight,
         toggleLineHeight: toggleStyle.lineHeight,
         togglePadding: toggleStyle.padding,
+        togglePosition: toggleStyle.position,
         toggleTransitionDuration: toggleStyle.transitionDuration,
+        toggleZIndex: toggleStyle.zIndex,
       },
     };
   });
-}
-
-async function caretBorderColor(toggle: Locator) {
-  return toggle
-    .locator(":scope > span")
-    .last()
-    .evaluate((caret) => getComputedStyle(caret).borderTopColor);
 }
 
 function assertContainedAndOrdered(
@@ -430,14 +507,12 @@ function assertContainedAndOrdered(
   }
 }
 
-async function removeStyleXClasses(menu: Locator) {
+async function removeNonButtonStyleXClasses(menu: Locator) {
   await menu.evaluate((element) => {
     const legacyClasses = new Set([
       "divider",
-      "dropdwon-box-btn",
       "dropdown-menu",
       "flat",
-      "gnb-dropdown-toggle",
       "gnb-usermenu",
       "gnb-usermenu-dropdown",
       "gnb-usermenu-item",
@@ -457,6 +532,7 @@ async function removeStyleXClasses(menu: Locator) {
     ]);
     for (const target of [element, ...element.querySelectorAll("*")]) {
       const htmlTarget = target as HTMLElement;
+      if (htmlTarget.closest("button")) continue;
       htmlTarget.dataset.preStylexClass = htmlTarget.className;
       htmlTarget.className = Array.from(htmlTarget.classList)
         .filter((className) => legacyClasses.has(className))
@@ -469,6 +545,7 @@ async function restoreClasses(menu: Locator) {
   await menu.evaluate((element) => {
     for (const target of [element, ...element.querySelectorAll("*")]) {
       const htmlTarget = target as HTMLElement;
+      if (!htmlTarget.hasAttribute("data-pre-stylex-class")) continue;
       htmlTarget.className = htmlTarget.dataset.preStylexClass ?? "";
       delete htmlTarget.dataset.preStylexClass;
     }
@@ -492,4 +569,12 @@ function expectBox(
   expect(Math.abs(actual.y - expected.y)).toBeLessThanOrEqual(0.02);
   expect(Math.abs(actual.width - expected.width)).toBeLessThanOrEqual(0.02);
   expect(Math.abs(actual.height - expected.height)).toBeLessThanOrEqual(0.02);
+}
+
+function expectRelativeBox(
+  actual: Pick<Box, "height" | "width" | "x" | "y">,
+  origin: Pick<Box, "x" | "y">,
+  expected: Pick<Box, "height" | "width" | "x" | "y">,
+) {
+  expectBox({ ...actual, x: actual.x - origin.x, y: actual.y - origin.y }, expected);
 }

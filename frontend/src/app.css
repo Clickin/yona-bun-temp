@@ -2064,59 +2064,6 @@ span.issue-label {
   font-size: 14px;
 }
 
-.gnb-usermenu-dropdown > a,
-.gnb-usermenu-dropdown > button {
-  padding: 0 10px;
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle {
-  position: relative;
-  z-index: 1000;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  display: inline-block;
-  line-height: 30px;
-  transition: all 0.15s ease;
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle .caret {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  margin-left: 5px;
-  vertical-align: middle !important;
-  border-top: 4px solid rgba(255, 255, 255, 0.7);
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
-  transition: all 0.15s ease;
-  content: "";
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle:hover,
-.gnb-usermenu-dropdown .gnb-dropdown-toggle:focus {
-  color: #51aacc;
-  text-decoration: none;
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle:hover .caret,
-.gnb-usermenu-dropdown .gnb-dropdown-toggle:focus .caret {
-  border-top-color: #51aacc;
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn {
-  padding: 0 10px;
-  color: #fff;
-  background-color: #51aacc;
-  border-radius: 3px;
-}
-
-.gnb-usermenu-dropdown .gnb-dropdown-toggle.dropdwon-box-btn .caret {
-  border-top-color: #fff;
-}
-
 @media (max-width: 720px) {
   .gnb-usermenu-item,
   .gnb-usermenu-dropdown {

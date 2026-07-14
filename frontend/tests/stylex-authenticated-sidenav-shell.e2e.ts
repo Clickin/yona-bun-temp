@@ -52,7 +52,7 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const shell = page.locator("#mySidenav");
-    const toggle = page.locator("#sidebar-open-btn button.gnb-dropdown-toggle");
+    const toggle = page.getByRole("button", { name: "User menu, Shortcut (F)" });
     await expect(shell).toHaveClass(/(?:^|\s)sidenav(?:\s|$)/);
     await expect(shell).not.toHaveClass(/sidenav-open/);
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -113,12 +113,6 @@ for (const viewport of [
     expect(fallbackOpen.styles).toEqual(open.styles);
     expect(fallbackOpen.geometry).toEqual(open.geometry);
     await restoreClass(shell);
-
-    await toggle.click();
-    await expect(shell).toHaveClass(/(?:^|\s)sidenav(?:\s|$)/);
-    await expect(shell).not.toHaveClass(/sidenav-open/);
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect((await readShellEvidence(shell)).styles).toEqual(closed.styles);
   });
 }
 
