@@ -45,7 +45,6 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
     await form.locator("dl > dd > input").evaluateAll((inputs) =>
       inputs.map((input) => ({
         autocomplete: input.getAttribute("autocomplete"),
-        className: input.className,
         id: input.id,
         name: input.getAttribute("name"),
         placeholder: input.getAttribute("placeholder"),
@@ -55,7 +54,6 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
   ).toEqual([
     {
       autocomplete: "off",
-      className: "text password",
       id: "password",
       name: "password",
       placeholder: "Password",
@@ -63,13 +61,26 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
     },
     {
       autocomplete: "off",
-      className: "text password",
       id: "retypedPassword",
       name: "retypedPassword",
       placeholder: "Password confirmation",
       type: "password",
     },
   ]);
+  expect(
+    await form.locator("dl > dd > input").evaluateAll((inputs) =>
+      inputs.map((input) =>
+        input.className
+          .split(/\s+/u)
+          .filter(
+            (classToken) =>
+              classToken && !classToken.startsWith("x") && !classToken.includes("__styles."),
+          )
+          .join(" "),
+      ),
+    ),
+  ).toEqual(["", ""]);
+  await expect(form.locator("dl > dd > input.text, dl > dd > input.password")).toHaveCount(0);
   await expect(form.locator("button[type='submit']")).toHaveText("Confirm");
   await assertNoPluginHooks(routeRoot);
 
@@ -350,7 +361,15 @@ function escapeRegExp(value: string) {
 async function directChildOrder(root: Locator) {
   return root.locator(":scope > *").evaluateAll((elements) =>
     elements.map((element) => {
-      if (element.className) return element.className;
+      if (element.className) {
+        return element.className
+          .split(/\s+/u)
+          .filter(
+            (classToken) =>
+              classToken && !classToken.startsWith("x") && !classToken.includes("__styles."),
+          )
+          .join(" ");
+      }
       return element.tagName;
     }),
   );

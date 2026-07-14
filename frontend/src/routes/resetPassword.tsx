@@ -1,10 +1,12 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
@@ -21,6 +23,80 @@ const legacyAnchorActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
+
+const styles = stylex.create({
+  validTokenReset: {
+    "--yoram-stylex-reset-password": "stylex",
+  },
+  taglineWrap: {
+    textAlign: globalColors.resetPasswordTaglineTextAlign,
+    marginTop: globalColors.resetPasswordTaglineMarginTop,
+    marginBottom: globalColors.resetPasswordTaglineMarginBottom,
+    paddingTop: globalColors.resetPasswordTaglinePaddingTop,
+  },
+  title: {
+    display: globalColors.resetPasswordTitleDisplay,
+    fontFamily: globalColors.resetPasswordTitleFontFamily,
+    fontSize: globalColors.resetPasswordTitleFontSize,
+    lineHeight: globalColors.resetPasswordTitleLineHeight,
+    fontWeight: globalColors.resetPasswordTitleFontWeight,
+  },
+  tagline: {
+    marginTop: globalColors.resetPasswordTaglineCopyMarginTop,
+    fontSize: globalColors.resetPasswordTaglineFontSize,
+    color: globalColors.resetPasswordTaglineColor,
+  },
+  formWrap: {
+    position: globalColors.resetPasswordFormPosition,
+    width: {
+      default: globalColors.resetPasswordFormWidth,
+      "@media (max-width: 767px)": globalColors.resetPasswordFormResponsiveWidth,
+    },
+    margin: globalColors.resetPasswordFormMargin,
+  },
+  textInput: {
+    width: {
+      default: globalColors.resetPasswordInputWidth,
+      "@media (max-width: 767px)": globalColors.resetPasswordInputResponsiveWidth,
+    },
+    height: globalColors.resetPasswordInputHeight,
+    marginBottom: globalColors.resetPasswordInputMarginBottom,
+    fontSize: globalColors.resetPasswordInputFontSize,
+    fontWeight: globalColors.resetPasswordInputFontWeight,
+    borderStyle: globalColors.resetPasswordInputBorderStyle,
+    borderBottomColor: globalColors.resetPasswordInputBorderBottomColor,
+    borderBottomStyle: globalColors.resetPasswordInputBorderBottomStyle,
+    borderBottomWidth: globalColors.resetPasswordInputBorderBottomWidth,
+    borderRadius: globalColors.resetPasswordInputBorderRadius,
+    ":focus": {
+      borderBottomColor: globalColors.resetPasswordInputFocusBorderBottomColor,
+      outline: globalColors.resetPasswordInputFocusOutline,
+      boxShadow: globalColors.resetPasswordInputFocusBoxShadow,
+    },
+  },
+  passwordInput: {
+    marginBottom: globalColors.resetPasswordPasswordMarginBottom,
+  },
+  buttonRow: {
+    display: globalColors.resetPasswordButtonRowDisplay,
+    textAlign: globalColors.resetPasswordButtonRowTextAlign,
+    margin: globalColors.resetPasswordButtonRowMargin,
+  },
+  submit: {
+    display: globalColors.resetPasswordSubmitDisplay,
+    boxSizing: globalColors.resetPasswordSubmitBoxSizing,
+    width: globalColors.resetPasswordSubmitWidth,
+  },
+});
+
+const validTokenResetClassName = stylex.props(styles.validTokenReset).className;
+const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
+const titleClassName = stylex.props(styles.title).className;
+const taglineClassName = stylex.props(styles.tagline).className;
+const formWrapClassName = stylex.props(styles.formWrap).className;
+const passwordInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
+const buttonRowClassName = stylex.props(styles.buttonRow).className;
+const submitClassName = stylex.props(styles.submit).className;
 
 export const Route = createFileRoute("/resetPassword")({
   component: ResetPasswordRoute,
@@ -45,6 +121,7 @@ function ResetPasswordRoute() {
 function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { error, s } = Route.useSearch();
   const resetToken = s ?? "";
+  const validTokenReset = !error && Boolean(resetToken);
   const { language, t } = useLegacyMessages();
   const navigate = useNavigate();
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -91,15 +168,40 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{browserTitle}</title>
-      <div className="page full">
-        <div className="center-wrap tag-line-wrap reset-password">
-          <h1 className="title">
+      <div
+        className={validTokenReset ? `page full ${validTokenResetClassName}` : "page full"}
+        data-stylex-owner={validTokenReset ? "reset-password-form" : undefined}
+      >
+        <div
+          className={
+            validTokenReset
+              ? `center-wrap tag-line-wrap reset-password ${taglineWrapClassName}`
+              : "center-wrap tag-line-wrap reset-password"
+          }
+          data-stylex-part={validTokenReset ? "reset-password-tagline" : undefined}
+        >
+          <h1
+            className={validTokenReset ? `title ${titleClassName}` : "title"}
+            data-stylex-part={validTokenReset ? "reset-password-title" : undefined}
+          >
             <HighlightedLegacyMessage message={title} />
           </h1>
-          <p className="tag-line">{t("app.description")}</p>
+          <p
+            className={validTokenReset ? `tag-line ${taglineClassName}` : "tag-line"}
+            data-stylex-part={validTokenReset ? "reset-password-copy" : undefined}
+          >
+            {t("app.description")}
+          </p>
         </div>
 
-        <div className="login-form-wrap frm-wrap">
+        <div
+          className={
+            validTokenReset
+              ? `login-form-wrap frm-wrap ${formWrapClassName}`
+              : "login-form-wrap frm-wrap"
+          }
+          data-stylex-part={validTokenReset ? "reset-password-form-wrap" : undefined}
+        >
           <form
             action={prefixBasePath(runtimeConfig.basePath, "/resetPassword")}
             method="post"
@@ -115,7 +217,8 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   id="password"
                   type="password"
                   name="password"
-                  className="text password"
+                  className={validTokenReset ? passwordInputClassName : "text password"}
+                  data-stylex-part={validTokenReset ? "reset-password-password" : undefined}
                   placeholder={t("user.password")}
                   autoComplete="off"
                   onBlur={validateCurrentForm}
@@ -128,7 +231,8 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   id="retypedPassword"
                   type="password"
                   name="retypedPassword"
-                  className="text password"
+                  className={validTokenReset ? passwordInputClassName : "text password"}
+                  data-stylex-part={validTokenReset ? "reset-password-retyped-password" : undefined}
                   placeholder={t("validation.retypePassword")}
                   autoComplete="off"
                   onBlur={validateCurrentForm}
@@ -140,10 +244,18 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
               </dd>
             </dl>
 
-            <div className="btns-row">
+            <div
+              className={validTokenReset ? `btns-row ${buttonRowClassName}` : "btns-row"}
+              data-stylex-part={validTokenReset ? "reset-password-submit-row" : undefined}
+            >
               <button
                 type="submit"
-                className="ybtn ybtn-primary ybtn-fullsize"
+                className={
+                  validTokenReset
+                    ? `ybtn ybtn-primary ybtn-fullsize ${submitClassName}`
+                    : "ybtn ybtn-primary ybtn-fullsize"
+                }
+                data-stylex-part={validTokenReset ? "reset-password-submit" : undefined}
                 disabled={resetMutation.isPending}
               >
                 {t("button.confirm")}

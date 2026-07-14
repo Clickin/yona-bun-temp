@@ -1218,6 +1218,19 @@ Focused RED became GREEN 5/5 for source/global-theme ownership, DOM/copy/order, 
 registration payload, excluded branches, desktop/mobile paint, screenshots, and no overflow. This
 is not Wave 1 completion.
 
+The seventy-third slice migrates the anonymous valid-token `/resetPassword?s=…` state from
+`user/resetPassword.scala.html`. StyleX owns the reset tagline/title/copy, form wrapper, two
+password inputs and focus state, and submit row/button through canonical global theme variables
+sourced from `_page.less` and `_responsive.less`; React/TanStack retains validation, reset
+mutation, and navigation. The invalid-token bad-request page and validation-popover surface are
+explicitly outside this owner. Valid-token inputs drop `text password` presentation classes and
+use one composed StyleX input declaration so the legacy 15px password spacing remains directly
+owned. Live legacy desktop/mobile captures and local output agree on the 400px desktop form and
+95% mobile form/input geometry; the en-US mobile title wraps exactly as the pre-existing legacy
+regression specifies. Focused RED became GREEN 5/5 for source/global-theme ownership, DOM/copy,
+validation and successful reset payload, excluded invalid state, desktop/mobile paint, screenshots,
+and no overflow. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
