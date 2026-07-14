@@ -635,6 +635,12 @@ async function canonicalizeScreenRoots(page: Page) {
       if (name === "class" && current.matches('[data-stylex-owner="site-massmail-write-action"]')) {
         return "";
       }
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-massmail-select-project-action"]')
+      ) {
+        return "";
+      }
       if (name === "class" && current.matches('[data-stylex-owner="site-massmail-title-strip"]')) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)

@@ -37,6 +37,50 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  selectProjectAction: {
+    backgroundColor: {
+      default: globalColors.siteMassMailSelectProjectActionSurface,
+      ":hover": globalColors.siteMassMailSelectProjectActionInteractiveSurface,
+      ":focus": globalColors.siteMassMailSelectProjectActionInteractiveSurface,
+      ":active": globalColors.siteMassMailSelectProjectActionInteractiveSurface,
+    },
+    borderColor: {
+      default: globalColors.siteMassMailSelectProjectActionBorderColor,
+      ":hover": globalColors.siteMassMailSelectProjectActionInteractiveBorderColor,
+      ":focus": globalColors.siteMassMailSelectProjectActionInteractiveBorderColor,
+      ":active": globalColors.siteMassMailSelectProjectActionInteractiveBorderColor,
+    },
+    borderRadius: globalColors.siteMassMailSelectProjectActionBorderRadius,
+    borderStyle: globalColors.siteMassMailSelectProjectActionBorderStyle,
+    borderWidth: globalColors.siteMassMailSelectProjectActionBorderWidth,
+    boxShadow: globalColors.siteMassMailSelectProjectActionBoxShadow,
+    color: {
+      default: globalColors.siteMassMailSelectProjectActionText,
+      ":hover": globalColors.siteMassMailSelectProjectActionInteractiveText,
+      ":focus": globalColors.siteMassMailSelectProjectActionInteractiveText,
+      ":active": globalColors.siteMassMailSelectProjectActionInteractiveText,
+    },
+    cursor: globalColors.siteMassMailSelectProjectActionCursor,
+    display: globalColors.siteMassMailSelectProjectActionDisplay,
+    fontSize: globalColors.siteMassMailSelectProjectActionFontSize,
+    lineHeight: globalColors.siteMassMailSelectProjectActionLineHeight,
+    marginBottom: globalColors.siteMassMailSelectProjectActionMarginBottom,
+    marginLeft: globalColors.siteMassMailSelectProjectActionMarginLeft,
+    outline: globalColors.siteMassMailSelectProjectActionOutline,
+    padding: globalColors.siteMassMailSelectProjectActionPadding,
+    position: globalColors.siteMassMailSelectProjectActionPosition,
+    textAlign: globalColors.siteMassMailSelectProjectActionTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteMassMailSelectProjectActionInteractiveTextDecoration,
+      ":focus": globalColors.siteMassMailSelectProjectActionInteractiveTextDecoration,
+      ":active": globalColors.siteMassMailSelectProjectActionInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteMassMailSelectProjectActionTextShadow,
+    transition: globalColors.siteMassMailSelectProjectActionTransition,
+    verticalAlign: globalColors.siteMassMailSelectProjectActionVerticalAlign,
+    whiteSpace: globalColors.siteMassMailSelectProjectActionWhiteSpace,
+    zIndex: globalColors.siteMassMailSelectProjectActionZIndex,
+  },
   writeAction: {
     backgroundColor: {
       default: globalColors.siteMassMailWriteActionSurface,
@@ -338,9 +382,10 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             }}
           />
           <button
+            {...stylex.props(styles.selectProjectAction)}
+            data-stylex-owner="site-massmail-select-project-action"
             id="select-project"
             type="submit"
-            className="ybtn"
             onClick={(event) => {
               event.preventDefault();
               addProject();

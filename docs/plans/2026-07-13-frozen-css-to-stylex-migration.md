@@ -1451,6 +1451,14 @@ declarations; radio controls, project wrapper/typeahead/tags, add and mail actio
 sidebar/shell, and generic inputs remain fallback or separate owners. This is not Wave 1
 completion.
 
+The one-hundred-sixth slice migrates the projects-recipient `/sites/massmail` default add action
+from `site/massMail.scala.html`, `_yobiUI.less`, `_mixins.less`, and `_variables.less`. StyleX owns
+the complete applicable former `ybtn` base and interaction surface through global variables and
+removes that fallback class only from this button; its input-before-button DOM means the legacy
+first-child margin exception does not apply. Radio controls, input/wrapper/typeahead/tags, mail
+action, title/sidebar/shell, and all other ybtn consumers remain fallback or separate owners.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
