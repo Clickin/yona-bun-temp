@@ -11,7 +11,7 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { globalColors } from "../theme.stylex";
+import { globalBreakpoints, globalColors } from "../theme.stylex";
 import { useRootLoginDialog, useRootToast } from "./__root";
 import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 
@@ -339,55 +339,80 @@ function HomeScreen({
             {...stylex.props(authenticatedHomePageWrapStyles.inner)}
             data-stylex-owner="authenticated-home-page-wrap"
           >
-            <div className={isIntroVisible ? "site-guide-outer" : "site-guide-outer hide"}>
-              <h3>
-                <span>{`${t("app.welcome", { args: [siteName] })} - ${t("app.description")}`}</span>
+            <div
+              {...stylex.props(
+                authenticatedHomeIntroGuideStyles.outer,
+                !isIntroVisible && authenticatedHomeIntroGuideStyles.hidden,
+              )}
+              data-stylex-owner="authenticated-home-intro-guide"
+            >
+              <h3 {...stylex.props(authenticatedHomeIntroGuideStyles.heading)}>
+                <span {...stylex.props(authenticatedHomeIntroGuideStyles.headingText)}>
+                  {`${t("app.welcome", { args: [siteName] })} - ${t("app.description")}`}
+                </span>
               </h3>
-              <table className="welcome-table table borderless">
+              <table
+                className={`table ${stylex.props(authenticatedHomeIntroGuideStyles.table).className}`}
+                data-stylex-owner="authenticated-home-intro-guide-table"
+              >
                 <tbody>
                   <tr>
-                    <td>
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
                       <Link
                         to={LEGACY_GUIDE_NEW_PROJECT_PATH}
                         reloadDocument
-                        className="ybtn ybtn-success"
+                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
                       >
                         {t("button.newProject")}
                       </Link>
                     </td>
-                    <td>{t("app.welcome.project.desc")}</td>
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
+                      {t("app.welcome.project.desc")}
+                    </td>
                   </tr>
                   <tr>
-                    <td>
-                      <Link to="/organizations/new" className="ybtn ybtn-success">
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
+                      <Link
+                        to="/organizations/new"
+                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
+                      >
                         {t("title.newOrganization")}
                       </Link>
                     </td>
-                    <td>{t("app.welcome.group.desc")}</td>
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
+                      {t("app.welcome.group.desc")}
+                    </td>
                   </tr>
                   <tr>
-                    <td>
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
                       <Link
                         to="/projects"
                         activeProps={LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS.activeProps}
-                        className="ybtn ybtn-success"
+                        className={`ybtn ybtn-success ${stylex.props(authenticatedHomeIntroGuideStyles.link).className}`}
                       >
                         {t("title.projectList")}
                       </Link>
                     </td>
-                    <td>{t("app.welcome.searchProject.desc")}</td>
+                    <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
+                      {t("app.welcome.searchProject.desc")}
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div className="guide-toggle">
+            <div
+              {...stylex.props(authenticatedHomeIntroGuideStyles.toggle)}
+              data-stylex-owner="authenticated-home-intro-guide-toggle"
+            >
               <button
-                className="btn-transparent"
+                className={`btn-transparent ${stylex.props(authenticatedHomeIntroGuideStyles.toggleButton).className}`}
                 id="toggleIntro"
                 type="button"
                 onClick={toggleIntro}
               >
-                <i className="yobicon-resizev" />
+                <i
+                  className={`yobicon-resizev ${stylex.props(authenticatedHomeIntroGuideStyles.icon).className}`}
+                />
               </button>
             </div>
             <div className="page on-fold-intro">
@@ -1716,6 +1741,62 @@ const framedSiteShellStyles = stylex.create({
       default: globalColors.framedSiteMainAutoWidth,
       "@media (max-width: 720px)": globalColors.framedSiteWidth,
     },
+  },
+});
+
+const authenticatedHomeIntroGuideStyles = stylex.create({
+  outer: {
+    margin: {
+      default: globalColors.authenticatedHomeIntroGuideMargin,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeIntroGuideMobileMargin,
+    },
+  },
+  hidden: {
+    display: globalColors.authenticatedHomeIntroGuideHiddenDisplay,
+    marginTop: {
+      default: globalColors.authenticatedHomeIntroGuideHiddenMarginTop,
+      [globalBreakpoints.mobile]: globalColors.authenticatedHomeIntroGuideHiddenMobileMarginTop,
+    },
+  },
+  heading: {
+    margin: globalColors.authenticatedHomeIntroGuideHeadingMargin,
+    padding: globalColors.authenticatedHomeIntroGuideHeadingPadding,
+  },
+  headingText: {
+    color: globalColors.authenticatedHomeIntroGuideHeadingText,
+    fontSize: globalColors.authenticatedHomeIntroGuideHeadingFontSize,
+    fontWeight: globalColors.authenticatedHomeIntroGuideHeadingFontWeight,
+  },
+  table: {
+    borderBottomColor: globalColors.authenticatedHomeIntroGuideTableBorderBottomColor,
+    borderBottomStyle: globalColors.authenticatedHomeIntroGuideTableBorderBottomStyle,
+    borderBottomWidth: globalColors.authenticatedHomeIntroGuideTableBorderBottomWidth,
+    marginBottom: globalColors.authenticatedHomeIntroGuideTableMarginBottom,
+  },
+  cell: {
+    borderTopStyle: globalColors.authenticatedHomeIntroGuideCellBorderTopStyle,
+    fontSize: globalColors.authenticatedHomeIntroGuideCellFontSize,
+    verticalAlign: globalColors.authenticatedHomeIntroGuideCellVerticalAlign,
+  },
+  link: {
+    width: globalColors.authenticatedHomeIntroGuideLinkWidth,
+  },
+  toggle: {
+    textAlign: globalColors.authenticatedHomeIntroGuideToggleTextAlign,
+  },
+  toggleButton: {
+    borderColor: globalColors.authenticatedHomeIntroGuideToggleBorderColor,
+    borderRadius: globalColors.authenticatedHomeIntroGuideToggleRadius,
+    borderStyle: globalColors.authenticatedHomeIntroGuideToggleBorderStyle,
+    borderTopColor: globalColors.authenticatedHomeIntroGuideToggleBorderTopColor,
+    borderTopWidth: globalColors.authenticatedHomeIntroGuideToggleBorderTopWidth,
+    borderWidth: globalColors.authenticatedHomeIntroGuideToggleBorderWidth,
+    color: globalColors.authenticatedHomeIntroGuideToggleText,
+    display: globalColors.authenticatedHomeIntroGuideToggleDisplay,
+    padding: globalColors.authenticatedHomeIntroGuideTogglePadding,
+  },
+  icon: {
+    fontSize: globalColors.authenticatedHomeIntroGuideIconFontSize,
   },
 });
 

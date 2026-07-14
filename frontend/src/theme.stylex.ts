@@ -1,5 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 
+export const globalBreakpoints = stylex.defineConsts({
+  mobile: "@media (max-width: 720px)",
+});
+
 export const globalColors = stylex.defineVars({
   // _page.less: .admin-logged-in-affix background-color
   siteAdminAffixSurface: "#ad0000",
@@ -67,6 +71,36 @@ export const globalColors = stylex.defineVars({
   authenticatedHomePageWrapSurface: "#ffffff",
   authenticatedHomePageWrapMargin: "0px auto",
   authenticatedHomePageWrapBoxSizing: "content-box",
+  // _page.less/_responsive.less/_override.less: authenticated index intro guide owner
+  authenticatedHomeIntroGuideMargin: "30px 0px 0px",
+  authenticatedHomeIntroGuideMobileMargin: "40px 0px 0px",
+  authenticatedHomeIntroGuideHiddenDisplay: "none",
+  authenticatedHomeIntroGuideHiddenMarginTop: "0px",
+  authenticatedHomeIntroGuideHiddenMobileMarginTop: "40px",
+  authenticatedHomeIntroGuideHeadingMargin: "0px",
+  authenticatedHomeIntroGuideHeadingPadding: "0px",
+  authenticatedHomeIntroGuideHeadingFontSize: "14px",
+  authenticatedHomeIntroGuideHeadingFontWeight: "700",
+  authenticatedHomeIntroGuideHeadingText: "#333333",
+  authenticatedHomeIntroGuideTableMarginBottom: "-1px",
+  authenticatedHomeIntroGuideTableBorderBottomColor: "#eeeeee",
+  authenticatedHomeIntroGuideTableBorderBottomStyle: "solid",
+  authenticatedHomeIntroGuideTableBorderBottomWidth: "1px",
+  authenticatedHomeIntroGuideCellFontSize: "14px",
+  authenticatedHomeIntroGuideCellVerticalAlign: "middle",
+  authenticatedHomeIntroGuideCellBorderTopStyle: "none",
+  authenticatedHomeIntroGuideLinkWidth: "85%",
+  authenticatedHomeIntroGuideToggleTextAlign: "center",
+  authenticatedHomeIntroGuideToggleDisplay: "inline-block",
+  authenticatedHomeIntroGuideTogglePadding: "0px 25px",
+  authenticatedHomeIntroGuideToggleText: "#95a5a6",
+  authenticatedHomeIntroGuideToggleBorderColor: "rgba(0, 0, 0, 0.1)",
+  authenticatedHomeIntroGuideToggleBorderStyle: "solid",
+  authenticatedHomeIntroGuideToggleBorderWidth: "1px",
+  authenticatedHomeIntroGuideToggleBorderTopColor: "#ffffff",
+  authenticatedHomeIntroGuideToggleBorderTopWidth: "2px",
+  authenticatedHomeIntroGuideToggleRadius: "0px 0px 6px 6px",
+  authenticatedHomeIntroGuideIconFontSize: "12px",
   // _page.less: .gnb-inner layout with the live legacy box model
   globalGnbInnerBoxSizing: "content-box",
   globalGnbInnerWidth: "98%",

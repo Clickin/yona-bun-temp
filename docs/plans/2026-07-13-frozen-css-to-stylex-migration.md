@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-four shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, fifty-five shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -951,6 +951,20 @@ runtime presentation classes are removed from this owner; generic fallback remai
 at 1366, 800, and 600px, including computed geometry, class isolation, DOM order, intro interaction,
 and screenshots. Typecheck, production build/StyleX verification, unchanged generated fallback
 hash, and diff gates pass. This is not Wave 1 completion.
+
+The fifty-fifth verified slice migrates the authenticated HOME intro guide and its sibling toggle
+as one React-owned interaction surface. Colocated StyleX owns the visible/hidden margins and
+display, heading typography, welcome-table border/cell/link declarations, and toggle/button/icon
+presentation through canonical global theme variables and the shared `globalBreakpoints.mobile`
+constant. The implementation follows the frozen cascade's `#95a5a6` toggle color rather than the
+stale `#999` React bridge. Runtime `site-guide-outer`, `hide`, `welcome-table`, `guide-toggle`, and
+the declaration-free `borderless` token are removed, allowing 56 owner-only `app.css` lines to be
+deleted. Bootstrap `table`, Yobi `ybtn ybtn-success`, common `btn-transparent`, and the Yobicon
+glyph remain because they still provide shared primitive declarations. Focused RED 5/5 becomes
+GREEN 5/5, combined intro/page-wrap verification is 10/10 at desktop and 390px, and visible/hidden
+localStorage persistence, computed paint, screenshots, class isolation, typecheck, production
+build/StyleX verification, manifest/app.css hashes, format, lint, and diff gates pass. This is not
+Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

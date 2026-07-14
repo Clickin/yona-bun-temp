@@ -71,8 +71,12 @@ for (const viewport of [
     await expect(inner).toHaveCount(1);
     await expect(outer).not.toHaveClass(/(?:^|\s)page-wrap-outer(?:\s|$)/u);
     await expect(inner).not.toHaveClass(/(?:^|\s)page-wrap(?:\s|$)/u);
-    await expect(inner.locator(":scope > .site-guide-outer")).toContainText("Welcome to Yoram");
-    await expect(inner.locator(":scope > .guide-toggle + .page")).toHaveCount(1);
+    await expect(
+      inner.locator(':scope > [data-stylex-owner="authenticated-home-intro-guide"]'),
+    ).toContainText("Welcome to Yoram");
+    await expect(
+      inner.locator(':scope > [data-stylex-owner="authenticated-home-intro-guide-toggle"] + .page'),
+    ).toHaveCount(1);
 
     const evidence = await outer.evaluate((outerElement) => {
       const innerElement = outerElement.firstElementChild as HTMLElement;
@@ -118,11 +122,14 @@ for (const viewport of [
     });
     expect(evidence.overflow).toBe(false);
 
-    const intro = inner.locator(":scope > .site-guide-outer");
-    await inner.locator(":scope > .guide-toggle #toggleIntro").click();
-    await expect(intro).toHaveClass(/\bhide\b/u);
-    await inner.locator(":scope > .guide-toggle #toggleIntro").click();
-    await expect(intro).not.toHaveClass(/\bhide\b/u);
+    const intro = inner.locator(':scope > [data-stylex-owner="authenticated-home-intro-guide"]');
+    const introToggle = inner.locator(
+      ':scope > [data-stylex-owner="authenticated-home-intro-guide-toggle"] #toggleIntro',
+    );
+    await introToggle.click();
+    await expect(intro).toBeHidden();
+    await introToggle.click();
+    await expect(intro).toBeVisible();
 
     mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
     await outer.screenshot({
