@@ -89,7 +89,9 @@ test("project code compare uses legacy project-scoped GNB search shell", async (
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
 
   const scopeButtons = page.locator("[data-stylex-owner=global-gnb-search-scope-item] > button");
@@ -329,7 +331,9 @@ async function compareNavbarMetrics(page: Page) {
     const navbar = document.querySelector<HTMLElement>("header.gnb-outer.project-header");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const searchBox = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");

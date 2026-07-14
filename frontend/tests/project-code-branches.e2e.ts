@@ -40,7 +40,9 @@ test("project code branches matches legacy code/branches.scala.html DOM", async 
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(
     page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button'),
   ).toHaveText(["This Project", "All Projects"]);
@@ -198,7 +200,9 @@ test("project code branches restores protected project shell parity for weblabs/
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const scopeToggle = page.locator("#gnb-search-scope-title");
   const scopeButtons = page.locator('[data-stylex-owner="global-gnb-search-scope-item"] > button');
   await expect(scopeButtons).toHaveText(["This Project", "This Group", "All Projects"]);

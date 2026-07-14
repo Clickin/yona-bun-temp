@@ -294,7 +294,9 @@ test("project pull request overview exposes legacy project-header search scope",
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText(
     "Pull request",
   );
@@ -427,7 +429,9 @@ async function pullRequestOverviewNavbarMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
-    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const search = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
     const header = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");

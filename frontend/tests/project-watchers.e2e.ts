@@ -204,7 +204,9 @@ test("protected org-owned project watchers expose legacy project-header search s
     `${basePath}/weblabs/portal/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const searchScopeButtons = page.locator(
     "[data-stylex-owner=global-gnb-search-scope-item] > button",
   );

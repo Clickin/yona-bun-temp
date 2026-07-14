@@ -65,6 +65,15 @@ export const globalColors = stylex.defineVars({
   globalGnbSearchWhiteSpace: "nowrap",
   // Bootstrap 2.3.1 .input-prepend vertical-align
   globalGnbSearchVerticalAlign: "middle",
+  // _page.less: .search-box and the React parity bridge wrapper declarations
+  globalGnbSearchBoxSurface: "#ffffff",
+  globalGnbSearchBoxBorderStyle: "none",
+  globalGnbSearchBoxBoxSizing: "content-box",
+  globalGnbSearchBoxDisplay: "inline-block",
+  globalGnbSearchBoxHeight: "30px",
+  globalGnbSearchBoxRadius: "3px",
+  globalGnbSearchBoxVerticalAlign: "middle",
+  globalGnbSearchBoxZero: "0px",
   // Bootstrap 2.3.1 .btn-group and frozen _yobiUI.less .dropdown-menu.flat search-scope values
   globalGnbSearchScopeZero: "0px",
   globalGnbSearchScopeDisplay: "inline-block",

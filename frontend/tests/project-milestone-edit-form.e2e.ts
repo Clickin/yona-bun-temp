@@ -731,7 +731,9 @@ async function navbarSearchMetrics(page: Page) {
     const navbar = shells.item(shells.length - 1);
     const form = navbar?.querySelector<HTMLElement>(".gnb-search-form");
     const scope = navbar?.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = navbar?.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const searchBox = navbar?.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const input = navbar?.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
     if (!navbar || !form || !scope || !searchBox || !input) {
       return null;

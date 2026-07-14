@@ -47,7 +47,9 @@ test("project code text file matches legacy code/partial_view_file.scala.html DO
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   await expect(page.locator(".project-menu-gruop li.active a .menu-name")).toHaveText("Code");
   await expect
     .poll(() =>

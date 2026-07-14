@@ -406,7 +406,9 @@ async function assertStatisticsProjectSearchShell(
   await expect(page.locator(".gnb-outer")).toHaveClass("gnb-outer project-header");
   await expect(page.locator(".gnb-search-form")).toHaveAttribute("action", projectAction);
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
   const scopeControls = page.locator(
     '[data-stylex-owner=global-gnb-search-scope-item] > button[type="button"]',
   );

@@ -1082,7 +1082,9 @@ async function projectForkHeaderSearchScopeMetrics(page: Page) {
     const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
     const form = document.querySelector<HTMLFormElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = form?.querySelector<HTMLElement>(".search-box.select");
+    const searchBox = form?.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const input = form?.querySelector<HTMLInputElement>('input[name="keyword"]');
     const missing = Object.entries({ form, header, input, scope, searchBox })
       .filter(([, element]) => !element)

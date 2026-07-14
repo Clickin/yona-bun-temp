@@ -826,6 +826,17 @@ outer `gnb-search-form`/`input-prepend` remain only for responsive hiding and un
 controls. Actual RED 6/7 becomes focused plus outer GREEN 17/17. The next safe owner is the inner
 `.search-box.select`, followed by its input and submit controls. This is not Wave 1 completion.
 
+The forty-sixth verified slice migrates only the inner GNB search-box wrapper. The HOME/scoped
+wrapper skeleton, input/button order, focus expansion, and GET behavior remain intact, while
+colocated StyleX owns the exact inline box, 30px height, middle alignment, content-box reset,
+white surface, zero border, 3px radius, and scoped left-radius reset through canonical global
+theme variables. Runtime `select` and the 13-line wrapper bridge are removed. `search-box` remains
+narrowly required by still-active frozen/app input and button descendant selectors; those controls
+are later owners, beginning with the text input. Fresh Edge/local HOME and project evidence agrees
+on the `92×30` base wrapper and project focus expansion to `242×30`, with no numeric compensation.
+Actual RED 8/1 becomes focused GREEN 9/9 and final affected search/project-review GREEN 33/33.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

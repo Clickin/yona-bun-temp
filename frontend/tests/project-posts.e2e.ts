@@ -3461,7 +3461,9 @@ async function boardDetailMetrics(page: Page) {
     const navbar = document.querySelector(".gnb-outer") as HTMLElement;
     const searchForm = document.querySelector(".gnb-search-form") as HTMLFormElement;
     const scope = document.querySelector("#gnb-search-scope-title") as HTMLElement;
-    const searchBox = document.querySelector(".gnb-search-form .search-box.select") as HTMLElement;
+    const searchBox = document.querySelector(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    ) as HTMLElement;
     const projectHeader = document.querySelector(".project-header-outer") as HTMLElement;
     const projectMenu = document.querySelector(".project-menu-outer") as HTMLElement;
     const header = element.querySelector(".board-header.issue") as HTMLElement;
@@ -4244,7 +4246,9 @@ async function protectedProjectPostsShellMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const search = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const search = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const board = document.querySelector<HTMLElement>(".post-list.project-page-wrap");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !scope || !search || !board || !menu) {

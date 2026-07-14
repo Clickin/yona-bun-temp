@@ -622,7 +622,9 @@ async function readMilestoneActionWhitespace(page: Page) {
 async function readProtectedProjectHeaderMetrics(page: Page) {
   return page.evaluate(() => {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
-    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const searchBox = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     if (!navbar || !searchBox) {
       throw new Error("Expected protected project header search elements are missing.");
     }
@@ -638,7 +640,9 @@ async function readProtectedProjectHeaderBoxes(page: Page) {
     const navbar = document.querySelector<HTMLElement>(".gnb-outer.project-header");
     const form = document.querySelector<HTMLElement>("form.gnb-search-form");
     const scopeToggle = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const searchBox = document.querySelector<HTMLElement>(".gnb-search-form .search-box.select");
+    const searchBox = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-box"]',
+    );
     const searchInput = document.querySelector<HTMLElement>(
       '.gnb-search-form input[name="keyword"]',
     );

@@ -59,12 +59,13 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
 
   expect(appCss).not.toMatch(/\.gnb-search-form\s*\{[^}]*\}/u);
   for (const selector of [
-    ".gnb-search-form .search-box {",
     '.gnb-search-form input[type="text"] {',
     ".gnb-search-form .search-box button {",
   ]) {
     expect(appCss).toContain(selector);
   }
+  expect(appCss).not.toContain(".gnb-search-form .search-box {");
+  expect(appCss).not.toContain(".gnb-search-form .search-box.select {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-toggle {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li > button");
@@ -153,7 +154,10 @@ for (const state of [
     );
     await expect(form.locator(':scope > input[type="hidden"]')).toHaveValue("auto");
     await expect(form.locator(":scope > :nth-child(1)")).toHaveAttribute("type", "hidden");
-    await expect(form.locator(":scope > :last-child")).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+    await expect(form.locator(":scope > :last-child")).toHaveAttribute(
+      "data-stylex-owner",
+      "global-gnb-search-box",
+    );
     await expect(item.locator(":scope > form")).toHaveCount(1);
     await expect(item.locator("xpath=preceding-sibling::*[1]")).toHaveAttribute(
       "data-stylex-owner",

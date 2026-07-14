@@ -56,10 +56,7 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
   expect(route).toContain("aria-expanded={isSearchScopeMenuOpen}");
   expect(route).toContain('aria-haspopup="menu"');
   const markupStart = route.indexOf("{hasScopedSearch ? (");
-  const markupEnd = route.indexOf(
-    '<div className={hasScopedSearch ? "search-box select" : "search-box"}>',
-    markupStart,
-  );
+  const markupEnd = route.indexOf('data-stylex-owner="global-gnb-search-box"', markupStart);
   expect(markupStart).toBeGreaterThanOrEqual(0);
   expect(markupEnd).toBeGreaterThan(markupStart);
   expect(route.slice(markupStart, markupEnd)).not.toMatch(
@@ -69,7 +66,7 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
   expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-menu > li > button");
   expect(appCss).toContain(".dropdown-menu {");
-  expect(appCss).toContain(".gnb-search-form .search-box {");
+  expect(appCss).not.toContain(".gnb-search-form .search-box {");
 });
 
 test("frozen search-scope sources stay byte-identical", () => {

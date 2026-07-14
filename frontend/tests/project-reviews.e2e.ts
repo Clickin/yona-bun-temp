@@ -79,7 +79,9 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   expect(await projectHeaderMetrics(page)).toEqual({
     headerClassName: "gnb-outer project-header",
     searchAction: `${projectBasePath}/search`,
-    searchBoxClassName: "search-box select",
+    searchBoxHasDescendantFallbackClass: true,
+    searchBoxHasRetiredSelectClass: false,
+    searchBoxOwner: "global-gnb-search-box",
     searchBoxContainedInHeader: true,
     searchBoxInsideSearchForm: true,
     searchFormContainedInHeader: true,
@@ -650,7 +652,7 @@ async function projectHeaderMetrics(page: Page) {
     const header = requireElement(".gnb-outer");
     const searchForm = requireElement<HTMLFormElement>('form[name="gnb-search-form"]');
     const searchScope = requireElement<HTMLButtonElement>("#gnb-search-scope-title");
-    const searchBox = requireElement(".gnb-search-form .search-box");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const headerRect = header.getBoundingClientRect();
     const searchFormRect = searchForm.getBoundingClientRect();
     const searchScopeRect = searchScope.getBoundingClientRect();
@@ -659,7 +661,9 @@ async function projectHeaderMetrics(page: Page) {
     return {
       headerClassName: header.className,
       searchAction: searchForm.getAttribute("action"),
-      searchBoxClassName: searchBox.className,
+      searchBoxHasDescendantFallbackClass: searchBox.classList.contains("search-box"),
+      searchBoxHasRetiredSelectClass: searchBox.classList.contains("select"),
+      searchBoxOwner: searchBox.getAttribute("data-stylex-owner"),
       searchBoxContainedInHeader:
         searchBoxRect.top >= headerRect.top && searchBoxRect.bottom <= headerRect.bottom,
       searchBoxInsideSearchForm:

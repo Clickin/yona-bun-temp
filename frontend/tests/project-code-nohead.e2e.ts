@@ -192,7 +192,9 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
     `${basePath}/admin/sample/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveText("This Project");
-  await expect(page.locator(".gnb-search-form .search-box")).toHaveClass("search-box select");
+  const searchBox = page.locator('[data-stylex-owner="global-gnb-search-box"]');
+  await expect(searchBox).toHaveClass(/(?:^|\s)search-box(?:\s|$)/u);
+  await expect(searchBox).not.toHaveClass(/\bselect\b/);
 
   const currentUrl = `${basePath}/admin/sample/code`;
   await expect(page.locator('.gnb-search-form [data-toggle="search-scope"]')).toHaveCount(0);

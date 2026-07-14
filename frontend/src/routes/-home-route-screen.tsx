@@ -684,6 +684,28 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbSearchBoxStyles = stylex.create({
+  box: {
+    backgroundColor: globalColors.globalGnbSearchBoxSurface,
+    borderBottomLeftRadius: globalColors.globalGnbSearchBoxRadius,
+    borderBottomRightRadius: globalColors.globalGnbSearchBoxRadius,
+    borderStyle: globalColors.globalGnbSearchBoxBorderStyle,
+    borderTopLeftRadius: globalColors.globalGnbSearchBoxRadius,
+    borderTopRightRadius: globalColors.globalGnbSearchBoxRadius,
+    borderWidth: globalColors.globalGnbSearchBoxZero,
+    boxSizing: globalColors.globalGnbSearchBoxBoxSizing,
+    display: globalColors.globalGnbSearchBoxDisplay,
+    height: globalColors.globalGnbSearchBoxHeight,
+    verticalAlign: globalColors.globalGnbSearchBoxVerticalAlign,
+  },
+  scoped: {
+    borderBottomLeftRadius: globalColors.globalGnbSearchBoxZero,
+    borderBottomRightRadius: globalColors.globalGnbSearchBoxRadius,
+    borderTopLeftRadius: globalColors.globalGnbSearchBoxZero,
+    borderTopRightRadius: globalColors.globalGnbSearchBoxRadius,
+  },
+});
+
 const globalGnbSearchScopeStyles = stylex.create({
   scope: {
     display: globalColors.globalGnbSearchScopeDisplay,
@@ -1431,7 +1453,15 @@ export function SiteLayoutShell({
                       </ul>
                     </div>
                   ) : null}
-                  <div className={hasScopedSearch ? "search-box select" : "search-box"}>
+                  <div
+                    className={`search-box ${
+                      stylex.props(
+                        globalGnbSearchBoxStyles.box,
+                        hasScopedSearch && globalGnbSearchBoxStyles.scoped,
+                      ).className
+                    }`}
+                    data-stylex-owner="global-gnb-search-box"
+                  >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
                     <input type="text" name="keyword" autoComplete="off" accessKey="S" />
                     <button type="submit">

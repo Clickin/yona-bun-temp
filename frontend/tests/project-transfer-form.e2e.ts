@@ -1059,7 +1059,7 @@ async function readProjectTransferShellMetrics(page: Page) {
     const navbar = requireElement(".gnb-outer");
     const projectHeader = requireElement(".project-header-outer");
     const searchScope = requireElement("#gnb-search-scope-title");
-    const searchBox = requireElement(".gnb-search-form .search-box.select");
+    const searchBox = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectMenu = requireElement(".project-menu-outer");
     return {
       navbar: navbar.getBoundingClientRect().toJSON(),
