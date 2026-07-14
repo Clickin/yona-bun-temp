@@ -11,7 +11,12 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { globalBreakpoints, globalColors } from "../theme.stylex";
+import {
+  anonymousHomeIntroBackgroundTheme,
+  anonymousHomeIntroBackgroundVars,
+  globalBreakpoints,
+  globalColors,
+} from "../theme.stylex";
 import { useRootLoginDialog, useRootToast } from "./__root";
 import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 
@@ -572,27 +577,51 @@ function HomeScreen({
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <HomeFlashToast message={flashMessage} />
-      <div className="siteintro-bg row">
+      <div className="siteintro-bg row" data-stylex-owner="anonymous-home-intro-outer">
         <div
-          className="siteintro"
+          {...stylex.props(anonymousHomeIntroBackgroundTheme, anonymousHomeIntroStyles.hero)}
+          data-stylex-owner="anonymous-home-intro"
           style={
             {
               "--siteintro-background-image": `url("${siteIntroBackgroundUrl}")`,
             } as React.CSSProperties
           }
         >
-          <div className="siteintro-cover">
-            <div className="siteintro-wrap">
-              <h1 className="site-heading">21st Century Software Development Platform</h1>
-              <ul className="site-features">
-                <li>Just focus on what you have to do</li>
+          <div
+            {...stylex.props(anonymousHomeIntroStyles.cover)}
+            data-stylex-owner="anonymous-home-intro-cover"
+          >
+            <div
+              {...stylex.props(anonymousHomeIntroStyles.wrap)}
+              data-stylex-owner="anonymous-home-intro-wrap"
+            >
+              <h1
+                {...stylex.props(anonymousHomeIntroStyles.heading)}
+                data-stylex-owner="anonymous-home-intro-heading"
+              >
+                21st Century Software Development Platform
+              </h1>
+              <ul
+                {...stylex.props(anonymousHomeIntroStyles.tagline)}
+                data-stylex-owner="anonymous-home-intro-tagline"
+              >
+                <li
+                  {...stylex.props(anonymousHomeIntroStyles.taglineItem)}
+                  data-stylex-owner="anonymous-home-intro-tagline-item"
+                >
+                  Just focus on what you have to do
+                </li>
               </ul>
             </div>
-            <div className="signup-btn">
+            <div
+              {...stylex.props(anonymousHomeIntroStyles.signup)}
+              data-stylex-owner="anonymous-home-intro-signup"
+            >
               <Link
+                {...stylex.props(anonymousHomeIntroStyles.signupLink)}
                 to="/users/signupform"
-                className="ybtn ybtn-success ybtn-padding"
                 activeOptions={{ exact: true }}
+                data-stylex-owner="anonymous-home-intro-signup-link"
               >
                 {t("button.signup", { args: [siteName] })}
               </Link>
@@ -1875,6 +1904,107 @@ export function SiteLayoutShell({
     </div>
   );
 }
+
+const anonymousHomeIntroStyles = stylex.create({
+  hero: {
+    backgroundImage: anonymousHomeIntroBackgroundVars.image,
+    backgroundPosition: globalColors.anonymousHomeIntroBackgroundPosition,
+    backgroundRepeat: globalColors.anonymousHomeIntroBackgroundRepeat,
+    backgroundSize: globalColors.anonymousHomeIntroBackgroundSize,
+    borderBottomColor: globalColors.anonymousHomeIntroBorderColor,
+    borderBottomStyle: globalColors.anonymousHomeIntroBorderStyle,
+    borderBottomWidth: globalColors.anonymousHomeIntroBorderWidth,
+  },
+  cover: {
+    backgroundPosition: globalColors.anonymousHomeIntroCoverBackgroundPosition,
+    backgroundRepeat: globalColors.anonymousHomeIntroCoverBackgroundRepeat,
+    backgroundSize: globalColors.anonymousHomeIntroCoverBackgroundSize,
+    margin: globalColors.anonymousHomeIntroCenteredMargin,
+    opacity: globalColors.anonymousHomeIntroCoverOpacity,
+    overflow: {
+      default: globalColors.anonymousHomeIntroCoverOverflow,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeIntroCoverMobileOverflow,
+    },
+    padding: globalColors.anonymousHomeIntroCoverPadding,
+    textAlign: globalColors.anonymousHomeIntroTextAlign,
+    width: {
+      default: globalColors.anonymousHomeIntroCoverWidth,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeIntroCoverMobileWidth,
+    },
+  },
+  wrap: {
+    margin: globalColors.anonymousHomeIntroCenteredMargin,
+    textAlign: globalColors.anonymousHomeIntroTextAlign,
+  },
+  heading: {
+    color: globalColors.anonymousHomeIntroHeadingText,
+    fontFamily: globalColors.anonymousHomeIntroHeadingFontFamily,
+    fontSize: {
+      default: globalColors.anonymousHomeIntroHeadingFontSize,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeIntroHeadingMobileFontSize,
+    },
+    fontWeight: globalColors.anonymousHomeIntroHeadingFontWeight,
+    lineHeight: globalColors.anonymousHomeIntroHeadingLineHeight,
+    margin: globalColors.anonymousHomeIntroHeadingMargin,
+    opacity: globalColors.anonymousHomeIntroHeadingOpacity,
+    padding: {
+      default: globalColors.anonymousHomeIntroHeadingPadding,
+      [globalBreakpoints.mobile]: globalColors.anonymousHomeIntroHeadingMobilePadding,
+    },
+  },
+  tagline: {
+    clear: globalColors.anonymousHomeIntroTaglineClear,
+    display: globalColors.anonymousHomeIntroTaglineDisplay,
+    listStyle: globalColors.anonymousHomeIntroTaglineListStyle,
+    margin: globalColors.anonymousHomeIntroTaglineMargin,
+    padding: globalColors.anonymousHomeIntroTaglinePadding,
+  },
+  taglineItem: {
+    color: globalColors.anonymousHomeIntroTaglineItemText,
+    display: globalColors.anonymousHomeIntroTaglineItemDisplay,
+    fontSize: globalColors.anonymousHomeIntroTaglineItemFontSize,
+    fontWeight: globalColors.anonymousHomeIntroTaglineItemFontWeight,
+    letterSpacing: globalColors.anonymousHomeIntroTaglineItemLetterSpacing,
+    lineHeight: globalColors.anonymousHomeIntroTaglineItemLineHeight,
+    marginLeft: globalColors.anonymousHomeIntroTaglineItemMarginLeft,
+    opacity: globalColors.anonymousHomeIntroTaglineItemOpacity,
+  },
+  signup: {
+    marginTop: globalColors.anonymousHomeIntroSignupMarginTop,
+    textAlign: globalColors.anonymousHomeIntroTextAlign,
+  },
+  signupLink: {
+    backgroundColor: {
+      default: globalColors.anonymousHomeIntroCtaSurface,
+      ":hover": globalColors.anonymousHomeIntroCtaHoverSurface,
+      ":focus": globalColors.anonymousHomeIntroCtaHoverSurface,
+      ":active": globalColors.anonymousHomeIntroCtaHoverSurface,
+    },
+    borderColor: globalColors.anonymousHomeIntroCtaBorderColor,
+    borderStyle: globalColors.anonymousHomeIntroCtaBorderStyle,
+    borderWidth: globalColors.anonymousHomeIntroCtaBorderWidth,
+    borderRadius: globalColors.anonymousHomeIntroCtaBorderRadius,
+    boxShadow: globalColors.anonymousHomeIntroCtaBoxShadow,
+    boxSizing: globalColors.anonymousHomeIntroCtaBoxSizing,
+    color: globalColors.anonymousHomeIntroCtaText,
+    cursor: globalColors.anonymousHomeIntroCtaCursor,
+    display: globalColors.anonymousHomeIntroCtaDisplay,
+    fontSize: globalColors.anonymousHomeIntroCtaFontSize,
+    fontWeight: globalColors.anonymousHomeIntroCtaFontWeight,
+    lineHeight: globalColors.anonymousHomeIntroCtaLineHeight,
+    margin: globalColors.anonymousHomeIntroCtaMargin,
+    outline: globalColors.anonymousHomeIntroCtaOutline,
+    padding: globalColors.anonymousHomeIntroCtaPadding,
+    position: globalColors.anonymousHomeIntroCtaPosition,
+    textAlign: globalColors.anonymousHomeIntroTextAlign,
+    textDecoration: globalColors.anonymousHomeIntroCtaTextDecoration,
+    textShadow: globalColors.anonymousHomeIntroCtaTextShadow,
+    transition: globalColors.anonymousHomeIntroCtaTransition,
+    verticalAlign: globalColors.anonymousHomeIntroCtaVerticalAlign,
+    whiteSpace: globalColors.anonymousHomeIntroCtaWhiteSpace,
+    zIndex: globalColors.anonymousHomeIntroCtaZIndex,
+  },
+});
 
 const anonymousHomeFeatureStyles = stylex.create({
   feature: {

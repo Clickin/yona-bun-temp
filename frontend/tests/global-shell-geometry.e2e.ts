@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const LEGACY_FEEDBACK_URL = "https://github.com/yona-projects/yona/issues";
-const SITEINTRO_BACKGROUND_PATH = "/legacy-assets/images/bg-samples/photo-svetacreative.jpg";
+const SITEINTRO_BACKGROUND_PATH = "/src/assets/legacy/photo-svetacreative.jpg";
 const SITEINTRO_BACKGROUND_URL = `${BASE_PATH === "/" ? "" : BASE_PATH}${SITEINTRO_BACKGROUND_PATH}`;
 
 test.use({ locale: "en-US", viewport: { width: 1366, height: 900 } });
@@ -24,7 +24,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   const expectedBackgroundUrl = new URL(SITEINTRO_BACKGROUND_URL, page.url()).href;
   expect(
     await page
-      .locator(".siteintro")
+      .locator('[data-stylex-owner="anonymous-home-intro"]')
       .evaluate((element) => getComputedStyle(element).backgroundImage),
   ).toContain(`url("${expectedBackgroundUrl}")`);
 
@@ -60,10 +60,9 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
     "href",
     `${BASE_PATH}/users/signupform`,
   );
-  await expect(page.locator(".siteintro .signup-btn a")).toHaveAttribute(
-    "href",
-    `${BASE_PATH}/users/signupform`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
+  ).toHaveAttribute("href", `${BASE_PATH}/users/signupform`);
   await expect.poll(() => sessionRequestPaths).toEqual([`${BASE_PATH}/api/v1/session`]);
   await assertOwnedShellHasNoPluginHooks(page);
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
@@ -413,8 +412,8 @@ async function readShellMetrics(page: Page) {
     return {
       divider: box('[data-stylex-owner="global-gnb-project-list-divider"]'),
       feedback: box('[data-stylex-owner="global-gnb-feedback-link"]'),
-      heroCover: box(".siteintro-cover"),
-      heroHeading: box(".site-heading"),
+      heroCover: box('[data-stylex-owner="anonymous-home-intro-cover"]'),
+      heroHeading: box('[data-stylex-owner="anonymous-home-intro-heading"]'),
       inner: box('[data-stylex-owner="global-gnb-inner"]'),
       login: box("#required-logged-in"),
       listAll: box('[data-stylex-owner="global-gnb-nav"] > li:nth-child(2) > a'),

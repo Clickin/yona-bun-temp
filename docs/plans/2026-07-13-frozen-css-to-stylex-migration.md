@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty-two shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty-three shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1072,6 +1072,23 @@ desktop exact-DOM case retains only pre-existing shell canonicalizer drift outsi
 Typecheck, production build/StyleX verification, manifest agreement at app.css
 `1c8002a8...a32`, unchanged frozen fallback `6417f445...16f`, lint/format, screenshots, visual
 inspection, and diff gates pass. This is not Wave 1 completion.
+
+The sixty-third verified slice migrates the anonymous HOME `siteintro` hero rendered from
+`index/partial_intro.scala.html`: background, cover, heading, tagline, signup wrapper, and the
+complete signup CTA state family. Colocated StyleX owns every frozen declaration through the
+canonical global theme file, including the max-720 cover/heading state and the former
+`ybtn-success ybtn-padding` base/hover/focus/active cascade. Because a root-defined CSS variable
+cannot resolve an element-scoped Vite asset variable, the theme file supplies a scoped
+`createTheme` for the complete gradient-plus-asset expression while JSX retains only the imported
+asset URL custom-property bridge. All hero presentation classes and 60 matching `app.css` lines
+are removed; the surrounding `siteintro-bg row` remains the real Bootstrap geometry consumer.
+Fresh live and local Korean screenshots agree on the 270px desktop and 310px mobile hero, exact
+cover/heading/tagline/CTA geometry and paint, responsive wrapping, and no horizontal overflow.
+Focused RED 3/3 becomes GREEN 3/3, the adjacent mobile landing case passes, and the broad desktop
+exact-DOM case retains only its pre-existing global-header canonicalizer drift outside the hero.
+Typecheck, production build/StyleX verification, manifest agreement at app.css
+`7696a82f...65e`, unchanged frozen fallback `6417f445...16f`, format, visual inspection, and diff
+gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

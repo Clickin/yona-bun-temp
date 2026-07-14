@@ -4,6 +4,19 @@ export const globalBreakpoints = stylex.defineConsts({
   mobile: "@media (max-width: 720px)",
 });
 
+export const anonymousHomeIntroBackgroundVars = stylex.defineVars({
+  image:
+    "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), var(--siteintro-background-image)",
+});
+
+export const anonymousHomeIntroBackgroundTheme = stylex.createTheme(
+  anonymousHomeIntroBackgroundVars,
+  {
+    image:
+      "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), var(--siteintro-background-image)",
+  },
+);
+
 export const globalColors = stylex.defineVars({
   // _page.less: .admin-logged-in-affix background-color
   siteAdminAffixSurface: "#ad0000",
@@ -48,6 +61,73 @@ export const globalColors = stylex.defineVars({
   siteFooterProviderFontFamily: "Verdana",
   siteFooterProviderFontSize: "9px",
   siteFooterProviderText: "#333333",
+
+  // _page.less `.siteintro`, _responsive.less, and _yobiUI.less `.ybtn-success`
+  anonymousHomeIntroBackgroundPosition: "center center",
+  anonymousHomeIntroBackgroundRepeat: "no-repeat",
+  anonymousHomeIntroBackgroundSize: "cover",
+  anonymousHomeIntroBorderColor: "#333333",
+  anonymousHomeIntroBorderStyle: "solid",
+  anonymousHomeIntroBorderWidth: "1px",
+  anonymousHomeIntroCoverOpacity: "1",
+  anonymousHomeIntroCoverPadding: "55px 0px 65px",
+  anonymousHomeIntroCoverBackgroundPosition: "bottom",
+  anonymousHomeIntroCoverBackgroundSize: "100vw 170px",
+  anonymousHomeIntroCoverBackgroundRepeat: "no-repeat",
+  anonymousHomeIntroCoverOverflow: "auto",
+  anonymousHomeIntroCoverMobileOverflow: "visible",
+  anonymousHomeIntroCoverWidth: "750px",
+  anonymousHomeIntroCoverMobileWidth: "inherit",
+  anonymousHomeIntroCenteredMargin: "0px auto",
+  anonymousHomeIntroTextAlign: "center",
+  anonymousHomeIntroHeadingMargin: "0px",
+  anonymousHomeIntroHeadingPadding: "0px",
+  anonymousHomeIntroHeadingMobilePadding: "0px 0px 0px 20px",
+  anonymousHomeIntroHeadingFontFamily: "sans-serif",
+  anonymousHomeIntroHeadingFontSize: "34px",
+  anonymousHomeIntroHeadingMobileFontSize: "22px",
+  anonymousHomeIntroHeadingFontWeight: "400",
+  anonymousHomeIntroHeadingLineHeight: "40px",
+  anonymousHomeIntroHeadingText: "#fafafa",
+  anonymousHomeIntroHeadingOpacity: "0.9",
+  anonymousHomeIntroTaglineDisplay: "block",
+  anonymousHomeIntroTaglineListStyle: "none",
+  anonymousHomeIntroTaglineMargin: "5px 0px 0px",
+  anonymousHomeIntroTaglinePadding: "0px",
+  anonymousHomeIntroTaglineClear: "both",
+  anonymousHomeIntroTaglineItemDisplay: "inline-block",
+  anonymousHomeIntroTaglineItemText: "#ffffff",
+  anonymousHomeIntroTaglineItemFontSize: "16px",
+  anonymousHomeIntroTaglineItemFontWeight: "400",
+  anonymousHomeIntroTaglineItemLineHeight: "20px",
+  anonymousHomeIntroTaglineItemMarginLeft: "0px",
+  anonymousHomeIntroTaglineItemLetterSpacing: "1.1px",
+  anonymousHomeIntroTaglineItemOpacity: "0.5",
+  anonymousHomeIntroSignupMarginTop: "35px",
+  anonymousHomeIntroCtaSurface: "#ff7332",
+  anonymousHomeIntroCtaHoverSurface: "#e95e01",
+  anonymousHomeIntroCtaText: "#ffffff",
+  anonymousHomeIntroCtaTextShadow: "none",
+  anonymousHomeIntroCtaBorderRadius: "3px",
+  anonymousHomeIntroCtaDisplay: "inline-block",
+  anonymousHomeIntroCtaPadding: "13px 30px",
+  anonymousHomeIntroCtaVerticalAlign: "middle",
+  anonymousHomeIntroCtaCursor: "pointer",
+  anonymousHomeIntroCtaLineHeight: "20px",
+  anonymousHomeIntroCtaFontSize: "20px",
+  anonymousHomeIntroCtaFontWeight: "400",
+  anonymousHomeIntroCtaTransition: "all 0.3s ease",
+  anonymousHomeIntroCtaOutline: "0px none",
+  anonymousHomeIntroCtaPosition: "relative",
+  anonymousHomeIntroCtaMargin: "0px",
+  anonymousHomeIntroCtaBorderColor: "#e95e01",
+  anonymousHomeIntroCtaBorderStyle: "solid",
+  anonymousHomeIntroCtaBorderWidth: "1px",
+  anonymousHomeIntroCtaBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)",
+  anonymousHomeIntroCtaZIndex: "2",
+  anonymousHomeIntroCtaBoxSizing: "content-box",
+  anonymousHomeIntroCtaTextDecoration: "none",
+  anonymousHomeIntroCtaWhiteSpace: "nowrap",
 
   // _page.less `.feature` + _responsive.less `.feature-wrap`: anonymous Home features
   anonymousHomeFeatureSurface: "#ffffff",

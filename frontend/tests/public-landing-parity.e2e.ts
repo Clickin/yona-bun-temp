@@ -51,16 +51,16 @@ const EXPECTED_PUBLIC_LANDING = `
   </div>
 </header>
 <div class="siteintro-bg row">
-  <div class="siteintro">
-    <div class="siteintro-cover">
-      <div class="siteintro-wrap">
-        <h1 class="site-heading">21st Century Software Development Platform</h1>
-        <ul class="site-features">
+  <div>
+    <div>
+      <div>
+        <h1>21st Century Software Development Platform</h1>
+        <ul>
           <li>Just focus on what you have to do</li>
         </ul>
       </div>
-      <div class="signup-btn">
-        <a href="__BASE_PATH__/users/signupform" class="ybtn ybtn-success ybtn-padding">Sign up for Yoram</a>
+      <div>
+        <a href="__BASE_PATH__/users/signupform">Sign up for Yoram</a>
       </div>
     </div>
   </div>
@@ -127,10 +127,9 @@ test("anonymous public landing matches legacy index partial intro screen DOM", a
   await expect(page.locator(".siteintro-bg")).toBeVisible();
   await expect(page.locator("[data-stylex-owner=site-footer]")).toBeVisible();
   await expect(page.locator("body#html-body > #root > #main.main")).toHaveCount(1);
-  await expect(page.locator(".signup-btn a")).toHaveAttribute(
-    "href",
-    `${basePath}/users/signupform`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
+  ).toHaveAttribute("href", `${basePath}/users/signupform`);
 
   const actual = await canonicalizeScreenRoots(page);
   const expected = await canonicalizeHtml(
@@ -255,12 +254,18 @@ async function readLegacyLayoutShell(page: Page) {
 
 async function readDesktopLandingMetrics(page: Page) {
   return page.evaluate(() => {
-    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const siteIntroCover = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-cover"]',
+    );
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const heading = document.querySelector<HTMLElement>(".site-heading");
-    const signup = document.querySelector<HTMLElement>(".signup-btn");
+    const heading = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-heading"]',
+    );
+    const signup = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-signup"]',
+    );
     const feature = document.querySelector<HTMLElement>(
       '[data-stylex-owner="anonymous-home-feature"]',
     );
@@ -339,9 +344,13 @@ async function readDesktopLandingMetrics(page: Page) {
 
 async function readMobileLandingMetrics(page: Page) {
   return page.evaluate(() => {
-    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const siteIntroCover = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-cover"]',
+    );
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const heading = document.querySelector<HTMLElement>(".site-heading");
+    const heading = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-heading"]',
+    );
     const featureWrap = document.querySelector<HTMLElement>(
       '[data-stylex-owner="anonymous-home-feature-list"]',
     );
@@ -450,7 +459,9 @@ async function canonicalizeScreenRoots(page: Page) {
             current.hasAttribute(name) &&
             !(
               name === "class" &&
-              current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature")
+              (current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature") ||
+                (current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-intro") &&
+                  current.getAttribute("data-stylex-owner") !== "anonymous-home-intro-outer"))
             ),
         )
         .map(

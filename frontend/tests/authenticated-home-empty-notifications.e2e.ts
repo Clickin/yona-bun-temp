@@ -619,7 +619,7 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
 
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
   const signupMenuLink = page.locator(".gnb-usermenu a.ybtn.ybtn-success");
-  const landingSignupLink = page.locator(".signup-btn a.ybtn.ybtn-success.ybtn-padding");
+  const landingSignupLink = page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]');
   const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
   const profileLink = page.locator("#mySidenav .user-menu a").first();
   const logoutLink = page.locator("#mySidenav a:has(.logout)");
@@ -637,7 +637,7 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
   await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
-  await expect(landingSignupLink).toHaveAttribute("class", "ybtn ybtn-success ybtn-padding");
+  await expect(landingSignupLink).not.toHaveAttribute("class", /(?:^|\s)ybtn(?:\s|$)/u);
   await expect(projectListLink).toHaveAttribute("href", `${basePath}/projects`);
   await expect(projectListLink).not.toHaveAttribute("aria-current");
   await expect(projectListLink).not.toHaveAttribute("data-status");

@@ -66,10 +66,9 @@ test("legacy GET /users/login renders the index screen at the original URL", asy
   expect(await page.locator("head title").allTextContents()).toContain(canonicalTitle);
   await expect(page.locator("[data-stylex-owner=global-gnb-outer]")).toBeVisible();
   await expect(page.locator(".siteintro-bg")).toBeVisible();
-  await expect(page.locator(".signup-btn a")).toHaveAttribute(
-    "href",
-    `${basePath}/users/signupform`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
+  ).toHaveAttribute("href", `${basePath}/users/signupform`);
   expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
   expect(await readDesktopIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
@@ -99,10 +98,9 @@ test("legacy GET /users/login keeps the public index mobile proportions", async 
   expect(new URL(page.url()).pathname).toBe(`${basePath}/users/login`);
   expect(new URL(page.url()).searchParams.get("from")).toBe("legacy");
   await expect(page.locator(".siteintro-bg")).toBeVisible();
-  await expect(page.locator(".signup-btn a")).toHaveAttribute(
-    "href",
-    `${basePath}/users/signupform`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]'),
+  ).toHaveAttribute("href", `${basePath}/users/signupform`);
   expect(await canonicalizeIndexRoots(page)).toEqual(canonicalIndexRoots);
   expect(await readMobileIndexMetrics(page)).toEqual(canonicalIndexMetrics);
 });
@@ -232,16 +230,30 @@ async function canonicalizeRoots(page: Page, selector: string) {
 
 async function readDesktopIndexMetrics(page: Page) {
   return page.evaluate(() => {
-    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const siteIntroCover = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-cover"]',
+    );
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const heading = document.querySelector<HTMLElement>(".site-heading");
-    const signup = document.querySelector<HTMLElement>(".signup-btn");
-    const feature = document.querySelector<HTMLElement>(".feature");
-    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
-    const featureIcon = document.querySelector<HTMLElement>(".feature-image");
-    const featureInfo = document.querySelector<HTMLElement>(".feature-info");
+    const heading = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-heading"]',
+    );
+    const signup = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-signup"]',
+    );
+    const feature = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature"]',
+    );
+    const featureItem = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-item"]',
+    );
+    const featureIcon = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-icon"]',
+    );
+    const featureInfo = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-info"]',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -308,11 +320,19 @@ async function readDesktopIndexMetrics(page: Page) {
 
 async function readMobileIndexMetrics(page: Page) {
   return page.evaluate(() => {
-    const siteIntroCover = document.querySelector<HTMLElement>(".siteintro-cover");
+    const siteIntroCover = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-cover"]',
+    );
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const heading = document.querySelector<HTMLElement>(".site-heading");
-    const featureWrap = document.querySelector<HTMLElement>(".feature-wrap");
-    const featureItem = document.querySelector<HTMLElement>(".feature-wrap li");
+    const heading = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-intro-heading"]',
+    );
+    const featureWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-list"]',
+    );
+    const featureItem = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="anonymous-home-feature-item"]',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(

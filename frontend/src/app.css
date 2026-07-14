@@ -1863,23 +1863,6 @@ span.issue-label {
   }
 }
 
-.siteintro {
-  border-bottom: 1px solid #333;
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), var(--siteintro-background-image);
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-.siteintro .siteintro-cover {
-  width: min(750px, 100%);
-  padding: 55px 0 65px;
-  margin: 0 auto;
-  overflow: auto;
-  text-align: center;
-}
-
 .page-footer-outer {
   padding: 10px 0;
   background-color: #fff;
@@ -1896,39 +1879,6 @@ span.issue-label {
   color: #333;
   font-family: Verdana, sans-serif;
   font-size: 9px;
-}
-
-.siteintro .site-heading {
-  padding: 0;
-  margin: 0;
-  font-family: sans-serif;
-  font-size: 34px;
-  font-weight: normal;
-  line-height: 40px;
-  color: #fafafa;
-  opacity: 0.9;
-}
-
-.siteintro .site-features {
-  display: block;
-  padding: 0;
-  margin: 5px 0 0;
-  list-style: none;
-}
-
-.siteintro .site-features li {
-  display: inline-block;
-  margin-left: 5px;
-  font-size: 16px;
-  font-weight: normal;
-  color: #fff;
-  letter-spacing: 1.1px;
-  opacity: 0.5;
-}
-
-.siteintro .signup-btn {
-  margin-top: 35px;
-  text-align: center;
 }
 
 .eyebrow {
@@ -3806,16 +3756,6 @@ h1 {
     box-sizing: border-box;
     width: 100%;
     padding: 0 10px;
-  }
-
-  .siteintro .siteintro-cover {
-    width: inherit;
-    overflow: inherit;
-  }
-
-  .siteintro .site-heading {
-    padding-left: 20px;
-    font-size: 22px;
   }
 
   .page-footer-outer {
