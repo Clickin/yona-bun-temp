@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, thirty user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, thirty-one user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -611,6 +611,21 @@ the authenticated right sidenav retain it for their real consumers. The former 1
 without compensation. Fresh live/local evidence agrees on desktop/mobile 270x26 rows and the exact
 204px hover overlay, star states, filtering, navigation, and mutation isolation. This is not Wave 1
 completion.
+
+The thirty-first verified slice migrates the framed left Project search/list shell. StyleX owns
+the group, black/white search input and focus state, focus-bar pseudo-elements, tab-content
+overflow, four pane display/list/scroll declarations, empty result, and WebKit scrollbar
+overrides. The two newly exposed search colors are semantic variables in the canonical global
+theme, while the existing semantic focus, empty-result, track, and thumb variables are reused; no
+dark value or toggle is introduced. The owner emits none of `search-result`, `tab-pane`,
+`myproject-list-wrap`, `group`, `search-input`, `project-search`, `bar`, `tab-content`, `user-ul`,
+`active`, or `no-result`. With the last Project descendant consumer migrated, the left Project
+pane also drops `user-project-list`; left Recent History and the authenticated right sidenav
+retain it for their actual consumers. The max-720 global text-input rule and global scrollbar
+thumb primitives remain separate shared owners, not fallback declarations for this shell. Fresh
+Edge/en-US live legacy and local evidence agrees on desktop `270×232` and mobile
+`317.6875×202` shells, exact focus/empty states, four subtab transitions, filtering, scrollbar
+styles, and no viewport overflow. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -3407,7 +3407,7 @@ function SidebarTabContent({
   const paneClassName = (tab: SidebarTab) => {
     const isActive = activeTab === tab;
     if (isLeftSidebar) {
-      return `${tab === "favorite" ? "" : "user-project-list "}${
+      return `${tab === "recent" ? "user-project-list " : ""}${
         stylex.props(
           leftSidebarTabPanelStyles.pane,
           isActive && leftSidebarTabPanelStyles.activePane,
@@ -4322,6 +4322,93 @@ function SidebarAllProjectItem({
   );
 }
 
+const leftSidebarProjectShellStyles = stylex.create({
+  group: {
+    position: "relative",
+  },
+  input: {
+    backgroundColor: globalColors.leftSidebarProjectSearchSurface,
+    borderRadius: 0,
+    borderStyle: "none",
+    borderWidth: 0,
+    boxSizing: "content-box",
+    color: globalColors.leftSidebarProjectSearchText,
+    display: "block",
+    fontSize: "14px",
+    height: "34px",
+    marginBottom: 0,
+    outline: "none",
+    width: "99%",
+    ":focus": {
+      borderStyle: "none",
+      borderWidth: 0,
+      outline: "none",
+    },
+  },
+  bar: {
+    display: "block",
+    position: "relative",
+    "::before": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      left: "50%",
+      position: "absolute",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+    "::after": {
+      backgroundColor: globalColors.sidenavSearchFocusAccent,
+      bottom: "1px",
+      content: '""',
+      height: "1px",
+      position: "absolute",
+      right: "50%",
+      transition: "0.2s ease all",
+      width: 0,
+    },
+  },
+  focusedBar: {
+    "::before": {
+      width: "50%",
+    },
+    "::after": {
+      width: "50%",
+    },
+  },
+  tabContent: {
+    overflow: "hidden",
+  },
+  pane: {
+    display: "none",
+    listStyleType: "none",
+    margin: "0 0 10px",
+    maxHeight: "80vh",
+    overflowX: "visible",
+    overflowY: "auto",
+    padding: 0,
+    "::-webkit-scrollbar": {
+      backgroundColor: globalColors.sidenavScrollbarTrack,
+      height: "10px",
+      width: "5px",
+    },
+    "::-webkit-scrollbar-thumb": {
+      backgroundColor: globalColors.sidenavScrollbarThumb,
+    },
+  },
+  activePane: {
+    display: "block",
+  },
+  noResult: {
+    color: globalColors.sidenavNoResultText,
+    fontSize: "16px",
+    marginBottom: "25px",
+    marginTop: "10px",
+    textAlign: "center",
+  },
+});
+
 const authenticatedSidenavProjectShellStyles = stylex.create({
   group: {
     position: "relative",
@@ -4567,24 +4654,38 @@ function SidebarProjectList({
 
   return (
     <div>
-      <div className="search-result">
+      <div className={isLeftSidebar ? undefined : "search-result"}>
         <div
-          className="tab-pane myproject-list-wrap"
+          className={isLeftSidebar ? undefined : "tab-pane myproject-list-wrap"}
           data-stylex-owner={
-            isAuthenticatedSidenav ? "authenticated-sidenav-project-shell" : undefined
+            isLeftSidebar
+              ? "left-sidebar-project-shell"
+              : isAuthenticatedSidenav
+                ? "authenticated-sidenav-project-shell"
+                : undefined
           }
         >
           <div
-            className={`group ${
-              stylex.props(isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.group)
-                .className
-            }`.trimEnd()}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarProjectShellStyles.group).className
+                : `group ${
+                    stylex.props(
+                      isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.group,
+                    ).className
+                  }`.trimEnd()
+            }
           >
             <input
-              className={`search-input project-search ${
-                stylex.props(isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.input)
-                  .className
-              }`.trimEnd()}
+              className={
+                isLeftSidebar
+                  ? stylex.props(leftSidebarProjectShellStyles.input).className
+                  : `search-input project-search ${
+                      stylex.props(
+                        isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.input,
+                      ).className
+                    }`.trimEnd()
+              }
               type="text"
               id={sidebarDomId(idPrefix, "query")}
               autoComplete="off"
@@ -4595,14 +4696,21 @@ function SidebarProjectList({
               value={searchQuery}
             />
             <span
-              className={`bar ${
-                stylex.props(
-                  isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.bar,
-                  isAuthenticatedSidenav &&
-                    isSearchFocused &&
-                    authenticatedSidenavProjectShellStyles.focusedBar,
-                ).className
-              }`.trimEnd()}
+              className={
+                isLeftSidebar
+                  ? stylex.props(
+                      leftSidebarProjectShellStyles.bar,
+                      isSearchFocused && leftSidebarProjectShellStyles.focusedBar,
+                    ).className
+                  : `bar ${
+                      stylex.props(
+                        isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.bar,
+                        isAuthenticatedSidenav &&
+                          isSearchFocused &&
+                          authenticatedSidenavProjectShellStyles.focusedBar,
+                      ).className
+                    }`.trimEnd()
+              }
             ></span>
           </div>
           <div
@@ -4676,11 +4784,15 @@ function SidebarProjectList({
             </ul>
           </div>
           <div
-            className={`tab-content ${
-              stylex.props(
-                isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.tabContent,
-              ).className
-            }`.trimEnd()}
+            className={
+              isLeftSidebar
+                ? stylex.props(leftSidebarProjectShellStyles.tabContent).className
+                : `tab-content ${
+                    stylex.props(
+                      isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.tabContent,
+                    ).className
+                  }`.trimEnd()
+            }
           >
             <SidebarProjectPane
               active={activeSubtab === "recentlyVisited"}
@@ -4753,13 +4865,23 @@ function SidebarProjectPane({
     return (
       <div
         id={paneId}
-        className={`no-result tab-pane user-ul ${active ? "active" : ""} ${
-          stylex.props(
-            isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.pane,
-            isAuthenticatedSidenav && active && authenticatedSidenavProjectShellStyles.activePane,
-            isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.noResult,
-          ).className
-        }`.trimEnd()}
+        className={
+          isLeftSidebar
+            ? stylex.props(
+                leftSidebarProjectShellStyles.pane,
+                active && leftSidebarProjectShellStyles.activePane,
+                leftSidebarProjectShellStyles.noResult,
+              ).className
+            : `no-result tab-pane user-ul ${active ? "active" : ""} ${
+                stylex.props(
+                  isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.pane,
+                  isAuthenticatedSidenav &&
+                    active &&
+                    authenticatedSidenavProjectShellStyles.activePane,
+                  isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.noResult,
+                ).className
+              }`.trimEnd()
+        }
       >
         {t("title.no.results")}
       </div>
@@ -4767,12 +4889,21 @@ function SidebarProjectPane({
   }
   return (
     <ul
-      className={`tab-pane user-ul ${active ? "active" : ""} ${
-        stylex.props(
-          isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.pane,
-          isAuthenticatedSidenav && active && authenticatedSidenavProjectShellStyles.activePane,
-        ).className
-      }`.trimEnd()}
+      className={
+        isLeftSidebar
+          ? stylex.props(
+              leftSidebarProjectShellStyles.pane,
+              active && leftSidebarProjectShellStyles.activePane,
+            ).className
+          : `tab-pane user-ul ${active ? "active" : ""} ${
+              stylex.props(
+                isAuthenticatedSidenav && authenticatedSidenavProjectShellStyles.pane,
+                isAuthenticatedSidenav &&
+                  active &&
+                  authenticatedSidenavProjectShellStyles.activePane,
+              ).className
+            }`.trimEnd()
+      }
       id={paneId}
     >
       {visibleProjects.map((project) => (

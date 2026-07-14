@@ -125,6 +125,10 @@ export const globalColors = stylex.defineVars({
   leftSidebarProjectSubtabAccent: "#f36c22",
   // _yobiUI.less: .nav-subtab li.active a color in the left Project pane
   leftSidebarProjectSubtabActiveText: "#fcfcfc",
+  // _usermenu.less: .sidebar .search-input background-color in the left Project pane
+  leftSidebarProjectSearchSurface: "#000000",
+  // _usermenu.less: .sidebar .search-input color in the left Project pane
+  leftSidebarProjectSearchText: "#ffffff",
   // _page.less: .sidebar .nav-tabs li a color
   leftSidebarTabText: "lightgray",
   // _page.less: .sidebar .nav-tabs active/interaction color

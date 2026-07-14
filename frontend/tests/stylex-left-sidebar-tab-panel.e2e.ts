@@ -90,7 +90,7 @@ for (const viewport of [
       paneDisplays: ["none", "none", "block"],
     });
     expect(initial.pluginAttributes).toEqual([]);
-    expect(initial.retainedUserProjectList).toEqual([false, true, true]);
+    expect(initial.retainedUserProjectList).toEqual([false, false, true]);
     expect(initial.removedPresentationClasses).toEqual([]);
 
     await assertSingleVisiblePane(panel, "left-sidebar-myRecentIssueList");
