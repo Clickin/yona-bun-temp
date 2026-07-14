@@ -1397,6 +1397,12 @@ evidenced preformatted exception surface through existing global variables witho
 legacy class; error copy, title, sidebar, other update branches, and generic pre consumers remain
 fallback. This is not Wave 1 completion.
 
+The ninety-seventh slice migrates the common `/sites/update` title strip from
+`site/update.scala.html` and `_page.less`. StyleX applies the exact title-area and direct-heading
+declarations through existing global variables while retaining the shared fallback classes;
+available/current/no-update/error bodies, title descendant navigation, sidebar, shell, and generic
+title areas remain fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

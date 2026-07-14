@@ -402,7 +402,7 @@ async function updateAvailableMetrics(page: Page) {
     const title = requireElement(".site-setting-wrap .title_area h2");
     const firstParagraph = requireElement(".site-setting-wrap .span10 > p");
     const strong = requireElement(".site-setting-wrap .span10 > p strong");
-    const downloadButton = requireElement(".site-setting-wrap a.ybtn.ybtn-success");
+    const downloadButton = requireElement('[data-stylex-owner="site-update-download-action"]');
 
     const rowRect = row.getBoundingClientRect();
     const sidebarRect = sidebar.getBoundingClientRect();
@@ -551,6 +551,15 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.closest('[data-stylex-owner="site-update-title-strip"]') !== null
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||

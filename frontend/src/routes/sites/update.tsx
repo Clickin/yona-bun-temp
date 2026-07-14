@@ -14,6 +14,20 @@ const legacySiteSidebarLinkProps = {
 };
 const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 const styles = stylex.create({
+  titleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  title: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
   downloadAction: {
     backgroundColor: {
       default: globalColors.siteUpdateDownloadActionSurface,
@@ -105,8 +119,12 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div className="title_area">
-                <h2 className="pull-left">
+              <div
+                {...stylex.props(styles.titleArea)}
+                className="title_area"
+                data-stylex-owner="site-update-title-strip"
+              >
+                <h2 {...stylex.props(styles.title)} className="pull-left">
                   <LegacyMessage messageKey="site.sidebar.update" />
                 </h2>
               </div>
