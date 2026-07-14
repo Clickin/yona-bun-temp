@@ -48,9 +48,23 @@ export const globalColors = stylex.defineVars({
   // _page.less: .gnb-nav anchor color transition duration
   globalGnbBrandTransitionDuration: "0.15s",
   // _page.less: .gnb-nav li float
-  globalGnbFeedbackItemFloat: "left",
+  globalGnbNavItemFloat: "left",
   // _page.less: .gnb-nav li position
-  globalGnbFeedbackItemPosition: "relative",
+  globalGnbNavItemPosition: "relative",
+  // Bootstrap 2.3.1 .input-prepend display
+  globalGnbSearchDisplay: "inline-block",
+  // _page.less: .gnb-search-form font-size
+  globalGnbSearchFontSize: "0px",
+  // _page.less: .gnb-search-form line-height
+  globalGnbSearchLineHeight: "30px",
+  // _page.less: .gnb-search-form margin-top
+  globalGnbSearchMarginTop: "5px",
+  // _page.less: .gnb-search-form zero margin and padding edges
+  globalGnbSearchZero: "0px",
+  // Bootstrap 2.3.1 .input-prepend white-space
+  globalGnbSearchWhiteSpace: "nowrap",
+  // Bootstrap 2.3.1 .input-prepend vertical-align
+  globalGnbSearchVerticalAlign: "middle",
   // Bootstrap 2.3.1 anchor display
   globalGnbFeedbackLinkDisplay: "inline",
   // _page.less: .gnb-nav li a float

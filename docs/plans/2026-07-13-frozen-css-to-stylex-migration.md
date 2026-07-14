@@ -802,6 +802,17 @@ their existing approved `Yoram repository` identity copy has a different natural
 legacy `Feedback`, which remains an intentional copy deviation rather than a styling offset.
 Actual RED 9/10 becomes focused GREEN 10/10. This is not Wave 1 completion.
 
+The forty-fourth verified slice migrates only the outer GNB search `li` and form shared by HOME,
+project, and organization states. The legacy form action/name, hidden input, child order, scoped
+menu behavior, and GET payload remain exact, while colocated StyleX owns the item positioning and
+form box, spacing, typography, nowrap, and alignment through canonical global theme variables.
+The seven-line base `.gnb-search-form` React bridge is deleted. Its runtime class remains narrowly
+required by the frozen max-720 `display:none!important` rule and unmigrated inner descendants;
+`input-prepend` likewise remains for active Bootstrap inner-control selectors. Fresh Edge and local
+evidence agrees on HOME `112×30`, project `231.625×30`, and attached-but-hidden mobile forms across
+HOME/project/organization. Actual RED 9/10 becomes focused GREEN 10/10, with Feedback regression
+10/10. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

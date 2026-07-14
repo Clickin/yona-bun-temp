@@ -746,13 +746,6 @@ body:has(.legacy-framed-shell.is-open) {
   color: #788ba7;
 }
 
-.gnb-search-form {
-  padding: 0 10px;
-  margin: 5px 0 0;
-  font-size: 0;
-  line-height: 30px;
-}
-
 .gnb-search-form .search-box {
   display: inline-block;
   height: 30px;

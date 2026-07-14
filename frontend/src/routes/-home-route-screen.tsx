@@ -684,10 +684,30 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbSearchFormStyles = stylex.create({
+  item: {
+    float: globalColors.globalGnbNavItemFloat,
+    position: globalColors.globalGnbNavItemPosition,
+  },
+  form: {
+    display: globalColors.globalGnbSearchDisplay,
+    fontSize: globalColors.globalGnbSearchFontSize,
+    lineHeight: globalColors.globalGnbSearchLineHeight,
+    marginBottom: globalColors.globalGnbSearchZero,
+    marginLeft: globalColors.globalGnbSearchZero,
+    marginRight: globalColors.globalGnbSearchZero,
+    marginTop: globalColors.globalGnbSearchMarginTop,
+    paddingBlock: globalColors.globalGnbSearchZero,
+    paddingInline: globalColors.globalGnbBrandPaddingInline,
+    verticalAlign: globalColors.globalGnbSearchVerticalAlign,
+    whiteSpace: globalColors.globalGnbSearchWhiteSpace,
+  },
+});
+
 const globalGnbFeedbackStyles = stylex.create({
   item: {
-    float: globalColors.globalGnbFeedbackItemFloat,
-    position: globalColors.globalGnbFeedbackItemPosition,
+    float: globalColors.globalGnbNavItemFloat,
+    position: globalColors.globalGnbNavItemPosition,
   },
   link: {
     color: globalColors.textMuted,
@@ -1054,10 +1074,14 @@ export function SiteLayoutShell({
                   </Link>
                 </li>
               ) : null}
-              <li>
+              <li
+                {...stylex.props(globalGnbSearchFormStyles.item)}
+                data-stylex-owner="global-gnb-search-item"
+              >
                 <form
                   action={gnbSearchAction}
-                  className="input-prepend gnb-search-form"
+                  className={`input-prepend gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
+                  data-stylex-owner="global-gnb-search-form"
                   name="gnb-search-form"
                 >
                   <input type="hidden" name="searchType" value="auto" />
