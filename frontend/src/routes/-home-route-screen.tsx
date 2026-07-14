@@ -989,6 +989,18 @@ const leftSidebarAccountActionStyles = stylex.create({
     boxSizing: "border-box",
     color: globalColors.leftSidebarAccountText,
     padding: "10px",
+    width: "100%",
+    "::before": {
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: "",
+      display: "table",
+      lineHeight: 0,
+    },
   },
   menu: {
     padding: "5px",
@@ -1005,9 +1017,16 @@ const leftSidebarAccountActionStyles = stylex.create({
   },
   logoutLabel: {
     backgroundColor: globalColors.leftSidebarAccountLogoutSurface,
+    borderRadius: "1px",
     color: globalColors.leftSidebarAccountLogoutText,
+    display: "inline-block",
+    fontSize: "11.844px",
     fontWeight: "normal",
+    lineHeight: "14px",
     padding: "5px",
+    textShadow: globalColors.leftSidebarAccountLogoutTextShadow,
+    verticalAlign: "baseline",
+    whiteSpace: "nowrap",
     ":hover": {
       backgroundColor: globalColors.leftSidebarAccountLogoutHoverSurface,
       color: globalColors.leftSidebarAccountLogoutText,
@@ -1152,7 +1171,7 @@ function LegacyFramedSidebar({
       id="sidebar"
     >
       <div
-        className={`row-fluid ${stylex.props(leftSidebarAccountActionStyles.row).className}`}
+        {...stylex.props(leftSidebarAccountActionStyles.row)}
         data-stylex-owner="left-sidebar-account-actions"
       >
         <span {...stylex.props(leftSidebarAccountActionStyles.menu)}>
@@ -1183,15 +1202,13 @@ function LegacyFramedSidebar({
           <Link {...stylex.props(leftSidebarAccountActionStyles.link)} to="/user/editform">
             {t("userinfo.accountSetting")}
           </Link>
-        </span>
+        </span>{" "}
         <Link
           {...stylex.props(leftSidebarAccountActionStyles.logoutLink)}
           reloadDocument
           to={LEGACY_AUTHENTICATED_LOGOUT_PATH}
         >
-          <span
-            className={`label ${stylex.props(leftSidebarAccountActionStyles.logoutLabel).className}`}
-          >
+          <span {...stylex.props(leftSidebarAccountActionStyles.logoutLabel)}>
             {t("title.logout")}
           </span>
         </Link>

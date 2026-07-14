@@ -8,8 +8,24 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 test.use({ locale: "en-US" });
 
 for (const viewport of [
-  { height: 900, label: "desktop", rowWidth: 270, width: 1366 },
-  { height: 844, label: "mobile", rowWidth: 317.6875, width: 390 },
+  {
+    account: { height: 26, width: 59.96875, x: 112.109375, y: 8 },
+    height: 900,
+    label: "desktop",
+    logout: { height: 16, width: 52.265625, x: 175.671875, y: 13 },
+    logoutLabel: { height: 24, width: 52.265625, x: 175.671875, y: 10 },
+    rowWidth: 270,
+    width: 1366,
+  },
+  {
+    account: { height: 26, width: 59.96875, x: 43.59375, y: 8 },
+    height: 844,
+    label: "mobile",
+    logout: { height: 16, width: 52.265625, x: 107.15625, y: 13 },
+    logoutLabel: { height: 24, width: 52.265625, x: 107.15625, y: 10 },
+    rowWidth: 317.6875,
+    width: 390,
+  },
 ]) {
   test(`left sidebar account actions preserve ${viewport.label} legacy parity`, async ({
     page,
@@ -25,23 +41,24 @@ for (const viewport of [
     const profile = owner.getByRole("link").first();
     const account = owner.getByRole("link", { exact: true, name: "Account" });
     const logout = owner.getByRole("link", { exact: true, name: "Log out" });
-    const logoutLabel = logout.locator(":scope > span.label");
+    const logoutLabel = logout.locator(":scope > span");
     const pin = owner.getByRole("button", { name: "Sidebar" });
     const profileOwner = owner.locator('[data-stylex-owner="left-sidebar-profile-identity"]');
     const label = profileOwner.locator(":scope > span").nth(1);
 
     await saveScreenshot(
       owner,
-      `stylex-left-sidebar-account-actions-local-${viewport.label}-${
-        (await owner.getAttribute("data-stylex-owner")) === "left-sidebar-account-actions"
-          ? "after"
-          : "before"
-      }.png`,
+      `stylex-left-sidebar-account-primitives-local-${viewport.label}.png`,
     );
     const evidence = await readEvidence(owner);
     expect(evidence).toEqual({
       actionOrder: ["SPAN", "SPAN", "A", "BUTTON"],
+      account: viewport.account,
+      accountLogoutGap: 3.59375,
       avatar: { height: 20, width: 20 },
+      hasAccountLogoutWhitespace: true,
+      logout: viewport.logout,
+      logoutLabel: viewport.logoutLabel,
       owner: "left-sidebar-account-actions",
       ownerClasses: [],
       pin: {
@@ -51,8 +68,8 @@ for (const viewport of [
       retainedClasses: {
         avatar: [],
         caret: [],
-        logout: ["label"],
-        row: ["row-fluid"],
+        logout: [],
+        row: [],
       },
       row: { height: 44, width: viewport.rowWidth, x: 0, y: 0 },
       styles: {
@@ -65,12 +82,16 @@ for (const viewport of [
         logout: { color: "rgb(128, 128, 128)" },
         logoutLabel: {
           backgroundColor: "rgb(153, 153, 153)",
+          borderRadius: "1px",
           color: "rgb(255, 255, 255)",
           display: "inline-block",
           fontSize: "11.844px",
           fontWeight: "400",
           lineHeight: "14px",
           padding: "5px",
+          textShadow: "rgba(0, 0, 0, 0.25) 0px -1px 0px",
+          verticalAlign: "baseline",
+          whiteSpace: "nowrap",
         },
         menu: ["5px", "5px"],
         profile: {
@@ -83,6 +104,10 @@ for (const viewport of [
           boxSizing: "border-box",
           color: "rgb(128, 128, 128)",
           padding: "10px",
+          pseudos: {
+            after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+            before: { clear: "none", content: '""', display: "table", lineHeight: "0px" },
+          },
         },
       },
     });
@@ -130,6 +155,7 @@ test("left sidebar account actions have complete global-theme StyleX ownership",
     "leftSidebarAccountLogoutText",
     "leftSidebarAccountLogoutSurface",
     "leftSidebarAccountLogoutHoverSurface",
+    "leftSidebarAccountLogoutTextShadow",
   ]) {
     expect(styles).toContain(`globalColors.${token}`);
     expect(theme).toContain(`${token}:`);
@@ -150,9 +176,9 @@ test("left sidebar account actions have complete global-theme StyleX ownership",
   expect(owner).not.toContain('className="user-menu-wrap"');
   expect(owner).not.toContain('className="user-menu"');
   expect(owner).not.toContain('className="user-menu logout label"');
-  for (const retainedClass of ["row-fluid", "label"]) {
-    expect(owner).toContain(retainedClass);
-  }
+  expect(owner).not.toContain("className={`row-fluid");
+  expect(owner).not.toContain("className={`label");
+  expect(owner).toContain('</Link>\n        </span>{" "}\n        <Link');
   expect(owner).toContain('data-stylex-owner="left-sidebar-profile-identity"');
   for (const removedClass of ["avatar-wrap", "smaller", "caret-text", "hide-in-mobile"]) {
     expect(owner).not.toContain(removedClass);
@@ -190,10 +216,32 @@ async function readEvidence(owner: Locator) {
       };
     };
     const rowStyle = getComputedStyle(element);
+    const rowBeforeStyle = getComputedStyle(element, "::before");
+    const rowAfterStyle = getComputedStyle(element, "::after");
     const labelStyle = getComputedStyle(logoutLabelElement);
+    const accountBox = box(accountElement.parentElement as HTMLElement);
+    const logoutBox = box(logoutElement);
+    const logoutLabelBox = box(logoutLabelElement);
+    const pseudoStyle = (style: CSSStyleDeclaration) => ({
+      clear: style.clear,
+      content: style.content,
+      display: style.display,
+      lineHeight: style.lineHeight,
+    });
     return {
       actionOrder: Array.from(element.children, (child) => child.tagName),
+      account: accountBox,
+      accountLogoutGap: logoutBox.x - (accountBox.x + accountBox.width),
       avatar: { height: box(avatarElement).height, width: box(avatarElement).width },
+      hasAccountLogoutWhitespace: Array.from(element.childNodes).some(
+        (node) =>
+          node.nodeType === Node.TEXT_NODE &&
+          /^\s+$/u.test(node.textContent ?? "") &&
+          node.previousSibling === accountElement.parentElement &&
+          node.nextSibling === logoutElement,
+      ),
+      logout: logoutBox,
+      logoutLabel: logoutLabelBox,
       owner: element.getAttribute("data-stylex-owner"),
       ownerClasses: ["user-menu-wrap", "user-menu", "logout"].filter((className) =>
         [element, ...element.querySelectorAll("*")].some((target) =>
@@ -220,12 +268,16 @@ async function readEvidence(owner: Locator) {
         logout: { color: getComputedStyle(logoutElement).color },
         logoutLabel: {
           backgroundColor: labelStyle.backgroundColor,
+          borderRadius: labelStyle.borderRadius,
           color: labelStyle.color,
           display: labelStyle.display,
           fontSize: labelStyle.fontSize,
           fontWeight: labelStyle.fontWeight,
           lineHeight: labelStyle.lineHeight,
           padding: labelStyle.padding,
+          textShadow: labelStyle.textShadow,
+          verticalAlign: labelStyle.verticalAlign,
+          whiteSpace: labelStyle.whiteSpace,
         },
         menu: menus.map((menu) => getComputedStyle(menu).padding),
         profile: textStyle(profileElement),
@@ -233,6 +285,10 @@ async function readEvidence(owner: Locator) {
           boxSizing: rowStyle.boxSizing,
           color: rowStyle.color,
           padding: rowStyle.padding,
+          pseudos: {
+            after: pseudoStyle(rowAfterStyle),
+            before: pseudoStyle(rowBeforeStyle),
+          },
         },
       },
     };

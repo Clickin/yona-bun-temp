@@ -117,6 +117,8 @@ export const globalColors = stylex.defineVars({
   leftSidebarAccountLogoutText: "#ffffff",
   // Bootstrap 2.3.1 .label background-color
   leftSidebarAccountLogoutSurface: "#999999",
+  // Bootstrap 2.3.1 .label text-shadow
+  leftSidebarAccountLogoutTextShadow: "0 -1px 0 rgba(0, 0, 0, 0.25)",
   // _usermenu.less: .logout:hover background-color
   leftSidebarAccountLogoutHoverSurface: "#9c27b0",
   // _usermenu.less: .nav-subtab.unstyled background-color in the left Project pane
