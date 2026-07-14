@@ -1438,6 +1438,12 @@ complete former `ybtn ybtn-primary` surface through global variables and removes
 classes only from this action; radio/project selection controls, the add-project button, title,
 sidebar/shell, and other ybtn consumers remain fallback. This is not Wave 1 completion.
 
+The one-hundred-fourth slice migrates the common `/sites/massmail` title strip from
+`site/massMail.scala.html` and `_page.less`. StyleX applies the exact title-area and direct-heading
+declarations through existing global variables while retaining shared fallback classes; controls,
+actions, sidebar/shell, and generic title areas remain fallback or separate owners. This is not
+Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
