@@ -195,7 +195,8 @@ test("anonymous Home hero preserves mobile geometry without horizontal overflow"
 });
 
 async function assertDom(page: Page) {
-  await expect(page.locator(OUTER)).toHaveClass("siteintro-bg row");
+  await expect(page.locator(OUTER)).toHaveClass(/(?:^|\s)siteintro-bg(?:\s|$)/u);
+  await expect(page.locator(OUTER)).not.toHaveClass(/(?:^|\s)row(?:\s|$)/u);
   await expect(page.locator(HEADING)).toHaveText("21st Century Software Development Platform");
   await expect(page.locator(TAGLINE_ITEM)).toHaveText("Just focus on what you have to do");
   await expect(page.locator(CTA)).toHaveText("Yona 시작 하기");

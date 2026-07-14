@@ -62,6 +62,13 @@ export const globalColors = stylex.defineVars({
   siteFooterProviderFontSize: "9px",
   siteFooterProviderText: "#333333",
 
+  // Bootstrap 2.3.1 bootstrap.css: anonymous Home outer `.row`
+  anonymousHomeIntroOuterMargin: "0px 0px 0px -20px",
+  anonymousHomeIntroOuterPseudoContent: '""',
+  anonymousHomeIntroOuterPseudoDisplay: "table",
+  anonymousHomeIntroOuterPseudoLineHeight: "0px",
+  anonymousHomeIntroOuterPseudoClear: "both",
+
   // _page.less `.siteintro`, _responsive.less, and _yobiUI.less `.ybtn-success`
   anonymousHomeIntroBackgroundPosition: "center center",
   anonymousHomeIntroBackgroundRepeat: "no-repeat",

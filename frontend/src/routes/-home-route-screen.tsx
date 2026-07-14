@@ -577,7 +577,10 @@ function HomeScreen({
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <HomeFlashToast message={flashMessage} />
-      <div className="siteintro-bg row" data-stylex-owner="anonymous-home-intro-outer">
+      <div
+        className={`siteintro-bg ${stylex.props(anonymousHomeIntroOuterStyles.outer).className}`}
+        data-stylex-owner="anonymous-home-intro-outer"
+      >
         <div
           {...stylex.props(anonymousHomeIntroBackgroundTheme, anonymousHomeIntroStyles.hero)}
           data-stylex-owner="anonymous-home-intro"
@@ -1904,6 +1907,23 @@ export function SiteLayoutShell({
     </div>
   );
 }
+
+const anonymousHomeIntroOuterStyles = stylex.create({
+  outer: {
+    margin: globalColors.anonymousHomeIntroOuterMargin,
+    "::before": {
+      content: globalColors.anonymousHomeIntroOuterPseudoContent,
+      display: globalColors.anonymousHomeIntroOuterPseudoDisplay,
+      lineHeight: globalColors.anonymousHomeIntroOuterPseudoLineHeight,
+    },
+    "::after": {
+      clear: globalColors.anonymousHomeIntroOuterPseudoClear,
+      content: globalColors.anonymousHomeIntroOuterPseudoContent,
+      display: globalColors.anonymousHomeIntroOuterPseudoDisplay,
+      lineHeight: globalColors.anonymousHomeIntroOuterPseudoLineHeight,
+    },
+  },
+});
 
 const anonymousHomeIntroStyles = stylex.create({
   hero: {

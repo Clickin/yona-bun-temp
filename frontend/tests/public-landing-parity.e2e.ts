@@ -411,6 +411,12 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (name === "class" && current.matches('[data-stylex-owner="anonymous-home-intro-outer"]')) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => token === "siteintro-bg")
+          .join(" ");
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -500,6 +506,16 @@ async function canonicalizeHtml(page: Page, html: string) {
 
       function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
         const value = current.getAttribute(name) ?? "";
+        if (
+          name === "class" &&
+          value.split(/\s+/u).includes("siteintro-bg") &&
+          current.matches("div.siteintro-bg.row")
+        ) {
+          return value
+            .split(/\s+/u)
+            .filter((token) => token !== "row")
+            .join(" ");
+        }
         const isSiteLayoutHeader =
           name === "class" &&
           value.split(/\s+/u).includes("gnb-outer") &&

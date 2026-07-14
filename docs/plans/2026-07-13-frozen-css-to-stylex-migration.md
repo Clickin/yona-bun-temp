@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty-three shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty-four shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1089,6 +1089,21 @@ exact-DOM case retains only its pre-existing global-header canonicalizer drift o
 Typecheck, production build/StyleX verification, manifest agreement at app.css
 `7696a82f...65e`, unchanged frozen fallback `6417f445...16f`, format, visual inspection, and diff
 gates pass. This is not Wave 1 completion.
+
+The sixty-fourth verified slice migrates the anonymous HOME outer intro region rendered from
+`index/partial_intro.scala.html`. Colocated StyleX owns only the active Bootstrap 2.3.1 `.row`
+negative margin and clearfix pseudos through canonical global theme variables; the IE-only
+`*zoom` parser hack and the inactive min-1200 responsive row variant are not translated. The
+presentation token `row` is removed while declaration-free `siteintro-bg` remains as structural
+markup. Generic Bootstrap `.row` fallback remains for its many other real consumers, and neither
+`app.css` nor its manifest changes. Fresh Korean desktop/mobile evidence and focused tests preserve
+the exact `1386×591 @ -20/40` and `410×1091 @ -20/40` outer geometry, hero-before-feature order,
+clearfix pseudos, and no horizontal overflow. Focused RED 3/3 becomes GREEN 3/3 and combined outer
+plus hero verification passes 6/6. The adjacent mobile landing case passes; its broad desktop
+exact-DOM case canonicalizes this region identically and retains only pre-existing global-header
+drift. Typecheck, production build/StyleX verification, unchanged app.css/manifest
+`7696a82f...65e`, unchanged frozen fallback `6417f445...16f`, format, screenshots, visual
+inspection, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
