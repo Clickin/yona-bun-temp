@@ -64,7 +64,9 @@ test("legacy singular notification browser route renders the raw notification fr
   await expect(
     page.locator('[data-stylex-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);
-  await expect(page.locator("#notification-more")).toBeVisible();
+  await expect(
+    page.locator('[data-stylex-owner="authenticated-home-notification-pagination"]'),
+  ).toBeVisible();
   await expect(
     page.locator(
       "[data-stylex-owner=global-gnb-outer], .page-wrap-outer, [data-stylex-owner=authenticated-home-main-stream], #setDefaultLoginPage",

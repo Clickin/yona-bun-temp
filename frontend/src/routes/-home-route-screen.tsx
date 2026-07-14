@@ -309,8 +309,8 @@ function HomeScreen({
             <button
               id="notification-more"
               type="button"
-              className="ybtn"
-              style={{ boxSizing: "content-box" }}
+              className={`ybtn ${stylex.props(authenticatedHomeNotificationPaginationStyles.button).className}`}
+              data-stylex-owner="authenticated-home-notification-pagination"
               onClick={() => {
                 void loadMoreNotifications();
               }}
@@ -538,8 +538,8 @@ function HomeScreen({
                         <button
                           id="notification-more"
                           type="button"
-                          className="ybtn"
-                          style={{ boxSizing: "content-box" }}
+                          className={`ybtn ${stylex.props(authenticatedHomeNotificationPaginationStyles.button).className}`}
+                          data-stylex-owner="authenticated-home-notification-pagination"
                           onClick={() => {
                             void loadMoreNotifications();
                           }}
@@ -2107,6 +2107,14 @@ const authenticatedHomeNotificationStyles = stylex.create({
     fontSize: globalColors.authenticatedHomeNotificationEmptyFontSize,
     padding: globalColors.authenticatedHomeNotificationEmptyPadding,
     textAlign: globalColors.authenticatedHomeNotificationEmptyTextAlign,
+  },
+});
+
+const authenticatedHomeNotificationPaginationStyles = stylex.create({
+  button: {
+    boxSizing: globalColors.authenticatedHomeNotificationPaginationBoxSizing,
+    marginTop: globalColors.authenticatedHomeNotificationPaginationMarginTop,
+    width: globalColors.authenticatedHomeNotificationPaginationWidth,
   },
 });
 

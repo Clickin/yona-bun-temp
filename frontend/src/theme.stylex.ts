@@ -163,6 +163,10 @@ export const globalColors = stylex.defineVars({
   authenticatedHomeNotificationEmptyBorderStyle: "none",
   authenticatedHomeNotificationEmptyBorderWidth: "0px",
   authenticatedHomeNotificationEmptyRadius: "6px",
+  // _page.less #notification-more plus the existing React button parity bridge
+  authenticatedHomeNotificationPaginationMarginTop: "20px",
+  authenticatedHomeNotificationPaginationWidth: "95%",
+  authenticatedHomeNotificationPaginationBoxSizing: "content-box",
   // _page.less: authenticated Home populated notification row and descendants
   authenticatedHomeNotificationRowClear: "both",
   authenticatedHomeNotificationRowText: "#dddddd",

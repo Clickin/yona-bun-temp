@@ -2548,10 +2548,13 @@ test("direct notifications route appends legacy notification-more rows", async (
 
   await page.goto(`${basePath}/notifications`);
   await expect(page.locator(NOTIFICATION_ROW)).toHaveCount(20);
-  const notificationMore = page.locator("button[type='button'].ybtn#notification-more");
+  const notificationMore = page.locator(
+    '[data-stylex-owner="authenticated-home-notification-pagination"]',
+  );
   await expect(notificationMore).toBeVisible();
   await expect(notificationMore).toHaveText("More");
   await expect(notificationMore).toHaveCSS("box-sizing", "content-box");
+  await expect(notificationMore).not.toHaveAttribute("style");
   await expect(page.locator("a[href^='javascript:']#notification-more")).toHaveCount(0);
   const desktopMore = await readNotificationMoreGeometry(page);
   expect(desktopMore.buttonLeft).toBeCloseTo(desktopMore.parentLeft, 1);
@@ -2582,7 +2585,7 @@ test("direct notifications route appends legacy notification-more rows", async (
       page,
       EXPECTED_DIRECT_NOTIFICATIONS.replace(
         `<div class="warning-none"><i class="yobicon-danger"></i>No notification has been received.</div>`,
-        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn" style="box-sizing:content-box">More</button></li>`,
+        `${expectedNotificationRows(firstPageItems, basePath)}<li><button id="notification-more" type="button" class="ybtn">More</button></li>`,
       ).replaceAll("__BASE_PATH__", basePath),
     ),
   );

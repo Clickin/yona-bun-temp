@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, fifty-nine shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, sixty shell/user-menu slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1027,6 +1027,20 @@ for the separately recorded surrounding-shell width/y drift or the existing 1px 
 line-box difference. Focused verification passes 5/5, the combined affected HOME matrix passes,
 and typecheck, production build/StyleX verification, screenshots, lint/format, manifest agreement,
 unchanged generated fallback hash, and diff gates pass. This is not Wave 1 completion.
+
+The sixtieth verified slice migrates the authenticated HOME notification pagination button
+rendered from `index/partial_notifications.scala.html` in the full `/` and `/notifications`
+screens and the singular `/notification` fragment. Colocated StyleX owns only the frozen
+`#notification-more` 20px top margin and 95% width plus the existing React button content-box
+parity bridge, with every value supplied by canonical global theme variables. The exact
+`li > button#notification-more.ybtn`, `More` copy, TanStack Query append behavior, and URL
+continuity remain unchanged, while the owned inline style is removed. The shared `ybtn` primitive
+continues to supply padding, border, typography, base paint, and hover/focus paint for this and
+other real consumers. Fresh live and local desktop/mobile screenshots agree on paint, 50px row,
+20px offset, and 30px button height; no compensation is added for the already-recorded HOME list
+width/y drift. Focused RED 6/6 becomes GREEN 6/6, the affected notification matrix passes 23/23,
+and Vitest 11/11, typecheck, production build/StyleX verification, unchanged app/fallback hashes,
+lint/format, visual inspection, and diff gates pass. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
