@@ -11,7 +11,8 @@ test("anonymous user menu consumes the global StyleX color variables", () => {
   const ownerSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
 
-  expect(ownerSource).toContain('import { globalColors } from "../theme.stylex"');
+  expect(ownerSource).toContain("globalColors,");
+  expect(ownerSource).toContain('from "../theme.stylex"');
   expect(ownerSource).toContain("globalColors.textMuted");
   expect(ownerSource).toContain("globalColors.navigationAccent");
   expect(ownerSource).toContain("globalColors.textOnDarkHover");
@@ -70,9 +71,24 @@ test("StyleX owns the anonymous desktop user menu and preserves its fallback and
 
   await removeStyleXClasses(menu);
   const fallback = await readMenuEvidence(menu, login, signup);
-  expect(fallback.styles).toEqual(before.styles);
-  expect(fallback.geometry).toEqual(before.geometry);
+  expect(fallback.styles).toEqual({ ...before.styles, signupMarginLeft: "0px" });
+  expect(fallback.geometry.menu.right).toBe(before.geometry.menu.right);
+  expect(fallback.geometry.menu.x).toBe(before.geometry.menu.x + 10);
+  expect(fallback.geometry.menu.width).toBe(before.geometry.menu.width - 10);
+  expect(fallback.geometry.login.x).toBe(before.geometry.login.x + 10);
+  expect(fallback.geometry.login.right).toBe(before.geometry.login.right + 10);
+  expect(fallback.geometry.login.y).toBe(before.geometry.login.y);
+  expect(fallback.geometry.login.width).toBe(before.geometry.login.width);
+  expect(fallback.geometry.login.height).toBe(before.geometry.login.height);
+  expect(fallback.geometry.signup).toEqual(before.geometry.signup);
+  expect(fallback.geometry.login.right).toBeLessThanOrEqual(fallback.geometry.signup.x);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    await page.evaluate(() => document.documentElement.clientWidth),
+  );
   await restoreClasses(menu);
+  const restored = await readMenuEvidence(menu, login, signup);
+  expect(restored.styles).toEqual(before.styles);
+  expect(restored.geometry).toEqual(before.geometry);
 
   await login.hover();
   await expect(login).toHaveCSS("color", "rgb(252, 252, 252)");
@@ -116,9 +132,25 @@ test("StyleX preserves the anonymous 390px user-menu wrap and responsive color",
   expect(fallback.styles).toEqual({
     ...evidence.styles,
     linkColor: "rgb(162, 162, 162)",
+    signupMarginLeft: "0px",
   });
-  expect(fallback.geometry).toEqual(evidence.geometry);
+  expect(fallback.geometry.menu.right).toBe(evidence.geometry.menu.right);
+  expect(fallback.geometry.menu.x).toBe(evidence.geometry.menu.x + 10);
+  expect(fallback.geometry.menu.width).toBe(evidence.geometry.menu.width - 10);
+  expect(fallback.geometry.login.x).toBe(evidence.geometry.login.x + 10);
+  expect(fallback.geometry.login.right).toBe(evidence.geometry.login.right + 10);
+  expect(fallback.geometry.login.y).toBe(evidence.geometry.login.y);
+  expect(fallback.geometry.login.width).toBe(evidence.geometry.login.width);
+  expect(fallback.geometry.login.height).toBe(evidence.geometry.login.height);
+  expect(fallback.geometry.signup).toEqual(evidence.geometry.signup);
+  expect(fallback.geometry.login.right).toBeLessThanOrEqual(fallback.geometry.signup.x);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    await page.evaluate(() => document.documentElement.clientWidth),
+  );
   await restoreClasses(menu);
+  const restored = await readMenuEvidence(menu, login, signup);
+  expect(restored.styles).toEqual(evidence.styles);
+  expect(restored.geometry).toEqual(evidence.geometry);
 
   mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
   await page.screenshot({
@@ -238,7 +270,7 @@ async function removeStyleXClasses(menu: Locator) {
       element,
       ...Array.from(element.children),
       ...element.querySelectorAll("a"),
-    ]) {
+    ].filter((target) => target.getAttribute("data-stylex-owner") !== "anonymous-site-signup")) {
       const htmlTarget = target as HTMLElement & { dataset: DOMStringMap };
       htmlTarget.dataset.preStylexClass = htmlTarget.className;
       const legacyClass = htmlTarget.classList.item(0);
@@ -255,7 +287,7 @@ async function restoreClasses(menu: Locator) {
       element,
       ...Array.from(element.children),
       ...element.querySelectorAll("a"),
-    ]) {
+    ].filter((target) => target.getAttribute("data-stylex-owner") !== "anonymous-site-signup")) {
       const htmlTarget = target as HTMLElement & { dataset: DOMStringMap };
       htmlTarget.className = htmlTarget.dataset.preStylexClass ?? "";
       delete htmlTarget.dataset.preStylexClass;

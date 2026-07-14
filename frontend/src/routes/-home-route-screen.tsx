@@ -1908,6 +1908,42 @@ export function SiteLayoutShell({
   );
 }
 
+const anonymousSiteSignupStyles = stylex.create({
+  link: {
+    backgroundColor: {
+      default: globalColors.anonymousSiteSignupSurface,
+      ":hover": globalColors.anonymousSiteSignupHoverSurface,
+      ":focus": globalColors.anonymousSiteSignupHoverSurface,
+      ":active": globalColors.anonymousSiteSignupHoverSurface,
+    },
+    borderColor: globalColors.anonymousSiteSignupBorderColor,
+    borderRadius: globalColors.anonymousSiteSignupBorderRadius,
+    borderStyle: globalColors.anonymousSiteSignupBorderStyle,
+    borderWidth: globalColors.anonymousSiteSignupBorderWidth,
+    boxShadow: globalColors.anonymousSiteSignupBoxShadow,
+    color: globalColors.anonymousSiteSignupText,
+    cursor: globalColors.anonymousSiteSignupCursor,
+    display: globalColors.anonymousSiteSignupDisplay,
+    fontSize: globalColors.anonymousSiteSignupFontSize,
+    lineHeight: globalColors.anonymousSiteSignupLineHeight,
+    margin: globalColors.anonymousSiteSignupMargin,
+    outline: globalColors.anonymousSiteSignupOutline,
+    padding: globalColors.anonymousSiteSignupPadding,
+    position: globalColors.anonymousSiteSignupPosition,
+    textAlign: globalColors.anonymousSiteSignupTextAlign,
+    textDecoration: {
+      ":hover": globalColors.anonymousSiteSignupInteractiveTextDecoration,
+      ":focus": globalColors.anonymousSiteSignupInteractiveTextDecoration,
+      ":active": globalColors.anonymousSiteSignupInteractiveTextDecoration,
+    },
+    textShadow: globalColors.anonymousSiteSignupTextShadow,
+    transition: globalColors.anonymousSiteSignupTransition,
+    verticalAlign: globalColors.anonymousSiteSignupVerticalAlign,
+    whiteSpace: globalColors.anonymousSiteSignupWhiteSpace,
+    zIndex: globalColors.anonymousSiteSignupZIndex,
+  },
+});
+
 const anonymousHomeIntroOuterStyles = stylex.create({
   outer: {
     margin: globalColors.anonymousHomeIntroOuterMargin,
@@ -5252,7 +5288,11 @@ function AnonymousSiteUserMenu() {
               .className
           }
         >
-          <Link to="/users/signupform" className="ybtn ybtn-success">
+          <Link
+            {...stylex.props(anonymousSiteSignupStyles.link)}
+            to="/users/signupform"
+            data-stylex-owner="anonymous-site-signup"
+          >
             {t("title.signup")}
           </Link>
         </li>

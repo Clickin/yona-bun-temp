@@ -465,7 +465,8 @@ async function canonicalizeScreenRoots(page: Page) {
             current.hasAttribute(name) &&
             !(
               name === "class" &&
-              (current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature") ||
+              (current.getAttribute("data-stylex-owner") === "anonymous-site-signup" ||
+                current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-feature") ||
                 (current.getAttribute("data-stylex-owner")?.startsWith("anonymous-home-intro") &&
                   current.getAttribute("data-stylex-owner") !== "anonymous-home-intro-outer"))
             ),
@@ -584,7 +585,16 @@ async function canonicalizeHtml(page: Page, html: string) {
           "data-login",
         ];
         const attrs = stableAttributes
-          .filter((name) => current.hasAttribute(name))
+          .filter(
+            (name) =>
+              current.hasAttribute(name) &&
+              !(
+                name === "class" &&
+                current.matches(
+                  'header.gnb-outer .gnb-usermenu > li:last-child > a.ybtn.ybtn-success[href$="/users/signupform"]',
+                )
+              ),
+          )
           .map(
             (name) =>
               `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,

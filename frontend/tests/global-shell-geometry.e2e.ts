@@ -56,7 +56,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(loginLink).not.toHaveAttribute("data-login");
   await expect(loginLink).toHaveAttribute("aria-controls", "loginDialog");
   await expect(loginLink).toHaveAttribute("aria-haspopup", "dialog");
-  await expect(page.locator(".gnb-usermenu .ybtn-success")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="anonymous-site-signup"]')).toHaveAttribute(
     "href",
     `${BASE_PATH}/users/signupform`,
   );
@@ -422,7 +422,7 @@ async function readShellMetrics(page: Page) {
       navbar: box("[data-stylex-owner=global-gnb-outer]"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
       search: box(".gnb-search-form"),
-      signup: box(".gnb-usermenu .ybtn-success"),
+      signup: box('[data-stylex-owner="anonymous-site-signup"]'),
       userMenu: box(".gnb-usermenu"),
       viewport: {
         height: innerHeight,

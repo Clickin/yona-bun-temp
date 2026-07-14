@@ -609,7 +609,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   expect(legacySources.siteLayout).toContain("@common.footer()");
 });
 
-test("anonymous home shell renders React-owned login and legacy signup Link affordances", async ({
+test("anonymous home shell renders React-owned login and React-owned signup Link affordances", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -618,7 +618,7 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
   await page.goto(`${basePath}/`);
 
   const loginLink = page.locator("#required-logged-in a.user-item-btn");
-  const signupMenuLink = page.locator(".gnb-usermenu a.ybtn.ybtn-success");
+  const signupMenuLink = page.locator('[data-stylex-owner="anonymous-site-signup"]');
   const landingSignupLink = page.locator('[data-stylex-owner="anonymous-home-intro-signup-link"]');
   const projectListLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
   const profileLink = page.locator("#mySidenav .user-menu a").first();
@@ -628,13 +628,14 @@ test("anonymous home shell renders React-owned login and legacy signup Link affo
 
   await expect(loginLink).toHaveText("Log in");
   await expect(loginLink).toHaveAttribute("href", `${basePath}/users/loginform`);
-  await expect(loginLink).toHaveAttribute("class", "user-item-btn");
+  await expect(loginLink).toHaveClass(/(?:^|\s)user-item-btn(?:\s|$)/u);
   await expect(loginLink).not.toHaveAttribute("data-login");
   await expect(loginLink).toHaveAttribute("aria-controls", "loginDialog");
   await expect(loginLink).toHaveAttribute("aria-haspopup", "dialog");
   await expect(signupMenuLink).toHaveText("Sign up");
   await expect(signupMenuLink).toHaveAttribute("href", `${basePath}/users/signupform`);
-  await expect(signupMenuLink).toHaveAttribute("class", "ybtn ybtn-success");
+  await expect(signupMenuLink).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(signupMenuLink).not.toHaveClass(/(?:^|\s)ybtn-success(?:\s|$)/u);
   await expect(landingSignupLink).toHaveText("Sign up for Yoram");
   await expect(landingSignupLink).toHaveAttribute("href", `${basePath}/users/signupform`);
   await expect(landingSignupLink).not.toHaveAttribute("class", /(?:^|\s)ybtn(?:\s|$)/u);

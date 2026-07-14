@@ -1105,6 +1105,21 @@ drift. Typecheck, production build/StyleX verification, unchanged app.css/manife
 `7696a82f...65e`, unchanged frozen fallback `6417f445...16f`, format, screenshots, visual
 inspection, and diff gates pass. This is not Wave 1 completion.
 
+The sixty-fifth verified slice migrates the anonymous global GNB Sign up Link rendered from
+`common/usermenu.scala.html`. Colocated StyleX owns the complete selector-declared `.ybtn` plus
+`.ybtn-success` base/hover/focus/active presentation through canonical global theme variables,
+and the Link drops both presentation classes. Browser/inherited/global anchor values that those
+selectors do not declare are not falsely copied. Generic button fallback remains unchanged for
+its many independent real consumers, while no button fallback now matches this owner. Desktop
+and Korean mobile preserve exact `74.6875×30 @1267.84375/5` and
+`78.234375×30 @298.0625/45` geometry, copy, href, settled interaction paint, containment, URL,
+and no overflow. Focused RED 3/3 becomes GREEN 3/3; signup plus adjacent menu passes 6/6 and the
+direct affordance regression passes 1/1. Typecheck, Vitest 11/11, production build/StyleX
+verification, unchanged app.css/manifest `7696a82f...65e`, unchanged frozen fallback
+`6417f445...16f`, formatting, screenshots, visual inspection, and diff gates pass. Broader shell
+and exact-DOM runs retain failures before or outside this owner and are not counted as green.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
