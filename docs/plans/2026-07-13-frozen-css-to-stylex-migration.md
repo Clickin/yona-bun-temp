@@ -1285,6 +1285,12 @@ presentation classes once the reused StyleX declarations own all concrete output
 5/5 verifies prefill values, copy/order/dismissal, desktop/mobile paint/geometry/screenshots, and
 all state exclusions; existing route regression is GREEN 5/5. This is not Wave 1 completion.
 
+The seventy-ninth slice migrates authenticated visible `/lostPassword?error=invalid` error alert,
+reusing the existing error StyleX surface, inherited copy, heading, and dismiss declarations under
+its own state owner. Prefilled values and React dismissal remain intact; anonymous error, success,
+and no-alert states stay separate. Focused and existing regressions are GREEN 5/5. This is not
+Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

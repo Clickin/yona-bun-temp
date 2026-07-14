@@ -245,6 +245,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     sessionQuery.data?.isAnonymous === false && isSent && !errorMessage && !isSuccessAlertDismissed;
   const anonymousVisibleError =
     sessionQuery.data?.isAnonymous === true && Boolean(errorMessage) && !isErrorAlertDismissed;
+  const authenticatedVisibleError =
+    sessionQuery.data?.isAnonymous === false && Boolean(errorMessage) && !isErrorAlertDismissed;
   // Requesting a reset email does not change cached session or auth state.
   // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const requestMutation = useMutation({
@@ -389,19 +391,34 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           ) : null}
 
           {errorMessage && !isErrorAlertDismissed ? (
-            anonymousVisibleError ? (
-              <div className={errorAlertClassName} data-stylex-owner="lost-password-error-alert">
+            anonymousVisibleError || authenticatedVisibleError ? (
+              <div
+                className={errorAlertClassName}
+                data-stylex-owner={
+                  anonymousVisibleError
+                    ? "lost-password-error-alert"
+                    : "lost-password-authenticated-error-alert"
+                }
+              >
                 <button
                   type="button"
                   className={errorAlertDismissClassName}
-                  data-stylex-part="lost-password-error-alert-dismiss"
+                  data-stylex-part={
+                    anonymousVisibleError
+                      ? "lost-password-error-alert-dismiss"
+                      : "lost-password-authenticated-error-alert-dismiss"
+                  }
                   onClick={() => setIsErrorAlertDismissed(true)}
                 >
                   &times;
                 </button>
                 <h4
                   className={errorAlertHeadingClassName}
-                  data-stylex-part="lost-password-error-alert-heading"
+                  data-stylex-part={
+                    anonymousVisibleError
+                      ? "lost-password-error-alert-heading"
+                      : "lost-password-authenticated-error-alert-heading"
+                  }
                 >
                   {t("site.mail.fail")}
                 </h4>
