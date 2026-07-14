@@ -1983,7 +1983,9 @@ async function milestoneDetailGnbSearchMetrics(page: Page) {
     const header = document.querySelector<HTMLElement>(".gnb-outer.project-header");
     const form = document.querySelector<HTMLElement>(".gnb-search-form");
     const scope = document.querySelector<HTMLElement>("#gnb-search-scope-title");
-    const input = document.querySelector<HTMLElement>(".gnb-search-form input[name='keyword']");
+    const input = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-input"]',
+    );
     if (!header || !form || !scope || !input) {
       throw new Error("Expected GNB search metric targets are missing.");
     }

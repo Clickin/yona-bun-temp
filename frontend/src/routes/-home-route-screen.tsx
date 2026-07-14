@@ -684,6 +684,77 @@ function LegacyNotificationMessage({ message }: { message: string }) {
   return <>{content}</>;
 }
 
+const globalGnbSearchInputStyles = stylex.create({
+  input: {
+    backgroundColor: globalColors.globalGnbSearchInputBackground,
+    borderBottomColor: {
+      default: globalColors.globalGnbSearchInputColor,
+      ":focus": globalColors.globalGnbSearchInputFocusBorderColor,
+    },
+    borderBottomLeftRadius: globalColors.globalGnbSearchInputRadius,
+    borderBottomRightRadius: globalColors.globalGnbSearchInputRadius,
+    borderBottomStyle: globalColors.globalGnbSearchInputBorderStyle,
+    borderBottomWidth: globalColors.globalGnbSearchInputZero,
+    borderLeftColor: {
+      default: globalColors.globalGnbSearchInputColor,
+      ":focus": globalColors.globalGnbSearchInputFocusBorderColor,
+    },
+    borderLeftStyle: globalColors.globalGnbSearchInputBorderStyle,
+    borderLeftWidth: globalColors.globalGnbSearchInputZero,
+    borderRightColor: {
+      default: globalColors.globalGnbSearchInputColor,
+      ":focus": globalColors.globalGnbSearchInputFocusBorderColor,
+    },
+    borderRightStyle: globalColors.globalGnbSearchInputBorderStyle,
+    borderRightWidth: globalColors.globalGnbSearchInputZero,
+    borderTopColor: {
+      default: globalColors.globalGnbSearchInputColor,
+      ":focus": globalColors.globalGnbSearchInputFocusBorderColor,
+    },
+    borderTopLeftRadius: globalColors.globalGnbSearchInputRadius,
+    borderTopRightRadius: globalColors.globalGnbSearchInputRadius,
+    borderTopStyle: globalColors.globalGnbSearchInputBorderStyle,
+    borderTopWidth: globalColors.globalGnbSearchInputZero,
+    boxShadow: globalColors.globalGnbSearchInputShadow,
+    boxSizing: globalColors.globalGnbSearchInputBoxSizing,
+    color: globalColors.globalGnbSearchInputColor,
+    display: globalColors.globalGnbSearchInputDisplay,
+    fontFamily: globalColors.globalGnbSearchInputFontFamily,
+    fontSize: globalColors.globalGnbSearchInputFontSize,
+    fontWeight: globalColors.globalGnbSearchInputFontWeight,
+    height: globalColors.globalGnbSearchInputHeight,
+    lineHeight: globalColors.globalGnbSearchInputLineHeight,
+    marginBottom: globalColors.globalGnbSearchInputMarginBottom,
+    marginLeft: globalColors.globalGnbSearchInputZero,
+    marginRight: globalColors.globalGnbSearchInputZero,
+    marginTop: globalColors.globalGnbSearchInputZero,
+    maxWidth: {
+      default: globalColors.globalGnbSearchInputMaxWidth,
+      ":focus": globalColors.globalGnbSearchInputFocusMaxWidth,
+    },
+    minHeight: globalColors.globalGnbSearchInputMinHeight,
+    outlineStyle: globalColors.globalGnbSearchInputOutlineStyle,
+    outlineWidth: globalColors.globalGnbSearchInputZero,
+    paddingBottom: globalColors.globalGnbSearchInputPaddingBlock,
+    paddingLeft: globalColors.globalGnbSearchInputPaddingInline,
+    paddingRight: globalColors.globalGnbSearchInputPaddingInline,
+    paddingTop: globalColors.globalGnbSearchInputPaddingBlock,
+    position: globalColors.globalGnbSearchInputPosition,
+    transitionDuration: globalColors.globalGnbSearchInputTransitionDuration,
+    transitionProperty: globalColors.globalGnbSearchInputTransitionProperty,
+    transitionTimingFunction: globalColors.globalGnbSearchInputTransitionTiming,
+    verticalAlign: globalColors.globalGnbSearchInputVerticalAlign,
+    width: {
+      default: globalColors.globalGnbSearchInputWidth,
+      ":focus": globalColors.globalGnbSearchInputFocusWidth,
+    },
+    zIndex: {
+      default: globalColors.globalGnbSearchInputZIndex,
+      ":focus": globalColors.globalGnbSearchInputFocusZIndex,
+    },
+  },
+});
+
 const globalGnbSearchBoxStyles = stylex.create({
   box: {
     backgroundColor: globalColors.globalGnbSearchBoxSurface,
@@ -1365,7 +1436,7 @@ export function SiteLayoutShell({
               >
                 <form
                   action={gnbSearchAction}
-                  className={`input-prepend gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
+                  className={`gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
                   data-stylex-owner="global-gnb-search-form"
                   name="gnb-search-form"
                 >
@@ -1463,7 +1534,14 @@ export function SiteLayoutShell({
                     data-stylex-owner="global-gnb-search-box"
                   >
                     {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy common/navbar.scala.html exposes accesskey="S". */}
-                    <input type="text" name="keyword" autoComplete="off" accessKey="S" />
+                    <input
+                      {...stylex.props(globalGnbSearchInputStyles.input)}
+                      accessKey="S"
+                      autoComplete="off"
+                      data-stylex-owner="global-gnb-search-input"
+                      name="keyword"
+                      type="text"
+                    />
                     <button type="submit">
                       <i className="yobicon-search" />
                     </button>

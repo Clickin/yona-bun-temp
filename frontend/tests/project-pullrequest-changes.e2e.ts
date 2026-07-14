@@ -1765,7 +1765,9 @@ async function pullRequestChangesNavbarMetrics(page: Page) {
     const searchBox = document.querySelector<HTMLElement>(
       '[data-stylex-owner="global-gnb-search-box"]',
     );
-    const input = document.querySelector<HTMLElement>('.gnb-search-form input[name="keyword"]');
+    const input = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="global-gnb-search-input"]',
+    );
     const projectHeader = document.querySelector<HTMLElement>(".project-header-outer");
     const menu = document.querySelector<HTMLElement>(".project-menu-outer");
     if (!navbar || !form || !scope || !searchBox || !input || !projectHeader || !menu) {

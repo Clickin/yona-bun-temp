@@ -746,23 +746,6 @@ body:has(.legacy-framed-shell.is-open) {
   color: #788ba7;
 }
 
-.gnb-search-form input[type="text"] {
-  box-sizing: content-box;
-  width: 50px;
-  height: 20px;
-  min-height: 0;
-  padding: 5px 10px;
-  margin-bottom: 3px;
-  line-height: 30px;
-  border: 0;
-  box-shadow: none;
-  transition: width 0.3s ease;
-}
-
-.gnb-search-form input[type="text"]:focus {
-  width: 200px;
-}
-
 .gnb-search-form .search-box button {
   min-height: auto;
   padding: 0;

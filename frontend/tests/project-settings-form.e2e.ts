@@ -1968,7 +1968,7 @@ async function navbarSearchContainmentMetrics(page: Page) {
     const form = requireElement('form[name="gnb-search-form"]');
     const scope = requireElement("#gnb-search-scope-title");
     const searchBox = requireElement(".gnb-search-form .search-box");
-    const input = requireElement('.gnb-search-form input[name="keyword"]');
+    const input = requireElement('[data-stylex-owner="global-gnb-search-input"]');
     const navbarRect = navbar.getBoundingClientRect();
     const formRect = form.getBoundingClientRect();
     const scopeRect = scope.getBoundingClientRect();

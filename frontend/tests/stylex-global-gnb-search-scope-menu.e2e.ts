@@ -340,7 +340,7 @@ test("scope paint remains isolated without runtime presentation classes", async 
   await page.waitForTimeout(300);
   const owned = await scopeEvidence(scope, toggle, menu);
   await scope.evaluate((node) => {
-    node.closest("form")?.classList.remove("gnb-search-form", "input-prepend");
+    node.closest("form")?.classList.remove("gnb-search-form");
     node.closest("ul")?.classList.remove("gnb-nav");
   });
   const isolated = await scopeEvidence(scope, toggle, menu);

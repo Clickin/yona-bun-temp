@@ -49,7 +49,7 @@ test("global GNB search box has complete global-theme StyleX ownership", () => {
 
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
   expect(appCss).not.toContain(".gnb-search-form .search-box.select {");
-  expect(appCss).toContain('.gnb-search-form input[type="text"] {');
+  expect(appCss).not.toContain('.gnb-search-form input[type="text"] {');
   expect(appCss).toContain(".gnb-search-form .search-box button {");
 });
 

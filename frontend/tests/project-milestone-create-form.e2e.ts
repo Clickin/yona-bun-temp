@@ -644,7 +644,7 @@ async function readProtectedProjectHeaderBoxes(page: Page) {
       '[data-stylex-owner="global-gnb-search-box"]',
     );
     const searchInput = document.querySelector<HTMLElement>(
-      '.gnb-search-form input[name="keyword"]',
+      '[data-stylex-owner="global-gnb-search-input"]',
     );
     const searchSubmit = document.querySelector<HTMLElement>(
       '.gnb-search-form button[type="submit"]',

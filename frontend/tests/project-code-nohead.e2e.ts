@@ -254,7 +254,7 @@ async function assertProjectSearchShell(page: Page, basePath: string) {
     const form = document.querySelector(".gnb-search-form");
     const searchBox = document.querySelector(".gnb-search-form .search-box");
     const scopeButton = document.querySelector("#gnb-search-scope-title");
-    const input = document.querySelector('.gnb-search-form input[name="keyword"]');
+    const input = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
     const submit = document.querySelector('.gnb-search-form button[type="submit"]');
     if (!navbar || !form || !searchBox || !scopeButton || !input || !submit) {
       return null;

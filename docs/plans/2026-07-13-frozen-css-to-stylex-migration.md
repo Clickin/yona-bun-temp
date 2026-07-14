@@ -837,6 +837,20 @@ on the `92×30` base wrapper and project focus expansion to `242×30`, with no n
 Actual RED 8/1 becomes focused GREEN 9/9 and final affected search/project-review GREEN 33/33.
 This is not Wave 1 completion.
 
+The forty-seventh verified slice migrates only the global GNB keyword text input. Its exact
+attributes, wrapper order, focus expansion, and GET payload remain unchanged, while colocated
+StyleX owns the evidenced 50→200px content width, 20px height, box model, Helvetica typography,
+paint, radius, outline/shadow reset, relative focus stacking, 0.3s transition, and 250px focus cap
+through canonical global theme variables. The 17-line input bridge and the SiteLayoutShell-only
+`input-prepend` class are removed; Bootstrap retains that selector for the separate `/restricted`
+consumer. `gnb-search-form` and `search-box` remain only for mobile hiding and the unmigrated
+submit-button descendant. Frozen generic input rules still supply the unavoidable max-720
+`font-size:16px!important` and focus border-color `!important`; no new important override is added.
+Fresh Edge/local computed styles and 70→220px geometry agree, while the known upstream GNB width
+drift changes absolute x independently of this owner and receives no compensation. Actual RED 7/8
+becomes focused-plus-adjacent GREEN 34/34. The next safe owner is the submit button and icon. This
+is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

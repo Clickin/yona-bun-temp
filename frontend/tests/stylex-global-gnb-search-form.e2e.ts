@@ -53,17 +53,14 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
   expect(formMarker).toBeGreaterThanOrEqual(0);
   expect(item).toContain("globalGnbSearchFormStyles.item");
   expect(form).toContain("globalGnbSearchFormStyles.form");
-  expect(form).toContain("`input-prepend gnb-search-form ${stylex.props(");
+  expect(form).toContain("`gnb-search-form ${stylex.props(");
+  expect(form).not.toContain("input-prepend");
   expect(form).toContain('name="gnb-search-form"');
   expect(form).toContain('name="searchType" value="auto"');
 
   expect(appCss).not.toMatch(/\.gnb-search-form\s*\{[^}]*\}/u);
-  for (const selector of [
-    '.gnb-search-form input[type="text"] {',
-    ".gnb-search-form .search-box button {",
-  ]) {
-    expect(appCss).toContain(selector);
-  }
+  expect(appCss).not.toContain('.gnb-search-form input[type="text"] {');
+  expect(appCss).toContain(".gnb-search-form .search-box button {");
   expect(appCss).not.toContain(".gnb-search-form .search-box {");
   expect(appCss).not.toContain(".gnb-search-form .search-box.select {");
   expect(appCss).not.toContain(".gnb-search-form .dropdown-toggle {");
@@ -144,8 +141,8 @@ for (const state of [
     const form = page.locator(FORM);
     await expect(item).toBeAttached();
     await expect(form).toBeAttached();
-    await expect(form).toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
     await expect(form).toHaveClass(/(?:^|\s)gnb-search-form(?:\s|$)/u);
+    await expect(form).not.toHaveClass(/(?:^|\s)input-prepend(?:\s|$)/u);
     await expect(form).toHaveAttribute("name", "gnb-search-form");
     await expect(form).toHaveAttribute("action", expectedAction(state.kind));
     await expect(form.locator(':scope > input[type="hidden"]')).toHaveAttribute(
@@ -280,8 +277,8 @@ test("global GNB search outer paint is isolated while required legacy classes re
     return { owned, requiredClasses, stripped: snapshot() };
   });
 
-  expect(evidence.requiredClasses).toContain("input-prepend");
   expect(evidence.requiredClasses).toContain("gnb-search-form");
+  expect(evidence.requiredClasses).not.toContain("input-prepend");
   expect(evidence.owned).toEqual({
     formDisplay: "inline-block",
     formFontSize: "0px",
