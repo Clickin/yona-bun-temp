@@ -537,7 +537,11 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      if (name === "class" && current.closest('[data-stylex-owner="site-data-warning-surface"]')) {
+      if (
+        name === "class" &&
+        (current.closest('[data-stylex-owner="site-data-warning-surface"]') ||
+          current.closest('[data-stylex-owner="site-data-title-strip"]'))
+      ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)
           .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))

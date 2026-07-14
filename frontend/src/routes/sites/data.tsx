@@ -12,6 +12,20 @@ import { SiteLayoutShell } from "../-home-route-screen";
 const styles = stylex.create({
   warningSurface: { display: globalColors.siteDataWarningDisplay },
   warning: { color: globalColors.siteDataWarningText },
+  titleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  title: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
 });
 
 const legacySiteSidebarLinkProps = {
@@ -62,8 +76,14 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div className="title_area">
-                <h2 className="pull-left">{t("site.sidebar.data")}</h2>
+              <div
+                {...stylex.props(styles.titleArea)}
+                className="title_area"
+                data-stylex-owner="site-data-title-strip"
+              >
+                <h2 {...stylex.props(styles.title)} className="pull-left">
+                  {t("site.sidebar.data")}
+                </h2>
               </div>
 
               <div

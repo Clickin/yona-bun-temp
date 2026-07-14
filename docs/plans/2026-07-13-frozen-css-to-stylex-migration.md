@@ -1369,6 +1369,12 @@ content, form controls, and the shared site-admin shell remain fallback. Focused
 screenshots and the existing data-settings regression retain legacy copy, order, and geometry.
 This is not Wave 1 completion.
 
+The ninety-second slice migrates the title strip of `/sites/data` from `site/data.scala.html` and
+`_page.less`. StyleX owns the exact title-area and heading declarations through existing global
+theme variables; warning, export/import content, form controls, and the shared site-admin shell
+remain fallback. Focused desktop/mobile screenshots and the existing data-settings regression
+retain legacy copy, order, and geometry. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
