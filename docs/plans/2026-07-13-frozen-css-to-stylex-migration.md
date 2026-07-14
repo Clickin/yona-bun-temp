@@ -1426,6 +1426,12 @@ base and error alert surface through global variables while retaining alert fall
 success/not-configured alerts, form, send action, title/sidebar/shell, and generic alerts remain
 fallback or separate owners. This is not Wave 1 completion.
 
+The one-hundred-second slice migrates the not-configured `/sites/mail` error alert from
+`site/mail.scala.html` and Bootstrap 2.3.1 `.alert`/`.alert-error` rules. It reuses the exact
+global error-alert values while retaining fallback classes; the search/mutation error alert,
+success alert, form, send action, title/sidebar/shell, and generic alerts remain separate owners
+or fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

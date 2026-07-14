@@ -91,6 +91,17 @@ const styles = stylex.create({
     borderRadius: globalColors.siteMailErrorAlertBorderRadius,
     color: globalColors.siteMailErrorAlertText,
   },
+  notConfiguredAlert: {
+    padding: globalColors.siteMailErrorAlertPadding,
+    marginBottom: globalColors.siteMailErrorAlertMarginBottom,
+    textShadow: globalColors.siteMailErrorAlertTextShadow,
+    backgroundColor: globalColors.siteMailErrorAlertSurface,
+    borderColor: globalColors.siteMailErrorAlertBorderColor,
+    borderStyle: globalColors.siteMailErrorAlertBorderStyle,
+    borderWidth: globalColors.siteMailErrorAlertBorderWidth,
+    borderRadius: globalColors.siteMailErrorAlertBorderRadius,
+    color: globalColors.siteMailErrorAlertText,
+  },
 });
 
 interface SiteMailRouteSearch {
@@ -307,7 +318,11 @@ function MailBody({
         </div>
       ) : null}
       {response && response.notConfiguredItems.length > 0 ? (
-        <div className="alert alert-error">
+        <div
+          {...stylex.props(styles.notConfiguredAlert)}
+          className="alert alert-error"
+          data-stylex-owner="site-mail-not-configured-alert"
+        >
           <p>{t("site.mail.notConfigured", { args: ["/admin/mailconf"] })}</p>
           <ul>
             {response.notConfiguredItems.map((item) => (
