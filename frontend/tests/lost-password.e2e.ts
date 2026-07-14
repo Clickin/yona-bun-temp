@@ -19,7 +19,13 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   expect(
     await routeRoot.locator(":scope > *").evaluateAll((elements) =>
       elements.map((element) => ({
-        className: element.className,
+        className: element.className
+          .split(/\s+/u)
+          .filter(
+            (classToken) =>
+              classToken && !classToken.startsWith("x") && !classToken.includes("__styles."),
+          )
+          .join(" "),
         tagName: element.tagName,
       })),
     ),
@@ -36,6 +42,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   );
 
   const form = routeRoot.locator(".login-form-wrap form");
+  await expect(form.locator("input.text")).toHaveCount(0);
   await expect(form).toHaveAttribute("method", "post");
   await expect(form).toHaveAttribute("action", appPath("/lostPassword"));
   expect(await form.evaluate((element) => new URL(element.action).pathname)).toBe(
@@ -44,7 +51,13 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
   expect(
     await form.locator("dl > dd > input").evaluateAll((inputs) =>
       inputs.map((input) => ({
-        className: input.className,
+        className: input.className
+          .split(/\s+/u)
+          .filter(
+            (classToken) =>
+              classToken && !classToken.startsWith("x") && !classToken.includes("__styles."),
+          )
+          .join(" "),
         id: input.id,
         name: input.getAttribute("name"),
         placeholder: input.getAttribute("placeholder"),
@@ -55,7 +68,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
     ),
   ).toEqual([
     {
-      className: "text",
+      className: "",
       id: "loginId",
       name: "loginId",
       placeholder: "Login ID",
@@ -64,7 +77,7 @@ test("lost-password preserves the legacy visible form and desktop/mobile geometr
       valueAttribute: null,
     },
     {
-      className: "text",
+      className: "",
       id: "emailAddress",
       name: "emailAddress",
       placeholder: "Email address",

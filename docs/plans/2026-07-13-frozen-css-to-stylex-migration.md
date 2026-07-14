@@ -1231,6 +1231,17 @@ regression specifies. Focused RED became GREEN 5/5 for source/global-theme owner
 validation and successful reset payload, excluded invalid state, desktop/mobile paint, screenshots,
 and no overflow. This is not Wave 1 completion.
 
+The seventy-fourth slice migrates the anonymous baseline `/lostPassword` email-request form from
+`site/lostPassword.scala.html`. StyleX owns its reset tagline/title/copy, wrapper, Login ID and
+email inputs/focus state, and submit row/button through canonical global theme variables from
+`_page.less` and `_responsive.less`; React/TanStack retains session lookup, request mutation, and
+success navigation. Requested/error alerts and authenticated prefill are separate states outside
+this owner. Baseline inputs drop the `text` presentation class only where StyleX directly owns the
+visible declarations. Live legacy desktop/mobile captures and local output agree on the 400px
+desktop form and 95% mobile form/input geometry; the en-US mobile title wraps as its legacy
+regression specifies. Focused RED became GREEN 5/5 and the existing route regression passes 5/5.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

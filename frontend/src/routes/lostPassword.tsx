@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
@@ -6,12 +7,84 @@ import { readSessionBootstrap, requestPasswordReset } from "../auth-workspace-cl
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalColors } from "../theme.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type LostPasswordSearch = {
   error?: string;
   requested?: number;
 };
+
+const styles = stylex.create({
+  anonymousBaseline: {
+    "--yoram-stylex-lost-password": "stylex",
+  },
+  taglineWrap: {
+    textAlign: globalColors.lostPasswordTaglineTextAlign,
+    marginTop: globalColors.lostPasswordTaglineMarginTop,
+    marginBottom: globalColors.lostPasswordTaglineMarginBottom,
+    paddingTop: globalColors.lostPasswordTaglinePaddingTop,
+  },
+  title: {
+    display: globalColors.lostPasswordTitleDisplay,
+    fontFamily: globalColors.lostPasswordTitleFontFamily,
+    fontSize: globalColors.lostPasswordTitleFontSize,
+    lineHeight: globalColors.lostPasswordTitleLineHeight,
+    fontWeight: globalColors.lostPasswordTitleFontWeight,
+  },
+  tagline: {
+    marginTop: globalColors.lostPasswordTaglineCopyMarginTop,
+    fontSize: globalColors.lostPasswordTaglineFontSize,
+    color: globalColors.lostPasswordTaglineColor,
+  },
+  formWrap: {
+    position: globalColors.lostPasswordFormPosition,
+    width: {
+      default: globalColors.lostPasswordFormWidth,
+      "@media (max-width: 767px)": globalColors.lostPasswordFormResponsiveWidth,
+    },
+    margin: globalColors.lostPasswordFormMargin,
+  },
+  textInput: {
+    width: {
+      default: globalColors.lostPasswordInputWidth,
+      "@media (max-width: 767px)": globalColors.lostPasswordInputResponsiveWidth,
+    },
+    height: globalColors.lostPasswordInputHeight,
+    marginBottom: globalColors.lostPasswordInputMarginBottom,
+    fontSize: globalColors.lostPasswordInputFontSize,
+    fontWeight: globalColors.lostPasswordInputFontWeight,
+    borderStyle: globalColors.lostPasswordInputBorderStyle,
+    borderBottomColor: globalColors.lostPasswordInputBorderBottomColor,
+    borderBottomStyle: globalColors.lostPasswordInputBorderBottomStyle,
+    borderBottomWidth: globalColors.lostPasswordInputBorderBottomWidth,
+    borderRadius: globalColors.lostPasswordInputBorderRadius,
+    ":focus": {
+      borderBottomColor: globalColors.lostPasswordInputFocusBorderBottomColor,
+      outline: globalColors.lostPasswordInputFocusOutline,
+      boxShadow: globalColors.lostPasswordInputFocusBoxShadow,
+    },
+  },
+  buttonRow: {
+    display: globalColors.lostPasswordButtonRowDisplay,
+    textAlign: globalColors.lostPasswordButtonRowTextAlign,
+    margin: globalColors.lostPasswordButtonRowMargin,
+  },
+  submit: {
+    display: globalColors.lostPasswordSubmitDisplay,
+    boxSizing: globalColors.lostPasswordSubmitBoxSizing,
+    width: globalColors.lostPasswordSubmitWidth,
+  },
+});
+
+const anonymousBaselineClassName = stylex.props(styles.anonymousBaseline).className;
+const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
+const titleClassName = stylex.props(styles.title).className;
+const taglineClassName = stylex.props(styles.tagline).className;
+const formWrapClassName = stylex.props(styles.formWrap).className;
+const textInputClassName = stylex.props(styles.textInput).className;
+const buttonRowClassName = stylex.props(styles.buttonRow).className;
+const submitClassName = stylex.props(styles.submit).className;
 
 export const Route = createFileRoute("/lostPassword")({
   component: LostPasswordRoute,
@@ -61,6 +134,7 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
     shouldPrefillCurrentUser && typeof sessionQuery.data?.emailAddress === "string"
       ? sessionQuery.data.emailAddress
       : "";
+  const anonymousBaseline = sessionQuery.data?.isAnonymous === true && !isSent && !errorMessage;
   // Requesting a reset email does not change cached session or auth state.
   // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation
   const requestMutation = useMutation({
@@ -87,15 +161,40 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{browserTitle}</title>
-      <div className="page full">
-        <div className="center-wrap tag-line-wrap reset-password">
-          <h1 className="title">
+      <div
+        className={anonymousBaseline ? `page full ${anonymousBaselineClassName}` : "page full"}
+        data-stylex-owner={anonymousBaseline ? "lost-password-form" : undefined}
+      >
+        <div
+          className={
+            anonymousBaseline
+              ? `center-wrap tag-line-wrap reset-password ${taglineWrapClassName}`
+              : "center-wrap tag-line-wrap reset-password"
+          }
+          data-stylex-part={anonymousBaseline ? "lost-password-tagline" : undefined}
+        >
+          <h1
+            className={anonymousBaseline ? `title ${titleClassName}` : "title"}
+            data-stylex-part={anonymousBaseline ? "lost-password-title" : undefined}
+          >
             <HighlightedLegacyMessage message={title} />
           </h1>
-          <p className="tag-line">{t("app.description")}</p>
+          <p
+            className={anonymousBaseline ? `tag-line ${taglineClassName}` : "tag-line"}
+            data-stylex-part={anonymousBaseline ? "lost-password-copy" : undefined}
+          >
+            {t("app.description")}
+          </p>
         </div>
 
-        <div className="login-form-wrap frm-wrap">
+        <div
+          className={
+            anonymousBaseline
+              ? `login-form-wrap frm-wrap ${formWrapClassName}`
+              : "login-form-wrap frm-wrap"
+          }
+          data-stylex-part={anonymousBaseline ? "lost-password-form-wrap" : undefined}
+        >
           {isSent && !isSuccessAlertDismissed ? (
             <div className="alert alert-success">
               <button
@@ -137,7 +236,8 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="loginId"
                   required
                   placeholder={t("user.loginId")}
-                  className="text"
+                  className={anonymousBaseline ? textInputClassName : "text"}
+                  data-stylex-part={anonymousBaseline ? "lost-password-login-id" : undefined}
                   {...(shouldPrefillCurrentUser ? { defaultValue: currentUserLoginId } : {})}
                 />
               </dd>
@@ -148,16 +248,25 @@ function LostPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   name="emailAddress"
                   required
                   placeholder={t("user.email")}
-                  className="text"
+                  className={anonymousBaseline ? textInputClassName : "text"}
+                  data-stylex-part={anonymousBaseline ? "lost-password-email" : undefined}
                   {...(shouldPrefillCurrentUser ? { defaultValue: currentUserEmail } : {})}
                 />
               </dd>
             </dl>
 
-            <div className="btns-row">
+            <div
+              className={anonymousBaseline ? `btns-row ${buttonRowClassName}` : "btns-row"}
+              data-stylex-part={anonymousBaseline ? "lost-password-submit-row" : undefined}
+            >
               <button
                 type="submit"
-                className="ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                className={
+                  anonymousBaseline
+                    ? `ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`
+                    : "ybtn ybtn-primary ybtn-large ybtn-fullsize"
+                }
+                data-stylex-part={anonymousBaseline ? "lost-password-submit" : undefined}
                 disabled={requestMutation.isPending}
               >
                 {t("button.confirm")}
