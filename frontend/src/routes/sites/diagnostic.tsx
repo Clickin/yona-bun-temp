@@ -1,11 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { siteDiagnosticsQueryOptions, siteUpdateQueryOptions } from "../../api/site-admin";
 import type { SiteDiagnosticsResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
+
+const styles = stylex.create({
+  noErrorTitleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  noErrorHeading: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
+});
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -35,6 +54,8 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
   const { t } = useLegacyMessages();
   const query = useQuery(siteDiagnosticsQueryOptions(runtimeConfig));
   const updateQuery = useQuery(siteUpdateQueryOptions(runtimeConfig));
+  const diagnosticErrors = query.data?.errors ?? [];
+  const hasNoDiagnosticErrors = diagnosticErrors.length === 0;
 
   return (
     <>
@@ -53,12 +74,21 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div className="title_area">
-                <h2 className="pull-left">
+              <div
+                {...(hasNoDiagnosticErrors ? stylex.props(styles.noErrorTitleArea) : {})}
+                className="title_area"
+                data-stylex-owner={
+                  hasNoDiagnosticErrors ? "site-diagnostic-no-error-title" : undefined
+                }
+              >
+                <h2
+                  {...(hasNoDiagnosticErrors ? stylex.props(styles.noErrorHeading) : {})}
+                  className="pull-left"
+                >
                   <LegacyMessage messageKey="site.sidebar.diagnostics" />
                 </h2>
               </div>
-              <DiagnosticBody response={query.data} />
+              <DiagnosticBody diagnosticErrors={diagnosticErrors} />
             </div>
           </div>
         </div>
@@ -119,9 +149,12 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   );
 }
 
-function DiagnosticBody({ response }: { response: SiteDiagnosticsResponse | undefined }) {
+function DiagnosticBody({
+  diagnosticErrors,
+}: {
+  diagnosticErrors: SiteDiagnosticsResponse["errors"];
+}) {
   const { t } = useLegacyMessages();
-  const diagnosticErrors = response?.errors ?? [];
   if (diagnosticErrors.length === 0) {
     return <p>{t("site.diagnostic.errorNotFound")}</p>;
   }

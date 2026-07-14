@@ -1348,6 +1348,13 @@ loading, invalid verification, the SiteLayout shell, and reset/login consumers r
 states. Focused desktop/mobile screenshots and the existing verification regression retain the
 legacy copy, order, and geometry. This is not Wave 1 completion.
 
+The eighty-ninth slice migrates the no-error title strip of `/sites/diagnostic` from
+`site/diagnostic.scala.html` and `_page.less`. StyleX owns the exact title-area and heading
+declarations through global theme variables only when diagnostics have no errors; the paragraph,
+error title/body/pre, shared site-admin shell, sidebar, and layout primitives remain fallback.
+Focused desktop/mobile screenshots and the existing diagnostics regression retain legacy copy,
+order, and geometry. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

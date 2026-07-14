@@ -515,6 +515,15 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
+        current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]')
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||

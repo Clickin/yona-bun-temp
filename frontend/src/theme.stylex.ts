@@ -117,6 +117,17 @@ export const globalColors = stylex.defineVars({
   siteAdminAffixDetailFontSize: "10px",
   // _common.less: .small-font normal font-weight
   siteAdminAffixDetailFontWeight: "400",
+  // site/diagnostic.scala.html + _page.less: no-error title strip only
+  siteDiagnosticNoErrorTitleOverflow: "hidden",
+  siteDiagnosticNoErrorTitleMarginBottom: "29px",
+  siteDiagnosticNoErrorTitlePaddingBottom: "8px",
+  siteDiagnosticNoErrorTitleBorderStyle: "solid",
+  siteDiagnosticNoErrorTitleBorderBottomWidth: "1px",
+  siteDiagnosticNoErrorTitleBorder: "#dddddd",
+  siteDiagnosticNoErrorHeadingMargin: "0px",
+  siteDiagnosticNoErrorHeadingFontSize: "1.5em",
+  siteDiagnosticNoErrorHeadingText: "#4c4c4c",
+  siteDiagnosticNoErrorHeadingLineHeight: "30px",
   // _page.less and _responsive.less: .gnb-outer base, project, and mobile states
   globalGnbOuterHeight: "40px",
   globalGnbOuterSurface: "#1b1b1b",
