@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/verify/$loginId/$verificationCode.tsx", import.meta.url);
+const routeThemeSource = new URL(
+  "../src/routes/verify/$loginId/-verification.stylex.ts",
+  import.meta.url,
+);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -16,9 +20,10 @@ async function openVerifiedUser(page: Page) {
 }
 
 test.describe("StyleX verified user success", () => {
-  test("uses the existing global reset-password theme values for success only", async () => {
-    const [route, theme] = await Promise.all([
+  test("uses inline geometry and route paint values for success only", async () => {
+    const [route, routeTheme, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);
 
@@ -32,7 +37,10 @@ test.describe("StyleX verified user success", () => {
     );
     expect(route).toContain('`title ${titleStyleProps.className ?? ""}`');
     expect(route).toContain('`tag-line ${taglineStyleProps.className ?? ""}`');
-    expect(route).toContain("globalColors.resetPasswordTaglinePaddingTop");
+    expect(route).toContain('paddingTop: "80px"');
+    expect(route).toContain("color: verificationTheme.taglineText");
+    expect(routeTheme).toContain('taglineText: "#7c7c7c"');
+    expect(route).not.toContain("globalColors.");
     expect(theme).toContain("resetPasswordTaglinePaddingTop");
     expect(theme).toContain("resetPasswordTitleLineHeight");
   });

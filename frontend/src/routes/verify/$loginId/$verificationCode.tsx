@@ -5,27 +5,28 @@ import { verifyUser } from "../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
-import { globalColors } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { verificationTheme } from "./-verification.stylex";
 
 const styles = stylex.create({
   taglineWrap: {
-    textAlign: globalColors.resetPasswordTaglineTextAlign,
-    marginTop: globalColors.resetPasswordTaglineMarginTop,
-    marginBottom: globalColors.resetPasswordTaglineMarginBottom,
-    paddingTop: globalColors.resetPasswordTaglinePaddingTop,
+    textAlign: "center",
+    marginTop: "0px",
+    marginBottom: "26px",
+    paddingTop: "80px",
   },
   title: {
-    display: globalColors.resetPasswordTitleDisplay,
-    fontFamily: globalColors.resetPasswordTitleFontFamily,
-    fontSize: globalColors.resetPasswordTitleFontSize,
-    lineHeight: globalColors.resetPasswordTitleLineHeight,
-    fontWeight: globalColors.resetPasswordTitleFontWeight,
+    display: "inline-block",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "3.3em",
+    lineHeight: "42px",
+    fontWeight: "400",
   },
   tagline: {
-    marginTop: globalColors.resetPasswordTaglineCopyMarginTop,
-    fontSize: globalColors.resetPasswordTaglineFontSize,
-    color: globalColors.resetPasswordTaglineColor,
+    marginTop: "10px",
+    fontSize: "1.2em",
+    color: verificationTheme.taglineText,
   },
 });
 
