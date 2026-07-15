@@ -6,7 +6,7 @@ import { currentSessionQueryOptions } from "../api/session";
 import type { YoramRecord } from "../api/types";
 import { YoramQueryProvider } from "../query-client";
 import { type RuntimeConfig, prefixBasePath } from "../runtime-config";
-import { globalColors } from "../theme.stylex";
+import { restrictedTheme } from "./-restricted.stylex";
 
 export const Route = createFileRoute("/restricted")({
   component: RestrictedRoute,
@@ -134,49 +134,49 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 const restrictedSidebarPinStyles = stylex.create({
   root: {
     appearance: "none",
-    backgroundColor: globalColors.globalSidebarOpenPinSurface,
-    borderBottomColor: globalColors.globalSidebarOpenPinText,
+    backgroundColor: restrictedTheme.sidebarPinSurface,
+    borderBottomColor: restrictedTheme.sidebarPinText,
     borderBottomStyle: "none",
-    borderBottomWidth: globalColors.globalSidebarOpenPinBorderWidth,
-    borderLeftColor: globalColors.globalSidebarOpenPinText,
+    borderBottomWidth: "0px",
+    borderLeftColor: restrictedTheme.sidebarPinText,
     borderLeftStyle: "none",
-    borderLeftWidth: globalColors.globalSidebarOpenPinBorderWidth,
-    borderRadius: globalColors.globalSidebarOpenPinRadius,
-    borderRightColor: globalColors.globalSidebarOpenPinText,
+    borderLeftWidth: "0px",
+    borderRadius: "0 3px 3px 0",
+    borderRightColor: restrictedTheme.sidebarPinText,
     borderRightStyle: "none",
-    borderRightWidth: globalColors.globalSidebarOpenPinBorderWidth,
-    borderTopColor: globalColors.globalSidebarOpenPinText,
+    borderRightWidth: "0px",
+    borderTopColor: restrictedTheme.sidebarPinText,
     borderTopStyle: "none",
-    borderTopWidth: globalColors.globalSidebarOpenPinBorderWidth,
+    borderTopWidth: "0px",
     boxShadow: "none",
     boxSizing: "content-box",
-    color: globalColors.globalSidebarOpenPinText,
+    color: restrictedTheme.sidebarPinText,
     cursor: {
       default: "auto",
       ":hover": "pointer",
     },
     display: "inline-block",
-    fontSize: globalColors.globalSidebarOpenPinFontSize,
-    left: globalColors.globalSidebarOpenPinLeft,
-    lineHeight: globalColors.globalSidebarOpenPinLineHeight,
-    margin: globalColors.globalSidebarOpenPinMargin,
-    padding: globalColors.globalSidebarOpenPinPadding,
+    fontSize: "18px",
+    left: "-6px",
+    lineHeight: "20px",
+    margin: "0 5px 0 0",
+    padding: "0 1px",
     position: "absolute",
     textAlign: "start",
-    top: globalColors.globalSidebarOpenPinTop,
+    top: "6px",
   },
   icon: {
     color: {
       default: "inherit",
-      ":hover": globalColors.globalSidebarOpenPinInteractionText,
+      ":hover": restrictedTheme.sidebarPinInteractionText,
     },
     cursor: {
       default: "inherit",
       ":hover": "pointer",
     },
     display: "none",
-    fontSize: globalColors.globalSidebarOpenPinFontSize,
-    padding: globalColors.globalSidebarOpenPinIconPadding,
+    fontSize: "18px",
+    padding: "4px 0 4px 5px",
   },
   visibleIcon: {
     display: "block",

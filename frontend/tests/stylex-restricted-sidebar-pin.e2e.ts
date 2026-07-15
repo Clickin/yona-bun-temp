@@ -8,32 +8,21 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
 
-test("restricted sidebar pin has complete global-theme StyleX ownership", () => {
+test("restricted sidebar pin has route-paint and inline-geometry StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/restricted.tsx", "utf8");
+  const routeTheme = readFileSync("src/routes/-restricted.stylex.ts", "utf8");
   const start = route.indexOf("const restrictedSidebarPinStyles");
   const end = route.indexOf("function asRecord", start);
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const owner = route.slice(start, end);
 
-  for (const token of [
-    "globalSidebarOpenPinSurface",
-    "globalSidebarOpenPinText",
-    "globalSidebarOpenPinInteractionText",
-    "globalSidebarOpenPinLeft",
-    "globalSidebarOpenPinTop",
-    "globalSidebarOpenPinMargin",
-    "globalSidebarOpenPinPadding",
-    "globalSidebarOpenPinFontSize",
-    "globalSidebarOpenPinLineHeight",
-    "globalSidebarOpenPinRadius",
-    "globalSidebarOpenPinBorderWidth",
-    "globalSidebarOpenPinIconPadding",
-  ]) {
-    expect(owner).toContain(`globalColors.${token}`);
-  }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|-?\d+(?:\.\d+)?px|!important/iu);
+  expect(owner).toContain("backgroundColor: restrictedTheme.sidebarPinSurface");
+  expect(owner).toContain('left: "-6px"');
+  expect(owner).toContain('fontSize: "18px"');
+  expect(owner).not.toContain("globalColors.");
+  expect(routeTheme).toContain('sidebarPinSurface: "#03a9f4"');
   expect(route).toContain('data-stylex-owner="restricted-sidebar-pin"');
   expect(route).not.toContain('className="pin"');
   expect(route).not.toContain('data-placement="bottom"');
