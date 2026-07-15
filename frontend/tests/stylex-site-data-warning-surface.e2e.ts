@@ -28,6 +28,7 @@ test.describe("StyleX site data warning surface", () => {
       readFile(themeSource, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="site-data-warning-surface"');
+    expect(route.match(/data-stylex-owner="site-data-warning-item"/gu)).toHaveLength(3);
     expect(route).toContain("styles.warningSurface");
     expect(route).toContain("globalColors.siteDataWarningText");
     expect(theme).toContain("siteDataWarningDisplay");
@@ -36,7 +37,9 @@ test.describe("StyleX site data warning surface", () => {
 
   test("keeps the three legacy warnings in order before export", async ({ page }) => {
     const owner = await openData(page);
-    await expect(owner.locator(":scope > ul > li.notice")).toHaveText([
+    await expect(
+      owner.locator(':scope > ul > li[data-stylex-owner="site-data-warning-item"]'),
+    ).toHaveText([
       "Before importing or exporting data, you should block other user's access and only allow the site admin.",
       "After clicking the export button please wait until the file download finishes.",
       "Please backup database before import data, in some cases you can lose existing data.",
@@ -56,11 +59,11 @@ test.describe("StyleX site data warning surface", () => {
         notice.className.split(/\s+/).filter(Boolean),
       ),
     }));
-    expect(classes.warningSurface).toContain("cu-desc");
+    expect(classes.warningSurface).not.toContain("cu-desc");
     expect(classes.warningSurface.length).toBeGreaterThan(1);
     expect(classes.notices).toHaveLength(3);
     for (const notice of classes.notices) {
-      expect(notice).toContain("notice");
+      expect(notice).not.toContain("notice");
       expect(notice.length).toBeGreaterThan(1);
     }
   });
@@ -74,7 +77,7 @@ test.describe("StyleX site data warning surface", () => {
     }) => {
       await page.setViewportSize(viewport);
       const owner = await openData(page);
-      const notices = owner.locator("li.notice");
+      const notices = owner.locator('[data-stylex-owner="site-data-warning-item"]');
       await expect(owner).toHaveCSS("display", "inline-block");
       await expect(notices.first()).toHaveCSS("color", "rgb(219, 58, 103)");
       await expect(notices).toHaveCount(3);
@@ -82,7 +85,9 @@ test.describe("StyleX site data warning surface", () => {
         const owner = document.querySelector<HTMLElement>(
           '[data-stylex-owner="site-data-warning-surface"]',
         );
-        const first = owner?.querySelector<HTMLElement>("li.notice");
+        const first = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-data-warning-item"]',
+        );
         if (!owner || !first) return null;
         return {
           owner: owner.getBoundingClientRect().toJSON(),

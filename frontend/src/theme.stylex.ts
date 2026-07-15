@@ -588,6 +588,8 @@ export const globalColors = stylex.defineVars({
   // site/data.scala.html + _page.less `.cu-desc` / `.notice`
   siteDataWarningDisplay: "inline-block",
   siteDataWarningText: "#db3a67",
+  // site/data.scala.html + Bootstrap `.pull-left`
+  siteDataTitleHeadingFloat: "left",
   // site/data.scala.html + _yobiUI.less `.ybtn.ybtn-primary`
   siteDataExportActionTextAlign: "center",
   siteDataExportActionWhiteSpace: "nowrap",

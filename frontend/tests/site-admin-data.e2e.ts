@@ -380,12 +380,12 @@ async function readSiteDataMetrics(page: Page) {
     const sidebar = requireElement(".site-setting-wrap .span2");
     const content = requireElement(".site-setting-wrap .span10");
     const breadcrumbHeading = requireElement(".site-breadcrumb-inner h3");
-    const cuDesc = requireElement(".cu-desc");
+    const cuDesc = requireElement('[data-stylex-owner="site-data-warning-surface"]');
     const navItem = requireElement(".site-setting-nav li");
     const navAnchor = requireElement(".site-setting-nav li a");
-    const notice = requireElement(".cu-desc .notice");
-    const titleArea = requireElement(".title_area");
-    const title = requireElement(".title_area h2");
+    const notice = requireElement('[data-stylex-owner="site-data-warning-item"]');
+    const titleArea = requireElement('[data-stylex-owner="site-data-title-strip"]');
+    const title = requireElement('[data-stylex-owner="site-data-title-heading"]');
     const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
     const rowRect = row.getBoundingClientRect();
     const breadcrumbHeadingStyle = getComputedStyle(breadcrumbHeading);
@@ -452,9 +452,9 @@ async function readSiteDataContainmentMetrics(page: Page) {
     const sidebar = requireElement(".site-setting-wrap .span2");
     const nav = requireElement(".site-setting-nav");
     const content = requireElement(".site-setting-wrap .span10");
-    const titleArea = requireElement(".title_area");
-    const title = requireElement(".title_area h2");
-    const cuDesc = requireElement(".cu-desc");
+    const titleArea = requireElement('[data-stylex-owner="site-data-title-strip"]');
+    const title = requireElement('[data-stylex-owner="site-data-title-heading"]');
+    const cuDesc = requireElement('[data-stylex-owner="site-data-warning-surface"]');
     const exportTitle = requireElement(".span10 > h3:nth-of-type(1)");
     const exportCopy = requireElement(".span10 > p:nth-of-type(1)");
     const exportButton = requireElement('[data-stylex-owner="site-data-export-action"]');
@@ -540,7 +540,9 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         (current.closest('[data-stylex-owner="site-data-warning-surface"]') ||
+          current.closest('[data-stylex-owner="site-data-warning-item"]') ||
           current.closest('[data-stylex-owner="site-data-title-strip"]') ||
+          current.closest('[data-stylex-owner="site-data-title-heading"]') ||
           current.closest('[data-stylex-owner="site-data-export-action"]'))
       ) {
         return (current.getAttribute(name) ?? "")
@@ -627,7 +629,28 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const value = current.getAttribute(name) ?? "";
+      let value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredDataToken = current.matches(
+          ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
+        )
+          ? "title_area"
+          : current.matches(
+                ".site-setting-wrap > .row-fluid > .span10 > div.title_area > h2.pull-left",
+              )
+            ? "pull-left"
+            : current.matches(".site-setting-wrap > .row-fluid > .span10 > div.cu-desc")
+              ? "cu-desc"
+              : current.matches(
+                    ".site-setting-wrap > .row-fluid > .span10 > div.cu-desc > ul > li.notice",
+                  )
+                ? "notice"
+                : null;
+        value = value
+          .split(/\s+/u)
+          .filter((token) => token !== retiredDataToken)
+          .join(" ");
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&

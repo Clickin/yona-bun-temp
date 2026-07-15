@@ -28,17 +28,22 @@ test.describe("StyleX site data title strip", () => {
       readFile(themeSource, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="site-data-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-data-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
     expect([...route.matchAll(/data-stylex-owner="([^"]+)"/g)].map((match) => match[1])).toEqual([
       "site-data-title-strip",
+      "site-data-title-heading",
       "site-data-warning-surface",
+      "site-data-warning-item",
+      "site-data-warning-item",
+      "site-data-warning-item",
       "site-data-export-action",
     ]);
   });
 
-  test("composes generated classes with the legacy title fallbacks", async ({ page }) => {
+  test("owns generated title classes without legacy title fallbacks", async ({ page }) => {
     const owner = await openData(page);
     const classes = await owner.evaluate((titleArea) => {
       const title = titleArea.querySelector("h2");
@@ -47,14 +52,16 @@ test.describe("StyleX site data title strip", () => {
         title: title?.className.split(/\s+/).filter(Boolean) ?? [],
       };
     });
-    expect(classes.titleArea).toContain("title_area");
+    expect(classes.titleArea).not.toContain("title_area");
     expect(classes.titleArea.length).toBeGreaterThan(1);
-    expect(classes.title).toContain("pull-left");
+    expect(classes.title).not.toContain("pull-left");
     expect(classes.title.length).toBeGreaterThan(1);
   });
   test("keeps heading before warning surface", async ({ page }) => {
     const owner = await openData(page);
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Data");
+    await expect(
+      owner.locator(':scope > h2[data-stylex-owner="site-data-title-heading"]'),
+    ).toHaveText("Data");
     expect(
       await page
         .locator(".site-setting-wrap .span10 > *")

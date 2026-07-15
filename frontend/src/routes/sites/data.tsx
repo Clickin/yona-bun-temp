@@ -25,6 +25,7 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.siteDataTitleHeadingFloat,
   },
   exportAction: {
     backgroundColor: {
@@ -120,38 +121,21 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-data-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-data-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-data-title-heading">
                   {t("site.sidebar.data")}
                 </h2>
               </div>
 
-              <div
-                {...warningSurfaceStyleProps}
-                className={`cu-desc ${warningSurfaceStyleProps.className ?? ""}`}
-                data-stylex-owner="site-data-warning-surface"
-              >
+              <div {...warningSurfaceStyleProps} data-stylex-owner="site-data-warning-surface">
                 <ul>
-                  <li
-                    {...warningStyleProps}
-                    className={`notice ${warningStyleProps.className ?? ""}`}
-                  >
+                  <li {...warningStyleProps} data-stylex-owner="site-data-warning-item">
                     <strong>{t("site.data.warning1")}</strong>
                   </li>
-                  <li
-                    {...warningStyleProps}
-                    className={`notice ${warningStyleProps.className ?? ""}`}
-                  >
+                  <li {...warningStyleProps} data-stylex-owner="site-data-warning-item">
                     <strong>{t("site.data.warning2")}</strong>
                   </li>
-                  <li
-                    {...warningStyleProps}
-                    className={`notice ${warningStyleProps.className ?? ""}`}
-                  >
+                  <li {...warningStyleProps} data-stylex-owner="site-data-warning-item">
                     <strong>{t("site.data.warning3")}</strong>
                   </li>
                 </ul>

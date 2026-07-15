@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-nine slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1728,6 +1728,16 @@ grid remain fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, the p
 baseline remains GREEN 11/11, and the complete project-list matrix is 58/59 with only the
 pre-existing global GNB/footer raw-DOM canonicalizer mismatch. Fresh live legacy visual comparison
 remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-fortieth slice completes the authenticated `/sites/data` default title/warning
+fallback retirement from `site/data.scala.html`, Bootstrap 2.3.1, `_page.less`, and the inline-block
+legacy mixin. Existing title and warning owners plus a direct heading and repeated warning-item
+owner move the title paint/float and warning display/color through canonical global variables.
+Only `title_area`, `pull-left`, `cu-desc`, and `notice` retire; export/import controls, sidebar,
+grid, and shell remain excluded or separate owners. Actual RED 5/5 becomes GREEN 5/5, the prior
+title/warning baseline remains GREEN 12/12, the combined focused matrix is GREEN 17/17, and the
+complete data matrix is 25/26 with only the pre-existing GNB `Feedback` fixture mismatch. Fresh
+live legacy visual comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
