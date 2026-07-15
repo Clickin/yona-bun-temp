@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteUserRest,
@@ -20,6 +21,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type UserListRouteSearch = {
@@ -49,6 +51,24 @@ const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
   __legacySiteUserListSidebarActiveMarker: undefined,
 };
 const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
+const styles = stylex.create({
+  titleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  title: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
+});
+const titleAreaStyleProps = stylex.props(styles.titleArea);
+const titleStyleProps = stylex.props(styles.title);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -218,8 +238,12 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div className="title_area">
-                <h2 className="pull-left">
+              <div
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
+                data-stylex-owner="site-user-list-title-strip"
+              >
+                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
                   <LegacyMessage messageKey="site.sidebar.userList" />
                 </h2>
                 <form

@@ -1507,6 +1507,12 @@ wrapper, title, and tagline classes now coexist with the existing generated clas
 invalid, and independent reset/login surfaces remain fallback or separate owners. This is not Wave
 1 completion.
 
+The one-hundred-fifteenth slice migrates the /sites/userList default title strip from
+site/userList.scala.html and _page.less. StyleX owns the exact title-area and direct-heading
+declarations through existing global variables while retaining the shared title_area and pull-left
+fallback classes; the search form, tabs, user list, sidebar/shell, and generic title areas remain
+fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
