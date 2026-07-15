@@ -67,23 +67,26 @@ test.describe("StyleX site post-list title strip", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="site-post-list-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-post-list-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(route).toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
-    expect(route).toContain('`pull-left ${titleStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
 
   test("keeps the legacy title before the populated post list", async ({ page }) => {
     const owner = await openPostList(page);
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Posts");
+    await expect(
+      owner.locator(':scope > h2[data-stylex-owner="site-post-list-title-heading"]'),
+    ).toHaveText("Posts");
     expect(
       await page.locator(".span10 > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "UL", "DIV"]);
   });
 
-  test("composes generated classes with shared legacy title fallbacks", async ({ page }) => {
+  test("owns both generated title classes without legacy title fallbacks", async ({ page }) => {
     const owner = await openPostList(page);
     const classes = await owner.evaluate((titleArea) => {
       const title = titleArea.querySelector("h2");
@@ -93,8 +96,8 @@ test.describe("StyleX site post-list title strip", () => {
       };
     });
 
-    expect(classes.titleArea).toContain("title_area");
-    expect(classes.title).toContain("pull-left");
+    expect(classes.titleArea).not.toContain("title_area");
+    expect(classes.title).not.toContain("pull-left");
     expect(classes.titleArea.some((token) => token.startsWith("x"))).toBe(true);
     expect(classes.title.some((token) => token.startsWith("x"))).toBe(true);
   });
@@ -106,7 +109,7 @@ test.describe("StyleX site post-list title strip", () => {
     test(`keeps ${viewport.name} title geometry and captures its surface`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const owner = await openPostList(page);
-      const title = owner.locator("h2.pull-left");
+      const title = owner.locator('[data-stylex-owner="site-post-list-title-heading"]');
 
       await expect(owner).toHaveCSS("overflow", "hidden");
       await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -117,8 +120,12 @@ test.describe("StyleX site post-list title strip", () => {
       await expect(title).toHaveCSS("line-height", "30px");
       const boxes = await page.evaluate((selector) => {
         const owner = document.querySelector<HTMLElement>(selector);
-        const title = owner?.querySelector<HTMLElement>("h2.pull-left");
-        const postList = document.querySelector<HTMLElement>(".post-list-wrap");
+        const title = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-post-list-title-heading"]',
+        );
+        const postList = document.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-post-list-container"]',
+        );
         if (!owner || !title || !postList) return null;
         return {
           owner: owner.getBoundingClientRect().toJSON(),
@@ -134,16 +141,19 @@ test.describe("StyleX site post-list title strip", () => {
     });
   }
 
-  test("keeps generated classes inside the explicit title owner", async ({ page }) => {
+  test("keeps generated direct children inside the three stable shell owners", async ({ page }) => {
     await openPostList(page);
-    const generatedDirectChildren = await page.evaluate(
-      (selector) =>
-        Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
-          .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-          .filter((element) => !element.matches(selector))
-          .map((element) => element.tagName),
-      ownerSelector,
-    );
+    const generatedDirectChildren = await page.evaluate(() => {
+      const allowed = new Set([
+        "site-post-list-title-strip",
+        "site-post-list-container",
+        "site-post-list-pagination",
+      ]);
+      return Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
+        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+        .filter((element) => !allowed.has(element.getAttribute("data-stylex-owner") ?? ""))
+        .map((element) => element.tagName);
+    });
     expect(generatedDirectChildren).toEqual([]);
   });
 });

@@ -45,9 +45,14 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.sitePostListTitleHeadingFloat,
   },
   postListContainer: {
     listStyle: globalColors.sitePostListContainerListStyle,
+    marginLeft: {
+      default: globalColors.sitePostListContainerDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.sitePostListContainerMobileMarginLeft,
+    },
   },
   postListRow: {
     paddingBlock: globalColors.sitePostListRowPaddingBlock,
@@ -267,20 +272,12 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-post-list-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-post-list-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-post-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
-              <ul
-                {...postListContainerStyleProps}
-                className={`post-list-wrap ${postListContainerStyleProps.className ?? ""}`}
-                data-stylex-owner="site-post-list-container"
-              >
+              <ul {...postListContainerStyleProps} data-stylex-owner="site-post-list-container">
                 {(query.data?.posts ?? []).map((post, index) => (
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}

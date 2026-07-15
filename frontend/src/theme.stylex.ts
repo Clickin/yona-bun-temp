@@ -353,6 +353,9 @@ export const globalColors = stylex.defineVars({
   siteProjectListDeleteInteractiveTextDecoration: "none",
   // site/postList.scala.html + _page.less `.post-list-wrap` / `.listitem` / post info links
   sitePostListContainerListStyle: "none",
+  sitePostListContainerDesktopMarginLeft: "0px",
+  sitePostListContainerMobileMarginLeft: "10px",
+  sitePostListTitleHeadingFloat: "left",
   sitePostListRowPaddingBlock: "10px",
   sitePostListRowPaddingInline: "0px",
   sitePostListInfoLineHeight: "20px",

@@ -562,7 +562,9 @@ test("site admin post list preserves mixed legacy row branches and pagination co
 
   await page.goto(`${basePath}/sites/postList`);
 
-  const rows = page.locator('.post-list-wrap > [data-stylex-owner="site-post-list-row"]');
+  const rows = page.locator(
+    '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
+  );
   await expect(rows).toHaveCount(2);
   expect(await sitePostRowDom(page)).toEqual([
     {
@@ -782,7 +784,9 @@ async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
 
 async function sitePostRowDom(page: Page) {
   return page
-    .locator('.post-list-wrap > [data-stylex-owner="site-post-list-row"]')
+    .locator(
+      '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
+    )
     .evaluateAll((rows) =>
       rows.map((row) => {
         function requireElement<TElement extends Element = Element>(
@@ -865,11 +869,13 @@ async function sitePostRowDom(page: Page) {
 async function postListContainmentMetrics(page: Page) {
   return page.evaluate(() => {
     const content = document.querySelector<HTMLElement>(".site-setting-wrap .span10");
-    const list = document.querySelector<HTMLElement>(".post-list-wrap");
+    const list = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="site-post-list-container"]',
+    );
     const pagination = document.querySelector<HTMLElement>("#pagination");
     const rows = Array.from(
       document.querySelectorAll<HTMLElement>(
-        '.post-list-wrap > [data-stylex-owner="site-post-list-row"]',
+        '[data-stylex-owner="site-post-list-container"] > [data-stylex-owner="site-post-list-row"]',
       ),
     );
     if (!content || !list || !pagination || rows.length === 0) {
@@ -1093,7 +1099,7 @@ async function postListMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap > .row-fluid");
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
-    const titleArea = requireElement(".title_area");
+    const titleArea = requireElement('[data-stylex-owner="site-post-list-title-strip"]');
     const firstRow = requireElement('[data-stylex-owner="site-post-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-post-list-project-avatar"]');
     const avatarImage = requireElement('[data-stylex-owner="site-post-list-project-avatar-image"]');
@@ -1184,6 +1190,8 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         new Set([
+          "site-post-list-title-strip",
+          "site-post-list-title-heading",
           "site-post-list-container",
           "site-post-list-row",
           "site-post-list-project-avatar",
@@ -1284,6 +1292,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       const value = current.getAttribute(name) ?? "";
       if (name === "class") {
         const retiredPostListTokens = new Set([
+          "title_area",
+          "pull-left",
+          "post-list-wrap",
           "post-info-wrap",
           "post-project",
           "post-info-separator",

@@ -204,8 +204,7 @@ test.describe("StyleX site post-list populated row content", () => {
     await expect(separator).toHaveAttribute("data-stylex-owner", owners.separator);
     await expect(title).toHaveAttribute("data-stylex-owner", owners.title);
 
-    // The container and Bootstrap grid class still own frozen responsive/grid declarations.
-    await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
+    await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
     await expect(row).toHaveClass(/\brow-fluid\b/u);
     await expect(row).not.toHaveClass(/\blistitem\b/u);
     for (const [element, retiredClass] of [
@@ -257,10 +256,13 @@ test.describe("StyleX site post-list populated row content", () => {
       await expect(title).toHaveCSS("font-weight", "700");
 
       const boxes = await row.evaluate((element) => {
-        const pick = (selector: string) => {
+        const pick = (selector: string, firstInlineFragment = false) => {
           const node = element.querySelector<HTMLElement>(selector);
           if (!node) throw new Error(`Missing ${selector}`);
-          const { bottom, left, right, top } = node.getBoundingClientRect();
+          const rect = firstInlineFragment
+            ? (node.getClientRects().item(0) ?? node.getBoundingClientRect())
+            : node.getBoundingClientRect();
+          const { bottom, left, right, top } = rect;
           return { bottom, left, right, top };
         };
         const { bottom, left, right, top } = element.getBoundingClientRect();
@@ -270,13 +272,16 @@ test.describe("StyleX site post-list populated row content", () => {
           meta: pick(':scope > [data-stylex-owner="site-post-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-post-list-info"] > [data-stylex-owner="site-post-list-project-link"]',
+            true,
           ),
           row: { bottom, left, right, top },
           separator: pick(
             ':scope > [data-stylex-owner="site-post-list-info"] > [data-stylex-owner="site-post-list-separator"]',
+            true,
           ),
           title: pick(
             ':scope > [data-stylex-owner="site-post-list-info"] > [data-stylex-owner="site-post-list-title-link"]',
+            true,
           ),
         };
       });
