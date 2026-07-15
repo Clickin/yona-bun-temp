@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-user-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/userList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-userList.stylex.ts", import.meta.url);
 
 async function openUserList(page: Page) {
   await page.route("**/api/v1/session", (route) =>
@@ -62,10 +62,11 @@ test.describe("StyleX site user-list title strip", () => {
     expect(route).toContain('data-stylex-owner="site-user-list-title-search-form"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
+    expect(route).toContain("siteUserListColors.titleBorder");
     expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
     expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps the legacy title before the search form", async ({ page }) => {

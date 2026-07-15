@@ -650,6 +650,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/sites\/update\.tsx$/i,
       /^frontend\/src\/routes\/sites\/-update\.stylex\.ts$/i,
       /^frontend\/src\/routes\/sites\/userList\.tsx$/i,
+      /^frontend\/src\/routes\/sites\/-userList\.stylex\.ts$/i,
       /^frontend\/src\/routes\/sites\/\$pageName\/route\.tsx$/i,
       /^crates\/(?:persistence|server)\/.*(?:site|admin|user)/i,
     ],

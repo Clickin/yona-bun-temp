@@ -21,8 +21,8 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
-import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { siteUserListColors } from "./-userList.stylex";
 
 type UserListRouteSearch = {
   pageNum?: number;
@@ -53,22 +53,22 @@ const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
 const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
 const styles = stylex.create({
   titleArea: {
-    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
-    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
-    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
-    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
-    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
-    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+    overflow: "hidden",
+    marginBottom: "29px",
+    paddingBottom: "8px",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderBottomColor: siteUserListColors.titleBorder,
   },
   title: {
-    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
-    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
-    color: globalColors.siteDiagnosticNoErrorHeadingText,
-    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
-    float: globalColors.siteUserListTitleHeadingFloat,
+    margin: "0px",
+    fontSize: "1.5em",
+    color: siteUserListColors.titleText,
+    lineHeight: "30px",
+    float: "left",
   },
   titleSearchForm: {
-    margin: globalColors.siteUserListTitleSearchFormMargin,
+    margin: "0px",
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);

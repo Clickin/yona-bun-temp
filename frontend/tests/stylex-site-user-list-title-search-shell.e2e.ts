@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/userList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-userList.stylex.ts", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/userList.scala.html",
   import.meta.url,
@@ -148,26 +148,14 @@ test.describe("StyleX site user-list title/search shell", () => {
 
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const canonicalToken of [
-      "siteDiagnosticNoErrorTitleOverflow",
-      "siteDiagnosticNoErrorTitleMarginBottom",
-      "siteDiagnosticNoErrorTitlePaddingBottom",
-      "siteDiagnosticNoErrorTitleBorder",
-      "siteDiagnosticNoErrorHeadingMargin",
-      "siteDiagnosticNoErrorHeadingFontSize",
-      "siteDiagnosticNoErrorHeadingText",
-      "siteDiagnosticNoErrorHeadingLineHeight",
-    ]) {
-      expect(route).toContain(`globalColors.${canonicalToken}`);
-      expect(theme).toContain(canonicalToken);
+    for (const paint of ["titleBorder", "titleText"]) {
+      expect(route).toContain(`siteUserListColors.${paint}`);
+      expect(theme).toContain(paint);
     }
-    for (const routeToken of [
-      "siteUserListTitleHeadingFloat",
-      "siteUserListTitleSearchFormMargin",
-    ]) {
-      expect(route).toContain(`globalColors.${routeToken}`);
-      expect(theme).toContain(routeToken);
-    }
+    expect(route).toContain('overflow: "hidden"');
+    expect(route).toContain('float: "left"');
+    expect(route).toContain('titleSearchForm: {\n    margin: "0px"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps DIV > H2 + FORM and title, tabs, listhead, populated list, pagination order", async ({
