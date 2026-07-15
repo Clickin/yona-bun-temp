@@ -98,12 +98,24 @@ const styles = stylex.create({
     borderBottomColor: globalColors.siteProjectListRowBorder,
     lineHeight: globalColors.siteProjectListRowLineHeight,
   },
+  projectRowEven: {
+    backgroundColor: globalColors.siteProjectListRowEvenSurface,
+  },
   projectRowAvatar: {
     width: globalColors.siteProjectListRowAvatarWidth,
     height: globalColors.siteProjectListRowAvatarHeight,
     marginRight: globalColors.siteProjectListRowAvatarMarginRight,
     marginTop: globalColors.siteProjectListRowAvatarMarginTop,
     float: globalColors.siteProjectListRowAvatarFloat,
+    display: globalColors.siteProjectListRowAvatarDisplay,
+    verticalAlign: globalColors.siteProjectListRowAvatarVerticalAlign,
+    overflow: globalColors.siteProjectListRowAvatarOverflow,
+    backgroundColor: globalColors.siteProjectListRowAvatarSurface,
+    borderRadius: globalColors.siteProjectListRowAvatarBorderRadius,
+  },
+  projectRowAvatarImage: {
+    width: globalColors.siteProjectListRowAvatarImageWidth,
+    verticalAlign: globalColors.siteProjectListRowAvatarImageVerticalAlign,
   },
   projectRowColumn: {
     fontSize: globalColors.siteProjectListRowColumnFontSize,
@@ -406,7 +418,9 @@ const projectSearchButtonStyleProps = stylex.props(styles.projectSearchButton);
 const listHeadStyleProps = stylex.props(styles.listHead);
 const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
 const projectRowStyleProps = stylex.props(styles.projectRow);
+const projectRowEvenStyleProps = stylex.props(styles.projectRow, styles.projectRowEven);
 const projectRowAvatarStyleProps = stylex.props(styles.projectRowAvatar);
+const projectRowAvatarImageStyleProps = stylex.props(styles.projectRowAvatarImage);
 const projectRowColumnStyleProps = stylex.props(styles.projectRowColumn);
 const projectListContainerStyleProps = stylex.props(styles.projectListContainer);
 const projectListProjectNameStyleProps = stylex.props(styles.projectListProjectName);
@@ -653,8 +667,13 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 className={projectListContainerStyleProps.className}
                 data-stylex-owner="site-project-list-container"
               >
-                {(query.data?.projects ?? []).map((project) => (
-                  <ProjectListItem key={project.id} onDelete={openDeleteModal} project={project} />
+                {(query.data?.projects ?? []).map((project, index) => (
+                  <ProjectListItem
+                    index={index}
+                    key={project.id}
+                    onDelete={openDeleteModal}
+                    project={project}
+                  />
                 ))}
               </ul>
 
@@ -976,18 +995,21 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 }
 
 function ProjectListItem({
+  index,
   onDelete,
   project,
 }: {
+  index: number;
   onDelete: (project: SiteProject, event: MouseEvent<HTMLButtonElement>) => void;
   project: SiteProject;
 }) {
   const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+  const rowStyleProps = index % 2 === 1 ? projectRowEvenStyleProps : projectRowStyleProps;
 
   return (
     <li
-      {...projectRowStyleProps}
-      className={`row-fluid listitem ${projectRowStyleProps.className ?? ""}`}
+      {...rowStyleProps}
+      className={`row-fluid ${rowStyleProps.className ?? ""}`}
       data-stylex-owner="site-project-list-row"
     >
       <div
@@ -999,11 +1021,17 @@ function ProjectListItem({
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
           {...projectRowAvatarStyleProps}
-          className={`avatar-wrap list-avatar ${projectRowAvatarStyleProps.className ?? ""}`}
+          className={projectRowAvatarStyleProps.className}
           data-stylex-owner="site-project-list-row-avatar"
         >
-          <img src={projectLogoUrl} alt={project.projectName} /> {project.ownerName}/
-          {project.projectName}
+          <img
+            {...projectRowAvatarImageStyleProps}
+            src={projectLogoUrl}
+            alt={project.projectName}
+            className={projectRowAvatarImageStyleProps.className}
+            data-stylex-owner="site-project-list-row-avatar-image"
+          />{" "}
+          {project.ownerName}/{project.projectName}
         </Link>
         <Link
           to="/$ownerName/$projectName"

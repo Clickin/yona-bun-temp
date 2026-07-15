@@ -71,15 +71,28 @@ test.describe("StyleX site project-list populated rows", () => {
 
     expect(route).toContain('data-stylex-owner="site-project-list-row"');
     expect(route).toContain('data-stylex-owner="site-project-list-row-avatar"');
+    expect(route).toContain('data-stylex-owner="site-project-list-row-avatar-image"');
     expect(route).toContain('data-stylex-owner="site-project-list-row-columns"');
     expect(route).toContain("styles.projectRow");
     expect(route).toContain("styles.projectRowAvatar");
+    expect(route).toContain("styles.projectRowAvatarImage");
     expect(route).toContain("styles.projectRowColumn");
     expect(route).toContain("globalColors.siteProjectListRowBorder");
     expect(route).toContain("globalColors.siteProjectListRowAvatarWidth");
+    expect(route).toContain("globalColors.siteProjectListRowEvenSurface");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarDisplay");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarVerticalAlign");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarOverflow");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarSurface");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarBorderRadius");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarImageWidth");
+    expect(route).toContain("globalColors.siteProjectListRowAvatarImageVerticalAlign");
     expect(route).toContain("globalColors.siteProjectListRowColumnFontSize");
     expect(theme).toContain("siteProjectListRowLineHeight");
     expect(theme).toContain("siteProjectListRowAvatarFloat");
+    expect(theme).toContain("siteProjectListRowEvenSurface");
+    expect(theme).toContain("siteProjectListRowAvatarDisplay");
+    expect(theme).toContain("siteProjectListRowAvatarImageVerticalAlign");
     expect(theme).toContain("siteProjectListRowColumnWordBreak");
   });
 
@@ -108,13 +121,20 @@ test.describe("StyleX site project-list populated rows", () => {
     await expect(
       first.locator('[data-stylex-owner="site-project-list-project-name"]'),
     ).toHaveAttribute("href", /\/acme\/roadmap$/);
+    await first.locator('[data-stylex-owner="site-project-list-project-name"]').click();
+    await expect(page).toHaveURL(/\/acme\/roadmap$/);
   });
 
-  test("composes generated classes with active shared fallbacks", async ({ page }) => {
+  test("retires row and avatar fallbacks while preserving shared grid classes", async ({
+    page,
+  }) => {
     const rows = await openProjectList(page);
     const classes = await rows.first().evaluate((row) => ({
       avatar: Array.from(
         row.querySelector('[data-stylex-owner="site-project-list-row-avatar"]')!.classList,
+      ),
+      avatarImage: Array.from(
+        row.querySelector('[data-stylex-owner="site-project-list-row-avatar-image"]')!.classList,
       ),
       columns: Array.from(
         row.querySelectorAll(':scope > [data-stylex-owner="site-project-list-row-columns"]'),
@@ -123,15 +143,18 @@ test.describe("StyleX site project-list populated rows", () => {
       row: Array.from(row.classList),
     }));
 
-    expect(classes.row).toEqual(expect.arrayContaining(["row-fluid", "listitem"]));
+    expect(classes.row).toContain("row-fluid");
+    expect(classes.row).not.toContain("listitem");
     expect(classes.row.some((token) => token.startsWith("x"))).toBe(true);
-    expect(classes.avatar).toEqual(expect.arrayContaining(["avatar-wrap", "list-avatar"]));
+    expect(classes.avatar).not.toContain("avatar-wrap");
+    expect(classes.avatar).not.toContain("list-avatar");
     expect(classes.avatar.some((token) => token.startsWith("x"))).toBe(true);
+    expect(classes.avatarImage.some((token) => token.startsWith("x"))).toBe(true);
     for (const column of classes.columns) {
       expect(column).toContain("listitem-col");
       expect(column.some((token) => token.startsWith("x"))).toBe(true);
     }
-
+    await expect(rows.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(rows.nth(1)).toHaveCSS("background-color", "rgb(249, 249, 249)");
   });
 
@@ -146,8 +169,11 @@ test.describe("StyleX site project-list populated rows", () => {
       const rows = await openProjectList(page);
       const row = rows.first();
       const avatar = row.locator('[data-stylex-owner="site-project-list-row-avatar"]');
+      const avatarImage = row.locator('[data-stylex-owner="site-project-list-row-avatar-image"]');
       const columns = row.locator(':scope > [data-stylex-owner="site-project-list-row-columns"]');
 
+      await expect(rows.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+      await expect(rows.nth(1)).toHaveCSS("background-color", "rgb(249, 249, 249)");
       await expect(row).toHaveCSS("border-bottom-color", "rgb(239, 239, 239)");
       await expect(row).toHaveCSS("border-bottom-width", "1px");
       await expect(row).toHaveCSS("border-bottom-style", "solid");
@@ -157,6 +183,14 @@ test.describe("StyleX site project-list populated rows", () => {
       await expect(avatar).toHaveCSS("margin-right", "10px");
       await expect(avatar).toHaveCSS("margin-top", "3px");
       await expect(avatar).toHaveCSS("float", "left");
+      // The frozen `display:inline-block` declaration is blockified by `float:left`.
+      await expect(avatar).toHaveCSS("display", "block");
+      await expect(avatar).toHaveCSS("vertical-align", "middle");
+      await expect(avatar).toHaveCSS("overflow", "hidden");
+      await expect(avatar).toHaveCSS("background-color", "rgb(221, 221, 221)");
+      await expect(avatar).toHaveCSS("border-radius", "3px");
+      await expect(avatarImage).toHaveCSS("width", "45px");
+      await expect(avatarImage).toHaveCSS("vertical-align", "top");
       for (const column of await columns.all()) {
         await expect(column).toHaveCSS("font-size", "12px");
         await expect(column).toHaveCSS("padding-top", "10px");
@@ -177,12 +211,21 @@ test.describe("StyleX site project-list populated rows", () => {
         const avatarBox = element
           .querySelector('[data-stylex-owner="site-project-list-row-avatar"]')!
           .getBoundingClientRect();
+        const avatarImageBox = element
+          .querySelector('[data-stylex-owner="site-project-list-row-avatar-image"]')!
+          .getBoundingClientRect();
         return {
           avatar: {
             bottom: avatarBox.bottom,
             left: avatarBox.left,
             right: avatarBox.right,
             top: avatarBox.top,
+          },
+          avatarImage: {
+            bottom: avatarImageBox.bottom,
+            left: avatarImageBox.left,
+            right: avatarImageBox.right,
+            top: avatarImageBox.top,
           },
           columns: columnBoxes.map(({ bottom, left, right, top }) => ({
             bottom,
@@ -211,6 +254,10 @@ test.describe("StyleX site project-list populated rows", () => {
       expect(boxes.avatar.right).toBeLessThanOrEqual(boxes.columns[0]!.right + 1);
       expect(boxes.avatar.top).toBeGreaterThanOrEqual(boxes.columns[0]!.top - 1);
       expect(boxes.avatar.bottom).toBeLessThanOrEqual(boxes.columns[0]!.bottom + 1);
+      expect(boxes.avatarImage.left).toBeCloseTo(boxes.avatar.left, 0);
+      expect(boxes.avatarImage.right).toBeCloseTo(boxes.avatar.right, 0);
+      expect(boxes.avatarImage.top).toBeGreaterThanOrEqual(boxes.avatar.top - 1);
+      expect(boxes.avatarImage.bottom).toBeLessThanOrEqual(boxes.avatar.bottom + 1);
       expect(
         (await page.locator('[data-stylex-owner="site-project-list-container"]').screenshot())
           .byteLength,
@@ -218,7 +265,7 @@ test.describe("StyleX site project-list populated rows", () => {
     });
   }
 
-  test("keeps generated row classes inside the three explicit row owners", async ({ page }) => {
+  test("keeps generated row classes inside the explicit row owners", async ({ page }) => {
     await openProjectList(page);
     const owners = await page
       .locator('[data-stylex-owner="site-project-list-container"]')
@@ -234,6 +281,7 @@ test.describe("StyleX site project-list populated rows", () => {
       new Set([
         "site-project-list-row",
         "site-project-list-row-avatar",
+        "site-project-list-row-avatar-image",
         "site-project-list-row-columns",
         "site-project-list-project-name",
         "site-project-list-delete-action",

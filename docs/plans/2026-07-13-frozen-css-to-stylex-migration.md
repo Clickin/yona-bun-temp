@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, sixty-six shell/user-menu slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred twenty-six slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1584,6 +1584,15 @@ base, first-child, hover, focus, active, and danger cascade through global theme
 restores the frozen `.3em` sibling spacing that the current app bridge had flattened. The two
 modal actions remove `ybtn`/`ybtn-danger`; all other shared button consumers and the already
 migrated modal frame remain unchanged. This is not Wave 1 completion.
+
+The one-hundred-twenty-sixth slice completes the `/sites/projectList` populated row's alternating
+surface and avatar presentation from `site/projectList.scala.html`, `_common.less`, `_page.less`,
+and `_yobiUI.less`. StyleX owns the even-row `#f9f9f9` surface, the avatar wrapper's final frozen
+cascade, and the direct image's 100% width/top alignment through global theme variables. Runtime
+rows remove `listitem`, and their avatar Links remove `avatar-wrap list-avatar`; Bootstrap
+`row-fluid`, `span*`, and `listitem-col` remain active grid/column fallback for a separate wave.
+The image now fills the frozen 45px wrapper instead of inheriting the noncanonical app bridge's
+32px descendant rule. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

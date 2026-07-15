@@ -105,10 +105,10 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
           <div class="span1 listhead-title"><strong>&nbsp;</strong></div>
         </div>
         <ul data-stylex-owner="site-project-list-container">
-          <li class="row-fluid listitem">
+          <li class="row-fluid" data-stylex-owner="site-project-list-row">
             <div class="span5 listitem-col">
-              <a href="__BASE_PATH__/acme/roadmap" class="avatar-wrap list-avatar">
-                <img src="/assets/images/default-project-logo.png" alt="roadmap">acme/roadmap
+              <a href="__BASE_PATH__/acme/roadmap" data-stylex-owner="site-project-list-row-avatar">
+                <img src="/assets/images/default-project-logo.png" alt="roadmap" data-stylex-owner="site-project-list-row-avatar-image">acme/roadmap
               </a>
               <a href="__BASE_PATH__/acme/roadmap" data-stylex-owner="site-project-list-project-name">acme/roadmap</a>
             </div>
@@ -226,12 +226,11 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect(page.locator(".site-setting-nav li").nth(3)).toHaveClass("active");
   await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
-  ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .list-avatar'),
-  ).toHaveAttribute("href", `${basePath}/acme/roadmap`);
+  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-project-list-row-avatar"]')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
   await expect(
     page.locator('[data-stylex-owner="site-project-list-project-name"]'),
   ).toHaveAttribute("href", `${basePath}/acme/roadmap`);
@@ -276,7 +275,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
 
   expect(actual).toEqual(expected);
   expect(await projectListMetrics(page)).toEqual({
-    avatarHeight: 40,
+    avatarHeight: 45,
     avatarWrapHeight: 45,
     avatarWrapMarginRight: 10,
     avatarWrapMarginTop: 3,
@@ -657,9 +656,7 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
       pathname: `${basePath}/api/v1/site/projects/77`,
     },
   ]);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(0);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(
@@ -716,7 +713,7 @@ test("site admin project list falls back to the legacy default project logo for 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
 
   await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .list-avatar img'),
+    page.locator('[data-stylex-owner="site-project-list-row-avatar-image"]'),
   ).toHaveAttribute("src", "/assets/images/project_default_logo.png");
   expect(
     consoleErrors.filter((entry) =>
@@ -830,11 +827,9 @@ async function projectListDeleteModalStateMetrics(page: Page) {
     const title = requireElement(".title_area h2");
     const titleArea = requireElement(".title_area");
     const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
-    const firstRow = requireElement('[data-stylex-owner="site-project-list-container"] .listitem');
+    const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
     const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
-    const createdColumn = requireElement(
-      '[data-stylex-owner="site-project-list-container"] .listitem .span2',
-    );
+    const createdColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span2');
     const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
     const modal = requireElement("#alertDeletionWrap");
     const modalFooter = requireElement(
@@ -1142,6 +1137,9 @@ async function canonicalizeScreenRoots(page: Page) {
       const residualOwner = current.getAttribute("data-stylex-owner");
       const isResidualOwner =
         residualOwner === "site-project-list-container" ||
+        residualOwner === "site-project-list-row" ||
+        residualOwner === "site-project-list-row-avatar" ||
+        residualOwner === "site-project-list-row-avatar-image" ||
         residualOwner === "site-project-list-project-name" ||
         residualOwner === "site-project-list-delete-action" ||
         residualOwner === "site-project-list-delete-modal" ||
@@ -1214,16 +1212,10 @@ async function projectListMetrics(page: Page) {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const listHead = requireElement(".listhead");
     const firstHeaderColumn = requireElement(".listhead .span5");
-    const firstRowColumn = requireElement(
-      '[data-stylex-owner="site-project-list-container"] .listitem .span5',
-    );
-    const firstRow = requireElement('[data-stylex-owner="site-project-list-container"] .listitem');
-    const avatarWrap = requireElement(
-      '[data-stylex-owner="site-project-list-container"] .list-avatar',
-    );
-    const avatar = requireElement(
-      '[data-stylex-owner="site-project-list-container"] .list-avatar img',
-    );
+    const firstRowColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span5');
+    const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
+    const avatarWrap = requireElement('[data-stylex-owner="site-project-list-row-avatar"]');
+    const avatar = requireElement('[data-stylex-owner="site-project-list-row-avatar-image"]');
     const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
     const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
     const pagination = requireElement("#pagination");
@@ -1422,6 +1414,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       const residualOwner = current.getAttribute("data-stylex-owner");
       const isResidualOwner =
         residualOwner === "site-project-list-container" ||
+        residualOwner === "site-project-list-row" ||
+        residualOwner === "site-project-list-row-avatar" ||
+        residualOwner === "site-project-list-row-avatar-image" ||
         residualOwner === "site-project-list-project-name" ||
         residualOwner === "site-project-list-delete-action" ||
         residualOwner === "site-project-list-delete-modal" ||

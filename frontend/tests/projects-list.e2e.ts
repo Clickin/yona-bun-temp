@@ -583,9 +583,7 @@ test("site admin project delete button drops legacy delegated hooks while React 
   await mockSiteUpdate(page);
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
-  ).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(1);
 
   const deleteButton = page.locator('[data-stylex-owner="site-project-list-delete-action"]');
   await expect(deleteButton).toHaveText("Delete");
@@ -635,9 +633,7 @@ test("site admin project delete button drops legacy delegated hooks while React 
       pathname: `${basePath}/api/v1/site/projects/77`,
     },
   ]);
-  await expect(
-    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
-  ).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(0);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page).toHaveURL(projectListUrl);
