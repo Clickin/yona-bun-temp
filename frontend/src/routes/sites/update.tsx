@@ -14,6 +14,61 @@ const legacySiteSidebarLinkProps = {
 };
 const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 const styles = stylex.create({
+  sidebar: {
+    margin: globalColors.siteUpdateSidebarMargin,
+    padding: globalColors.siteUpdateSidebarPadding,
+    listStyle: globalColors.siteUpdateSidebarListStyle,
+  },
+  sidebarItem: {
+    borderLeftColor: globalColors.siteUpdateSidebarItemBorderLeftColor,
+    borderLeftStyle: globalColors.siteUpdateSidebarItemBorderLeftStyle,
+    borderLeftWidth: globalColors.siteUpdateSidebarItemBorderLeftWidth,
+    fontSize: globalColors.siteUpdateSidebarItemFontSize,
+    lineHeight: globalColors.siteUpdateSidebarItemLineHeight,
+    marginTop: globalColors.siteUpdateSidebarItemMarginTop,
+  },
+  sidebarFirstItem: {
+    marginTop: globalColors.siteUpdateSidebarFirstItemMarginTop,
+  },
+  sidebarActiveItem: {
+    borderLeftColor: globalColors.siteUpdateSidebarActiveItemBorderLeftColor,
+    fontWeight: globalColors.siteUpdateSidebarActiveItemFontWeight,
+  },
+  sidebarLink: {
+    color: globalColors.siteUpdateSidebarLinkColor,
+    display: globalColors.siteUpdateSidebarLinkDisplay,
+    outline: {
+      default: globalColors.siteUpdateSidebarLinkOutline,
+      ":hover": globalColors.siteUpdateSidebarLinkHoverOutline,
+      ":focus": globalColors.siteUpdateSidebarLinkHoverOutline,
+    },
+    padding: globalColors.siteUpdateSidebarLinkPadding,
+    textDecoration: {
+      default: globalColors.siteUpdateSidebarLinkTextDecoration,
+      ":hover": globalColors.siteUpdateSidebarLinkHoverTextDecoration,
+      ":focus": globalColors.siteUpdateSidebarLinkHoverTextDecoration,
+    },
+    backgroundColor: {
+      ":hover": globalColors.siteUpdateSidebarLinkHoverBackground,
+    },
+  },
+  sidebarActiveLink: {
+    backgroundColor: {
+      ":hover": globalColors.siteUpdateSidebarActiveLinkHoverBackground,
+    },
+  },
+  sidebarBadge: {
+    backgroundColor: globalColors.siteUpdateSidebarBadgeBackground,
+    borderColor: globalColors.siteUpdateSidebarBadgeBorderColor,
+    borderRadius: globalColors.siteUpdateSidebarBadgeBorderRadius,
+    borderStyle: globalColors.siteUpdateSidebarBadgeBorderStyle,
+    borderWidth: globalColors.siteUpdateSidebarBadgeBorderWidth,
+    boxShadow: globalColors.siteUpdateSidebarBadgeBoxShadow,
+    color: globalColors.siteUpdateSidebarBadgeColor,
+    fontSize: globalColors.siteUpdateSidebarBadgeFontSize,
+    lineHeight: globalColors.siteUpdateSidebarBadgeLineHeight,
+    padding: globalColors.siteUpdateSidebarBadgePadding,
+  },
   titleArea: {
     overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
     marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
@@ -148,45 +203,99 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
-    <ul className="site-setting-nav">
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/userList">
+    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-update-sidebar">
+      <li
+        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
+        data-stylex-owner="site-update-sidebar-item"
+      >
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/userList"
+        >
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/postList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/postList"
+        >
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/issueList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/issueList"
+        >
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/projectList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/projectList"
+        >
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/mail"
+        >
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/massmail">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/massmail"
+        >
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
-      <li className="active">
-        <Link {...legacySiteSidebarLinkProps} search={legacyUpdateSidebarSearch} to="/sites/update">
+      <li
+        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
+        data-stylex-owner="site-update-sidebar-item"
+      >
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          search={legacyUpdateSidebarSearch}
+          to="/sites/update"
+        >
           <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? <span className="notification-badge">1</span> : null}
+          {showUpdateBadge ? (
+            <span
+              {...stylex.props(styles.sidebarBadge)}
+              data-stylex-owner="site-update-sidebar-badge"
+            >
+              1
+            </span>
+          ) : null}
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/diagnostic">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-update-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-update-sidebar-link"
+          to="/sites/diagnostic"
+        >
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>

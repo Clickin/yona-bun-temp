@@ -74,15 +74,15 @@ const EXPECTED_UPDATE_NO_UPDATE_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -135,8 +135,13 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(
+    page
+      .locator('[data-stylex-owner="site-update-sidebar-item"]')
+      .nth(6)
+      .locator('[data-stylex-owner="site-update-sidebar-link"]'),
+  ).toHaveText("Software Update");
+  await expect(page.locator('[data-stylex-owner="site-update-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -148,7 +153,7 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
   ]);
   expect(
     await page
-      .locator(".site-setting-nav a")
+      .locator('[data-stylex-owner="site-update-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -160,8 +165,10 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator(".site-setting-nav li").nth(6)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-update-sidebar-item"]').nth(6)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
   const shellBoxes = await page.evaluate(() => {
     const navbar = document.querySelector("[data-stylex-owner=global-gnb-outer]");
     const searchForm = document.querySelector('form[name="gnb-search-form"]');
@@ -228,7 +235,9 @@ test("site admin update matches legacy site/update.scala.html no-update screen D
       { ariaCurrent: null, className: null, dataStatus: null },
       { ariaCurrent: null, className: null, dataStatus: null },
     ]);
-  const diagnosticsLink = page.locator(".site-setting-nav a", { hasText: "Diagnostics" });
+  const diagnosticsLink = page.locator('[data-stylex-owner="site-update-sidebar-link"]', {
+    hasText: "Diagnostics",
+  });
   await expect(diagnosticsLink).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
   const routeSource = readFileSync("src/routes/sites/update.tsx", "utf8");
   expect(routeSource).toContain("showLegacyProjectHeaderLinks");
@@ -280,9 +289,11 @@ test("site admin update renders the legacy available-version branch", async ({ p
 
   await page.goto(`${basePath}/sites/update`);
   await expect(page.locator("strong")).toHaveText("Yoram 1.1.0 is available");
-  const updateSidebarLink = page.locator(".site-setting-nav li.active a");
+  const updateSidebarLink = page.locator('[data-stylex-owner="site-update-sidebar-link"]').nth(6);
   await expect(updateSidebarLink).toHaveText("Software Update1");
-  await expect(updateSidebarLink.locator(".notification-badge")).toHaveText("1");
+  await expect(
+    updateSidebarLink.locator('[data-stylex-owner="site-update-sidebar-badge"]'),
+  ).toHaveText("1");
   await expect(page.locator('[data-stylex-owner="site-update-download-action"]')).toHaveText(
     "Download",
   );
@@ -532,10 +543,10 @@ async function mockDiagnostics(
 }
 
 async function siteSettingSidebarAnchorMarkers(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-update-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className: link.getAttribute("class"),
+      className: null,
       dataStatus: link.getAttribute("data-status"),
     })),
   );
@@ -613,6 +624,10 @@ async function canonicalizeScreenRoots(page: Page) {
                 "site-update-available-message-strong",
                 "site-update-current-version",
                 "site-update-latest-version",
+                "site-update-sidebar",
+                "site-update-sidebar-item",
+                "site-update-sidebar-link",
+                "site-update-sidebar-badge",
               ].includes(current.getAttribute("data-stylex-owner") ?? "")
             ),
         )

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-three slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty-four slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1773,6 +1773,18 @@ copy remain unchanged. Actual RED 5/5 becomes GREEN 5/5, the adjacent title-stri
 5/5, and the complete update matrix is 31/34 with only the pre-existing global GNB root-order
 fixture and two external-download href expectations outside this wave. Fresh live legacy visual
 comparison remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-forty-fourth slice completes the authenticated `/sites/update` local settings
+sidebar from `site/siteMngLayout.scala.html`, `_common.less`, and `_page.less`. Four stable owners
+cover the UL, eight repeated LI and Link boundaries with first/active variants, and the conditional
+update badge; all concrete declarations are canonical global theme variables. This route retires
+`site-setting-nav`, active LI `active`, `notification-badge`, empty LI classes, and the duplicate
+`app.css` sidebar bridge while frozen fallback remains untouched for other site-admin routes. The
+exact eight-item copy/order/hrefs, update state, badge condition, and Diagnostics SPA navigation
+remain unchanged. Actual RED 5/5 becomes GREEN 5/5. The complete update matrix is 36/39; the
+remaining global GNB root-order fixture and two external-download href expectations predate this
+slice and are outside its owner boundary. Fresh live legacy visual comparison remains explicitly
+unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
