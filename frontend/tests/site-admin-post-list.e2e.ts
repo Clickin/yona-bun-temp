@@ -77,15 +77,15 @@ const EXPECTED_POST_LIST_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -176,8 +176,10 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+    "Posts",
+  );
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -201,8 +203,14 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator(".site-setting-nav li").nth(1)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+    "border-left-color",
+    "rgb(243, 108, 34)",
+  );
   expect(await siteSidebarAnchorActiveAttrs(page)).toEqual([
     { ariaCurrent: null, className: null, dataStatus: null, text: "Users" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "Posts" },
@@ -289,7 +297,9 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     page.locator('[data-stylex-owner="site-post-list-metadata-item"] > a[href$="#comments"]'),
   ).toHaveAttribute("href", `${basePath}/acme/roadmap/post/7#comments`);
   await expect(
-    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+    page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+      hasText: "Send mass emails",
+    }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   await expect(page.locator('[data-stylex-owner="site-post-list-pagination"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="site-post-list-pagination-item"]')).toHaveCount(5);
@@ -352,7 +362,9 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   });
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+    "Posts",
+  );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute("href", `${basePath}/sites/postList?pageNum=1`);
@@ -392,7 +404,9 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   ).toBe("site-posts-pagination-input");
 
   await mockSiteUsers(page);
-  const usersLink = page.locator(".site-setting-nav a", { hasText: "Users" });
+  const usersLink = page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+    hasText: "Users",
+  });
   await expect(usersLink).toHaveAttribute("href", `${basePath}/sites/userList`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-nav";
@@ -420,10 +434,14 @@ test("site admin post list renders legacy update notification badge", async ({ p
 
   await page.goto(`${basePath}/sites/postList`);
 
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-post-list-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(updateLink.locator('[data-stylex-owner="site-post-list-sidebar-badge"]')).toHaveText(
+    "1",
+  );
 });
 
 test("site admin post list sidebar active state stays on legacy li at pageNum=1", async ({
@@ -442,8 +460,14 @@ test("site admin post list sidebar active state stays on legacy li at pageNum=1"
 
   await page.goto(`${basePath}/sites/postList?pageNum=1`);
 
-  await expect(page.locator(".site-setting-nav li").nth(1)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1)).toHaveCSS(
+    "border-left-color",
+    "rgb(243, 108, 34)",
+  );
   expect(await siteSidebarAnchorActiveAttrs(page)).toEqual([
     { ariaCurrent: null, className: null, dataStatus: null, text: "Users" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "Posts" },
@@ -762,10 +786,10 @@ async function expectSpaClick(page: Page, selector: string, expectedUrl: string,
 }
 
 async function siteSidebarAnchorActiveAttrs(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className: link.getAttribute("class"),
+      className: null,
       dataStatus: link.getAttribute("data-status"),
       text: link.textContent?.trim() ?? "",
     })),
@@ -1190,6 +1214,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         new Set([
+          "site-post-list-sidebar",
+          "site-post-list-sidebar-item",
+          "site-post-list-sidebar-link",
+          "site-post-list-sidebar-badge",
           "site-post-list-title-strip",
           "site-post-list-title-heading",
           "site-post-list-container",

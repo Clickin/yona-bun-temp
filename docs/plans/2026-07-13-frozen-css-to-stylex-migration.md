@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-eight slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty-nine slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1835,6 +1835,19 @@ RED 5/5 becomes GREEN 5/5. The complete massmail matrix is 40/45: the pre-existi
 fixture mismatch plus four stale expectations from earlier massmail slices (`.label`, `ybtn`, and
 project-wrapper generated ownership) remain outside this sidebar boundary. Fresh live legacy
 visual comparison remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-forty-ninth slice completes the authenticated populated-default
+`/sites/postList` local settings sidebar from `site/postList.scala.html`,
+`site/siteMngLayout.scala.html`, `_common.less`, and `_page.less`. Four stable owners cover the UL,
+eight repeated LI and Link boundaries with first/active variants, and the conditional update badge
+through canonical global theme variables. This route retires `site-setting-nav`, active LI
+`active`, `notification-badge`, and empty LI classes while preserving the exact eight-item
+copy/order/hrefs, second-item Posts selection, `pageNum` mask/search suppression, populated posts,
+pagination, badge condition, and Send email SPA navigation. Actual RED fails on the absent
+ownership contract and becomes GREEN 5/5. The complete post-list matrix is 41/42 after removing
+one stale generated-class expectation; only the pre-existing global GNB `Feedback` fixture
+mismatch remains outside this owner boundary. Fresh live legacy visual comparison remains
+explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
