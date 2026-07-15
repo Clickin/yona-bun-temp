@@ -1519,6 +1519,12 @@ declarations through existing global variables while retaining the shared title_
 fallback classes; post rows, pagination, sidebar/shell, and generic title areas remain fallback or
 separate owners. This is not Wave 1 completion.
 
+The one-hundred-seventeenth slice migrates the /sites/projectList default title strip from
+site/projectList.scala.html and _page.less. StyleX owns the exact title-area and direct-heading
+declarations through existing global variables while retaining the shared title_area and pull-left
+fallback classes; the direct search form, list header/rows, modal, pagination, sidebar/shell, and
+generic title areas remain fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
