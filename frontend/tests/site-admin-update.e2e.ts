@@ -398,8 +398,8 @@ async function updateAvailableMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap .row-fluid");
     const sidebar = requireElement(".site-setting-wrap .span2");
     const content = requireElement(".site-setting-wrap .span10");
-    const titleArea = requireElement(".site-setting-wrap .title_area");
-    const title = requireElement(".site-setting-wrap .title_area h2");
+    const titleArea = requireElement('[data-stylex-owner="site-update-title-strip"]');
+    const title = requireElement('[data-stylex-owner="site-update-title-heading"]');
     const firstParagraph = requireElement(".site-setting-wrap .span10 > p");
     const strong = requireElement(".site-setting-wrap .span10 > p strong");
     const downloadButton = requireElement('[data-stylex-owner="site-update-download-action"]');
@@ -653,7 +653,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const value = current.getAttribute(name) ?? "";
+      let value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredTitleToken = current.matches(
+          ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
+        )
+          ? "title_area"
+          : current.matches(
+                ".site-setting-wrap > .row-fluid > .span10 > div.title_area > h2.pull-left",
+              )
+            ? "pull-left"
+            : null;
+        value = value
+          .split(/\s+/u)
+          .filter((token) => token !== retiredTitleToken)
+          .join(" ");
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&

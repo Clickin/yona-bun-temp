@@ -37,12 +37,13 @@ test.describe("StyleX site update title strip", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="site-update-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-update-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
     expect(route).toContain("titleAreaStyleProps");
     expect(route).toContain("titleStyleProps");
-    expect(route).toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
-    expect(route).toContain('`pull-left ${titleStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
@@ -55,7 +56,9 @@ test.describe("StyleX site update title strip", () => {
       versionToUpdate: null,
     });
 
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Software Update");
+    await expect(
+      owner.locator(':scope > h2[data-stylex-owner="site-update-title-heading"]'),
+    ).toHaveText("Software Update");
     await expect(owner.locator("+ p").first()).toHaveText("Current version is Yoram 1.0.0");
     expect(
       await page
@@ -76,7 +79,7 @@ test.describe("StyleX site update title strip", () => {
         releaseUrl: null,
         versionToUpdate: null,
       });
-      const heading = owner.locator("h2.pull-left");
+      const heading = owner.locator('[data-stylex-owner="site-update-title-heading"]');
 
       await expect(owner).toHaveCSS("overflow", "hidden");
       await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -87,7 +90,9 @@ test.describe("StyleX site update title strip", () => {
       await expect(heading).toHaveCSS("line-height", "30px");
       const boxes = await page.evaluate((selector) => {
         const owner = document.querySelector<HTMLElement>(selector);
-        const heading = owner?.querySelector<HTMLElement>("h2.pull-left");
+        const heading = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-update-title-heading"]',
+        );
         const content = owner?.parentElement;
         if (!owner || !heading || !content) return null;
         return {
@@ -166,8 +171,8 @@ test.describe("StyleX site update title strip", () => {
       };
     });
     expect(classComposition).not.toBeNull();
-    expect(classComposition!.titleArea).toContain("title_area");
-    expect(classComposition!.heading).toContain("pull-left");
+    expect(classComposition!.titleArea).not.toContain("title_area");
+    expect(classComposition!.heading).not.toContain("pull-left");
     expect(classComposition!.titleArea.some((token) => token.startsWith("x"))).toBe(true);
     expect(classComposition!.heading.some((token) => token.startsWith("x"))).toBe(true);
 
@@ -177,7 +182,7 @@ test.describe("StyleX site update title strip", () => {
         .filter(
           (element) =>
             element.closest(
-              '[data-stylex-owner="site-update-title-strip"], [data-stylex-owner="site-update-download-action"], [data-stylex-owner="site-update-error-pre"]',
+              '[data-stylex-owner="site-update-title-strip"], [data-stylex-owner="site-update-title-heading"], [data-stylex-owner="site-update-download-action"], [data-stylex-owner="site-update-error-pre"]',
             ) === null,
         )
         .map((element) => element.tagName),

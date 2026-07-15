@@ -615,6 +615,8 @@ export const globalColors = stylex.defineVars({
   siteDataExportActionBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)",
   siteDataExportActionZIndex: "2",
   siteDataExportActionInteractiveTextDecoration: "none",
+  // site/update.scala.html + Bootstrap `.pull-left`
+  siteUpdateTitleHeadingFloat: "left",
   // site/update.scala.html + _yobiUI.less `.ybtn.ybtn-success`
   siteUpdateDownloadActionTextAlign: "center",
   siteUpdateDownloadActionWhiteSpace: "nowrap",

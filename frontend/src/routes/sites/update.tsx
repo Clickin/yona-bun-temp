@@ -27,6 +27,7 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.siteUpdateTitleHeadingFloat,
   },
   downloadAction: {
     backgroundColor: {
@@ -121,12 +122,8 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-update-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-update-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-update-title-heading">
                   <LegacyMessage messageKey="site.sidebar.update" />
                 </h2>
               </div>
