@@ -360,6 +360,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/\[_\]UIKit\.tsx$/i,
       /^frontend\/src\/routes\/restricted\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,
+      /^frontend\/src\/routes\/-restart\.stylex\.ts$/i,
       /^frontend\/src\/routes\/restart\.tsx$/i,
       /^frontend\/src\/routes\/secret\.tsx$/i,
       /^frontend\/src\/routes\/(?:secret|restart)\/route\.tsx$/i,

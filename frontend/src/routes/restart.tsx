@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
-import { globalColors } from "../theme.stylex";
+import { restartTheme } from "./-restart.stylex";
 
 const legacyLogoLinkActiveProps = {
   "aria-current": undefined,
@@ -15,25 +15,25 @@ const styles = stylex.create({
     "--yoram-stylex-restart-notice": "stylex",
   },
   wrap: {
-    padding: globalColors.restartNoticeWrapPadding,
-    textAlign: globalColors.secretSetupWrapTextAlign,
+    padding: "50px 0px",
+    textAlign: "center",
   },
   logo: {
-    display: globalColors.secretSetupLogoDisplay,
-    textAlign: globalColors.secretSetupLogoTextAlign,
-    overflow: globalColors.secretSetupLogoOverflow,
-    width: globalColors.secretSetupLogoWidth,
-    height: globalColors.secretSetupLogoHeight,
-    lineHeight: globalColors.secretSetupLogoLineHeight,
-    fontSize: globalColors.secretSetupLogoFontSize,
-    color: globalColors.secretSetupLogoText,
-    backgroundColor: globalColors.secretSetupLogoSurface,
-    margin: globalColors.secretSetupLogoMargin,
-    ":hover": { color: globalColors.secretSetupLogoText },
+    display: "block",
+    textAlign: "center",
+    overflow: "hidden",
+    width: "123px",
+    height: "55px",
+    lineHeight: "55px",
+    fontSize: "2em",
+    color: restartTheme.logoText,
+    backgroundColor: restartTheme.logoSurface,
+    margin: "50px auto",
+    ":hover": { color: restartTheme.logoText },
   },
   box: {
-    width: globalColors.secretSetupBoxWidth,
-    margin: globalColors.secretSetupBoxMargin,
+    width: "50%",
+    margin: "20px auto",
   },
 });
 

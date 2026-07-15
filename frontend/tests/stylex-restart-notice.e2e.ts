@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/restart.tsx", import.meta.url);
+const routeThemeSource = new URL("../src/routes/-restart.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -16,9 +17,10 @@ async function openRestart(page: Page, failed = false) {
 }
 
 test.describe("StyleX restart notice", () => {
-  test("uses global theme ownership while retaining the legacy restart skeleton", async () => {
-    const [route, theme, fallback] = await Promise.all([
+  test("uses route paint ownership while retaining the legacy restart skeleton", async () => {
+    const [route, routeTheme, theme, fallback] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
       readFile(fallbackSource, "utf8"),
     ]);
@@ -27,8 +29,10 @@ test.describe("StyleX restart notice", () => {
     expect(route).toContain('data-stylex-part="restart-notice-logo"');
     expect(route).toContain('data-stylex-part="restart-notice-copy"');
     expect(route).toContain("styles.restartNotice");
-    expect(theme).toContain("restartNoticeWrapPadding");
-    expect(theme).toContain("secretSetupLogoSurface");
+    expect(route).toContain('padding: "50px 0px"');
+    expect(route).toContain("backgroundColor: restartTheme.logoSurface");
+    expect(routeTheme).toContain('logoSurface: "#f36c22"');
+    expect(theme).not.toContain("restartNoticeWrapPadding");
     expect(fallback).toContain(".secret-wrap .logo");
     expect(fallback).toContain(".secret-box");
   });

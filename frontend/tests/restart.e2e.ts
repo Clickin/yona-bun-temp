@@ -148,7 +148,7 @@ test("restart route source keeps TanStack-owned home navigation without a route-
   expect(source).toContain('to="/"');
   expect(source).toContain("activeOptions={{ exact: true, explicitUndefined: true }}");
   expect(source).toContain("activeProps={legacyLogoLinkActiveProps}");
-  expect(source).toContain('className="logo"');
+  expect(source).toContain("className={`logo ${restartLogoClassName}`}");
   expect(source).not.toContain("useLinkProps");
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("<a{");

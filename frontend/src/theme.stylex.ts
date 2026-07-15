@@ -18,8 +18,6 @@ export const anonymousHomeIntroBackgroundTheme = stylex.createTheme(
 );
 
 export const globalColors = stylex.defineVars({
-  // welcome/restart.scala.html inline `.secret-wrap`
-  restartNoticeWrapPadding: "50px 0px",
   // welcome/secret.scala.html inline `.secret-box`, `.secret-wrap`, and `.logo`
   secretSetupBoxWidth: "50%",
   secretSetupBoxMargin: "20px auto",
