@@ -40,6 +40,7 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.siteProjectListTitleHeadingFloat,
   },
   projectSearchForm: {
     margin: globalColors.siteProjectListSearchFormMargin,
@@ -574,12 +575,8 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-project-list-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-project-list-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-project-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.projectList" />
                 </h2>
                 <form

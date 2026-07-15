@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-eight slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-nine slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1717,6 +1717,17 @@ cascade. Actual RED 5/5 becomes GREEN 5/5; together with the prior title gate th
 350px expectation against the frozen 360px input border box, and stale `MouseEvent` source
 expectation against the existing `SyntheticEvent` remain outside this wave. Fresh live legacy
 visual comparison remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-thirty-ninth slice completes the authenticated populated
+`/sites/projectList?filter=road` title/search shell fallback retirement from
+`site/projectList.scala.html`, Bootstrap 2.3.1, and `_page.less`. The existing title and search
+owners plus a new direct heading owner move the title paint, heading float, form margin, and search
+controls through canonical global theme variables. This route retires only `title_area` and
+`pull-left`; `pull-right`, the glyph primitive, list header/rows, pagination, modal, sidebar, and
+grid remain fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, the prior title/search
+baseline remains GREEN 11/11, and the complete project-list matrix is 58/59 with only the
+pre-existing global GNB/footer raw-DOM canonicalizer mismatch. Fresh live legacy visual comparison
+remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

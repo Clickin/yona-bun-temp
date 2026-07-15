@@ -824,8 +824,8 @@ async function spaMarker(page: Page) {
 async function projectListDeleteModalStateMetrics(page: Page) {
   return page.evaluate(() => {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
-    const title = requireElement(".title_area h2");
-    const titleArea = requireElement(".title_area");
+    const title = requireElement('[data-stylex-owner="site-project-list-title-heading"]');
+    const titleArea = requireElement('[data-stylex-owner="site-project-list-title-strip"]');
     const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
     const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
     const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
@@ -1095,6 +1095,17 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (
         name === "class" &&
+        new Set(["site-project-list-title-strip", "site-project-list-title-heading"]).has(
+          current.getAttribute("data-stylex-owner") ?? "",
+        )
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
         current.matches('[data-stylex-owner="global-gnb-nav"]')
       ) {
@@ -1201,8 +1212,8 @@ async function siteLayoutRootOrder(page: Page) {
 
 async function projectListMetrics(page: Page) {
   return page.evaluate(() => {
-    const titleArea = requireElement(".title_area");
-    const title = requireElement(".title_area h2");
+    const titleArea = requireElement('[data-stylex-owner="site-project-list-title-strip"]');
+    const title = requireElement('[data-stylex-owner="site-project-list-title-heading"]');
     const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
     const filterInput = requireElement(
       '[data-stylex-owner="site-project-list-search-textbox"][name="filter"]',
@@ -1333,7 +1344,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const value = current.getAttribute(name) ?? "";
+      let value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredTitleToken = current.matches(
+          ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
+        )
+          ? "title_area"
+          : current.matches(
+                ".site-setting-wrap > .row-fluid > .span10 > div.title_area > h2.pull-left",
+              )
+            ? "pull-left"
+            : null;
+        value = value
+          .split(/\s+/u)
+          .filter((token) => token !== retiredTitleToken)
+          .join(" ");
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&

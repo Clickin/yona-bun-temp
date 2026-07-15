@@ -131,6 +131,8 @@ export const globalColors = stylex.defineVars({
   // site/userList.scala.html + Bootstrap `.pull-left` + _page.less direct `.form-search`
   siteUserListTitleHeadingFloat: "left",
   siteUserListTitleSearchFormMargin: "0px",
+  // site/projectList.scala.html + Bootstrap `.pull-left`
+  siteProjectListTitleHeadingFloat: "left",
   // site/projectList.scala.html + _page.less listhead
   siteProjectListHeadSurface: "#f7f7f7",
   siteProjectListHeadBorderStyle: "solid",
