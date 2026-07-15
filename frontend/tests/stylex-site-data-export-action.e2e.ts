@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const ownerSelector = '[data-stylex-owner="site-data-export-action"]';
 
 async function open(page: Page) {
@@ -106,7 +106,8 @@ test("export owner does not expose generated selectors", async () => {
   expect(route).toContain("styles.exportAction");
   expect(route).not.toContain("anonymousSiteSignup");
   expect(route).not.toContain("':hover, :focus, :active'");
-  expect(route).toContain('":active": globalColors.siteDataExportActionInteractiveSurface');
-  expect(theme).toContain("siteDataExportActionInteractiveSurface");
+  expect(route).toContain('":active": siteDataColors.actionInteractiveSurface');
+  expect(theme).toContain("actionInteractiveSurface");
+  expect(route).not.toContain("globalColors.");
   expect(route).not.toMatch(/#[0-9a-f]/iu);
 });

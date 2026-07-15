@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openData(page: Page) {
@@ -30,9 +30,10 @@ test.describe("StyleX site data warning surface", () => {
     expect(route).toContain('data-stylex-owner="site-data-warning-surface"');
     expect(route.match(/data-stylex-owner="site-data-warning-item"/gu)).toHaveLength(3);
     expect(route).toContain("styles.warningSurface");
-    expect(route).toContain("globalColors.siteDataWarningText");
-    expect(theme).toContain("siteDataWarningDisplay");
-    expect(theme).toContain("siteDataWarningText");
+    expect(route).toContain("siteDataColors.warningText");
+    expect(route).toContain('warningSurface: { display: "inline-block" }');
+    expect(theme).toContain("warningText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps the three legacy warnings in order before export", async ({ page }) => {

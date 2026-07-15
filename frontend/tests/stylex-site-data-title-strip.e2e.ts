@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openData(page: Page) {
@@ -30,8 +30,9 @@ test.describe("StyleX site data title strip", () => {
     expect(route).toContain('data-stylex-owner="site-data-title-strip"');
     expect(route).toContain('data-stylex-owner="site-data-title-heading"');
     expect(route).toContain("styles.titleArea");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).toContain("siteDataColors.titleBorder");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
     expect([...route.matchAll(/data-stylex-owner="([^"]+)"/g)].map((match) => match[1])).toEqual([
       "site-data-title-strip",
       "site-data-title-heading",

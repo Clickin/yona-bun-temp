@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/data.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-data.stylex.ts", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/data.scala.html",
   import.meta.url,
@@ -102,22 +102,14 @@ test.describe("StyleX site data title/warning shell", () => {
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
     expect(route.match(/data-stylex-owner="site-data-warning-item"/gu)).toHaveLength(3);
-    for (const token of [
-      "siteDiagnosticNoErrorTitleOverflow",
-      "siteDiagnosticNoErrorTitleMarginBottom",
-      "siteDiagnosticNoErrorTitlePaddingBottom",
-      "siteDiagnosticNoErrorTitleBorder",
-      "siteDiagnosticNoErrorHeadingMargin",
-      "siteDiagnosticNoErrorHeadingFontSize",
-      "siteDiagnosticNoErrorHeadingText",
-      "siteDiagnosticNoErrorHeadingLineHeight",
-      "siteDataTitleHeadingFloat",
-      "siteDataWarningDisplay",
-      "siteDataWarningText",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
+    for (const token of ["titleBorder", "titleText", "warningText"]) {
+      expect(route).toContain(`siteDataColors.${token}`);
       expect(theme).toContain(token);
     }
+    expect(route).toContain('overflow: "hidden"');
+    expect(route).toContain('marginBottom: "29px"');
+    expect(route).toContain('float: "left"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps exact DIV > H2 and warning UL > three LI order/copy", async ({ page }) => {

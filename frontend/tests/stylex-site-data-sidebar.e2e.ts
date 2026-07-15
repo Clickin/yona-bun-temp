@@ -10,37 +10,6 @@ const owners = {
   sidebar: "site-data-sidebar",
 } as const;
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-stylex-owner="${name}"]`);
-const suffixes = [
-  "Margin",
-  "Padding",
-  "ListStyle",
-  "ItemBorderLeftColor",
-  "ItemBorderLeftStyle",
-  "ItemBorderLeftWidth",
-  "ItemFontSize",
-  "ItemLineHeight",
-  "ItemMarginTop",
-  "FirstItemMarginTop",
-  "LinkColor",
-  "LinkDisplay",
-  "LinkOutline",
-  "LinkPadding",
-  "LinkTextDecoration",
-  "LinkHoverBackground",
-  "LinkHoverOutline",
-  "LinkHoverTextDecoration",
-  "BadgeBackground",
-  "BadgeBorderColor",
-  "BadgeBorderRadius",
-  "BadgeBorderStyle",
-  "BadgeBorderWidth",
-  "BadgeBoxShadow",
-  "BadgeColor",
-  "BadgeFontSize",
-  "BadgeLineHeight",
-  "BadgePadding",
-] as const;
-
 async function openData(page: Page) {
   const session = (route: Route) =>
     route.fulfill({
@@ -88,7 +57,7 @@ test.describe("StyleX site data sidebar", () => {
     ] = await Promise.all(
       [
         "../src/routes/sites/data.tsx",
-        "../src/theme.stylex.ts",
+        "../src/routes/sites/-data.stylex.ts",
         "../src/app.css",
         "../../yona-original/app/views/site/data.scala.html",
         "../../yona-original/app/views/site/siteMngLayout.scala.html",
@@ -128,11 +97,19 @@ test.describe("StyleX site data sidebar", () => {
     expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const suffix of suffixes) {
-      const key = `siteDataSidebar${suffix}`;
-      expect(route).toContain(`globalColors.${key}`);
-      expect(theme).toContain(key);
+    for (const paint of [
+      "sidebarBorder",
+      "sidebarLinkHoverSurface",
+      "badgeSurface",
+      "badgeBorder",
+      "badgeShadow",
+      "badgeText",
+    ]) {
+      expect(route).toContain(`siteDataColors.${paint}`);
+      expect(theme).toContain(paint);
     }
+    expect(route).toContain('color: "inherit"');
+    expect(route).not.toContain("globalColors.");
     for (const retired of [
       'className="site-setting-nav"',
       'className="notification-badge"',
