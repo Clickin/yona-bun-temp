@@ -185,6 +185,12 @@ test.describe("StyleX site project-list list header", () => {
     const allowedOwners = new Set([
       "site-project-list-container",
       "site-project-list-delete-action",
+      "site-project-list-delete-modal",
+      "site-project-list-delete-modal-backdrop",
+      "site-project-list-delete-modal-body",
+      "site-project-list-delete-modal-close",
+      "site-project-list-delete-modal-footer",
+      "site-project-list-delete-modal-header",
       "site-project-list-listhead",
       "site-project-list-pagination",
       "site-project-list-pagination-icon",

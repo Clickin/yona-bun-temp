@@ -1570,6 +1570,14 @@ are removed. Bootstrap's generic input foundation, the shared pull-right float, 
 search glyph remain fallback; the delete modal, sidebar, and shell remain separate owners. This is
 not Wave 1 completion.
 
+The one-hundred-twenty-fourth slice migrates the /sites/projectList delete-confirmation modal's
+settled open state from site/projectList.scala.html, Bootstrap 2.3.1, and _responsive.less. StyleX
+owns the frame, header, close control, body, footer, and backdrop through global theme variables,
+including the max-767 and max-480 responsive cascade. React state/events and TanStack Query retain
+open, dismiss, deletion, and cache behavior. The six fully migrated modal presentation groups are
+removed; the footer's shared ybtn confirmation controls, sidebar, and shell remain separate owners
+or fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

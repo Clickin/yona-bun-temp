@@ -236,6 +236,99 @@ const styles = stylex.create({
   paginationNextIcon: {
     marginLeft: globalColors.siteProjectListPaginationNextIconMarginLeft,
   },
+  deleteModal: {
+    position: globalColors.siteProjectListModalPosition,
+    top: {
+      default: globalColors.siteProjectListModalDesktopTop,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileTop,
+    },
+    left: {
+      default: globalColors.siteProjectListModalDesktopLeft,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileLeft,
+    },
+    right: {
+      default: globalColors.siteProjectListModalDesktopRight,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileRight,
+    },
+    zIndex: globalColors.siteProjectListModalZIndex,
+    width: {
+      default: globalColors.siteProjectListModalDesktopWidth,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileWidth,
+    },
+    marginLeft: {
+      default: globalColors.siteProjectListModalDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileMarginLeft,
+    },
+    marginRight: {
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalMobileMarginRight,
+    },
+    backgroundColor: globalColors.siteProjectListModalSurface,
+    borderColor: globalColors.siteProjectListModalBorder,
+    borderRadius: globalColors.siteProjectListModalBorderRadius,
+    borderStyle: globalColors.siteProjectListModalBorderStyle,
+    borderWidth: globalColors.siteProjectListModalBorderWidth,
+    outline: globalColors.siteProjectListModalOutline,
+    boxShadow: globalColors.siteProjectListModalShadow,
+    backgroundClip: globalColors.siteProjectListModalBackgroundClip,
+    opacity: globalColors.siteProjectListModalOpacity,
+    transition: globalColors.siteProjectListModalTransition,
+  },
+  deleteModalHeader: {
+    padding: globalColors.siteProjectListModalHeaderPadding,
+    borderBottomColor: globalColors.siteProjectListModalHeaderBorder,
+    borderBottomStyle: globalColors.siteProjectListModalHeaderBorderStyle,
+    borderBottomWidth: globalColors.siteProjectListModalHeaderBorderWidth,
+  },
+  deleteModalClose: {
+    float: globalColors.siteProjectListModalCloseFloat,
+    fontSize: globalColors.siteProjectListModalCloseFontSize,
+    fontWeight: globalColors.siteProjectListModalCloseFontWeight,
+    lineHeight: globalColors.siteProjectListModalCloseLineHeight,
+    color: globalColors.siteProjectListModalCloseText,
+    textShadow: globalColors.siteProjectListModalCloseTextShadow,
+    opacity: {
+      default: globalColors.siteProjectListModalCloseOpacity,
+      ":hover": globalColors.siteProjectListModalCloseHoverOpacity,
+      ":focus": globalColors.siteProjectListModalCloseHoverOpacity,
+    },
+    padding: {
+      default: globalColors.siteProjectListModalCloseDesktopPadding,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalCloseMobilePadding,
+    },
+    margin: {
+      default: globalColors.siteProjectListModalCloseDesktopMargin,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListModalCloseMobileMargin,
+    },
+    cursor: globalColors.siteProjectListModalCloseCursor,
+    backgroundColor: globalColors.siteProjectListModalCloseSurface,
+    borderStyle: globalColors.siteProjectListModalCloseBorderStyle,
+    borderWidth: globalColors.siteProjectListModalCloseBorderWidth,
+    appearance: globalColors.siteProjectListModalCloseAppearance,
+  },
+  deleteModalBody: {
+    position: globalColors.siteProjectListModalBodyPosition,
+    maxHeight: globalColors.siteProjectListModalBodyMaxHeight,
+    padding: globalColors.siteProjectListModalBodyPadding,
+    overflowY: globalColors.siteProjectListModalBodyOverflowY,
+  },
+  deleteModalFooter: {
+    padding: globalColors.siteProjectListModalFooterPadding,
+    marginBottom: globalColors.siteProjectListModalFooterMarginBottom,
+    textAlign: globalColors.siteProjectListModalFooterTextAlign,
+    backgroundColor: globalColors.siteProjectListModalFooterSurface,
+    borderTopColor: globalColors.siteProjectListModalFooterBorder,
+    borderTopStyle: globalColors.siteProjectListModalFooterBorderStyle,
+    borderTopWidth: globalColors.siteProjectListModalFooterBorderWidth,
+    borderRadius: globalColors.siteProjectListModalFooterRadius,
+    boxShadow: globalColors.siteProjectListModalFooterShadow,
+  },
+  deleteModalBackdrop: {
+    position: globalColors.siteProjectListModalBackdropPosition,
+    inset: globalColors.siteProjectListModalBackdropInset,
+    zIndex: globalColors.siteProjectListModalBackdropZIndex,
+    backgroundColor: globalColors.siteProjectListModalBackdropSurface,
+    opacity: globalColors.siteProjectListModalBackdropOpacity,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -267,6 +360,12 @@ const paginationOffLabelStyleProps = stylex.props(
 );
 const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
 const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const deleteModalStyleProps = stylex.props(styles.deleteModal);
+const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
+const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
+const deleteModalBodyStyleProps = stylex.props(styles.deleteModalBody);
+const deleteModalFooterStyleProps = stylex.props(styles.deleteModalFooter);
+const deleteModalBackdropStyleProps = stylex.props(styles.deleteModalBackdrop);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
@@ -494,13 +593,25 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               />
 
               <div
+                {...deleteModalStyleProps}
                 id="alertDeletionWrap"
-                className={deleteProject ? "modal fade in" : "modal fade"}
+                className={deleteModalStyleProps.className}
+                data-stylex-owner="site-project-list-delete-modal"
                 style={{ display: deleteProject ? "block" : "none" }}
                 aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}
               >
-                <div className="modal-header">
-                  <button type="button" className="close" onClick={dismissDeleteModal}>
+                <div
+                  {...deleteModalHeaderStyleProps}
+                  className={deleteModalHeaderStyleProps.className}
+                  data-stylex-owner="site-project-list-delete-modal-header"
+                >
+                  <button
+                    {...deleteModalCloseStyleProps}
+                    type="button"
+                    className={deleteModalCloseStyleProps.className}
+                    data-stylex-owner="site-project-list-delete-modal-close"
+                    onClick={dismissDeleteModal}
+                  >
                     ×
                   </button>
                   <span id="project-name">
@@ -508,12 +619,20 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   </span>
                   <LegacyMessage messageKey="site.project.delete" />
                 </div>
-                <div className="modal-body">
+                <div
+                  {...deleteModalBodyStyleProps}
+                  className={deleteModalBodyStyleProps.className}
+                  data-stylex-owner="site-project-list-delete-modal-body"
+                >
                   <p>
                     <LegacyMessage messageKey="site.project.deleteConfirm" />
                   </p>
                 </div>
-                <div className="modal-footer">
+                <div
+                  {...deleteModalFooterStyleProps}
+                  className={deleteModalFooterStyleProps.className}
+                  data-stylex-owner="site-project-list-delete-modal-footer"
+                >
                   <button
                     type="button"
                     id="projectDeleteBtn"
@@ -529,7 +648,9 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               </div>
               {deleteProject ? (
                 <div
-                  className="modal-backdrop fade in"
+                  {...deleteModalBackdropStyleProps}
+                  className={deleteModalBackdropStyleProps.className}
+                  data-stylex-owner="site-project-list-delete-modal-backdrop"
                   onClick={dismissDeleteModal}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") dismissDeleteModal(event);

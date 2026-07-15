@@ -583,11 +583,12 @@ test("site admin project delete button drops legacy delegated hooks while React 
   await mockSiteUpdate(page);
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
-  await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
+  ).toHaveCount(1);
 
-  const deleteButton = page.locator(".project-list-wrap button.ybtn.ybtn-danger");
+  const deleteButton = page.locator('[data-stylex-owner="site-project-list-delete-action"]');
   await expect(deleteButton).toHaveText("Delete");
-  await expect(deleteButton).toHaveAttribute("class", "ybtn ybtn-danger");
   await expect(deleteButton).toHaveAttribute("data-project-name", "acme/roadmap");
   await expect(deleteButton).not.toHaveAttribute("data-href", /.+/);
   await expect(deleteButton).not.toHaveAttribute("data-toggle", /.+/);
@@ -604,17 +605,19 @@ test("site admin project delete button drops legacy delegated hooks while React 
   await deleteButton.click();
 
   const deleteModal = page.locator("#alertDeletionWrap");
-  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveAttribute("data-stylex-owner", "site-project-list-delete-modal");
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
-  await expect(page.locator("#alertDeletionWrap .modal-header")).toHaveText(
-    "×acme/roadmapDelete project",
-  );
-  await expect(page.locator("#alertDeletionWrap .modal-body p")).toHaveText(
-    "Do you really want to delete this project?",
-  );
-  await expect(page.locator("#alertDeletionWrap .modal-footer > button")).toHaveText(["Yes", "No"]);
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-delete-modal-header"]'),
+  ).toHaveText("×acme/roadmapDelete project");
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-delete-modal-body"] p'),
+  ).toHaveText("Do you really want to delete this project?");
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-delete-modal-footer"] > button'),
+  ).toHaveText(["Yes", "No"]);
 
   const deleteResponse = page.waitForResponse(
     (response) =>
@@ -632,8 +635,9 @@ test("site admin project delete button drops legacy delegated hooks while React 
       pathname: `${basePath}/api/v1/site/projects/77`,
     },
   ]);
-  await expect(page.locator(".project-list-wrap .listitem")).toHaveCount(0);
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-container"] .listitem'),
+  ).toHaveCount(0);
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(page).toHaveURL(projectListUrl);
@@ -655,7 +659,7 @@ test("site admin project delete source has no legacy data-href delegated hook", 
     source.indexOf("function LegacyMessage"),
   );
 
-  expect(projectListItemSource).toContain('className="ybtn ybtn-danger"');
+  expect(projectListItemSource).toContain('data-stylex-owner="site-project-list-delete-action"');
   expect(projectListItemSource).toContain("data-project-name=");
   expect(projectListItemSource).toContain("onClick={(event) => onDelete(project, event)}");
   expect(projectListItemSource).not.toContain("data-href");

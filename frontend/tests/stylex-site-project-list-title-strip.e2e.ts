@@ -165,6 +165,7 @@ test.describe("StyleX site project-list title strip", () => {
       { owner: "site-project-list-listhead", tagName: "DIV" },
       { owner: "site-project-list-container", tagName: "UL" },
       { owner: "site-project-list-pagination", tagName: "DIV" },
+      { owner: "site-project-list-delete-modal", tagName: "DIV" },
     ]);
     expect(ownership.nestedSearch).toEqual([
       { generated: true, owner: "site-project-list-search", tagName: "FORM" },

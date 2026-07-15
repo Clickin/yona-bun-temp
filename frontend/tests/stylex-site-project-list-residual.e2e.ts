@@ -116,16 +116,20 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
     await actions.first().click();
     const modal = page.locator("#alertDeletionWrap");
     await expect(modal).toBeVisible();
-    await expect(modal.locator(".modal-header")).toContainText("acme/roadmapDelete project");
-    await expect(modal.locator(".modal-body")).toContainText(
-      "Do you really want to delete this project?",
-    );
-    await modal.locator("button.close").click();
+    await expect(
+      modal.locator('[data-stylex-owner="site-project-list-delete-modal-header"]'),
+    ).toContainText("acme/roadmapDelete project");
+    await expect(
+      modal.locator('[data-stylex-owner="site-project-list-delete-modal-body"]'),
+    ).toContainText("Do you really want to delete this project?");
+    await modal.locator('[data-stylex-owner="site-project-list-delete-modal-close"]').click();
     await expect(modal).toBeHidden();
 
     await actions.nth(1).click();
     await expect(modal.locator("#project-name")).toHaveText("yona/conversion");
-    await page.locator(".modal-backdrop").click({ position: { x: 2, y: 2 } });
+    await page
+      .locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]')
+      .click({ position: { x: 2, y: 2 } });
     await expect(modal).toBeHidden();
   });
 
@@ -158,7 +162,9 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
     }
 
     await expect(page.locator("#projectDeleteBtn")).toHaveClass("ybtn ybtn-danger");
-    await expect(page.locator("#alertDeletionWrap .modal-footer .ybtn").nth(1)).toHaveClass("ybtn");
+    await expect(
+      page.locator('[data-stylex-owner="site-project-list-delete-modal-footer"] .ybtn').nth(1),
+    ).toHaveClass("ybtn");
   });
 
   for (const viewport of [
