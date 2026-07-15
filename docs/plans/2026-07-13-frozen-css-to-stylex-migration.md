@@ -1485,6 +1485,13 @@ with actual generated classes, so the previously recorded StyleX declarations ta
 selector or declaration scope changes; remaining surfaces remain fallback or separate owners.
 This is not Wave 1 completion.
 
+The one-hundred-eleventh slice repairs `/sites/mail` title and alert StyleX class composition.
+The retained `title_area`, `pull-left`, `alert`, `alert-error`, and `alert-success` fallback
+classes now coexist with actual generated classes for the existing title and three alert owners;
+no declarations, theme values, DOM order, or route behavior changes. Form controls, send action,
+sidebar/shell, and other alert consumers remain fallback or separate owners. This is not Wave 1
+completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

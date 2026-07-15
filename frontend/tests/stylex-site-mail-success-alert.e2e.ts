@@ -52,7 +52,9 @@ test("successful alert keeps Bootstrap fallback classes and StyleX ownership", a
   ]);
   expect(route).toContain('data-stylex-owner="site-mail-success-alert"');
   expect(route).toContain("styles.successAlert");
-  expect(route).toContain('className="alert alert-success"');
+  expect(route).toContain(
+    'className={`alert alert-success ${successAlertStyleProps.className ?? ""}`}',
+  );
   expect(route).not.toMatch(/successAlert:[^{]*\{[^}]*#[0-9a-f]/iu);
   expect(theme).toContain("siteMailSuccessAlertSurface");
 

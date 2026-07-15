@@ -736,36 +736,15 @@ async function canonicalizeScreenRoots(page: Page) {
       if (name === "class" && current.matches('[data-stylex-owner="site-mail-send-action"]')) {
         return "";
       }
+      const mailStylexOwners = [
+        "site-mail-title-strip",
+        "site-mail-error-alert",
+        "site-mail-success-alert",
+        "site-mail-not-configured-alert",
+      ];
       if (
         name === "class" &&
-        current.closest('[data-stylex-owner="site-mail-title-strip"]') !== null
-      ) {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => !token.startsWith("x"))
-          .join(" ");
-      }
-      if (
-        name === "class" &&
-        current.closest('[data-stylex-owner="site-mail-success-alert"]') !== null
-      ) {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => !token.startsWith("x"))
-          .join(" ");
-      }
-      if (
-        name === "class" &&
-        current.closest('[data-stylex-owner="site-mail-error-alert"]') !== null
-      ) {
-        return (current.getAttribute(name) ?? "")
-          .split(/\s+/u)
-          .filter((token) => !token.startsWith("x"))
-          .join(" ");
-      }
-      if (
-        name === "class" &&
-        current.closest('[data-stylex-owner="site-mail-not-configured-alert"]') !== null
+        mailStylexOwners.some((owner) => current.closest(`[data-stylex-owner="${owner}"]`) !== null)
       ) {
         return (current.getAttribute(name) ?? "")
           .split(/\s+/u)

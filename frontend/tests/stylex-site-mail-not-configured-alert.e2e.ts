@@ -54,7 +54,9 @@ test("not-configured alert keeps Bootstrap fallback classes and StyleX ownership
   ]);
   expect(route).toContain('data-stylex-owner="site-mail-not-configured-alert"');
   expect(route).toContain("styles.notConfiguredAlert");
-  expect(route).toContain('className="alert alert-error"');
+  expect(route).toContain(
+    'className={`alert alert-error ${notConfiguredAlertStyleProps.className ?? ""}`}',
+  );
   expect(route).not.toMatch(/notConfiguredAlert:[^{]*\{[^}]*#[0-9a-f]/iu);
   expect(theme).toContain("siteMailErrorAlertSurface");
 
@@ -62,7 +64,7 @@ test("not-configured alert keeps Bootstrap fallback classes and StyleX ownership
   await expect(alert).toHaveClass(/(?:^|\s)alert(?:\s|$)/u);
   await expect(alert).toHaveClass(/(?:^|\s)alert-error(?:\s|$)/u);
   await expect(alert.locator("p")).toHaveText(
-    "Mailer has not been configured yet. Please configure it at Site Settings.",
+    "Mailer has not been configured. Set following properties in conf/application.conf.",
   );
   await expect(alert.locator("ul > li")).toHaveText(["smtp.host", "smtp.user", "smtp.password"]);
   expect(await alert.evaluate((element) => element.nextElementSibling?.id)).toBe("mailForm");

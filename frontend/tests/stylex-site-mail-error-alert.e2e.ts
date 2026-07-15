@@ -52,7 +52,9 @@ test("error alert keeps Bootstrap fallback classes and StyleX ownership", async 
   ]);
   expect(route).toContain('data-stylex-owner="site-mail-error-alert"');
   expect(route).toContain("styles.errorAlert");
-  expect(route).toContain('className="alert alert-error"');
+  expect(route).toContain(
+    'className={`alert alert-error ${errorAlertStyleProps.className ?? ""}`}',
+  );
   expect(route).not.toMatch(/errorAlert:[^{]*\{[^}]*#[0-9a-f]/iu);
   expect(theme).toContain("siteMailErrorAlertSurface");
 

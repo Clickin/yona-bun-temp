@@ -267,6 +267,11 @@ function MailBody({
   const queryClient = useQueryClient();
   const mailOptions = siteMailOptionsQueryOptions(runtimeConfig);
   const [formResetKey, setFormResetKey] = useState(0);
+  const titleAreaStyleProps = stylex.props(styles.titleArea);
+  const titleStyleProps = stylex.props(styles.title);
+  const errorAlertStyleProps = stylex.props(styles.errorAlert);
+  const successAlertStyleProps = stylex.props(styles.successAlert);
+  const notConfiguredAlertStyleProps = stylex.props(styles.notConfiguredAlert);
 
   const mutation = useMutation({
     mutationFn: async (input: { body: string; from: string; subject: string; to: string }) => {
@@ -285,19 +290,19 @@ function MailBody({
   return (
     <>
       <div
-        {...stylex.props(styles.titleArea)}
-        className="title_area"
+        {...titleAreaStyleProps}
+        className={`title_area ${titleAreaStyleProps.className ?? ""}`}
         data-stylex-owner="site-mail-title-strip"
       >
-        <h2 {...stylex.props(styles.title)} className="pull-left">
+        <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
           {t("site.sidebar.mailSend")}
         </h2>
       </div>
       {!response ? <p>{t("common.loading")}</p> : null}
       {response && (errorMessageBySearch || mutation.isError) ? (
         <div
-          {...stylex.props(styles.errorAlert)}
-          className="alert alert-error"
+          {...errorAlertStyleProps}
+          className={`alert alert-error ${errorAlertStyleProps.className ?? ""}`}
           data-stylex-owner="site-mail-error-alert"
         >
           <p>{t("site.mail.fail")}</p>
@@ -310,8 +315,8 @@ function MailBody({
       ) : null}
       {response && sent ? (
         <div
-          {...stylex.props(styles.successAlert)}
-          className="alert alert-success"
+          {...successAlertStyleProps}
+          className={`alert alert-success ${successAlertStyleProps.className ?? ""}`}
           data-stylex-owner="site-mail-success-alert"
         >
           {t("site.mail.sended")}
@@ -319,8 +324,8 @@ function MailBody({
       ) : null}
       {response && response.notConfiguredItems.length > 0 ? (
         <div
-          {...stylex.props(styles.notConfiguredAlert)}
-          className="alert alert-error"
+          {...notConfiguredAlertStyleProps}
+          className={`alert alert-error ${notConfiguredAlertStyleProps.className ?? ""}`}
           data-stylex-owner="site-mail-not-configured-alert"
         >
           <p>{t("site.mail.notConfigured", { args: ["/admin/mailconf"] })}</p>

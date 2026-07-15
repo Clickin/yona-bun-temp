@@ -93,7 +93,20 @@ test.describe("StyleX site mail title strip", () => {
     for (const entry of cases) {
       const owner = await openMail(page, entry.response, entry.search);
       await expect(page.locator(ownerSelector)).toHaveCount(1);
+      await expect(owner).toHaveClass(/(?:^|\s)title_area(?:\s|$)/u);
+      expect(
+        await owner.evaluate((element) =>
+          [...element.classList].some((token) => /^x[a-z0-9_-]{5,}$/iu.test(token)),
+        ),
+      ).toBe(true);
       await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Send email");
+      expect(
+        await owner
+          .locator(":scope > h2.pull-left")
+          .evaluate((element) =>
+            [...element.classList].some((token) => /^x[a-z0-9_-]{5,}$/iu.test(token)),
+          ),
+      ).toBe(true);
       expect(
         await page
           .locator(".site-setting-wrap .span10 > *")
@@ -148,21 +161,33 @@ test.describe("StyleX site mail title strip", () => {
     }
   });
 
-  test("isolates generated StyleX classes to the title owner and existing send-action owner", async ({
-    page,
-  }) => {
-    await openMail(page, { notConfiguredItems: [], sender: "site-admin@yona.local", sent: false });
-
-    const generatedOutsideOwners = await page.evaluate((selector) =>
-      Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
-        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-        .filter(
-          (element) =>
-            element.closest(selector) === null &&
-            element.closest('[data-stylex-owner="site-mail-send-action"]') === null,
-        )
-        .map((element) => element.tagName),
+  test("isolates generated StyleX classes to explicit existing mail owners", async ({ page }) => {
+    await openMail(
+      page,
+      { notConfiguredItems: ["smtp.host"], sender: "site-admin@yona.local", sent: true },
+      "?errorMessage=validation.invalidEmail",
     );
-    expect(generatedOutsideOwners).toEqual([]);
+
+    const generatedOwners = await page.evaluate(() =>
+      [
+        ...new Set(
+          Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+            .filter((element) =>
+              Array.from(element.classList).some((token) => token.startsWith("x")),
+            )
+            .map((element) =>
+              element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner"),
+            )
+            .filter((owner): owner is string => owner !== null),
+        ),
+      ].sort(),
+    );
+    expect(generatedOwners).toEqual([
+      "site-mail-error-alert",
+      "site-mail-not-configured-alert",
+      "site-mail-send-action",
+      "site-mail-success-alert",
+      "site-mail-title-strip",
+    ]);
   });
 });
