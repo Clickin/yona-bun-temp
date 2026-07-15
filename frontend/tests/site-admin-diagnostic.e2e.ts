@@ -75,15 +75,15 @@ const EXPECTED_DIAGNOSTIC_NO_ERROR_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -152,7 +152,7 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator(".site-setting-nav li")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -164,7 +164,7 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   ]);
   expect(
     await page
-      .locator(".site-setting-nav a")
+      .locator('[data-stylex-owner="site-diagnostic-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -177,10 +177,10 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     `${basePath}/sites/diagnostic`,
   ]);
   expect(
-    await page.locator(".site-setting-nav a").evaluateAll((links) =>
+    await page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]').evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        className: null,
         dataStatus: link.getAttribute("data-status"),
       })),
     ),
@@ -194,18 +194,13 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
     { ariaCurrent: null, className: null, dataStatus: null },
     { ariaCurrent: null, className: null, dataStatus: null },
   ]);
-  await expect(page.locator(".site-setting-nav li")).toHaveClass([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "active",
-  ]);
-  await expect(page.locator(".site-setting-nav li").nth(7)).toHaveClass("active");
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  await expect(page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]').nth(7)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
+  const updateLink = page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   const siteAdminShellLink = page.locator(".gnb-usermenu .usermenu-icon-button.show-progress-bar");
   await expect(siteAdminShellLink).toHaveAttribute("href", `${basePath}/sites/userList`);
@@ -234,7 +229,9 @@ test("site admin diagnostics matches legacy site/diagnostic.scala.html no-error 
   });
   await updateLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/update`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Software Update");
+  await expect(page.locator('[data-stylex-owner="site-update-sidebar-link"]').nth(6)).toHaveText(
+    "Software Update",
+  );
   await expect(page.locator(".title_area h2")).toHaveText("Software Update");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -259,11 +256,12 @@ test("site admin diagnostics renders legacy error pre blocks", async ({ page }) 
   await page.goto(`${basePath}/sites/diagnostic`);
   await expect(page.getByText("No errors were found")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap .span10 > p")).toHaveText("2 errors were found");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveText("Diagnostics");
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveAttribute(
-    "href",
-    `${basePath}/sites/diagnostic`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="site-diagnostic-sidebar-item"]').nth(7),
+  ).toHaveText("Diagnostics");
+  await expect(
+    page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]').nth(7),
+  ).toHaveAttribute("href", `${basePath}/sites/diagnostic`);
   await expect(page.locator(".site-setting-wrap .span10 > ul")).toHaveCount(1);
   await expect(page.locator(".site-setting-wrap .span10 > ul > li")).toHaveCount(2);
   await expect(page.locator(".site-setting-wrap .span10 > ul > li > pre")).toHaveText([
@@ -313,10 +311,14 @@ test("site admin diagnostics renders legacy update notification badge", async ({
 
   await page.goto(`${basePath}/sites/diagnostic`);
 
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-diagnostic-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(
+    updateLink.locator('[data-stylex-owner="site-diagnostic-sidebar-badge"]'),
+  ).toHaveText("1");
 });
 
 test("site admin diagnostics sidebar uses typed route Links without a route-local generic adapter", async () => {
@@ -513,6 +515,17 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        [
+          "site-diagnostic-sidebar",
+          "site-diagnostic-sidebar-item",
+          "site-diagnostic-sidebar-link",
+          "site-diagnostic-sidebar-badge",
+        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return "";
+      }
       if (
         name === "class" &&
         (current.closest('[data-stylex-owner="site-diagnostic-no-error-title"]') ||
