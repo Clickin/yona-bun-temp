@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred twenty-six slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1621,6 +1621,16 @@ variables. Runtime output removes `post-meta-wrap`, the author `avatar-wrap`, al
 Default/custom avatar attributes, copy, title, order, hrefs, and comments hash remain unchanged.
 Actual RED 2/4 becomes GREEN 4/4, and the complete three-suite post-row matrix is GREEN 13/13.
 This is not Wave 1 completion.
+
+The one-hundred-thirtieth slice migrates the authenticated populated `/sites/postList`
+multi-page first-page pagination from `site/postList.scala.html`, the generated pagination DOM in
+`yona-lib.js`, `_common.less`, `_page.less`, `_responsive.less`, and `_sprites.less`. Six stable
+StyleX owners cover the wrapper, list, repeated item variants, input interaction states, labels,
+and sprite-icon geometry through global theme variables and the shared mobile breakpoint. Runtime
+output removes `page-navigation-wrap`, `page-nums`, `page-num`, `ikon`, `delimiter`, `input-mini`,
+and label `off`; `nospinner` and the sprite-producing `ico`, `btn-pg-*`, and icon `off` remain.
+Actual RED 5/5 becomes GREEN 5/5, and the complete post-list owner matrix is GREEN 18/18. This is
+not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

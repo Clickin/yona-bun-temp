@@ -291,8 +291,9 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
-  await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
+  await expect(page.locator('[data-stylex-owner="site-post-list-pagination"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-post-list-pagination-item"]')).toHaveCount(5);
+  await expect(page.locator("#pagination")).not.toHaveClass(/\bpage-navigation-wrap\b/u);
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
@@ -1196,6 +1197,12 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-post-list-author-avatar-image",
           "site-post-list-metadata-item",
           "site-post-list-comments-icon",
+          "site-post-list-pagination",
+          "site-post-list-pagination-list",
+          "site-post-list-pagination-item",
+          "site-post-list-pagination-input",
+          "site-post-list-pagination-label",
+          "site-post-list-pagination-icon",
         ]).has(current.getAttribute("data-stylex-owner") ?? "")
       ) {
         return value
@@ -1299,6 +1306,23 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (current.matches(".post-meta-wrap > .post-meta-item")) {
           retiredPostListTokens.add("post-meta-item");
           retiredPostListTokens.add("post-comments");
+        }
+        if (current.matches("#pagination.page-navigation-wrap")) {
+          retiredPostListTokens.add("page-navigation-wrap");
+        }
+        if (current.matches("#pagination > .page-nums")) {
+          retiredPostListTokens.add("page-nums");
+        }
+        if (current.matches("#pagination > .page-nums > .page-num")) {
+          retiredPostListTokens.add("page-num");
+          retiredPostListTokens.add("ikon");
+          retiredPostListTokens.add("delimiter");
+        }
+        if (current.matches('#pagination input[name="pageNum"]')) {
+          retiredPostListTokens.add("input-mini");
+        }
+        if (current.matches("#pagination span.off")) {
+          retiredPostListTokens.add("off");
         }
         if (value.split(/\s+/u).some((token) => retiredPostListTokens.has(token))) {
           return value

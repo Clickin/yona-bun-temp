@@ -5,7 +5,7 @@ import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "..
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
-import { globalColors } from "../../theme.stylex";
+import { globalBreakpoints, globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type PostListRouteSearch = {
@@ -120,6 +120,76 @@ const styles = stylex.create({
   postCommentsIcon: {
     verticalAlign: globalColors.sitePostListCommentsIconVerticalAlign,
   },
+  paginationWrapper: {
+    width: globalColors.sitePostListPaginationWrapperWidth,
+    textAlign: globalColors.sitePostListPaginationWrapperTextAlign,
+    margin: globalColors.sitePostListPaginationWrapperMargin,
+    clear: globalColors.sitePostListPaginationWrapperClear,
+  },
+  paginationList: {
+    margin: globalColors.sitePostListPaginationListMargin,
+    marginLeft: {
+      default: globalColors.sitePostListPaginationListDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.sitePostListPaginationListMobileMarginLeft,
+    },
+    padding: globalColors.sitePostListPaginationListPadding,
+    listStyle: globalColors.sitePostListPaginationListStyle,
+    fontSize: globalColors.sitePostListPaginationListFontSize,
+    display: globalColors.sitePostListPaginationListDisplay,
+  },
+  paginationItem: {
+    display: globalColors.sitePostListPaginationItemDisplay,
+    padding: globalColors.sitePostListPaginationItemPadding,
+    fontSize: globalColors.sitePostListPaginationItemFontSize,
+    color: globalColors.sitePostListPaginationItemText,
+  },
+  paginationIconItem: {
+    padding: globalColors.sitePostListPaginationIconItemPadding,
+  },
+  paginationDelimiter: {
+    color: globalColors.sitePostListPaginationDelimiterText,
+    padding: globalColors.sitePostListPaginationDelimiterPadding,
+  },
+  paginationInput: {
+    margin: globalColors.sitePostListPaginationInputMargin,
+    width: globalColors.sitePostListPaginationInputWidth,
+    textAlign: globalColors.sitePostListPaginationInputTextAlign,
+    fontWeight: globalColors.sitePostListPaginationInputFontWeight,
+    borderWidth: globalColors.sitePostListPaginationInputBorderWidth,
+    borderStyle: globalColors.sitePostListPaginationInputBorderStyle,
+    borderColor: {
+      default: globalColors.sitePostListPaginationInputBorder,
+      ":hover": globalColors.sitePostListPaginationInputInteractiveBorder,
+      ":focus": globalColors.sitePostListPaginationInputInteractiveBorder,
+    },
+    color: {
+      ":hover": globalColors.sitePostListPaginationInputInteractiveText,
+      ":focus": globalColors.sitePostListPaginationInputInteractiveText,
+    },
+    boxShadow: {
+      ":hover": globalColors.sitePostListPaginationInputInteractiveShadow,
+      ":focus": globalColors.sitePostListPaginationInputInteractiveShadow,
+    },
+  },
+  paginationLabel: {
+    fontSize: globalColors.sitePostListPaginationLabelFontSize,
+    color: globalColors.sitePostListPaginationLabelText,
+  },
+  paginationOffLabel: {
+    color: globalColors.sitePostListPaginationOffLabelText,
+  },
+  paginationIcon: {
+    display: globalColors.sitePostListPaginationIconDisplay,
+    verticalAlign: globalColors.sitePostListPaginationIconVerticalAlign,
+    width: globalColors.sitePostListPaginationIconWidth,
+    height: globalColors.sitePostListPaginationIconHeight,
+  },
+  paginationPrevIcon: {
+    marginRight: globalColors.sitePostListPaginationPrevIconMarginRight,
+  },
+  paginationNextIcon: {
+    marginLeft: globalColors.sitePostListPaginationNextIconMarginLeft,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -135,6 +205,22 @@ const postAuthorAvatarStyleProps = stylex.props(styles.postAuthorAvatar);
 const postAuthorAvatarImageStyleProps = stylex.props(styles.postAuthorAvatarImage);
 const postMetadataItemStyleProps = stylex.props(styles.postMetadataItem);
 const postCommentsIconStyleProps = stylex.props(styles.postCommentsIcon);
+const paginationWrapperStyleProps = stylex.props(styles.paginationWrapper);
+const paginationListStyleProps = stylex.props(styles.paginationList);
+const paginationItemStyleProps = stylex.props(styles.paginationItem);
+const paginationIconItemStyleProps = stylex.props(styles.paginationItem, styles.paginationIconItem);
+const paginationDelimiterStyleProps = stylex.props(
+  styles.paginationItem,
+  styles.paginationDelimiter,
+);
+const paginationInputStyleProps = stylex.props(styles.paginationInput);
+const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
+const paginationOffLabelStyleProps = stylex.props(
+  styles.paginationLabel,
+  styles.paginationOffLabel,
+);
+const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -234,28 +320,70 @@ function PostListPagination({
   const hasNext = currentPage < totalPages;
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...paginationWrapperStyleProps}
+      className={paginationWrapperStyleProps.className}
+      data-stylex-owner="site-post-list-pagination"
+      id="pagination"
+    >
+      <ul
+        {...paginationListStyleProps}
+        className={paginationListStyleProps.className}
+        data-stylex-owner="site-post-list-pagination-list"
+      >
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-post-list-pagination-item"
+        >
           {hasPrev ? (
             <Link
               {...legacyPaginationLinkProps}
               search={{ pageNum: currentPage - 1 }}
               to="/sites/postList"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...paginationPrevIconStyleProps}
+                className={`ico btn-pg-prev ${paginationPrevIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-post-list-pagination-icon"
+              ></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="site-post-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...paginationPrevIconStyleProps}
+                className={`ico btn-pg-prev off ${paginationPrevIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-post-list-pagination-icon"
+              ></i>
+              <span
+                {...paginationOffLabelStyleProps}
+                className={paginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-post-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="site-post-list-pagination-item"
+        >
           <input
-            className="input-mini nospinner"
+            {...paginationInputStyleProps}
+            className={`nospinner ${paginationInputStyleProps.className ?? ""}`}
+            data-stylex-owner="site-post-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
@@ -285,22 +413,62 @@ function PostListPagination({
             defaultValue={currentPage}
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...paginationDelimiterStyleProps}
+          className={paginationDelimiterStyleProps.className}
+          data-pagination-variant="delimiter"
+          data-stylex-owner="site-post-list-pagination-item"
+        >
+          /
+        </li>
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="site-post-list-pagination-item"
+        >
+          {totalPages}
+        </li>
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-post-list-pagination-item"
+        >
           {hasNext ? (
             <Link
               {...legacyPaginationLinkProps}
               search={{ pageNum: currentPage + 1 }}
               to="/sites/postList"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="site-post-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...paginationNextIconStyleProps}
+                className={`ico btn-pg-next ${paginationNextIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-post-list-pagination-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...paginationOffLabelStyleProps}
+                className={paginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-post-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...paginationNextIconStyleProps}
+                className={`ico btn-pg-next off ${paginationNextIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-post-list-pagination-icon"
+              ></i>
             </>
           )}
         </li>
