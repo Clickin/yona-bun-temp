@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-postList.stylex.ts", import.meta.url);
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/postList.scala.html",
   import.meta.url,
@@ -181,8 +181,8 @@ test.describe("StyleX site post-list metadata subtree", () => {
       "sitePostListMetadataItemMarginInline",
       "sitePostListCommentsIconVerticalAlign",
     ]) {
-      expect(route).toContain(`globalColors.${variable}`);
-      expect(theme).toContain(variable);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(variable);
     }
   });
 

@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-postList.stylex.ts", import.meta.url);
 const owners = {
   icon: '[data-stylex-owner="site-post-list-pagination-icon"]',
   input: '[data-stylex-owner="site-post-list-pagination-input"]',
@@ -109,8 +109,8 @@ test.describe("StyleX site post-list pagination", () => {
       "sitePostListPaginationIconWidth",
       "sitePostListPaginationIconHeight",
     ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(token);
     }
   });
 

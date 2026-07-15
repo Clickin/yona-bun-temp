@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-post-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-postList.stylex.ts", import.meta.url);
 
 async function openPostList(page: Page) {
   const session = (route: Route) =>
@@ -70,10 +70,10 @@ test.describe("StyleX site post-list title strip", () => {
     expect(route).toContain('data-stylex-owner="site-post-list-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
+    expect(route).toContain("sitePostListColors.titleBorder");
     expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
     expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(theme).toContain("defineVars");
   });
 
   test("keeps the legacy title before the populated post list", async ({ page }) => {

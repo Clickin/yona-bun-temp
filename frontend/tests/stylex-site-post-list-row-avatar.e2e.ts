@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-postList.stylex.ts", import.meta.url);
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/postList.scala.html",
   import.meta.url,
@@ -153,8 +153,8 @@ test.describe("StyleX site post-list row and project avatar", () => {
     expect(route).toContain("styles.postListProjectAvatarImage");
 
     // The previous row-padding declarations must remain composed into the expanded owner.
-    expect(route).toContain("paddingBlock: globalColors.sitePostListRowPaddingBlock");
-    expect(route).toContain("paddingInline: globalColors.sitePostListRowPaddingInline");
+    expect(route).toContain('paddingBlock: "10px"');
+    expect(route).toContain('paddingInline: "10px"');
     for (const variable of [
       "sitePostListRowBorder",
       "sitePostListRowBorderStyle",
@@ -174,8 +174,8 @@ test.describe("StyleX site post-list row and project avatar", () => {
       "sitePostListAvatarImageWidth",
       "sitePostListAvatarImageVerticalAlign",
     ]) {
-      expect(route).toContain(`globalColors.${variable}`);
-      expect(theme).toContain(variable);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(variable);
     }
   });
 
