@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type PostListRouteSearch = {
@@ -29,6 +31,24 @@ const legacyUserLinkSearch = {
 const legacyCurrentSitePostListSidebarSearch = {
   pageNum: -1,
 } satisfies PostListRouteSearch;
+const styles = stylex.create({
+  titleArea: {
+    overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
+    marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
+    paddingBottom: globalColors.siteDiagnosticNoErrorTitlePaddingBottom,
+    borderBottomStyle: globalColors.siteDiagnosticNoErrorTitleBorderStyle,
+    borderBottomWidth: globalColors.siteDiagnosticNoErrorTitleBorderBottomWidth,
+    borderBottomColor: globalColors.siteDiagnosticNoErrorTitleBorder,
+  },
+  title: {
+    margin: globalColors.siteDiagnosticNoErrorHeadingMargin,
+    fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
+    color: globalColors.siteDiagnosticNoErrorHeadingText,
+    lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+  },
+});
+const titleAreaStyleProps = stylex.props(styles.titleArea);
+const titleStyleProps = stylex.props(styles.title);
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -75,8 +95,12 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div className="title_area">
-                <h2 className="pull-left">
+              <div
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
+                data-stylex-owner="site-post-list-title-strip"
+              >
+                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
