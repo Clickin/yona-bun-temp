@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/users/-signupform.stylex.ts", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
 const legacyFallbackSource = new URL(
   "../public/legacy-assets/stylesheets/legacy-fallback.css",
@@ -62,9 +62,9 @@ test.describe("StyleX standalone signup form", () => {
     expect(route).toContain('"standalone-signup-login-id"');
     expect(route).toContain('"standalone-signup-submit"');
     expect(route).toContain("stylex.props(styles.textInput, styles.passwordInput)");
-    expect(theme).toContain("standaloneSignupFormWidth");
-    expect(theme).toContain("standaloneSignupInputFocusBorderBottomColor");
-    expect(theme).toContain("standaloneSignupLoginLinkColor");
+    expect(theme).toContain("inputBorder");
+    expect(theme).toContain("accent");
+    expect(route).not.toContain("globalColors.");
     expect(legacyFallback).toContain(".signup-form-wrap .text");
     expect(legacyFallback).toContain(".signup-form-wrap {\n    width: 95% !important;");
     expect(legacyFallback).toContain(".signup-form-wrap .popover.left");

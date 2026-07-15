@@ -54,7 +54,9 @@ test.describe("StyleX standalone signup confirmation notice", () => {
 
     expect(route).toContain('data-stylex-owner="standalone-signup-confirmation-notice"');
     expect(route).toContain("styles.confirmationNotice");
-    expect(theme).toContain("standaloneSignupConfirmationNoticeTextAlign");
+    expect(route).toContain('textAlign: "center"');
+    expect(theme).not.toContain("standaloneSignupConfirmationNotice");
+    expect(route).not.toContain("globalColors.");
     expect(fallback).toContain(".center-txt");
   });
 

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/users/signupform.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/users/-signupform.stylex.ts", import.meta.url);
 const fallbackSource = new URL(
   "../public/legacy-assets/stylesheets/legacy-fallback.css",
   import.meta.url,
@@ -60,8 +60,9 @@ test.describe("StyleX standalone signup validation popover", () => {
     expect(route).toContain("stylex.props(styles.validationPopover)");
     expect(route).toContain("stylex.props(styles.validationPopoverArrow)");
     expect(route).toContain("standardPasswordSignup");
-    expect(theme).toContain("standaloneSignupValidationPopoverMobileLeft");
-    expect(theme).toContain("standaloneSignupValidationPopoverArrowLeftBorderColor");
+    expect(theme).toContain("popoverBorder");
+    expect(theme).toContain("popoverArrowBorder");
+    expect(route).not.toContain("globalColors.");
     expect(fallback).toContain(".signup-form-wrap .popover.left");
   });
 
