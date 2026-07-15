@@ -289,8 +289,12 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
-  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
-  await expect(page.locator("#pagination .page-nums .page-num")).toHaveCount(5);
+  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
+    /\bpage-navigation-wrap\b/u,
+  );
+  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination-item"]')).toHaveCount(
+    5,
+  );
   await expect(page.locator("#pagination.pagination")).toHaveCount(0);
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("max", "2");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveAttribute("min", "1");
@@ -558,7 +562,9 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     row.locator('[data-stylex-owner="site-issue-list-comments-icon"].yobicon-comments'),
   ).toHaveCount(1);
 
-  await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
+  await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
+    /\bpage-navigation-wrap\b/u,
+  );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
   const nextPageLink = page.locator("#pagination a", { hasText: "Next page" });
   await expect(nextPageLink).not.toHaveAttribute("pjax-page", "");
@@ -1221,6 +1227,12 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-issue-list-author-avatar-image",
           "site-issue-list-metadata-item",
           "site-issue-list-comments-icon",
+          "site-issue-list-pagination",
+          "site-issue-list-pagination-list",
+          "site-issue-list-pagination-item",
+          "site-issue-list-pagination-input",
+          "site-issue-list-pagination-label",
+          "site-issue-list-pagination-icon",
         ]).has(current.getAttribute("data-stylex-owner") ?? "")
       ) {
         return value
@@ -1267,6 +1279,42 @@ async function canonicalizeScreenRoots(page: Page) {
             (token) =>
               token !== "post-meta-item" && token !== "post-comments" && !token.startsWith("x"),
           )
+          .join(" ");
+      }
+      if (name === "class" && current.matches("#pagination")) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "page-navigation-wrap" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (name === "class" && current.matches("#pagination > ul")) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "page-nums" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (name === "class" && current.matches("#pagination > ul > li")) {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token !== "page-num" &&
+              token !== "ikon" &&
+              token !== "delimiter" &&
+              !token.startsWith("x"),
+          )
+          .join(" ");
+      }
+      if (name === "class" && current.matches('#pagination input[name="pageNum"]')) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "input-mini" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (name === "class" && current.matches("#pagination span")) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "off" && !token.startsWith("x"))
           .join(" ");
       }
       if (

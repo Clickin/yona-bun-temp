@@ -177,6 +177,12 @@ test.describe("StyleX site issue-list title strip", () => {
         "site-issue-list-author-avatar-image",
         "site-issue-list-metadata-item",
         "site-issue-list-comments-icon",
+        "site-issue-list-pagination",
+        "site-issue-list-pagination-list",
+        "site-issue-list-pagination-item",
+        "site-issue-list-pagination-input",
+        "site-issue-list-pagination-label",
+        "site-issue-list-pagination-icon",
       ]);
       return Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
         .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-three slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-four slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1660,6 +1660,17 @@ theme variables. `post-meta-wrap`, the author `avatar-wrap`, all three `post-met
 becomes GREEN 5/5, and the complete issue-list owner/behavior matrix passes 28/29 with only the
 pre-existing unrelated GNB `Feedback` fixture mismatch. Fresh live legacy visual comparison remains
 unverified. This is not Wave 1 completion.
+
+The one-hundred-thirty-fourth slice migrates the authenticated populated open-state first-page
+`/sites/issueList` pagination from `site/issueList.scala.html`, `yona-lib.js`, `_common.less`,
+`_page.less`, `_responsive.less`, and `_sprites.less`. Six stable owners cover the wrapper, list,
+repeated item variants, input interaction states, labels, and sprite-icon geometry through
+route-specific global theme variables and the shared mobile breakpoint. This consumer retires
+`page-navigation-wrap`, `page-nums`, `page-num`, `ikon`, `delimiter`, `input-mini`, and label `off`;
+`nospinner` plus sprite-producing `ico`, `btn-pg-*`, and icon `off` remain. Actual RED 5/5 becomes
+GREEN 5/5, and the complete issue-list owner/behavior matrix passes 33/34 with only the pre-existing
+unrelated GNB `Feedback` fixture mismatch. Fresh live legacy visual comparison remains unverified.
+This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -11,7 +11,7 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { type RuntimeConfig } from "../../runtime-config";
-import { globalColors } from "../../theme.stylex";
+import { globalBreakpoints, globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type IssueListSearch = {
@@ -125,6 +125,76 @@ const styles = stylex.create({
   issueListCommentsIcon: {
     verticalAlign: globalColors.siteIssueListCommentsIconVerticalAlign,
   },
+  issueListPaginationWrapper: {
+    width: globalColors.siteIssueListPaginationWrapperWidth,
+    textAlign: globalColors.siteIssueListPaginationWrapperTextAlign,
+    margin: globalColors.siteIssueListPaginationWrapperMargin,
+    clear: globalColors.siteIssueListPaginationWrapperClear,
+  },
+  issueListPaginationList: {
+    margin: globalColors.siteIssueListPaginationListMargin,
+    marginLeft: {
+      default: globalColors.siteIssueListPaginationListDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.siteIssueListPaginationListMobileMarginLeft,
+    },
+    padding: globalColors.siteIssueListPaginationListPadding,
+    listStyle: globalColors.siteIssueListPaginationListStyle,
+    fontSize: globalColors.siteIssueListPaginationListFontSize,
+    display: globalColors.siteIssueListPaginationListDisplay,
+  },
+  issueListPaginationItem: {
+    display: globalColors.siteIssueListPaginationItemDisplay,
+    padding: globalColors.siteIssueListPaginationItemPadding,
+    fontSize: globalColors.siteIssueListPaginationItemFontSize,
+    color: globalColors.siteIssueListPaginationItemText,
+  },
+  issueListPaginationIconItem: {
+    padding: globalColors.siteIssueListPaginationIconItemPadding,
+  },
+  issueListPaginationDelimiter: {
+    color: globalColors.siteIssueListPaginationDelimiterText,
+    padding: globalColors.siteIssueListPaginationDelimiterPadding,
+  },
+  issueListPaginationInput: {
+    margin: globalColors.siteIssueListPaginationInputMargin,
+    width: globalColors.siteIssueListPaginationInputWidth,
+    textAlign: globalColors.siteIssueListPaginationInputTextAlign,
+    fontWeight: globalColors.siteIssueListPaginationInputFontWeight,
+    borderWidth: globalColors.siteIssueListPaginationInputBorderWidth,
+    borderStyle: globalColors.siteIssueListPaginationInputBorderStyle,
+    borderColor: {
+      default: globalColors.siteIssueListPaginationInputBorder,
+      ":hover": globalColors.siteIssueListPaginationInputInteractiveBorder,
+      ":focus": globalColors.siteIssueListPaginationInputInteractiveBorder,
+    },
+    color: {
+      ":hover": globalColors.siteIssueListPaginationInputInteractiveText,
+      ":focus": globalColors.siteIssueListPaginationInputInteractiveText,
+    },
+    boxShadow: {
+      ":hover": globalColors.siteIssueListPaginationInputInteractiveShadow,
+      ":focus": globalColors.siteIssueListPaginationInputInteractiveShadow,
+    },
+  },
+  issueListPaginationLabel: {
+    fontSize: globalColors.siteIssueListPaginationLabelFontSize,
+    color: globalColors.siteIssueListPaginationLabelText,
+  },
+  issueListPaginationOffLabel: {
+    color: globalColors.siteIssueListPaginationOffLabelText,
+  },
+  issueListPaginationIcon: {
+    display: globalColors.siteIssueListPaginationIconDisplay,
+    verticalAlign: globalColors.siteIssueListPaginationIconVerticalAlign,
+    width: globalColors.siteIssueListPaginationIconWidth,
+    height: globalColors.siteIssueListPaginationIconHeight,
+  },
+  issueListPaginationPrevIcon: {
+    marginRight: globalColors.siteIssueListPaginationPrevIconMarginRight,
+  },
+  issueListPaginationNextIcon: {
+    marginLeft: globalColors.siteIssueListPaginationNextIconMarginLeft,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -142,6 +212,31 @@ const issueListAuthorAvatarStyleProps = stylex.props(styles.issueListAuthorAvata
 const issueListAuthorAvatarImageStyleProps = stylex.props(styles.issueListAuthorAvatarImage);
 const issueListMetadataItemStyleProps = stylex.props(styles.issueListMetadataItem);
 const issueListCommentsIconStyleProps = stylex.props(styles.issueListCommentsIcon);
+const issueListPaginationWrapperStyleProps = stylex.props(styles.issueListPaginationWrapper);
+const issueListPaginationListStyleProps = stylex.props(styles.issueListPaginationList);
+const issueListPaginationItemStyleProps = stylex.props(styles.issueListPaginationItem);
+const issueListPaginationIconItemStyleProps = stylex.props(
+  styles.issueListPaginationItem,
+  styles.issueListPaginationIconItem,
+);
+const issueListPaginationDelimiterStyleProps = stylex.props(
+  styles.issueListPaginationItem,
+  styles.issueListPaginationDelimiter,
+);
+const issueListPaginationInputStyleProps = stylex.props(styles.issueListPaginationInput);
+const issueListPaginationLabelStyleProps = stylex.props(styles.issueListPaginationLabel);
+const issueListPaginationOffLabelStyleProps = stylex.props(
+  styles.issueListPaginationLabel,
+  styles.issueListPaginationOffLabel,
+);
+const issueListPaginationPrevIconStyleProps = stylex.props(
+  styles.issueListPaginationIcon,
+  styles.issueListPaginationPrevIcon,
+);
+const issueListPaginationNextIconStyleProps = stylex.props(
+  styles.issueListPaginationIcon,
+  styles.issueListPaginationNextIcon,
+);
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
@@ -289,28 +384,70 @@ function IssueListPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...issueListPaginationWrapperStyleProps}
+      id="pagination"
+      className={issueListPaginationWrapperStyleProps.className}
+      data-stylex-owner="site-issue-list-pagination"
+    >
+      <ul
+        {...issueListPaginationListStyleProps}
+        className={issueListPaginationListStyleProps.className}
+        data-stylex-owner="site-issue-list-pagination-list"
+      >
+        <li
+          {...issueListPaginationIconItemStyleProps}
+          className={issueListPaginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-issue-list-pagination-item"
+        >
           {hasPrev ? (
             <Link
               {...legacyIssueListLinkProps}
               search={pageSearch(currentPage - 1)}
               to="/sites/issueList"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...issueListPaginationPrevIconStyleProps}
+                className={`ico btn-pg-prev ${issueListPaginationPrevIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-issue-list-pagination-icon"
+              ></i>
+              <span
+                {...issueListPaginationLabelStyleProps}
+                className={issueListPaginationLabelStyleProps.className}
+                data-stylex-owner="site-issue-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...issueListPaginationPrevIconStyleProps}
+                className={`ico btn-pg-prev off ${issueListPaginationPrevIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-issue-list-pagination-icon"
+              ></i>
+              <span
+                {...issueListPaginationOffLabelStyleProps}
+                className={issueListPaginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-issue-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...issueListPaginationItemStyleProps}
+          className={issueListPaginationItemStyleProps.className}
+          data-stylex-owner="site-issue-list-pagination-item"
+        >
           <input
-            className="input-mini nospinner"
+            {...issueListPaginationInputStyleProps}
+            className={`nospinner ${issueListPaginationInputStyleProps.className ?? ""}`}
+            data-stylex-owner="site-issue-list-pagination-input"
             defaultValue={currentPage}
             max={totalPages}
             min={1}
@@ -323,22 +460,62 @@ function IssueListPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...issueListPaginationDelimiterStyleProps}
+          className={issueListPaginationDelimiterStyleProps.className}
+          data-pagination-variant="delimiter"
+          data-stylex-owner="site-issue-list-pagination-item"
+        >
+          /
+        </li>
+        <li
+          {...issueListPaginationItemStyleProps}
+          className={issueListPaginationItemStyleProps.className}
+          data-stylex-owner="site-issue-list-pagination-item"
+        >
+          {totalPages}
+        </li>
+        <li
+          {...issueListPaginationIconItemStyleProps}
+          className={issueListPaginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-issue-list-pagination-item"
+        >
           {hasNext ? (
             <Link
               {...legacyIssueListLinkProps}
               search={pageSearch(currentPage + 1)}
               to="/sites/issueList"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...issueListPaginationLabelStyleProps}
+                className={issueListPaginationLabelStyleProps.className}
+                data-stylex-owner="site-issue-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...issueListPaginationNextIconStyleProps}
+                className={`ico btn-pg-next ${issueListPaginationNextIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-issue-list-pagination-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...issueListPaginationOffLabelStyleProps}
+                className={issueListPaginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-issue-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...issueListPaginationNextIconStyleProps}
+                className={`ico btn-pg-next off ${issueListPaginationNextIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-issue-list-pagination-icon"
+              ></i>
             </>
           )}
         </li>
