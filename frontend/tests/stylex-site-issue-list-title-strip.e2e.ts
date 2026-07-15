@@ -102,7 +102,9 @@ test.describe("StyleX site issue-list title strip", () => {
       owner.locator(':scope > h2[data-stylex-owner="site-issue-list-title-heading"]'),
     ).toHaveText("Issues");
     expect(
-      await page.locator(".span10 > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
+      await page
+        .locator('[data-stylex-owner="site-issue-list-setting-content-column"] > *')
+        .evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "UL", "UL", "DIV"]);
     await expect(
       page.locator(`${ownerSelector} + ul[data-stylex-owner="site-issue-list-state-tabs"]`),
@@ -200,7 +202,9 @@ test.describe("StyleX site issue-list title strip", () => {
         "site-issue-list-pagination-label",
         "site-issue-list-pagination-icon",
       ]);
-      return Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+      return Array.from(
+        document.querySelectorAll('[data-stylex-owner="site-issue-list-setting-content-column"] *'),
+      )
         .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
         .map((element) => element.closest<HTMLElement>("[data-stylex-owner]"))
         .filter((owner) => owner === null || !allowedOwners.has(owner.dataset.stylexOwner ?? ""))

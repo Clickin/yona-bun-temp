@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 paused after one hundred fifty slices; theme-boundary correction blocks resume
+Status: Wave 1 active after one hundred fifty-one slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1719,6 +1719,15 @@ for independent consumers. Actual RED 5/5 becomes GREEN 5/5, the wrapped mobile 
 GREEN 5/5, and the complete issue-list matrix is 43/44 with only the pre-existing unrelated GNB
 `Feedback` fixture mismatch. Fresh live legacy visual comparison remains explicitly unverified.
 This is not Wave 1 completion.
+
+The following direct-grid slice migrates only the four management layout owners for authenticated
+populated-open `/sites/issueList?state=open`: `.site-setting-wrap`, its direct `.row-fluid`, direct
+`.span2`, and direct `.span10`. Colocated StyleX reproduces Bootstrap 2.3.1 clearfix, percentage
+columns, gutter, box model, and max-767 stacking without theme variables. The nested issue-row
+`.row-fluid`, outer shell, sidebar internals, and all content owners remain outside this slice.
+Desktop deletion remains fallback-equivalent. On mobile, deletion evidence records the existing
+unlayered `app.css` bridge drift: the fixture stays floated at desktop percentages and gutter,
+while the route-local StyleX owners supply the correct 100% stacked, float-none output.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

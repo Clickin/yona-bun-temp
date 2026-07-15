@@ -38,6 +38,49 @@ const legacySiteIssueListSidebarSearch = {
   __legacySiteIssueListSidebarActiveMarker: "inactive",
 };
 const styles = stylex.create({
+  settingWrap: {
+    margin: "0px auto",
+  },
+  settingGrid: {
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: {
+      default: "left",
+      "@media (max-width: 767px)": "none",
+    },
+    minHeight: "30px",
+  },
+  settingSidebarColumn: {
+    marginLeft: "0px",
+    width: {
+      default: "14.893617021276595%",
+      "@media (max-width: 767px)": "100%",
+    },
+  },
+  settingContentColumn: {
+    marginLeft: {
+      default: "2.127659574468085%",
+      "@media (max-width: 767px)": "0px",
+    },
+    width: {
+      default: "82.97872340425532%",
+      "@media (max-width: 767px)": "100%",
+    },
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -422,12 +465,21 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
         </div>
       </div>
       <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
-          <div className="row-fluid">
-            <div className="span2">
+        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-issue-list-setting-wrap">
+          <div
+            {...stylex.props(styles.settingGrid)}
+            data-stylex-owner="site-issue-list-setting-grid"
+          >
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
+              data-stylex-owner="site-issue-list-setting-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
+              data-stylex-owner="site-issue-list-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-issue-list-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-issue-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.issueList" />

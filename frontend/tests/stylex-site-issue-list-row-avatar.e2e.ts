@@ -135,7 +135,7 @@ test.describe("StyleX site issue-list row and project avatar", () => {
     expect(route).toContain("styles.issueListProjectAvatar");
     expect(route).toContain("styles.issueListProjectAvatarImage");
     expect(route).toContain('paddingBlock: "10px"');
-    expect(route).toContain('paddingInline: "10px"');
+    expect(route).toContain('paddingInline: "0px"');
     for (const variable of [
       "siteIssueListRowBorder",
       "siteIssueListRowBorderStyle",

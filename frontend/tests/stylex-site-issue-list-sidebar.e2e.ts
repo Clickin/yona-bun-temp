@@ -179,7 +179,7 @@ test.describe("StyleX site issue list sidebar", () => {
     for (const suffix of suffixes) {
       const key = `siteIssueListSidebar${suffix}`;
       expect(route).not.toContain("globalColors.");
-      expect(theme).not.toContain(imported);
+      expect(theme).not.toContain(key);
     }
     for (const retired of [
       'className="site-setting-nav"',
@@ -334,7 +334,12 @@ test.describe("StyleX site issue list sidebar", () => {
         a.append(span);
         li.append(a);
         ul.append(li);
-        actual.parentElement!.append(ul);
+        const fixture = document.createElement("div");
+        fixture.className = "site-setting-wrap";
+        fixture.style.cssText = "position:absolute;left:-10000px";
+        fixture.innerHTML = '<div class="row-fluid"><div class="span2"></div></div>';
+        fixture.querySelector(".span2")!.append(ul);
+        document.body.append(fixture);
         const pick = (element: Element, props: string[]) =>
           props.map((prop) => getComputedStyle(element).getPropertyValue(prop));
         const result = {
@@ -373,7 +378,7 @@ test.describe("StyleX site issue list sidebar", () => {
             ]),
           ],
         };
-        ul.remove();
+        fixture.remove();
         return result;
       }, owners);
       expect(fallback.sidebar[0]).toEqual(fallback.sidebar[1]);
