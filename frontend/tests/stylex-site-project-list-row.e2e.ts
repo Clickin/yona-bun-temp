@@ -4,7 +4,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const rowSelector = '[data-stylex-owner="site-project-list-row"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 
 async function openProjectList(page: Page) {
   const session = {
@@ -63,11 +62,8 @@ async function openProjectList(page: Page) {
 }
 
 test.describe("StyleX site project-list populated rows", () => {
-  test("uses canonical row, avatar, and column variables through explicit owners", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("keeps row geometry inline and paint in the route theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     expect(route).toContain('data-stylex-owner="site-project-list-row"');
     expect(route).toContain('data-stylex-owner="site-project-list-row-avatar"');
@@ -77,23 +73,12 @@ test.describe("StyleX site project-list populated rows", () => {
     expect(route).toContain("styles.projectRowAvatar");
     expect(route).toContain("styles.projectRowAvatarImage");
     expect(route).toContain("styles.projectRowColumn");
-    expect(route).toContain("globalColors.siteProjectListRowBorder");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarWidth");
-    expect(route).toContain("globalColors.siteProjectListRowEvenSurface");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarDisplay");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarVerticalAlign");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarOverflow");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarSurface");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarBorderRadius");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarImageWidth");
-    expect(route).toContain("globalColors.siteProjectListRowAvatarImageVerticalAlign");
-    expect(route).toContain("globalColors.siteProjectListRowColumnFontSize");
-    expect(theme).toContain("siteProjectListRowLineHeight");
-    expect(theme).toContain("siteProjectListRowAvatarFloat");
-    expect(theme).toContain("siteProjectListRowEvenSurface");
-    expect(theme).toContain("siteProjectListRowAvatarDisplay");
-    expect(theme).toContain("siteProjectListRowAvatarImageVerticalAlign");
-    expect(theme).toContain("siteProjectListRowColumnWordBreak");
+    expect(route).toContain("borderBottomColor: siteProjectListTheme.listBorder");
+    expect(route).toContain("backgroundColor: siteProjectListTheme.rowEvenSurface");
+    expect(route).toContain('width: "45px"');
+    expect(route).toContain('display: "inline-block"');
+    expect(route).toContain('wordBreak: "break-all"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps populated project link, copy, column, and action order", async ({ page }) => {

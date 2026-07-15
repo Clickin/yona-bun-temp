@@ -3,7 +3,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const owners = {
   button: '[data-stylex-owner="site-project-list-search-button"]',
   form: '[data-stylex-owner="site-project-list-search"]',
@@ -65,11 +64,8 @@ async function openProjectSearch(page: Page, initialFilter = "road", pageNum = 3
 }
 
 test.describe("StyleX site project-list title search", () => {
-  test("uses exactly four stable owners and global theme variables", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("uses four stable owners with inline geometry and a route paint theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     for (const owner of Object.values(owners)) {
       expect(route).toContain(owner.slice(1, -1));
@@ -83,26 +79,13 @@ test.describe("StyleX site project-list title search", () => {
       expect(route).toContain(`styles.${style}`);
     }
     expect(route).toContain("globalBreakpoints.mobile");
-    for (const token of [
-      "siteProjectListSearchFormMargin",
-      "siteProjectListSearchBarBorder",
-      "siteProjectListSearchBarRadius",
-      "siteProjectListSearchBarPadding",
-      "siteProjectListSearchBarSurface",
-      "siteProjectListSearchBarMobileMargin",
-      "siteProjectListSearchTextboxWidth",
-      "siteProjectListSearchTextboxMobileWidth",
-      "siteProjectListSearchTextboxMargin",
-      "siteProjectListSearchTextboxPadding",
-      "siteProjectListSearchTextboxTransition",
-      "siteProjectListSearchButtonSurface",
-      "siteProjectListSearchButtonPosition",
-      "siteProjectListSearchButtonTop",
-      "siteProjectListSearchButtonRight",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
-    }
+    expect(route).toContain("backgroundColor: siteProjectListTheme.searchSurface");
+    expect(route).toContain("borderColor: siteProjectListTheme.searchBorder");
+    expect(route).toContain('padding: "4px 25px 4px 5px"');
+    expect(route).toContain('default: "350px"');
+    expect(route).toContain('[globalBreakpoints.mobile]: "inherit"');
+    expect(route).toContain('position: "absolute"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps legacy DOM order, copy, glyph primitive, and filter SPA behavior", async ({

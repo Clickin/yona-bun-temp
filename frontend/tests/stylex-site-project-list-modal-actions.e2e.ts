@@ -3,7 +3,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const modal = '[data-stylex-owner="site-project-list-delete-modal"]';
 const footer = '[data-stylex-owner="site-project-list-delete-modal-footer"]';
 const backdrop = '[data-stylex-owner="site-project-list-delete-modal-backdrop"]';
@@ -361,49 +360,16 @@ test.describe("StyleX site project-list delete modal actions", () => {
     );
   });
 
-  test("declares the two modal action styles through global theme variables", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("declares modal action geometry inline and paint in the route theme", async () => {
+    const route = await readFile(routeSource, "utf8");
     expect(route).toContain("styles.deleteModalAction");
     expect(route).toContain("styles.deleteModalConfirmAction");
     for (const owner of Object.values(actions)) expect(route).toContain(owner.slice(1, -1));
-    for (const token of [
-      "siteProjectListModalActionTextAlign",
-      "siteProjectListModalActionWhiteSpace",
-      "siteProjectListModalActionText",
-      "siteProjectListModalActionSurface",
-      "siteProjectListModalActionTextShadow",
-      "siteProjectListModalActionBorderRadius",
-      "siteProjectListModalActionDisplay",
-      "siteProjectListModalActionPadding",
-      "siteProjectListModalActionVerticalAlign",
-      "siteProjectListModalActionCursor",
-      "siteProjectListModalActionLineHeight",
-      "siteProjectListModalActionFontSize",
-      "siteProjectListModalActionTransition",
-      "siteProjectListModalActionOutline",
-      "siteProjectListModalActionPosition",
-      "siteProjectListModalActionMarginBottom",
-      "siteProjectListModalActionMarginLeft",
-      "siteProjectListModalActionFirstChildMarginLeft",
-      "siteProjectListModalActionBorder",
-      "siteProjectListModalActionBorderStyle",
-      "siteProjectListModalActionBorderWidth",
-      "siteProjectListModalActionInteractiveBorder",
-      "siteProjectListModalActionShadow",
-      "siteProjectListModalActionZIndex",
-      "siteProjectListModalActionInteractiveSurface",
-      "siteProjectListModalActionInteractiveText",
-      "siteProjectListModalActionInteractiveTextDecoration",
-      "siteProjectListModalConfirmText",
-      "siteProjectListModalConfirmSurface",
-      "siteProjectListModalConfirmBorder",
-      "siteProjectListModalConfirmInteractiveSurface",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
-    }
+    expect(route).toContain("default: siteProjectListTheme.modalActionText");
+    expect(route).toContain("default: siteProjectListTheme.modalActionSurface");
+    expect(route).toContain("default: siteProjectListTheme.modalConfirmSurface");
+    expect(route).toContain('padding: "4px 12px"');
+    expect(route).toContain('transition: "all 0.3s ease"');
+    expect(route).not.toContain("globalColors.");
   });
 });

@@ -3,7 +3,6 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/projectList.scala.html",
   import.meta.url,
@@ -92,29 +91,18 @@ async function openProjectList(page: Page) {
 
 test.describe("StyleX site project-list title/search shell", () => {
   test("pins the Scala shell, full cascade, and exactly three title boundaries", async () => {
-    const [
-      route,
-      theme,
-      template,
-      layout,
-      yobi,
-      pageLess,
-      responsive,
-      yobiUi,
-      override,
-      bootstrap,
-    ] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(templateSource, "utf8"),
-      readFile(layoutSource, "utf8"),
-      readFile(yobiSource, "utf8"),
-      readFile(pageLessSource, "utf8"),
-      readFile(responsiveLessSource, "utf8"),
-      readFile(yobiUiLessSource, "utf8"),
-      readFile(overrideLessSource, "utf8"),
-      readFile(bootstrapSource, "utf8"),
-    ]);
+    const [route, template, layout, yobi, pageLess, responsive, yobiUi, override, bootstrap] =
+      await Promise.all([
+        readFile(routeSource, "utf8"),
+        readFile(templateSource, "utf8"),
+        readFile(layoutSource, "utf8"),
+        readFile(yobiSource, "utf8"),
+        readFile(pageLessSource, "utf8"),
+        readFile(responsiveLessSource, "utf8"),
+        readFile(yobiUiLessSource, "utf8"),
+        readFile(overrideLessSource, "utf8"),
+        readFile(bootstrapSource, "utf8"),
+      ]);
 
     expect(template).toContain('<div class="title_area">');
     expect(template).toContain('<h2 class="pull-left">');
@@ -138,21 +126,13 @@ test.describe("StyleX site project-list title/search shell", () => {
 
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const token of [
-      "siteDiagnosticNoErrorTitleOverflow",
-      "siteDiagnosticNoErrorTitleMarginBottom",
-      "siteDiagnosticNoErrorTitlePaddingBottom",
-      "siteDiagnosticNoErrorTitleBorder",
-      "siteDiagnosticNoErrorHeadingMargin",
-      "siteDiagnosticNoErrorHeadingFontSize",
-      "siteDiagnosticNoErrorHeadingText",
-      "siteDiagnosticNoErrorHeadingLineHeight",
-      "siteProjectListTitleHeadingFloat",
-      "siteProjectListSearchFormMargin",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
-    }
+    expect(route).toContain('overflow: "hidden"');
+    expect(route).toContain('marginBottom: "29px"');
+    expect(route).toContain("borderBottomColor: siteProjectListTheme.titleBorder");
+    expect(route).toContain('fontSize: "1.5em"');
+    expect(route).toContain("color: siteProjectListTheme.titleText");
+    expect(route).toContain('float: "left"');
+    expect(route).not.toContain("globalColors.");
     for (const searchOwner of [
       "site-project-list-search-bar",
       "site-project-list-search-textbox",

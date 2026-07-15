@@ -1,6 +1,6 @@
 # Frontend StyleX Migration Ledger
 
-Status: Wave 0 infrastructure active; Wave 1 one hundred fifty slices verified
+Status: Wave 1 paused after one hundred fifty slices; theme-boundary correction active
 Date: 2026-07-15
 
 Frozen files under `yona-original/app/assets/stylesheets/**` and
@@ -8,10 +8,11 @@ Frozen files under `yona-original/app/assets/stylesheets/**` and
 `frontend/scripts/build-legacy-css.mjs`; no row permits editing those sources or bulk-rewriting
 selectors.
 
-`frontend/src/theme.stylex.ts` is the canonical global variable and future theme-override entry.
-The sixty-six verified slices define only evidenced shell/user-menu values, each cited to its
-frozen selector, LESS variable, or legacy state script; no dark-mode values or toggle are implied.
-Every migrated concrete value is exposed through the canonical global theme entry.
+Theme variables are override boundaries, not a registry for every migrated literal. Common theme
+sets may contain only genuinely shared semantic paint; route-only paint belongs to route-owned
+`stylex.defineVars`, while geometry, spacing, typography metrics, and behavior values are written
+directly in the owning `stylex.create`. The active correction inventory and resume gate live in
+`docs/provenance/frontend-stylex-theme-boundary-correction.md`.
 
 ## Runtime fallback inventory
 

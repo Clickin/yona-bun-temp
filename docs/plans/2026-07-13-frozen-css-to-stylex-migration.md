@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred fifty slices complete
+Status: Wave 1 paused after one hundred fifty slices; theme-boundary correction blocks resume
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -144,19 +144,38 @@ consumers. Do not create a speculative design-system layer.
 
 ### 4.2 Tokens
 
-`frontend/src/theme.stylex.ts` is the canonical global StyleX variable entry and future theme
-override boundary. Add typed variables only for exact legacy values used by migrated rules;
-`stylex.defineVars` values must cite the source declaration or variable. Dark-mode values and a
-toggle remain out of scope until legacy-equivalent requirements exist. Token work does not
-authorize palette, typography, spacing, or naming changes.
+StyleX variables are theme override boundaries, not a second centralized stylesheet. A common
+theme may contain only semantic colors, surfaces, border colors, and theme-dependent shadows that
+multiple real consumers share with the same meaning. Route-specific theme values belong to a
+route-specific `stylex.defineVars` set beside that route or in its route-owned module.
 
-Suggested minimal groups:
+Geometry and non-theme presentation values belong directly in the owning `stylex.create` block:
+`margin`, `padding`, `width`, `height`, offsets, display, font size/weight/line height, border
+width/style, radius, responsive geometry, and similar values must not be routed through a variable
+that is not reused as a theme override. A repeated literal alone does not justify a common token.
 
-- typography and line height;
-- Yobi orange/link/status colors;
-- border colors and radii;
-- responsive breakpoints;
-- sprite/icon asset references that remain CSS-backed.
+Legacy traceability is proven by colocated source comments, focused E2E, and the migration ledger;
+it is not proven by moving every literal into `frontend/src/theme.stylex.ts`. Dark-mode values and
+a toggle remain out of scope, but the variable boundary must already permit them without mixing in
+route geometry.
+
+### 4.2.1 Theme-boundary correction gate
+
+Wave 1 route migration is paused. Before selecting another route/state, audit every definition in
+`frontend/src/theme.stylex.ts` and every existing `globalColors.*` consumer, then:
+
+1. inline every non-theme value in its owning `stylex.create` block;
+2. move route-only theme values into route-specific variable sets;
+3. retain in the common theme only genuinely shared semantic theme values;
+4. remove the misleading `globalColors` catch-all after all consumers are migrated;
+5. update focused tests and provenance so they assert the new ownership boundary without treating
+   variable indirection as legacy evidence;
+6. pass affected browser parity, full frontend typecheck/Vitest/build/StyleX verification, frozen
+   hashes, and the mandatory turn commit.
+
+The original Wave 1 route/state sequence may resume only after the inventory has zero unclassified
+definitions, zero non-theme values in theme variable sets, zero route-only values in the common
+theme, and no remaining `globalColors` catch-all consumer.
 
 ### 4.3 Global-rule and font boundary
 

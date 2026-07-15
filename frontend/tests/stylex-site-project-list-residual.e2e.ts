@@ -6,7 +6,6 @@ const containerSelector = '[data-stylex-owner="site-project-list-container"]';
 const projectNameSelector = '[data-stylex-owner="site-project-list-project-name"]';
 const deleteActionSelector = '[data-stylex-owner="site-project-list-delete-action"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 
 async function openPopulatedProjectList(page: Page) {
   const session = {
@@ -69,11 +68,8 @@ async function openPopulatedProjectList(page: Page) {
 }
 
 test.describe("StyleX site project-list residual populated surfaces", () => {
-  test("uses global theme variables for all three explicit residual owners", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("keeps residual geometry inline and delete paint in the route theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     expect(route).toContain('data-stylex-owner="site-project-list-container"');
     expect(route).toContain('data-stylex-owner="site-project-list-project-name"');
@@ -81,22 +77,14 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
     expect(route).toContain("styles.projectListContainer");
     expect(route).toContain("styles.projectListProjectName");
     expect(route).toContain("styles.projectListDeleteAction");
-    expect(route).toContain("globalColors.siteProjectListContainerListStyle");
-    expect(route).toContain("globalColors.siteProjectListProjectNameFontSize");
-    expect(route).toContain("globalColors.siteProjectListProjectNameFontWeight");
-    expect(route).toContain("globalColors.siteProjectListDeleteText");
-    expect(route).toContain("globalColors.siteProjectListDeleteSurface");
-    expect(route).toContain("globalColors.siteProjectListDeleteHoverSurface");
-    expect(route).toContain("globalColors.siteProjectListDeleteBorder");
-    expect(route).toContain("globalColors.siteProjectListDeletePadding");
-    expect(route).toContain("globalColors.siteProjectListDeleteFirstChildMarginLeft");
-    expect(route).toContain("globalColors.siteProjectListDeleteTransition");
-    expect(theme).toContain('siteProjectListContainerListStyle: "none"');
-    expect(theme).toContain('siteProjectListProjectNameFontSize: "14px"');
-    expect(theme).toContain('siteProjectListProjectNameFontWeight: "bold"');
-    expect(theme).toContain('siteProjectListDeleteText: "#fff"');
-    expect(theme).toContain('siteProjectListDeleteSurface: "#c93426"');
-    expect(theme).toContain('siteProjectListDeleteHoverSurface: "#b13427"');
+    expect(route).toContain('listStyle: "none"');
+    expect(route).toContain('fontSize: "14px"');
+    expect(route).toContain('fontWeight: "bold"');
+    expect(route).toContain("default: siteProjectListTheme.deleteSurface");
+    expect(route).toContain('":hover": siteProjectListTheme.deleteInteractiveSurface');
+    expect(route).toContain('padding: "4px 12px"');
+    expect(route).toContain('transition: "all 0.3s ease"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps copy, row order, project navigation, and React-owned delete interaction", async ({

@@ -3,7 +3,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const owners = {
   icon: '[data-stylex-owner="site-project-list-pagination-icon"]',
   input: '[data-stylex-owner="site-project-list-pagination-input"]',
@@ -63,11 +62,8 @@ async function openPagination(page: Page, pageNum = 1) {
 }
 
 test.describe("StyleX site project-list pagination", () => {
-  test("uses six stable owners and global theme variables", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("uses six stable owners with inline geometry and a route paint theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     for (const owner of Object.values(owners)) {
       expect(route).toContain(owner.slice(1, -1));
@@ -88,22 +84,13 @@ test.describe("StyleX site project-list pagination", () => {
       expect(route).toContain(`styles.${style}`);
     }
     expect(route).toContain("globalBreakpoints.mobile");
-    for (const token of [
-      "siteProjectListPaginationWrapperMargin",
-      "siteProjectListPaginationListDesktopMarginLeft",
-      "siteProjectListPaginationListMobileMarginLeft",
-      "siteProjectListPaginationItemText",
-      "siteProjectListPaginationInputBorder",
-      "siteProjectListPaginationInputInteractiveText",
-      "siteProjectListPaginationInputInteractiveShadow",
-      "siteProjectListPaginationLabelText",
-      "siteProjectListPaginationOffLabelText",
-      "siteProjectListPaginationIconWidth",
-      "siteProjectListPaginationIconHeight",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
-    }
+    expect(route).toContain('margin: "20px 0px"');
+    expect(route).toContain('default: "-120px"');
+    expect(route).toContain("color: siteProjectListTheme.paginationText");
+    expect(route).toContain("default: siteProjectListTheme.paginationInputBorder");
+    expect(route).toContain("siteProjectListTheme.paginationInputInteractiveShadow");
+    expect(route).toContain('width: "6px"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps legacy order, copy, query-preserving SPA navigation, and input behavior", async ({

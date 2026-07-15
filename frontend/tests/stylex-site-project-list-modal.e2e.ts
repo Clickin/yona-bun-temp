@@ -3,7 +3,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const owners = {
   backdrop: '[data-stylex-owner="site-project-list-delete-modal-backdrop"]',
   body: '[data-stylex-owner="site-project-list-delete-modal-body"]',
@@ -82,11 +81,8 @@ async function showDeleteModal(page: Page) {
 }
 
 test.describe("StyleX site project-list delete modal", () => {
-  test("uses exactly six stable presentation owners and global theme variables", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("uses six stable owners with inline geometry and a route paint theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     for (const owner of Object.values(owners)) expect(route).toContain(owner.slice(1, -1));
     for (const style of [
@@ -100,73 +96,13 @@ test.describe("StyleX site project-list delete modal", () => {
       expect(route).toContain(`styles.${style}`);
     }
     expect(route).toContain("globalBreakpoints.mobile");
-    for (const token of [
-      "siteProjectListModalPosition",
-      "siteProjectListModalDesktopTop",
-      "siteProjectListModalMobileTop",
-      "siteProjectListModalDesktopLeft",
-      "siteProjectListModalMobileLeft",
-      "siteProjectListModalDesktopRight",
-      "siteProjectListModalMobileRight",
-      "siteProjectListModalZIndex",
-      "siteProjectListModalDesktopWidth",
-      "siteProjectListModalMobileWidth",
-      "siteProjectListModalDesktopMarginLeft",
-      "siteProjectListModalMobileMarginLeft",
-      "siteProjectListModalMobileMarginRight",
-      "siteProjectListModalSurface",
-      "siteProjectListModalBorder",
-      "siteProjectListModalBorderRadius",
-      "siteProjectListModalBorderStyle",
-      "siteProjectListModalBorderWidth",
-      "siteProjectListModalOutline",
-      "siteProjectListModalShadow",
-      "siteProjectListModalBackgroundClip",
-      "siteProjectListModalOpacity",
-      "siteProjectListModalTransition",
-      "siteProjectListModalHeaderPadding",
-      "siteProjectListModalHeaderBorder",
-      "siteProjectListModalHeaderBorderStyle",
-      "siteProjectListModalHeaderBorderWidth",
-      "siteProjectListModalCloseFloat",
-      "siteProjectListModalCloseFontSize",
-      "siteProjectListModalCloseFontWeight",
-      "siteProjectListModalCloseLineHeight",
-      "siteProjectListModalCloseText",
-      "siteProjectListModalCloseTextShadow",
-      "siteProjectListModalCloseOpacity",
-      "siteProjectListModalCloseHoverOpacity",
-      "siteProjectListModalCloseDesktopPadding",
-      "siteProjectListModalCloseMobilePadding",
-      "siteProjectListModalCloseDesktopMargin",
-      "siteProjectListModalCloseMobileMargin",
-      "siteProjectListModalCloseSurface",
-      "siteProjectListModalCloseBorderStyle",
-      "siteProjectListModalCloseBorderWidth",
-      "siteProjectListModalCloseCursor",
-      "siteProjectListModalCloseAppearance",
-      "siteProjectListModalBodyPosition",
-      "siteProjectListModalBodyMaxHeight",
-      "siteProjectListModalBodyPadding",
-      "siteProjectListModalBodyOverflowY",
-      "siteProjectListModalFooterPadding",
-      "siteProjectListModalFooterMarginBottom",
-      "siteProjectListModalFooterTextAlign",
-      "siteProjectListModalFooterSurface",
-      "siteProjectListModalFooterBorder",
-      "siteProjectListModalFooterBorderStyle",
-      "siteProjectListModalFooterBorderWidth",
-      "siteProjectListModalFooterRadius",
-      "siteProjectListModalFooterShadow",
-      "siteProjectListModalBackdropPosition",
-      "siteProjectListModalBackdropInset",
-      "siteProjectListModalBackdropSurface",
-      "siteProjectListModalBackdropOpacity",
-      "siteProjectListModalBackdropZIndex",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
-    }
+    expect(route).toContain('position: "fixed"');
+    expect(route).toContain('default: "560px"');
+    expect(route).toContain("backgroundColor: siteProjectListTheme.modalSurface");
+    expect(route).toContain("boxShadow: siteProjectListTheme.modalShadow");
+    expect(route).toContain('maxHeight: "400px"');
+    expect(route).toContain("backgroundColor: siteProjectListTheme.modalBackdropSurface");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps legacy copy and order while React owns every dismiss path", async ({ page }) => {

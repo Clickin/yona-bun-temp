@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-project-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const globalThemeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 
 async function openProjectList(page: Page) {
   const session = {
@@ -54,20 +54,22 @@ async function openProjectList(page: Page) {
 }
 
 test.describe("StyleX site project-list title strip", () => {
-  test("reuses canonical global title variables through the explicit owner", async () => {
-    const [route, theme] = await Promise.all([
+  test("keeps title geometry inline and paint in the route theme", async () => {
+    const [route, globalTheme] = await Promise.all([
       readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
+      readFile(globalThemeSource, "utf8"),
     ]);
 
     expect(route).toContain('data-stylex-owner="site-project-list-title-strip"');
     expect(route).toContain('data-stylex-owner="site-project-list-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
+    expect(route).toContain("borderBottomColor: siteProjectListTheme.titleBorder");
+    expect(route).toContain('marginBottom: "29px"');
     expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
     expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).not.toContain("globalColors.");
+    expect(globalTheme).not.toMatch(/^\s+siteProjectList[A-Z]/m);
   });
 
   test("keeps the legacy title before the search form", async ({ page }) => {

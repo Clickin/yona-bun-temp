@@ -4,7 +4,6 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-project-list-listhead"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 
 async function openProjectList(page: Page) {
   const session = {
@@ -54,21 +53,17 @@ async function openProjectList(page: Page) {
 }
 
 test.describe("StyleX site project-list list header", () => {
-  test("uses canonical list-header variables through the explicit owner", async () => {
-    const [route, theme] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-    ]);
+  test("keeps list-header geometry inline and paint in the route theme", async () => {
+    const route = await readFile(routeSource, "utf8");
 
     expect(route).toContain('data-stylex-owner="site-project-list-listhead"');
     expect(route).toContain("styles.listHead");
     expect(route).toContain("styles.listHeadTitle");
-    expect(route).toContain("globalColors.siteProjectListHeadSurface");
-    expect(route).toContain("globalColors.siteProjectListHeadColumnPadding");
+    expect(route).toContain("backgroundColor: siteProjectListTheme.listHeadSurface");
+    expect(route).toContain('padding: "0px 20px"');
     expect(route).toContain('`row-fluid listhead ${listHeadStyleProps.className ?? ""}`');
     expect(route).toContain('`span5 listhead-title ${listHeadTitleStyleProps.className ?? ""}`');
-    expect(theme).toContain("siteProjectListHeadSurface");
-    expect(theme).toContain("siteProjectListHeadColumnPadding");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps the legacy populated header column order and copy", async ({ page }) => {
