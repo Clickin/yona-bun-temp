@@ -29,6 +29,9 @@ const styles = stylex.create({
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
     float: globalColors.siteUpdateTitleHeadingFloat,
   },
+  noUpdateParagraph: {
+    margin: globalColors.siteUpdateNoUpdateParagraphMargin,
+  },
   downloadAction: {
     backgroundColor: {
       default: globalColors.siteUpdateDownloadActionSurface,
@@ -83,6 +86,7 @@ const styles = stylex.create({
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const noUpdateParagraphStyleProps = stylex.props(styles.noUpdateParagraph);
 
 export const Route = createFileRoute("/sites/update")({
   component: SiteUpdateRoute,
@@ -212,10 +216,14 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
         </p>
       ) : null}
       {response.currentVersion ? (
-        <p>{t("site.update.currentVersion", { args: [response.currentVersion] })}</p>
+        <p {...noUpdateParagraphStyleProps} data-stylex-owner="site-update-current-version">
+          {t("site.update.currentVersion", { args: [response.currentVersion] })}
+        </p>
       ) : null}
       {!response.versionToUpdate && !response.error ? (
-        <p>{t("site.update.isNotNecessary", { args: [response.currentVersion] })}</p>
+        <p {...noUpdateParagraphStyleProps} data-stylex-owner="site-update-latest-version">
+          {t("site.update.isNotNecessary", { args: [response.currentVersion] })}
+        </p>
       ) : null}
       {response.error ? (
         <>

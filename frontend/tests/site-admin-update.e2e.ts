@@ -603,7 +603,16 @@ async function canonicalizeScreenRoots(page: Page) {
         "role",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(
+              name === "class" &&
+              ["site-update-current-version", "site-update-latest-version"].includes(
+                current.getAttribute("data-stylex-owner") ?? "",
+              )
+            ),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )

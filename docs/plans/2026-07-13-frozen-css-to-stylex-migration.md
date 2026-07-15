@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-one slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty-two slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1748,6 +1748,18 @@ canonical React product-identity deviation keeps `Yoram` in the current-version 
 messages remain provenance. Actual RED 5/5 becomes GREEN 5/5, the prior title baseline remains
 GREEN 5/5, and the combined title matrix is GREEN 10/10. The complete update matrix is 21/24 with
 the pre-existing global GNB root-order fixture and two external-download href expectations outside
+this wave. Fresh live legacy visual comparison remains explicitly unverified. This is not Wave 1
+completion.
+
+The one-hundred-forty-second slice migrates the authenticated `/sites/update` no-update body
+paragraphs from `site/update.scala.html`, Bootstrap 2.3.1, and the later `_common.less` reset. The
+direct current-version and latest-version paragraphs become two stable owners sharing the final
+frozen `margin: 0` value through one canonical global variable; title, available/download,
+error/pre, sidebar, grid, and shell remain excluded or separate owners. Copy, conditions, direct
+sibling order, and the canonical `Yoram` current-version deviation remain unchanged. Actual RED
+5/5 becomes GREEN 5/5 after correcting the focused fixture to model the full frozen cascade. The
+adjacent title-strip gate is GREEN 5/5, and the complete update matrix is 26/29 with only the
+pre-existing global GNB root-order fixture and two external-download href expectations outside
 this wave. Fresh live legacy visual comparison remains explicitly unverified. This is not Wave 1
 completion.
 
