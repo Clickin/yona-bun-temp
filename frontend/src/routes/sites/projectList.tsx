@@ -41,9 +41,23 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  listHead: {
+    backgroundColor: globalColors.siteProjectListHeadSurface,
+    borderBottomStyle: globalColors.siteProjectListHeadBorderStyle,
+    borderBottomWidth: globalColors.siteProjectListHeadBorderBottomWidth,
+    borderBottomColor: globalColors.siteProjectListHeadBorder,
+    marginBottom: globalColors.siteProjectListHeadMarginBottom,
+    padding: globalColors.siteProjectListHeadPadding,
+    lineHeight: globalColors.siteProjectListHeadLineHeight,
+  },
+  listHeadTitle: {
+    padding: globalColors.siteProjectListHeadColumnPadding,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const listHeadStyleProps = stylex.props(styles.listHead);
+const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
@@ -205,23 +219,39 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   </div>
                 </form>
               </div>
-              <div className="row-fluid listhead">
-                <div className="span5 listhead-title">
+              <div
+                {...listHeadStyleProps}
+                className={`row-fluid listhead ${listHeadStyleProps.className ?? ""}`}
+                data-stylex-owner="site-project-list-listhead"
+              >
+                <div
+                  {...listHeadTitleStyleProps}
+                  className={`span5 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                >
                   <strong>
                     <LegacyMessage messageKey="project.name" />
                   </strong>
                 </div>
-                <div className="span4 listhead-title">
+                <div
+                  {...listHeadTitleStyleProps}
+                  className={`span4 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                >
                   <strong>
                     <LegacyMessage messageKey="project.description" />
                   </strong>
                 </div>
-                <div className="span2 listhead-title">
+                <div
+                  {...listHeadTitleStyleProps}
+                  className={`span2 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                >
                   <strong>
                     <LegacyMessage messageKey="project.created" />
                   </strong>
                 </div>
-                <div className="span1 listhead-title">
+                <div
+                  {...listHeadTitleStyleProps}
+                  className={`span1 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                >
                   <strong>&nbsp;</strong>
                 </div>
               </div>

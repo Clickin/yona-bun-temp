@@ -128,6 +128,15 @@ export const globalColors = stylex.defineVars({
   siteDiagnosticNoErrorHeadingFontSize: "1.5em",
   siteDiagnosticNoErrorHeadingText: "#4c4c4c",
   siteDiagnosticNoErrorHeadingLineHeight: "30px",
+  // site/projectList.scala.html + _page.less listhead
+  siteProjectListHeadSurface: "#f7f7f7",
+  siteProjectListHeadBorderStyle: "solid",
+  siteProjectListHeadBorderBottomWidth: "1px",
+  siteProjectListHeadBorder: "#efefef",
+  siteProjectListHeadMarginBottom: "5px",
+  siteProjectListHeadPadding: "5px 0px",
+  siteProjectListHeadLineHeight: "30px",
+  siteProjectListHeadColumnPadding: "0px 20px",
   // site/diagnostic.scala.html error branch + Bootstrap 2.3.1 `code, pre` / `pre`
   siteDiagnosticErrorPreFontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
   siteDiagnosticErrorPreText: "#333333",
