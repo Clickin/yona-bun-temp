@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/mail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-mail.stylex.ts", import.meta.url);
 const ownerSelector = '[data-stylex-owner="site-mail-error-alert"]';
 
 type MailOptions = {
@@ -56,7 +56,8 @@ test("error alert keeps Bootstrap fallback classes and StyleX ownership", async 
     'className={`alert alert-error ${errorAlertStyleProps.className ?? ""}`}',
   );
   expect(route).not.toMatch(/errorAlert:[^{]*\{[^}]*#[0-9a-f]/iu);
-  expect(theme).toContain("siteMailErrorAlertSurface");
+  expect(theme).toContain("errorSurface");
+  expect(route).not.toContain("globalColors.");
 
   const alert = await openSearchError(page);
   await expect(alert).toHaveClass(/(?:^|\s)alert(?:\s|$)/u);

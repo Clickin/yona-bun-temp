@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/mail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-mail.stylex.ts", import.meta.url);
 const ownerSelector = '[data-stylex-owner="site-mail-send-action"]';
 
 type MailOptions = {
@@ -170,9 +170,10 @@ test("send action has a stable owner without generated selector contracts", asyn
   expect(route).toContain('data-stylex-owner="site-mail-send-action"');
   expect(route).toContain("styles.sendAction");
   expect(route).not.toContain('className="ybtn ybtn-primary"');
-  expect(route).toContain('":active": globalColors.siteMailSendActionInteractiveSurface');
+  expect(route).toContain('":active": siteMailColors.actionInteractiveSurface');
   expect(route).not.toMatch(/#[0-9a-f]/iu);
-  expect(theme).toContain("siteMailSendActionInteractiveSurface");
+  expect(theme).toContain("actionInteractiveSurface");
+  expect(route).not.toContain("globalColors.");
 
   const action = await open(page);
   expect(

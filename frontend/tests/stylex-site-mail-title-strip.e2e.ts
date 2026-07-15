@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-mail-title-strip"]';
 const routeSource = new URL("../src/routes/sites/mail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-mail.stylex.ts", import.meta.url);
 
 type MailResponse = {
   notConfiguredItems: string[];
@@ -48,8 +48,11 @@ test.describe("StyleX site mail title strip", () => {
     expect(route).toContain('data-stylex-owner="site-mail-title-strip"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).toContain("siteMailColors.titleBorder");
+    expect(route).toContain("siteMailColors.titleText");
+    expect(theme).toContain("titleBorder");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps the legacy heading first across loading, error, success, not-configured, and default bodies", async ({

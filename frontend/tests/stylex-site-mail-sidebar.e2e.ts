@@ -10,40 +10,6 @@ const owners = {
   sidebar: "site-mail-sidebar",
 } as const;
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-stylex-owner="${name}"]`);
-const suffixes = [
-  "Margin",
-  "Padding",
-  "ListStyle",
-  "ItemBorderLeftColor",
-  "ItemBorderLeftStyle",
-  "ItemBorderLeftWidth",
-  "ItemFontSize",
-  "ItemLineHeight",
-  "ItemMarginTop",
-  "FirstItemMarginTop",
-  "ActiveItemBorderLeftColor",
-  "ActiveItemFontWeight",
-  "LinkColor",
-  "LinkDisplay",
-  "LinkOutline",
-  "LinkPadding",
-  "LinkTextDecoration",
-  "LinkHoverBackground",
-  "LinkHoverOutline",
-  "LinkHoverTextDecoration",
-  "ActiveLinkHoverBackground",
-  "BadgeBackground",
-  "BadgeBorderColor",
-  "BadgeBorderRadius",
-  "BadgeBorderStyle",
-  "BadgeBorderWidth",
-  "BadgeBoxShadow",
-  "BadgeColor",
-  "BadgeFontSize",
-  "BadgeLineHeight",
-  "BadgePadding",
-] as const;
-
 async function openMail(page: Page) {
   const session = (route: Route) =>
     route.fulfill({
@@ -91,7 +57,7 @@ test.describe("StyleX site mail sidebar", () => {
     ] = await Promise.all(
       [
         "../src/routes/sites/mail.tsx",
-        "../src/theme.stylex.ts",
+        "../src/routes/sites/-mail.stylex.ts",
         "../src/app.css",
         "../../yona-original/app/views/site/mail.scala.html",
         "../../yona-original/app/views/site/siteMngLayout.scala.html",
@@ -131,11 +97,19 @@ test.describe("StyleX site mail sidebar", () => {
     expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const suffix of suffixes) {
-      const key = `siteMailSidebar${suffix}`;
-      expect(route).toContain(`globalColors.${key}`);
-      expect(theme).toContain(key);
+    for (const paint of [
+      "sidebarBorder",
+      "sidebarActiveBorder",
+      "sidebarHoverSurface",
+      "badgeSurface",
+      "badgeBorder",
+      "badgeShadow",
+      "badgeText",
+    ]) {
+      expect(route).toContain(`siteMailColors.${paint}`);
+      expect(theme).toContain(paint);
     }
+    expect(route).not.toContain("globalColors.");
     for (const retired of [
       'className="site-setting-nav"',
       'className="active"',
