@@ -51,9 +51,42 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  issueListContainer: {
+    listStyle: globalColors.siteIssueListContainerListStyle,
+  },
+  issueListRow: {
+    paddingBlock: globalColors.siteIssueListRowPaddingBlock,
+    paddingInline: globalColors.siteIssueListRowPaddingInline,
+  },
+  issueInfo: {
+    lineHeight: globalColors.siteIssueListInfoLineHeight,
+    marginTop: globalColors.siteIssueListInfoMarginTop,
+  },
+  issueProjectLink: {
+    fontSize: globalColors.siteIssueListProjectFontSize,
+    fontWeight: globalColors.siteIssueListProjectFontWeight,
+    display: globalColors.siteIssueListProjectDisplay,
+    lineHeight: globalColors.siteIssueListProjectLineHeight,
+    color: globalColors.siteIssueListProjectText,
+  },
+  issueInfoSeparator: {
+    fontSize: globalColors.siteIssueListSeparatorFontSize,
+    fontWeight: globalColors.siteIssueListSeparatorFontWeight,
+    paddingInline: globalColors.siteIssueListSeparatorPaddingInline,
+  },
+  issueTitleLink: {
+    fontSize: globalColors.siteIssueListTitleFontSize,
+    fontWeight: globalColors.siteIssueListTitleFontWeight,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const issueListContainerStyleProps = stylex.props(styles.issueListContainer);
+const issueListRowStyleProps = stylex.props(styles.issueListRow);
+const issueInfoStyleProps = stylex.props(styles.issueInfo);
+const issueProjectLinkStyleProps = stylex.props(styles.issueProjectLink);
+const issueInfoSeparatorStyleProps = stylex.props(styles.issueInfoSeparator);
+const issueTitleLinkStyleProps = stylex.props(styles.issueTitleLink);
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
@@ -118,7 +151,11 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 <IssueStateTab state="open" selected={state} />
                 <IssueStateTab state="closed" selected={state} />
               </ul>
-              <ul className="post-list-wrap">
+              <ul
+                {...issueListContainerStyleProps}
+                className={`post-list-wrap ${issueListContainerStyleProps.className ?? ""}`}
+                data-stylex-owner="site-issue-list-container"
+              >
                 {(query.data?.issues ?? []).map((issue) => (
                   <IssueListItem
                     issue={issue}
@@ -331,7 +368,11 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
   const projectLogoUrl = issue.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 
   return (
-    <li className="row-fluid listitem">
+    <li
+      {...issueListRowStyleProps}
+      className={`row-fluid listitem ${issueListRowStyleProps.className ?? ""}`}
+      data-stylex-owner="site-issue-list-row"
+    >
       <Link
         to="/$ownerName/$projectName"
         params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
@@ -339,23 +380,27 @@ function IssueListItem({ issue }: { issue: SiteIssue }) {
       >
         <img src={projectLogoUrl} alt={issue.projectName} />
       </Link>
-      <div className="post-info-wrap">
+      <div {...issueInfoStyleProps} data-stylex-owner="site-issue-list-info">
         <Link
+          {...issueProjectLinkStyleProps}
+          data-stylex-owner="site-issue-list-project-link"
           to="/$ownerName/$projectName"
           params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
-          className="post-project"
         >
           {issue.ownerName}/{issue.projectName}
         </Link>
-        <span className="post-info-separator">·</span>
+        <span {...issueInfoSeparatorStyleProps} data-stylex-owner="site-issue-list-separator">
+          ·
+        </span>
         <Link
+          {...issueTitleLinkStyleProps}
+          data-stylex-owner="site-issue-list-title-link"
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{
             ownerName: issue.ownerName,
             projectName: issue.projectName,
             issueNumber: issue.issueNumber,
           }}
-          className="post-title"
         >
           {issue.title}
         </Link>

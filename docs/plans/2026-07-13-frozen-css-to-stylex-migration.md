@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-one slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1631,6 +1631,15 @@ output removes `page-navigation-wrap`, `page-nums`, `page-num`, `ikon`, `delimit
 and label `off`; `nospinner` and the sprite-producing `ico`, `btn-pg-*`, and icon `off` remain.
 Actual RED 5/5 becomes GREEN 5/5, and the complete post-list owner matrix is GREEN 18/18. This is
 not Wave 1 completion.
+
+The one-hundred-thirty-first slice migrates the authenticated populated open-state
+`/sites/issueList` container and row information content from `site/issueList.scala.html` and
+`_page.less`. Six stable StyleX owners use route-specific global theme variables for list style,
+row padding, information rhythm, project-link paint, separator spacing, and issue-title typography.
+Only `post-info-wrap`, `post-project`, `post-info-separator`, and `post-title` retire;
+`post-list-wrap`, `row-fluid`, `listitem`, state tabs, avatar/metadata, and pagination remain active
+fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, and the title/content matrix is
+GREEN 11/11. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

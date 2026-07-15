@@ -157,16 +157,26 @@ test.describe("StyleX site issue-list title strip", () => {
     });
   }
 
-  test("keeps generated classes inside the explicit title owner", async ({ page }) => {
+  test("keeps generated classes inside the explicit title and row-content owners", async ({
+    page,
+  }) => {
     await openIssueList(page);
-    const generatedDirectChildren = await page.evaluate(
-      (selector) =>
-        Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
-          .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-          .filter((element) => !element.matches(selector))
-          .map((element) => element.tagName),
-      ownerSelector,
-    );
-    expect(generatedDirectChildren).toEqual([]);
+    const unauthorizedGeneratedOwners = await page.evaluate(() => {
+      const allowedOwners = new Set([
+        "site-issue-list-title-strip",
+        "site-issue-list-container",
+        "site-issue-list-row",
+        "site-issue-list-info",
+        "site-issue-list-project-link",
+        "site-issue-list-separator",
+        "site-issue-list-title-link",
+      ]);
+      return Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+        .map((element) => element.closest<HTMLElement>("[data-stylex-owner]"))
+        .filter((owner) => owner === null || !allowedOwners.has(owner.dataset.stylexOwner ?? ""))
+        .map((owner) => owner?.dataset.stylexOwner ?? "missing-owner");
+    });
+    expect(unauthorizedGeneratedOwners).toEqual([]);
   });
 });

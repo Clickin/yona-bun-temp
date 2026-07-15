@@ -257,8 +257,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
-  await expect(page.locator(".post-project")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
-  await expect(page.locator(".post-title")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
+  await expect(page.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/issue/42`,
   );
@@ -499,13 +502,20 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect(row.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/beta/archive`);
   await expect(row.locator(".list-avatar img")).toHaveAttribute("src", "/logos/closed-roadmap.png");
   await expect(row.locator(".list-avatar img")).toHaveAttribute("alt", "archive");
-  await expect(row.locator(".post-project")).toHaveAttribute("href", `${basePath}/beta/archive`);
-  await expect(row.locator(".post-project")).toHaveText("beta/archive");
-  await expect(row.locator(".post-title")).toHaveAttribute(
+  await expect(row.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/beta/archive`,
+  );
+  await expect(row.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveText(
+    "beta/archive",
+  );
+  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/beta/archive/issue/77`,
   );
-  await expect(row.locator(".post-title")).toHaveText("Close archived task");
+  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText(
+    "Close archived task",
+  );
   await expect(row.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
     "href",
     `${basePath}/bob`,
@@ -570,8 +580,8 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     rowInsideContent: true,
     rowLinkOrder: [
       "list-avatar",
-      "post-project",
-      "post-title",
+      "owner:site-issue-list-project-link",
+      "owner:site-issue-list-title-link",
       "avatar-wrap",
       "post-meta-item",
       "",
@@ -1031,6 +1041,10 @@ async function closedIssueListLayoutMetrics(page: Page) {
         if (link.classList.contains("list-avatar")) {
           return "list-avatar";
         }
+        const stylexOwner = link.getAttribute("data-stylex-owner");
+        if (stylexOwner) {
+          return `owner:${stylexOwner}`;
+        }
         return link.getAttribute("class") ?? "";
       }),
       tabsBelowTitle: tabsRect.top >= titleAreaRect.bottom,
@@ -1057,10 +1071,10 @@ async function issueListMetrics(page: Page) {
     const firstRow = requireElement(".post-list-wrap .listitem");
     const avatarWrap = requireElement(".post-list-wrap .list-avatar");
     const avatarImage = requireElement(".post-list-wrap .list-avatar img");
-    const postInfo = requireElement(".post-info-wrap");
-    const postProject = requireElement(".post-project");
-    const separator = requireElement(".post-info-separator");
-    const postTitle = requireElement(".post-title");
+    const postInfo = requireElement('[data-stylex-owner="site-issue-list-info"]');
+    const postProject = requireElement('[data-stylex-owner="site-issue-list-project-link"]');
+    const separator = requireElement('[data-stylex-owner="site-issue-list-separator"]');
+    const postTitle = requireElement('[data-stylex-owner="site-issue-list-title-link"]');
     const meta = requireElement(".post-meta-wrap");
     const metaAvatar = requireElement(".post-meta-wrap .avatar-wrap");
     const metaItem = requireElement(".post-meta-item");
@@ -1182,6 +1196,22 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (
         name === "class" &&
+        new Set([
+          "site-issue-list-container",
+          "site-issue-list-row",
+          "site-issue-list-info",
+          "site-issue-list-project-link",
+          "site-issue-list-separator",
+          "site-issue-list-title-link",
+        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
         current.matches('[data-stylex-owner="global-gnb-nav"]')
       ) {
@@ -1251,7 +1281,19 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const value = current.getAttribute(name) ?? "";
+      let value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredIssueListTokens = new Set([
+          "post-info-wrap",
+          "post-project",
+          "post-info-separator",
+          "post-title",
+        ]);
+        value = value
+          .split(/\s+/u)
+          .filter((token) => !retiredIssueListTokens.has(token))
+          .join(" ");
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&
