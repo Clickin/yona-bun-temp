@@ -1578,6 +1578,13 @@ open, dismiss, deletion, and cache behavior. The six fully migrated modal presen
 removed; the footer's shared ybtn confirmation controls, sidebar, and shell remain separate owners
 or fallback. This is not Wave 1 completion.
 
+The one-hundred-twenty-fifth slice migrates the /sites/projectList delete-confirmation modal's
+Yes and No footer actions from site/projectList.scala.html and _yobiUI.less. StyleX owns the full
+base, first-child, hover, focus, active, and danger cascade through global theme variables, and
+restores the frozen `.3em` sibling spacing that the current app bridge had flattened. The two
+modal actions remove `ybtn`/`ybtn-danger`; all other shared button consumers and the already
+migrated modal frame remain unchanged. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

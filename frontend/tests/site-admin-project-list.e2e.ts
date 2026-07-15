@@ -137,8 +137,8 @@ const EXPECTED_PROJECT_LIST_SCREEN = `
             <p>Do you really want to delete this project?</p>
           </div>
           <div data-stylex-owner="site-project-list-delete-modal-footer">
-            <button type="button" id="projectDeleteBtn" class="ybtn ybtn-danger">Yes</button>
-            <button type="button" class="ybtn">No</button>
+            <button type="button" id="projectDeleteBtn" data-stylex-owner="site-project-list-delete-modal-confirm-action">Yes</button>
+            <button type="button" data-stylex-owner="site-project-list-delete-modal-cancel-action">No</button>
           </div>
         </div>
       </div>
@@ -536,11 +536,9 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   const deleteButton = page.locator('[data-stylex-owner="site-project-list-delete-action"]');
   const deleteModal = page.locator("#alertDeletionWrap");
   const closeButton = page.locator('[data-stylex-owner="site-project-list-delete-modal-close"]');
-  const noButton = page
-    .locator('[data-stylex-owner="site-project-list-delete-modal-footer"] .ybtn')
-    .filter({
-      hasText: "No",
-    });
+  const noButton = page.locator(
+    '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
+  );
   await expect(deleteModal).toHaveAttribute("data-stylex-owner", "site-project-list-delete-modal");
   await expect(deleteModal).toHaveCSS("display", "none");
   await expect(deleteModal).not.toHaveAttribute("aria-hidden", /.+/);
@@ -577,8 +575,16 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
   );
   await expect(footerButtons).toHaveText(["Yes", "No"]);
   await expect(footerButtons.first()).toHaveAttribute("id", "projectDeleteBtn");
-  await expect(footerButtons.first()).toHaveClass("ybtn ybtn-danger");
-  await expect(footerButtons.nth(1)).toHaveClass("ybtn");
+  await expect(footerButtons.first()).toHaveAttribute(
+    "data-stylex-owner",
+    "site-project-list-delete-modal-confirm-action",
+  );
+  await expect(footerButtons.nth(1)).toHaveAttribute(
+    "data-stylex-owner",
+    "site-project-list-delete-modal-cancel-action",
+  );
+  await expect(footerButtons.first()).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
+  await expect(footerButtons.nth(1)).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
   expect(await projectListDeleteModalStateMetrics(page)).toMatchObject({
     openBackdropCoversContent: true,
     openModalCentered: true,
@@ -637,7 +643,7 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
       response.url().includes("/api/v1/site/projects/77") &&
       response.request().method() === "DELETE",
   );
-  await page.locator("#projectDeleteBtn").click();
+  await page.locator('[data-stylex-owner="site-project-list-delete-modal-confirm-action"]').click();
   await expect(deleteModal).toHaveCSS("display", "block");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   await expect(page.locator("#project-name")).toHaveText("acme/roadmap");
@@ -834,10 +840,10 @@ async function projectListDeleteModalStateMetrics(page: Page) {
     const modalFooter = requireElement(
       '[data-stylex-owner="site-project-list-delete-modal-footer"]',
     );
-    const yes = requireElement("#projectDeleteBtn");
-    const no = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-footer"] .ybtn:not(#projectDeleteBtn)',
+    const yes = requireElement(
+      '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
     );
+    const no = requireElement('[data-stylex-owner="site-project-list-delete-modal-cancel-action"]');
     const backdrop = document.querySelector<HTMLElement>(
       '[data-stylex-owner="site-project-list-delete-modal-backdrop"]',
     );
@@ -1143,7 +1149,9 @@ async function canonicalizeScreenRoots(page: Page) {
         residualOwner === "site-project-list-delete-modal-close" ||
         residualOwner === "site-project-list-delete-modal-body" ||
         residualOwner === "site-project-list-delete-modal-footer" ||
-        residualOwner === "site-project-list-delete-modal-backdrop";
+        residualOwner === "site-project-list-delete-modal-backdrop" ||
+        residualOwner === "site-project-list-delete-modal-confirm-action" ||
+        residualOwner === "site-project-list-delete-modal-cancel-action";
       const attrs = stableAttributes
         .filter(
           (name) =>
@@ -1220,9 +1228,11 @@ async function projectListMetrics(page: Page) {
     const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
-    const modalYes = requireElement("#projectDeleteBtn");
+    const modalYes = requireElement(
+      '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
+    );
     const modalNo = requireElement(
-      '[data-stylex-owner="site-project-list-delete-modal-footer"] .ybtn:not(#projectDeleteBtn)',
+      '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
     );
     const titleAreaRect = titleArea.getBoundingClientRect();
     const titleRect = title.getBoundingClientRect();
@@ -1419,7 +1429,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         residualOwner === "site-project-list-delete-modal-close" ||
         residualOwner === "site-project-list-delete-modal-body" ||
         residualOwner === "site-project-list-delete-modal-footer" ||
-        residualOwner === "site-project-list-delete-modal-backdrop";
+        residualOwner === "site-project-list-delete-modal-backdrop" ||
+        residualOwner === "site-project-list-delete-modal-confirm-action" ||
+        residualOwner === "site-project-list-delete-modal-cancel-action";
       const attrs = stableAttributes
         .filter(
           (name) =>

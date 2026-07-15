@@ -12,6 +12,10 @@ const owners = {
   frame: '[data-stylex-owner="site-project-list-delete-modal"]',
   header: '[data-stylex-owner="site-project-list-delete-modal-header"]',
 };
+const actionOwners = {
+  cancel: '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
+  confirm: '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
+};
 
 async function openProjectList(page: Page) {
   const deletedProjectIds: string[] = [];
@@ -175,10 +179,8 @@ test.describe("StyleX site project-list delete modal", () => {
       "Do you really want to delete this project?",
     );
     await expect(modal.locator(`${owners.footer} > button`)).toHaveText(["Yes", "No"]);
-    await expect(modal.locator(`${owners.footer} > button`)).toHaveClass([
-      "ybtn ybtn-danger",
-      "ybtn",
-    ]);
+    await expect(modal.locator(actionOwners.confirm)).toHaveCount(1);
+    await expect(modal.locator(actionOwners.cancel)).toHaveCount(1);
     await expect(modal.locator(`:scope > ${owners.header} + ${owners.body}`)).toHaveCount(1);
     await expect(modal.locator(`:scope > ${owners.body} + ${owners.footer}`)).toHaveCount(1);
 
@@ -214,9 +216,7 @@ test.describe("StyleX site project-list delete modal", () => {
     await expect(page.locator(owners.backdrop)).toHaveCount(0);
   });
 
-  test("removes migrated modal presentation classes and retains only button fallbacks", async ({
-    page,
-  }) => {
+  test("removes migrated modal and action presentation classes", async ({ page }) => {
     await openProjectList(page);
     const modal = await showDeleteModal(page);
     const classes = await page.evaluate(
@@ -245,10 +245,9 @@ test.describe("StyleX site project-list delete modal", () => {
         ]),
       );
     }
-    await expect(modal.locator(`${owners.footer} > button`).first()).toHaveClass(
-      "ybtn ybtn-danger",
-    );
-    await expect(modal.locator(`${owners.footer} > button`).last()).toHaveClass("ybtn");
+    for (const selector of Object.values(actionOwners)) {
+      await expect(modal.locator(selector)).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
+    }
   });
 
   for (const viewport of [
@@ -411,7 +410,7 @@ test.describe("StyleX site project-list delete modal", () => {
     });
   }
 
-  test("isolates generated modal classes to the six explicit owners", async ({ page }) => {
+  test("isolates generated modal classes to the eight explicit owners", async ({ page }) => {
     await openProjectList(page);
     await showDeleteModal(page);
     const modalOwnerIds = await page.evaluate(() =>
@@ -425,6 +424,8 @@ test.describe("StyleX site project-list delete modal", () => {
           element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner"),
         ),
     );
+    expect(modalOwnerIds).not.toContain(null);
+    expect(modalOwnerIds).not.toContain(undefined);
     expect(new Set(modalOwnerIds)).toEqual(
       new Set([
         "site-project-list-delete-modal",
@@ -433,6 +434,8 @@ test.describe("StyleX site project-list delete modal", () => {
         "site-project-list-delete-modal-body",
         "site-project-list-delete-modal-footer",
         "site-project-list-delete-modal-backdrop",
+        "site-project-list-delete-modal-confirm-action",
+        "site-project-list-delete-modal-cancel-action",
       ]),
     );
   });

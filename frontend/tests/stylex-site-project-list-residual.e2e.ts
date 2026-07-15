@@ -161,10 +161,17 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
       expect(action.some((token) => token.startsWith("x"))).toBe(true);
     }
 
-    await expect(page.locator("#projectDeleteBtn")).toHaveClass("ybtn ybtn-danger");
-    await expect(
-      page.locator('[data-stylex-owner="site-project-list-delete-modal-footer"] .ybtn').nth(1),
-    ).toHaveClass("ybtn");
+    const modalConfirm = page.locator(
+      '[data-stylex-owner="site-project-list-delete-modal-confirm-action"]',
+    );
+    const modalCancel = page.locator(
+      '[data-stylex-owner="site-project-list-delete-modal-cancel-action"]',
+    );
+    await expect(modalConfirm).toHaveAttribute("id", "projectDeleteBtn");
+    await expect(modalConfirm).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
+    await expect(modalCancel).not.toHaveClass(/(?:^|\s)ybtn(?:-danger)?(?:\s|$)/);
+    await expect(modalConfirm).toHaveClass(/(?:^|\s)x\S*/);
+    await expect(modalCancel).toHaveClass(/(?:^|\s)x\S*/);
   });
 
   for (const viewport of [

@@ -322,6 +322,73 @@ const styles = stylex.create({
     borderRadius: globalColors.siteProjectListModalFooterRadius,
     boxShadow: globalColors.siteProjectListModalFooterShadow,
   },
+  deleteModalAction: {
+    textAlign: globalColors.siteProjectListModalActionTextAlign,
+    whiteSpace: globalColors.siteProjectListModalActionWhiteSpace,
+    color: {
+      default: globalColors.siteProjectListModalActionText,
+      ":hover": globalColors.siteProjectListModalActionInteractiveText,
+      ":focus": globalColors.siteProjectListModalActionInteractiveText,
+      ":active": globalColors.siteProjectListModalActionInteractiveText,
+    },
+    backgroundColor: {
+      default: globalColors.siteProjectListModalActionSurface,
+      ":hover": globalColors.siteProjectListModalActionInteractiveSurface,
+      ":focus": globalColors.siteProjectListModalActionInteractiveSurface,
+      ":active": globalColors.siteProjectListModalActionInteractiveSurface,
+    },
+    textShadow: globalColors.siteProjectListModalActionTextShadow,
+    borderRadius: globalColors.siteProjectListModalActionBorderRadius,
+    display: globalColors.siteProjectListModalActionDisplay,
+    padding: globalColors.siteProjectListModalActionPadding,
+    verticalAlign: globalColors.siteProjectListModalActionVerticalAlign,
+    cursor: globalColors.siteProjectListModalActionCursor,
+    lineHeight: globalColors.siteProjectListModalActionLineHeight,
+    fontSize: globalColors.siteProjectListModalActionFontSize,
+    transition: globalColors.siteProjectListModalActionTransition,
+    outline: globalColors.siteProjectListModalActionOutline,
+    position: globalColors.siteProjectListModalActionPosition,
+    marginBottom: globalColors.siteProjectListModalActionMarginBottom,
+    marginLeft: {
+      default: globalColors.siteProjectListModalActionMarginLeft,
+      ":first-child": globalColors.siteProjectListModalActionFirstChildMarginLeft,
+    },
+    borderColor: {
+      default: globalColors.siteProjectListModalActionBorder,
+      ":hover": globalColors.siteProjectListModalActionInteractiveBorder,
+      ":focus": globalColors.siteProjectListModalActionInteractiveBorder,
+      ":active": globalColors.siteProjectListModalActionInteractiveBorder,
+    },
+    borderStyle: globalColors.siteProjectListModalActionBorderStyle,
+    borderWidth: globalColors.siteProjectListModalActionBorderWidth,
+    boxShadow: globalColors.siteProjectListModalActionShadow,
+    zIndex: globalColors.siteProjectListModalActionZIndex,
+    textDecoration: {
+      ":hover": globalColors.siteProjectListModalActionInteractiveTextDecoration,
+      ":focus": globalColors.siteProjectListModalActionInteractiveTextDecoration,
+      ":active": globalColors.siteProjectListModalActionInteractiveTextDecoration,
+    },
+  },
+  deleteModalConfirmAction: {
+    color: {
+      default: globalColors.siteProjectListModalConfirmText,
+      ":hover": globalColors.siteProjectListModalConfirmText,
+      ":focus": globalColors.siteProjectListModalConfirmText,
+      ":active": globalColors.siteProjectListModalConfirmText,
+    },
+    backgroundColor: {
+      default: globalColors.siteProjectListModalConfirmSurface,
+      ":hover": globalColors.siteProjectListModalConfirmInteractiveSurface,
+      ":focus": globalColors.siteProjectListModalConfirmInteractiveSurface,
+      ":active": globalColors.siteProjectListModalConfirmInteractiveSurface,
+    },
+    borderColor: {
+      default: globalColors.siteProjectListModalConfirmBorder,
+      ":hover": globalColors.siteProjectListModalConfirmBorder,
+      ":focus": globalColors.siteProjectListModalConfirmBorder,
+      ":active": globalColors.siteProjectListModalConfirmBorder,
+    },
+  },
   deleteModalBackdrop: {
     position: globalColors.siteProjectListModalBackdropPosition,
     inset: globalColors.siteProjectListModalBackdropInset,
@@ -365,6 +432,11 @@ const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
 const deleteModalBodyStyleProps = stylex.props(styles.deleteModalBody);
 const deleteModalFooterStyleProps = stylex.props(styles.deleteModalFooter);
+const deleteModalConfirmActionStyleProps = stylex.props(
+  styles.deleteModalAction,
+  styles.deleteModalConfirmAction,
+);
+const deleteModalCancelActionStyleProps = stylex.props(styles.deleteModalAction);
 const deleteModalBackdropStyleProps = stylex.props(styles.deleteModalBackdrop);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
@@ -634,14 +706,22 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   data-stylex-owner="site-project-list-delete-modal-footer"
                 >
                   <button
+                    {...deleteModalConfirmActionStyleProps}
                     type="button"
                     id="projectDeleteBtn"
-                    className="ybtn ybtn-danger"
+                    className={deleteModalConfirmActionStyleProps.className}
+                    data-stylex-owner="site-project-list-delete-modal-confirm-action"
                     onClick={confirmDeleteProject}
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
-                  <button type="button" className="ybtn" onClick={dismissDeleteModal}>
+                  <button
+                    {...deleteModalCancelActionStyleProps}
+                    type="button"
+                    className={deleteModalCancelActionStyleProps.className}
+                    data-stylex-owner="site-project-list-delete-modal-cancel-action"
+                    onClick={dismissDeleteModal}
+                  >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>
