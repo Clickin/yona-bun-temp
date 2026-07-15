@@ -100,8 +100,9 @@ test.describe("StyleX site update no-update body", () => {
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
     expect(route).toContain("styles.noUpdateParagraph");
-    expect(route).toContain("globalColors.siteUpdateNoUpdateParagraphMargin");
-    expect(theme).toContain("siteUpdateNoUpdateParagraphMargin");
+    expect(route).toContain('noUpdateParagraph: {\n    margin: "0px"');
+    expect(route).not.toContain("globalColors.");
+    expect(theme).not.toContain("siteUpdateNoUpdate");
     expect(route).toContain("stylex.props(styles.noUpdateParagraph)");
     expect(route.match(/\{\.\.\.noUpdateParagraphStyleProps\}/gu)).toHaveLength(2);
   });

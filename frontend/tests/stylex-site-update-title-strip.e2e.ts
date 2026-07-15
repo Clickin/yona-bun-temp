@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-update-title-strip"]';
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-update.stylex.ts", import.meta.url);
 
 type UpdateResponse = {
   currentVersion: string;
@@ -44,8 +44,9 @@ test.describe("StyleX site update title strip", () => {
     expect(route).toContain("titleStyleProps");
     expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
     expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).toContain("siteUpdateColors.titleBorder");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("preserves the legacy heading before the no-update body", async ({ page }) => {

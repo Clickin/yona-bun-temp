@@ -37,15 +37,14 @@ async function openError(page: Page) {
 test("update error pre has a stable StyleX source contract through global theme variables", async () => {
   const [route, theme] = await Promise.all([
     readFile("src/routes/sites/update.tsx", "utf8"),
-    readFile("src/theme.stylex.ts", "utf8"),
+    readFile("src/routes/sites/-update.stylex.ts", "utf8"),
   ]);
 
   expect(route).toContain('data-stylex-owner="site-update-error-pre"');
   expect(route).toContain("styles.errorPre");
-  expect(route).toContain("globalColors.siteDiagnosticErrorPreBorder");
-  expect(theme).toContain("siteDiagnosticErrorPreFontFamily");
-  expect(theme).toContain("siteDiagnosticErrorPreSurface");
-  expect(theme).toContain("siteDiagnosticErrorPreRadius");
+  expect(route).toContain("siteUpdateColors.errorBorder");
+  expect(theme).toContain("errorSurface");
+  expect(route).not.toContain("globalColors.");
 });
 
 for (const viewport of [

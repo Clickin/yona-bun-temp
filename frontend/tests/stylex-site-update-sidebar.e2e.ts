@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-update.stylex.ts", import.meta.url);
 const appCssSource = new URL("../src/app.css", import.meta.url);
 const layoutSource = new URL(
   "../../yona-original/app/views/site/siteMngLayout.scala.html",
@@ -37,37 +37,13 @@ const owners = {
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-stylex-owner="${name}"]`);
 
 const themeKeys = [
-  "siteUpdateSidebarMargin",
-  "siteUpdateSidebarPadding",
-  "siteUpdateSidebarListStyle",
-  "siteUpdateSidebarItemBorderLeftColor",
-  "siteUpdateSidebarItemBorderLeftStyle",
-  "siteUpdateSidebarItemBorderLeftWidth",
-  "siteUpdateSidebarItemFontSize",
-  "siteUpdateSidebarItemLineHeight",
-  "siteUpdateSidebarItemMarginTop",
-  "siteUpdateSidebarFirstItemMarginTop",
-  "siteUpdateSidebarActiveItemBorderLeftColor",
-  "siteUpdateSidebarActiveItemFontWeight",
-  "siteUpdateSidebarLinkColor",
-  "siteUpdateSidebarLinkDisplay",
-  "siteUpdateSidebarLinkOutline",
-  "siteUpdateSidebarLinkPadding",
-  "siteUpdateSidebarLinkTextDecoration",
-  "siteUpdateSidebarLinkHoverBackground",
-  "siteUpdateSidebarLinkHoverOutline",
-  "siteUpdateSidebarLinkHoverTextDecoration",
-  "siteUpdateSidebarActiveLinkHoverBackground",
-  "siteUpdateSidebarBadgeBackground",
-  "siteUpdateSidebarBadgeBorderColor",
-  "siteUpdateSidebarBadgeBorderRadius",
-  "siteUpdateSidebarBadgeBorderStyle",
-  "siteUpdateSidebarBadgeBorderWidth",
-  "siteUpdateSidebarBadgeBoxShadow",
-  "siteUpdateSidebarBadgeColor",
-  "siteUpdateSidebarBadgeFontSize",
-  "siteUpdateSidebarBadgeLineHeight",
-  "siteUpdateSidebarBadgePadding",
+  "sidebarBorder",
+  "sidebarActiveBorder",
+  "sidebarHoverSurface",
+  "badgeSurface",
+  "badgeBorder",
+  "badgeShadow",
+  "badgeText",
 ] as const;
 
 async function openAvailable(page: Page) {
@@ -137,9 +113,10 @@ test.describe("StyleX site update sidebar", () => {
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
     for (const key of themeKeys) {
-      expect(route).toContain(`globalColors.${key}`);
+      expect(route).toContain(`siteUpdateColors.${key}`);
       expect(theme).toContain(key);
     }
+    expect(route).not.toContain("globalColors.");
     expect(route).not.toContain('className="site-setting-nav"');
     expect(route).not.toContain('className="active"');
     expect(route).not.toContain('className="notification-badge"');

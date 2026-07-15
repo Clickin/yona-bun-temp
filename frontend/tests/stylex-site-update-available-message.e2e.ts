@@ -107,10 +107,10 @@ test.describe("StyleX site update available message", () => {
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
     expect(route).toContain("styles.availableParagraph");
     expect(route).toContain("styles.availableStrong");
-    expect(route).toContain("globalColors.siteUpdateAvailableParagraphMargin");
-    expect(route).toContain("globalColors.siteUpdateAvailableStrongFontWeight");
-    expect(theme).toContain("siteUpdateAvailableParagraphMargin");
-    expect(theme).toContain("siteUpdateAvailableStrongFontWeight");
+    expect(route).toContain('availableParagraph: {\n    margin: "0px"');
+    expect(route).toContain('availableStrong: {\n    fontWeight: "bold"');
+    expect(route).not.toContain("globalColors.");
+    expect(theme).not.toContain("siteUpdateAvailable");
     expect(route).toContain("stylex.props(styles.availableParagraph)");
     expect(route).toContain("stylex.props(styles.availableStrong)");
   });

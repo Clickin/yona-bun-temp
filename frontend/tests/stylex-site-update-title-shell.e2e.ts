@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/update.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-update.stylex.ts", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/update.scala.html",
   import.meta.url,
@@ -104,20 +104,13 @@ test.describe("StyleX site update no-update title shell", () => {
 
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const token of [
-      "siteDiagnosticNoErrorTitleOverflow",
-      "siteDiagnosticNoErrorTitleMarginBottom",
-      "siteDiagnosticNoErrorTitlePaddingBottom",
-      "siteDiagnosticNoErrorTitleBorder",
-      "siteDiagnosticNoErrorHeadingMargin",
-      "siteDiagnosticNoErrorHeadingFontSize",
-      "siteDiagnosticNoErrorHeadingText",
-      "siteDiagnosticNoErrorHeadingLineHeight",
-      "siteUpdateTitleHeadingFloat",
-    ]) {
-      expect(route).toContain(`globalColors.${token}`);
+    for (const token of ["titleBorder", "titleText"]) {
+      expect(route).toContain(`siteUpdateColors.${token}`);
       expect(theme).toContain(token);
     }
+    expect(route).toContain('overflow: "hidden"');
+    expect(route).toContain('float: "left"');
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps exact DIV > H2 then current-version and no-update paragraphs", async ({ page }) => {
