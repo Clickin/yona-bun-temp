@@ -225,15 +225,32 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
       title: null,
     },
   ]);
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveAttribute(
-    "href",
-    `${basePath}/sites/issueList?state=open`,
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText("Open");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveAttribute("href", `${basePath}/sites/issueList?state=open`);
+  const openStateItems = page.locator(
+    '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"]',
   );
-  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("active");
-  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("");
-  await expect(page.locator(".span10 > .nav.nav-tabs a")).toHaveText(["Open", "Closed"]);
-  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+  await expect(openStateItems.first()).toHaveAttribute("data-selected", "true");
+  await expect(openStateItems.nth(1)).toHaveAttribute("data-selected", "false");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText(["Open", "Closed"]);
+  expect(
+    await legacyLinkSnapshot(
+      page,
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toEqual([
     {
       ariaCurrent: null,
       className: null,
@@ -369,7 +386,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("open");
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Open");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText("Open");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await expect(previousPageLink).toHaveAttribute(
     "href",
@@ -398,7 +419,11 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   });
   await closedTab.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText("Closed");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-issues-tabs");
@@ -480,10 +505,22 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await page.goto(`${basePath}/sites/issueList?state=closed&pageNum=1`);
 
   await expect.poll(() => issueRequests).toEqual([{ page: "1", state: "closed" }]);
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
-  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("");
-  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("active");
-  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText("Closed");
+  const closedStateItems = page.locator(
+    '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"]',
+  );
+  await expect(closedStateItems.first()).toHaveAttribute("data-selected", "false");
+  await expect(closedStateItems.nth(1)).toHaveAttribute("data-selected", "true");
+  expect(
+    await legacyLinkSnapshot(
+      page,
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toEqual([
     {
       ariaCurrent: null,
       className: null,
@@ -580,7 +617,11 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("closed");
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveText("Closed");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-item"][data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toHaveText("Closed");
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   const previousHref = await previousPageLink.getAttribute("href");
   expect(new URL(previousHref ?? "", "http://yona.test").searchParams.get("pageNum")).toBe("1");
@@ -627,10 +668,19 @@ test("site admin issue list preserves invalid nonblank state for backend rejecti
   await expect.poll(() => issueRequests.some((request) => request.state === "waiting")).toBe(true);
   expect(issueRequests.filter((request) => request.state === "open")).toEqual([]);
   expect(issueRequests[0]).toEqual({ page: "1", state: "waiting" });
-  await expect(page.locator(".span10 > .nav.nav-tabs li.active a")).toHaveCount(0);
-  await expect(page.locator(".span10 > .nav.nav-tabs li").first()).toHaveClass("");
-  await expect(page.locator(".span10 > .nav.nav-tabs li").nth(1)).toHaveClass("");
-  expect(await legacyLinkSnapshot(page, ".span10 > .nav.nav-tabs a")).toEqual([
+  const invalidStateTabs = page.locator('[data-stylex-owner="site-issue-list-state-tabs"]');
+  const invalidStateItems = invalidStateTabs.locator(
+    '[data-stylex-owner="site-issue-list-state-tab-item"]',
+  );
+  await expect(invalidStateItems.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect(invalidStateItems.first()).toHaveAttribute("data-selected", "false");
+  await expect(invalidStateItems.nth(1)).toHaveAttribute("data-selected", "false");
+  expect(
+    await legacyLinkSnapshot(
+      page,
+      '[data-stylex-owner="site-issue-list-state-tabs"] [data-stylex-owner="site-issue-list-state-tab-link"]',
+    ),
+  ).toEqual([
     {
       ariaCurrent: null,
       className: null,
@@ -1021,7 +1071,10 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
   return page.locator(selector).evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className: link.getAttribute("class"),
+      className:
+        link.getAttribute("data-stylex-owner") === "site-issue-list-state-tab-link"
+          ? null
+          : link.getAttribute("class"),
       dataStatus: link.getAttribute("data-status"),
       href: link.getAttribute("href"),
       pjaxPage: link.getAttribute("pjax-page"),
@@ -1035,7 +1088,7 @@ async function closedIssueListLayoutMetrics(page: Page) {
   return page.evaluate(() => {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const titleArea = requireElement(".title_area");
-    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
     const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
     const pagination = requireElement("#pagination");
@@ -1082,7 +1135,7 @@ async function issueListMetrics(page: Page) {
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const titleArea = requireElement(".title_area");
-    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const firstRow = requireElement('[data-stylex-owner="site-issue-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-issue-list-project-avatar"]');
     const avatarImage = requireElement(

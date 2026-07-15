@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-four slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-five slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1671,6 +1671,17 @@ route-specific global theme variables and the shared mobile breakpoint. This con
 GREEN 5/5, and the complete issue-list owner/behavior matrix passes 33/34 with only the pre-existing
 unrelated GNB `Feedback` fixture mismatch. Fresh live legacy visual comparison remains unverified.
 This is not Wave 1 completion.
+
+The one-hundred-thirty-fifth slice migrates the authenticated populated
+`/sites/issueList?state=open` Open/Closed state-tab row from `site/issueList.scala.html`, Bootstrap
+2.3.1, `_responsive.less`, and `_yobiUI.less`. Three stable owners cover the tab list clearfix and
+border, repeated floated items, responsive links, hover/focus paint, and selected state through
+route-specific global theme variables and the shared mobile breakpoint. Only this consumer retires
+`nav`, `nav-tabs`, and item `active`; the `ul > li > Link` skeleton, copy/order, search-state SPA
+navigation, and independent tab consumers remain unchanged. Actual RED 5/5 becomes GREEN 5/5. The
+complete issue-list owner/behavior matrix passes 38/39 with only the pre-existing unrelated GNB
+`Feedback` fixture mismatch; the whole-screen file itself passes 7/8. Fresh live legacy visual
+comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

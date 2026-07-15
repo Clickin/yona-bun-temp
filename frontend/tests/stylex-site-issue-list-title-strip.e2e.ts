@@ -100,8 +100,14 @@ test.describe("StyleX site issue-list title strip", () => {
     expect(
       await page.locator(".span10 > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "UL", "UL", "DIV"]);
-    await expect(page.locator(`${ownerSelector} + ul.nav.nav-tabs`)).toHaveCount(1);
-    await expect(page.locator(`${ownerSelector} + ul.nav.nav-tabs li.active a`)).toHaveText("Open");
+    await expect(
+      page.locator(`${ownerSelector} + ul[data-stylex-owner="site-issue-list-state-tabs"]`),
+    ).toHaveCount(1);
+    await expect(
+      page.locator(
+        `${ownerSelector} + ul[data-stylex-owner="site-issue-list-state-tabs"] [data-selected="true"] [data-stylex-owner="site-issue-list-state-tab-link"]`,
+      ),
+    ).toHaveText("Open");
   });
 
   test("composes generated classes with shared legacy title fallbacks", async ({ page }) => {
@@ -164,6 +170,9 @@ test.describe("StyleX site issue-list title strip", () => {
     const unauthorizedGeneratedOwners = await page.evaluate(() => {
       const allowedOwners = new Set([
         "site-issue-list-title-strip",
+        "site-issue-list-state-tabs",
+        "site-issue-list-state-tab-item",
+        "site-issue-list-state-tab-link",
         "site-issue-list-container",
         "site-issue-list-row",
         "site-issue-list-project-avatar",

@@ -51,6 +51,84 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  issueListStateTabs: {
+    marginBottom: globalColors.siteIssueListStateTabsMarginBottom,
+    marginLeft: globalColors.siteIssueListStateTabsMarginLeft,
+    listStyle: globalColors.siteIssueListStateTabsListStyle,
+    borderBottomWidth: globalColors.siteIssueListStateTabsBorderBottomWidth,
+    borderBottomStyle: globalColors.siteIssueListStateTabsBorderBottomStyle,
+    borderBottomColor: globalColors.siteIssueListStateTabsBorderBottom,
+    "::before": {
+      content: globalColors.siteIssueListStateTabsClearfixContent,
+      display: globalColors.siteIssueListStateTabsClearfixDisplay,
+      lineHeight: globalColors.siteIssueListStateTabsClearfixLineHeight,
+    },
+    "::after": {
+      content: globalColors.siteIssueListStateTabsClearfixContent,
+      display: globalColors.siteIssueListStateTabsClearfixDisplay,
+      lineHeight: globalColors.siteIssueListStateTabsClearfixLineHeight,
+      clear: globalColors.siteIssueListStateTabsClearfixClear,
+    },
+  },
+  issueListStateTabItem: {
+    float: globalColors.siteIssueListStateTabItemFloat,
+    marginBottom: globalColors.siteIssueListStateTabItemMarginBottom,
+  },
+  issueListStateTabItemSelected: {
+    marginBottom: globalColors.siteIssueListStateTabItemMarginBottom,
+  },
+  issueListStateTabLink: {
+    display: globalColors.siteIssueListStateTabLinkDisplay,
+    paddingInline: {
+      default: globalColors.siteIssueListStateTabLinkDesktopPaddingInline,
+      [globalBreakpoints.mobile]: globalColors.siteIssueListStateTabLinkMobilePaddingInline,
+    },
+    paddingBlock: globalColors.siteIssueListStateTabLinkPaddingBlock,
+    marginRight: globalColors.siteIssueListStateTabLinkMarginRight,
+    lineHeight: globalColors.siteIssueListStateTabLinkLineHeight,
+    borderWidth: globalColors.siteIssueListStateTabLinkBorderWidth,
+    borderStyle: globalColors.siteIssueListStateTabLinkBorderStyle,
+    borderColor: {
+      default: globalColors.siteIssueListStateTabLinkBorder,
+      ":hover": globalColors.siteIssueListStateTabLinkInteractiveBorder,
+      ":focus": globalColors.siteIssueListStateTabLinkInteractiveBorder,
+    },
+    borderRadius: globalColors.siteIssueListStateTabLinkRadius,
+    color: globalColors.siteIssueListStateTabLinkText,
+    fontWeight: globalColors.siteIssueListStateTabLinkFontWeight,
+    backgroundColor: {
+      ":hover": globalColors.siteIssueListStateTabLinkInteractiveSurface,
+      ":focus": globalColors.siteIssueListStateTabLinkInteractiveSurface,
+    },
+    textDecoration: {
+      ":hover": globalColors.siteIssueListStateTabLinkInteractiveTextDecoration,
+      ":focus": globalColors.siteIssueListStateTabLinkInteractiveTextDecoration,
+    },
+  },
+  issueListStateTabLinkSelected: {
+    color: {
+      default: globalColors.siteIssueListStateTabLinkSelectedText,
+      ":hover": globalColors.siteIssueListStateTabLinkSelectedText,
+      ":focus": globalColors.siteIssueListStateTabLinkSelectedText,
+    },
+    cursor: globalColors.siteIssueListStateTabLinkSelectedCursor,
+    backgroundColor: {
+      default: globalColors.siteIssueListStateTabLinkSelectedSurface,
+      ":hover": globalColors.siteIssueListStateTabLinkSelectedSurface,
+      ":focus": globalColors.siteIssueListStateTabLinkSelectedSurface,
+    },
+    borderColor: {
+      default: globalColors.siteIssueListStateTabLinkSelectedBorder,
+      ":hover": globalColors.siteIssueListStateTabLinkSelectedBorder,
+      ":focus": globalColors.siteIssueListStateTabLinkSelectedBorder,
+    },
+    borderBottomColor: {
+      default: globalColors.siteIssueListStateTabLinkSelectedBorderBottom,
+      ":hover": globalColors.siteIssueListStateTabLinkSelectedBorderBottom,
+      ":focus": globalColors.siteIssueListStateTabLinkSelectedBorderBottom,
+    },
+    fontWeight: globalColors.siteIssueListStateTabLinkFontWeight,
+  },
   issueListContainer: {
     listStyle: globalColors.siteIssueListContainerListStyle,
   },
@@ -198,6 +276,7 @@ const styles = stylex.create({
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const issueListStateTabsStyleProps = stylex.props(styles.issueListStateTabs);
 const issueListContainerStyleProps = stylex.props(styles.issueListContainer);
 const issueListRowStyleProps = stylex.props(styles.issueListRow);
 const issueListRowEvenStyleProps = stylex.props(styles.issueListRow, styles.issueListRowEven);
@@ -297,7 +376,7 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                   <LegacyMessage messageKey="site.sidebar.issueList" />
                 </h2>
               </div>
-              <ul className="nav nav-tabs">
+              <ul {...issueListStateTabsStyleProps} data-stylex-owner="site-issue-list-state-tabs">
                 <IssueStateTab state="open" selected={state} />
                 <IssueStateTab state="closed" selected={state} />
               </ul>
@@ -587,10 +666,29 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
 
 function IssueStateTab({ selected, state }: { selected: string; state: SiteIssueState }) {
   const { t } = useLegacyMessages();
+  const isSelected = selected === state;
+  const itemStyleProps = stylex.props(
+    styles.issueListStateTabItem,
+    isSelected && styles.issueListStateTabItemSelected,
+  );
+  const linkStyleProps = stylex.props(
+    styles.issueListStateTabLink,
+    isSelected && styles.issueListStateTabLinkSelected,
+  );
 
   return (
-    <li className={selected === state ? "active" : ""}>
-      <Link {...legacyIssueListLinkProps} search={{ state }} to="/sites/issueList">
+    <li
+      {...itemStyleProps}
+      data-selected={String(isSelected)}
+      data-stylex-owner="site-issue-list-state-tab-item"
+    >
+      <Link
+        {...legacyIssueListLinkProps}
+        {...linkStyleProps}
+        data-stylex-owner="site-issue-list-state-tab-link"
+        search={{ state }}
+        to="/sites/issueList"
+      >
         {t(`issue.state.${state}`)}
       </Link>
     </li>
