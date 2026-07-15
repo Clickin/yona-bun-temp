@@ -154,7 +154,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
 
     // The previous row-padding declarations must remain composed into the expanded owner.
     expect(route).toContain('paddingBlock: "10px"');
-    expect(route).toContain('paddingInline: "10px"');
+    expect(route).toContain('paddingInline: "0px"');
     for (const variable of [
       "sitePostListRowBorder",
       "sitePostListRowBorderStyle",

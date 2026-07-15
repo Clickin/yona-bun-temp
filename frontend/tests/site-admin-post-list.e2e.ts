@@ -1194,7 +1194,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-post-list-breadcrumb-outer], .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1215,6 +1215,9 @@ async function canonicalizeScreenRoots(page: Page) {
         name === "class" &&
         new Set([
           "site-post-list-sidebar",
+          "site-post-list-breadcrumb-outer",
+          "site-post-list-breadcrumb-inner",
+          "site-post-list-breadcrumb-heading",
           "site-post-list-sidebar-item",
           "site-post-list-sidebar-link",
           "site-post-list-sidebar-badge",
@@ -1328,6 +1331,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           "post-info-separator",
           "post-title",
         ]);
+        if (current.matches(".site-breadcrumb-outer")) {
+          retiredPostListTokens.add("site-breadcrumb-outer");
+        }
+        if (current.matches(".site-breadcrumb-inner")) {
+          retiredPostListTokens.add("site-breadcrumb-inner");
+        }
         if (
           current.matches(".post-list-wrap > .listitem") ||
           current.matches(".post-list-wrap > .listitem > .avatar-wrap.list-avatar")

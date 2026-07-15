@@ -175,7 +175,7 @@ test.describe("StyleX site post list sidebar", () => {
     for (const suffix of suffixes) {
       const key = `sitePostListSidebar${suffix}`;
       expect(route).not.toContain("globalColors.");
-      expect(theme).not.toContain(imported);
+      expect(theme).not.toContain(key);
     }
     for (const retired of [
       'className="site-setting-nav"',

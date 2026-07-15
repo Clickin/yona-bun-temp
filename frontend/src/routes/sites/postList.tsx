@@ -33,6 +33,27 @@ const legacyCurrentSitePostListSidebarSearch = {
   pageNum: -1,
 } satisfies PostListRouteSearch;
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: {
+      "@media (max-width: 720px)": "10px",
+    },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: {
+    margin: "0px auto",
+  },
+  breadcrumbHeading: {
+    color: "inherit",
+    fontFamily: "inherit",
+    fontSize: "24.5px",
+    fontWeight: "700",
+    lineHeight: "30px",
+    margin: "10px 0px",
+    padding: "10px 10px 5px",
+    textRendering: "optimizeLegibility",
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -314,9 +335,18 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <title>{t("title.siteSetting")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        data-stylex-owner="site-post-list-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="site-post-list-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="site-post-list-breadcrumb-heading"
+          >
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

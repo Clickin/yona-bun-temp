@@ -1742,6 +1742,21 @@ compared with those captures: the owned 20px heading start, 45px heading rhythm,
 and 10px inner inset match; locale, fixture data, and excluded shell/grid owners are not attributed
 to this breadcrumb slice.
 
+The one-hundred-fifty-third slice applies the same strictly bounded management-breadcrumb
+retirement to authenticated populated `/sites/postList`. Exactly three route-local StyleX owners
+replace outer `.site-breadcrumb-outer`, inner `.site-breadcrumb-inner`, and the direct `h3` using
+the verified Bootstrap 2.3.1, `_page.less`, and `_responsive.less` declarations inline, without a
+theme registry. Only the two wrapper classes retire; page wrap, management grid/sidebar,
+title/list/rows/metadata/pagination, and other site-admin consumers remain excluded. The focused
+test uses one browser process for desktop 1366x900 and mobile 390x844, an independent ShadowRoot
+frozen fallback, and local screenshots compared with the authenticated legacy breadcrumb captures.
+Source RED on absent owners becomes focused GREEN 2/2. The generated desktop/mobile screenshots
+were visually compared with the authenticated legacy captures: the owned x=20 heading start,
+45px heading box/rhythm, full width, and 10px inset match. Locale, fixture content, and excluded
+shell/grid owners remain outside this visual claim. After correcting two stale source expectations,
+the complete post-list StyleX matrix is GREEN 36/36. Whole-screen post-list is GREEN 7/8; its only
+failure is the pre-existing excluded global-GNB `Feedback` gap and is not caused by the breadcrumb.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
