@@ -58,19 +58,27 @@ test.describe("StyleX site user-list title strip", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="site-user-list-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-user-list-title-heading"');
+    expect(route).toContain('data-stylex-owner="site-user-list-title-search-form"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(route).toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
-    expect(route).toContain('`pull-left ${titleStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
 
   test("keeps the legacy title before the search form", async ({ page }) => {
     const owner = await openUserList(page);
 
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Users");
-    await expect(owner.locator(":scope > form.form-search.pull-right")).toHaveCount(1);
+    await expect(
+      owner.locator(':scope > h2[data-stylex-owner="site-user-list-title-heading"]'),
+    ).toHaveText("Users");
+    await expect(
+      owner.locator(
+        ':scope > form.form-search.pull-right[data-stylex-owner="site-user-list-title-search-form"]',
+      ),
+    ).toHaveCount(1);
     expect(
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),
@@ -78,7 +86,7 @@ test.describe("StyleX site user-list title strip", () => {
     ).toEqual(["H2", "FORM"]);
   });
 
-  test("composes generated classes with shared legacy title fallbacks", async ({ page }) => {
+  test("owns title classes while retaining the form semantic fallbacks", async ({ page }) => {
     const owner = await openUserList(page);
     const classes = await owner.evaluate((titleArea) => {
       const title = titleArea.querySelector("h2");
@@ -88,8 +96,8 @@ test.describe("StyleX site user-list title strip", () => {
       };
     });
 
-    expect(classes.titleArea).toContain("title_area");
-    expect(classes.title).toContain("pull-left");
+    expect(classes.titleArea).not.toContain("title_area");
+    expect(classes.title).not.toContain("pull-left");
     expect(classes.titleArea.some((token) => token.startsWith("x"))).toBe(true);
     expect(classes.title.some((token) => token.startsWith("x"))).toBe(true);
   });
@@ -101,7 +109,7 @@ test.describe("StyleX site user-list title strip", () => {
     test(`keeps ${viewport.name} title geometry and captures its surface`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const owner = await openUserList(page);
-      const title = owner.locator("h2.pull-left");
+      const title = owner.locator('[data-stylex-owner="site-user-list-title-heading"]');
 
       await expect(owner).toHaveCSS("overflow", "hidden");
       await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -112,8 +120,12 @@ test.describe("StyleX site user-list title strip", () => {
       await expect(title).toHaveCSS("line-height", "30px");
       const boxes = await page.evaluate((selector) => {
         const owner = document.querySelector<HTMLElement>(selector);
-        const title = owner?.querySelector<HTMLElement>("h2.pull-left");
-        const search = owner?.querySelector<HTMLElement>("form.form-search");
+        const title = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-user-list-title-heading"]',
+        );
+        const search = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-user-list-title-search-form"]',
+        );
         if (!owner || !title || !search) return null;
         return {
           owner: owner.getBoundingClientRect().toJSON(),

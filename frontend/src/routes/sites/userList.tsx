@@ -65,10 +65,15 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.siteUserListTitleHeadingFloat,
+  },
+  titleSearchForm: {
+    margin: globalColors.siteUserListTitleSearchFormMargin,
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const titleSearchFormStyleProps = stylex.props(styles.titleSearchForm);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -238,16 +243,14 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-user-list-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-user-list-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-user-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.userList" />
                 </h2>
                 <form
-                  className="form-search pull-right"
+                  {...titleSearchFormStyleProps}
+                  className={`form-search pull-right ${titleSearchFormStyleProps.className ?? ""}`}
+                  data-stylex-owner="site-user-list-title-search-form"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
                   onSubmit={(event) => {
                     event.preventDefault();

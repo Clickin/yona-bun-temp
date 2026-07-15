@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-seven slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-eight slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1704,6 +1704,18 @@ through global theme variables. This route retires only `title_area`, `pull-left
 `.site-setting-wrap .post-list-wrap { margin: 0 }` bridge no longer matches this owner but remains
 for independent consumers. Actual RED 5/5 becomes GREEN 5/5, and the complete post-list matrix is
 36/37 with only the pre-existing unrelated GNB `Feedback` fixture mismatch. Fresh live legacy
+visual comparison remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-thirty-eighth slice completes the authenticated populated
+`/sites/userList?state=ACTIVE` title/search shell fallback retirement from
+`site/userList.scala.html`, Bootstrap 2.3.1, and `_page.less`. The existing title owner plus new
+direct heading and search-form owners move the title paint, heading float, and direct form zero
+margin through global theme variables. This route retires only `title_area` and `pull-left` while
+retaining `form-search`, `pull-right`, and every search child class for their independent frozen
+cascade. Actual RED 5/5 becomes GREEN 5/5; together with the prior title gate the focused matrix is
+11/11. The broader user-list matrix is 24/27: the unrelated GNB `Feedback` fixture mismatch, stale
+350px expectation against the frozen 360px input border box, and stale `MouseEvent` source
+expectation against the existing `SyntheticEvent` remain outside this wave. Fresh live legacy
 visual comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives

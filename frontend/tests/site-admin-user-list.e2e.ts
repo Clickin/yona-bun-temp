@@ -1475,6 +1475,19 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (
         name === "class" &&
+        new Set([
+          "site-user-list-title-strip",
+          "site-user-list-title-heading",
+          "site-user-list-title-search-form",
+        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
         current.matches('[data-stylex-owner="global-gnb-nav"]')
       ) {
@@ -1578,10 +1591,12 @@ async function linkActiveMarkerLeaks(locator: Locator) {
 
 async function userListMetrics(page: Page) {
   return page.evaluate(() => {
-    const titleArea = requireElement(".title_area");
-    const title = requireElement(".title_area h2");
-    const searchForm = requireElement(".title_area .form-search");
-    const searchInput = requireElement('.title_area input[name="query"]');
+    const titleArea = requireElement('[data-stylex-owner="site-user-list-title-strip"]');
+    const title = requireElement('[data-stylex-owner="site-user-list-title-heading"]');
+    const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
+    const searchInput = requireElement(
+      '[data-stylex-owner="site-user-list-title-search-form"] input[name="query"]',
+    );
     const row = requireElement(".site-setting-wrap > .row-fluid");
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
@@ -1685,9 +1700,9 @@ async function userListMetrics(page: Page) {
 
 async function siteAdminStateLayoutFlags(page: Page) {
   return page.evaluate(() => {
-    const title = requireElement(".title_area h2");
-    const titleArea = requireElement(".title_area");
-    const searchForm = requireElement(".title_area .form-search");
+    const title = requireElement('[data-stylex-owner="site-user-list-title-heading"]');
+    const titleArea = requireElement('[data-stylex-owner="site-user-list-title-strip"]');
+    const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const activeTab = requireElement(".site-setting-wrap .nav-tabs li.active a");
@@ -1766,7 +1781,22 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
-      const value = current.getAttribute(name) ?? "";
+      let value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredTitleToken = current.matches(
+          ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
+        )
+          ? "title_area"
+          : current.matches(
+                ".site-setting-wrap > .row-fluid > .span10 > div.title_area > h2.pull-left",
+              )
+            ? "pull-left"
+            : null;
+        value = value
+          .split(/\s+/u)
+          .filter((token) => token !== retiredTitleToken)
+          .join(" ");
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&
