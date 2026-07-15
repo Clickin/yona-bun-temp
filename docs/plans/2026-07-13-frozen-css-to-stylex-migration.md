@@ -1757,6 +1757,20 @@ shell/grid owners remain outside this visual claim. After correcting two stale s
 the complete post-list StyleX matrix is GREEN 36/36. Whole-screen post-list is GREEN 7/8; its only
 failure is the pre-existing excluded global-GNB `Feedback` gap and is not caused by the breadcrumb.
 
+The one-hundred-fifty-fourth slice migrates only the authenticated populated `/sites/postList`
+direct management grid to four colocated owners. Active `bootstrap.css` and `_page.less` supply
+the centered wrapper, clearfix, fixed percentage columns, and gutter; manifest-declared
+reference-only/inactive `bootstrap-responsive.css` is not migrated. Both 1366x900 and 390x844
+retain side-by-side columns, matching live post-list x=239/width=1117 and x=76/width=314 evidence
+without horizontal overflow. Only the direct `site-setting-wrap`, `row-fluid`, `span2`, and
+`span10` classes retire; breadcrumb, nested post-row `row-fluid`, and all child owners remain.
+Focused GREEN is 2/2. Local desktop/mobile grid screenshots were visually compared with the
+authenticated legacy baseline and sweep: desktop grid width 1346 with content near x=239 and list
+width near 1117; mobile grid width 390 with content/list near x=66/x=76 and list width near 314.
+Side-by-side geometry and no overflow match. Locale, fixture content, and excluded GNB/footer are
+outside this claim. The complete post-list StyleX matrix is GREEN 38/38. Whole-screen post-list is
+GREEN 7/8 with only the pre-existing excluded global-GNB `Feedback` gap, unrelated to this grid.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

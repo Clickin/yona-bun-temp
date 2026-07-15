@@ -54,6 +54,23 @@ const styles = stylex.create({
     padding: "10px 10px 5px",
     textRendering: "optimizeLegibility",
   },
+  settingWrap: { margin: "0px auto" },
+  settingGrid: {
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    minHeight: "30px",
+  },
+  settingSidebarColumn: { marginLeft: "0px", width: "14.893617021276595%" },
+  settingContentColumn: {
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -352,12 +369,21 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
       </div>
       <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
-          <div className="row-fluid">
-            <div className="span2">
+        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-post-list-setting-wrap">
+          <div
+            {...stylex.props(styles.settingGrid)}
+            data-stylex-owner="site-post-list-setting-grid"
+          >
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
+              data-stylex-owner="site-post-list-setting-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
+              data-stylex-owner="site-post-list-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-post-list-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-post-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.postList" />

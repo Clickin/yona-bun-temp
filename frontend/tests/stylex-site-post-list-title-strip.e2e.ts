@@ -82,7 +82,9 @@ test.describe("StyleX site post-list title strip", () => {
       owner.locator(':scope > h2[data-stylex-owner="site-post-list-title-heading"]'),
     ).toHaveText("Posts");
     expect(
-      await page.locator(".span10 > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
+      await page
+        .locator('[data-stylex-owner="site-post-list-setting-content-column"] > *')
+        .evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "UL", "DIV"]);
   });
 
@@ -149,7 +151,11 @@ test.describe("StyleX site post-list title strip", () => {
         "site-post-list-container",
         "site-post-list-pagination",
       ]);
-      return Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
+      return Array.from(
+        document.querySelectorAll(
+          '[data-stylex-owner="site-post-list-setting-content-column"] > *',
+        ),
+      )
         .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
         .filter((element) => !allowed.has(element.getAttribute("data-stylex-owner") ?? ""))
         .map((element) => element.tagName);

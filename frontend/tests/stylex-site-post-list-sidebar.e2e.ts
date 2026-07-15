@@ -320,18 +320,21 @@ test.describe("StyleX site post list sidebar", () => {
         const item = actual.querySelector<HTMLElement>(`[data-stylex-owner="${names.item}"]`)!;
         const link = item.querySelector<HTMLElement>(`[data-stylex-owner="${names.link}"]`)!;
         const badge = actual.querySelector<HTMLElement>(`[data-stylex-owner="${names.badge}"]`)!;
-        const ul = document.createElement("ul"),
+        const host = document.createElement("div"),
+          ul = document.createElement("ul"),
           li = document.createElement("li"),
           a = document.createElement("a"),
           span = document.createElement("span");
+        host.className = "site-setting-wrap";
+        host.style.cssText = "position:absolute;left:-10000px";
         ul.className = "site-setting-nav";
         span.className = "notification-badge";
-        ul.style.cssText = "position:absolute;left:-10000px";
         span.textContent = "1";
         a.append(span);
         li.append(a);
         ul.append(li);
-        actual.parentElement!.append(ul);
+        host.append(ul);
+        actual.parentElement!.append(host);
         const pick = (element: Element, props: string[]) =>
           props.map((prop) => getComputedStyle(element).getPropertyValue(prop));
         const result = {
@@ -370,7 +373,7 @@ test.describe("StyleX site post list sidebar", () => {
             ]),
           ],
         };
-        ul.remove();
+        host.remove();
         return result;
       }, owners);
       expect(fallback.sidebar[0]).toEqual(fallback.sidebar[1]);

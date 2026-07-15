@@ -157,7 +157,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     ).toEqual(["H2"]);
     expect(
       await page
-        .locator(".site-setting-wrap > .row-fluid > .span10 > *")
+        .locator('[data-stylex-owner="site-post-list-setting-content-column"] > *')
         .evaluateAll((nodes) =>
           nodes.map((node) => node.getAttribute("data-stylex-owner") ?? node.tagName),
         ),
@@ -176,7 +176,18 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
     await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
-    await expect(page.locator(".site-setting-wrap > .row-fluid > .span10")).toHaveCount(1);
+    const settingWrap = page.locator('[data-stylex-owner="site-post-list-setting-wrap"]');
+    const settingGrid = page.locator('[data-stylex-owner="site-post-list-setting-grid"]');
+    const sidebarColumn = page.locator(
+      '[data-stylex-owner="site-post-list-setting-sidebar-column"]',
+    );
+    const contentColumn = page.locator(
+      '[data-stylex-owner="site-post-list-setting-content-column"]',
+    );
+    await expect(settingWrap).not.toHaveClass(/site-setting-wrap/u);
+    await expect(settingGrid).not.toHaveClass(/row-fluid/u);
+    await expect(sidebarColumn).not.toHaveClass(/span2/u);
+    await expect(contentColumn).not.toHaveClass(/span10/u);
     await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).toHaveClass(
       /\brow-fluid\b/u,
     );
@@ -205,7 +216,9 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
         "site-post-list-pagination-label",
         "site-post-list-pagination-icon",
       ]);
-      return Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+      return Array.from(
+        document.querySelectorAll('[data-stylex-owner="site-post-list-setting-content-column"] *'),
+      )
         .filter((element) => Array.from(element.classList).some((name) => name.startsWith("x")))
         .map((element) => element.closest<HTMLElement>("[data-stylex-owner]")?.dataset.stylexOwner)
         .filter((name) => !name || !allowed.has(name));
@@ -238,7 +251,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
 
       const geometry = await page.evaluate((ownerNames) => {
         const content = document.querySelector<HTMLElement>(
-          ".site-setting-wrap > .row-fluid > .span10",
+          '[data-stylex-owner="site-post-list-setting-content-column"]',
         )!;
         const get = (name: string) =>
           document
@@ -273,17 +286,24 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
 
       const fallback = await page.evaluate((ownerNames) => {
         const content = document.querySelector<HTMLElement>(
-          ".site-setting-wrap > .row-fluid > .span10",
+          '[data-stylex-owner="site-post-list-setting-content-column"]',
         )!;
         const titleFixture = document.createElement("div");
+        titleFixture.className = "site-setting-wrap";
         titleFixture.style.position = "absolute";
         titleFixture.style.left = "-10000px";
         titleFixture.innerHTML = '<div class="title_area"><h2 class="pull-left">Posts</h2></div>';
         content.append(titleFixture);
         const listFixture = document.createElement("div");
+        listFixture.className = "site-setting-wrap";
+        listFixture.dataset.frozenPostListFixture = "true";
         listFixture.style.position = "absolute";
         listFixture.style.left = "-10000px";
-        listFixture.innerHTML = '<ul class="post-list-wrap"><li></li></ul>';
+        listFixture.innerHTML = `<style>
+          @media (max-width: 720px) {
+            [data-frozen-post-list-fixture="true"] .post-list-wrap { margin-left: 10px; }
+          }
+        </style><ul class="post-list-wrap"><li></li></ul>`;
         document.body.append(listFixture);
         const actual = (name: string) =>
           document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;

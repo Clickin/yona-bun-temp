@@ -175,7 +175,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-post-list-setting-wrap"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
     "Posts",
   );
@@ -892,7 +892,9 @@ async function sitePostRowDom(page: Page) {
 
 async function postListContainmentMetrics(page: Page) {
   return page.evaluate(() => {
-    const content = document.querySelector<HTMLElement>(".site-setting-wrap .span10");
+    const content = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="site-post-list-setting-content-column"]',
+    );
     const list = document.querySelector<HTMLElement>(
       '[data-stylex-owner="site-post-list-container"]',
     );
@@ -1120,9 +1122,9 @@ async function mockUpdate(
 
 async function postListMetrics(page: Page) {
   return page.evaluate(() => {
-    const row = requireElement(".site-setting-wrap > .row-fluid");
-    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const row = requireElement('[data-stylex-owner="site-post-list-setting-grid"]');
+    const sidebar = requireElement('[data-stylex-owner="site-post-list-setting-sidebar-column"]');
+    const content = requireElement('[data-stylex-owner="site-post-list-setting-content-column"]');
     const titleArea = requireElement('[data-stylex-owner="site-post-list-title-strip"]');
     const firstRow = requireElement('[data-stylex-owner="site-post-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-post-list-project-avatar"]');
@@ -1218,6 +1220,10 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-post-list-breadcrumb-outer",
           "site-post-list-breadcrumb-inner",
           "site-post-list-breadcrumb-heading",
+          "site-post-list-setting-wrap",
+          "site-post-list-setting-grid",
+          "site-post-list-setting-sidebar-column",
+          "site-post-list-setting-content-column",
           "site-post-list-sidebar-item",
           "site-post-list-sidebar-link",
           "site-post-list-sidebar-badge",
@@ -1337,6 +1343,13 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (current.matches(".site-breadcrumb-inner")) {
           retiredPostListTokens.add("site-breadcrumb-inner");
         }
+        if (current.matches(".site-setting-wrap")) retiredPostListTokens.add("site-setting-wrap");
+        if (current.matches(".site-setting-wrap > .row-fluid"))
+          retiredPostListTokens.add("row-fluid");
+        if (current.matches(".site-setting-wrap > .row-fluid > .span2"))
+          retiredPostListTokens.add("span2");
+        if (current.matches(".site-setting-wrap > .row-fluid > .span10"))
+          retiredPostListTokens.add("span10");
         if (
           current.matches(".post-list-wrap > .listitem") ||
           current.matches(".post-list-wrap > .listitem > .avatar-wrap.list-avatar")
