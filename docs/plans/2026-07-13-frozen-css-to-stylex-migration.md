@@ -1492,6 +1492,11 @@ no declarations, theme values, DOM order, or route behavior changes. Form contro
 sidebar/shell, and other alert consumers remain fallback or separate owners. This is not Wave 1
 completion.
 
+The one-hundred-twelfth slice repairs `/sites/update` title-strip StyleX class composition. The
+legacy `title_area` and `pull-left` classes now coexist with the existing generated classes; update
+download/error owners, body states, sidebar/shell, and generic title areas remain fallback or
+separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

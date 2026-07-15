@@ -39,6 +39,10 @@ test.describe("StyleX site update title strip", () => {
     expect(route).toContain('data-stylex-owner="site-update-title-strip"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
+    expect(route).toContain("titleAreaStyleProps");
+    expect(route).toContain("titleStyleProps");
+    expect(route).toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
+    expect(route).toContain('`pull-left ${titleStyleProps.className ?? ""}`');
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
@@ -143,24 +147,41 @@ test.describe("StyleX site update title strip", () => {
     }
   });
 
-  test("limits generated StyleX classes to the title owner in the no-update body", async ({
+  test("composes generated StyleX and legacy fallback classes inside explicit update owners", async ({
     page,
   }) => {
-    await openUpdate(page, {
+    const owner = await openUpdate(page, {
       currentVersion: "1.0.0",
       error: null,
       releaseUrl: null,
       versionToUpdate: null,
     });
 
-    const generatedOutsideOwner = await page.evaluate(
-      (selector) =>
-        Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
-          .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-          .filter((element) => element.closest(selector) === null)
-          .map((element) => element.tagName),
-      selector,
+    const classComposition = await owner.evaluate((titleArea) => {
+      const heading = titleArea.querySelector("h2");
+      if (!heading) return null;
+      return {
+        heading: Array.from(heading.classList),
+        titleArea: Array.from(titleArea.classList),
+      };
+    });
+    expect(classComposition).not.toBeNull();
+    expect(classComposition!.titleArea).toContain("title_area");
+    expect(classComposition!.heading).toContain("pull-left");
+    expect(classComposition!.titleArea.some((token) => token.startsWith("x"))).toBe(true);
+    expect(classComposition!.heading.some((token) => token.startsWith("x"))).toBe(true);
+
+    const generatedOutsideExplicitOwners = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+        .filter(
+          (element) =>
+            element.closest(
+              '[data-stylex-owner="site-update-title-strip"], [data-stylex-owner="site-update-download-action"], [data-stylex-owner="site-update-error-pre"]',
+            ) === null,
+        )
+        .map((element) => element.tagName),
     );
-    expect(generatedOutsideOwner).toEqual([]);
+    expect(generatedOutsideExplicitOwners).toEqual([]);
   });
 });

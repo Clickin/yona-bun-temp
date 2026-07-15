@@ -80,6 +80,8 @@ const styles = stylex.create({
     borderRadius: globalColors.siteDiagnosticErrorPreRadius,
   },
 });
+const titleAreaStyleProps = stylex.props(styles.titleArea);
+const titleStyleProps = stylex.props(styles.title);
 
 export const Route = createFileRoute("/sites/update")({
   component: SiteUpdateRoute,
@@ -120,11 +122,11 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
             <div className="span10">
               <div
-                {...stylex.props(styles.titleArea)}
-                className="title_area"
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
                 data-stylex-owner="site-update-title-strip"
               >
-                <h2 {...stylex.props(styles.title)} className="pull-left">
+                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
                   <LegacyMessage messageKey="site.sidebar.update" />
                 </h2>
               </div>
