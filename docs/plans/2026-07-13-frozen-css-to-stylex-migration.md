@@ -1602,6 +1602,16 @@ classes retire; `post-list-wrap`, `listitem`, and `row-fluid` remain for verifie
 shared-row, and Bootstrap consumers. Focused RED 2/5 becomes GREEN 5/5 at desktop and 390 px
 without editing frozen fallback. This is not Wave 1 completion.
 
+The one-hundred-twenty-eighth slice completes the authenticated populated `/sites/postList` row
+and project-avatar presentation from `site/postList.scala.html`, `_common.less`, `_page.less`, and
+`_yobiUI.less`. The existing row owner keeps its padding and adds border, 70px line-height, and
+index-derived alternating surface; separate Link/image owners take the final 45px avatar cascade
+and direct 100% image alignment through global theme variables. Runtime rows remove `listitem`,
+and project-avatar Links remove `avatar-wrap list-avatar`; `row-fluid`, `post-list-wrap`, and the
+excluded metadata subtree remain active fallback. The image now fills 45px instead of the app
+bridge's noncanonical 32px descendant output. Actual RED 2/4 becomes GREEN 4/4, and the previous
+row-content suite remains GREEN 5/5. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

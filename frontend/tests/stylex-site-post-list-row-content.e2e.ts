@@ -154,7 +154,7 @@ test.describe("StyleX site post-list populated row content", () => {
     page,
   }) => {
     const row = await openPostList(page);
-    const avatar = row.locator(":scope > .avatar-wrap.list-avatar");
+    const avatar = owner(row, "site-post-list-project-avatar");
     const info = owner(row, owners.info);
     const project = owner(info, owners.project);
     const separator = owner(info, owners.separator);
@@ -171,7 +171,7 @@ test.describe("StyleX site post-list populated row content", () => {
         .locator(":scope > *")
         .evaluateAll((elements) =>
           elements.map((element) =>
-            element.matches(".avatar-wrap.list-avatar")
+            element.matches('[data-stylex-owner="site-post-list-project-avatar"]')
               ? "avatar"
               : element.matches('[data-stylex-owner="site-post-list-info"]')
                 ? "info"
@@ -204,10 +204,10 @@ test.describe("StyleX site post-list populated row content", () => {
     await expect(separator).toHaveAttribute("data-stylex-owner", owners.separator);
     await expect(title).toHaveAttribute("data-stylex-owner", owners.title);
 
-    // These two classes still own frozen responsive/list-row declarations outside this wave.
+    // The container and Bootstrap grid class still own frozen responsive/grid declarations.
     await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
     await expect(row).toHaveClass(/\brow-fluid\b/u);
-    await expect(row).toHaveClass(/\blistitem\b/u);
+    await expect(row).not.toHaveClass(/\blistitem\b/u);
     for (const [element, retiredClass] of [
       [info, "post-info-wrap"],
       [project, "post-project"],
@@ -265,7 +265,7 @@ test.describe("StyleX site post-list populated row content", () => {
         };
         const { bottom, left, right, top } = element.getBoundingClientRect();
         return {
-          avatar: pick(":scope > .avatar-wrap.list-avatar"),
+          avatar: pick(':scope > [data-stylex-owner="site-post-list-project-avatar"]'),
           info: pick(':scope > [data-stylex-owner="site-post-list-info"]'),
           meta: pick(":scope > .post-meta-wrap"),
           project: pick(

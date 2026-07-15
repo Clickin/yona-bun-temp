@@ -52,6 +52,29 @@ const styles = stylex.create({
   postListRow: {
     paddingBlock: globalColors.sitePostListRowPaddingBlock,
     paddingInline: globalColors.sitePostListRowPaddingInline,
+    borderBottomColor: globalColors.sitePostListRowBorder,
+    borderBottomStyle: globalColors.sitePostListRowBorderStyle,
+    borderBottomWidth: globalColors.sitePostListRowBorderWidth,
+    lineHeight: globalColors.sitePostListRowLineHeight,
+  },
+  postListRowEven: {
+    backgroundColor: globalColors.sitePostListRowEvenSurface,
+  },
+  postListProjectAvatar: {
+    width: globalColors.sitePostListAvatarWidth,
+    height: globalColors.sitePostListAvatarHeight,
+    marginRight: globalColors.sitePostListAvatarMarginRight,
+    marginTop: globalColors.sitePostListAvatarMarginTop,
+    float: globalColors.sitePostListAvatarFloat,
+    display: globalColors.sitePostListAvatarDisplay,
+    verticalAlign: globalColors.sitePostListAvatarVerticalAlign,
+    overflow: globalColors.sitePostListAvatarOverflow,
+    backgroundColor: globalColors.sitePostListAvatarSurface,
+    borderRadius: globalColors.sitePostListAvatarRadius,
+  },
+  postListProjectAvatarImage: {
+    width: globalColors.sitePostListAvatarImageWidth,
+    verticalAlign: globalColors.sitePostListAvatarImageVerticalAlign,
   },
   postInfo: {
     lineHeight: globalColors.sitePostListInfoLineHeight,
@@ -77,7 +100,8 @@ const styles = stylex.create({
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const postListContainerStyleProps = stylex.props(styles.postListContainer);
-const postListRowStyleProps = stylex.props(styles.postListRow);
+const postListProjectAvatarStyleProps = stylex.props(styles.postListProjectAvatar);
+const postListProjectAvatarImageStyleProps = stylex.props(styles.postListProjectAvatarImage);
 const postInfoStyleProps = stylex.props(styles.postInfo);
 const postProjectLinkStyleProps = stylex.props(styles.postProjectLink);
 const postInfoSeparatorStyleProps = stylex.props(styles.postInfoSeparator);
@@ -142,9 +166,10 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 className={`post-list-wrap ${postListContainerStyleProps.className ?? ""}`}
                 data-stylex-owner="site-post-list-container"
               >
-                {(query.data?.posts ?? []).map((post) => (
+                {(query.data?.posts ?? []).map((post, index) => (
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                    even={index % 2 === 1}
                     post={post}
                   />
                 ))}
@@ -308,22 +333,29 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   );
 }
 
-function PostListItem({ post }: { post: SitePost }) {
+function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
   const projectLogoUrl = legacyProjectLogoUrl(post.projectLogoUrl);
   const createdTitle = post.createdTitle ?? post.createdLabel;
+  const postListRowStyleProps = stylex.props(styles.postListRow, even && styles.postListRowEven);
 
   return (
     <li
       {...postListRowStyleProps}
-      className={`row-fluid listitem ${postListRowStyleProps.className ?? ""}`}
+      className={`row-fluid ${postListRowStyleProps.className ?? ""}`}
       data-stylex-owner="site-post-list-row"
     >
       <Link
-        className="avatar-wrap list-avatar"
+        {...postListProjectAvatarStyleProps}
+        data-stylex-owner="site-post-list-project-avatar"
         params={{ ownerName: post.ownerName, projectName: post.projectName }}
         to="/$ownerName/$projectName"
       >
-        <img src={projectLogoUrl} alt={post.projectName} />
+        <img
+          {...postListProjectAvatarImageStyleProps}
+          data-stylex-owner="site-post-list-project-avatar-image"
+          src={projectLogoUrl}
+          alt={post.projectName}
+        />
       </Link>
       <div {...postInfoStyleProps} data-stylex-owner="site-post-list-info">
         <Link

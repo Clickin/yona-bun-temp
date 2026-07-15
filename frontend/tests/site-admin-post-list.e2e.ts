@@ -280,7 +280,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     "height",
     /.*/,
   );
-  await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/post/7`,
@@ -470,7 +470,7 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
 
   await page.goto(`${basePath}/sites/postList`);
 
-  await expect(page.locator(".post-list-wrap .list-avatar")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-post-list-project-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
   );
@@ -559,7 +559,7 @@ test("site admin post list preserves mixed legacy row branches and pagination co
 
   await page.goto(`${basePath}/sites/postList`);
 
-  const rows = page.locator(".post-list-wrap > .listitem");
+  const rows = page.locator('.post-list-wrap > [data-stylex-owner="site-post-list-row"]');
   await expect(rows).toHaveCount(2);
   expect(await sitePostRowDom(page)).toEqual([
     {
@@ -569,7 +569,11 @@ test("site admin post list preserves mixed legacy row branches and pagination co
       authorHref: `${basePath}/bob`,
       authorImgAlt: "Bob Custom",
       authorText: "Bob Custom",
-      childClasses: ["avatar-wrap list-avatar", "owner:site-post-list-info", "post-meta-wrap"],
+      childClasses: [
+        "owner:site-post-list-project-avatar",
+        "owner:site-post-list-info",
+        "post-meta-wrap",
+      ],
       commentHref: `${basePath}/acme/roadmap/post/8#comments`,
       commentText: "11",
       dateText: "2 hours ago",
@@ -589,7 +593,11 @@ test("site admin post list preserves mixed legacy row branches and pagination co
       authorHref: `${basePath}/carol`,
       authorImgAlt: null,
       authorText: "Carol",
-      childClasses: ["avatar-wrap list-avatar", "owner:site-post-list-info", "post-meta-wrap"],
+      childClasses: [
+        "owner:site-post-list-project-avatar",
+        "owner:site-post-list-info",
+        "post-meta-wrap",
+      ],
       commentHref: `${basePath}/labs/ops/post/9#comments`,
       commentText: "0",
       dateText: "Jun 29, 2026",
@@ -678,7 +686,7 @@ test("site admin post list falls back to the legacy default project logo when th
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/postList`);
 
-  const projectLogo = page.locator(".post-list-wrap .list-avatar img");
+  const projectLogo = page.locator('[data-stylex-owner="site-post-list-project-avatar-image"]');
   await expect(projectLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
   expect(consoleMessages).not.toEqual(
     expect.arrayContaining([
@@ -770,68 +778,82 @@ async function paginationAnchorAttrs(anchor: ReturnType<Page["locator"]>) {
 }
 
 async function sitePostRowDom(page: Page) {
-  return page.locator(".post-list-wrap > .listitem").evaluateAll((rows) =>
-    rows.map((row) => {
-      function requireElement<TElement extends Element = Element>(root: Element, selector: string) {
-        const element = root.querySelector<TElement>(selector);
-        if (!element) {
-          throw new Error(`Missing ${selector}`);
+  return page
+    .locator('.post-list-wrap > [data-stylex-owner="site-post-list-row"]')
+    .evaluateAll((rows) =>
+      rows.map((row) => {
+        function requireElement<TElement extends Element = Element>(
+          root: Element,
+          selector: string,
+        ) {
+          const element = root.querySelector<TElement>(selector);
+          if (!element) {
+            throw new Error(`Missing ${selector}`);
+          }
+          return element;
         }
-        return element;
-      }
 
-      const directElementChildren = Array.from(row.children);
-      const projectLink = requireElement<HTMLAnchorElement>(row, ":scope > .list-avatar");
-      const projectImage = requireElement<HTMLImageElement>(row, ":scope > .list-avatar img");
-      const projectNameLink = requireElement<HTMLAnchorElement>(
-        row,
-        '[data-stylex-owner="site-post-list-project-link"]',
-      );
-      const separator = requireElement(row, '[data-stylex-owner="site-post-list-separator"]');
-      const titleLink = requireElement<HTMLAnchorElement>(
-        row,
-        '[data-stylex-owner="site-post-list-title-link"]',
-      );
-      const authorAvatarLink = requireElement<HTMLAnchorElement>(
-        row,
-        ".post-meta-wrap > .avatar-wrap",
-      );
-      const authorImage = requireElement<HTMLImageElement>(
-        row,
-        ".post-meta-wrap > .avatar-wrap img",
-      );
-      const authorLink = requireElement<HTMLAnchorElement>(
-        row,
-        ".post-meta-wrap > .post-meta-item[href]",
-      );
-      const date = requireElement(row, ".post-meta-wrap > span.post-meta-item:not(.post-comments)");
-      const comments = requireElement<HTMLAnchorElement>(row, ".post-comments > a");
+        const directElementChildren = Array.from(row.children);
+        const projectLink = requireElement<HTMLAnchorElement>(
+          row,
+          ':scope > [data-stylex-owner="site-post-list-project-avatar"]',
+        );
+        const projectImage = requireElement<HTMLImageElement>(
+          row,
+          '[data-stylex-owner="site-post-list-project-avatar-image"]',
+        );
+        const projectNameLink = requireElement<HTMLAnchorElement>(
+          row,
+          '[data-stylex-owner="site-post-list-project-link"]',
+        );
+        const separator = requireElement(row, '[data-stylex-owner="site-post-list-separator"]');
+        const titleLink = requireElement<HTMLAnchorElement>(
+          row,
+          '[data-stylex-owner="site-post-list-title-link"]',
+        );
+        const authorAvatarLink = requireElement<HTMLAnchorElement>(
+          row,
+          ".post-meta-wrap > .avatar-wrap",
+        );
+        const authorImage = requireElement<HTMLImageElement>(
+          row,
+          ".post-meta-wrap > .avatar-wrap img",
+        );
+        const authorLink = requireElement<HTMLAnchorElement>(
+          row,
+          ".post-meta-wrap > .post-meta-item[href]",
+        );
+        const date = requireElement(
+          row,
+          ".post-meta-wrap > span.post-meta-item:not(.post-comments)",
+        );
+        const comments = requireElement<HTMLAnchorElement>(row, ".post-comments > a");
 
-      return {
-        authorAvatarHeight: authorImage.getAttribute("height"),
-        authorAvatarSrc: authorImage.getAttribute("src"),
-        authorAvatarWidth: authorImage.getAttribute("width"),
-        authorHref: authorAvatarLink.getAttribute("href"),
-        authorImgAlt: authorImage.getAttribute("alt"),
-        authorText: authorLink.textContent?.trim() ?? "",
-        childClasses: directElementChildren.map((child) => {
-          const owner = child.getAttribute("data-stylex-owner");
-          return owner ? `owner:${owner}` : child.getAttribute("class");
-        }),
-        commentHref: comments.getAttribute("href"),
-        commentText: comments.textContent?.replace(/\s+/g, " ").trim() ?? "",
-        dateText: date.textContent?.trim() ?? "",
-        dateTitle: date.getAttribute("title"),
-        projectHref: projectLink.getAttribute("href"),
-        projectImgAlt: projectImage.getAttribute("alt"),
-        projectImgSrc: projectImage.getAttribute("src"),
-        projectText: projectNameLink.textContent?.trim() ?? "",
-        separatorText: separator.textContent?.trim() ?? "",
-        titleHref: titleLink.getAttribute("href"),
-        titleText: titleLink.textContent?.trim() ?? "",
-      };
-    }),
-  );
+        return {
+          authorAvatarHeight: authorImage.getAttribute("height"),
+          authorAvatarSrc: authorImage.getAttribute("src"),
+          authorAvatarWidth: authorImage.getAttribute("width"),
+          authorHref: authorAvatarLink.getAttribute("href"),
+          authorImgAlt: authorImage.getAttribute("alt"),
+          authorText: authorLink.textContent?.trim() ?? "",
+          childClasses: directElementChildren.map((child) => {
+            const owner = child.getAttribute("data-stylex-owner");
+            return owner ? `owner:${owner}` : child.getAttribute("class");
+          }),
+          commentHref: comments.getAttribute("href"),
+          commentText: comments.textContent?.replace(/\s+/g, " ").trim() ?? "",
+          dateText: date.textContent?.trim() ?? "",
+          dateTitle: date.getAttribute("title"),
+          projectHref: projectLink.getAttribute("href"),
+          projectImgAlt: projectImage.getAttribute("alt"),
+          projectImgSrc: projectImage.getAttribute("src"),
+          projectText: projectNameLink.textContent?.trim() ?? "",
+          separatorText: separator.textContent?.trim() ?? "",
+          titleHref: titleLink.getAttribute("href"),
+          titleText: titleLink.textContent?.trim() ?? "",
+        };
+      }),
+    );
 }
 
 async function postListContainmentMetrics(page: Page) {
@@ -839,7 +861,11 @@ async function postListContainmentMetrics(page: Page) {
     const content = document.querySelector<HTMLElement>(".site-setting-wrap .span10");
     const list = document.querySelector<HTMLElement>(".post-list-wrap");
     const pagination = document.querySelector<HTMLElement>("#pagination");
-    const rows = Array.from(document.querySelectorAll<HTMLElement>(".post-list-wrap > .listitem"));
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.post-list-wrap > [data-stylex-owner="site-post-list-row"]',
+      ),
+    );
     if (!content || !list || !pagination || rows.length === 0) {
       return null;
     }
@@ -849,7 +875,10 @@ async function postListContainmentMetrics(page: Page) {
       list: rect(list),
       pagination: rect(pagination),
       rows: rows.map((row) => {
-        const avatar = requireElement(row, ":scope > .list-avatar");
+        const avatar = requireElement(
+          row,
+          ':scope > [data-stylex-owner="site-post-list-project-avatar"]',
+        );
         const info = requireElement(row, ':scope > [data-stylex-owner="site-post-list-info"]');
         const meta = requireElement(row, ":scope > .post-meta-wrap");
         const project = requireElement(row, '[data-stylex-owner="site-post-list-project-link"]');
@@ -1053,9 +1082,9 @@ async function postListMetrics(page: Page) {
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const titleArea = requireElement(".title_area");
-    const firstRow = requireElement(".post-list-wrap .listitem");
-    const avatarWrap = requireElement(".post-list-wrap .list-avatar");
-    const avatarImage = requireElement(".post-list-wrap .list-avatar img");
+    const firstRow = requireElement('[data-stylex-owner="site-post-list-row"]');
+    const avatarWrap = requireElement('[data-stylex-owner="site-post-list-project-avatar"]');
+    const avatarImage = requireElement('[data-stylex-owner="site-post-list-project-avatar-image"]');
     const postInfo = requireElement('[data-stylex-owner="site-post-list-info"]');
     const postProject = requireElement('[data-stylex-owner="site-post-list-project-link"]');
     const separator = requireElement('[data-stylex-owner="site-post-list-separator"]');
@@ -1145,6 +1174,8 @@ async function canonicalizeScreenRoots(page: Page) {
         new Set([
           "site-post-list-container",
           "site-post-list-row",
+          "site-post-list-project-avatar",
+          "site-post-list-project-avatar-image",
           "site-post-list-info",
           "site-post-list-project-link",
           "site-post-list-separator",
@@ -1235,6 +1266,14 @@ async function canonicalizeHtml(page: Page, html: string) {
           "post-info-separator",
           "post-title",
         ]);
+        if (
+          current.matches(".post-list-wrap > .listitem") ||
+          current.matches(".post-list-wrap > .listitem > .avatar-wrap.list-avatar")
+        ) {
+          retiredPostListTokens.add("listitem");
+          retiredPostListTokens.add("avatar-wrap");
+          retiredPostListTokens.add("list-avatar");
+        }
         if (value.split(/\s+/u).some((token) => retiredPostListTokens.has(token))) {
           return value
             .split(/\s+/u)
