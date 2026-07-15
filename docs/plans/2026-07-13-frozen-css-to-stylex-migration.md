@@ -1544,6 +1544,14 @@ retaining Bootstrap/shared fallback classes and the listitem class required by t
 even-row background; actions, links, modal, pagination, and shell remain fallback or separate
 owners. This is not Wave 1 completion.
 
+The one-hundred-twenty-first slice migrates the /sites/projectList populated list container,
+project-name links, and row delete actions from site/projectList.scala.html, _page.less, and
+_yobiUI.less. StyleX owns the exact list style, project-name typography, and resolved
+base/danger/hover/focus/active/first-child button cascade through global variables. The three
+fully migrated presentation classes are removed and affected E2E locators move to stable owners;
+the delete modal controls, pagination, search, sidebar, and shell remain fallback or separate
+owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

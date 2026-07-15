@@ -73,6 +73,60 @@ const styles = stylex.create({
     wordBreak: globalColors.siteProjectListRowColumnWordBreak,
     lineHeight: globalColors.siteProjectListRowColumnLineHeight,
   },
+  projectListContainer: {
+    listStyle: globalColors.siteProjectListContainerListStyle,
+  },
+  projectListProjectName: {
+    fontSize: globalColors.siteProjectListProjectNameFontSize,
+    fontWeight: globalColors.siteProjectListProjectNameFontWeight,
+  },
+  projectListDeleteAction: {
+    backgroundColor: {
+      default: globalColors.siteProjectListDeleteSurface,
+      ":hover": globalColors.siteProjectListDeleteHoverSurface,
+      ":focus": globalColors.siteProjectListDeleteHoverSurface,
+      ":active": globalColors.siteProjectListDeleteSurface,
+    },
+    borderColor: {
+      default: globalColors.siteProjectListDeleteBorder,
+      ":hover": globalColors.siteProjectListDeleteBorder,
+      ":focus": globalColors.siteProjectListDeleteBorder,
+      ":active": globalColors.siteProjectListDeleteBorder,
+    },
+    borderRadius: globalColors.siteProjectListDeleteBorderRadius,
+    borderStyle: globalColors.siteProjectListDeleteBorderStyle,
+    borderWidth: globalColors.siteProjectListDeleteBorderWidth,
+    boxShadow: globalColors.siteProjectListDeleteBoxShadow,
+    color: {
+      default: globalColors.siteProjectListDeleteText,
+      ":hover": globalColors.siteProjectListDeleteText,
+      ":focus": globalColors.siteProjectListDeleteText,
+      ":active": globalColors.siteProjectListDeleteActiveText,
+    },
+    cursor: globalColors.siteProjectListDeleteCursor,
+    display: globalColors.siteProjectListDeleteDisplay,
+    fontSize: globalColors.siteProjectListDeleteFontSize,
+    lineHeight: globalColors.siteProjectListDeleteLineHeight,
+    marginBottom: globalColors.siteProjectListDeleteMarginBottom,
+    marginLeft: {
+      default: globalColors.siteProjectListDeleteMarginLeft,
+      ":first-child": globalColors.siteProjectListDeleteFirstChildMarginLeft,
+    },
+    outline: globalColors.siteProjectListDeleteOutline,
+    padding: globalColors.siteProjectListDeletePadding,
+    position: globalColors.siteProjectListDeletePosition,
+    textAlign: globalColors.siteProjectListDeleteTextAlign,
+    textDecoration: {
+      ":hover": globalColors.siteProjectListDeleteInteractiveTextDecoration,
+      ":focus": globalColors.siteProjectListDeleteInteractiveTextDecoration,
+      ":active": globalColors.siteProjectListDeleteInteractiveTextDecoration,
+    },
+    textShadow: globalColors.siteProjectListDeleteTextShadow,
+    transition: globalColors.siteProjectListDeleteTransition,
+    verticalAlign: globalColors.siteProjectListDeleteVerticalAlign,
+    whiteSpace: globalColors.siteProjectListDeleteWhiteSpace,
+    zIndex: globalColors.siteProjectListDeleteZIndex,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -81,6 +135,9 @@ const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
 const projectRowStyleProps = stylex.props(styles.projectRow);
 const projectRowAvatarStyleProps = stylex.props(styles.projectRowAvatar);
 const projectRowColumnStyleProps = stylex.props(styles.projectRowColumn);
+const projectListContainerStyleProps = stylex.props(styles.projectListContainer);
+const projectListProjectNameStyleProps = stylex.props(styles.projectListProjectName);
+const projectListDeleteActionStyleProps = stylex.props(styles.projectListDeleteAction);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
@@ -278,7 +335,11 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   <strong>&nbsp;</strong>
                 </div>
               </div>
-              <ul className="project-list-wrap">
+              <ul
+                {...projectListContainerStyleProps}
+                className={projectListContainerStyleProps.className}
+                data-stylex-owner="site-project-list-container"
+              >
                 {(query.data?.projects ?? []).map((project) => (
                   <ProjectListItem key={project.id} onDelete={openDeleteModal} project={project} />
                 ))}
@@ -522,7 +583,9 @@ function ProjectListItem({
         <Link
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
-          className="project-name"
+          {...projectListProjectNameStyleProps}
+          className={projectListProjectNameStyleProps.className}
+          data-stylex-owner="site-project-list-project-name"
         >
           {project.ownerName}/{project.projectName}
         </Link>
@@ -547,7 +610,9 @@ function ProjectListItem({
         data-stylex-owner="site-project-list-row-columns"
       >
         <button
-          className="ybtn ybtn-danger"
+          {...projectListDeleteActionStyleProps}
+          className={projectListDeleteActionStyleProps.className}
+          data-stylex-owner="site-project-list-delete-action"
           data-project-name={`${project.ownerName}/${project.projectName}`}
           onClick={(event) => onDelete(project, event)}
         >

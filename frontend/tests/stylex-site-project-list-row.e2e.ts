@@ -105,7 +105,9 @@ test.describe("StyleX site project-list populated rows", () => {
     await expect(
       first.locator('[data-stylex-owner="site-project-list-row-avatar"]'),
     ).toHaveAttribute("href", /\/acme\/roadmap$/);
-    await expect(first.locator(".project-name")).toHaveAttribute("href", /\/acme\/roadmap$/);
+    await expect(
+      first.locator('[data-stylex-owner="site-project-list-project-name"]'),
+    ).toHaveAttribute("href", /\/acme\/roadmap$/);
   });
 
   test("composes generated classes with active shared fallbacks", async ({ page }) => {
@@ -209,25 +211,32 @@ test.describe("StyleX site project-list populated rows", () => {
       expect(boxes.avatar.right).toBeLessThanOrEqual(boxes.columns[0]!.right + 1);
       expect(boxes.avatar.top).toBeGreaterThanOrEqual(boxes.columns[0]!.top - 1);
       expect(boxes.avatar.bottom).toBeLessThanOrEqual(boxes.columns[0]!.bottom + 1);
-      expect((await page.locator(".project-list-wrap").screenshot()).byteLength).toBeGreaterThan(0);
+      expect(
+        (await page.locator('[data-stylex-owner="site-project-list-container"]').screenshot())
+          .byteLength,
+      ).toBeGreaterThan(0);
     });
   }
 
   test("keeps generated row classes inside the three explicit row owners", async ({ page }) => {
     await openProjectList(page);
-    const owners = await page.locator(".project-list-wrap").evaluate((list) =>
-      Array.from(list.querySelectorAll(":scope > li, :scope > li *"))
-        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-        .map((element) =>
-          element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner"),
-        ),
-    );
+    const owners = await page
+      .locator('[data-stylex-owner="site-project-list-container"]')
+      .evaluate((list) =>
+        Array.from(list.querySelectorAll(":scope > li, :scope > li *"))
+          .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+          .map((element) =>
+            element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner"),
+          ),
+      );
 
     expect(new Set(owners)).toEqual(
       new Set([
         "site-project-list-row",
         "site-project-list-row-avatar",
         "site-project-list-row-columns",
+        "site-project-list-project-name",
+        "site-project-list-delete-action",
       ]),
     );
   });
