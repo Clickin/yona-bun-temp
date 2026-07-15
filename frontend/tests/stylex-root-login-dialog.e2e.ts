@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const rootSource = new URL("../src/routes/__root.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/-root.stylex.ts", import.meta.url);
 
 const desktop = { width: 1366, height: 900 };
 const mobile = { width: 390, height: 844 };
@@ -58,8 +58,9 @@ test.describe("StyleX root login dialog", () => {
     expect(root).toContain('data-stylex-part="login-dialog-form"');
     expect(root).toContain("stylex.props(styles.rootLoginDialog)");
     expect(root).toContain('"modal hide loginDialog in"');
-    expect(theme).toContain("rootLoginDialogWidth");
-    expect(theme).toContain("rootLoginDialogResponsiveWidth");
+    expect(root).toContain('default: "460px"');
+    expect(root).not.toContain("globalColors.");
+    expect(theme).toContain("errorText");
   });
 
   test("opens from the root Log in CTA with legacy login form copy and navigation", async ({

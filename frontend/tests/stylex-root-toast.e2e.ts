@@ -4,7 +4,7 @@ import path from "node:path";
 
 const frontendRoot = path.resolve(import.meta.dirname, "..");
 const rootRoutePath = path.join(frontendRoot, "src/routes/__root.tsx");
-const themePath = path.join(frontendRoot, "src/theme.stylex.ts");
+const themePath = path.join(frontendRoot, "src/routes/-root.stylex.ts");
 
 const toastOwner = '[data-stylex-owner="root-yoram-toast"]';
 const toastContainerOwner = '[data-stylex-owner="root-toast-container"]';
@@ -39,9 +39,10 @@ test.describe("RootYoramToast StyleX ownership", () => {
       "rootYoramToastMessageFontSize",
       "rootYoramToastMessageWidth",
     ]) {
-      expect(themeSource).toContain(`${token}:`);
-      expect(routeSource).toContain(`globalColors.${token}`);
+      expect(themeSource).not.toContain(`${token}:`);
+      expect(routeSource).not.toContain(`globalColors.${token}`);
     }
+    expect(routeSource).toContain("rootColors.toastSurface");
   });
 
   test("shows the legacy-visible signup-requested toast and dismisses on click", async ({

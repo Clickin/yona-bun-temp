@@ -84,6 +84,7 @@ const PARITY_SLICES = [
       /^frontend\/src\/routes\/index\.tsx$/i,
       /^frontend\/src\/routes\/-home-view\.tsx$/i,
       /^frontend\/src\/routes\/__root\.tsx$/i,
+      /^frontend\/src\/routes\/-root\.stylex\.ts$/i,
     ],
     testKeywords: ["authenticated-home", "public-landing", "home-route", "layout-parity"],
     provenanceDocs: [
