@@ -16,6 +16,61 @@ import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 const styles = stylex.create({
+  sidebar: {
+    margin: globalColors.siteMailSidebarMargin,
+    padding: globalColors.siteMailSidebarPadding,
+    listStyle: globalColors.siteMailSidebarListStyle,
+  },
+  sidebarItem: {
+    borderLeftColor: globalColors.siteMailSidebarItemBorderLeftColor,
+    borderLeftStyle: globalColors.siteMailSidebarItemBorderLeftStyle,
+    borderLeftWidth: globalColors.siteMailSidebarItemBorderLeftWidth,
+    fontSize: globalColors.siteMailSidebarItemFontSize,
+    lineHeight: globalColors.siteMailSidebarItemLineHeight,
+    marginTop: globalColors.siteMailSidebarItemMarginTop,
+  },
+  sidebarFirstItem: { marginTop: globalColors.siteMailSidebarFirstItemMarginTop },
+  sidebarActiveItem: {
+    borderLeftColor: globalColors.siteMailSidebarActiveItemBorderLeftColor,
+    fontWeight: globalColors.siteMailSidebarActiveItemFontWeight,
+  },
+  sidebarLink: {
+    backgroundColor: {
+      ":hover": globalColors.siteMailSidebarLinkHoverBackground,
+      ":focus": globalColors.siteMailSidebarLinkHoverBackground,
+    },
+    color: globalColors.siteMailSidebarLinkColor,
+    display: globalColors.siteMailSidebarLinkDisplay,
+    outline: {
+      default: globalColors.siteMailSidebarLinkOutline,
+      ":hover": globalColors.siteMailSidebarLinkHoverOutline,
+      ":focus": globalColors.siteMailSidebarLinkHoverOutline,
+    },
+    padding: globalColors.siteMailSidebarLinkPadding,
+    textDecoration: {
+      default: globalColors.siteMailSidebarLinkTextDecoration,
+      ":hover": globalColors.siteMailSidebarLinkHoverTextDecoration,
+      ":focus": globalColors.siteMailSidebarLinkHoverTextDecoration,
+    },
+  },
+  sidebarActiveLink: {
+    backgroundColor: {
+      ":hover": globalColors.siteMailSidebarActiveLinkHoverBackground,
+      ":focus": globalColors.siteMailSidebarActiveLinkHoverBackground,
+    },
+  },
+  sidebarBadge: {
+    backgroundColor: globalColors.siteMailSidebarBadgeBackground,
+    borderColor: globalColors.siteMailSidebarBadgeBorderColor,
+    borderRadius: globalColors.siteMailSidebarBadgeBorderRadius,
+    borderStyle: globalColors.siteMailSidebarBadgeBorderStyle,
+    borderWidth: globalColors.siteMailSidebarBadgeBorderWidth,
+    boxShadow: globalColors.siteMailSidebarBadgeBoxShadow,
+    color: globalColors.siteMailSidebarBadgeColor,
+    fontSize: globalColors.siteMailSidebarBadgeFontSize,
+    lineHeight: globalColors.siteMailSidebarBadgeLineHeight,
+    padding: globalColors.siteMailSidebarBadgePadding,
+  },
   titleArea: {
     overflow: globalColors.siteDiagnosticNoErrorTitleOverflow,
     marginBottom: globalColors.siteDiagnosticNoErrorTitleMarginBottom,
@@ -118,7 +173,6 @@ const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
-const legacyMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 
 export const Route = createFileRoute("/sites/mail")({
   component: SiteMailRoute,
@@ -206,45 +260,98 @@ function normalizeSiteMailSearch(search: SiteMailRouteSearch): SiteMailSearch {
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
-    <ul className="site-setting-nav">
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/userList">
+    <ul {...stylex.props(styles.sidebar)} data-stylex-owner="site-mail-sidebar">
+      <li
+        {...stylex.props(styles.sidebarItem, styles.sidebarFirstItem)}
+        data-stylex-owner="site-mail-sidebar-item"
+      >
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/userList"
+        >
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/postList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/postList"
+        >
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/issueList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/issueList"
+        >
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/projectList">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/projectList"
+        >
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
-      <li className="active">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/mail">
+      <li
+        {...stylex.props(styles.sidebarItem, styles.sidebarActiveItem)}
+        data-stylex-owner="site-mail-sidebar-item"
+      >
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink, styles.sidebarActiveLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/mail"
+        >
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/massmail">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/massmail"
+        >
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/update">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/update"
+        >
           <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? <span className="notification-badge">1</span> : null}
+          {showUpdateBadge ? (
+            <span
+              {...stylex.props(styles.sidebarBadge)}
+              data-stylex-owner="site-mail-sidebar-badge"
+            >
+              1
+            </span>
+          ) : null}
         </Link>
       </li>
-      <li className="">
-        <Link {...legacySiteSidebarLinkProps} to="/sites/diagnostic">
+      <li {...stylex.props(styles.sidebarItem)} data-stylex-owner="site-mail-sidebar-item">
+        <Link
+          {...legacySiteSidebarLinkProps}
+          {...stylex.props(styles.sidebarLink)}
+          data-stylex-owner="site-mail-sidebar-link"
+          to="/sites/diagnostic"
+        >
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>

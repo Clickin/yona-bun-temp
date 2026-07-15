@@ -85,15 +85,15 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -176,8 +176,10 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
+    "Send email",
+  );
+  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -207,11 +209,15 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     { ariaCurrent: null, className: null, dataStatus: null, text: "Software Update" },
     { ariaCurrent: null, className: null, dataStatus: null, text: "Diagnostics" },
   ]);
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
-  await expect(page.locator(".site-setting-nav li").nth(4)).toHaveClass("active");
+  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-item"]').nth(4)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
   await expect(page.locator('input[name="from"]')).toHaveValue("noreply@example.com");
-  const massMailLink = page.locator(".site-setting-nav a", { hasText: "Send mass emails" });
+  const massMailLink = page.locator('[data-stylex-owner="site-mail-sidebar-link"]', {
+    hasText: "Send mass emails",
+  });
   await expect(massMailLink).toHaveAttribute("href", `${basePath}/sites/massmail`);
 
   const actual = await canonicalizeScreenRoots(page);
@@ -461,10 +467,12 @@ test("site admin mail renders legacy update notification badge", async ({ page }
   await mockAvailableUpdate(page);
 
   await page.goto(`${basePath}/sites/mail`);
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-mail-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(updateLink.locator('[data-stylex-owner="site-mail-sidebar-badge"]')).toHaveText("1");
 });
 
 test("site admin mail route source keeps direct typed sidebar links", async () => {
@@ -472,12 +480,19 @@ test("site admin mail route source keeps direct typed sidebar links", async () =
 
   expect(source).toContain("showLegacyProjectHeaderLinks");
   expect(source).toContain('<title>{t("title.sendMail")}</title>');
-  expect(source).toContain(
-    "const legacyMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };",
-  );
-  expect(source).toContain(
-    '<Link {...legacySiteSidebarLinkProps} search={legacyMailSidebarSearch} to="/sites/mail">',
-  );
+  expect(source).not.toContain("legacyMailSidebarSearch");
+  for (const destination of [
+    "/sites/userList",
+    "/sites/postList",
+    "/sites/issueList",
+    "/sites/projectList",
+    "/sites/mail",
+    "/sites/massmail",
+    "/sites/update",
+    "/sites/diagnostic",
+  ])
+    expect(source).toContain(`to="${destination}"`);
+  expect(source).toContain("stylex.props(styles.sidebarLink, styles.sidebarActiveLink)");
   expect(source).not.toContain(
     'errorMessage: typeof search.errorMessage === "string" ? search.errorMessage : ""',
   );
@@ -513,7 +528,7 @@ async function gnbNavAnchorHrefs(page: Page) {
 }
 
 async function siteSettingSidebarHrefs(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => {
       const href = link.getAttribute("href");
       if (!href) {
@@ -525,10 +540,10 @@ async function siteSettingSidebarHrefs(page: Page) {
 }
 
 async function siteSettingSidebarAnchorActiveMarkers(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-mail-sidebar-link"]').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className: link.getAttribute("class"),
+      className: null,
       dataStatus: link.getAttribute("data-status"),
       text: link.textContent?.trim() ?? "",
     })),
@@ -537,19 +552,23 @@ async function siteSettingSidebarAnchorActiveMarkers(page: Page) {
 
 async function mailErrorStateOrder(page: Page) {
   return page.evaluate(() =>
-    Array.from(
-      document.querySelectorAll(".site-setting-wrap .span10 > *"),
-      (element) => element.getAttribute("class") ?? element.tagName.toLowerCase(),
-    ),
+    Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"), (element) => {
+      const owner = element.getAttribute("data-stylex-owner");
+      if (owner === "site-mail-title-strip") return "title_area";
+      if (owner === "site-mail-error-alert") return "alert alert-error";
+      return element.getAttribute("class") ?? element.tagName.toLowerCase();
+    }),
   );
 }
 
 async function mailSuccessStateOrder(page: Page) {
   return page.evaluate(() =>
-    Array.from(
-      document.querySelectorAll(".site-setting-wrap .span10 > *"),
-      (element) => element.getAttribute("class") ?? element.tagName.toLowerCase(),
-    ),
+    Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"), (element) => {
+      const owner = element.getAttribute("data-stylex-owner");
+      if (owner === "site-mail-title-strip") return "title_area";
+      if (owner === "site-mail-success-alert") return "alert alert-success";
+      return element.getAttribute("class") ?? element.tagName.toLowerCase();
+    }),
   );
 }
 
@@ -733,6 +752,17 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        [
+          "site-mail-sidebar",
+          "site-mail-sidebar-item",
+          "site-mail-sidebar-link",
+          "site-mail-sidebar-badge",
+        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return "";
+      }
       if (name === "class" && current.matches('[data-stylex-owner="site-mail-send-action"]')) {
         return "";
       }
