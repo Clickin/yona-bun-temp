@@ -14,6 +14,9 @@ it does not justify putting every literal behind a global variable.
 
 - Common theme variables: only semantic colors, surfaces, border colors, and theme-dependent
   shadows shared by multiple real consumers with the same meaning.
+- `globalColors` final contract: only genuinely shared light/dark-mode override colors, surfaces,
+  border colors, and semantic shadows. If none remain, delete the registry. A renamed catch-all or
+  a registry containing the full CSS declaration set still fails the correction.
 - Route theme variables: route-only theme paint in a route-owned `stylex.defineVars` set.
 - Colocated `stylex.create`: margin, padding, width, height, offsets, display, typography size,
   weight and line height, border width/style/radius, responsive geometry, and other non-theme
@@ -54,12 +57,16 @@ of the following:
 - zero unclassified definitions;
 - zero non-theme values in any `stylex.defineVars` set;
 - zero route-only values in the common theme;
-- zero `globalColors` definitions and consumers;
+- `globalColors` is absent or every remaining definition and consumer is proven to be a genuinely
+  shared light/dark-mode color boundary;
 - affected browser parity and full frontend check/Vitest/build/StyleX verification pass;
 - frozen hashes remain exact and correction provenance is committed.
+- the final correction commit adds a precommit guard and focused contract test preventing
+  non-color or route-owned entries from returning to `globalColors`.
 
 ## Correction ledger
 
 | Consumer | Non-theme declarations inlined | Route theme isolated | Common theme reviewed | Focused parity | Commit |
 | --- | --- | --- | --- | --- | --- |
+| `/migration` existing disabled shell | all 66 `globalColors` references audited; geometry, spacing, typography, border structure, and behavior declarations inlined | 15 route-local paint keys in ignored route module `-migration.stylex.ts` | no common global retained; 64 sole-consumer definitions removed | 6/6 affected focused browser checks pass, including desktop/mobile geometry and paint; whole-screen raw-DOM check retains the pre-existing shared GNB mismatch; TypeScript, 11/11 Vitest, production build, StyleX verification, and frozen `6417f445...` hash pass | this commit |
 | `/sites/projectList` already-migrated owners | 227 `globalColors` references audited; all non-theme declarations inlined | 41 route-local paint/shadow keys in ignored route module `-projectList.stylex.ts` | no common global retained; 217 sole-consumer definitions removed | 30/30 affected focused browser checks pass; full populated-DOM check retains the pre-existing shared GNB/footer mismatch; TypeScript, 11/11 Vitest, production build, StyleX verification, and frozen `6417f445...` hash pass | this commit |

@@ -167,11 +167,17 @@ Wave 1 route migration is paused. Before selecting another route/state, audit ev
 1. inline every non-theme value in its owning `stylex.create` block;
 2. move route-only theme values into route-specific variable sets;
 3. retain in the common theme only genuinely shared semantic theme values;
-4. remove the misleading `globalColors` catch-all after all consumers are migrated;
-5. update focused tests and provenance so they assert the new ownership boundary without treating
+4. remove the misleading catch-all contents from `globalColors` after all consumers are migrated;
+5. if `globalColors` is retained, prove every remaining entry is a genuinely shared color,
+   surface, border color, or semantic shadow intended for light/dark-mode override; delete it when
+   no such entries remain. Renaming a catch-all registry or leaving the full CSS declaration set
+   behind does not satisfy this gate;
+6. update focused tests and provenance so they assert the new ownership boundary without treating
    variable indirection as legacy evidence;
-6. pass affected browser parity, full frontend typecheck/Vitest/build/StyleX verification, frozen
+7. pass affected browser parity, full frontend typecheck/Vitest/build/StyleX verification, frozen
    hashes, and the mandatory turn commit.
+8. in the final correction commit, add a precommit static guard and focused contract test that
+   reject non-color or route-owned entries added back to `globalColors`.
 
 The original Wave 1 route/state sequence may resume only after the inventory has zero unclassified
 definitions, zero non-theme values in theme variable sets, zero route-only values in the common

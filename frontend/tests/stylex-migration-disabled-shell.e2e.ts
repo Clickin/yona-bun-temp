@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/migration.tsx", import.meta.url);
+const routeThemeSource = new URL("../src/routes/-migration.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -13,16 +14,20 @@ async function openMigration(page: Page) {
 }
 
 test.describe("StyleX migration disabled shell", () => {
-  test("uses global theme ownership while retaining shared migration fallbacks", async () => {
-    const [route, theme] = await Promise.all([
+  test("uses route paint theme ownership while retaining shared migration fallbacks", async () => {
+    const [route, routeTheme, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="migration-disabled-shell"');
     expect(route).toContain("styles.projectList");
     expect(route).toContain('style={{ width: "0%" }}');
-    expect(theme).toContain("migrationDisabledBoardSurface");
-    expect(theme).toContain("migrationDisabledPaneHeaderSurface");
+    expect(route).toContain('fontSize: "30px"');
+    expect(route).toContain("backgroundColor: migrationTheme.boardSurface");
+    expect(routeTheme).toContain('boardSurface: "#333333"');
+    expect(routeTheme).toContain('paneHeaderSurface: "#e36b23"');
+    expect(theme).not.toMatch(/^\s+migrationDisabled[A-Z]/m);
   });
 
   test("keeps disabled copy, order, controls, and shared primitives", async ({ page }) => {
