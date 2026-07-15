@@ -47,8 +47,8 @@ test.describe("StyleX authenticated lost-password prefill", () => {
 
     expect(route).toContain('"lost-password-authenticated-prefill"');
     expect(route).toContain("authenticatedNoAlert");
-    expect(route).toContain("lostPasswordInputFocusBorderBottomColor");
-    expect(theme).toContain("lostPasswordFormWidth");
+    expect(route).toContain("lostPasswordTheme.inputFocusBorder");
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(legacyFallback).toContain(".login-form-wrap .text");
     expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
   });
@@ -197,11 +197,15 @@ test.describe("StyleX authenticated lost-password prefill", () => {
     await expect(
       page.locator('[data-stylex-owner="lost-password-authenticated-prefill"]'),
     ).toHaveCount(0);
-    await expect(page.locator(".alert.alert-success")).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="lost-password-authenticated-success-alert"]'),
+    ).toBeVisible();
     await page.goto(`${basePath}/lostPassword?error=invalid`);
     await expect(
       page.locator('[data-stylex-owner="lost-password-authenticated-prefill"]'),
     ).toHaveCount(0);
-    await expect(page.locator(".alert.alert-error")).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="lost-password-authenticated-error-alert"]'),
+    ).toBeVisible();
   });
 });

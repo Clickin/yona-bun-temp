@@ -45,12 +45,14 @@ test.describe("StyleX anonymous requested-success lost-password alert", () => {
       readFile(legacyFallbackSource, "utf8"),
     ]);
 
-    expect(route).toContain('data-stylex-owner="lost-password-success-alert"');
+    expect(route).toContain("data-stylex-owner={");
+    expect(route).toContain('"lost-password-success-alert"');
     expect(route).toContain('"lost-password-success-alert-heading"');
     expect(route).toContain('"lost-password-success-alert-dismiss"');
     expect(route).toContain("anonymousRequestedSuccess");
-    expect(theme).toContain("lostPasswordSuccessAlertSurface");
-    expect(theme).toContain("lostPasswordSuccessAlertDismissHoverOpacity");
+    expect(route).toContain("backgroundColor: lostPasswordTheme.successSurface");
+    expect(route).toContain('opacity: "0.4"');
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(legacyFallback).toContain(".alert-success");
     expect(legacyFallback).toContain(".alert .close");
   });
@@ -154,7 +156,7 @@ test.describe("StyleX anonymous requested-success lost-password alert", () => {
 
     await page.goto(`${basePath}/lostPassword?error=invalid`);
     await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toHaveCount(0);
-    await expect(page.locator(".alert.alert-error")).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="lost-password-error-alert"]')).toBeVisible();
 
     await page.unroute("**/api/v1/session");
     await page.route("**/api/v1/session", async (route) => {

@@ -35,12 +35,14 @@ test.describe("StyleX anonymous visible lost-password error alert", () => {
       readFile(legacyFallbackSource, "utf8"),
     ]);
 
-    expect(route).toContain('data-stylex-owner="lost-password-error-alert"');
+    expect(route).toContain("data-stylex-owner={");
+    expect(route).toContain('"lost-password-error-alert"');
     expect(route).toContain('"lost-password-error-alert-heading"');
     expect(route).toContain('"lost-password-error-alert-dismiss"');
     expect(route).toContain("anonymousVisibleError");
-    expect(theme).toContain("lostPasswordErrorAlertSurface");
-    expect(theme).toContain("lostPasswordErrorAlertDismissAppearance");
+    expect(route).toContain("backgroundColor: lostPasswordTheme.errorSurface");
+    expect(route).toContain('appearance: "none"');
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(legacyFallback).toContain(".alert-error");
     expect(legacyFallback).toContain(".alert .close");
   });
@@ -175,10 +177,14 @@ test.describe("StyleX anonymous visible lost-password error alert", () => {
     });
     await page.goto(`${basePath}/lostPassword?requested=1`);
     await expect(page.locator('[data-stylex-owner="lost-password-success-alert"]')).toHaveCount(0);
-    await expect(page.locator(".alert.alert-success")).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="lost-password-authenticated-success-alert"]'),
+    ).toBeVisible();
 
     await page.goto(`${basePath}/lostPassword?error=invalid`);
     await expect(page.locator('[data-stylex-owner="lost-password-error-alert"]')).toHaveCount(0);
-    await expect(page.locator(".alert.alert-error")).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="lost-password-authenticated-error-alert"]'),
+    ).toBeVisible();
   });
 });

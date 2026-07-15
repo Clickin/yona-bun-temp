@@ -49,8 +49,9 @@ test.describe("StyleX anonymous lost-password form", () => {
     expect(route).toContain('"lost-password-login-id"');
     expect(route).toContain('"lost-password-submit"');
     expect(route).toContain('className={anonymousBaseline ? textInputClassName : "text"}');
-    expect(theme).toContain("lostPasswordFormWidth");
-    expect(theme).toContain("lostPasswordInputFocusBorderBottomColor");
+    expect(route).toContain('default: "400px"');
+    expect(route).toContain("borderBottomColor: lostPasswordTheme.inputFocusBorder");
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(legacyFallback).toContain(".login-form-wrap .text");
     expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
   });

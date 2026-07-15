@@ -32,9 +32,11 @@ test.describe("StyleX authenticated lost-password success alert", () => {
       readFile(themeSource, "utf8"),
       readFile(fallbackSource, "utf8"),
     ]);
+    expect(route).toContain("data-stylex-owner={");
     expect(route).toContain('"lost-password-authenticated-success-alert"');
     expect(route).toContain("authenticatedRequestedSuccess");
-    expect(theme).toContain("lostPasswordSuccessAlertSurface");
+    expect(route).toContain("backgroundColor: lostPasswordTheme.successSurface");
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(fallback).toContain(".alert-success");
   });
 
@@ -124,6 +126,8 @@ test.describe("StyleX authenticated lost-password success alert", () => {
     await expect(
       page.locator('[data-stylex-owner="lost-password-authenticated-success-alert"]'),
     ).toHaveCount(0);
-    await expect(page.locator(".alert.alert-error")).toBeVisible();
+    await expect(
+      page.locator('[data-stylex-owner="lost-password-authenticated-error-alert"]'),
+    ).toBeVisible();
   });
 });

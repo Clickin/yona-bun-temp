@@ -31,9 +31,11 @@ test.describe("StyleX authenticated lost-password error alert", () => {
       readFile(themeSource, "utf8"),
       readFile(fallbackSource, "utf8"),
     ]);
+    expect(route).toContain("data-stylex-owner={");
     expect(route).toContain('"lost-password-authenticated-error-alert"');
     expect(route).toContain("authenticatedVisibleError");
-    expect(theme).toContain("lostPasswordErrorAlertSurface");
+    expect(route).toContain("backgroundColor: lostPasswordTheme.errorSurface");
+    expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
     expect(fallback).toContain(".alert-error");
   });
 
