@@ -101,6 +101,30 @@ const styles = stylex.create({
     fontSize: globalColors.siteIssueListTitleFontSize,
     fontWeight: globalColors.siteIssueListTitleFontWeight,
   },
+  issueListMetadata: {
+    fontSize: globalColors.siteIssueListMetadataFontSize,
+    lineHeight: globalColors.siteIssueListMetadataLineHeight,
+  },
+  issueListAuthorAvatar: {
+    width: globalColors.siteIssueListMetadataAvatarWidth,
+    height: globalColors.siteIssueListMetadataAvatarHeight,
+    display: globalColors.siteIssueListMetadataAvatarDisplay,
+    verticalAlign: globalColors.siteIssueListMetadataAvatarVerticalAlign,
+    overflow: globalColors.siteIssueListMetadataAvatarOverflow,
+    backgroundColor: globalColors.siteIssueListMetadataAvatarSurface,
+    borderRadius: globalColors.siteIssueListMetadataAvatarRadius,
+  },
+  issueListAuthorAvatarImage: {
+    width: globalColors.siteIssueListMetadataAvatarImageWidth,
+    verticalAlign: globalColors.siteIssueListMetadataAvatarImageVerticalAlign,
+  },
+  issueListMetadataItem: {
+    marginBlock: globalColors.siteIssueListMetadataItemMarginBlock,
+    marginInline: globalColors.siteIssueListMetadataItemMarginInline,
+  },
+  issueListCommentsIcon: {
+    verticalAlign: globalColors.siteIssueListCommentsIconVerticalAlign,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -113,6 +137,11 @@ const issueInfoStyleProps = stylex.props(styles.issueInfo);
 const issueProjectLinkStyleProps = stylex.props(styles.issueProjectLink);
 const issueInfoSeparatorStyleProps = stylex.props(styles.issueInfoSeparator);
 const issueTitleLinkStyleProps = stylex.props(styles.issueTitleLink);
+const issueListMetadataStyleProps = stylex.props(styles.issueListMetadata);
+const issueListAuthorAvatarStyleProps = stylex.props(styles.issueListAuthorAvatar);
+const issueListAuthorAvatarImageStyleProps = stylex.props(styles.issueListAuthorAvatarImage);
+const issueListMetadataItemStyleProps = stylex.props(styles.issueListMetadataItem);
+const issueListCommentsIconStyleProps = stylex.props(styles.issueListCommentsIcon);
 
 export const Route = createFileRoute("/sites/issueList")({
   component: SiteIssueListRoute,
@@ -439,34 +468,54 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
           {issue.title}
         </Link>
       </div>
-      <div className="post-meta-wrap">
+      <div {...issueListMetadataStyleProps} data-stylex-owner="site-issue-list-metadata">
         <Link
+          {...issueListAuthorAvatarStyleProps}
+          data-stylex-owner="site-issue-list-author-avatar"
           to="/$user"
           params={{ user: issue.authorLoginId }}
           search={legacyPublicProfileSearch}
           mask={legacyPublicProfileMask(issue.authorLoginId)}
-          className="avatar-wrap"
         >
           {isDefaultAuthorAvatar(issue.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
-            <img src={issue.authorAvatarUrl} />
+            <img
+              {...issueListAuthorAvatarImageStyleProps}
+              data-stylex-owner="site-issue-list-author-avatar-image"
+              src={issue.authorAvatarUrl}
+            />
           ) : (
-            <img src={issue.authorAvatarUrl} alt={authorAvatarAlt(issue)} width="16" height="16" />
+            <img
+              {...issueListAuthorAvatarImageStyleProps}
+              data-stylex-owner="site-issue-list-author-avatar-image"
+              src={issue.authorAvatarUrl}
+              alt={authorAvatarAlt(issue)}
+              width="16"
+              height="16"
+            />
           )}
         </Link>
         <Link
+          {...issueListMetadataItemStyleProps}
+          data-stylex-owner="site-issue-list-metadata-item"
           to="/$user"
           params={{ user: issue.authorLoginId }}
           search={legacyPublicProfileSearch}
           mask={legacyPublicProfileMask(issue.authorLoginId)}
-          className="post-meta-item"
         >
           {issue.authorLabel}
         </Link>
-        <span className="post-meta-item" title={issue.createdTitle}>
+        <span
+          {...issueListMetadataItemStyleProps}
+          data-stylex-owner="site-issue-list-metadata-item"
+          title={issue.createdTitle}
+        >
           {issue.createdLabel}
         </span>
-        <span className="post-comments post-meta-item">
+        <span
+          {...issueListMetadataItemStyleProps}
+          data-stylex-owner="site-issue-list-metadata-item"
+        >
           <Link
             to="/$ownerName/$projectName/issue/$issueNumber"
             params={{
@@ -476,7 +525,11 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
             }}
             hash="comments"
           >
-            <i className="yobicon-comments"></i>
+            <i
+              {...issueListCommentsIconStyleProps}
+              className={`yobicon-comments ${issueListCommentsIconStyleProps.className ?? ""}`}
+              data-stylex-owner="site-issue-list-comments-icon"
+            ></i>
             {issue.commentCount}
           </Link>
         </span>

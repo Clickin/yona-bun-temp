@@ -169,7 +169,7 @@ test.describe("StyleX site issue-list row and project avatar", () => {
     const info = owner(first, owners.info);
     const project = owner(info, owners.project);
     const title = owner(info, owners.title);
-    const meta = first.locator(":scope > .post-meta-wrap");
+    const meta = owner(first, "site-issue-list-metadata");
 
     await expect(project).toHaveText("acme/roadmap");
     await expect(title).toHaveText("Fix release blocker");
@@ -189,7 +189,7 @@ test.describe("StyleX site issue-list row and project avatar", () => {
           const ownerName = element.getAttribute("data-stylex-owner");
           if (ownerName === "site-issue-list-project-avatar") return "avatar";
           if (ownerName === "site-issue-list-info") return "info";
-          if (element.matches(".post-meta-wrap")) return "meta";
+          if (ownerName === "site-issue-list-metadata") return "meta";
           return element.tagName;
         }),
       ),
@@ -209,8 +209,8 @@ test.describe("StyleX site issue-list row and project avatar", () => {
     await expect(first).not.toHaveClass(/\blistitem\b/u);
     await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
     await expect(avatar).not.toHaveClass(/\blist-avatar\b/u);
-    await expect(first.locator(":scope > .post-meta-wrap .avatar-wrap")).toHaveCount(1);
-    await expect(first.locator(":scope > .post-meta-wrap .post-meta-item")).toHaveCount(3);
+    await expect(owner(first, "site-issue-list-author-avatar")).toHaveCount(1);
+    await expect(owner(first, "site-issue-list-metadata-item")).toHaveCount(3);
     for (const element of [first, avatar, avatarImage]) {
       expect(
         await element.evaluate((node) =>
@@ -275,7 +275,7 @@ test.describe("StyleX site issue-list row and project avatar", () => {
             ':scope > [data-stylex-owner="site-issue-list-project-avatar"] > [data-stylex-owner="site-issue-list-project-avatar-image"]',
           ),
           info: pick(':scope > [data-stylex-owner="site-issue-list-info"]'),
-          meta: pick(":scope > .post-meta-wrap"),
+          meta: pick(':scope > [data-stylex-owner="site-issue-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-issue-list-info"] > [data-stylex-owner="site-issue-list-project-link"]',
           ),

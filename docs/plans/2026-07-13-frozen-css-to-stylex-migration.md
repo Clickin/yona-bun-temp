@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-two slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-three slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1650,6 +1650,16 @@ retire `avatar-wrap list-avatar`; `row-fluid`, `post-list-wrap`, state tabs, met
 remain fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, while the prior row-content
 suite remains GREEN. Fresh live legacy visual comparison remains unverified. This is not Wave 1
 completion.
+
+The one-hundred-thirty-third slice completes the authenticated populated open-state
+`/sites/issueList` metadata subtree from `site/issueList.scala.html`, `_common.less`, `_page.less`,
+and `_yobiUI.less`. Five stable StyleX owners move the metadata typography, author-avatar wrapper
+and image cascade, repeated item margins, and comment-icon alignment through route-specific global
+theme variables. `post-meta-wrap`, the author `avatar-wrap`, all three `post-meta-item` uses, and
+`post-comments` retire; `yobicon-comments` remains solely for font-glyph generation. Actual RED 5/5
+becomes GREEN 5/5, and the complete issue-list owner/behavior matrix passes 28/29 with only the
+pre-existing unrelated GNB `Feedback` fixture mismatch. Fresh live legacy visual comparison remains
+unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

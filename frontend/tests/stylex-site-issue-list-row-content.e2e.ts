@@ -172,7 +172,7 @@ test.describe("StyleX site issue-list populated row content", () => {
     const project = owner(info, owners.project);
     const separator = owner(info, owners.separator);
     const title = owner(info, owners.title);
-    const meta = row.locator(":scope > .post-meta-wrap");
+    const meta = owner(row, "site-issue-list-metadata");
 
     await expect(project).toHaveText("acme/roadmap");
     await expect(separator).toHaveText("·");
@@ -189,7 +189,7 @@ test.describe("StyleX site issue-list populated row content", () => {
               ? "avatar"
               : element.matches('[data-stylex-owner="site-issue-list-info"]')
                 ? "info"
-                : element.matches(".post-meta-wrap")
+                : element.matches('[data-stylex-owner="site-issue-list-metadata"]')
                   ? "meta"
                   : element.tagName,
           ),
@@ -215,7 +215,7 @@ test.describe("StyleX site issue-list populated row content", () => {
     await expect(row).toHaveClass(/\brow-fluid\b/u);
     await expect(row).not.toHaveClass(/\blistitem\b/u);
     await expect(owner(row, "site-issue-list-project-avatar")).toHaveCount(1);
-    await expect(row.locator(":scope > .post-meta-wrap")).toHaveCount(1);
+    await expect(owner(row, "site-issue-list-metadata")).toHaveCount(1);
     for (const [element, retiredClass] of [
       [info, "post-info-wrap"],
       [project, "post-project"],
@@ -275,7 +275,7 @@ test.describe("StyleX site issue-list populated row content", () => {
         return {
           avatar: pick(':scope > [data-stylex-owner="site-issue-list-project-avatar"]'),
           info: pick(':scope > [data-stylex-owner="site-issue-list-info"]'),
-          meta: pick(":scope > .post-meta-wrap"),
+          meta: pick(':scope > [data-stylex-owner="site-issue-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-issue-list-info"] > [data-stylex-owner="site-issue-list-project-link"]',
           ),

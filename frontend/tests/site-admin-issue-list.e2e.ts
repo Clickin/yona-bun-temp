@@ -267,24 +267,25 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "href",
     `${basePath}/acme/roadmap/issue/42`,
   );
-  await expect(page.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/alice`,
   );
-  await expect(page.locator(".post-meta-wrap > .post-meta-item").first()).toHaveAttribute(
-    "href",
-    `${basePath}/alice`,
-  );
-  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("alt", /.*/);
-  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute("width", /.*/);
-  await expect(page.locator(".post-meta-wrap .avatar-wrap img")).not.toHaveAttribute(
-    "height",
-    /.*/,
-  );
-  await expect(page.locator(".post-comments a")).toHaveAttribute(
-    "href",
-    `${basePath}/acme/roadmap/issue/42#comments`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
+  ).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).not.toHaveAttribute("alt", /.*/);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).not.toHaveAttribute("width", /.*/);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).not.toHaveAttribute("height", /.*/);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-metadata-item"] a'),
+  ).toHaveAttribute("href", `${basePath}/acme/roadmap/issue/42#comments`);
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
@@ -519,36 +520,43 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText(
     "Close archived task",
   );
-  await expect(row.locator(".post-meta-wrap > .avatar-wrap")).toHaveAttribute(
+  await expect(row.locator('[data-stylex-owner="site-issue-list-author-avatar"]')).toHaveAttribute(
     "href",
     `${basePath}/bob`,
   );
-  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute(
-    "src",
-    "/avatars/closed-author.png",
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).toHaveAttribute("src", "/avatars/closed-author.png");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).toHaveAttribute("alt", "Bob Legal Name");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).toHaveAttribute("width", "16");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]'),
+  ).toHaveAttribute("height", "16");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
+  ).toHaveAttribute("href", `${basePath}/bob`);
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
+  ).toHaveText("Bob Display");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').nth(1),
+  ).toHaveAttribute("title", "2026-06-28 09:15");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-metadata-item"]').nth(1),
+  ).toHaveText("2 days ago");
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-metadata-item"] a'),
+  ).toHaveAttribute("href", `${basePath}/beta/archive/issue/77#comments`);
+  await expect(row.locator('[data-stylex-owner="site-issue-list-metadata-item"] a')).toHaveText(
+    "8",
   );
-  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute(
-    "alt",
-    "Bob Legal Name",
-  );
-  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute("width", "16");
-  await expect(row.locator(".post-meta-wrap > .avatar-wrap img")).toHaveAttribute("height", "16");
-  await expect(row.locator(".post-meta-wrap > .post-meta-item").first()).toHaveAttribute(
-    "href",
-    `${basePath}/bob`,
-  );
-  await expect(row.locator(".post-meta-wrap > .post-meta-item").first()).toHaveText("Bob Display");
-  await expect(row.locator(".post-meta-wrap > .post-meta-item").nth(1)).toHaveAttribute(
-    "title",
-    "2026-06-28 09:15",
-  );
-  await expect(row.locator(".post-meta-wrap > .post-meta-item").nth(1)).toHaveText("2 days ago");
-  await expect(row.locator(".post-comments a")).toHaveAttribute(
-    "href",
-    `${basePath}/beta/archive/issue/77#comments`,
-  );
-  await expect(row.locator(".post-comments a")).toHaveText("8");
-  await expect(row.locator(".post-comments .yobicon-comments")).toHaveCount(1);
+  await expect(
+    row.locator('[data-stylex-owner="site-issue-list-comments-icon"].yobicon-comments'),
+  ).toHaveCount(1);
 
   await expect(page.locator("#pagination")).toHaveClass("page-navigation-wrap");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("1");
@@ -585,8 +593,8 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
       "owner:site-issue-list-project-avatar",
       "owner:site-issue-list-project-link",
       "owner:site-issue-list-title-link",
-      "avatar-wrap",
-      "post-meta-item",
+      "owner:site-issue-list-author-avatar",
+      "owner:site-issue-list-metadata-item",
       "",
     ],
     tabsBelowTitle: true,
@@ -717,14 +725,14 @@ test("site admin issue list custom author avatar alt uses legacy user name", asy
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  const authorAvatar = page.locator(".post-meta-wrap > .avatar-wrap img");
+  const authorAvatar = page.locator('[data-stylex-owner="site-issue-list-author-avatar-image"]');
   await expect(authorAvatar).toHaveAttribute("src", "/avatars/alice-custom.png");
   await expect(authorAvatar).toHaveAttribute("alt", "Alice Legal Name");
   await expect(authorAvatar).toHaveAttribute("width", "16");
   await expect(authorAvatar).toHaveAttribute("height", "16");
-  await expect(page.locator(".post-meta-wrap > .post-meta-item").first()).toHaveText(
-    "Alice Display",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-metadata-item"]').first(),
+  ).toHaveText("Alice Display");
 });
 
 test("site admin issue list resets decimal pagination input without navigation", async ({
@@ -1023,7 +1031,7 @@ async function closedIssueListLayoutMetrics(page: Page) {
     const titleArea = requireElement(".title_area");
     const tabs = requireElement(".span10 > .nav.nav-tabs");
     const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
-    const meta = requireElement(".post-meta-wrap");
+    const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
     const pagination = requireElement("#pagination");
     const contentRect = content.getBoundingClientRect();
     const titleAreaRect = titleArea.getBoundingClientRect();
@@ -1078,9 +1086,9 @@ async function issueListMetrics(page: Page) {
     const postProject = requireElement('[data-stylex-owner="site-issue-list-project-link"]');
     const separator = requireElement('[data-stylex-owner="site-issue-list-separator"]');
     const postTitle = requireElement('[data-stylex-owner="site-issue-list-title-link"]');
-    const meta = requireElement(".post-meta-wrap");
-    const metaAvatar = requireElement(".post-meta-wrap .avatar-wrap");
-    const metaItem = requireElement(".post-meta-item");
+    const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
+    const metaAvatar = requireElement('[data-stylex-owner="site-issue-list-author-avatar"]');
+    const metaItem = requireElement('[data-stylex-owner="site-issue-list-metadata-item"]');
     const rowRect = row.getBoundingClientRect();
     const firstRowStyle = getComputedStyle(firstRow);
     const avatarWrapStyle = getComputedStyle(avatarWrap);
@@ -1208,6 +1216,11 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-issue-list-project-link",
           "site-issue-list-separator",
           "site-issue-list-title-link",
+          "site-issue-list-metadata",
+          "site-issue-list-author-avatar",
+          "site-issue-list-author-avatar-image",
+          "site-issue-list-metadata-item",
+          "site-issue-list-comments-icon",
         ]).has(current.getAttribute("data-stylex-owner") ?? "")
       ) {
         return value
@@ -1226,6 +1239,33 @@ async function canonicalizeScreenRoots(page: Page) {
           .split(/\s+/u)
           .filter(
             (token) => token !== "avatar-wrap" && token !== "list-avatar" && !token.startsWith("x"),
+          )
+          .join(" ");
+      }
+      if (name === "class" && current.matches(".post-list-wrap > li > div:last-child")) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "post-meta-wrap" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
+        current.matches(".post-list-wrap > li > div:last-child > a:first-child")
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "avatar-wrap" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
+        current.matches(".post-list-wrap > li > div:last-child > :not(:first-child)")
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token !== "post-meta-item" && token !== "post-comments" && !token.startsWith("x"),
           )
           .join(" ");
       }
