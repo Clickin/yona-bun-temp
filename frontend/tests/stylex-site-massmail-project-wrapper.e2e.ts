@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-massmail-project-wrapper"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -36,8 +36,9 @@ test.describe("StyleX site massmail project wrapper", () => {
     ]);
     expect(route).toContain('data-stylex-owner="site-massmail-project-wrapper"');
     expect(route).toContain("styles.projectWrapper");
-    expect(route).toContain("marginBottom: globalColors.siteMassMailProjectWrapperMarginBottom");
-    expect(theme).toContain('siteMassMailProjectWrapperMarginBottom: "10px"');
+    expect(route).toContain('projectWrapper: {\n    marginBottom: "10px"');
+    expect(route).not.toContain("globalColors.");
+    expect(theme).toContain("defineVars");
 
     const wrapper = await openMassMail(page);
     await expect(wrapper).toHaveAttribute("id", "project-list-wrap");

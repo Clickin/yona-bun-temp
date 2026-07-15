@@ -6,7 +6,7 @@ const ownerSelector = '[data-stylex-owner="site-massmail-project-input"]';
 const selectedProjectTagSelector =
   '#selected-projects [data-stylex-owner="site-massmail-selected-project-tag"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -53,8 +53,9 @@ test.describe("StyleX site massmail project input", () => {
     ]);
     expect(route).toContain('data-stylex-owner="site-massmail-project-input"');
     expect(route).toContain("styles.projectInput");
-    expect(route).toContain("margin: globalColors.siteMassMailProjectInputMargin");
-    expect(theme).toContain('siteMassMailProjectInputMargin: "0px"');
+    expect(route).toContain('projectInput: {\n    margin: "0px"');
+    expect(route).not.toContain("globalColors.");
+    expect(theme).toContain("defineVars");
 
     await mockSession(page);
     await page.goto(`${basePath}/sites/massmail`);

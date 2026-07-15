@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 const ownerSelector = '[data-stylex-owner="site-massmail-write-action"]';
 
 async function mockSession(page: Page) {
@@ -126,9 +126,10 @@ test("write action has a stable owner without generated selector contracts", asy
   expect(route).toContain('data-stylex-owner="site-massmail-write-action"');
   expect(route).toContain("styles.writeAction");
   expect(route).not.toContain('className="ybtn ybtn-primary"');
-  expect(route).toContain('":active": globalColors.siteMassMailWriteActionInteractiveSurface');
+  expect(route).toContain('":active": siteMassMailColors.primaryInteractive');
   expect(route).not.toMatch(/#[0-9a-f]/iu);
-  expect(theme).toContain("siteMassMailWriteActionInteractiveSurface");
+  expect(theme).toContain("primaryInteractive");
+  expect(route).not.toContain("globalColors.");
 
   const action = await open(page);
   expect(

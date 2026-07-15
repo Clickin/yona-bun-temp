@@ -71,7 +71,7 @@ test.describe("StyleX site mass mail sidebar", () => {
   test("pins legacy sources, frozen cascade, global theme, bridge absence, and retirement", async () => {
     const paths = [
       "../src/routes/sites/massmail.tsx",
-      "../src/theme.stylex.ts",
+      "../src/routes/sites/-massmail.stylex.ts",
       "../src/app.css",
       "../../yona-original/app/views/site/massMail.scala.html",
       "../../yona-original/app/views/site/siteMngLayout.scala.html",
@@ -123,11 +123,18 @@ test.describe("StyleX site mass mail sidebar", () => {
     expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const suffix of suffixes) {
-      const key = `siteMassMailSidebar${suffix}`;
-      expect(route).toContain(`globalColors.${key}`);
-      expect(theme).toContain(key);
+    expect(suffixes).toHaveLength(31);
+    for (const paint of [
+      "neutralBorder",
+      "activeBorder",
+      "primarySurface",
+      "badgeShadow",
+      "badgeText",
+    ]) {
+      expect(route).toContain(`siteMassMailColors.${paint}`);
+      expect(theme).toContain(paint);
     }
+    expect(route).not.toContain("globalColors.");
     for (const retired of [
       'className="site-setting-nav"',
       'className="active"',

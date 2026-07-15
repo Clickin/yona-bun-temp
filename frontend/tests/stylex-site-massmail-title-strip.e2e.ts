@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-massmail-title-strip"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfillSession = (route: Route) =>
@@ -44,8 +44,9 @@ test.describe("StyleX site massmail title strip", () => {
     expect(route).toContain('data-stylex-owner="site-massmail-title-strip"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).toContain("siteMassMailColors.titleBorder");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("composes generated classes with the legacy title classes", async ({ page }) => {

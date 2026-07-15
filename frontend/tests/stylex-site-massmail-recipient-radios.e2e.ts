@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-massmail-recipient-radios"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -38,8 +38,10 @@ test.describe("StyleX site massmail recipient radios", () => {
     expect(route).toContain("styles.recipientRadio");
     expect(route).toContain("styles.recipientRadioInput");
     expect(route).not.toMatch(/<label className="radio" htmlFor="mailto(?:All|Prj)">/u);
-    expect(theme).toContain('siteMassMailRecipientRadioMinHeight: "20px"');
-    expect(theme).toContain('siteMassMailRecipientRadioInputMarginLeft: "-20px"');
+    expect(route).toContain('minHeight: "20px"');
+    expect(route).toContain('marginLeft: "-20px"');
+    expect(route).not.toContain("globalColors.");
+    expect(theme).toContain("defineVars");
 
     const radios = await openMassMail(page);
     await expect(radios).toHaveText(["To all", "To members of a specific project"]);

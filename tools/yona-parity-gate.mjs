@@ -644,6 +644,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/sites\/mail\.tsx$/i,
       /^frontend\/src\/routes\/sites\/-mail\.stylex\.ts$/i,
       /^frontend\/src\/routes\/sites\/massmail\.tsx$/i,
+      /^frontend\/src\/routes\/sites\/-massmail\.stylex\.ts$/i,
       /^frontend\/src\/routes\/sites\/postList\.tsx$/i,
       /^frontend\/src\/routes\/sites\/projectList\.tsx$/i,
       /^frontend\/src\/routes\/sites\/-pagination\.tsx$/i,

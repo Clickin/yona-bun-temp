@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-massmail-select-project-action"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -55,11 +55,10 @@ test.describe("StyleX site massmail select-project action", () => {
     expect(route).toContain('data-stylex-owner="site-massmail-select-project-action"');
     expect(route).toContain("styles.selectProjectAction");
     expect(route).not.toMatch(/id="select-project"[\s\S]{0,120}className="ybtn"/u);
-    expect(route).toContain(
-      '":hover": globalColors.siteMassMailSelectProjectActionInteractiveSurface',
-    );
-    expect(theme).toContain('siteMassMailSelectProjectActionSurface: "#ffffff"');
-    expect(theme).toContain("siteMassMailSelectProjectActionInteractiveBorderColor");
+    expect(route).toContain('":hover": siteMassMailColors.secondaryHoverSurface');
+    expect(theme).toContain("secondaryHoverSurface");
+    expect(theme).toContain("secondaryInteractiveBorder");
+    expect(route).not.toContain("globalColors.");
 
     const action = await openProjects(page);
     await expect(action).toHaveAttribute("id", "select-project");
