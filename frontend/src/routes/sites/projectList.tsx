@@ -53,11 +53,34 @@ const styles = stylex.create({
   listHeadTitle: {
     padding: globalColors.siteProjectListHeadColumnPadding,
   },
+  projectRow: {
+    borderBottomStyle: globalColors.siteProjectListRowBorderStyle,
+    borderBottomWidth: globalColors.siteProjectListRowBorderBottomWidth,
+    borderBottomColor: globalColors.siteProjectListRowBorder,
+    lineHeight: globalColors.siteProjectListRowLineHeight,
+  },
+  projectRowAvatar: {
+    width: globalColors.siteProjectListRowAvatarWidth,
+    height: globalColors.siteProjectListRowAvatarHeight,
+    marginRight: globalColors.siteProjectListRowAvatarMarginRight,
+    marginTop: globalColors.siteProjectListRowAvatarMarginTop,
+    float: globalColors.siteProjectListRowAvatarFloat,
+  },
+  projectRowColumn: {
+    fontSize: globalColors.siteProjectListRowColumnFontSize,
+    padding: globalColors.siteProjectListRowColumnPadding,
+    textOverflow: globalColors.siteProjectListRowColumnTextOverflow,
+    wordBreak: globalColors.siteProjectListRowColumnWordBreak,
+    lineHeight: globalColors.siteProjectListRowColumnLineHeight,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const listHeadStyleProps = stylex.props(styles.listHead);
 const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
+const projectRowStyleProps = stylex.props(styles.projectRow);
+const projectRowAvatarStyleProps = stylex.props(styles.projectRowAvatar);
+const projectRowColumnStyleProps = stylex.props(styles.projectRowColumn);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
@@ -476,12 +499,22 @@ function ProjectListItem({
   const projectLogoUrl = project.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
 
   return (
-    <li className="row-fluid listitem">
-      <div className="span5 listitem-col">
+    <li
+      {...projectRowStyleProps}
+      className={`row-fluid listitem ${projectRowStyleProps.className ?? ""}`}
+      data-stylex-owner="site-project-list-row"
+    >
+      <div
+        {...projectRowColumnStyleProps}
+        className={`span5 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
+        data-stylex-owner="site-project-list-row-columns"
+      >
         <Link
           to="/$ownerName/$projectName"
           params={{ ownerName: project.ownerName, projectName: project.projectName }}
-          className="avatar-wrap list-avatar"
+          {...projectRowAvatarStyleProps}
+          className={`avatar-wrap list-avatar ${projectRowAvatarStyleProps.className ?? ""}`}
+          data-stylex-owner="site-project-list-row-avatar"
         >
           <img src={projectLogoUrl} alt={project.projectName} /> {project.ownerName}/
           {project.projectName}
@@ -494,9 +527,25 @@ function ProjectListItem({
           {project.ownerName}/{project.projectName}
         </Link>
       </div>
-      <div className="span4 listitem-col">{project.overview}</div>
-      <div className="span2 listitem-col">{project.createdAt}</div>
-      <div className="span1 listitem-col">
+      <div
+        {...projectRowColumnStyleProps}
+        className={`span4 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
+        data-stylex-owner="site-project-list-row-columns"
+      >
+        {project.overview}
+      </div>
+      <div
+        {...projectRowColumnStyleProps}
+        className={`span2 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
+        data-stylex-owner="site-project-list-row-columns"
+      >
+        {project.createdAt}
+      </div>
+      <div
+        {...projectRowColumnStyleProps}
+        className={`span1 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
+        data-stylex-owner="site-project-list-row-columns"
+      >
         <button
           className="ybtn ybtn-danger"
           data-project-name={`${project.ownerName}/${project.projectName}`}

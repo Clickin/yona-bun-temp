@@ -1531,6 +1531,19 @@ declarations through existing global variables while retaining shared fallback c
 issue rows, pagination, sidebar/shell, and generic title areas remain separate owners or fallback.
 This is not Wave 1 completion.
 
+The one-hundred-nineteenth slice migrates the /sites/projectList populated list header from
+site/projectList.scala.html and _page.less. StyleX owns the list-header surface, border, spacing,
+line height, and direct-column padding through global variables while retaining Bootstrap grid
+and shared fallback classes; rows, actions, modal, pagination, sidebar/shell, and generic list
+headers remain fallback or separate owners. This is not Wave 1 completion.
+
+The one-hundred-twentieth slice migrates the /sites/projectList populated project-row base,
+project avatar, and four direct columns from site/projectList.scala.html and _page.less. StyleX
+owns their exact border, geometry, spacing, and typography through global variables while
+retaining Bootstrap/shared fallback classes and the listitem class required by the unmigrated
+even-row background; actions, links, modal, pagination, and shell remain fallback or separate
+owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
