@@ -24,9 +24,49 @@ test.describe("StyleX verified user success", () => {
 
     expect(route).toContain('data-stylex-owner="verified-user-success"');
     expect(route).toContain("styles.taglineWrap");
+    expect(route).toContain("taglineWrapStyleProps");
+    expect(route).toContain("titleStyleProps");
+    expect(route).toContain("taglineStyleProps");
+    expect(route).toContain(
+      '`center-wrap tag-line-wrap reset-password ${taglineWrapStyleProps.className ?? ""}`',
+    );
+    expect(route).toContain('`title ${titleStyleProps.className ?? ""}`');
+    expect(route).toContain('`tag-line ${taglineStyleProps.className ?? ""}`');
     expect(route).toContain("globalColors.resetPasswordTaglinePaddingTop");
     expect(theme).toContain("resetPasswordTaglinePaddingTop");
     expect(theme).toContain("resetPasswordTitleLineHeight");
+  });
+
+  test("composes generated classes with the legacy verified screen fallbacks", async ({ page }) => {
+    const owner = await openVerifiedUser(page);
+    const classComposition = await owner.evaluate((taglineWrap) => {
+      const title = taglineWrap.querySelector("h1");
+      const tagline = taglineWrap.querySelector("p.tag-line");
+      return {
+        tagline: tagline ? Array.from(tagline.classList) : [],
+        taglineWrap: Array.from(taglineWrap.classList),
+        title: title ? Array.from(title.classList) : [],
+      };
+    });
+
+    expect(classComposition.taglineWrap).toEqual(
+      expect.arrayContaining(["center-wrap", "tag-line-wrap", "reset-password"]),
+    );
+    expect(classComposition.title).toContain("title");
+    expect(classComposition.tagline).toContain("tag-line");
+    for (const classes of Object.values(classComposition)) {
+      expect(classes.some((token) => token.startsWith("x"))).toBe(true);
+    }
+
+    const generatedOutsideVerifiedOwner = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".page.full *"))
+        .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
+        .filter(
+          (element) => element.closest('[data-stylex-owner="verified-user-success"]') === null,
+        )
+        .map((element) => element.tagName),
+    );
+    expect(generatedOutsideVerifiedOwner).toEqual([]);
   });
 
   test("keeps the verified Scala HTML copy and element order", async ({ page }) => {

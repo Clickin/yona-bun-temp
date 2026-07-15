@@ -29,6 +29,10 @@ const styles = stylex.create({
   },
 });
 
+const taglineWrapStyleProps = stylex.props(styles.taglineWrap);
+const titleStyleProps = stylex.props(styles.title);
+const taglineStyleProps = stylex.props(styles.tagline);
+
 export const Route = createFileRoute("/verify/$loginId/$verificationCode")({
   component: VerifyUserRoute,
 });
@@ -87,16 +91,16 @@ function VerifyUserScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div className="page full">
           <div
-            {...stylex.props(styles.taglineWrap)}
-            className="center-wrap tag-line-wrap reset-password"
+            {...taglineWrapStyleProps}
+            className={`center-wrap tag-line-wrap reset-password ${taglineWrapStyleProps.className ?? ""}`}
             data-stylex-owner="verified-user-success"
           >
-            <h1 {...stylex.props(styles.title)} className="title">
+            <h1 {...titleStyleProps} className={`title ${titleStyleProps.className ?? ""}`}>
               {t("user.verified")}
             </h1>
             <p>{verifiedLoginId}</p>
             <hr />
-            <p {...stylex.props(styles.tagline)} className="tag-line">
+            <p {...taglineStyleProps} className={`tag-line ${taglineStyleProps.className ?? ""}`}>
               {t("user.verified.detail")}
             </p>
           </div>

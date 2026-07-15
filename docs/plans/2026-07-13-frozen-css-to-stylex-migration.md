@@ -1502,6 +1502,11 @@ The existing generated classes now coexist with retained `title_area`, `pull-lef
 `notice` fallback classes; export/import controls, sidebar/shell, and generic title/warning
 consumers remain fallback or separate owners. This is not Wave 1 completion.
 
+The one-hundred-fourteenth slice repairs verified-user success StyleX class composition. The legacy
+wrapper, title, and tagline classes now coexist with the existing generated classes; pending,
+invalid, and independent reset/login surfaces remain fallback or separate owners. This is not Wave
+1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
