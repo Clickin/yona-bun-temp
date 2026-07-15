@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/resetPassword.tsx", import.meta.url);
+const routeThemeSource = new URL("../src/routes/-resetPassword.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const legacyFallbackSource = new URL(
   "../public/legacy-assets/stylesheets/legacy-fallback.css",
@@ -39,8 +40,9 @@ async function openValidTokenReset(page: Page) {
 
 test.describe("StyleX valid-token reset password form", () => {
   test("declares globally themed valid-token ownership while retaining real fallback states", async () => {
-    const [route, theme, legacyFallback] = await Promise.all([
+    const [route, routeTheme, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
       readFile(legacyFallbackSource, "utf8"),
     ]);
@@ -50,9 +52,10 @@ test.describe("StyleX valid-token reset password form", () => {
     expect(route).toContain('"reset-password-submit"');
     expect(route).toContain("stylex.props(styles.textInput, styles.passwordInput)");
     expect(route).toContain('className="popover left in"');
-    expect(theme).toContain("resetPasswordFormWidth");
-    expect(theme).toContain("resetPasswordInputFocusBorderBottomColor");
-    expect(theme).toContain("resetPasswordPasswordMarginBottom");
+    expect(route).toContain('default: "400px"');
+    expect(route).toContain("borderBottomColor: resetPasswordTheme.inputFocusBorder");
+    expect(routeTheme).toContain('inputFocusBorder: "#f36c22"');
+    expect(theme).not.toMatch(/^\s+resetPassword[A-Z]/m);
     expect(legacyFallback).toContain(".login-form-wrap .text");
     expect(legacyFallback).toContain(".login-form-wrap {\n    width: 95% !important;");
   });

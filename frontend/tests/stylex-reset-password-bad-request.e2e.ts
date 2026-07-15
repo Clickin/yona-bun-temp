@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const route = new URL("../src/routes/resetPassword.tsx", import.meta.url);
+const routeTheme = new URL("../src/routes/-resetPassword.stylex.ts", import.meta.url);
 const theme = new URL("../src/theme.stylex.ts", import.meta.url);
 const fallback = new URL(
   "../public/legacy-assets/stylesheets/legacy-fallback.css",
@@ -23,15 +24,19 @@ async function open(page: Page) {
 
 test.describe("StyleX reset-password bad request", () => {
   test("owns only the legacy wrapper and message while retaining shared fallback primitives", async () => {
-    const [source, vars, css] = await Promise.all([
+    const [source, routeVars, vars, css] = await Promise.all([
       readFile(route, "utf8"),
+      readFile(routeTheme, "utf8"),
       readFile(theme, "utf8"),
       readFile(fallback, "utf8"),
     ]);
     expect(source).toContain('data-stylex-owner="reset-password-bad-request"');
     expect(source).toContain('className="ico-404"');
     expect(source).toContain('className="ybtn ybtn-info"');
-    expect(vars).toContain("resetPasswordBadRequestErrorWrapPadding");
+    expect(source).toContain('padding: "100px 0px"');
+    expect(source).toContain("color: resetPasswordTheme.badRequestText");
+    expect(routeVars).toContain('badRequestText: "#898989"');
+    expect(vars).not.toMatch(/^\s+resetPassword[A-Z]/m);
     expect(css).toContain(".ybtn-info");
   });
 

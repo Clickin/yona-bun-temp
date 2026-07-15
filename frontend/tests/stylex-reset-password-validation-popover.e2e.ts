@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/resetPassword.tsx", import.meta.url);
+const routeThemeSource = new URL("../src/routes/-resetPassword.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const legacyFallbackSource = new URL(
   "../public/legacy-assets/stylesheets/legacy-fallback.css",
@@ -32,8 +33,9 @@ async function openValidTokenReset(page: Page) {
 
 test.describe("StyleX valid-token reset password validation popover", () => {
   test("owns the valid-token presentation while retaining the fallback for excluded states", async () => {
-    const [route, theme, legacyFallback] = await Promise.all([
+    const [route, routeTheme, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
       readFile(legacyFallbackSource, "utf8"),
     ]);
@@ -42,9 +44,10 @@ test.describe("StyleX valid-token reset password validation popover", () => {
     expect(route).toContain("stylexOwned={validTokenReset}");
     expect(route).toContain('className="popover left in"');
     expect(route).toContain("::after");
-    expect(theme).toContain("resetPasswordValidationPopoverSurface");
-    expect(theme).toContain("resetPasswordValidationPopoverArrowBorder");
-    expect(theme).toContain("resetPasswordValidationPopoverContentPadding");
+    expect(route).toContain("backgroundColor: resetPasswordTheme.validationSurface");
+    expect(route).toContain('padding: "9px 10px"');
+    expect(routeTheme).toContain('validationArrowBorder: "rgba(0, 0, 0, 0.25)"');
+    expect(theme).not.toMatch(/^\s+resetPassword[A-Z]/m);
     expect(legacyFallback).toContain(".popover.left");
     expect(legacyFallback).toContain(".popover-content");
   });
