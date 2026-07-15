@@ -4,7 +4,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-issue-list-title-strip"]';
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-issueList.stylex.ts", import.meta.url);
 
 async function openIssueList(page: Page) {
   const session = (route: Route) =>
@@ -88,10 +88,11 @@ test.describe("StyleX site issue-list title strip", () => {
     expect(route).toContain('data-stylex-owner="site-issue-list-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
+    expect(route).toContain("siteIssueListColors.titleBorder");
     expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
     expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("keeps the legacy title directly before the tab sibling", async ({ page }) => {

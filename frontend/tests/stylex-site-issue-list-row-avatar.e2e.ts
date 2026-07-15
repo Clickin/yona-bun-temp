@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-issueList.stylex.ts", import.meta.url);
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/issueList.scala.html",
   import.meta.url,
@@ -134,8 +134,8 @@ test.describe("StyleX site issue-list row and project avatar", () => {
     expect(route).toContain("styles.issueListRow");
     expect(route).toContain("styles.issueListProjectAvatar");
     expect(route).toContain("styles.issueListProjectAvatarImage");
-    expect(route).toContain("paddingBlock: globalColors.siteIssueListRowPaddingBlock");
-    expect(route).toContain("paddingInline: globalColors.siteIssueListRowPaddingInline");
+    expect(route).toContain('paddingBlock: "10px"');
+    expect(route).toContain('paddingInline: "10px"');
     for (const variable of [
       "siteIssueListRowBorder",
       "siteIssueListRowBorderStyle",
@@ -155,8 +155,8 @@ test.describe("StyleX site issue-list row and project avatar", () => {
       "siteIssueListAvatarImageWidth",
       "siteIssueListAvatarImageVerticalAlign",
     ]) {
-      expect(route).toContain(`globalColors.${variable}`);
-      expect(theme).toContain(variable);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(variable);
     }
   });
 

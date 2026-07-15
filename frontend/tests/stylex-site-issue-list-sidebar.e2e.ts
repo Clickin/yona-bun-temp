@@ -124,7 +124,7 @@ test.describe("StyleX site issue list sidebar", () => {
   test("pins legacy sources, global theme, bridge absence, and retirement", async () => {
     const paths = [
       "../src/routes/sites/issueList.tsx",
-      "../src/theme.stylex.ts",
+      "../src/routes/sites/-issueList.stylex.ts",
       "../src/app.css",
       "../../yona-original/app/views/site/issueList.scala.html",
       "../../yona-original/app/views/site/siteMngLayout.scala.html",
@@ -178,8 +178,8 @@ test.describe("StyleX site issue list sidebar", () => {
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
     for (const suffix of suffixes) {
       const key = `siteIssueListSidebar${suffix}`;
-      expect(route).toContain(`globalColors.${key}`);
-      expect(theme).toContain(key);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(imported);
     }
     for (const retired of [
       'className="site-setting-nav"',

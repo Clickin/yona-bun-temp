@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-issueList.stylex.ts", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/issueList.scala.html",
   import.meta.url,
@@ -165,8 +165,8 @@ test.describe("StyleX site issue-list state tabs", () => {
       "siteIssueListStateTabLinkSelectedBorderBottom",
       "siteIssueListStateTabLinkSelectedCursor",
     ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(token);
     }
   });
 

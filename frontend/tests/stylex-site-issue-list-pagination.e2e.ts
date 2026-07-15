@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/issueList.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-issueList.stylex.ts", import.meta.url);
 const legacyTemplateSource = new URL(
   "../../yona-original/app/views/site/issueList.scala.html",
   import.meta.url,
@@ -134,8 +134,8 @@ test.describe("StyleX site issue-list pagination", () => {
       "siteIssueListPaginationIconWidth",
       "siteIssueListPaginationIconHeight",
     ]) {
-      expect(route).toContain(`globalColors.${token}`);
-      expect(theme).toContain(token);
+      expect(route).not.toContain("globalColors.");
+      expect(theme).not.toContain(token);
     }
   });
 
