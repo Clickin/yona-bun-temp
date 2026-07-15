@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-two slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty-three slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1762,6 +1762,17 @@ adjacent title-strip gate is GREEN 5/5, and the complete update matrix is 26/29 
 pre-existing global GNB root-order fixture and two external-download href expectations outside
 this wave. Fresh live legacy visual comparison remains explicitly unverified. This is not Wave 1
 completion.
+
+The one-hundred-forty-third slice migrates the authenticated `/sites/update` update-available
+message from `site/update.scala.html`, Bootstrap 2.3.1, and the later `_common.less` reset. The
+direct available paragraph owns the final frozen `margin: 0`, and its direct strong child owns
+Bootstrap's bold weight through two canonical global variables. The existing download action and
+current-version paragraph remain independent owners; title, no-update/error, sidebar, grid, and
+shell remain excluded. Conditions, whitespace, direct child/sibling order, and canonical Yoram
+copy remain unchanged. Actual RED 5/5 becomes GREEN 5/5, the adjacent title-strip gate is GREEN
+5/5, and the complete update matrix is 31/34 with only the pre-existing global GNB root-order
+fixture and two external-download href expectations outside this wave. Fresh live legacy visual
+comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

@@ -182,7 +182,7 @@ test.describe("StyleX site update title strip", () => {
         .filter(
           (element) =>
             element.closest(
-              '[data-stylex-owner="site-update-title-strip"], [data-stylex-owner="site-update-title-heading"], [data-stylex-owner="site-update-current-version"], [data-stylex-owner="site-update-latest-version"], [data-stylex-owner="site-update-download-action"], [data-stylex-owner="site-update-error-pre"]',
+              '[data-stylex-owner="site-update-title-strip"], [data-stylex-owner="site-update-title-heading"], [data-stylex-owner="site-update-available-message"], [data-stylex-owner="site-update-available-message-strong"], [data-stylex-owner="site-update-current-version"], [data-stylex-owner="site-update-latest-version"], [data-stylex-owner="site-update-download-action"], [data-stylex-owner="site-update-error-pre"]',
             ) === null,
         )
         .map((element) => element.tagName),

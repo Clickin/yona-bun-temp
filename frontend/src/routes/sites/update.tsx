@@ -32,6 +32,12 @@ const styles = stylex.create({
   noUpdateParagraph: {
     margin: globalColors.siteUpdateNoUpdateParagraphMargin,
   },
+  availableParagraph: {
+    margin: globalColors.siteUpdateAvailableParagraphMargin,
+  },
+  availableStrong: {
+    fontWeight: globalColors.siteUpdateAvailableStrongFontWeight,
+  },
   downloadAction: {
     backgroundColor: {
       default: globalColors.siteUpdateDownloadActionSurface,
@@ -198,8 +204,16 @@ function UpdateBody({ response }: { response: SiteUpdateResponse | undefined }) 
   return (
     <>
       {response.versionToUpdate ? (
-        <p>
-          <strong>{t("site.update.isAvailable", { args: [response.versionToUpdate] })}</strong>
+        <p
+          {...stylex.props(styles.availableParagraph)}
+          data-stylex-owner="site-update-available-message"
+        >
+          <strong
+            {...stylex.props(styles.availableStrong)}
+            data-stylex-owner="site-update-available-message-strong"
+          >
+            {t("site.update.isAvailable", { args: [response.versionToUpdate] })}
+          </strong>
           {releaseUrl ? (
             <>
               {" "}

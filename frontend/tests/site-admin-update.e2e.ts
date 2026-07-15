@@ -608,9 +608,12 @@ async function canonicalizeScreenRoots(page: Page) {
             current.hasAttribute(name) &&
             !(
               name === "class" &&
-              ["site-update-current-version", "site-update-latest-version"].includes(
-                current.getAttribute("data-stylex-owner") ?? "",
-              )
+              [
+                "site-update-available-message",
+                "site-update-available-message-strong",
+                "site-update-current-version",
+                "site-update-latest-version",
+              ].includes(current.getAttribute("data-stylex-owner") ?? "")
             ),
         )
         .map(

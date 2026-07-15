@@ -619,6 +619,9 @@ export const globalColors = stylex.defineVars({
   siteUpdateTitleHeadingFloat: "left",
   // site/update.scala.html + _common.less reset after Bootstrap `p`
   siteUpdateNoUpdateParagraphMargin: "0px",
+  siteUpdateAvailableParagraphMargin: "0px",
+  // site/update.scala.html + Bootstrap `strong`
+  siteUpdateAvailableStrongFontWeight: "bold",
   // site/update.scala.html + _yobiUI.less `.ybtn.ybtn-success`
   siteUpdateDownloadActionTextAlign: "center",
   siteUpdateDownloadActionWhiteSpace: "nowrap",
