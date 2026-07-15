@@ -57,6 +57,29 @@ const styles = stylex.create({
   issueListRow: {
     paddingBlock: globalColors.siteIssueListRowPaddingBlock,
     paddingInline: globalColors.siteIssueListRowPaddingInline,
+    borderBottomColor: globalColors.siteIssueListRowBorder,
+    borderBottomStyle: globalColors.siteIssueListRowBorderStyle,
+    borderBottomWidth: globalColors.siteIssueListRowBorderWidth,
+    lineHeight: globalColors.siteIssueListRowLineHeight,
+  },
+  issueListRowEven: {
+    backgroundColor: globalColors.siteIssueListRowEvenSurface,
+  },
+  issueListProjectAvatar: {
+    width: globalColors.siteIssueListAvatarWidth,
+    height: globalColors.siteIssueListAvatarHeight,
+    marginRight: globalColors.siteIssueListAvatarMarginRight,
+    marginTop: globalColors.siteIssueListAvatarMarginTop,
+    float: globalColors.siteIssueListAvatarFloat,
+    display: globalColors.siteIssueListAvatarDisplay,
+    verticalAlign: globalColors.siteIssueListAvatarVerticalAlign,
+    overflow: globalColors.siteIssueListAvatarOverflow,
+    backgroundColor: globalColors.siteIssueListAvatarSurface,
+    borderRadius: globalColors.siteIssueListAvatarRadius,
+  },
+  issueListProjectAvatarImage: {
+    width: globalColors.siteIssueListAvatarImageWidth,
+    verticalAlign: globalColors.siteIssueListAvatarImageVerticalAlign,
   },
   issueInfo: {
     lineHeight: globalColors.siteIssueListInfoLineHeight,
@@ -83,6 +106,9 @@ const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const issueListContainerStyleProps = stylex.props(styles.issueListContainer);
 const issueListRowStyleProps = stylex.props(styles.issueListRow);
+const issueListRowEvenStyleProps = stylex.props(styles.issueListRow, styles.issueListRowEven);
+const issueListProjectAvatarStyleProps = stylex.props(styles.issueListProjectAvatar);
+const issueListProjectAvatarImageStyleProps = stylex.props(styles.issueListProjectAvatarImage);
 const issueInfoStyleProps = stylex.props(styles.issueInfo);
 const issueProjectLinkStyleProps = stylex.props(styles.issueProjectLink);
 const issueInfoSeparatorStyleProps = stylex.props(styles.issueInfoSeparator);
@@ -156,9 +182,10 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 className={`post-list-wrap ${issueListContainerStyleProps.className ?? ""}`}
                 data-stylex-owner="site-issue-list-container"
               >
-                {(query.data?.issues ?? []).map((issue) => (
+                {(query.data?.issues ?? []).map((issue, index) => (
                   <IssueListItem
                     issue={issue}
+                    index={index}
                     key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
                   />
                 ))}
@@ -364,21 +391,28 @@ function IssueStateTab({ selected, state }: { selected: string; state: SiteIssue
   );
 }
 
-function IssueListItem({ issue }: { issue: SiteIssue }) {
+function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
   const projectLogoUrl = issue.projectLogoUrl.trim() || "/assets/images/project_default_logo.png";
+  const rowStyleProps = index % 2 === 1 ? issueListRowEvenStyleProps : issueListRowStyleProps;
 
   return (
     <li
-      {...issueListRowStyleProps}
-      className={`row-fluid listitem ${issueListRowStyleProps.className ?? ""}`}
+      {...rowStyleProps}
+      className={`row-fluid ${rowStyleProps.className ?? ""}`}
       data-stylex-owner="site-issue-list-row"
     >
       <Link
+        {...issueListProjectAvatarStyleProps}
+        data-stylex-owner="site-issue-list-project-avatar"
         to="/$ownerName/$projectName"
         params={{ ownerName: issue.ownerName, projectName: issue.projectName }}
-        className="avatar-wrap list-avatar"
       >
-        <img src={projectLogoUrl} alt={issue.projectName} />
+        <img
+          {...issueListProjectAvatarImageStyleProps}
+          data-stylex-owner="site-issue-list-project-avatar-image"
+          src={projectLogoUrl}
+          alt={issue.projectName}
+        />
       </Link>
       <div {...issueInfoStyleProps} data-stylex-owner="site-issue-list-info">
         <Link

@@ -255,8 +255,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   const closedTab = page.getByRole("link", { exact: true, name: "Closed" });
   await expect(closedTab).toHaveAttribute("href", `${basePath}/sites/issueList?state=closed`);
-  await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
-  await expect(page.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
+  await expect(page.locator('[data-stylex-owner="site-issue-list-row"]')).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-project-avatar"]'),
+  ).toHaveAttribute("href", `${basePath}/acme/roadmap`);
   await expect(page.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap`,
@@ -497,11 +499,12 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     },
   ]);
 
-  const row = page.locator(".post-list-wrap .listitem");
+  const row = page.locator('[data-stylex-owner="site-issue-list-row"]');
   await expect(row).toHaveCount(1);
-  await expect(row.locator(".list-avatar")).toHaveAttribute("href", `${basePath}/beta/archive`);
-  await expect(row.locator(".list-avatar img")).toHaveAttribute("src", "/logos/closed-roadmap.png");
-  await expect(row.locator(".list-avatar img")).toHaveAttribute("alt", "archive");
+  const projectAvatar = row.locator('[data-stylex-owner="site-issue-list-project-avatar"]');
+  await expect(projectAvatar).toHaveAttribute("href", `${basePath}/beta/archive`);
+  await expect(projectAvatar.locator("img")).toHaveAttribute("src", "/logos/closed-roadmap.png");
+  await expect(projectAvatar.locator("img")).toHaveAttribute("alt", "archive");
   await expect(row.locator('[data-stylex-owner="site-issue-list-project-link"]')).toHaveAttribute(
     "href",
     `${basePath}/beta/archive`,
@@ -579,7 +582,7 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
     paginationBelowRow: true,
     rowInsideContent: true,
     rowLinkOrder: [
-      "list-avatar",
+      "owner:site-issue-list-project-avatar",
       "owner:site-issue-list-project-link",
       "owner:site-issue-list-title-link",
       "avatar-wrap",
@@ -687,11 +690,12 @@ test("site admin issue list falls back to the legacy default project logo for bl
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  await expect(page.locator(".post-list-wrap .list-avatar img")).toHaveAttribute(
-    "src",
-    "/assets/images/project_default_logo.png",
-  );
-  await expect(page.locator('.post-list-wrap .list-avatar img[src=""]')).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-project-avatar-image"]'),
+  ).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-project-avatar-image"][src=""]'),
+  ).toHaveCount(0);
   expect(
     consoleErrors.find((message) =>
       message.includes('An empty string ("") was passed to the src attribute'),
@@ -1018,7 +1022,7 @@ async function closedIssueListLayoutMetrics(page: Page) {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const titleArea = requireElement(".title_area");
     const tabs = requireElement(".span10 > .nav.nav-tabs");
-    const row = requireElement(".post-list-wrap .listitem");
+    const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
     const meta = requireElement(".post-meta-wrap");
     const pagination = requireElement("#pagination");
     const contentRect = content.getBoundingClientRect();
@@ -1038,9 +1042,6 @@ async function closedIssueListLayoutMetrics(page: Page) {
       paginationBelowRow: paginationRect.top >= rowRect.bottom,
       rowInsideContent: rowRect.top >= contentRect.top && rowRect.bottom <= contentRect.bottom,
       rowLinkOrder: Array.from(row.querySelectorAll("a")).map((link) => {
-        if (link.classList.contains("list-avatar")) {
-          return "list-avatar";
-        }
         const stylexOwner = link.getAttribute("data-stylex-owner");
         if (stylexOwner) {
           return `owner:${stylexOwner}`;
@@ -1068,9 +1069,11 @@ async function issueListMetrics(page: Page) {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
     const titleArea = requireElement(".title_area");
     const tabs = requireElement(".span10 > .nav.nav-tabs");
-    const firstRow = requireElement(".post-list-wrap .listitem");
-    const avatarWrap = requireElement(".post-list-wrap .list-avatar");
-    const avatarImage = requireElement(".post-list-wrap .list-avatar img");
+    const firstRow = requireElement('[data-stylex-owner="site-issue-list-row"]');
+    const avatarWrap = requireElement('[data-stylex-owner="site-issue-list-project-avatar"]');
+    const avatarImage = requireElement(
+      '[data-stylex-owner="site-issue-list-project-avatar-image"]',
+    );
     const postInfo = requireElement('[data-stylex-owner="site-issue-list-info"]');
     const postProject = requireElement('[data-stylex-owner="site-issue-list-project-link"]');
     const separator = requireElement('[data-stylex-owner="site-issue-list-separator"]');
@@ -1199,6 +1202,8 @@ async function canonicalizeScreenRoots(page: Page) {
         new Set([
           "site-issue-list-container",
           "site-issue-list-row",
+          "site-issue-list-project-avatar",
+          "site-issue-list-project-avatar-image",
           "site-issue-list-info",
           "site-issue-list-project-link",
           "site-issue-list-separator",
@@ -1208,6 +1213,20 @@ async function canonicalizeScreenRoots(page: Page) {
         return value
           .split(/\s+/u)
           .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (name === "class" && current.matches(".post-list-wrap > li")) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => token !== "listitem" && !token.startsWith("x"))
+          .join(" ");
+      }
+      if (name === "class" && current.matches(".post-list-wrap > li > a:first-child")) {
+        return value
+          .split(/\s+/u)
+          .filter(
+            (token) => token !== "avatar-wrap" && token !== "list-avatar" && !token.startsWith("x"),
+          )
           .join(" ");
       }
       if (

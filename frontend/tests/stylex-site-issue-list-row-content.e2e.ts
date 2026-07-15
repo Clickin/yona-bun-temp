@@ -167,7 +167,7 @@ test.describe("StyleX site issue-list populated row content", () => {
 
   test("keeps copy, order, destinations, and open search state", async ({ page }) => {
     const row = await openIssueList(page);
-    const avatar = row.locator(":scope > .list-avatar");
+    const avatar = owner(row, "site-issue-list-project-avatar");
     const info = owner(row, owners.info);
     const project = owner(info, owners.project);
     const separator = owner(info, owners.separator);
@@ -185,7 +185,7 @@ test.describe("StyleX site issue-list populated row content", () => {
         .locator(":scope > *")
         .evaluateAll((elements) =>
           elements.map((element) =>
-            element.matches(".list-avatar")
+            element.matches('[data-stylex-owner="site-issue-list-project-avatar"]')
               ? "avatar"
               : element.matches('[data-stylex-owner="site-issue-list-info"]')
                 ? "info"
@@ -213,8 +213,8 @@ test.describe("StyleX site issue-list populated row content", () => {
 
     await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
     await expect(row).toHaveClass(/\brow-fluid\b/u);
-    await expect(row).toHaveClass(/\blistitem\b/u);
-    await expect(row.locator(":scope > .avatar-wrap.list-avatar")).toHaveCount(1);
+    await expect(row).not.toHaveClass(/\blistitem\b/u);
+    await expect(owner(row, "site-issue-list-project-avatar")).toHaveCount(1);
     await expect(row.locator(":scope > .post-meta-wrap")).toHaveCount(1);
     for (const [element, retiredClass] of [
       [info, "post-info-wrap"],
@@ -273,7 +273,7 @@ test.describe("StyleX site issue-list populated row content", () => {
         };
         const { bottom, left, right, top } = element.getBoundingClientRect();
         return {
-          avatar: pick(":scope > .list-avatar"),
+          avatar: pick(':scope > [data-stylex-owner="site-issue-list-project-avatar"]'),
           info: pick(':scope > [data-stylex-owner="site-issue-list-info"]'),
           meta: pick(":scope > .post-meta-wrap"),
           project: pick(

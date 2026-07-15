@@ -166,6 +166,8 @@ test.describe("StyleX site issue-list title strip", () => {
         "site-issue-list-title-strip",
         "site-issue-list-container",
         "site-issue-list-row",
+        "site-issue-list-project-avatar",
+        "site-issue-list-project-avatar-image",
         "site-issue-list-info",
         "site-issue-list-project-link",
         "site-issue-list-separator",

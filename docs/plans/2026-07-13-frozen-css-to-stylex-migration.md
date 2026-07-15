@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-one slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-two slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1640,6 +1640,16 @@ Only `post-info-wrap`, `post-project`, `post-info-separator`, and `post-title` r
 `post-list-wrap`, `row-fluid`, `listitem`, state tabs, avatar/metadata, and pagination remain active
 fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, and the title/content matrix is
 GREEN 11/11. This is not Wave 1 completion.
+
+The one-hundred-thirty-second slice completes the authenticated populated open-state
+`/sites/issueList` row residual and project avatar from `site/issueList.scala.html`, `_common.less`,
+`_page.less`, and `_yobiUI.less`. The existing row owner gains border, line-height, and the
+index-derived even surface; project-avatar Link and image owners restore the frozen 45px cascade
+through route-specific global theme variables. Rows retire `listitem`, and project-avatar Links
+retire `avatar-wrap list-avatar`; `row-fluid`, `post-list-wrap`, state tabs, metadata, and pagination
+remain fallback or separate owners. Actual RED 5/5 becomes GREEN 5/5, while the prior row-content
+suite remains GREEN. Fresh live legacy visual comparison remains unverified. This is not Wave 1
+completion.
 
 ### Wave 2 — Bootstrap primitives
 
