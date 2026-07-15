@@ -10,7 +10,7 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { globalColors } from "../theme.stylex";
+import { secretTheme } from "./-secret.stylex";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
@@ -25,21 +25,21 @@ const legacyLinkActiveProps = {
 };
 
 const styles = stylex.create({
-  wrap: { textAlign: globalColors.secretSetupWrapTextAlign },
+  wrap: { textAlign: "center" },
   logo: {
-    display: globalColors.secretSetupLogoDisplay,
-    textAlign: globalColors.secretSetupLogoTextAlign,
-    overflow: globalColors.secretSetupLogoOverflow,
-    width: globalColors.secretSetupLogoWidth,
-    height: globalColors.secretSetupLogoHeight,
-    lineHeight: globalColors.secretSetupLogoLineHeight,
-    fontSize: globalColors.secretSetupLogoFontSize,
-    color: globalColors.secretSetupLogoText,
-    backgroundColor: globalColors.secretSetupLogoSurface,
-    margin: globalColors.secretSetupLogoMargin,
-    ":hover": { color: globalColors.secretSetupLogoText },
+    display: "block",
+    textAlign: "center",
+    overflow: "hidden",
+    width: "123px",
+    height: "55px",
+    lineHeight: "55px",
+    fontSize: "2em",
+    color: secretTheme.logoText,
+    backgroundColor: secretTheme.logoSurface,
+    margin: "50px auto",
+    ":hover": { color: secretTheme.logoText },
   },
-  box: { width: globalColors.secretSetupBoxWidth, margin: globalColors.secretSetupBoxMargin },
+  box: { width: "50%", margin: "20px auto" },
 });
 const secretWrapClassName = stylex.props(styles.wrap).className;
 const secretLogoClassName = stylex.props(styles.logo).className;

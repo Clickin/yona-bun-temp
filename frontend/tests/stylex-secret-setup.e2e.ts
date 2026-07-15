@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/secret.tsx", import.meta.url);
+const routeThemeSource = new URL("../src/routes/-secret.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
@@ -15,15 +16,18 @@ async function mockSecretSetup(page: Page, secretSetupRequired = true) {
 }
 
 test.describe("StyleX secret setup", () => {
-  test("uses global theme ownership for the legacy inline secret surface", async () => {
-    const [route, theme] = await Promise.all([
+  test("uses route paint ownership for the legacy inline secret surface", async () => {
+    const [route, routeTheme, theme] = await Promise.all([
       readFile(routeSource, "utf8"),
+      readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="secret-setup"');
     expect(route).toContain("styles.logo");
-    expect(theme).toContain("secretSetupLogoSurface");
-    expect(theme).toContain("secretSetupBoxWidth");
+    expect(route).toContain('width: "123px"');
+    expect(route).toContain("backgroundColor: secretTheme.logoSurface");
+    expect(routeTheme).toContain('logoSurface: "#f36c22"');
+    expect(theme).not.toMatch(/^\s+secretSetup[A-Z]/m);
   });
 
   for (const viewport of [

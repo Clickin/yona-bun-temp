@@ -18,20 +18,6 @@ export const anonymousHomeIntroBackgroundTheme = stylex.createTheme(
 );
 
 export const globalColors = stylex.defineVars({
-  // welcome/secret.scala.html inline `.secret-box`, `.secret-wrap`, and `.logo`
-  secretSetupBoxWidth: "50%",
-  secretSetupBoxMargin: "20px auto",
-  secretSetupWrapTextAlign: "center",
-  secretSetupLogoDisplay: "block",
-  secretSetupLogoTextAlign: "center",
-  secretSetupLogoOverflow: "hidden",
-  secretSetupLogoWidth: "123px",
-  secretSetupLogoHeight: "55px",
-  secretSetupLogoLineHeight: "55px",
-  secretSetupLogoFontSize: "2em",
-  secretSetupLogoText: "#ffffff",
-  secretSetupLogoSurface: "#f36c22",
-  secretSetupLogoMargin: "50px auto",
   // _page.less: .admin-logged-in-affix background-color
   siteAdminAffixSurface: "#ad0000",
   // _variables.less: @yobi-white used by .admin-logged-in-affix
