@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred fifty-one slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred fifty-two slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1728,6 +1728,19 @@ columns, gutter, box model, and max-767 stacking without theme variables. The ne
 Desktop deletion remains fallback-equivalent. On mobile, deletion evidence records the existing
 unlayered `app.css` bridge drift: the fixture stays floated at desktop percentages and gutter,
 while the route-local StyleX owners supply the correct 100% stacked, float-none output.
+
+The following breadcrumb slice migrates only the three management breadcrumb owners for
+authenticated populated-open `/sites/issueList?state=open`: `.site-breadcrumb-outer`,
+`.site-breadcrumb-inner`, and the direct `h3` from `site/siteMngLayout.scala.html`. Colocated
+StyleX reproduces the Bootstrap 2.3.1 heading defaults plus frozen `_page.less` and
+`_responsive.less` spacing, width, box model, and max-720 minimum width without theme variables.
+Only the two breadcrumb presentation classes retire; page wrap, management grid, sidebar, and
+content remain outside this slice. Official authenticated legacy captures at 1366x900 and 390x844
+return 200 with zero errors and horizontal overflow, preserve heading text at x=20, and place the
+following page wrapper at y=138. The focused local desktop/mobile screenshots were visually
+compared with those captures: the owned 20px heading start, 45px heading rhythm, full outer width,
+and 10px inner inset match; locale, fixture data, and excluded shell/grid owners are not attributed
+to this breadcrumb slice.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

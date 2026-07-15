@@ -166,7 +166,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   await expect
     .poll(() => new URL(page.url()).pathname + new URL(page.url()).search)
     .toBe(`${basePath}/sites/issueList`);
-  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-issue-list-setting-wrap"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] > li > a')).toHaveText([
     "Y",
     "List All",
@@ -201,7 +201,7 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ]);
   await expect(
     page
-      .locator(".site-setting-nav a")
+      .locator('[data-stylex-owner="site-issue-list-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).resolves.toEqual([
     `${basePath}/sites/userList`,
@@ -222,7 +222,12 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     "rgb(243, 108, 34)",
   );
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
-  expect(await legacyLinkSnapshot(page, ".site-setting-nav li.active a")).toEqual([
+  expect(
+    await legacyLinkSnapshot(
+      page,
+      '[data-stylex-owner="site-issue-list-sidebar-item"]:nth-child(3) > [data-stylex-owner="site-issue-list-sidebar-link"]',
+    ),
+  ).toEqual([
     {
       ariaCurrent: null,
       className: null,
@@ -1103,7 +1108,7 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
 
 async function closedIssueListLayoutMetrics(page: Page) {
   return page.evaluate(() => {
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const content = requireElement('[data-stylex-owner="site-issue-list-setting-content-column"]');
     const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
     const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
@@ -1148,9 +1153,9 @@ async function closedIssueListLayoutMetrics(page: Page) {
 
 async function issueListMetrics(page: Page) {
   return page.evaluate(() => {
-    const row = requireElement(".site-setting-wrap > .row-fluid");
-    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const row = requireElement('[data-stylex-owner="site-issue-list-setting-grid"]');
+    const sidebar = requireElement('[data-stylex-owner="site-issue-list-setting-sidebar-column"]');
+    const content = requireElement('[data-stylex-owner="site-issue-list-setting-content-column"]');
     const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
     const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const firstRow = requireElement('[data-stylex-owner="site-issue-list-row"]');
@@ -1264,7 +1269,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-issue-list-breadcrumb-outer], .page-wrap-outer, [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1285,6 +1290,13 @@ async function canonicalizeScreenRoots(page: Page) {
         name === "class" &&
         new Set([
           "site-issue-list-sidebar",
+          "site-issue-list-breadcrumb-outer",
+          "site-issue-list-breadcrumb-inner",
+          "site-issue-list-breadcrumb-heading",
+          "site-issue-list-setting-wrap",
+          "site-issue-list-setting-grid",
+          "site-issue-list-setting-sidebar-column",
+          "site-issue-list-setting-content-column",
           "site-issue-list-sidebar-item",
           "site-issue-list-sidebar-link",
           "site-issue-list-sidebar-badge",
@@ -1488,6 +1500,24 @@ async function canonicalizeHtml(page: Page, html: string) {
           "post-info-separator",
           "post-title",
         ]);
+        if (current.matches(".site-breadcrumb-outer")) {
+          retiredIssueListTokens.add("site-breadcrumb-outer");
+        }
+        if (current.matches(".site-breadcrumb-inner")) {
+          retiredIssueListTokens.add("site-breadcrumb-inner");
+        }
+        if (current.matches(".site-setting-wrap")) {
+          retiredIssueListTokens.add("site-setting-wrap");
+        }
+        if (current.matches(".site-setting-wrap > .row-fluid")) {
+          retiredIssueListTokens.add("row-fluid");
+        }
+        if (current.matches(".site-setting-wrap > .row-fluid > .span2")) {
+          retiredIssueListTokens.add("span2");
+        }
+        if (current.matches(".site-setting-wrap > .row-fluid > .span10")) {
+          retiredIssueListTokens.add("span10");
+        }
         value = value
           .split(/\s+/u)
           .filter((token) => !retiredIssueListTokens.has(token))
