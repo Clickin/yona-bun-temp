@@ -186,7 +186,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
     const info = owner(first, owners.info);
     const project = owner(info, owners.project);
     const title = owner(info, owners.title);
-    const meta = first.locator(":scope > .post-meta-wrap");
+    const meta = first.locator(':scope > [data-stylex-owner="site-post-list-metadata"]');
 
     await expect(project).toHaveText("acme/roadmap");
     await expect(title).toHaveText("Release checklist");
@@ -201,7 +201,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
           const ownerName = element.getAttribute("data-stylex-owner");
           if (ownerName === "site-post-list-project-avatar") return "avatar";
           if (ownerName === "site-post-list-info") return "info";
-          if (element.matches(".post-meta-wrap")) return "meta";
+          if (element.matches('[data-stylex-owner="site-post-list-metadata"]')) return "meta";
           return element.tagName;
         }),
       ),
@@ -305,7 +305,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
             return { bottom, height, left, right, top, width };
           })(),
           info: pick(':scope > [data-stylex-owner="site-post-list-info"]'),
-          meta: pick(":scope > .post-meta-wrap"),
+          meta: pick(':scope > [data-stylex-owner="site-post-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-post-list-info"] > [data-stylex-owner="site-post-list-project-link"]',
           ),

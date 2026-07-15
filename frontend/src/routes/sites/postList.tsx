@@ -96,6 +96,30 @@ const styles = stylex.create({
     fontSize: globalColors.sitePostListTitleFontSize,
     fontWeight: globalColors.sitePostListTitleFontWeight,
   },
+  postMetadata: {
+    fontSize: globalColors.sitePostListMetadataFontSize,
+    lineHeight: globalColors.sitePostListMetadataLineHeight,
+  },
+  postAuthorAvatar: {
+    width: globalColors.sitePostListAuthorAvatarWidth,
+    height: globalColors.sitePostListAuthorAvatarHeight,
+    display: globalColors.sitePostListAuthorAvatarDisplay,
+    verticalAlign: globalColors.sitePostListAuthorAvatarVerticalAlign,
+    overflow: globalColors.sitePostListAuthorAvatarOverflow,
+    backgroundColor: globalColors.sitePostListAuthorAvatarSurface,
+    borderRadius: globalColors.sitePostListAuthorAvatarRadius,
+  },
+  postAuthorAvatarImage: {
+    width: globalColors.sitePostListAuthorAvatarImageWidth,
+    verticalAlign: globalColors.sitePostListAuthorAvatarImageVerticalAlign,
+  },
+  postMetadataItem: {
+    marginBlock: globalColors.sitePostListMetadataItemMarginBlock,
+    marginInline: globalColors.sitePostListMetadataItemMarginInline,
+  },
+  postCommentsIcon: {
+    verticalAlign: globalColors.sitePostListCommentsIconVerticalAlign,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -106,6 +130,11 @@ const postInfoStyleProps = stylex.props(styles.postInfo);
 const postProjectLinkStyleProps = stylex.props(styles.postProjectLink);
 const postInfoSeparatorStyleProps = stylex.props(styles.postInfoSeparator);
 const postTitleLinkStyleProps = stylex.props(styles.postTitleLink);
+const postMetadataStyleProps = stylex.props(styles.postMetadata);
+const postAuthorAvatarStyleProps = stylex.props(styles.postAuthorAvatar);
+const postAuthorAvatarImageStyleProps = stylex.props(styles.postAuthorAvatarImage);
+const postMetadataItemStyleProps = stylex.props(styles.postMetadataItem);
+const postCommentsIconStyleProps = stylex.props(styles.postCommentsIcon);
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -382,32 +411,49 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
           {post.title}
         </Link>
       </div>
-      <div className="post-meta-wrap">
+      <div {...postMetadataStyleProps} data-stylex-owner="site-post-list-metadata">
         <Link
-          className="avatar-wrap"
+          {...postAuthorAvatarStyleProps}
+          data-stylex-owner="site-post-list-author-avatar"
           params={{ user: post.authorLoginId }}
           search={legacyUserLinkSearch}
           to="/$user"
         >
           {isDefaultAuthorAvatar(post.authorAvatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default author avatar branch renders no alt/size attributes. */
-            <img src={post.authorAvatarUrl} />
+            <img
+              {...postAuthorAvatarImageStyleProps}
+              data-stylex-owner="site-post-list-author-avatar-image"
+              src={post.authorAvatarUrl}
+            />
           ) : (
-            <img src={post.authorAvatarUrl} alt={post.authorLabel} width="16" height="16" />
+            <img
+              {...postAuthorAvatarImageStyleProps}
+              data-stylex-owner="site-post-list-author-avatar-image"
+              src={post.authorAvatarUrl}
+              alt={post.authorLabel}
+              width="16"
+              height="16"
+            />
           )}
         </Link>
         <Link
-          className="post-meta-item"
+          {...postMetadataItemStyleProps}
+          data-stylex-owner="site-post-list-metadata-item"
           params={{ user: post.authorLoginId }}
           search={legacyUserLinkSearch}
           to="/$user"
         >
           {post.authorLabel}
         </Link>
-        <span className="post-meta-item" title={createdTitle}>
+        <span
+          {...postMetadataItemStyleProps}
+          data-stylex-owner="site-post-list-metadata-item"
+          title={createdTitle}
+        >
           {post.createdLabel}
         </span>
-        <span className="post-comments post-meta-item">
+        <span {...postMetadataItemStyleProps} data-stylex-owner="site-post-list-metadata-item">
           <Link
             hash="comments"
             params={{
@@ -417,7 +463,11 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
             }}
             to="/$ownerName/$projectName/post/$postNumber"
           >
-            <i className="yobicon-comments"></i>
+            <i
+              {...postCommentsIconStyleProps}
+              className={`yobicon-comments ${postCommentsIconStyleProps.className ?? ""}`}
+              data-stylex-owner="site-post-list-comments-icon"
+            ></i>
             {post.commentCount}
           </Link>
         </span>

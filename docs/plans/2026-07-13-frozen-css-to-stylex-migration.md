@@ -1612,6 +1612,16 @@ excluded metadata subtree remain active fallback. The image now fills 45px inste
 bridge's noncanonical 32px descendant output. Actual RED 2/4 becomes GREEN 4/4, and the previous
 row-content suite remains GREEN 5/5. This is not Wave 1 completion.
 
+The one-hundred-twenty-ninth slice completes the authenticated populated `/sites/postList`
+metadata subtree from `site/postList.scala.html`, `_common.less`, `_page.less`, and `_yobiUI.less`.
+Five stable StyleX owners cover the 11px/20px wrapper rhythm, final 14px author-avatar Link and
+direct-image cascade, repeated item margins, and comments-icon alignment through global theme
+variables. Runtime output removes `post-meta-wrap`, the author `avatar-wrap`, all three
+`post-meta-item` uses, and `post-comments`; `yobicon-comments` remains only as the glyph primitive.
+Default/custom avatar attributes, copy, title, order, hrefs, and comments hash remain unchanged.
+Actual RED 2/4 becomes GREEN 4/4, and the complete three-suite post-row matrix is GREEN 13/13.
+This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

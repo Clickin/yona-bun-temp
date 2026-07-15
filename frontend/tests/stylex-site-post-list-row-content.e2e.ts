@@ -159,7 +159,7 @@ test.describe("StyleX site post-list populated row content", () => {
     const project = owner(info, owners.project);
     const separator = owner(info, owners.separator);
     const title = owner(info, owners.title);
-    const meta = row.locator(":scope > .post-meta-wrap");
+    const meta = row.locator(':scope > [data-stylex-owner="site-post-list-metadata"]');
 
     await expect(project).toHaveText("acme/roadmap");
     await expect(separator).toHaveText("·");
@@ -175,7 +175,7 @@ test.describe("StyleX site post-list populated row content", () => {
               ? "avatar"
               : element.matches('[data-stylex-owner="site-post-list-info"]')
                 ? "info"
-                : element.matches(".post-meta-wrap")
+                : element.matches('[data-stylex-owner="site-post-list-metadata"]')
                   ? "meta"
                   : element.tagName,
           ),
@@ -267,7 +267,7 @@ test.describe("StyleX site post-list populated row content", () => {
         return {
           avatar: pick(':scope > [data-stylex-owner="site-post-list-project-avatar"]'),
           info: pick(':scope > [data-stylex-owner="site-post-list-info"]'),
-          meta: pick(":scope > .post-meta-wrap"),
+          meta: pick(':scope > [data-stylex-owner="site-post-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-post-list-info"] > [data-stylex-owner="site-post-list-project-link"]',
           ),
