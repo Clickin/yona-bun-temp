@@ -1594,6 +1594,14 @@ rows remove `listitem`, and their avatar Links remove `avatar-wrap list-avatar`;
 The image now fills the frozen 45px wrapper instead of inheriting the noncanonical app bridge's
 32px descendant rule. This is not Wave 1 completion.
 
+The one-hundred-twenty-seventh slice migrates the authenticated populated `/sites/postList`
+container and direct row information content from `site/postList.scala.html` and `_page.less`.
+Six stable StyleX owners use global theme variables for list style, row padding, information rhythm,
+project-link paint, separator spacing, and title typography. Only the four fully owned information
+classes retire; `post-list-wrap`, `listitem`, and `row-fluid` remain for verified responsive,
+shared-row, and Bootstrap consumers. Focused RED 2/5 becomes GREEN 5/5 at desktop and 390 px
+without editing frozen fallback. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

@@ -46,9 +46,42 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  postListContainer: {
+    listStyle: globalColors.sitePostListContainerListStyle,
+  },
+  postListRow: {
+    paddingBlock: globalColors.sitePostListRowPaddingBlock,
+    paddingInline: globalColors.sitePostListRowPaddingInline,
+  },
+  postInfo: {
+    lineHeight: globalColors.sitePostListInfoLineHeight,
+    marginTop: globalColors.sitePostListInfoMarginTop,
+  },
+  postProjectLink: {
+    fontSize: globalColors.sitePostListProjectFontSize,
+    fontWeight: globalColors.sitePostListProjectFontWeight,
+    display: globalColors.sitePostListProjectDisplay,
+    lineHeight: globalColors.sitePostListProjectLineHeight,
+    color: globalColors.sitePostListProjectText,
+  },
+  postInfoSeparator: {
+    fontSize: globalColors.sitePostListSeparatorFontSize,
+    fontWeight: globalColors.sitePostListSeparatorFontWeight,
+    paddingInline: globalColors.sitePostListSeparatorPaddingInline,
+  },
+  postTitleLink: {
+    fontSize: globalColors.sitePostListTitleFontSize,
+    fontWeight: globalColors.sitePostListTitleFontWeight,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const postListContainerStyleProps = stylex.props(styles.postListContainer);
+const postListRowStyleProps = stylex.props(styles.postListRow);
+const postInfoStyleProps = stylex.props(styles.postInfo);
+const postProjectLinkStyleProps = stylex.props(styles.postProjectLink);
+const postInfoSeparatorStyleProps = stylex.props(styles.postInfoSeparator);
+const postTitleLinkStyleProps = stylex.props(styles.postTitleLink);
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -104,7 +137,11 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   <LegacyMessage messageKey="site.sidebar.postList" />
                 </h2>
               </div>
-              <ul className="post-list-wrap">
+              <ul
+                {...postListContainerStyleProps}
+                className={`post-list-wrap ${postListContainerStyleProps.className ?? ""}`}
+                data-stylex-owner="site-post-list-container"
+              >
                 {(query.data?.posts ?? []).map((post) => (
                   <PostListItem
                     key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
@@ -276,7 +313,11 @@ function PostListItem({ post }: { post: SitePost }) {
   const createdTitle = post.createdTitle ?? post.createdLabel;
 
   return (
-    <li className="row-fluid listitem">
+    <li
+      {...postListRowStyleProps}
+      className={`row-fluid listitem ${postListRowStyleProps.className ?? ""}`}
+      data-stylex-owner="site-post-list-row"
+    >
       <Link
         className="avatar-wrap list-avatar"
         params={{ ownerName: post.ownerName, projectName: post.projectName }}
@@ -284,17 +325,21 @@ function PostListItem({ post }: { post: SitePost }) {
       >
         <img src={projectLogoUrl} alt={post.projectName} />
       </Link>
-      <div className="post-info-wrap">
+      <div {...postInfoStyleProps} data-stylex-owner="site-post-list-info">
         <Link
-          className="post-project"
+          {...postProjectLinkStyleProps}
+          data-stylex-owner="site-post-list-project-link"
           params={{ ownerName: post.ownerName, projectName: post.projectName }}
           to="/$ownerName/$projectName"
         >
           {post.ownerName}/{post.projectName}
         </Link>
-        <span className="post-info-separator">·</span>
+        <span {...postInfoSeparatorStyleProps} data-stylex-owner="site-post-list-separator">
+          ·
+        </span>
         <Link
-          className="post-title"
+          {...postTitleLinkStyleProps}
+          data-stylex-owner="site-post-list-title-link"
           params={{
             ownerName: post.ownerName,
             postNumber: post.postNumber,

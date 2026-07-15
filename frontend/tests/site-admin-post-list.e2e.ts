@@ -281,7 +281,7 @@ test("site admin post list matches legacy site/postList.scala.html populated DOM
     /.*/,
   );
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
-  await expect(page.locator(".post-title")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/post/7`,
   );
@@ -474,8 +474,11 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
     "href",
     `${basePath}/acme/roadmap`,
   );
-  await expect(page.locator(".post-project")).toHaveAttribute("href", `${basePath}/acme/roadmap`);
-  await expect(page.locator(".post-title")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="site-post-list-project-link"]')).toHaveAttribute(
+    "href",
+    `${basePath}/acme/roadmap`,
+  );
+  await expect(page.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveAttribute(
     "href",
     `${basePath}/acme/roadmap/post/7`,
   );
@@ -492,8 +495,18 @@ test("site admin post list row links keep legacy hrefs and SPA navigation", asyn
     `${basePath}/acme/roadmap/post/7#comments`,
   );
 
-  await expectSpaClick(page, ".post-project", `${basePath}/acme/roadmap`, "site-post-project");
-  await expectSpaClick(page, ".post-title", `${basePath}/acme/roadmap/post/7`, "site-post-title");
+  await expectSpaClick(
+    page,
+    '[data-stylex-owner="site-post-list-project-link"]',
+    `${basePath}/acme/roadmap`,
+    "site-post-project",
+  );
+  await expectSpaClick(
+    page,
+    '[data-stylex-owner="site-post-list-title-link"]',
+    `${basePath}/acme/roadmap/post/7`,
+    "site-post-title",
+  );
   await expectSpaClick(
     page,
     ".post-comments a",
@@ -556,7 +569,7 @@ test("site admin post list preserves mixed legacy row branches and pagination co
       authorHref: `${basePath}/bob`,
       authorImgAlt: "Bob Custom",
       authorText: "Bob Custom",
-      childClasses: ["avatar-wrap list-avatar", "post-info-wrap", "post-meta-wrap"],
+      childClasses: ["avatar-wrap list-avatar", "owner:site-post-list-info", "post-meta-wrap"],
       commentHref: `${basePath}/acme/roadmap/post/8#comments`,
       commentText: "11",
       dateText: "2 hours ago",
@@ -576,7 +589,7 @@ test("site admin post list preserves mixed legacy row branches and pagination co
       authorHref: `${basePath}/carol`,
       authorImgAlt: null,
       authorText: "Carol",
-      childClasses: ["avatar-wrap list-avatar", "post-info-wrap", "post-meta-wrap"],
+      childClasses: ["avatar-wrap list-avatar", "owner:site-post-list-info", "post-meta-wrap"],
       commentHref: `${basePath}/labs/ops/post/9#comments`,
       commentText: "0",
       dateText: "Jun 29, 2026",
@@ -770,9 +783,15 @@ async function sitePostRowDom(page: Page) {
       const directElementChildren = Array.from(row.children);
       const projectLink = requireElement<HTMLAnchorElement>(row, ":scope > .list-avatar");
       const projectImage = requireElement<HTMLImageElement>(row, ":scope > .list-avatar img");
-      const projectNameLink = requireElement<HTMLAnchorElement>(row, ".post-project");
-      const separator = requireElement(row, ".post-info-separator");
-      const titleLink = requireElement<HTMLAnchorElement>(row, ".post-title");
+      const projectNameLink = requireElement<HTMLAnchorElement>(
+        row,
+        '[data-stylex-owner="site-post-list-project-link"]',
+      );
+      const separator = requireElement(row, '[data-stylex-owner="site-post-list-separator"]');
+      const titleLink = requireElement<HTMLAnchorElement>(
+        row,
+        '[data-stylex-owner="site-post-list-title-link"]',
+      );
       const authorAvatarLink = requireElement<HTMLAnchorElement>(
         row,
         ".post-meta-wrap > .avatar-wrap",
@@ -795,7 +814,10 @@ async function sitePostRowDom(page: Page) {
         authorHref: authorAvatarLink.getAttribute("href"),
         authorImgAlt: authorImage.getAttribute("alt"),
         authorText: authorLink.textContent?.trim() ?? "",
-        childClasses: directElementChildren.map((child) => child.getAttribute("class")),
+        childClasses: directElementChildren.map((child) => {
+          const owner = child.getAttribute("data-stylex-owner");
+          return owner ? `owner:${owner}` : child.getAttribute("class");
+        }),
         commentHref: comments.getAttribute("href"),
         commentText: comments.textContent?.replace(/\s+/g, " ").trim() ?? "",
         dateText: date.textContent?.trim() ?? "",
@@ -828,10 +850,10 @@ async function postListContainmentMetrics(page: Page) {
       pagination: rect(pagination),
       rows: rows.map((row) => {
         const avatar = requireElement(row, ":scope > .list-avatar");
-        const info = requireElement(row, ":scope > .post-info-wrap");
+        const info = requireElement(row, ':scope > [data-stylex-owner="site-post-list-info"]');
         const meta = requireElement(row, ":scope > .post-meta-wrap");
-        const project = requireElement(row, ".post-project");
-        const title = requireElement(row, ".post-title");
+        const project = requireElement(row, '[data-stylex-owner="site-post-list-project-link"]');
+        const title = requireElement(row, '[data-stylex-owner="site-post-list-title-link"]');
         const author = requireElement(row, ".post-meta-wrap > .post-meta-item[href]");
         const date = requireElement(
           row,
@@ -1034,10 +1056,10 @@ async function postListMetrics(page: Page) {
     const firstRow = requireElement(".post-list-wrap .listitem");
     const avatarWrap = requireElement(".post-list-wrap .list-avatar");
     const avatarImage = requireElement(".post-list-wrap .list-avatar img");
-    const postInfo = requireElement(".post-info-wrap");
-    const postProject = requireElement(".post-project");
-    const separator = requireElement(".post-info-separator");
-    const postTitle = requireElement(".post-title");
+    const postInfo = requireElement('[data-stylex-owner="site-post-list-info"]');
+    const postProject = requireElement('[data-stylex-owner="site-post-list-project-link"]');
+    const separator = requireElement('[data-stylex-owner="site-post-list-separator"]');
+    const postTitle = requireElement('[data-stylex-owner="site-post-list-title-link"]');
     const meta = requireElement(".post-meta-wrap");
     const metaAvatar = requireElement(".post-meta-wrap .avatar-wrap");
     const metaItem = requireElement(".post-meta-item");
@@ -1120,6 +1142,22 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (
         name === "class" &&
+        new Set([
+          "site-post-list-container",
+          "site-post-list-row",
+          "site-post-list-info",
+          "site-post-list-project-link",
+          "site-post-list-separator",
+          "site-post-list-title-link",
+        ]).has(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return value
+          .split(/\s+/u)
+          .filter((token) => !token.startsWith("x"))
+          .join(" ");
+      }
+      if (
+        name === "class" &&
         value.split(/\s+/u).includes("gnb-nav") &&
         current.matches('[data-stylex-owner="global-gnb-nav"]')
       ) {
@@ -1190,6 +1228,20 @@ async function canonicalizeHtml(page: Page, html: string) {
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       const value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const retiredPostListTokens = new Set([
+          "post-info-wrap",
+          "post-project",
+          "post-info-separator",
+          "post-title",
+        ]);
+        if (value.split(/\s+/u).some((token) => retiredPostListTokens.has(token))) {
+          return value
+            .split(/\s+/u)
+            .filter((token) => !retiredPostListTokens.has(token))
+            .join(" ");
+        }
+      }
       const isSiteLayoutHeader =
         name === "class" &&
         value.split(/\s+/u).includes("gnb-outer") &&
