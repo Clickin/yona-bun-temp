@@ -13,7 +13,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home series tabs have bounded global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const projectRoute = readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8");
   const styleStart = route.indexOf("const authenticatedHomeSeriesTabStyles");
@@ -56,12 +56,18 @@ test("authenticated Home series tabs have bounded global-theme StyleX ownership"
     "authenticatedHomeSeriesTabActiveSurface",
     "authenticatedHomeSeriesTabActiveCursor",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles).toContain("[globalBreakpoints.mobile]");
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%)\b/iu);
-  expect(styles).not.toMatch(/:\s*"(?:block|left|relative|solid|none|pointer|default)"/u);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
+  expect(styles).toMatch(/display: "block"/u);
+  expect(styles).toMatch(/position: "relative"/u);
+  expect(styles).toMatch(/cursor: "pointer"/u);
 
   const markupStart = route.indexOf('data-stylex-owner="authenticated-home-series-tabs"');
   const notificationOwner = route.indexOf(

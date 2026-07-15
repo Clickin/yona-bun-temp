@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("left sidebar Recent issue rows have narrow global-theme StyleX ownership", () => {
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const legacyCss = readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const owner = source.match(
     /const leftSidebarRecentIssueRowStyles = stylex\.create\([\s\S]*?\n\}\);/,
@@ -19,7 +19,6 @@ test("left sidebar Recent issue rows have narrow global-theme StyleX ownership",
   for (const token of [
     "leftSidebarRecentIssueText",
     "leftSidebarRecentIssueHoverSurface",
-    "transparent",
     "sidenavIssueTitleMarker",
     "sidenavPopoverSurface",
     "sidenavPopoverBorder",
@@ -27,9 +26,12 @@ test("left sidebar Recent issue rows have narrow global-theme StyleX ownership",
     "sidenavPopoverShadow",
     "textOnAccent",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
+    expect(owner).toContain(`homeColors.${token}`);
   }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(owner).toContain('backgroundColor: "transparent"');
+  expect(owner).toContain('borderColor: "transparent"');
+  expect(theme).not.toContain("transparent:");
+  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   const issueStyle = owner?.match(/\n  issue: \{([\s\S]*?)\n  \},\n  marker:/)?.[1] ?? "";
   expect(issueStyle).not.toMatch(/\bdisplay\s*:/);
   expect(issueStyle).not.toMatch(/\bpaddingLeft\s*:/);
@@ -69,7 +71,7 @@ for (const viewport of [
     const initial = await readRowEvidence(row, sidebar);
     const shellGeometry = await page.evaluate(() => {
       const selectors = [
-        "#sidebar > .user-menu-wrap",
+        '#sidebar > [data-stylex-owner="left-sidebar-account-actions"]',
         '#sidebar > [data-stylex-owner="left-sidebar-tabs"]',
         "#left-sidebar-myRecentIssueList",
         "#left-sidebar-recent-issue-query",

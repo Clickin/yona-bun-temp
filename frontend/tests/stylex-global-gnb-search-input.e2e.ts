@@ -14,7 +14,7 @@ test.use({ locale: "en-US" });
 
 test("global GNB search text input has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbSearchInputStyles");
   const end = route.indexOf("const globalGnbSearchBoxStyles", start);
@@ -54,12 +54,14 @@ test("global GNB search text input has complete global-theme StyleX ownership", 
     "globalGnbSearchInputZIndex",
     "globalGnbSearchInputZero",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|s|%)\b|!important/iu,
-  );
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const marker = route.indexOf('data-stylex-owner="global-gnb-search-input"');
   const markup = route.slice(route.lastIndexOf("<input", marker), route.indexOf("/>", marker));

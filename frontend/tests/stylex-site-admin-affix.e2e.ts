@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 test("site-admin affix source owns the legacy surface through global StyleX variables", () => {
   const appSource = readFileSync("src/app.css", "utf8");
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const ownerSource = routeSource.slice(
     routeSource.indexOf("const siteAdminAffixStyles"),
     routeSource.indexOf("const authenticatedSidenavShellStyles"),
@@ -22,35 +22,31 @@ test("site-admin affix source owns the legacy surface through global StyleX vari
   expect(routeSource).not.toContain('className="admin-logged-in-affix"');
   expect(routeSource).not.toContain('className="small-font"');
   expect(appSource).not.toContain(".admin-logged-in-affix");
-  for (const variable of [
-    "siteAdminAffixSurface",
-    "siteAdminAffixText",
-    "siteAdminAffixPadding",
-    "siteAdminAffixWidth",
-    "siteAdminAffixFontSize",
-    "siteAdminAffixFontWeight",
-    "siteAdminAffixZIndex",
-    "siteAdminAffixDetailFontSize",
-    "siteAdminAffixDetailFontWeight",
-  ]) {
-    expect(ownerSource).toContain(`globalColors.${variable}`);
+  for (const variable of ["siteAdminAffixSurface", "siteAdminAffixText"]) {
+    expect(ownerSource).toContain(`homeColors.${variable}`);
   }
-  for (const declaration of [
-    'siteAdminAffixSurface: "#ad0000"',
-    'siteAdminAffixText: "#ffffff"',
-    'siteAdminAffixPadding: "10px"',
-    'siteAdminAffixWidth: "100%"',
-    'siteAdminAffixFontSize: "20px"',
-    'siteAdminAffixFontWeight: "700"',
-    'siteAdminAffixZIndex: "1000"',
-    'siteAdminAffixDetailFontSize: "10px"',
-    'siteAdminAffixDetailFontWeight: "400"',
-  ]) {
+  for (const declaration of ['siteAdminAffixSurface: "#ad0000"', 'siteAdminAffixText: "#ffffff"']) {
     expect(themeSource).toContain(declaration);
   }
-  for (const rawValue of ["#ad0000", "#ffffff", '"10px"', '"20px"', '"100%"', "1000"]) {
+  for (const rawValue of ["#ad0000", "#ffffff"]) {
     expect(ownerSource.toLowerCase()).not.toContain(rawValue);
   }
+  for (const declaration of [
+    'padding: "10px"',
+    'fontSize: "20px"',
+    'fontWeight: "700"',
+    'zIndex: "1000"',
+    'fontSize: "10px"',
+    'fontWeight: "400"',
+  ]) {
+    expect(ownerSource).toContain(declaration);
+  }
+  expect(ownerSource).toContain(
+    'width: {\n      default: "100%",\n      "@media (max-width: 720px)": "auto",\n    }',
+  );
+  expect(themeSource).not.toMatch(
+    /siteAdminAffix(?:Padding|Width|FontSize|FontWeight|ZIndex|DetailFontSize|DetailFontWeight):/u,
+  );
 });
 
 for (const viewport of [

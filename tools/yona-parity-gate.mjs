@@ -80,6 +80,7 @@ const PARITY_SLICES = [
     implementationPatterns: [
       /^frontend\/src\/theme\.stylex\.ts$/i,
       /^frontend\/src\/routes\/-home-route-screen\.tsx$/i,
+      /^frontend\/src\/routes\/-home-route-screen\.stylex\.ts$/i,
       /^frontend\/src\/routes\/-last-outlet-transition\.tsx$/i,
       /^frontend\/src\/routes\/index\.tsx$/i,
       /^frontend\/src\/routes\/-home-view\.tsx$/i,

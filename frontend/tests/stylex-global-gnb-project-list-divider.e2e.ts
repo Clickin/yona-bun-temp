@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 
 test("List All divider source has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbProjectListDividerStyles");
   const end = route.indexOf("const globalGnbProjectListStyles", start);
@@ -26,8 +26,12 @@ test("List All divider source has complete global-theme StyleX ownership", () =>
     "textMuted",
     "transparent",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles).toContain("content: '\"|\"'");
   expect(styles).toContain('float: "left"');
@@ -35,9 +39,7 @@ test("List All divider source has complete global-theme StyleX ownership", () =>
   expect(styles).toContain('width: "auto"');
   expect(styles).toContain('height: "auto"');
   expect(styles).toContain('backgroundImage: "none"');
-  expect(styles).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|s|%)\b|!important/iu,
-  );
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const marker = route.indexOf('data-stylex-owner="global-gnb-project-list-divider"');
   const owner = route.slice(route.lastIndexOf("<li", marker), route.indexOf("/>", marker));

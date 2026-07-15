@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated Favorite organization rows have narrow themed StyleX ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavFavoriteOrganizationRowStyles");
   const end = routeSource.indexOf("const authenticatedSidenavFavoriteStarStyles");
 
@@ -17,11 +17,11 @@ test("authenticated Favorite organization rows have narrow themed StyleX ownersh
   expect(end).toBeGreaterThan(start);
   const ownerSource = routeSource.slice(start, end);
   expect(ownerSource).toContain("stylex.create");
-  expect(ownerSource).toContain("globalColors.sidenavOrganizationHoverSurface");
-  expect(ownerSource).toContain("globalColors.sidenavOrganizationName");
-  expect(ownerSource).toContain("globalColors.textOnAccent");
-  expect(ownerSource).toContain("globalColors.sidenavAccountText");
-  expect(ownerSource).toContain("globalColors.transparent");
+  expect(ownerSource).toContain("homeColors.sidenavOrganizationHoverSurface");
+  expect(ownerSource).toContain("homeColors.sidenavOrganizationName");
+  expect(ownerSource).toContain("homeColors.textOnAccent");
+  expect(ownerSource).toContain("homeColors.sidenavAccountText");
+  expect(ownerSource).toContain('"transparent"');
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(|\bwhite\b|\bgrey\b/i);
   expect(ownerSource).not.toMatch(/starred|starButton|starIcon|projectList|projectUl/i);
   expect(themeSource).toContain('sidenavOrganizationHoverSurface: "#f1f1f1"');

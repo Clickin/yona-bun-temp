@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 
 test("global GNB nav and brand item have complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbNavStyles");
   const end = route.indexOf("const globalGnbBrandLinkStyles", start);
@@ -34,10 +34,14 @@ test("global GNB nav and brand item have complete global-theme StyleX ownership"
     "globalGnbNavItemFloat",
     "globalGnbNavItemPosition",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b\d+(?:\.\d+)?px\b/i);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
 
   const marker = route.indexOf('data-stylex-owner="global-gnb-nav"');
   const navStart = route.lastIndexOf("<ul", marker);

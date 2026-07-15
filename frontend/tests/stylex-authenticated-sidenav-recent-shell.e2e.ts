@@ -19,10 +19,10 @@ test("authenticated Recent History shell has narrow global-theme StyleX ownershi
   expect(recentEnd).toBeGreaterThan(recentStart);
   const shellStyles = source.slice(styleStart, styleEnd);
   const recentSource = source.slice(recentStart, recentEnd);
-  expect(shellStyles).toContain("globalColors.sidenavSearchFocusAccent");
-  expect(shellStyles).toContain("globalColors.sidenavScrollbarTrack");
-  expect(shellStyles).toContain("globalColors.sidenavScrollbarThumb");
-  expect(shellStyles).toContain("globalColors.sidenavNoResultText");
+  expect(shellStyles).toContain("homeColors.sidenavSearchFocusAccent");
+  expect(shellStyles).toContain("homeColors.sidenavScrollbarTrack");
+  expect(shellStyles).toContain("homeColors.sidenavScrollbarThumb");
+  expect(shellStyles).toContain("homeColors.sidenavNoResultText");
   expect(shellStyles).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(/i);
   expect(recentSource).toContain('"authenticated-sidenav-recent-shell"');
   expect(recentSource).toContain("authenticatedSidenavRecentShellStyles");

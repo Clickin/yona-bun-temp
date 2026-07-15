@@ -10,7 +10,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home intro-guide CTAs have complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
+  const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const fallbackCss = readFileSync(
     resolve("public/legacy-assets/stylesheets/legacy-fallback.css"),
@@ -34,33 +34,40 @@ test("authenticated Home intro-guide CTAs have complete global-theme StyleX owne
   expect(guideBody).not.toMatch(/\bybtn(?:-success)?\b/u);
   expect(route).toContain("stylex.props(authenticatedHomeIntroGuideStyles.cta)");
   for (const variable of [
-    'authenticatedHomeIntroGuideLinkWidth: "85%"',
     'authenticatedHomeIntroGuideCtaSurface: "#ff7332"',
     'authenticatedHomeIntroGuideCtaHoverSurface: "#e95e01"',
     'authenticatedHomeIntroGuideCtaText: "#ffffff"',
-    'authenticatedHomeIntroGuideCtaTextShadow: "none"',
-    'authenticatedHomeIntroGuideCtaBorderRadius: "3px"',
-    'authenticatedHomeIntroGuideCtaDisplay: "inline-block"',
-    'authenticatedHomeIntroGuideCtaPadding: "4px 12px"',
-    'authenticatedHomeIntroGuideCtaVerticalAlign: "middle"',
-    'authenticatedHomeIntroGuideCtaCursor: "pointer"',
-    'authenticatedHomeIntroGuideCtaLineHeight: "20px"',
-    'authenticatedHomeIntroGuideCtaFontSize: "14px"',
-    'authenticatedHomeIntroGuideCtaTransition: "all 0.3s ease"',
-    'authenticatedHomeIntroGuideCtaOutline: "0px none"',
-    'authenticatedHomeIntroGuideCtaPosition: "relative"',
-    'authenticatedHomeIntroGuideCtaMargin: "0px"',
     'authenticatedHomeIntroGuideCtaBorderColor: "#e95e01"',
-    'authenticatedHomeIntroGuideCtaBorderStyle: "solid"',
-    'authenticatedHomeIntroGuideCtaBorderWidth: "1px"',
     'authenticatedHomeIntroGuideCtaBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)"',
-    'authenticatedHomeIntroGuideCtaZIndex: "2"',
-    'authenticatedHomeIntroGuideCtaTextAlign: "center"',
-    'authenticatedHomeIntroGuideCtaInteractiveTextDecoration: "none"',
-    'authenticatedHomeIntroGuideCtaWhiteSpace: "nowrap"',
   ]) {
     expect(theme).toContain(variable);
   }
+  for (const declaration of [
+    'width: "85%"',
+    'textShadow: "none"',
+    'borderRadius: "3px"',
+    'display: "inline-block"',
+    'padding: "4px 12px"',
+    'verticalAlign: "middle"',
+    'cursor: "pointer"',
+    'lineHeight: "20px"',
+    'fontSize: "14px"',
+    'transition: "all 0.3s ease"',
+    'outline: "0px none"',
+    'position: "relative"',
+    'margin: "0px"',
+    'borderStyle: "solid"',
+    'borderWidth: "1px"',
+    'zIndex: "2"',
+    'textAlign: "center"',
+    'textDecoration: "none"',
+    'whiteSpace: "nowrap"',
+  ]) {
+    expect(route).toContain(declaration);
+  }
+  expect(theme).not.toMatch(
+    /authenticatedHomeIntroGuide(?:LinkWidth|Cta(?:TextShadow|BorderRadius|Display|Padding|VerticalAlign|Cursor|LineHeight|FontSize|Transition|Outline|Position|Margin|BorderStyle|BorderWidth|ZIndex|TextAlign|InteractiveTextDecoration|WhiteSpace)):/u,
+  );
   expect(appCss).toMatch(/\.ybtn\s*\{/u);
   expect(appCss).toMatch(/\.ybtn-success/u);
   expect(fallbackCss).toMatch(/\.ybtn\s*\{/u);

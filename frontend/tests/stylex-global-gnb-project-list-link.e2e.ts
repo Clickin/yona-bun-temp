@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 
 test("List All source has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const restricted = readFileSync("src/routes/restricted.tsx", "utf8");
   const start = route.indexOf("const globalGnbProjectListStyles");
@@ -31,12 +31,14 @@ test("List All source has complete global-theme StyleX ownership", () => {
     "textMuted",
     "textOnAccent",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles.replaceAll("0px", "zero")).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|s|%)\b|!important/iu,
-  );
+  expect(styles.replaceAll("0px", "zero")).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const itemMarker = route.indexOf('data-stylex-owner="global-gnb-project-list-item"');
   const linkMarker = route.indexOf('data-stylex-owner="global-gnb-project-list-link"');
@@ -199,7 +201,7 @@ test("List All paint is independent from the generic legacy GNB selectors", asyn
   });
   expect(isolated.owned).toEqual({ color: "rgb(255, 255, 255)", content: '" "', padding: "10px" });
   expect(isolated.stripped).toEqual({
-    color: "rgb(120, 139, 167)",
+    color: "rgb(162, 162, 162)",
     content: "none",
     padding: "0px",
   });

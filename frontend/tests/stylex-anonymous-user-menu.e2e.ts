@@ -7,16 +7,17 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
 
-test("anonymous user menu consumes the global StyleX color variables", () => {
+test("anonymous user menu consumes its route-local StyleX color variables", () => {
   const ownerSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
 
-  expect(ownerSource).toContain("globalColors,");
-  expect(ownerSource).toContain('from "../theme.stylex"');
-  expect(ownerSource).toContain("globalColors.textMuted");
-  expect(ownerSource).toContain("globalColors.navigationAccent");
-  expect(ownerSource).toContain("globalColors.textOnDarkHover");
-  expect(ownerSource).toContain("globalColors.navigationDivider");
+  expect(ownerSource).toContain('import { homeColors } from "./-home-route-screen.stylex";');
+  expect(ownerSource).not.toContain("globalColors");
+  expect(themeSource).toContain("export const homeColors = stylex.defineVars({");
+  expect(ownerSource).toContain("homeColors.textMuted");
+  expect(ownerSource).toContain("homeColors.navigationAccent");
+  expect(ownerSource).toContain("homeColors.textOnDarkHover");
+  expect(ownerSource).toContain("homeColors.navigationDivider");
   expect(themeSource).toContain("stylex.defineVars");
   for (const color of ["#a2a2a2", "#5dbbe0", "#fcfcfc", "#788ba7"]) {
     expect(themeSource).toContain(color);

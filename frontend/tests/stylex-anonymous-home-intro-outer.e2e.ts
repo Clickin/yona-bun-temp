@@ -12,7 +12,7 @@ test.use({ locale: "ko-KR" });
 
 test("anonymous Home intro outer has complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
+  const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
     "utf8",
@@ -35,11 +35,13 @@ test("anonymous Home intro outer has complete global-theme StyleX ownership", ()
   );
   expect(route).not.toContain('className="siteintro-bg row"');
   expect(route).toContain("stylex.props(anonymousHomeIntroOuterStyles.outer)");
-  expect(theme).toContain('anonymousHomeIntroOuterMargin: "0px 0px 0px -20px"');
-  expect(theme).toContain("anonymousHomeIntroOuterPseudoContent: '\"\"'");
-  expect(theme).toContain('anonymousHomeIntroOuterPseudoDisplay: "table"');
-  expect(theme).toContain('anonymousHomeIntroOuterPseudoLineHeight: "0px"');
-  expect(theme).toContain('anonymousHomeIntroOuterPseudoClear: "both"');
+  expect(route).toContain('margin: "0px 0px 0px -20px"');
+  expect(theme).not.toContain("anonymousHomeIntroOuterMargin:");
+  expect(route).toContain("content: '\"\"'");
+  expect(route).toContain('display: "table"');
+  expect(route).toContain('lineHeight: "0px"');
+  expect(route).toContain('clear: "both"');
+  expect(theme).not.toMatch(/anonymousHomeIntroOuterPseudo(?:Content|Display|LineHeight|Clear):/u);
 });
 
 test("anonymous Home intro outer preserves desktop geometry, pseudos, and child order", async ({

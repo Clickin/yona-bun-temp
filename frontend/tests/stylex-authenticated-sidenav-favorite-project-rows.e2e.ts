@@ -15,14 +15,14 @@ test("authenticated Favorite nested project rows have narrow themed StyleX owner
   )?.[0];
 
   expect(ownerSource).toBeDefined();
-  expect(ownerSource).toContain("globalColors.sidenavText");
-  expect(ownerSource).toContain("globalColors.sidenavOrganizationHoverSurface");
-  expect(ownerSource).toContain("globalColors.transparent");
-  expect(ownerSource).toContain("globalColors.sidenavPopoverSurface");
-  expect(ownerSource).toContain("globalColors.sidenavPopoverBorder");
-  expect(ownerSource).toContain("globalColors.sidenavPopoverArrowBorder");
-  expect(ownerSource).toContain("globalColors.sidenavPopoverShadow");
-  expect(ownerSource).toContain("globalColors.textOnAccent");
+  expect(ownerSource).toContain("homeColors.sidenavText");
+  expect(ownerSource).toContain("homeColors.sidenavOrganizationHoverSurface");
+  expect(ownerSource).toContain('"transparent"');
+  expect(ownerSource).toContain("homeColors.sidenavPopoverSurface");
+  expect(ownerSource).toContain("homeColors.sidenavPopoverBorder");
+  expect(ownerSource).toContain("homeColors.sidenavPopoverArrowBorder");
+  expect(ownerSource).toContain("homeColors.sidenavPopoverShadow");
+  expect(ownerSource).toContain("homeColors.textOnAccent");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}|rgba?\(|starred|starButton|starIcon/i);
   expect(source).toContain('"authenticated-sidenav-favorite-project-rows"');
   expect(source).toContain('ownsPopoverPresentation ? "" : "popover right"');

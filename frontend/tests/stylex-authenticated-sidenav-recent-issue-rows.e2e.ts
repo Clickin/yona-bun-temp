@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated Recent issue rows have narrow global-theme StyleX ownership", () => {
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const legacyCss = readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
   const owner = source.match(
     /const authenticatedSidenavRecentIssueRowStyles = stylex\.create\([\s\S]*?\n\}\);/,
@@ -19,7 +19,6 @@ test("authenticated Recent issue rows have narrow global-theme StyleX ownership"
   for (const token of [
     "sidenavText",
     "sidenavOrganizationHoverSurface",
-    "transparent",
     "sidenavIssueTitleMarker",
     "sidenavPopoverSurface",
     "sidenavPopoverBorder",
@@ -27,9 +26,12 @@ test("authenticated Recent issue rows have narrow global-theme StyleX ownership"
     "sidenavPopoverShadow",
     "textOnAccent",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
+    expect(owner).toContain(`homeColors.${token}`);
   }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(owner).toContain('backgroundColor: "transparent"');
+  expect(owner).toContain('borderColor: "transparent"');
+  expect(theme).not.toContain("transparent:");
+  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   const issueStyle = owner?.match(/\n  issue: \{([\s\S]*?)\n  \},\n  marker:/)?.[1] ?? "";
   expect(issueStyle).not.toMatch(/\bdisplay\s*:/);
   expect(issueStyle).not.toMatch(/\bpaddingLeft\s*:/);

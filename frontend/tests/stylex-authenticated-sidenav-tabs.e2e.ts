@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav tabs use global StyleX color variables", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavTabStyles");
   const end = routeSource.indexOf("const authenticatedSidenavContentFrameStyles");
 
@@ -18,11 +18,11 @@ test("authenticated side-nav tabs use global StyleX color variables", () => {
   const ownerSource = routeSource.slice(start, end);
   expect(routeSource).toContain('data-stylex-owner="authenticated-sidenav-tabs"');
   expect(ownerSource).toContain("stylex.create");
-  expect(ownerSource).toContain("globalColors.sidenavTabAccent");
-  expect(ownerSource).toContain("globalColors.sidenavTabBorder");
-  expect(ownerSource).toContain("globalColors.sidenavTabHoverSurface");
-  expect(ownerSource).toContain("globalColors.sidenavTabActiveText");
-  expect(ownerSource).toContain("globalColors.sidenavSurface");
+  expect(ownerSource).toContain("homeColors.sidenavTabAccent");
+  expect(ownerSource).toContain("homeColors.sidenavTabBorder");
+  expect(ownerSource).toContain("homeColors.sidenavTabHoverSurface");
+  expect(ownerSource).toContain("homeColors.sidenavTabActiveText");
+  expect(ownerSource).toContain("homeColors.sidenavSurface");
   expect(themeSource).toContain("stylex.defineVars");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(/i);
 });

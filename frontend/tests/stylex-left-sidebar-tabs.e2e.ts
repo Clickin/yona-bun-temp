@@ -7,7 +7,7 @@ const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test("framed left sidebar tabs have complete global-theme StyleX ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const componentStart = routeSource.indexOf("function LegacyFramedSidebar");
   const componentEnd = routeSource.indexOf("const leftSidebarTabStyles");
   const styleStart = componentEnd;
@@ -30,11 +30,12 @@ test("framed left sidebar tabs have complete global-theme StyleX ownership", () 
     "leftSidebarTabAccent",
     "leftSidebarTabSurface",
     "leftSidebarRefreshAccent",
-    "transparent",
   ]) {
-    expect(ownerSource).toContain(`globalColors.${token}`);
+    expect(ownerSource).toContain(`homeColors.${token}`);
   }
-  expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(ownerSource).toContain('default: "transparent"');
+  expect(themeSource).not.toContain("transparent:");
+  expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(themeSource).toContain("stylex.defineVars");
 });
 

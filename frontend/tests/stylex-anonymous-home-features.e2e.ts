@@ -76,7 +76,7 @@ const KOREAN = [
 
 test("anonymous Home feature block has complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
+  const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
@@ -100,7 +100,8 @@ test("anonymous Home feature block has complete global-theme StyleX ownership", 
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(theme).toContain('anonymousHomeFeaturePrimary: "#ff7332"');
-  expect(theme).toContain('anonymousHomeFeatureMobileItemWidth: "95%"');
+  expect(route).toContain('width: "95%"');
+  expect(theme).not.toContain("anonymousHomeFeatureMobileItemWidth:");
   expect(route).not.toMatch(
     /className="(?:feature(?:-wrap|-image|-info|-title|-desc)?|row)(?:\s|")/u,
   );

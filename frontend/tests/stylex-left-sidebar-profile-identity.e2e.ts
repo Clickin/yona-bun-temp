@@ -9,16 +9,16 @@ test.use({ locale: "en-US" });
 
 test("left sidebar profile identity has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const leftSidebarProfileIdentityStyles");
   const end = route.indexOf("const leftSidebarClosePinStyles", start);
 
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
-  expect(styles).toContain("globalColors.leftSidebarProfileAvatarSurface");
+  expect(styles).toContain("homeColors.leftSidebarProfileAvatarSurface");
   expect(theme).toContain("leftSidebarProfileAvatarSurface:");
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
 
   const marker = route.indexOf('data-stylex-owner="left-sidebar-profile-identity"');
   expect(marker).toBeGreaterThanOrEqual(0);

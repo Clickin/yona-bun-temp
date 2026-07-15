@@ -1,6 +1,6 @@
 # Frontend StyleX Theme-Boundary Correction
 
-Status: active blocker; Wave 1 route migration paused
+Status: correction complete; Wave 1 route migration may resume
 Date: 2026-07-15
 
 ## Reason
@@ -51,6 +51,9 @@ source references to `globalColors.*`, and 20 source consumers:
 
 ## Resume gate
 
+Completed 2026-07-16. Every gate below is satisfied; the original Wave 1 route/state sequence may
+resume from the next target.
+
 The original Wave 1 route/state sequence must not resume until current source evidence proves all
 of the following:
 
@@ -68,6 +71,7 @@ of the following:
 
 | Consumer | Non-theme declarations inlined | Route theme isolated | Common theme reviewed | Focused parity | Commit |
 | --- | --- | --- | --- | --- | --- |
+| HOME/root shared screen owners | all 1,301 `globalColors` references audited and every geometry, spacing, sizing, typography, border structure, responsive and behavior value inlined | 210 route-local paint/shadow keys in ignored `-home-route-screen.stylex.ts` | HOME was the final consumer; all 818 common definitions removed and `globalColors` deleted, leaving only breakpoints and the anonymous intro background variable/theme; precommit guard and focused contract test prevent catch-all reintroduction | all 279 assertions across the 57 affected focused E2E files pass; paint/shadow remains owned through `homeColors`, non-theme literals are inline, and `globalColors` is absent without deleting visible/runtime parity assertions | this commit |
 | root shell toast and login-dialog owners | all 64 `globalColors` references audited; fixed/responsive geometry, spacing, typography, border structure, opacity, transition, and behavior declarations inlined | 4 root-local text/surface/shadow keys in ignored route module `-root.stylex.ts` | all 64 sole-consumer `rootYoramToast*` and `rootLoginDialog*` definitions removed; unrelated home-screen globals retained | focused runtime assertions retained and static contracts enforce root isolation and zero global references; TypeScript passes; browser execution is included in the final consolidated server run | this commit |
 | `/users/signupform` existing standalone signup owners | all 94 `globalColors` references audited; layout, responsive sizing, typography, spacing, input, label, and validation-popover structure/behavior declarations inlined | 9 route-local text/surface/border/shadow paint keys in ignored route module `users/-signupform.stylex.ts` | all 87 sole-consumer `standaloneSignup*` definitions removed | focused runtime assertions retained and static contracts enforce route isolation and zero global references; TypeScript passes; browser execution is included in the final consolidated server run | this commit |
 | `/users/loginform` existing standalone login owners | all 46 `globalColors` references audited; layout, responsive sizing, typography, spacing, input structure, and behavior declarations inlined | 3 route-local text/border paint keys in ignored route module `users/-loginform.stylex.ts` | all 46 sole-consumer `standaloneLogin*` definitions removed | focused runtime assertions retained and static contracts enforce route isolation and zero global references; TypeScript passes; browser execution is included in the final consolidated server run | this commit |

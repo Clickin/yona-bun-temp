@@ -111,7 +111,7 @@ for (const viewport of [
 test("left sidebar close pin has complete global-theme StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const leftSidebarClosePinStyles");
   const end = route.indexOf("function LegacyFramedSidebar", start);
   expect(start).toBeGreaterThanOrEqual(0);
@@ -122,10 +122,14 @@ test("left sidebar close pin has complete global-theme StyleX ownership", () => 
     "leftSidebarClosePinText",
     "leftSidebarClosePinInteractionText",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(owner).toContain(`homeColors.${token}`);
+    } else {
+      expect(owner).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(appCss).not.toContain(".pin-in-sidebar");
   expect(route).toContain('data-stylex-owner="left-sidebar-close-pin"');
   expect(route).not.toContain('className="pin-in-sidebar"');

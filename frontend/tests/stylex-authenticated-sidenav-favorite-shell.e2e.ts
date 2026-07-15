@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav Favorite shell uses the global theme color boundary", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavFavoriteShellStyles");
   const end = routeSource.indexOf("const authenticatedSidenavTabPanelStyles");
 
@@ -17,10 +17,10 @@ test("authenticated side-nav Favorite shell uses the global theme color boundary
   expect(end).toBeGreaterThan(start);
   const ownerSource = routeSource.slice(start, end);
   expect(ownerSource).toContain("stylex.create");
-  expect(ownerSource).toContain("globalColors.sidenavNoResultText");
-  expect(ownerSource).toContain("globalColors.sidenavSearchFocusAccent");
-  expect(ownerSource).toContain("globalColors.sidenavScrollbarTrack");
-  expect(ownerSource).toContain("globalColors.sidenavScrollbarThumb");
+  expect(ownerSource).toContain("homeColors.sidenavNoResultText");
+  expect(ownerSource).toContain("homeColors.sidenavSearchFocusAccent");
+  expect(ownerSource).toContain("homeColors.sidenavScrollbarTrack");
+  expect(ownerSource).toContain("homeColors.sidenavScrollbarThumb");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(|mediumvioletred/i);
   expect(themeSource).toContain('sidenavNoResultText: "mediumvioletred"');
   expect(routeSource).toContain('"authenticated-sidenav-favorite-shell"');

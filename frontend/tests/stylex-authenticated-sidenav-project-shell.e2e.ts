@@ -9,7 +9,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated side-nav project shell has narrow global-theme StyleX ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavProjectShellStyles");
   const end = routeSource.indexOf("const authenticatedSidenavProjectSubtabStyles", start);
 
@@ -17,10 +17,10 @@ test("authenticated side-nav project shell has narrow global-theme StyleX owners
   expect(end).toBeGreaterThan(start);
   const ownerSource = routeSource.slice(start, end);
   expect(ownerSource).toContain("stylex.create");
-  expect(ownerSource).toContain("globalColors.sidenavSearchFocusAccent");
-  expect(ownerSource).toContain("globalColors.sidenavNoResultText");
-  expect(ownerSource).toContain("globalColors.sidenavScrollbarTrack");
-  expect(ownerSource).toContain("globalColors.sidenavScrollbarThumb");
+  expect(ownerSource).toContain("homeColors.sidenavSearchFocusAccent");
+  expect(ownerSource).toContain("homeColors.sidenavNoResultText");
+  expect(ownerSource).toContain("homeColors.sidenavScrollbarTrack");
+  expect(ownerSource).toContain("homeColors.sidenavScrollbarThumb");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(/i);
   expect(ownerSource).not.toContain("authenticatedSidenavProjectSubtabStyles");
   expect(ownerSource).not.toContain("authenticatedSidenavDirectProjectRowStyles");

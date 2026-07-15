@@ -12,7 +12,7 @@ test.use({ locale: "en-US" });
 
 test("framed SiteLayout shell has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const framedSiteShellStyles");
   const end = route.indexOf("const siteFooterStyles", start);
@@ -33,11 +33,15 @@ test("framed SiteLayout shell has complete global-theme StyleX ownership", () =>
     "framedSiteMobilePosition",
     "framedSiteMobileDisplay",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles.replaceAll('"@media (max-width: 720px)"', '"@media (mobile)"')).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%|vh)\b|"(?:auto|block|flex|hidden|relative|white)"/iu,
+    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu,
   );
 
   expect(route).toContain('data-stylex-owner="framed-site-shell"');

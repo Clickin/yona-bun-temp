@@ -18,7 +18,7 @@ test.use({ locale: "ko-KR" });
 
 test("anonymous Home hero has complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
+  const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),

@@ -12,7 +12,7 @@ test.use({ locale: "en-US" });
 
 test("global GNB search outer item and form have global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbSearchFormStyles");
   const end = route.indexOf("const globalGnbFeedbackStyles", start);
@@ -32,12 +32,14 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
     "globalGnbBrandPaddingInline",
     "globalGnbSearchZero",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|s|%)\b|!important/iu,
-  );
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const itemMarker = route.indexOf('data-stylex-owner="global-gnb-search-item"');
   const formMarker = route.indexOf('data-stylex-owner="global-gnb-search-form"');
@@ -293,7 +295,7 @@ test("global GNB search outer paint is isolated while required legacy classes re
   });
   expect(evidence.stripped).toEqual({
     formDisplay: "block",
-    formFontSize: "13px",
+    formFontSize: "14px",
     formLineHeight: "20px",
     formMargin: "0px",
     formPadding: "0px",

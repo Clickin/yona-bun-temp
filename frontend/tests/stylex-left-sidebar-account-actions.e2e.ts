@@ -143,7 +143,7 @@ for (const viewport of [
 test("left sidebar account actions have complete global-theme StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const styleStart = route.indexOf("const leftSidebarAccountActionStyles");
   const styleEnd = route.indexOf("function LegacyFramedSidebar", styleStart);
   expect(styleStart).toBeGreaterThanOrEqual(0);
@@ -157,8 +157,12 @@ test("left sidebar account actions have complete global-theme StyleX ownership",
     "leftSidebarAccountLogoutHoverSurface",
     "leftSidebarAccountLogoutTextShadow",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
   for (const selector of [

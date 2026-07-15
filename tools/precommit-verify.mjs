@@ -16,6 +16,10 @@ import {
   evaluateScalaHtmlGoalGuard,
   formatScalaHtmlGoalGuardSummary,
 } from "./scala-html-goal-guard.mjs";
+import {
+  evaluateRepositoryStylexThemeBoundary,
+  formatStylexThemeBoundarySummary,
+} from "./stylex-theme-boundary-guard.mjs";
 
 const STAGED_CMD = ["diff", "--cached", "--name-status", "--diff-filter=ACMRD"];
 const IGNORED_PREFIXES = [
@@ -212,6 +216,12 @@ const designResult = evaluateDesignHarness({
 });
 console.log(formatDesignHarnessSummary(designResult));
 if (shouldBlockDesignHarness(designResult)) {
+  process.exit(1);
+}
+
+const stylexThemeBoundaryResult = evaluateRepositoryStylexThemeBoundary(process.cwd());
+console.log(formatStylexThemeBoundarySummary(stylexThemeBoundaryResult));
+if (stylexThemeBoundaryResult.blocked) {
   process.exit(1);
 }
 

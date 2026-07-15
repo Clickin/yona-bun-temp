@@ -9,7 +9,7 @@ const SCREENSHOTS = resolve("..", "output", "playwright");
 
 test("anonymous site Sign up has complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
-  const theme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
+  const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const fallbackCss = readFileSync(
     resolve("public/legacy-assets/stylesheets/legacy-fallback.css"),
@@ -31,29 +31,36 @@ test("anonymous site Sign up has complete global-theme StyleX ownership", () => 
     'anonymousSiteSignupSurface: "#ff7332"',
     'anonymousSiteSignupHoverSurface: "#e95e01"',
     'anonymousSiteSignupText: "#ffffff"',
-    'anonymousSiteSignupTextShadow: "none"',
-    'anonymousSiteSignupBorderRadius: "3px"',
-    'anonymousSiteSignupDisplay: "inline-block"',
-    'anonymousSiteSignupPadding: "4px 12px"',
-    'anonymousSiteSignupVerticalAlign: "middle"',
-    'anonymousSiteSignupCursor: "pointer"',
-    'anonymousSiteSignupLineHeight: "20px"',
-    'anonymousSiteSignupFontSize: "14px"',
-    'anonymousSiteSignupTransition: "all 0.3s ease"',
-    'anonymousSiteSignupOutline: "0px none"',
-    'anonymousSiteSignupPosition: "relative"',
-    'anonymousSiteSignupMargin: "0px"',
     'anonymousSiteSignupBorderColor: "#e95e01"',
-    'anonymousSiteSignupBorderStyle: "solid"',
-    'anonymousSiteSignupBorderWidth: "1px"',
     'anonymousSiteSignupBoxShadow: "0px 1px 0px rgba(0, 0, 0, 0.05)"',
-    'anonymousSiteSignupZIndex: "2"',
-    'anonymousSiteSignupTextAlign: "center"',
-    'anonymousSiteSignupInteractiveTextDecoration: "none"',
-    'anonymousSiteSignupWhiteSpace: "nowrap"',
   ]) {
     expect(theme).toContain(variable);
   }
+  for (const declaration of [
+    'textShadow: "none"',
+    'borderRadius: "3px"',
+    'display: "inline-block"',
+    'padding: "4px 12px"',
+    'verticalAlign: "middle"',
+    'cursor: "pointer"',
+    'lineHeight: "20px"',
+    'fontSize: "14px"',
+    'transition: "all 0.3s ease"',
+    'outline: "0px none"',
+    'position: "relative"',
+    'margin: "0px"',
+    'borderStyle: "solid"',
+    'borderWidth: "1px"',
+    'zIndex: "2"',
+    'textAlign: "center"',
+    'textDecoration: "none"',
+    'whiteSpace: "nowrap"',
+  ]) {
+    expect(route).toContain(declaration);
+  }
+  expect(theme).not.toMatch(
+    /anonymousSiteSignup(?:TextShadow|BorderRadius|Display|Padding|VerticalAlign|Cursor|LineHeight|FontSize|Transition|Outline|Position|Margin|BorderStyle|BorderWidth|ZIndex|TextAlign|InteractiveTextDecoration|WhiteSpace):/u,
+  );
   expect(appCss).toMatch(/\.ybtn\s*\{/u);
   expect(appCss).toMatch(/\.ybtn-success/u);
   expect(fallbackCss).toMatch(/\.ybtn\s*\{/u);

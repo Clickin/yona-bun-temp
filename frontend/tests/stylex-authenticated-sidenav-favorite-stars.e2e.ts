@@ -9,16 +9,16 @@ test.setTimeout(20_000);
 
 test("authenticated Favorite stars have one narrow themed StyleX owner", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const ownerSource = routeSource.match(
     /const authenticatedSidenavFavoriteStarStyles = stylex\.create\([\s\S]*?\n\}\);/,
   )?.[0];
 
   expect(ownerSource).toBeDefined();
-  expect(ownerSource).toContain("globalColors.sidenavFavoriteStarIdle");
-  expect(ownerSource).toContain("globalColors.sidenavFavoriteStarActive");
-  expect(ownerSource).toContain("globalColors.sidenavFavoriteStarActiveHover");
-  expect(ownerSource).toContain("globalColors.transparent");
+  expect(ownerSource).toContain("homeColors.sidenavFavoriteStarIdle");
+  expect(ownerSource).toContain("homeColors.sidenavFavoriteStarActive");
+  expect(ownerSource).toContain("homeColors.sidenavFavoriteStarActiveHover");
+  expect(ownerSource).toContain('"transparent"');
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(themeSource).toContain('sidenavFavoriteStarIdle: "#eeeeee"');
   expect(themeSource).toContain('sidenavFavoriteStarActive: "#e91e63"');

@@ -9,23 +9,27 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav account actions have complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const styleStart = route.indexOf("const authenticatedSidenavAccountActionStyles");
   const styleEnd = route.indexOf("const authenticatedSidenavShellStyles", styleStart);
   const styles = route.slice(styleStart, styleEnd);
 
   expect(styles).toContain("stylex.create");
-  expect(styles).toContain("globalColors.sidenavText");
-  expect(styles).toContain("globalColors.sidenavLogoutHover");
+  expect(styles).toContain("homeColors.sidenavText");
+  expect(styles).toContain("homeColors.sidenavLogoutHover");
   for (const token of [
     "sidenavAccountLogoutText",
     "sidenavAccountLogoutSurface",
     "sidenavAccountLogoutTextShadow",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
 
   const ownerMarker = route.indexOf('data-stylex-owner="authenticated-sidenav-account-actions"');
   const ownerStart = route.lastIndexOf("<div", ownerMarker);

@@ -239,7 +239,7 @@ test("left Project subtabs preserve Korean legacy copy and order", async ({ page
 
 test("left Project subtabs have complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const leftSidebarProjectSubtabStyles");
   const end = route.indexOf("const authenticatedSidenavProjectSubtabStyles", start);
   expect(start).toBeGreaterThanOrEqual(0);
@@ -251,8 +251,12 @@ test("left Project subtabs have complete global-theme StyleX ownership", () => {
     "leftSidebarProjectSubtabAccent",
     "leftSidebarProjectSubtabActiveText",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(owner).toContain(`homeColors.${token}`);
+    } else {
+      expect(owner).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
   expect(route).toContain('"left-sidebar-project-subtabs"');

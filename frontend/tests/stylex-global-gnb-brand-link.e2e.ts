@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 test("global GNB brand link has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const restricted = readFileSync("src/routes/restricted.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbBrandLinkStyles");
   const end = route.indexOf("export function SiteLayoutShell", start);
@@ -37,12 +37,16 @@ test("global GNB brand link has complete global-theme StyleX ownership", () => {
     "globalGnbBrandFontSize",
     "globalGnbBrandFontWeight",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).toContain("globalColors.textOnAccent");
+  expect(styles).toContain("homeColors.textOnAccent");
   expect(styles.replace('"@media (max-width: 720px)"', '"@media (mobile)"')).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b\d+(?:\.\d+)?px\b|!important/i,
+    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i,
   );
 
   const marker = route.indexOf('data-stylex-owner="global-gnb-brand-link"');

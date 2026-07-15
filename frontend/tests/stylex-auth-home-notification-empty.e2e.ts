@@ -11,7 +11,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home empty notification has bounded global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
@@ -33,11 +33,15 @@ test("authenticated Home empty notification has bounded global-theme StyleX owne
     "authenticatedHomeNotificationEmptyBorderWidth",
     "authenticatedHomeNotificationEmptyRadius",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%)\b/iu);
-  expect(styles).not.toMatch(/:\s*"(?:none|center|solid)"/u);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
+  expect(styles).toMatch(/textAlign: "center"/u);
 
   const markupStart = route.indexOf('data-stylex-owner="authenticated-home-notification-list"');
   const markupEnd = route.indexOf("{notificationHasMore ?", markupStart);

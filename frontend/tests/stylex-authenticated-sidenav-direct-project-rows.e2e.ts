@@ -13,10 +13,10 @@ test("authenticated direct project rows have one narrow themed StyleX owner", ()
     /const authenticatedSidenavDirectProjectRowStyles = stylex\.create\([\s\S]*?\n\}\);/,
   )?.[0];
   expect(owner).toBeDefined();
-  expect(owner).toContain("globalColors.sidenavText");
-  expect(owner).toContain("globalColors.sidenavAccountText");
-  expect(owner).toContain("globalColors.sidenavOrganizationHoverSurface");
-  expect(owner).toContain("globalColors.transparent");
+  expect(owner).toContain("homeColors.sidenavText");
+  expect(owner).toContain("homeColors.sidenavAccountText");
+  expect(owner).toContain("homeColors.sidenavOrganizationHoverSurface");
+  expect(owner).toContain('"transparent"');
   expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(source).toContain('"authenticated-sidenav-direct-project-rows"');
 });

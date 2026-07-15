@@ -11,8 +11,9 @@ test.use({ locale: "en-US" });
 test("global sidebar open pin has complete global-theme StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const restrictedRoute = readFileSync("src/routes/restricted.tsx", "utf8");
+  const restrictedTheme = readFileSync("src/routes/-restricted.stylex.ts", "utf8");
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const globalSidebarOpenPinStyles");
   const end = route.indexOf("const siteAdminAffixStyles", start);
   expect(start).toBeGreaterThanOrEqual(0);
@@ -33,16 +34,23 @@ test("global sidebar open pin has complete global-theme StyleX ownership", () =>
     "globalSidebarOpenPinBorderWidth",
     "globalSidebarOpenPinIconPadding",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(owner).toContain(`homeColors.${token}`);
+    } else {
+      expect(owner).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|-?\d+(?:\.\d+)?px|!important/iu);
+  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
   expect(route).toContain('data-stylex-owner="global-sidebar-open-pin"');
   expect(route).not.toContain('className="pin"');
   expect(appCss).not.toContain(".pin-move-to-right");
   expect(appCss).not.toContain(".pin-move-to-default-position");
-  expect(restrictedRoute).toContain('className="pin"');
-  expect(appCss).toContain(".pin {");
+  expect(restrictedRoute).toContain('data-stylex-owner="restricted-sidebar-pin"');
+  expect(restrictedRoute).toContain("restrictedTheme.sidebarPinSurface");
+  expect(restrictedRoute).not.toContain('className="pin"');
+  expect(restrictedTheme).toContain("export const restrictedTheme = stylex.defineVars({");
+  expect(appCss).not.toContain(".pin {");
 });
 
 for (const viewport of [

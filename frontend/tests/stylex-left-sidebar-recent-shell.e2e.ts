@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("left sidebar Recent History shell has narrow global-theme StyleX ownership", () => {
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const styleStart = source.indexOf("const leftSidebarRecentShellStyles");
   const styleEnd = source.indexOf("function SidebarRecentIssueList", styleStart);
   const recentStart = source.indexOf("function SidebarRecentIssueList");
@@ -30,9 +30,9 @@ test("left sidebar Recent History shell has narrow global-theme StyleX ownership
     "sidenavScrollbarThumb",
     "sidenavNoResultText",
   ]) {
-    expect(shellStyles).toContain(`globalColors.${token}`);
+    expect(shellStyles).toContain(`homeColors.${token}`);
   }
-  expect(shellStyles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(shellStyles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(theme).toContain('leftSidebarRecentSearchSurface: "#000000"');
   expect(recentSource).toMatch(/isLeftSidebar\s*\? "left-sidebar-recent-shell"/);
   expect(recentSource).toContain("leftSidebarRecentShellStyles");
@@ -169,9 +169,11 @@ for (const state of ["populated", "empty"] as const) {
         await expect(result).toContainText("needle issue");
         await expect(result).not.toContainText("other issue");
         await sidebar.getByRole("button", { exact: true, name: "Project" }).click();
-        await expect(sidebar.locator("#left-sidebar-myProjectList .project-search")).toHaveValue(
-          "needle",
-        );
+        await expect(
+          sidebar.locator(
+            '#left-sidebar-myProjectList [data-stylex-owner="left-sidebar-project-shell"] input',
+          ),
+        ).toHaveValue("needle");
         await sidebar.getByRole("button", { exact: true, name: "Recent History" }).click();
         await expect(input).toHaveValue("needle");
         await input.fill("");

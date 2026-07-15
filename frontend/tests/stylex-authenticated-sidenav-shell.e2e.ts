@@ -9,7 +9,7 @@ test.use({ locale: "en-US" });
 
 test("authenticated side-nav shell uses global StyleX color variables", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const ownerSource = routeSource.slice(
     routeSource.indexOf("const authenticatedSidenavShellStyles"),
     routeSource.indexOf("const authenticatedSiteUserMenuStyles"),
@@ -17,18 +17,16 @@ test("authenticated side-nav shell uses global StyleX color variables", () => {
 
   expect(ownerSource).toContain("stylex.create");
   expect(routeSource).toContain('data-stylex-owner="authenticated-site-sidenav-shell"');
-  expect(ownerSource).toContain("globalColors.sidenavSurface");
-  expect(ownerSource).toContain("globalColors.sidenavText");
-  expect(ownerSource).toContain("globalColors.sidenavBorder");
-  expect(ownerSource).toContain("globalColors.sidenavShadow");
-  expect(ownerSource).toContain("globalColors.sidenavBaseTop");
-  expect(ownerSource).toContain("globalColors.sidenavAdminAffixTop");
-  expect(ownerSource).not.toContain('top: "40px"');
-  expect(ownerSource).not.toContain('top: "84px"');
+  expect(ownerSource).toContain("homeColors.sidenavSurface");
+  expect(ownerSource).toContain("homeColors.sidenavText");
+  expect(ownerSource).toContain("homeColors.sidenavBorder");
+  expect(ownerSource).toContain("homeColors.sidenavShadow");
+  expect(ownerSource).toContain('top: "40px"');
+  expect(ownerSource).toContain('top: "84px"');
   expect(routeSource).toContain("sidenavUsesAdminAffixTop");
   expect(themeSource).toContain("stylex.defineVars");
-  expect(themeSource).toContain('sidenavBaseTop: "40px"');
-  expect(themeSource).toContain('sidenavAdminAffixTop: "84px"');
+  expect(themeSource).not.toContain("sidenavBaseTop");
+  expect(themeSource).not.toContain("sidenavAdminAffixTop");
 
   for (const color of [
     "#fff",

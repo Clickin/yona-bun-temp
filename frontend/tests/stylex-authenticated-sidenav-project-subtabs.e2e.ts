@@ -9,7 +9,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated side-nav project subtabs use global StyleX color variables", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = routeSource.indexOf("const authenticatedSidenavProjectSubtabStyles");
   const end = routeSource.indexOf("function SidebarProjectList", start);
 
@@ -17,10 +17,10 @@ test("authenticated side-nav project subtabs use global StyleX color variables",
   expect(end).toBeGreaterThan(start);
   const ownerSource = routeSource.slice(start, end);
   expect(ownerSource).toContain("stylex.create");
-  expect(ownerSource).toContain("globalColors.sidenavSubtabSurface");
-  expect(ownerSource).toContain("globalColors.sidenavSubtabText");
-  expect(ownerSource).toContain("globalColors.sidenavSubtabAccent");
-  expect(ownerSource).toContain("globalColors.sidenavSubtabActiveText");
+  expect(ownerSource).toContain("homeColors.sidenavSubtabSurface");
+  expect(ownerSource).toContain("homeColors.sidenavSubtabText");
+  expect(ownerSource).toContain("homeColors.sidenavSubtabAccent");
+  expect(ownerSource).toContain("homeColors.sidenavSubtabActiveText");
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|\brgb\(|\bhsl\(/i);
   expect(themeSource).toContain("stylex.defineVars");
   expect(routeSource).toContain('"authenticated-sidenav-project-subtabs"');

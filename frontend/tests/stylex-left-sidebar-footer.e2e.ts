@@ -71,17 +71,21 @@ for (const viewport of [
 test("left sidebar footer has complete global-theme StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const leftSidebarFooterStyles");
   const end = route.indexOf("function LegacyFramedSidebar", start);
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const owner = route.slice(start, end);
   for (const token of ["leftSidebarFooterText", "leftSidebarFooterHeart"]) {
-    expect(owner).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(owner).toContain(`homeColors.${token}`);
+    } else {
+      expect(owner).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
+  expect(owner).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/i);
   expect(appCss).not.toContain(".sidebar-bottom");
   expect(route).toContain('data-stylex-owner="left-sidebar-footer"');
   expect(route).toContain('id="sidebar-bottom"');

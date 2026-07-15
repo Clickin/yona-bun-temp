@@ -202,7 +202,7 @@ for (const state of ["populated", "empty"] as const) {
 
 test("left sidebar Favorite shell has complete global-theme StyleX ownership", () => {
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const styleStart = routeSource.indexOf("const leftSidebarFavoriteShellStyles");
   const styleEnd = routeSource.indexOf("const authenticatedSidenavFavoriteShellStyles", styleStart);
   const componentStart = routeSource.indexOf("function SidebarOrganizationList");
@@ -223,7 +223,7 @@ test("left sidebar Favorite shell has complete global-theme StyleX ownership", (
     "sidenavScrollbarTrack",
     "sidenavScrollbarThumb",
   ]) {
-    expect(ownerSource).toContain(`globalColors.${token}`);
+    expect(ownerSource).toContain(`homeColors.${token}`);
   }
   expect(ownerSource).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|!important/i);
   expect(themeSource).toContain('leftSidebarFavoriteSearchSurface: "#000000"');

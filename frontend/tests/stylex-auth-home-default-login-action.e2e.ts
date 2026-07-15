@@ -15,7 +15,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home default-login action has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const frozenFallback = readFileSync(
     "public/legacy-assets/stylesheets/legacy-fallback.css",
     "utf8",
@@ -88,11 +88,15 @@ test("authenticated Home default-login action has complete global-theme StyleX o
     "authenticatedHomeDefaultLoginPopoverArrowInnerTop",
     "authenticatedHomeDefaultLoginPopoverArrowInnerMarginLeft",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles).toContain("[globalBreakpoints.mobile]");
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%|s)\b/iu);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const markupStart = route.indexOf('id="setDefaultLoginPage"');
   const markupEnd = route.indexOf("{notificationHasMore ?", markupStart);

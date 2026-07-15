@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 
 test("left Favorite nested project rows use global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const start = route.indexOf("const leftSidebarFavoriteNestedProjectRowStyles");
   const end = route.indexOf("const authenticatedSidenavFavoriteProjectRowStyles", start);
   expect(start).toBeGreaterThanOrEqual(0);
@@ -30,8 +30,12 @@ test("left Favorite nested project rows use global-theme StyleX ownership", () =
     "leftSidebarFavoriteNestedProjectPopoverShadow",
     "textOnAccent",
   ]) {
-    expect(owner).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(owner).toContain(`homeColors.${token}`);
+    } else {
+      expect(owner).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(owner).not.toMatch(/#[\da-f]{3,8}|rgba?\(/i);
   expect(route).toContain(`"${OWNER}"`);

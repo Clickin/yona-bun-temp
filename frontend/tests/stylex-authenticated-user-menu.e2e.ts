@@ -11,7 +11,7 @@ test.use({ locale: "en-US" });
 test("authenticated user menu owns its legacy declarations through global StyleX variables", () => {
   const appSource = readFileSync("src/app.css", "utf8");
   const routeSource = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const themeSource = readFileSync("src/theme.stylex.ts", "utf8");
+  const themeSource = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const ownerSource = routeSource.slice(
     routeSource.indexOf("const authenticatedSiteUserMenuStyles"),
     routeSource.indexOf("const anonymousSiteUserMenuStyles"),
@@ -19,18 +19,18 @@ test("authenticated user menu owns its legacy declarations through global StyleX
 
   expect(ownerSource).toContain("stylex.create");
   expect(ownerSource).toContain('data-stylex-owner="authenticated-site-user-menu"');
-  expect(ownerSource).toContain("globalColors.navigationAccent");
-  expect(ownerSource).toContain("globalColors.navigationDivider");
-  expect(ownerSource).toContain("globalColors.navigationDropdownText");
-  expect(ownerSource).toContain("globalColors.navigationCreateAction");
-  expect(ownerSource).toContain("backgroundColor: globalColors.transparent");
+  expect(ownerSource).toContain("homeColors.navigationAccent");
+  expect(ownerSource).toContain("homeColors.navigationDivider");
+  expect(ownerSource).toContain("homeColors.navigationDropdownText");
+  expect(ownerSource).toContain("homeColors.navigationCreateAction");
+  expect(ownerSource).toContain('backgroundColor: "transparent"');
   expect(ownerSource).toContain('borderStyle: "none"');
   expect(ownerSource).toContain("borderWidth: 0");
   expect(ownerSource).toContain('color: "inherit"');
   expect(ownerSource).toContain('cursor: "pointer"');
   expect(ownerSource).toContain('font: "inherit"');
-  expect(ownerSource).toContain("globalColors.textMuted");
-  expect(ownerSource).toContain("globalColors.textOnDarkHover");
+  expect(ownerSource).toContain("homeColors.textMuted");
+  expect(ownerSource).toContain("homeColors.textOnDarkHover");
   expect(themeSource).toContain("stylex.defineVars");
 
   for (const color of ["#efefef", "#f36c22", "#ffffff"]) {

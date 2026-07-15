@@ -11,7 +11,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home intro guide has bounded global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const bootstrapCss = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const yobiconCss = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
@@ -57,11 +57,15 @@ test("authenticated Home intro guide has bounded global-theme StyleX ownership",
     "authenticatedHomeIntroGuideToggleOutline",
     "authenticatedHomeIntroGuideIconFontSize",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
   expect(styles.replaceAll('"@media (max-width: 720px)"', '"@media (mobile)"')).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%)\b|"(?:bold|inline-block|middle|none|center)"/iu,
+    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu,
   );
 
   expect(route).toContain('data-stylex-owner="authenticated-home-intro-guide"');

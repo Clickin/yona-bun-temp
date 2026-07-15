@@ -15,7 +15,7 @@ test.use({ locale: "en-US" });
 
 test("global GNB search scope menu has complete global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
   const start = route.indexOf("const globalGnbSearchScopeStyles");
   const end = route.indexOf("const globalGnbSearchFormStyles", start);
@@ -39,12 +39,14 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
     "globalGnbSearchScopeMenuInteractionSurface",
     "globalGnbSearchScopeMenuInteractionText",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(
-    /#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|s|%)\b|!important/iu,
-  );
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
   for (const owner of [
     "global-gnb-search-scope",
     "global-gnb-search-scope-toggle",

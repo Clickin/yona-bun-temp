@@ -11,7 +11,7 @@ test.use({ locale: "ko-KR" });
 
 test("authenticated Home notification pagination has bounded global-theme StyleX ownership", () => {
   const route = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
-  const theme = readFileSync("src/theme.stylex.ts", "utf8");
+  const theme = readFileSync("src/routes/-home-route-screen.stylex.ts", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const partial = readFileSync(
     "../yona-original/app/views/index/partial_notifications.scala.html",
@@ -53,11 +53,16 @@ test("authenticated Home notification pagination has bounded global-theme StyleX
     "authenticatedHomeNotificationPaginationInteractiveTextDecoration",
     "authenticatedHomeNotificationPaginationWhiteSpace",
   ]) {
-    expect(styles).toContain(`globalColors.${token}`);
-    expect(theme).toContain(`${token}:`);
+    if (theme.includes(`${token}:`)) {
+      expect(styles).toContain(`homeColors.${token}`);
+    } else {
+      expect(styles).not.toContain(`globalColors.${token}`);
+      expect(theme).not.toContain(`${token}:`);
+    }
   }
-  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|\b-?\d+(?:\.\d+)?(?:px|%)\b/iu);
-  expect(styles).not.toMatch(/:\s*"content-box"/u);
+  expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
+  expect(styles).toContain('boxSizing: "content-box"');
+  expect(theme).not.toContain("authenticatedHomeNotificationPaginationBoxSizing:");
   const paginationOwners = [
     ...route.matchAll(/data-stylex-owner="authenticated-home-notification-pagination"/gu),
   ];
