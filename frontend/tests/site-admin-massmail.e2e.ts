@@ -75,15 +75,15 @@ const EXPECTED_MASSMAIL_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -158,8 +158,10 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
     )
     .toEqual([baseRoot, `${basePath}/projects`, "https://github.com/yona-projects/yona/issues"]);
   await expect(page.locator(".gnb-search-form")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send mass emails");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-link"]').nth(5)).toHaveText(
+    "Send mass emails",
+  );
+  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -205,16 +207,14 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
       { ariaCurrent: null, className: null, dataStatus: null },
       { ariaCurrent: null, className: null, dataStatus: null },
     ]);
-  await expect(page.locator(".site-setting-nav li")).toHaveClass([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "active",
-    "",
-    "",
-  ]);
+  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
+  await expect(page.locator('[data-stylex-owner="site-massmail-sidebar-item"]').nth(5)).toHaveCSS(
+    "border-left-color",
+    "rgb(243, 108, 34)",
+  );
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
   await expect(page.locator('[name="mailingType"][data-toggle="mail-type"]')).toHaveCount(0);
@@ -226,7 +226,9 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   await expect(page.locator("#mailtoPrj")).not.toHaveAttribute("data-action", /.+/);
   await expect(page.locator("#input-project")).not.toHaveAttribute("data-provider", /.+/);
   await expect(page.locator("#select-project")).not.toHaveAttribute("data-loading-text", /.+/);
-  const mailLink = page.locator(".site-setting-nav a", { hasText: "Send email" });
+  const mailLink = page.locator('[data-stylex-owner="site-massmail-sidebar-link"]', {
+    hasText: "Send email",
+  });
   await expect(mailLink).toHaveAttribute("href", `${basePath}/sites/mail`);
   await expect(
     page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
@@ -261,7 +263,9 @@ test("site admin mass mail matches legacy site/massMail.scala.html DOM", async (
   });
   await mailLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/mail`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Send email");
+  await expect(page.locator('[data-stylex-owner="site-mail-sidebar-link"]').nth(4)).toHaveText(
+    "Send email",
+  );
   await expect(page.locator(".title_area h2")).toHaveText("Send email");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -420,10 +424,14 @@ test("site admin mass mail renders legacy update notification badge", async ({ p
   await mockAvailableUpdate(page);
 
   await page.goto(`${basePath}/sites/massmail`);
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-massmail-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(updateLink.locator('[data-stylex-owner="site-massmail-sidebar-badge"]')).toHaveText(
+    "1",
+  );
 });
 
 async function massMailDefaultMetrics(page: Page) {
@@ -637,6 +645,17 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        [
+          "site-massmail-sidebar",
+          "site-massmail-sidebar-item",
+          "site-massmail-sidebar-link",
+          "site-massmail-sidebar-badge",
+        ].includes(current.getAttribute("data-stylex-owner") ?? "")
+      ) {
+        return "";
+      }
       if (
         name === "class" &&
         current.matches('[data-stylex-owner="site-massmail-selected-project-tag"]')

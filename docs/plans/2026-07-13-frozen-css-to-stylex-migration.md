@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-seven slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred forty-eight slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1822,6 +1822,19 @@ mutation states, and Mass mail SPA navigation remain unchanged. Actual RED 5/5 b
 5/5. The complete mail matrix is 39/40 with only the pre-existing global GNB `Feedback` fixture
 mismatch outside this owner boundary. Fresh live legacy visual comparison remains explicitly
 unverified. This is not Wave 1 completion.
+
+The one-hundred-forty-eighth slice completes the authenticated `/sites/massmail` default-all
+local settings sidebar from `site/massMail.scala.html`, `site/siteMngLayout.scala.html`,
+`_common.less`, and `_page.less`. Four stable owners cover the UL, eight repeated LI and Link
+boundaries with first/active variants, and the conditional update badge through canonical global
+theme variables. This route retires `site-setting-nav`, active LI `active`, `notification-badge`,
+and empty LI classes while frozen fallback remains active for other site-admin routes. Exact
+copy/order/hrefs, the sixth-item Send mass emails selection, badge condition, recipient/project
+selection and mail-list mutation behavior, and Send email SPA navigation remain unchanged. Actual
+RED 5/5 becomes GREEN 5/5. The complete massmail matrix is 40/45: the pre-existing GNB `Feedback`
+fixture mismatch plus four stale expectations from earlier massmail slices (`.label`, `ybtn`, and
+project-wrapper generated ownership) remain outside this sidebar boundary. Fresh live legacy
+visual comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 
