@@ -139,9 +139,16 @@ test.describe("StyleX site project-list title strip", () => {
         Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
           .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
           .filter((element) => !element.matches(selector))
-          .map((element) => element.tagName),
+          .map((element) => ({
+            owner: element.getAttribute("data-stylex-owner"),
+            tagName: element.tagName,
+          })),
       ownerSelector,
     );
-    expect(generatedDirectChildren).toEqual([]);
+    expect(generatedDirectChildren).toEqual([
+      { owner: "site-project-list-listhead", tagName: "DIV" },
+      { owner: "site-project-list-container", tagName: "UL" },
+      { owner: "site-project-list-pagination", tagName: "DIV" },
+    ]);
   });
 });

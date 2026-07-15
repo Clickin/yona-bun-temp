@@ -1552,6 +1552,15 @@ fully migrated presentation classes are removed and affected E2E locators move t
 the delete modal controls, pagination, search, sidebar, and shell remain fallback or separate
 owners. This is not Wave 1 completion.
 
+The one-hundred-twenty-second slice migrates the /sites/projectList populated first-page
+pagination from site/projectList.scala.html, the legacy Pagination behavior, _common.less,
+_page.less, _responsive.less, and _sprites.less. StyleX owns the wrapper, page-number list,
+items and variants, input interaction states, labels, and icon geometry through global variables,
+including the desktop -120px list offset and max-720 zero reset. The wrapper/list/item/input and
+variant presentation classes are removed. The sprite image/background-position classes and the
+Firefox-only nospinner class remain shared fallback; the delete modal, search, sidebar, and shell
+remain separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

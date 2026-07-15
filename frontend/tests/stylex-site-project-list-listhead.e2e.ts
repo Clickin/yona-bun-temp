@@ -176,19 +176,37 @@ test.describe("StyleX site project-list list header", () => {
     const generatedOwnerIds = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
         .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
-        .map((element) => element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner"))
-        .filter((owner): owner is string => Boolean(owner))
-        .sort(),
+        .map(
+          (element) =>
+            element.closest("[data-stylex-owner]")?.getAttribute("data-stylex-owner") ?? null,
+        ),
     );
 
-    expect(generatedOwnerIds).toEqual([
+    const allowedOwners = new Set([
+      "site-project-list-container",
+      "site-project-list-delete-action",
       "site-project-list-listhead",
-      "site-project-list-listhead",
-      "site-project-list-listhead",
-      "site-project-list-listhead",
-      "site-project-list-listhead",
-      "site-project-list-title-strip",
+      "site-project-list-pagination",
+      "site-project-list-pagination-icon",
+      "site-project-list-pagination-input",
+      "site-project-list-pagination-item",
+      "site-project-list-pagination-label",
+      "site-project-list-pagination-list",
+      "site-project-list-project-name",
+      "site-project-list-row",
+      "site-project-list-row-avatar",
+      "site-project-list-row-columns",
       "site-project-list-title-strip",
     ]);
+    expect(generatedOwnerIds).not.toContain(null);
+    expect(generatedOwnerIds.every((owner) => owner !== null && allowedOwners.has(owner))).toBe(
+      true,
+    );
+    expect(
+      generatedOwnerIds.filter((owner) => owner === "site-project-list-listhead"),
+    ).toHaveLength(5);
+    expect(
+      generatedOwnerIds.filter((owner) => owner === "site-project-list-title-strip"),
+    ).toHaveLength(2);
   });
 });

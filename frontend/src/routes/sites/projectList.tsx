@@ -14,7 +14,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
-import { globalColors } from "../../theme.stylex";
+import { globalBreakpoints, globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 
 type ProjectListSearch = {
@@ -127,6 +127,76 @@ const styles = stylex.create({
     whiteSpace: globalColors.siteProjectListDeleteWhiteSpace,
     zIndex: globalColors.siteProjectListDeleteZIndex,
   },
+  paginationWrapper: {
+    width: globalColors.siteProjectListPaginationWrapperWidth,
+    textAlign: globalColors.siteProjectListPaginationWrapperTextAlign,
+    margin: globalColors.siteProjectListPaginationWrapperMargin,
+    clear: globalColors.siteProjectListPaginationWrapperClear,
+  },
+  paginationList: {
+    margin: globalColors.siteProjectListPaginationListMargin,
+    marginLeft: {
+      default: globalColors.siteProjectListPaginationListDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListPaginationListMobileMarginLeft,
+    },
+    padding: globalColors.siteProjectListPaginationListPadding,
+    listStyle: globalColors.siteProjectListPaginationListStyle,
+    fontSize: globalColors.siteProjectListPaginationListFontSize,
+    display: globalColors.siteProjectListPaginationListDisplay,
+  },
+  paginationItem: {
+    display: globalColors.siteProjectListPaginationItemDisplay,
+    padding: globalColors.siteProjectListPaginationItemPadding,
+    fontSize: globalColors.siteProjectListPaginationItemFontSize,
+    color: globalColors.siteProjectListPaginationItemText,
+  },
+  paginationIconItem: {
+    padding: globalColors.siteProjectListPaginationIconItemPadding,
+  },
+  paginationDelimiter: {
+    color: globalColors.siteProjectListPaginationDelimiterText,
+    padding: globalColors.siteProjectListPaginationDelimiterPadding,
+  },
+  paginationInput: {
+    margin: globalColors.siteProjectListPaginationInputMargin,
+    width: globalColors.siteProjectListPaginationInputWidth,
+    textAlign: globalColors.siteProjectListPaginationInputTextAlign,
+    fontWeight: globalColors.siteProjectListPaginationInputFontWeight,
+    borderWidth: globalColors.siteProjectListPaginationInputBorderWidth,
+    borderStyle: globalColors.siteProjectListPaginationInputBorderStyle,
+    borderColor: {
+      default: globalColors.siteProjectListPaginationInputBorder,
+      ":hover": globalColors.siteProjectListPaginationInputInteractiveBorder,
+      ":focus": globalColors.siteProjectListPaginationInputInteractiveBorder,
+    },
+    color: {
+      ":hover": globalColors.siteProjectListPaginationInputInteractiveText,
+      ":focus": globalColors.siteProjectListPaginationInputInteractiveText,
+    },
+    boxShadow: {
+      ":hover": globalColors.siteProjectListPaginationInputInteractiveShadow,
+      ":focus": globalColors.siteProjectListPaginationInputInteractiveShadow,
+    },
+  },
+  paginationLabel: {
+    fontSize: globalColors.siteProjectListPaginationLabelFontSize,
+    color: globalColors.siteProjectListPaginationLabelText,
+  },
+  paginationOffLabel: {
+    color: globalColors.siteProjectListPaginationOffLabelText,
+  },
+  paginationIcon: {
+    display: globalColors.siteProjectListPaginationIconDisplay,
+    verticalAlign: globalColors.siteProjectListPaginationIconVerticalAlign,
+    width: globalColors.siteProjectListPaginationIconWidth,
+    height: globalColors.siteProjectListPaginationIconHeight,
+  },
+  paginationPrevIcon: {
+    marginRight: globalColors.siteProjectListPaginationPrevIconMarginRight,
+  },
+  paginationNextIcon: {
+    marginLeft: globalColors.siteProjectListPaginationNextIconMarginLeft,
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -138,6 +208,22 @@ const projectRowColumnStyleProps = stylex.props(styles.projectRowColumn);
 const projectListContainerStyleProps = stylex.props(styles.projectListContainer);
 const projectListProjectNameStyleProps = stylex.props(styles.projectListProjectName);
 const projectListDeleteActionStyleProps = stylex.props(styles.projectListDeleteAction);
+const paginationWrapperStyleProps = stylex.props(styles.paginationWrapper);
+const paginationListStyleProps = stylex.props(styles.paginationList);
+const paginationItemStyleProps = stylex.props(styles.paginationItem);
+const paginationIconItemStyleProps = stylex.props(styles.paginationItem, styles.paginationIconItem);
+const paginationDelimiterStyleProps = stylex.props(
+  styles.paginationItem,
+  styles.paginationDelimiter,
+);
+const paginationInputStyleProps = stylex.props(styles.paginationInput);
+const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
+const paginationOffLabelStyleProps = stylex.props(
+  styles.paginationLabel,
+  styles.paginationOffLabel,
+);
+const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
 
 function insulateProjectDeleteModalClick(event: SyntheticEvent<HTMLElement>) {
   event.preventDefault();
@@ -428,28 +514,70 @@ function ProjectListPagination({
   });
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...paginationWrapperStyleProps}
+      className={paginationWrapperStyleProps.className}
+      data-stylex-owner="site-project-list-pagination"
+      id="pagination"
+    >
+      <ul
+        {...paginationListStyleProps}
+        className={paginationListStyleProps.className}
+        data-stylex-owner="site-project-list-pagination-list"
+      >
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-project-list-pagination-item"
+        >
           {hasPrev ? (
             <Link
               {...legacyLinkSuppressionProps}
               search={search(currentPage - 1)}
               to="/sites/projectList"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...paginationPrevIconStyleProps}
+                className={`ico btn-pg-prev ${paginationPrevIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-project-list-pagination-icon"
+              ></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="site-project-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...paginationPrevIconStyleProps}
+                className={`ico btn-pg-prev off ${paginationPrevIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-project-list-pagination-icon"
+              ></i>
+              <span
+                {...paginationOffLabelStyleProps}
+                className={paginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-project-list-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="site-project-list-pagination-item"
+        >
           <input
-            className="input-mini nospinner"
+            {...paginationInputStyleProps}
+            className={`nospinner ${paginationInputStyleProps.className ?? ""}`}
+            data-stylex-owner="site-project-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
@@ -478,22 +606,62 @@ function ProjectListPagination({
             defaultValue={currentPage}
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...paginationDelimiterStyleProps}
+          className={paginationDelimiterStyleProps.className}
+          data-pagination-variant="delimiter"
+          data-stylex-owner="site-project-list-pagination-item"
+        >
+          /
+        </li>
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="site-project-list-pagination-item"
+        >
+          {totalPages}
+        </li>
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="site-project-list-pagination-item"
+        >
           {hasNext ? (
             <Link
               {...legacyLinkSuppressionProps}
               search={search(currentPage + 1)}
               to="/sites/projectList"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="site-project-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...paginationNextIconStyleProps}
+                className={`ico btn-pg-next ${paginationNextIconStyleProps.className ?? ""}`}
+                data-stylex-owner="site-project-list-pagination-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...paginationOffLabelStyleProps}
+                className={paginationOffLabelStyleProps.className}
+                data-pagination-state="off"
+                data-stylex-owner="site-project-list-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...paginationNextIconStyleProps}
+                className={`ico btn-pg-next off ${paginationNextIconStyleProps.className ?? ""}`}
+                data-pagination-state="off"
+                data-stylex-owner="site-project-list-pagination-icon"
+              ></i>
             </>
           )}
         </li>
