@@ -48,6 +48,23 @@ test.describe("StyleX site data warning surface", () => {
     ).toEqual(["DIV", "H3"]);
   });
 
+  test("composes generated classes with legacy warning fallbacks", async ({ page }) => {
+    const owner = await openData(page);
+    const classes = await owner.evaluate((warningSurface) => ({
+      warningSurface: warningSurface.className.split(/\s+/).filter(Boolean),
+      notices: [...warningSurface.querySelectorAll("li")].map((notice) =>
+        notice.className.split(/\s+/).filter(Boolean),
+      ),
+    }));
+    expect(classes.warningSurface).toContain("cu-desc");
+    expect(classes.warningSurface.length).toBeGreaterThan(1);
+    expect(classes.notices).toHaveLength(3);
+    for (const notice of classes.notices) {
+      expect(notice).toContain("notice");
+      expect(notice.length).toBeGreaterThan(1);
+    }
+  });
+
   for (const viewport of [
     { name: "desktop", width: 1366, height: 900 },
     { name: "mobile", width: 390, height: 844 },

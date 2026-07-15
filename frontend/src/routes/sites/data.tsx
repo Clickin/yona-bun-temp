@@ -67,6 +67,11 @@ const styles = stylex.create({
   },
 });
 
+const titleAreaStyleProps = stylex.props(styles.titleArea);
+const titleStyleProps = stylex.props(styles.title);
+const warningSurfaceStyleProps = stylex.props(styles.warningSurface);
+const warningStyleProps = stylex.props(styles.warning);
+
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
@@ -116,28 +121,37 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
             <div className="span10">
               <div
-                {...stylex.props(styles.titleArea)}
-                className="title_area"
+                {...titleAreaStyleProps}
+                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
                 data-stylex-owner="site-data-title-strip"
               >
-                <h2 {...stylex.props(styles.title)} className="pull-left">
+                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
                   {t("site.sidebar.data")}
                 </h2>
               </div>
 
               <div
-                {...stylex.props(styles.warningSurface)}
-                className="cu-desc"
+                {...warningSurfaceStyleProps}
+                className={`cu-desc ${warningSurfaceStyleProps.className ?? ""}`}
                 data-stylex-owner="site-data-warning-surface"
               >
                 <ul>
-                  <li {...stylex.props(styles.warning)} className="notice">
+                  <li
+                    {...warningStyleProps}
+                    className={`notice ${warningStyleProps.className ?? ""}`}
+                  >
                     <strong>{t("site.data.warning1")}</strong>
                   </li>
-                  <li {...stylex.props(styles.warning)} className="notice">
+                  <li
+                    {...warningStyleProps}
+                    className={`notice ${warningStyleProps.className ?? ""}`}
+                  >
                     <strong>{t("site.data.warning2")}</strong>
                   </li>
-                  <li {...stylex.props(styles.warning)} className="notice">
+                  <li
+                    {...warningStyleProps}
+                    className={`notice ${warningStyleProps.className ?? ""}`}
+                  >
                     <strong>{t("site.data.warning3")}</strong>
                   </li>
                 </ul>

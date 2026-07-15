@@ -1497,6 +1497,11 @@ legacy `title_area` and `pull-left` classes now coexist with the existing genera
 download/error owners, body states, sidebar/shell, and generic title areas remain fallback or
 separate owners. This is not Wave 1 completion.
 
+The one-hundred-thirteenth slice repairs `/sites/data` title and warning StyleX class composition.
+The existing generated classes now coexist with retained `title_area`, `pull-left`, `cu-desc`, and
+`notice` fallback classes; export/import controls, sidebar/shell, and generic title/warning
+consumers remain fallback or separate owners. This is not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:
