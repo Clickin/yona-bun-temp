@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred forty-nine slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred fifty slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1848,6 +1848,18 @@ ownership contract and becomes GREEN 5/5. The complete post-list matrix is 41/42
 one stale generated-class expectation; only the pre-existing global GNB `Feedback` fixture
 mismatch remains outside this owner boundary. Fresh live legacy visual comparison remains
 explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-fiftieth slice completes the authenticated populated-open
+`/sites/issueList?state=open` local settings sidebar from `site/issueList.scala.html`,
+`site/siteMngLayout.scala.html`, `_common.less`, and `_page.less`. Four stable owners cover the UL,
+eight repeated LI and Link boundaries with first/active variants, and the conditional update badge
+through canonical global theme variables. This route retires `site-setting-nav`, active LI
+`active`, `notification-badge`, and empty LI classes while preserving the exact eight-item
+copy/order/hrefs, third-item Issues selection, legacy active-marker suppression, open/closed tabs,
+populated rows, pagination, badge condition, and Send email SPA navigation. Actual RED fails on the
+absent ownership contract and becomes GREEN 5/5. The complete issue-list matrix is 48/49 with only
+the pre-existing global GNB `Feedback` fixture mismatch outside this owner boundary. Fresh live
+legacy visual comparison remains explicitly unverified. This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

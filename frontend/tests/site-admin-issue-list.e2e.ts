@@ -75,15 +75,15 @@ const EXPECTED_ISSUE_LIST_SCREEN = `
   <div class="site-setting-wrap">
     <div class="row-fluid">
       <div class="span2">
-        <ul class="site-setting-nav">
-          <li class=""><a href="__BASE_PATH__/sites/userList">Users</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/postList">Posts</a></li>
-          <li class="active"><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/mail">Send email</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/update">Software Update</a></li>
-          <li class=""><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
+        <ul>
+          <li><a href="__BASE_PATH__/sites/userList">Users</a></li>
+          <li><a href="__BASE_PATH__/sites/postList">Posts</a></li>
+          <li><a href="__BASE_PATH__/sites/issueList">Issues</a></li>
+          <li><a href="__BASE_PATH__/sites/projectList">Projects</a></li>
+          <li><a href="__BASE_PATH__/sites/mail">Send email</a></li>
+          <li><a href="__BASE_PATH__/sites/massmail">Send mass emails</a></li>
+          <li><a href="__BASE_PATH__/sites/update">Software Update</a></li>
+          <li><a href="__BASE_PATH__/sites/diagnostic">Diagnostics</a></li>
         </ul>
       </div>
       <div class="span10">
@@ -186,8 +186,10 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Issues");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(
+    page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]').nth(2),
+  ).toHaveText("Issues");
+  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -211,8 +213,14 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator(".site-setting-nav li").nth(2)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
+    "font-weight",
+    "700",
+  );
+  await expect(page.locator('[data-stylex-owner="site-issue-list-sidebar-item"]').nth(2)).toHaveCSS(
+    "border-left-color",
+    "rgb(243, 108, 34)",
+  );
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   expect(await legacyLinkSnapshot(page, ".site-setting-nav li.active a")).toEqual([
     {
@@ -304,7 +312,9 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
     page.locator('[data-stylex-owner="site-issue-list-metadata-item"] a'),
   ).toHaveAttribute("href", `${basePath}/acme/roadmap/issue/42#comments`);
   await expect(
-    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+    page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+      hasText: "Send mass emails",
+    }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
     /\bpage-navigation-wrap\b/u,
@@ -429,15 +439,19 @@ test("site admin issue list matches legacy site/issueList.scala.html open popula
   ).toBe("site-issues-tabs");
 
   await mockPosts(page);
-  const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
+  const postsLink = page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+    hasText: "Posts",
+  });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-posts-nav";
   });
   await postsLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
-  await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="site-post-list-sidebar-link"]').nth(1)).toHaveText(
+    "Posts",
+  );
+  await expect(page.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-posts-nav");
@@ -724,10 +738,14 @@ test("site admin issue list renders legacy update notification badge", async ({ 
 
   await page.goto(`${basePath}/sites/issueList?state=open`);
 
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(
+    updateLink.locator('[data-stylex-owner="site-issue-list-sidebar-badge"]'),
+  ).toHaveText("1");
 });
 
 test("site admin issue list falls back to the legacy default project logo for blank logo URLs", async ({
@@ -1057,11 +1075,9 @@ async function mockUpdate(
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-issue-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
-      const leaked = ["class", "aria-current", "data-status"].filter((name) =>
-        link.hasAttribute(name),
-      );
+      const leaked = ["aria-current", "data-status"].filter((name) => link.hasAttribute(name));
       return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
     }),
   );
@@ -1071,10 +1087,11 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
   return page.locator(selector).evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className:
-        link.getAttribute("data-stylex-owner") === "site-issue-list-state-tab-link"
-          ? null
-          : link.getAttribute("class"),
+      className: new Set(["site-issue-list-state-tab-link", "site-issue-list-sidebar-link"]).has(
+        link.getAttribute("data-stylex-owner") ?? "",
+      )
+        ? null
+        : link.getAttribute("class"),
       dataStatus: link.getAttribute("data-status"),
       href: link.getAttribute("href"),
       pjaxPage: link.getAttribute("pjax-page"),
@@ -1267,6 +1284,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         new Set([
+          "site-issue-list-sidebar",
+          "site-issue-list-sidebar-item",
+          "site-issue-list-sidebar-link",
+          "site-issue-list-sidebar-badge",
           "site-issue-list-title-strip",
           "site-issue-list-title-heading",
           "site-issue-list-container",
