@@ -36,7 +36,7 @@ export const globalColors = stylex.defineVars({
   siteAdminAffixDetailFontSize: "10px",
   // _common.less: .small-font normal font-weight
   siteAdminAffixDetailFontWeight: "400",
-  // site/diagnostic.scala.html + _page.less: no-error title strip only
+  // Shared site-admin title strip; inline/route-localize as each remaining consumer is corrected.
   siteDiagnosticNoErrorTitleOverflow: "hidden",
   siteDiagnosticNoErrorTitleMarginBottom: "29px",
   siteDiagnosticNoErrorTitlePaddingBottom: "8px",
@@ -331,7 +331,7 @@ export const globalColors = stylex.defineVars({
   sitePostListPaginationIconHeight: "9px",
   sitePostListPaginationPrevIconMarginRight: "10px",
   sitePostListPaginationNextIconMarginLeft: "10px",
-  // site/diagnostic.scala.html error branch + Bootstrap 2.3.1 `code, pre` / `pre`
+  // Shared with the update error branch; inline/route-localize when that consumer is corrected.
   siteDiagnosticErrorPreFontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
   siteDiagnosticErrorPreText: "#333333",
   siteDiagnosticErrorPreDisplay: "block",
@@ -347,40 +347,6 @@ export const globalColors = stylex.defineVars({
   siteDiagnosticErrorPreBorderWidth: "1px",
   siteDiagnosticErrorPreBorder: "rgba(0, 0, 0, 0.15)",
   siteDiagnosticErrorPreRadius: "4px",
-  // site/siteMngLayout.scala.html + _common.less / _page.less diagnostic settings navigation
-  siteDiagnosticSidebarMargin: "0px",
-  siteDiagnosticSidebarPadding: "0px",
-  siteDiagnosticSidebarListStyle: "none",
-  siteDiagnosticSidebarItemBorderLeftColor: "#eeeeee",
-  siteDiagnosticSidebarItemBorderLeftStyle: "solid",
-  siteDiagnosticSidebarItemBorderLeftWidth: "4px",
-  siteDiagnosticSidebarItemFontSize: "14px",
-  siteDiagnosticSidebarItemLineHeight: "30px",
-  siteDiagnosticSidebarItemMarginTop: "3px",
-  siteDiagnosticSidebarFirstItemMarginTop: "0px",
-  siteDiagnosticSidebarActiveItemBorderLeftColor: "#f36c22",
-  siteDiagnosticSidebarActiveItemFontWeight: "bold",
-  siteDiagnosticSidebarLinkColor: "inherit",
-  siteDiagnosticSidebarLinkDisplay: "block",
-  siteDiagnosticSidebarLinkOutline: "none",
-  siteDiagnosticSidebarLinkPadding: "5px 10px",
-  siteDiagnosticSidebarLinkTextDecoration: "none",
-  siteDiagnosticSidebarLinkHoverBackground: "#eeeeee",
-  siteDiagnosticSidebarLinkHoverOutline: "none",
-  siteDiagnosticSidebarLinkHoverTextDecoration: "none",
-  siteDiagnosticSidebarActiveLinkHoverBackground: "transparent",
-  // site/siteMngLayout.scala.html + _common.less `.notification-badge`
-  siteDiagnosticSidebarBadgeBackground: "#ff7332",
-  siteDiagnosticSidebarBadgeBorderColor: "#ffffff",
-  siteDiagnosticSidebarBadgeBorderRadius: "10px",
-  siteDiagnosticSidebarBadgeBorderStyle: "solid",
-  siteDiagnosticSidebarBadgeBorderWidth: "2px",
-  siteDiagnosticSidebarBadgeBoxShadow:
-    "0px 1px 1px rgba(0, 0, 0, 0.2), inset 0px 1px 1px rgba(0, 0, 0, 0.1)",
-  siteDiagnosticSidebarBadgeColor: "#ecf0f1",
-  siteDiagnosticSidebarBadgeFontSize: "12px",
-  siteDiagnosticSidebarBadgeLineHeight: "20px",
-  siteDiagnosticSidebarBadgePadding: "0px 5px",
   // site/update.scala.html + Bootstrap `.pull-left`
   siteUpdateTitleHeadingFloat: "left",
   // site/update.scala.html + _common.less reset after Bootstrap `p`

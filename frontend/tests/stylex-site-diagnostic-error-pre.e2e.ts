@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/sites/diagnostic.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-diagnostic.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockSiteAdminSession(page: Page) {
@@ -46,11 +46,14 @@ test.describe("StyleX site diagnostic error pre", () => {
 
     expect(route).toContain('data-stylex-owner="site-diagnostic-error-pre"');
     expect(route).toContain("styles.errorPre");
-    expect(route).toContain("globalColors.siteDiagnosticErrorPreBorder");
-    expect(theme).toContain("siteDiagnosticErrorPreFontFamily");
-    expect(theme).toContain("siteDiagnosticErrorPreText");
-    expect(theme).toContain("siteDiagnosticErrorPreSurface");
-    expect(theme).toContain("siteDiagnosticErrorPreRadius");
+    expect(route).toContain("siteDiagnosticColors.errorBorder");
+    expect(route).toContain("siteDiagnosticColors.errorText");
+    expect(route).toContain("siteDiagnosticColors.errorSurface");
+    expect(route).toContain('borderRadius: "4px"');
+    expect(theme).toContain("errorBorder");
+    expect(theme).toContain("errorText");
+    expect(theme).toContain("errorSurface");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("preserves legacy diagnostic error copy and list order", async ({ page }) => {

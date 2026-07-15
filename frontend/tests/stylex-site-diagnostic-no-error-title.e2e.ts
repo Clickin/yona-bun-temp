@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/sites/diagnostic.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-diagnostic.stylex.ts", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockSiteAdminSession(page: Page) {
@@ -48,9 +48,11 @@ test.describe("StyleX site diagnostic no-error title", () => {
 
     expect(route).toContain('"site-diagnostic-no-error-title"');
     expect(route).toContain("styles.noErrorTitleArea");
-    expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorTitleBorder");
-    expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
+    expect(route).toContain("siteDiagnosticColors.titleBorder");
+    expect(route).toContain("siteDiagnosticColors.titleText");
+    expect(theme).toContain("titleBorder");
+    expect(theme).toContain("titleText");
+    expect(route).not.toContain("globalColors.");
   });
 
   test("preserves the legacy diagnostics heading and no-error paragraph order", async ({

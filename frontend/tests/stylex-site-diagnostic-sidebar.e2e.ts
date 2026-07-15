@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/diagnostic.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/sites/-diagnostic.stylex.ts", import.meta.url);
 const appCssSource = new URL("../src/app.css", import.meta.url);
 const templateSource = new URL(
   "../../yona-original/app/views/site/diagnostic.scala.html",
@@ -39,40 +39,6 @@ const owners = {
   sidebar: "site-diagnostic-sidebar",
 } as const;
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-stylex-owner="${name}"]`);
-const themeKeys = [
-  "Margin",
-  "Padding",
-  "ListStyle",
-  "ItemBorderLeftColor",
-  "ItemBorderLeftStyle",
-  "ItemBorderLeftWidth",
-  "ItemFontSize",
-  "ItemLineHeight",
-  "ItemMarginTop",
-  "FirstItemMarginTop",
-  "ActiveItemBorderLeftColor",
-  "ActiveItemFontWeight",
-  "LinkColor",
-  "LinkDisplay",
-  "LinkOutline",
-  "LinkPadding",
-  "LinkTextDecoration",
-  "LinkHoverBackground",
-  "LinkHoverOutline",
-  "LinkHoverTextDecoration",
-  "ActiveLinkHoverBackground",
-  "BadgeBackground",
-  "BadgeBorderColor",
-  "BadgeBorderRadius",
-  "BadgeBorderStyle",
-  "BadgeBorderWidth",
-  "BadgeBoxShadow",
-  "BadgeColor",
-  "BadgeFontSize",
-  "BadgeLineHeight",
-  "BadgePadding",
-].map((suffix) => `siteDiagnosticSidebar${suffix}`);
-
 async function openNoErrorWithBadge(page: Page) {
   const session = (route: Route) =>
     route.fulfill({
@@ -155,10 +121,20 @@ test.describe("StyleX site diagnostic sidebar", () => {
     expect(appCss).not.toContain(".site-setting-wrap .site-setting-nav li.active a:hover {");
     for (const explicitOwner of Object.values(owners))
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
-    for (const key of themeKeys) {
-      expect(route).toContain(`globalColors.${key}`);
-      expect(theme).toContain(key);
+    for (const paint of [
+      "sidebarBorder",
+      "sidebarActiveBorder",
+      "sidebarHoverSurface",
+      "badgeSurface",
+      "badgeBorder",
+      "badgeShadow",
+      "badgeText",
+    ]) {
+      expect(route).toContain(`siteDiagnosticColors.${paint}`);
+      expect(theme).toContain(paint);
     }
+    expect(route).toContain('backgroundColor: { ":hover": "transparent" }');
+    expect(route).not.toContain("globalColors.");
     for (const retired of [
       'className="site-setting-nav"',
       'className="active"',
