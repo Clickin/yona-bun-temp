@@ -10,9 +10,9 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
-import { globalColors } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
+import { loginFormColors } from "./-loginform.stylex";
 
 type LoginFormSearch = {
   password?: string;
@@ -32,80 +32,81 @@ const styles = stylex.create({
     "--yoram-stylex-standalone-login": "stylex",
   },
   taglineWrap: {
-    textAlign: globalColors.standaloneLoginTaglineTextAlign,
-    marginTop: globalColors.standaloneLoginTaglineMarginTop,
-    marginBottom: globalColors.standaloneLoginTaglineMarginBottom,
-    paddingTop: globalColors.standaloneLoginTaglinePaddingTop,
+    textAlign: "center",
+    marginTop: "0px",
+    marginBottom: "26px",
+    paddingTop: "80px",
   },
   title: {
-    display: globalColors.standaloneLoginTitleDisplay,
-    fontFamily: globalColors.standaloneLoginTitleFontFamily,
-    fontSize: globalColors.standaloneLoginTitleFontSize,
-    lineHeight: globalColors.standaloneLoginTitleLineHeight,
-    fontWeight: globalColors.standaloneLoginTitleFontWeight,
+    display: "inline-block",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "3.3em",
+    lineHeight: "42px",
+    fontWeight: "400",
   },
   tagline: {
-    marginTop: globalColors.standaloneLoginTaglineCopyMarginTop,
-    fontSize: globalColors.standaloneLoginTaglineFontSize,
-    color: globalColors.standaloneLoginTaglineColor,
+    marginTop: "10px",
+    fontSize: "1.2em",
+    color: loginFormColors.taglineText,
   },
   formWrap: {
-    position: globalColors.standaloneLoginFormPosition,
+    position: "relative",
     width: {
-      default: globalColors.standaloneLoginFormWidth,
-      "@media (max-width: 767px)": globalColors.standaloneLoginFormResponsiveWidth,
+      default: "400px",
+      "@media (max-width: 767px)": "95%",
     },
-    margin: globalColors.standaloneLoginFormMargin,
+    margin: "54px auto 0px",
   },
   textInput: {
     width: {
-      default: globalColors.standaloneLoginInputWidth,
-      "@media (max-width: 767px)": globalColors.standaloneLoginInputResponsiveWidth,
+      default: "386px",
+      "@media (max-width: 767px)": "95%",
     },
-    height: globalColors.standaloneLoginInputHeight,
-    marginBottom: globalColors.standaloneLoginInputMarginBottom,
-    fontSize: globalColors.standaloneLoginInputFontSize,
-    fontWeight: globalColors.standaloneLoginInputFontWeight,
-    borderStyle: globalColors.standaloneLoginInputBorderStyle,
-    borderBottomColor: globalColors.standaloneLoginInputBorderBottomColor,
-    borderBottomStyle: globalColors.standaloneLoginInputBorderBottomStyle,
-    borderBottomWidth: globalColors.standaloneLoginInputBorderBottomWidth,
-    borderRadius: globalColors.standaloneLoginInputBorderRadius,
+    height: "27px",
+    marginBottom: "10px",
+    fontSize: "12px",
+    fontWeight: "700",
+    borderStyle: "none",
+    borderBottomColor: loginFormColors.inputBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderRadius: "0px",
     ":focus": {
-      borderBottomColor: globalColors.standaloneLoginInputFocusBorderBottomColor,
-      outline: globalColors.standaloneLoginInputFocusOutline,
-      boxShadow: globalColors.standaloneLoginInputFocusBoxShadow,
+      borderBottomColor: loginFormColors.inputFocusBorder,
+      outline: "none",
+      boxShadow: "none",
     },
   },
   passwordInput: {
-    marginBottom: globalColors.standaloneLoginPasswordMarginBottom,
+    marginBottom: "15px",
   },
   buttonRow: {
-    display: globalColors.standaloneLoginButtonRowDisplay,
-    textAlign: globalColors.standaloneLoginButtonRowTextAlign,
-    margin: globalColors.standaloneLoginButtonRowMargin,
+    display: "block",
+    textAlign: "center",
+    margin: "0px auto 20px",
   },
   submit: {
-    display: globalColors.standaloneLoginSubmitDisplay,
-    boxSizing: globalColors.standaloneLoginSubmitBoxSizing,
-    width: globalColors.standaloneLoginSubmitWidth,
+    display: "block",
+    boxSizing: "border-box",
+    width: "100%",
   },
   rememberMe: {
-    marginTop: globalColors.standaloneLoginRememberMarginTop,
+    marginTop: "0px",
   },
   checkbox: {
-    marginLeft: globalColors.standaloneLoginCheckboxMarginLeft,
-    marginTop: globalColors.standaloneLoginCheckboxMarginTop,
+    marginLeft: "0px",
+    marginTop: "4px",
   },
   actionRow: {
-    lineHeight: globalColors.standaloneLoginActionLineHeight,
-    overflow: globalColors.standaloneLoginActionOverflow,
+    lineHeight: "22px",
+    overflow: "auto",
   },
   verificationHelp: {
-    fontWeight: globalColors.standaloneLoginVerificationHelpFontWeight,
-    padding: globalColors.standaloneLoginVerificationHelpPadding,
-    marginBottom: globalColors.standaloneLoginVerificationHelpMarginBottom,
-    fontSize: globalColors.standaloneLoginVerificationHelpFontSize,
+    fontWeight: "700",
+    padding: "5px",
+    marginBottom: "10px",
+    fontSize: "16px",
   },
 });
 

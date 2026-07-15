@@ -373,6 +373,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/(?:lostPassword|resetPassword|forgot-password)\/route\.tsx$/i,
       /^frontend\/src\/routes\/\(legacy-auth\)\/reset-password\/route\.tsx$/i,
       /^frontend\/src\/routes\/users\/(?:login|loginform|signupform)\.tsx$/i,
+      /^frontend\/src\/routes\/users\/(?:-loginform|-signupform)\.stylex\.ts$/i,
       /^frontend\/src\/routes\/users\/(?:login|loginform|signupform)\/route\.tsx$/i,
       /^frontend\/src\/routes\/verify\/\$loginId\/\$verificationCode\.tsx$/i,
       /^frontend\/src\/routes\/verify\/\$loginId\/-verification\.stylex\.ts$/i,

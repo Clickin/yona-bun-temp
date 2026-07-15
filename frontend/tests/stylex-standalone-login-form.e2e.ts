@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const routeSource = new URL("../src/routes/users/loginform.tsx", import.meta.url);
-const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const themeSource = new URL("../src/routes/users/-loginform.stylex.ts", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const desktop = { height: 900, width: 1366 };
@@ -61,9 +61,9 @@ test.describe("StyleX standalone login form", () => {
     expect(route).toContain("stylex.props(styles.textInput)");
     expect(route).toContain('className="ybtn oauth-login-btn"');
     expect(route).toContain('className="btns-row nm"');
-    expect(theme).toContain("standaloneLoginFormWidth");
-    expect(theme).toContain("standaloneLoginInputFocusBorderBottomColor");
-    expect(theme).toContain("standaloneLoginActionLineHeight");
+    expect(theme).toContain("inputFocusBorder");
+    expect(route).toContain('lineHeight: "20px"');
+    expect(route).not.toContain("globalColors.");
     expect(fallback).toContain(".login-form-wrap .text");
     expect(fallback).toContain(".oauth-login-btn");
     expect(fallback).toContain(".login-form-wrap {\n    width: 95% !important;");

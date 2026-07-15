@@ -69,8 +69,10 @@ test.describe("StyleX standalone login verification help", () => {
     expect(route).toContain('data-stylex-owner="standalone-login-verification-help"');
     expect(route).toContain('data-stylex-part="standalone-login-verification-help-message"');
     expect(route).not.toContain('className="email-verification-help"');
-    expect(theme).toContain("standaloneLoginVerificationHelpFontWeight");
-    expect(theme).toContain("standaloneLoginVerificationHelpMarginBottom");
+    expect(route).toContain('fontWeight: "bold"');
+    expect(route).toContain('marginBottom: "20px"');
+    expect(theme).not.toContain("standaloneLoginVerificationHelp");
+    expect(route).not.toContain("globalColors.");
     expect(fallback).toContain(".login-form-wrap .email-verification-help");
     expect(legacyFallback).toContain(".login-form-wrap .email-verification-help");
   });
