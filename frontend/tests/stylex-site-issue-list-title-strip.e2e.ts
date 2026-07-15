@@ -85,18 +85,21 @@ test.describe("StyleX site issue-list title strip", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="site-issue-list-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-issue-list-title-heading"');
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
     expect(route).toContain("globalColors.siteDiagnosticNoErrorTitleBorder");
-    expect(route).toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
-    expect(route).toContain('`pull-left ${titleStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`title_area ${titleAreaStyleProps.className ?? ""}`');
+    expect(route).not.toContain('`pull-left ${titleStyleProps.className ?? ""}`');
     expect(theme).toContain("siteDiagnosticNoErrorHeadingText");
   });
 
   test("keeps the legacy title directly before the tab sibling", async ({ page }) => {
     const owner = await openIssueList(page);
 
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Issues");
+    await expect(
+      owner.locator(':scope > h2[data-stylex-owner="site-issue-list-title-heading"]'),
+    ).toHaveText("Issues");
     expect(
       await page.locator(".span10 > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "UL", "UL", "DIV"]);
@@ -110,7 +113,7 @@ test.describe("StyleX site issue-list title strip", () => {
     ).toHaveText("Open");
   });
 
-  test("composes generated classes with shared legacy title fallbacks", async ({ page }) => {
+  test("owns both generated title classes without legacy title fallbacks", async ({ page }) => {
     const owner = await openIssueList(page);
     const classes = await owner.evaluate((titleArea) => {
       const title = titleArea.querySelector("h2");
@@ -120,8 +123,8 @@ test.describe("StyleX site issue-list title strip", () => {
       };
     });
 
-    expect(classes.titleArea).toContain("title_area");
-    expect(classes.title).toContain("pull-left");
+    expect(classes.titleArea).not.toContain("title_area");
+    expect(classes.title).not.toContain("pull-left");
     expect(classes.titleArea.some((token) => token.startsWith("x"))).toBe(true);
     expect(classes.title.some((token) => token.startsWith("x"))).toBe(true);
   });
@@ -135,7 +138,7 @@ test.describe("StyleX site issue-list title strip", () => {
     }) => {
       await page.setViewportSize(viewport);
       const owner = await openIssueList(page);
-      const title = owner.locator("h2.pull-left");
+      const title = owner.locator('[data-stylex-owner="site-issue-list-title-heading"]');
 
       await expect(owner).toHaveCSS("overflow", "hidden");
       await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -146,7 +149,9 @@ test.describe("StyleX site issue-list title strip", () => {
       await expect(title).toHaveCSS("line-height", "30px");
       const boxes = await page.evaluate((selector) => {
         const owner = document.querySelector<HTMLElement>(selector);
-        const title = owner?.querySelector<HTMLElement>("h2.pull-left");
+        const title = owner?.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-issue-list-title-heading"]',
+        );
         const tabs = owner?.nextElementSibling;
         if (!owner || !title || !(tabs instanceof HTMLElement)) return null;
         return {
@@ -170,6 +175,7 @@ test.describe("StyleX site issue-list title strip", () => {
     const unauthorizedGeneratedOwners = await page.evaluate(() => {
       const allowedOwners = new Set([
         "site-issue-list-title-strip",
+        "site-issue-list-title-heading",
         "site-issue-list-state-tabs",
         "site-issue-list-state-tab-item",
         "site-issue-list-state-tab-link",

@@ -1087,7 +1087,7 @@ async function legacyLinkSnapshot(page: Page, selector: string) {
 async function closedIssueListLayoutMetrics(page: Page) {
   return page.evaluate(() => {
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
-    const titleArea = requireElement(".title_area");
+    const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
     const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const row = requireElement('[data-stylex-owner="site-issue-list-row"]');
     const meta = requireElement('[data-stylex-owner="site-issue-list-metadata"]');
@@ -1134,7 +1134,7 @@ async function issueListMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap > .row-fluid");
     const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
     const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
-    const titleArea = requireElement(".title_area");
+    const titleArea = requireElement('[data-stylex-owner="site-issue-list-title-strip"]');
     const tabs = requireElement('[data-stylex-owner="site-issue-list-state-tabs"]');
     const firstRow = requireElement('[data-stylex-owner="site-issue-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-issue-list-project-avatar"]');
@@ -1267,6 +1267,8 @@ async function canonicalizeScreenRoots(page: Page) {
       if (
         name === "class" &&
         new Set([
+          "site-issue-list-title-strip",
+          "site-issue-list-title-heading",
           "site-issue-list-container",
           "site-issue-list-row",
           "site-issue-list-project-avatar",
@@ -1293,13 +1295,19 @@ async function canonicalizeScreenRoots(page: Page) {
           .filter((token) => !token.startsWith("x"))
           .join(" ");
       }
-      if (name === "class" && current.matches(".post-list-wrap > li")) {
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-issue-list-container"] > li')
+      ) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== "listitem" && !token.startsWith("x"))
           .join(" ");
       }
-      if (name === "class" && current.matches(".post-list-wrap > li > a:first-child")) {
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-issue-list-container"] > li > a:first-child')
+      ) {
         return value
           .split(/\s+/u)
           .filter(
@@ -1307,7 +1315,10 @@ async function canonicalizeScreenRoots(page: Page) {
           )
           .join(" ");
       }
-      if (name === "class" && current.matches(".post-list-wrap > li > div:last-child")) {
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-issue-list-container"] > li > div:last-child')
+      ) {
         return value
           .split(/\s+/u)
           .filter((token) => token !== "post-meta-wrap" && !token.startsWith("x"))
@@ -1315,7 +1326,9 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        current.matches(".post-list-wrap > li > div:last-child > a:first-child")
+        current.matches(
+          '[data-stylex-owner="site-issue-list-container"] > li > div:last-child > a:first-child',
+        )
       ) {
         return value
           .split(/\s+/u)
@@ -1324,7 +1337,9 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       if (
         name === "class" &&
-        current.matches(".post-list-wrap > li > div:last-child > :not(:first-child)")
+        current.matches(
+          '[data-stylex-owner="site-issue-list-container"] > li > div:last-child > :not(:first-child)',
+        )
       ) {
         return value
           .split(/\s+/u)
@@ -1444,6 +1459,9 @@ async function canonicalizeHtml(page: Page, html: string) {
       let value = current.getAttribute(name) ?? "";
       if (name === "class") {
         const retiredIssueListTokens = new Set([
+          "title_area",
+          "pull-left",
+          "post-list-wrap",
           "post-info-wrap",
           "post-project",
           "post-info-separator",

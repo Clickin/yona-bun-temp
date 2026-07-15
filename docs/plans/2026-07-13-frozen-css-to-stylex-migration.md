@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 0 implemented; Wave 1 started, one hundred thirty-five slices complete
+Status: Wave 0 implemented; Wave 1 started, one hundred thirty-six slices complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1682,6 +1682,18 @@ navigation, and independent tab consumers remain unchanged. Actual RED 5/5 becom
 complete issue-list owner/behavior matrix passes 38/39 with only the pre-existing unrelated GNB
 `Feedback` fixture mismatch; the whole-screen file itself passes 7/8. Fresh live legacy visual
 comparison remains explicitly unverified. This is not Wave 1 completion.
+
+The one-hundred-thirty-sixth slice completes the authenticated populated
+`/sites/issueList?state=open` title/list shell fallback retirement from `site/issueList.scala.html`,
+Bootstrap 2.3.1, `_page.less`, and `_responsive.less`. The existing title and list owners plus a new
+direct heading owner move the title wrapper, heading float, list style, and canonical max-720 10px
+list margin through global theme variables. This route retires only `title_area`, `pull-left`, and
+`post-list-wrap`; Bootstrap grid/row classes and every other screen owner remain. The pre-Rust
+`.site-setting-wrap .post-list-wrap { margin: 0 }` bridge no longer matches this owner but remains
+for independent consumers. Actual RED 5/5 becomes GREEN 5/5, the wrapped mobile inline-row gate is
+GREEN 5/5, and the complete issue-list matrix is 43/44 with only the pre-existing unrelated GNB
+`Feedback` fixture mismatch. Fresh live legacy visual comparison remains explicitly unverified.
+This is not Wave 1 completion.
 
 ### Wave 2 — Bootstrap primitives
 

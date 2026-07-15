@@ -50,6 +50,7 @@ const styles = stylex.create({
     fontSize: globalColors.siteDiagnosticNoErrorHeadingFontSize,
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
+    float: globalColors.siteIssueListTitleHeadingFloat,
   },
   issueListStateTabs: {
     marginBottom: globalColors.siteIssueListStateTabsMarginBottom,
@@ -131,6 +132,10 @@ const styles = stylex.create({
   },
   issueListContainer: {
     listStyle: globalColors.siteIssueListContainerListStyle,
+    marginLeft: {
+      default: globalColors.siteIssueListContainerDesktopMarginLeft,
+      [globalBreakpoints.mobile]: globalColors.siteIssueListContainerMobileMarginLeft,
+    },
   },
   issueListRow: {
     paddingBlock: globalColors.siteIssueListRowPaddingBlock,
@@ -367,12 +372,8 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">
-              <div
-                {...titleAreaStyleProps}
-                className={`title_area ${titleAreaStyleProps.className ?? ""}`}
-                data-stylex-owner="site-issue-list-title-strip"
-              >
-                <h2 {...titleStyleProps} className={`pull-left ${titleStyleProps.className ?? ""}`}>
+              <div {...titleAreaStyleProps} data-stylex-owner="site-issue-list-title-strip">
+                <h2 {...titleStyleProps} data-stylex-owner="site-issue-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.issueList" />
                 </h2>
               </div>
@@ -380,11 +381,7 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
                 <IssueStateTab state="open" selected={state} />
                 <IssueStateTab state="closed" selected={state} />
               </ul>
-              <ul
-                {...issueListContainerStyleProps}
-                className={`post-list-wrap ${issueListContainerStyleProps.className ?? ""}`}
-                data-stylex-owner="site-issue-list-container"
-              >
+              <ul {...issueListContainerStyleProps} data-stylex-owner="site-issue-list-container">
                 {(query.data?.issues ?? []).map((issue, index) => (
                   <IssueListItem
                     issue={issue}

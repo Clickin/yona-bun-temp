@@ -369,6 +369,9 @@ export const globalColors = stylex.defineVars({
   sitePostListTitleFontWeight: "bold",
   // site/issueList.scala.html + _page.less `.post-list-wrap` / `.listitem` / post info links
   siteIssueListContainerListStyle: "none",
+  siteIssueListContainerDesktopMarginLeft: "0px",
+  siteIssueListContainerMobileMarginLeft: "10px",
+  siteIssueListTitleHeadingFloat: "left",
   siteIssueListRowPaddingBlock: "10px",
   siteIssueListRowPaddingInline: "0px",
   siteIssueListInfoLineHeight: "20px",

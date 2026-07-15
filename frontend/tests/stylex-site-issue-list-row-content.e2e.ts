@@ -211,7 +211,7 @@ test.describe("StyleX site issue-list populated row content", () => {
     const separator = owner(info, owners.separator);
     const title = owner(info, owners.title);
 
-    await expect(container).toHaveClass(/\bpost-list-wrap\b/u);
+    await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
     await expect(row).toHaveClass(/\brow-fluid\b/u);
     await expect(row).not.toHaveClass(/\blistitem\b/u);
     await expect(owner(row, "site-issue-list-project-avatar")).toHaveCount(1);
@@ -265,10 +265,13 @@ test.describe("StyleX site issue-list populated row content", () => {
       await expect(title).toHaveCSS("font-weight", "700");
 
       const boxes = await row.evaluate((element) => {
-        const pick = (selector: string) => {
+        const pick = (selector: string, firstInlineFragment = false) => {
           const node = element.querySelector<HTMLElement>(selector);
           if (!node) throw new Error(`Missing ${selector}`);
-          const { bottom, left, right, top } = node.getBoundingClientRect();
+          const rect = firstInlineFragment
+            ? (node.getClientRects().item(0) ?? node.getBoundingClientRect())
+            : node.getBoundingClientRect();
+          const { bottom, left, right, top } = rect;
           return { bottom, left, right, top };
         };
         const { bottom, left, right, top } = element.getBoundingClientRect();
@@ -278,13 +281,16 @@ test.describe("StyleX site issue-list populated row content", () => {
           meta: pick(':scope > [data-stylex-owner="site-issue-list-metadata"]'),
           project: pick(
             ':scope > [data-stylex-owner="site-issue-list-info"] > [data-stylex-owner="site-issue-list-project-link"]',
+            true,
           ),
           row: { bottom, left, right, top },
           separator: pick(
             ':scope > [data-stylex-owner="site-issue-list-info"] > [data-stylex-owner="site-issue-list-separator"]',
+            true,
           ),
           title: pick(
             ':scope > [data-stylex-owner="site-issue-list-info"] > [data-stylex-owner="site-issue-list-title-link"]',
+            true,
           ),
         };
       });
