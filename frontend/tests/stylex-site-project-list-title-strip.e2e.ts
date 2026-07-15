@@ -73,7 +73,9 @@ test.describe("StyleX site project-list title strip", () => {
     const owner = await openProjectList(page);
 
     await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Projects");
-    await expect(owner.locator(":scope > form.form-search.pull-right")).toHaveCount(1);
+    const search = owner.locator(':scope > form[data-stylex-owner="site-project-list-search"]');
+    await expect(search).toHaveCount(1);
+    await expect(search).toHaveClass(/\bpull-right\b/);
     expect(
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),
@@ -116,7 +118,9 @@ test.describe("StyleX site project-list title strip", () => {
       const boxes = await page.evaluate((selector) => {
         const owner = document.querySelector<HTMLElement>(selector);
         const title = owner?.querySelector<HTMLElement>("h2.pull-left");
-        const search = owner?.querySelector<HTMLElement>("form.form-search");
+        const search = owner?.querySelector<HTMLElement>(
+          ':scope > form[data-stylex-owner="site-project-list-search"]',
+        );
         if (!owner || !title || !search) return null;
         return {
           owner: owner.getBoundingClientRect().toJSON(),
@@ -134,21 +138,36 @@ test.describe("StyleX site project-list title strip", () => {
 
   test("keeps generated classes inside the explicit title owner", async ({ page }) => {
     await openProjectList(page);
-    const generatedDirectChildren = await page.evaluate(
-      (selector) =>
-        Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
+    const ownership = await page.evaluate(
+      (selector) => ({
+        generatedDirectChildren: Array.from(
+          document.querySelectorAll(".site-setting-wrap .span10 > *"),
+        )
           .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
           .filter((element) => !element.matches(selector))
           .map((element) => ({
             owner: element.getAttribute("data-stylex-owner"),
             tagName: element.tagName,
           })),
+        nestedSearch: Array.from(
+          document.querySelectorAll(
+            `${selector} > form[data-stylex-owner="site-project-list-search"]`,
+          ),
+        ).map((element) => ({
+          generated: Array.from(element.classList).some((token) => token.startsWith("x")),
+          owner: element.getAttribute("data-stylex-owner"),
+          tagName: element.tagName,
+        })),
+      }),
       ownerSelector,
     );
-    expect(generatedDirectChildren).toEqual([
+    expect(ownership.generatedDirectChildren).toEqual([
       { owner: "site-project-list-listhead", tagName: "DIV" },
       { owner: "site-project-list-container", tagName: "UL" },
       { owner: "site-project-list-pagination", tagName: "DIV" },
+    ]);
+    expect(ownership.nestedSearch).toEqual([
+      { generated: true, owner: "site-project-list-search", tagName: "FORM" },
     ]);
   });
 });

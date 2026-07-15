@@ -1561,6 +1561,15 @@ variant presentation classes are removed. The sprite image/background-position c
 Firefox-only nospinner class remain shared fallback; the delete modal, search, sidebar, and shell
 remain separate owners. This is not Wave 1 completion.
 
+The one-hundred-twenty-third slice migrates the /sites/projectList authenticated populated
+title-area search from site/projectList.scala.html, _page.less, _yobiUI.less, _responsive.less,
+and Bootstrap's generic form-control foundation. StyleX owns the form margin, complete search-bar
+box, textbox selector-specific sizing/spacing/transition, and positioned submit control through
+global variables and the shared max-720 breakpoint. The four fully migrated presentation classes
+are removed. Bootstrap's generic input foundation, the shared pull-right float, and the Yobicon
+search glyph remain fallback; the delete modal, sidebar, and shell remain separate owners. This is
+not Wave 1 completion.
+
 ### Wave 2 — Bootstrap primitives
 
 Migrate in dependency order:

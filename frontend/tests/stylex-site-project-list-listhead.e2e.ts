@@ -196,6 +196,10 @@ test.describe("StyleX site project-list list header", () => {
       "site-project-list-row",
       "site-project-list-row-avatar",
       "site-project-list-row-columns",
+      "site-project-list-search",
+      "site-project-list-search-bar",
+      "site-project-list-search-button",
+      "site-project-list-search-textbox",
       "site-project-list-title-strip",
     ]);
     expect(generatedOwnerIds).not.toContain(null);

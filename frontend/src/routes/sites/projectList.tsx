@@ -41,6 +41,45 @@ const styles = stylex.create({
     color: globalColors.siteDiagnosticNoErrorHeadingText,
     lineHeight: globalColors.siteDiagnosticNoErrorHeadingLineHeight,
   },
+  projectSearchForm: {
+    margin: globalColors.siteProjectListSearchFormMargin,
+  },
+  projectSearchBar: {
+    backgroundColor: globalColors.siteProjectListSearchBarSurface,
+    borderColor: globalColors.siteProjectListSearchBarBorder,
+    borderRadius: globalColors.siteProjectListSearchBarRadius,
+    borderStyle: globalColors.siteProjectListSearchBarBorderStyle,
+    borderWidth: globalColors.siteProjectListSearchBarBorderWidth,
+    height: globalColors.siteProjectListSearchBarHeight,
+    lineHeight: globalColors.siteProjectListSearchBarLineHeight,
+    margin: {
+      default: globalColors.siteProjectListSearchBarMargin,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListSearchBarMobileMargin,
+    },
+    padding: globalColors.siteProjectListSearchBarPadding,
+    position: globalColors.siteProjectListSearchBarPosition,
+  },
+  projectSearchTextbox: {
+    borderStyle: globalColors.siteProjectListSearchTextboxBorderStyle,
+    borderWidth: globalColors.siteProjectListSearchTextboxBorderWidth,
+    height: globalColors.siteProjectListSearchTextboxHeight,
+    margin: globalColors.siteProjectListSearchTextboxMargin,
+    padding: globalColors.siteProjectListSearchTextboxPadding,
+    transition: globalColors.siteProjectListSearchTextboxTransition,
+    width: {
+      default: globalColors.siteProjectListSearchTextboxWidth,
+      [globalBreakpoints.mobile]: globalColors.siteProjectListSearchTextboxMobileWidth,
+    },
+  },
+  projectSearchButton: {
+    backgroundColor: globalColors.siteProjectListSearchButtonSurface,
+    borderWidth: globalColors.siteProjectListSearchButtonBorderWidth,
+    height: globalColors.siteProjectListSearchButtonHeight,
+    outline: globalColors.siteProjectListSearchButtonOutline,
+    position: globalColors.siteProjectListSearchButtonPosition,
+    right: globalColors.siteProjectListSearchButtonRight,
+    top: globalColors.siteProjectListSearchButtonTop,
+  },
   listHead: {
     backgroundColor: globalColors.siteProjectListHeadSurface,
     borderBottomStyle: globalColors.siteProjectListHeadBorderStyle,
@@ -200,6 +239,10 @@ const styles = stylex.create({
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const projectSearchFormStyleProps = stylex.props(styles.projectSearchForm);
+const projectSearchBarStyleProps = stylex.props(styles.projectSearchBar);
+const projectSearchTextboxStyleProps = stylex.props(styles.projectSearchTextbox);
+const projectSearchButtonStyleProps = stylex.props(styles.projectSearchButton);
 const listHeadStyleProps = stylex.props(styles.listHead);
 const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
 const projectRowStyleProps = stylex.props(styles.projectRow);
@@ -355,7 +398,9 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                   <LegacyMessage messageKey="site.sidebar.projectList" />
                 </h2>
                 <form
-                  className="form-search pull-right"
+                  {...projectSearchFormStyleProps}
+                  className={`pull-right ${projectSearchFormStyleProps.className ?? ""}`}
+                  data-stylex-owner="site-project-list-search"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/projectList")}
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -370,16 +415,27 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                     });
                   }}
                 >
-                  <div className="search-bar">
+                  <div
+                    {...projectSearchBarStyleProps}
+                    className={projectSearchBarStyleProps.className}
+                    data-stylex-owner="site-project-list-search-bar"
+                  >
                     <input
+                      {...projectSearchTextboxStyleProps}
                       type="text"
-                      className="textbox"
+                      className={projectSearchTextboxStyleProps.className}
+                      data-stylex-owner="site-project-list-search-textbox"
                       key={filter}
                       name="filter"
                       placeholder={t("site.project.filter")}
                       defaultValue={filter}
                     />
-                    <button type="submit" className="search-btn">
+                    <button
+                      {...projectSearchButtonStyleProps}
+                      type="submit"
+                      className={projectSearchButtonStyleProps.className}
+                      data-stylex-owner="site-project-list-search-button"
+                    >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>
