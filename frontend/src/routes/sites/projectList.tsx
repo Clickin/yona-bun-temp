@@ -129,6 +129,20 @@ const styles = stylex.create({
       ":hover": "transparent",
     },
   },
+  notificationBadge: {
+    backgroundColor: siteProjectListTheme.badgeSurface,
+    borderColor: siteProjectListTheme.badgeBorder,
+    borderRadius: "10px",
+    borderStyle: "solid",
+    borderWidth: "2px",
+    boxShadow: siteProjectListTheme.badgeShadow,
+    color: siteProjectListTheme.badgeText,
+    display: "inline",
+    fontSize: "12px",
+    lineHeight: "20px",
+    padding: "0px 5px",
+    position: "static",
+  },
   titleArea: {
     overflow: "hidden",
     marginBottom: "29px",
@@ -630,6 +644,7 @@ const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sideb
 const sidebarActiveItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarActiveItem);
 const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarActiveLink);
+const notificationBadgeStyleProps = stylex.props(styles.notificationBadge);
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
@@ -1268,7 +1283,15 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
           to="/sites/update"
         >
           <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? <span className="notification-badge">1</span> : null}
+          {showUpdateBadge ? (
+            <span
+              {...notificationBadgeStyleProps}
+              className={notificationBadgeStyleProps.className}
+              data-stylex-owner="site-project-list-notification-badge"
+            >
+              1
+            </span>
+          ) : null}
         </Link>
       </li>
       <li

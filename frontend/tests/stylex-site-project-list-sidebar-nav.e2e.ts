@@ -120,7 +120,9 @@ for (const viewport of [
         .locator("[data-stylex-owner]")
         .evaluateAll((nodes) => nodes.flatMap((node) => Array.from(node.classList))),
     ).not.toEqual(expect.arrayContaining(["site-setting-nav", "active"]));
-    await expect(nav.locator(".notification-badge")).toHaveCount(0);
+    await expect(
+      nav.locator('[data-stylex-owner="site-project-list-notification-badge"]'),
+    ).toHaveCount(0);
 
     const evidence = await nav.evaluate((actualNav) => {
       const fixture = document.createElement("div");

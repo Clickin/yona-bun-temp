@@ -2237,6 +2237,18 @@ Focused search is GREEN 5/5 (15.0s), the final projectList StyleX matrix is GREE
 and whole-screen coverage is GREEN 7/8 (48.7s). Its seven behavior/route/modal/update/default-logo/
 typed-link cases pass; only the pre-existing broad DOM-equality gap outside this owner remains.
 
+The one-hundred-eighty-third slice completes only the conditional update-count badge in the
+`/sites/projectList` site sidebar. `siteMngLayout.scala.html` preserves the version-available
+conditional and literal `1`; frozen `_common.less`, variables/mixins, and the full `yobi.less`
+cascade provide the primitive. A stable badge owner moves orange surface, muted-white text, white
+border, and dual shadow through the route theme while radius, border width/style, padding,
+typography, line height, display, and position remain inline in `projectList.tsx`. Exactly
+`notification-badge` retires; query and conditional behavior are unchanged. Focused source RED was
+recorded before implementation. Focused badge coverage is GREEN 4/4 (19.8s), the final projectList
+StyleX matrix is GREEN 60/60 (46.9s), and whole-screen coverage is GREEN 7/8 (48.8s). The update
+badge and six other functional cases pass; only the same pre-existing broad DOM-equality gap
+outside this owner remains.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

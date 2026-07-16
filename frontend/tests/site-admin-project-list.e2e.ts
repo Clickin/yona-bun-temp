@@ -709,7 +709,9 @@ test("site admin project list renders legacy update notification badge", async (
   });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
-  await expect(updateLink.locator(".notification-badge")).toHaveText("1");
+  await expect(
+    updateLink.locator('[data-stylex-owner="site-project-list-notification-badge"]'),
+  ).toHaveText("1");
 });
 
 test("site admin project list falls back to the legacy default project logo for blank logo URLs", async ({
