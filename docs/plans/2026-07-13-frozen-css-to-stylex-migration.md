@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred one slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -333,6 +333,21 @@ fallback boundaries. Live desktop pins stats/members at `1271,307,85x60`, list a
 `343.656,444`, the 151px row, and 390px scroll width. A genuine absent-owner RED is 0/3, focused
 GREEN is 3/3, the affected matrix is GREEN 17/17, and complete `/projects` StyleX coverage is
 GREEN 30/30. Live/local desktop and mobile captures were directly inspected. This is not Wave 1
+completion.
+
+The two-hundred-first slice migrates exactly two repeated residual owners in the same authenticated
+populated-default `/projects` state: both stats icons and each member-avatar image. The icons now
+own the frozen global `.stats-wrap i` 16px size and 5px inline margins; their generic Yobicon
+font/display/line-height/glyph and `_common.less` `yobicon-middle` bottom alignment remain lower
+fallback. Member images now own `_yobiUI.less .avatar-wrap img` 100% width and top alignment, with
+no explicit height. Because the prior wrapper slice already owns every contextual stats declaration,
+literal `stats-wrap` retires on this route. `avatar-wrap` remains solely for the excluded legacy
+`3px !important` radius. No theme value, paint, height, compensation, or abstraction is added. Live
+desktop pins the avatar/image to `1321,307,32x32` and icons to
+`1288.656,348,16x16` / `1324.828,348,16x16`; mobile pins them to
+`355,402,32x32` and `322.656,443,16x16` / `358.828,443,16x16`. A genuine
+absent-owner RED is 0/3, focused GREEN is 3/3, and the affected matrix is GREEN 17/17. Target
+regions in live/local desktop and mobile captures were directly inspected. This is not Wave 1
 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns

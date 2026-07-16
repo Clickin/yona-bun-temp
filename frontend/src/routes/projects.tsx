@@ -257,6 +257,15 @@ const styles = stylex.create({
     verticalAlign: "middle",
     width: "32px",
   },
+  directoryStatsIcon: {
+    fontSize: "16px",
+    marginLeft: "5px",
+    marginRight: "5px",
+  },
+  directoryMemberAvatarImage: {
+    verticalAlign: "top",
+    width: "100%",
+  },
   directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
 });
 
@@ -286,6 +295,8 @@ const directoryMembersStyleProps = stylex.props(styles.directoryMembers);
 const directoryMembersListStyleProps = stylex.props(styles.directoryMembersList);
 const directoryMemberItemStyleProps = stylex.props(styles.directoryMemberItem);
 const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvatar);
+const directoryStatsIconStyleProps = stylex.props(styles.directoryStatsIcon);
+const directoryMemberAvatarImageStyleProps = stylex.props(styles.directoryMemberAvatarImage);
 const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
 
 export const Route = createFileRoute("/projects")({
@@ -716,11 +727,7 @@ function ProjectListItem({
         </div>
       </div>
       {stringField(project, "projectScope", "public") === "public" ? (
-        <div
-          {...directoryStatsStyleProps}
-          className={`stats-wrap ${directoryStatsStyleProps.className ?? ""}`}
-          data-stylex-owner="projects-directory-stats"
-        >
+        <div {...directoryStatsStyleProps} data-stylex-owner="projects-directory-stats">
           <div {...directoryMembersStyleProps} data-stylex-owner="projects-directory-members">
             <ul
               {...directoryMembersListStyleProps}
@@ -747,7 +754,9 @@ function ProjectListItem({
                       to="/$user"
                     >
                       <img
+                        {...directoryMemberAvatarImageStyleProps}
                         alt={stringField(member, "userLabel", "")}
+                        data-stylex-owner="projects-directory-member-avatar-image"
                         src={stringField(member, "avatarUrl", "")}
                       />
                     </Link>
@@ -756,14 +765,22 @@ function ProjectListItem({
               })}
             </ul>
             <p>
-              <i className="yobicon-friends yobicon-middle"></i>
+              <i
+                {...directoryStatsIconStyleProps}
+                className={`yobicon-friends yobicon-middle ${directoryStatsIconStyleProps.className ?? ""}`}
+                data-stylex-owner="projects-directory-stats-icon"
+              ></i>
               <strong
                 {...directoryMemberCountStyleProps}
                 data-stylex-owner="projects-directory-member-count"
               >
                 {memberCount}
               </strong>{" "}
-              <i className="yobicon-eye yobicon-middle"></i>{" "}
+              <i
+                {...directoryStatsIconStyleProps}
+                className={`yobicon-eye yobicon-middle ${directoryStatsIconStyleProps.className ?? ""}`}
+                data-stylex-owner="projects-directory-stats-icon"
+              ></i>{" "}
               <strong
                 {...directoryMemberCountStyleProps}
                 data-stylex-owner="projects-directory-member-count"

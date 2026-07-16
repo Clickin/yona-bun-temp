@@ -944,7 +944,9 @@ async function readProjectsListMetrics(page: Page) {
     const nameTag = document.querySelector<HTMLElement>(
       '[data-stylex-owner="projects-directory-name-tag"]',
     );
-    const stats = document.querySelector<HTMLElement>(".all-projects .stats-wrap");
+    const stats = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-stats"]',
+    );
     const members = document.querySelector<HTMLElement>(
       '[data-stylex-owner="projects-directory-members"]',
     );
@@ -1040,6 +1042,9 @@ async function canonicalizeScreenRoots(page: Page) {
                 attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-member-count"]',
                 ) ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-member-avatar-image"]',
+                ) ||
                 (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
             ) &&
@@ -1123,6 +1128,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-members-list") return "unstyled";
       if (attr.name === "class" && owner === "projects-directory-member-avatar")
         return "avatar-wrap";
+      if (attr.name === "class" && owner === "projects-directory-stats-icon")
+        return attr.value.includes("yobicon-friends")
+          ? "yobicon-friends yobicon-middle"
+          : "yobicon-eye yobicon-middle";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")

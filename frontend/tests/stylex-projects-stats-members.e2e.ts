@@ -133,6 +133,7 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
     "utf8",
   );
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
+  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
   const messages = readFileSync("../yona-original/conf/messages", "utf8");
 
   expect(scala).toContain('<div class="stats-wrap pull-right">');
@@ -183,6 +184,10 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
     "ul.unstyled,\nol.unstyled {\n  margin-left: 0;\n  list-style: none;",
   );
   expect(bootstrap).toContain(".pull-right {\n  float: right;");
+  expect(yobicon).toContain("font-family: 'yobicon';");
+  expect(yobicon).toContain("display: inline-block;");
+  expect(yobicon).toContain('.yobicon-friends:before {\n    content: "\\e27b";');
+  expect(yobicon).toContain('.yobicon-eye:before {\n    content: "\\e52e";');
   expect(messages).toContain(
     'project.onmember = <i class="yobicon-friends yobicon-middle"></i><strong>{0}</strong>',
   );
@@ -193,7 +198,10 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
       owner === owners.count ? 2 : 1,
     );
   }
-  expect(route).toContain('className={`stats-wrap ${directoryStatsStyleProps.className ?? ""}`}');
+  expect(route).not.toContain("stats-wrap");
+  expect(route.match(/data-stylex-owner="projects-directory-stats-icon"/gu)?.length).toBe(2);
+  expect(route).toContain("yobicon-friends yobicon-middle");
+  expect(route).toContain("yobicon-eye yobicon-middle");
   expect(route).not.toContain(
     'className={`members ${directoryMembersStyleProps.className ?? ""}`}',
   );
@@ -238,7 +246,7 @@ for (const viewport of [
     const item = list.locator(`:scope > [data-stylex-owner="${owners.item}"]`);
     const avatar = item.locator(`:scope > [data-stylex-owner="${owners.avatar}"]`);
     const counts = members.locator(`p > [data-stylex-owner="${owners.count}"]`);
-    await expect(stats).toHaveClass(/(?:^|\s)stats-wrap(?:\s|$)/u);
+    await expect(stats).not.toHaveClass(/(?:^|\s)stats-wrap(?:\s|$)/u);
     expect((await members.getAttribute("class"))?.split(/\s+/u)).not.toContain("members");
     await expect(item).toHaveCount(1);
     await expect(avatar).toHaveAttribute("href", `${basePath}/alice`);
