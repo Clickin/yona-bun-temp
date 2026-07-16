@@ -2032,6 +2032,17 @@ the exact frozen cascade and independent generic fallback consumer; main browser
 GREEN 2/2 after the default-avatar fixture resolves to the existing PNG. This is not Wave 1
 completion.
 
+The one-hundred-seventy-first slice migrates the authenticated ACTIVE delete-confirmation modal
+shell from `site/userList.scala.html`, Bootstrap 2.3.1 modal/close/fade rules, `_override.less`, and
+`_responsive.less`. Six owners cover root state, header, close control, body, footer, and generated
+backdrop. Route variables contain only modal paint, borders, shadows, and text; geometry,
+transition, type, and responsive values remain inline. React preserves open/closed state, copy,
+order, backdrop/Escape dismissal, and mutations. These consumers retire the modal presentation
+classes while the footer's two `ybtn` consumers remain independent. Browser verification is
+GREEN 1/1 (13.4s) for open, close, backdrop, Escape, and confirm behavior. The separately selected
+populated-DOM check reaches only the pre-existing unrelated global-GNB `Feedback` fixture failure.
+This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

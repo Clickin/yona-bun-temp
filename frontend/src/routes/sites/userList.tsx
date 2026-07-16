@@ -331,6 +331,86 @@ const styles = stylex.create({
     textShadow: "none",
     verticalAlign: "top",
   },
+  deleteModal: {
+    backgroundClip: "padding-box",
+    backgroundColor: siteUserListColors.modalSurface,
+    borderColor: siteUserListColors.modalBorder,
+    borderRadius: "6px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: siteUserListColors.modalShadow,
+    display: "block",
+    left: {
+      default: "50%",
+      "@media (max-width: 720px)": "auto",
+    },
+    marginLeft: {
+      default: "-280px",
+      "@media (max-width: 720px)": "0px",
+    },
+    outline: "none",
+    position: "fixed",
+    top: "-25%",
+    transition: "opacity 0.3s linear, top 0.3s ease-out",
+    width: {
+      default: "560px",
+      "@media (max-width: 720px)": "auto",
+    },
+    zIndex: 1050,
+  },
+  deleteModalOpen: { top: "10%" },
+  deleteModalClosed: { display: "none" },
+  deleteModalHeader: {
+    borderBottomColor: siteUserListColors.modalHeaderBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    padding: "9px 15px",
+  },
+  deleteModalClose: {
+    appearance: "none",
+    backgroundColor: "transparent",
+    borderWidth: "0px",
+    color: siteUserListColors.modalText,
+    cursor: "pointer",
+    float: "right",
+    fontSize: "20px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginTop: "2px",
+    opacity: { default: 0.2, ":hover": 0.4, ":focus": 0.4 },
+    padding: "0px",
+    textDecoration: { default: "none", ":hover": "none", ":focus": "none" },
+    textShadow: siteUserListColors.modalCloseShadow,
+  },
+  deleteModalBody: {
+    maxHeight: "400px",
+    overflowY: "auto",
+    padding: "15px",
+    position: "relative",
+  },
+  deleteModalFooter: {
+    backgroundColor: siteUserListColors.modalFooterSurface,
+    borderRadius: "0px 0px 6px 6px",
+    borderTopColor: siteUserListColors.modalFooterBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    boxShadow: siteUserListColors.modalFooterShadow,
+    marginBottom: "0px",
+    padding: "14px 15px 15px",
+    textAlign: "right",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  deleteModalBackdrop: {
+    backgroundColor: siteUserListColors.modalBackdrop,
+    bottom: "0px",
+    left: "0px",
+    opacity: 0.5,
+    position: "fixed",
+    right: "0px",
+    top: "0px",
+    zIndex: 1040,
+  },
   actionButton: {
     backgroundColor: {
       default: siteUserListColors.actionDefaultSurface,
@@ -590,6 +670,11 @@ const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarLinkActive);
 const sidebarNotificationBadgeStyleProps = stylex.props(styles.sidebarNotificationBadge);
 const stateTabNumericBadgeStyleProps = stylex.props(styles.stateTabNumericBadge);
+const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
+const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
+const deleteModalBodyStyleProps = stylex.props(styles.deleteModalBody);
+const deleteModalFooterStyleProps = stylex.props(styles.deleteModalFooter);
+const deleteModalBackdropStyleProps = stylex.props(styles.deleteModalBackdrop);
 const actionButtonStyleProps = stylex.props(styles.actionButton);
 const actionSuccessButtonStyleProps = stylex.props(styles.actionButton, styles.actionSuccessButton);
 const actionInfoButtonStyleProps = stylex.props(styles.actionButton, styles.actionInfoButton);
@@ -901,19 +986,26 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               />
 
               <div
+                {...stylex.props(
+                  styles.deleteModal,
+                  deleteUser && styles.deleteModalOpen,
+                  !deleteUser && deleteModalClosed && styles.deleteModalClosed,
+                )}
                 id="alertDeletionWrap"
-                className={deleteUser ? "modal fade in" : "modal fade"}
+                data-state={deleteUser ? "open" : deleteModalClosed ? "closed" : "initial"}
+                data-stylex-owner="site-user-list-delete-modal"
                 aria-hidden={deleteUser ? false : deleteModalClosed ? true : undefined}
-                style={
-                  deleteUser
-                    ? { display: "block" }
-                    : deleteModalClosed
-                      ? { display: "none" }
-                      : undefined
-                }
               >
-                <div className="modal-header">
-                  <button type="button" className="close" onClick={dismissDeleteModal}>
+                <div
+                  {...deleteModalHeaderStyleProps}
+                  data-stylex-owner="site-user-list-delete-modal-header"
+                >
+                  <button
+                    {...deleteModalCloseStyleProps}
+                    data-stylex-owner="site-user-list-delete-modal-close"
+                    type="button"
+                    onClick={dismissDeleteModal}
+                  >
                     ×
                   </button>
                   <span id="userInfo">
@@ -923,12 +1015,18 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     <LegacyMessage messageKey="site.user.delete" />
                   </span>
                 </div>
-                <div className="modal-body">
+                <div
+                  {...deleteModalBodyStyleProps}
+                  data-stylex-owner="site-user-list-delete-modal-body"
+                >
                   <p>
                     <LegacyMessage messageKey="site.user.deleteConfirm" />
                   </p>
                 </div>
-                <div className="modal-footer">
+                <div
+                  {...deleteModalFooterStyleProps}
+                  data-stylex-owner="site-user-list-delete-modal-footer"
+                >
                   <button
                     type="button"
                     id="accountToggleBtn"
@@ -944,7 +1042,8 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </div>
               {deleteUser ? (
                 <div
-                  className="modal-backdrop fade in"
+                  {...deleteModalBackdropStyleProps}
+                  data-stylex-owner="site-user-list-delete-modal-backdrop"
                   onClick={dismissDeleteModalBackdrop}
                   onKeyDown={(event) => {
                     if (event.key === "Escape") dismissDeleteModalBackdrop(event);

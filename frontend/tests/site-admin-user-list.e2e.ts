@@ -914,27 +914,34 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   const userListUrl = page.url();
   const deleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   const deleteModal = page.locator("#alertDeletionWrap");
-  const closeButton = page.locator("#alertDeletionWrap .close");
-  const noButton = page.locator("#alertDeletionWrap .modal-footer .ybtn").filter({
-    hasText: "No",
-  });
+  const closeButton = page.locator('[data-stylex-owner="site-user-list-delete-modal-close"]');
+  const noButton = page
+    .locator('[data-stylex-owner="site-user-list-delete-modal-footer"] .ybtn')
+    .filter({
+      hasText: "No",
+    });
   const confirmButton = page.locator("#accountToggleBtn");
 
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveAttribute("data-state", "initial");
+  await expect(deleteModal).not.toHaveClass(/\b(?:modal|fade|in)\b/u);
   await expect(deleteModal).not.toHaveAttribute("aria-hidden");
   await expect(deleteModal).not.toHaveAttribute("style");
   await expect(deleteModal).toHaveCSS("display", "block");
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
-  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveAttribute("data-state", "open");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
-  await expect(deleteModal).toHaveAttribute("style", "display: block;");
+  await expect(deleteModal).not.toHaveAttribute("style");
   await expect(deleteModal).toHaveCSS("display", "block");
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(1);
   await expect(closeButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(noButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(deleteModal.locator('[data-dismiss="modal"]')).toHaveCount(0);
@@ -946,10 +953,12 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   expect(requests.deletedLoginIds).toEqual([]);
 
   expect(await dispatchCancelableClick(noButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -958,13 +967,15 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   expect(requests.deletedLoginIds).toEqual([]);
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveAttribute("data-state", "open");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
   expect(await dispatchCancelableClick(closeButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -972,14 +983,22 @@ test("site admin user delete modal stays route-owned across open dismiss and con
     .toEqual({ documentClicks: [], getElementById: [] });
 
   expect(await dispatchCancelableClick(deleteButton)).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade in");
+  await expect(deleteModal).toHaveAttribute("data-state", "open");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "false");
-  await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
-  expect(await dispatchCancelableClick(page.locator(".modal-backdrop.fade.in"))).toBe(false);
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(1);
+  expect(
+    await dispatchCancelableClick(
+      page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+    ),
+  ).toBe(false);
+  await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
-  await expect(deleteModal).toHaveAttribute("style", "display: none;");
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(deleteModal).not.toHaveAttribute("style");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(0);
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect
@@ -997,10 +1016,12 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await deleteResponsePromise;
 
   await expect.poll(() => requests.deletedLoginIds).toEqual(["doortts"]);
-  await expect(deleteModal).toHaveClass("modal fade");
+  await expect(deleteModal).toHaveAttribute("data-state", "closed");
   await expect(deleteModal).toHaveAttribute("aria-hidden", "true");
   await expect(deleteModal).toHaveCSS("display", "none");
-  await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-delete-modal-backdrop"]'),
+  ).toHaveCount(0);
   await expect(
     page.locator(
       '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
@@ -1103,7 +1124,7 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
 
   await page.getByRole("button", { exact: true, name: "Delete" }).click();
   await expect(page.locator("#userInfo")).toHaveText("Door TTS(doortts)");
-  await expect(page.locator("#alertDeletionWrap")).toHaveClass("modal fade in");
+  await expect(page.locator("#alertDeletionWrap")).toHaveAttribute("data-state", "open");
 
   const reloadPromise = page.waitForEvent("framenavigated");
   await page.locator("#accountToggleBtn").click();
