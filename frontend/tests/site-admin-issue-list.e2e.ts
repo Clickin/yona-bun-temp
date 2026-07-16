@@ -1269,7 +1269,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-issue-list-breadcrumb-outer], .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-issue-list-breadcrumb-outer], [data-stylex-owner=site-issue-list-page-wrap-outer], [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1293,6 +1293,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-issue-list-breadcrumb-outer",
           "site-issue-list-breadcrumb-inner",
           "site-issue-list-breadcrumb-heading",
+          "site-issue-list-page-wrap-outer",
           "site-issue-list-setting-wrap",
           "site-issue-list-setting-grid",
           "site-issue-list-setting-sidebar-column",
@@ -1334,7 +1335,9 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return value
           .split(/\s+/u)
-          .filter((token) => token !== "listitem" && !token.startsWith("x"))
+          .filter(
+            (token) => token !== "row-fluid" && token !== "listitem" && !token.startsWith("x"),
+          )
           .join(" ");
       }
       if (
@@ -1509,6 +1512,9 @@ async function canonicalizeHtml(page: Page, html: string) {
         if (current.matches(".site-setting-wrap")) {
           retiredIssueListTokens.add("site-setting-wrap");
         }
+        if (current.matches(".page-wrap-outer")) {
+          retiredIssueListTokens.add("page-wrap-outer");
+        }
         if (current.matches(".site-setting-wrap > .row-fluid")) {
           retiredIssueListTokens.add("row-fluid");
         }
@@ -1517,6 +1523,10 @@ async function canonicalizeHtml(page: Page, html: string) {
         }
         if (current.matches(".site-setting-wrap > .row-fluid > .span10")) {
           retiredIssueListTokens.add("span10");
+        }
+        if (current.matches(".post-list-wrap > li")) {
+          retiredIssueListTokens.add("row-fluid");
+          retiredIssueListTokens.add("listitem");
         }
         value = value
           .split(/\s+/u)

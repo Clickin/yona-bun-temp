@@ -212,7 +212,7 @@ test.describe("StyleX site issue-list populated row content", () => {
     const title = owner(info, owners.title);
 
     await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
-    await expect(row).toHaveClass(/\brow-fluid\b/u);
+    await expect(row).not.toHaveClass(/\brow-fluid\b/u);
     await expect(row).not.toHaveClass(/\blistitem\b/u);
     await expect(owner(row, "site-issue-list-project-avatar")).toHaveCount(1);
     await expect(owner(row, "site-issue-list-metadata")).toHaveCount(1);

@@ -205,7 +205,7 @@ test.describe("StyleX site issue-list row and project avatar", () => {
     const avatar = owner(first, owners.avatar);
     const avatarImage = owner(avatar, owners.avatarImage);
 
-    await expect(first).toHaveClass(/\brow-fluid\b/u);
+    await expect(first).not.toHaveClass(/\brow-fluid\b/u);
     await expect(first).not.toHaveClass(/\blistitem\b/u);
     await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
     await expect(avatar).not.toHaveClass(/\blist-avatar\b/u);

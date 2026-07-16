@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred fifty-two slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred fifty-six slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1720,14 +1720,13 @@ GREEN 5/5, and the complete issue-list matrix is 43/44 with only the pre-existin
 `Feedback` fixture mismatch. Fresh live legacy visual comparison remains explicitly unverified.
 This is not Wave 1 completion.
 
-The following direct-grid slice migrates only the four management layout owners for authenticated
+The earlier direct-grid slice migrated only the four management layout owners for authenticated
 populated-open `/sites/issueList?state=open`: `.site-setting-wrap`, its direct `.row-fluid`, direct
 `.span2`, and direct `.span10`. Colocated StyleX reproduces Bootstrap 2.3.1 clearfix, percentage
-columns, gutter, box model, and max-767 stacking without theme variables. The nested issue-row
-`.row-fluid`, outer shell, sidebar internals, and all content owners remain outside this slice.
-Desktop deletion remains fallback-equivalent. On mobile, deletion evidence records the existing
-unlayered `app.css` bridge drift: the fixture stays floated at desktop percentages and gutter,
-while the route-local StyleX owners supply the correct 100% stacked, float-none output.
+columns, gutter, and box model without theme variables. Later authenticated live inspection proved
+that `bootstrap-responsive.css` is manifest-declared reference-only/inactive and the actual mobile
+layout remains side-by-side. Slice 156 therefore removes the unsupported max-767 stacking
+overrides while preserving the direct owner boundaries and all React/TanStack behavior.
 
 The following breadcrumb slice migrates only the three management breadcrumb owners for
 authenticated populated-open `/sites/issueList?state=open`: `.site-breadcrumb-outer`,
@@ -1781,6 +1780,31 @@ normal exit using `CI` workers=1. Whole-screen post-list is GREEN 7/8; its sole 
 pre-existing excluded global-GNB `Feedback` fixture gap, unrelated to wrapper/row. New local
 desktop/mobile screenshots were visually compared with authenticated legacy captures: page
 inset/content x and row x/width/height/flow match; locale and excluded global shell/footer copy differ.
+
+The one-hundred-fifty-sixth slice migrates and corrects exactly five authenticated populated-open
+`/sites/issueList?state=open` owner responsibilities: the page wrapper, shared management-column
+base, sidebar column, content column, and repeated issue row. The new page owner reproduces
+`_page.less` 450px minimum height/10px top margin plus `_responsive.less` all-viewport box model
+and max-720 zero padding/minimum width. The row owner absorbs only active Bootstrap 2.3.1 base
+`.row-fluid` width and clearfix pseudos while preserving prior paint/content owners. Fresh live
+desktop/mobile inspection corrects the earlier unsupported max-767 column stacking: the runtime
+manifest keeps `bootstrap-responsive.css` reference-only/inactive, so both viewports retain the
+base 14.893617% sidebar, 2.127659% gutter, and 82.978723% content column. Only this route's
+`page-wrap-outer` and repeated issue-row `row-fluid` retire; the already-retired direct grid/span
+classes remain absent. Legacy captures establish desktop wrapper `1366×450`, content/row
+`x239.078/1116.891`, and mobile wrapper observed at `390×611` with side-by-side content/row
+`x66.375/76.375` and `323.609/313.609` widths; the 611px mobile height is intrinsic evidence, not
+an owner-enforced local value. In the valid focused RED progression, the static contract passed;
+runtime first stopped on a redundant computed-width string precision check and then on raw
+percentage-to-pixel gutter rounding. Both assertions were corrected without weakening the exact
+bounding-rect or ratio gates, after which focused GREEN is 2/2 with a normal exit. The complete
+issue-list StyleX matrix is GREEN 46/46 with `CI` workers=1 and a normal exit. Whole-screen coverage
+is GREEN 7/8; its sole failure is the pre-existing excluded global-GNB `Feedback` fixture gap,
+unrelated to these owners. Visual inspection of authenticated legacy
+`legacy-issue-list-page-row-shell-{desktop,mobile}.png` against local
+`stylex-site-issue-list-page-row-shell-{desktop,mobile}.png` confirms matching desktop/mobile
+side-by-side grid, page inset/content x, and row x/width/wrapping/flow. Locale, assets, global shell,
+and footer copy remain outside this claim.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

@@ -154,16 +154,16 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
       expect(route).not.toContain(directLegacyClass);
     for (const exactDeclaration of [
       'margin: "0px auto"',
-      '"@media (max-width: 767px)": "none"',
       'minHeight: "30px"',
       'boxSizing: "border-box"',
+      'float: "left"',
     ])
       expect(route).toContain(exactDeclaration);
     expect(route).toContain(
-      'settingSidebarColumn: {\n    marginLeft: "0px",\n    width: {\n      default: "14.893617021276595%",\n      "@media (max-width: 767px)": "100%",\n    },\n  }',
+      'settingSidebarColumn: {\n    marginLeft: "0px",\n    width: "14.893617021276595%",\n  }',
     );
     expect(route).toContain(
-      'settingContentColumn: {\n    marginLeft: {\n      default: "2.127659574468085%",\n      "@media (max-width: 767px)": "0px",\n    },\n    width: {\n      default: "82.97872340425532%",\n      "@media (max-width: 767px)": "100%",\n    },\n  }',
+      'settingContentColumn: {\n    marginLeft: "2.127659574468085%",\n    width: "82.97872340425532%",\n  }',
     );
     expect(route).toContain("styles.titleArea");
     expect(route).toContain("styles.title");
@@ -226,7 +226,7 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
     await expect(owner(page, owners.grid)).not.toHaveClass(/\brow-fluid\b/u);
     await expect(owner(page, owners.sidebarColumn)).not.toHaveClass(/\bspan2\b/u);
     await expect(owner(page, owners.contentColumn)).not.toHaveClass(/\bspan10\b/u);
-    await expect(container.locator('[data-stylex-owner="site-issue-list-row"]')).toHaveClass(
+    await expect(container.locator('[data-stylex-owner="site-issue-list-row"]')).not.toHaveClass(
       /\brow-fluid\b/u,
     );
 
@@ -277,7 +277,6 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
       await page.setViewportSize(viewport);
       const title = await openIssueList(page);
       const heading = owner(title, owners.heading);
-      const tabs = owner(page, owners.tabs);
       const container = owner(page, owners.container);
       const settingWrap = owner(page, owners.settingWrap);
       const grid = owner(page, owners.grid);
@@ -291,8 +290,8 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
       await expect(grid).toHaveCSS("width", viewport.name === "mobile" ? "390px" : "1346px");
       await expect(sidebarColumn).toHaveCSS("box-sizing", "border-box");
       await expect(contentColumn).toHaveCSS("box-sizing", "border-box");
-      await expect(sidebarColumn).toHaveCSS("float", viewport.name === "mobile" ? "none" : "left");
-      await expect(contentColumn).toHaveCSS("float", viewport.name === "mobile" ? "none" : "left");
+      await expect(sidebarColumn).toHaveCSS("float", "left");
+      await expect(contentColumn).toHaveCSS("float", "left");
       await expect(sidebarColumn).toHaveCSS("min-height", "30px");
       await expect(contentColumn).toHaveCSS("min-height", "30px");
 
@@ -350,19 +349,14 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
       expect(geometry.grid.width).toBeCloseTo(geometry.settingWrap.width, 1);
       expect(geometry.grid.width).toBe(viewport.name === "mobile" ? 390 : 1346);
       expect(geometry.sidebar.left).toBeCloseTo(geometry.grid.left, 1);
-      if (viewport.name === "desktop") {
-        expect(geometry.sidebar.right).toBeLessThanOrEqual(geometry.content.left + 0.5);
-        expect(geometry.sidebar.width / geometry.grid.width).toBeCloseTo(0.1489361702, 4);
-        expect(geometry.content.width / geometry.grid.width).toBeCloseTo(0.829787234, 4);
-        expect(geometry.content.left - geometry.sidebar.right).toBeCloseTo(
-          geometry.grid.width * 0.0212765957,
-          1,
-        );
-      } else {
-        expect(geometry.sidebar.width).toBeCloseTo(geometry.grid.width, 1);
-        expect(geometry.content.width).toBeCloseTo(geometry.grid.width, 1);
-        expect(geometry.content.top).toBeGreaterThanOrEqual(geometry.sidebar.bottom);
-      }
+      expect(geometry.sidebar.right).toBeLessThanOrEqual(geometry.content.left + 0.5);
+      expect(geometry.sidebar.width / geometry.grid.width).toBeCloseTo(0.1489361702, 4);
+      expect(geometry.content.width / geometry.grid.width).toBeCloseTo(0.829787234, 4);
+      expect(geometry.content.left - geometry.sidebar.right).toBeCloseTo(
+        geometry.grid.width * 0.0212765957,
+        1,
+      );
+      expect(geometry.content.top).toBeCloseTo(geometry.sidebar.top, 1);
 
       const fallback = await page.evaluate((ownerNames) => {
         const content = document.querySelector<HTMLElement>(
@@ -488,35 +482,7 @@ test.describe("StyleX site issue-list shell fallback retirement", () => {
       expect(fallback.heading[0]).toEqual(fallback.heading[1]);
       expect(fallback.container[0]).toEqual(fallback.container[1]);
       expect(fallback.wrapAndGrid[0]).toEqual(fallback.wrapAndGrid[1]);
-      if (viewport.name === "desktop") {
-        expect(fallback.columns[0]).toEqual(fallback.columns[1]);
-      } else {
-        expect(fallback.columns[0]).toEqual([
-          ["block", "none", "390px", "30px", "0px", "border-box"],
-          ["block", "none", "390px", "30px", "0px", "border-box"],
-        ]);
-        const fallbackGridWidth = Number.parseFloat(fallback.wrapAndGrid[1][1][0]);
-        const [fallbackSidebar, fallbackContent] = fallback.columns[1];
-        expect(fallbackSidebar[0]).toBe("block");
-        expect(fallbackSidebar[1]).toBe("left");
-        expect(Number.parseFloat(fallbackSidebar[2]) / fallbackGridWidth).toBeCloseTo(
-          0.1489361702,
-          4,
-        );
-        expect(fallbackSidebar.slice(3)).toEqual(["30px", "0px", "border-box"]);
-        expect(fallbackContent[0]).toBe("block");
-        expect(fallbackContent[1]).toBe("left");
-        expect(Number.parseFloat(fallbackContent[2]) / fallbackGridWidth).toBeCloseTo(
-          0.829787234,
-          4,
-        );
-        expect(Number.parseFloat(fallbackContent[4]) / fallbackGridWidth).toBeCloseTo(
-          0.0212765957,
-          4,
-        );
-        expect(fallbackContent[3]).toBe("30px");
-        expect(fallbackContent[5]).toBe("border-box");
-      }
+      expect(fallback.columns[0]).toEqual(fallback.columns[1]);
       expect((await title.screenshot()).byteLength).toBeGreaterThan(0);
       expect((await container.screenshot()).byteLength).toBeGreaterThan(0);
     });

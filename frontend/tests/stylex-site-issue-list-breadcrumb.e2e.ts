@@ -54,7 +54,10 @@ test("breadcrumb source owns exactly the frozen route-local declarations", () =>
   for (const retired of ['className="site-breadcrumb-outer"', 'className="site-breadcrumb-inner"'])
     expect(route).not.toContain(retired);
   const breadcrumbStart = route.indexOf('data-stylex-owner="site-issue-list-breadcrumb-outer"');
-  const breadcrumbEnd = route.indexOf('<div className="page-wrap-outer">', breadcrumbStart);
+  const breadcrumbEnd = route.indexOf(
+    'data-stylex-owner="site-issue-list-page-wrap-outer"',
+    breadcrumbStart,
+  );
   const breadcrumb = route.slice(route.lastIndexOf("<div", breadcrumbStart), breadcrumbEnd);
   expect(breadcrumb).toContain("<h3");
   for (const declaration of [

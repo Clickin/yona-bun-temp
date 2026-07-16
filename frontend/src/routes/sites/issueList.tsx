@@ -38,6 +38,19 @@ const legacySiteIssueListSidebarSearch = {
   __legacySiteIssueListSidebarActiveMarker: "inactive",
 };
 const styles = stylex.create({
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      "@media (max-width: 720px)": "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      "@media (max-width: 720px)": "0px",
+    },
+    width: "100%",
+  },
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: {
@@ -79,28 +92,16 @@ const styles = stylex.create({
   settingColumn: {
     boxSizing: "border-box",
     display: "block",
-    float: {
-      default: "left",
-      "@media (max-width: 767px)": "none",
-    },
+    float: "left",
     minHeight: "30px",
   },
   settingSidebarColumn: {
     marginLeft: "0px",
-    width: {
-      default: "14.893617021276595%",
-      "@media (max-width: 767px)": "100%",
-    },
+    width: "14.893617021276595%",
   },
   settingContentColumn: {
-    marginLeft: {
-      default: "2.127659574468085%",
-      "@media (max-width: 767px)": "0px",
-    },
-    width: {
-      default: "82.97872340425532%",
-      "@media (max-width: 767px)": "100%",
-    },
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
   },
   sidebar: {
     margin: "0px",
@@ -258,6 +259,18 @@ const styles = stylex.create({
     },
   },
   issueListRow: {
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
     paddingBlock: "10px",
     paddingInline: "0px",
     borderBottomColor: siteIssueListColors.rowBorder,
@@ -494,7 +507,10 @@ function SiteIssueListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
+      <div
+        {...stylex.props(styles.pageWrapOuter)}
+        data-stylex-owner="site-issue-list-page-wrap-outer"
+      >
         <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-issue-list-setting-wrap">
           <div
             {...stylex.props(styles.settingGrid)}
@@ -885,11 +901,7 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
   const rowStyleProps = index % 2 === 1 ? issueListRowEvenStyleProps : issueListRowStyleProps;
 
   return (
-    <li
-      {...rowStyleProps}
-      className={`row-fluid ${rowStyleProps.className ?? ""}`}
-      data-stylex-owner="site-issue-list-row"
-    >
+    <li {...rowStyleProps} data-stylex-owner="site-issue-list-row">
       <Link
         {...issueListProjectAvatarStyleProps}
         data-stylex-owner="site-issue-list-project-avatar"
