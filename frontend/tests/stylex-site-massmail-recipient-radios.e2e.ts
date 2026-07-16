@@ -38,9 +38,13 @@ test.describe("StyleX site massmail recipient radios", () => {
     expect(route).toContain("styles.recipientRadio");
     expect(route).toContain("styles.recipientRadioInput");
     expect(route).not.toMatch(/<label className="radio" htmlFor="mailto(?:All|Prj)">/u);
-    expect(route).toContain('minHeight: "20px"');
-    expect(route).toContain('marginLeft: "-20px"');
-    expect(route).not.toContain("globalColors.");
+    const radioStyles = route.slice(
+      route.indexOf("recipientRadio: {"),
+      route.indexOf("selectedProjectTag: {"),
+    );
+    expect(radioStyles).toContain('minHeight: "20px"');
+    expect(radioStyles).toContain('marginLeft: "-20px"');
+    expect(radioStyles).not.toContain("globalColors.");
     expect(theme).toContain("defineVars");
 
     const radios = await openMassMail(page);
@@ -66,11 +70,15 @@ test.describe("StyleX site massmail recipient radios", () => {
     await expect(page.locator("#project-list-wrap")).toBeVisible();
     await page.locator("#input-project").fill("admin/projectYobi");
     await page.locator("#select-project").click();
-    await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+    await expect(
+      page.locator('[data-stylex-owner="site-massmail-selected-project-tag"]'),
+    ).toHaveText("admin/projectYobi x");
     await all.check();
     await expect(all).toBeChecked();
     await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
-    await expect(page.locator("#selected-projects .label")).toHaveCount(0);
+    await expect(
+      page.locator('[data-stylex-owner="site-massmail-selected-project-tag"]'),
+    ).toHaveCount(0);
   });
 
   for (const viewport of [
@@ -147,6 +155,6 @@ test.describe("StyleX site massmail recipient radios", () => {
           writeAction: generated(document.querySelector("#write-email")),
         };
       }),
-    ).toEqual({ inputs: true, labels: true, projectWrapper: false, writeAction: true });
+    ).toEqual({ inputs: true, labels: true, projectWrapper: true, writeAction: true });
   });
 });

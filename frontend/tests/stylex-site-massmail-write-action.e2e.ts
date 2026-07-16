@@ -46,7 +46,9 @@ test("write action retires only its ybtn fallback classes and preserves legacy o
       .locator(".mess-mail-wrap > *")
       .evaluateAll((nodes) => nodes.map((node) => node.id || node.tagName.toLowerCase())),
   ).toEqual(["label", "label", "project-list-wrap", "write-email"]);
-  await expect(page.locator("#select-project")).toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
+  await expect(
+    page.locator('[data-stylex-owner="site-massmail-select-project-action"]'),
+  ).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
 });
 
 test("write action preserves React mutation and pending behavior", async ({ page }) => {
@@ -126,10 +128,14 @@ test("write action has a stable owner without generated selector contracts", asy
   expect(route).toContain('data-stylex-owner="site-massmail-write-action"');
   expect(route).toContain("styles.writeAction");
   expect(route).not.toContain('className="ybtn ybtn-primary"');
-  expect(route).toContain('":active": siteMassMailColors.primaryInteractive');
+  const actionStyle = route.slice(
+    route.indexOf("writeAction: {"),
+    route.indexOf("projectInput: {"),
+  );
+  expect(actionStyle).toContain('":active": siteMassMailColors.primaryInteractive');
   expect(route).not.toMatch(/#[0-9a-f]/iu);
   expect(theme).toContain("primaryInteractive");
-  expect(route).not.toContain("globalColors.");
+  expect(actionStyle).not.toContain("globalColors.");
 
   const action = await open(page);
   expect(

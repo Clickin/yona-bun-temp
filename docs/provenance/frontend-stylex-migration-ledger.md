@@ -245,6 +245,8 @@ with accessible role/name, stable form name/id, or visible state attributes; use
 `data-testid` only when no semantic geometry anchor exists. Never select StyleX hashes. A fallback
 module is retired only after every owned selector row has desktop and 390 px evidence.
 
+| Default `/sites/massmail` site-management breadcrumb | `site/siteMngLayout.scala.html`, included `site/massMail.scala.html`, frozen `_page.less` nested breadcrumb declarations, `_responsive.less` all/max-720 rules, and Bootstrap generic h3 output. | Exactly three route-inline owners cover outer width/padding/box sizing/mobile minimum, inner auto margin, and direct-heading padding/line height; no paint or theme variable. | Stable `site-massmail-breadcrumb-outer`, `-inner`, and `-heading` owners with direct DOM nesting. | Authenticated Java legacy and local preserve outer 1366x45 at x0/y83 and inner/heading 1346x45 at x10/y83. | Authenticated Java legacy and local preserve outer 390x45 at x0/y83 and inner/heading 370x45 at x10/y83 with 10px minimum width. | Only `site-breadcrumb-outer` and `site-breadcrumb-inner` retire; generic h3 and page/grid/sidebar/body fallback remain. | Slice 194 focused GREEN 3/3. Authenticated legacy and local desktop/mobile screenshots were inspected; owned full width, inset, 45px rhythm, and following-page y=138 match exactly. Final mass-mail matrix is 47/48 with only the known global GNB `Feedback` whole-screen gap. |
+
 ## Incremental waves
 
 1. Wave 0: deterministic fallback/hash/manifest, structured StyleX layers, production verifier,

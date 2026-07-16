@@ -55,10 +55,14 @@ test.describe("StyleX site massmail select-project action", () => {
     expect(route).toContain('data-stylex-owner="site-massmail-select-project-action"');
     expect(route).toContain("styles.selectProjectAction");
     expect(route).not.toMatch(/id="select-project"[\s\S]{0,120}className="ybtn"/u);
-    expect(route).toContain('":hover": siteMassMailColors.secondaryHoverSurface');
+    const actionStyle = route.slice(
+      route.indexOf("selectProjectAction: {"),
+      route.indexOf("writeAction: {"),
+    );
+    expect(actionStyle).toContain('":hover": siteMassMailColors.secondaryHoverSurface');
     expect(theme).toContain("secondaryHoverSurface");
     expect(theme).toContain("secondaryInteractiveBorder");
-    expect(route).not.toContain("globalColors.");
+    expect(actionStyle).not.toContain("globalColors.");
 
     const action = await openProjects(page);
     await expect(action).toHaveAttribute("id", "select-project");
@@ -88,7 +92,9 @@ test.describe("StyleX site massmail select-project action", () => {
     await expect(input).toHaveValue("admin/projectYobi");
     await action.click();
     await expect(input).toHaveValue("");
-    await expect(page.locator("#selected-projects .label")).toHaveText("admin/projectYobi x");
+    await expect(
+      page.locator('[data-stylex-owner="site-massmail-selected-project-tag"]'),
+    ).toHaveText("admin/projectYobi x");
   });
 
   for (const viewport of [

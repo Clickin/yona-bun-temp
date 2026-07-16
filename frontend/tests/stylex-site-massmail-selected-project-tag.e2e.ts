@@ -54,10 +54,14 @@ test.describe("StyleX site massmail selected-project tag", () => {
     expect(route).toContain('data-stylex-owner="site-massmail-selected-project-tag"');
     expect(route).toContain("styles.selectedProjectTag");
     expect(route).not.toContain('className="label label-info"');
-    expect(route).not.toContain('marginRight: "5px"');
+    const tagStyle = route.slice(
+      route.indexOf("selectedProjectTag: {"),
+      route.indexOf("});", route.indexOf("selectedProjectTag: {")),
+    );
+    expect(tagStyle).toContain('marginRight: "5px"');
     expect(theme).toContain("whitePaint");
     expect(theme).toContain("tagSurface");
-    expect(route).not.toContain("globalColors.");
+    expect(tagStyle).not.toContain("globalColors.");
 
     await mockSession(page);
     await page.goto(`${basePath}/sites/massmail`);

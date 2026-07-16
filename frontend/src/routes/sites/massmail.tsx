@@ -8,6 +8,7 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { siteMassMailColors } from "./-massmail.stylex";
 
@@ -23,6 +24,17 @@ const legacySiteSidebarLinkProps = {
 const legacyMassMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -205,6 +217,9 @@ const styles = stylex.create({
   },
 });
 
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const projectInputStyleProps = stylex.props(styles.projectInput);
@@ -234,9 +249,9 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <SiteMassMailTitle />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-massmail-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-massmail-breadcrumb-inner">
+          <h3 {...breadcrumbHeadingStyleProps} data-stylex-owner="site-massmail-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

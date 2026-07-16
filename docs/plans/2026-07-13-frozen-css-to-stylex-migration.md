@@ -2392,6 +2392,20 @@ affected identity/role/delete/typeahead/navigation matrix is GREEN 16/16, typech
 11/11 pass, production build/StyleX verification keeps hash `6417f445…16f`, and persistent live/
 local desktop/mobile screenshots were inspected. This is not Wave 1 completion.
 
+The one-hundred-ninety-fourth slice migrates only the authenticated default `/sites/massmail`
+management breadcrumb. Three route-inline owners cover outer full width, horizontal padding,
+border-box sizing and the max-720 10px minimum; inner auto margin; and direct h3 padding with 30px
+line height. Exactly `site-breadcrumb-outer` and `site-breadcrumb-inner` retire on this route.
+Generic h3 paint, font, weight, margin, and rendering plus every page/grid/sidebar/body fallback
+remain shared. The slice has no dark-mode paint, so it adds no theme variable and keeps every
+geometry value inline in `stylex.create`. Focused source, direct DOM, class-retirement, and exact
+1366x900/390x844 metric coverage is GREEN 3/3. Authenticated Java legacy and focused local
+desktop/mobile screenshots were inspected; the owned full width, 10px inset, 45px rhythm, and
+following-page y=138 match exactly. Four stale earlier-owner assertions now use stable owners and
+scoped style blocks, so the final mass-mail matrix is 47/48; only the known global GNB `Feedback`
+whole-screen gap remains outside this owner. No frozen/app CSS, compensation, behavior, or new
+abstraction changes.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
