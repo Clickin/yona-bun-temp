@@ -121,7 +121,9 @@ test("management shell directly owns only the five legacy layout boundaries", ()
   );
   for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
     expect(route).not.toContain(retired);
-  for (const retained of ["row-fluid listhead", "listitem-col"]) expect(route).toContain(retained);
+  expect(route).toContain("listitem-col");
+  expect(route).toContain('data-stylex-owner="site-project-list-listhead"');
+  expect(route).not.toContain("row-fluid listhead");
   expect(route).not.toContain("globalColors.");
 });
 
@@ -145,7 +147,9 @@ for (const viewport of [
     await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
     await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
     await expect(content).not.toHaveClass(/\bspan10\b/u);
-    await expect(content.locator(":scope > .row-fluid.listhead")).toHaveCount(1);
+    await expect(
+      content.locator(':scope > [data-stylex-owner="site-project-list-listhead"]'),
+    ).toHaveCount(1);
     await expect(content.locator(".listitem-col")).toHaveCount(16);
     expect(
       await setting

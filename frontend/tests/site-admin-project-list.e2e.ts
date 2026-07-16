@@ -1125,6 +1125,11 @@ async function canonicalizeScreenRoots(page: Page) {
           current.getAttribute("data-selected") === "true" ? "active" : "",
         ],
         ["site-project-list-sidebar-link", ""],
+        ["site-project-list-listhead", "row-fluid listhead"],
+        ["site-project-list-listhead-name-column", "span5 listhead-title"],
+        ["site-project-list-listhead-description-column", "span4 listhead-title"],
+        ["site-project-list-listhead-created-column", "span2 listhead-title"],
+        ["site-project-list-listhead-action-column", "span1 listhead-title"],
       ]).get(owner ?? "");
       if (name === "class" && canonicalLayoutClass !== undefined) {
         return canonicalLayoutClass;
@@ -1300,8 +1305,10 @@ async function projectListMetrics(page: Page) {
     const content = requireElement(
       '[data-stylex-owner="site-project-list-setting-content-column"]',
     );
-    const listHead = requireElement(".listhead");
-    const firstHeaderColumn = requireElement(".listhead .span5");
+    const listHead = requireElement('[data-stylex-owner="site-project-list-listhead"]');
+    const firstHeaderColumn = requireElement(
+      '[data-stylex-owner="site-project-list-listhead-name-column"]',
+    );
     const firstRowColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span5');
     const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-project-list-row-avatar"]');

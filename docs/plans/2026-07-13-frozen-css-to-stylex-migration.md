@@ -2180,6 +2180,26 @@ search/listhead/row/pagination generated-class canonicalization gaps. This is no
 `Feedback` fixture mismatch and is outside the breadcrumb owner; the goal rule requires splitting
 shared/global and prior-owner canonicalization into separate follow-up work.
 
+The one-hundred-eightieth slice migrates only the authenticated populated-first-page
+`/sites/projectList?filter=road&pageNum=1` direct listhead fluid grid from
+`site/projectList.scala.html`. The existing listhead owner adds active Bootstrap 2.3.1 width and
+table-clearfix declarations to its existing paint/spacing/type; four direct column owners add the
+shared block/left-float/border-box/min-height/gutter/padding geometry and exact span5/4/2/1 widths.
+All geometry/type remains inline and only existing listhead paint variables are reused. Direct
+`row-fluid listhead` and `span5|4|2|1 listhead-title` retire with zero fallback; repeated project-row
+`row-fluid`/`span*` consumers remain excluded, and inactive bootstrap-responsive is not copied.
+Desktop evidence fixes the 1116.890625×41 header at (239.078125,206) and four columns at y211;
+mobile fixes the 323.609375×131 header at (66.375,216), created-copy 90px wrap, action float at
+(73.25,311), and document width420 without stacking. Source RED becomes GREEN and main focused
+Playwright is GREEN 2/2 (22.2s). Local
+`output/playwright/visual-sweep/stylex-site-project-list-listhead-{desktop,mobile}.png` versus live
+`output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/page-2026-07-16T10-17-52-323Z.png`
+and `page-2026-07-16T10-18-56-459Z.png` confirms matching surface/copy/column rhythm and mobile
+created wrap/action float. The full projectList StyleX matrix is GREEN 56/56 (55.8s). Whole-screen
+coverage is GREEN 7/8 (57.5s): behavior/routes/modal/update/default-logo/typed-link cases pass;
+the sole failure is the pre-existing broad DOM equality gap across GNB/footer and prior generated
+class canonicalization, outside this listhead owner.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

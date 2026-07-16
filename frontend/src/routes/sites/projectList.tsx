@@ -191,9 +191,30 @@ const styles = stylex.create({
     marginBottom: "5px",
     padding: "5px 0px",
     lineHeight: "30px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
   },
-  listHeadTitle: {
+  listHeadColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
     padding: "0px 20px",
+  },
+  listHeadNameColumn: {
+    marginLeft: "0px",
+    width: "40.42553191489362%",
+  },
+  listHeadDescriptionColumn: {
+    width: "31.914893617021278%",
+  },
+  listHeadCreatedColumn: {
+    width: "14.893617021276595%",
+  },
+  listHeadActionColumn: {
+    width: "6.382978723404255%",
   },
   projectRow: {
     borderBottomStyle: "solid",
@@ -530,7 +551,12 @@ const projectSearchBarStyleProps = stylex.props(styles.projectSearchBar);
 const projectSearchTextboxStyleProps = stylex.props(styles.projectSearchTextbox);
 const projectSearchButtonStyleProps = stylex.props(styles.projectSearchButton);
 const listHeadStyleProps = stylex.props(styles.listHead);
-const listHeadTitleStyleProps = stylex.props(styles.listHeadTitle);
+const listHeadColumnStyleProps = {
+  action: stylex.props(styles.listHeadColumn, styles.listHeadActionColumn),
+  created: stylex.props(styles.listHeadColumn, styles.listHeadCreatedColumn),
+  description: stylex.props(styles.listHeadColumn, styles.listHeadDescriptionColumn),
+  name: stylex.props(styles.listHeadColumn, styles.listHeadNameColumn),
+};
 const projectRowStyleProps = stylex.props(styles.projectRow);
 const projectRowEvenStyleProps = stylex.props(styles.projectRow, styles.projectRowEven);
 const projectRowAvatarStyleProps = stylex.props(styles.projectRowAvatar);
@@ -781,36 +807,40 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               </div>
               <div
                 {...listHeadStyleProps}
-                className={`row-fluid listhead ${listHeadStyleProps.className ?? ""}`}
+                className={listHeadStyleProps.className}
                 data-stylex-owner="site-project-list-listhead"
               >
                 <div
-                  {...listHeadTitleStyleProps}
-                  className={`span5 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                  {...listHeadColumnStyleProps.name}
+                  className={listHeadColumnStyleProps.name.className}
+                  data-stylex-owner="site-project-list-listhead-name-column"
                 >
                   <strong>
                     <LegacyMessage messageKey="project.name" />
                   </strong>
                 </div>
                 <div
-                  {...listHeadTitleStyleProps}
-                  className={`span4 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                  {...listHeadColumnStyleProps.description}
+                  className={listHeadColumnStyleProps.description.className}
+                  data-stylex-owner="site-project-list-listhead-description-column"
                 >
                   <strong>
                     <LegacyMessage messageKey="project.description" />
                   </strong>
                 </div>
                 <div
-                  {...listHeadTitleStyleProps}
-                  className={`span2 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                  {...listHeadColumnStyleProps.created}
+                  className={listHeadColumnStyleProps.created.className}
+                  data-stylex-owner="site-project-list-listhead-created-column"
                 >
                   <strong>
                     <LegacyMessage messageKey="project.created" />
                   </strong>
                 </div>
                 <div
-                  {...listHeadTitleStyleProps}
-                  className={`span1 listhead-title ${listHeadTitleStyleProps.className ?? ""}`}
+                  {...listHeadColumnStyleProps.action}
+                  className={listHeadColumnStyleProps.action.className}
+                  data-stylex-owner="site-project-list-listhead-action-column"
                 >
                   <strong>&nbsp;</strong>
                 </div>
