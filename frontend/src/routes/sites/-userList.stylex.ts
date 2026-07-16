@@ -3,6 +3,11 @@ import * as stylex from "@stylexjs/stylex";
 export const siteUserListColors = stylex.defineVars({
   identityId: "#999999",
   identityName: "#0088cc",
+  paginationAccent: "#f36c22",
+  paginationDelimiter: "#dddddd",
+  paginationFocusShadow: "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
+  paginationInputBorder: "#eeeeee",
+  paginationText: "#8e9094",
   listheadBorder: "#efefef",
   listheadSurface: "#f7f7f7",
   rowAlternateSurface: "#f9f9f9",

@@ -64,7 +64,7 @@ test("moves only the active legacy user-list management shell to five StyleX own
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
   expect(route).toContain('data-stylex-owner="site-user-list-row"');
   expect(route).toContain(
-    'className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}',
+    'className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}',
   );
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("siteUserListColors.page");
@@ -91,7 +91,9 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
     await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
     await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
     await expect(content).not.toHaveClass(/\bspan10\b/u);
-    const userRows = page.locator('.user-list-wrap > [data-stylex-owner="site-user-list-row"]');
+    const userRows = page.locator(
+      '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
+    );
     await expect(userRows).toHaveCount(3);
     expect(
       await userRows.evaluateAll((nodes) =>
@@ -101,9 +103,9 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
         })),
       ),
     ).toEqual([
-      { listitem: true, rowFluid: false },
-      { listitem: true, rowFluid: false },
-      { listitem: true, rowFluid: false },
+      { listitem: false, rowFluid: false },
+      { listitem: false, rowFluid: false },
+      { listitem: false, rowFluid: false },
     ]);
     await expect(
       userRows.locator(':scope > [data-stylex-owner="site-user-list-row-column"]'),

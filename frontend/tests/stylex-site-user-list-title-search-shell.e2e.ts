@@ -182,7 +182,7 @@ test.describe("StyleX site user-list title/search shell", () => {
               if (node.getAttribute("data-stylex-owner") === titleOwner) return titleOwner;
               if (node.matches('[data-stylex-owner="site-user-list-state-tabs"]')) return "tabs";
               if (node.matches('[data-stylex-owner="site-user-list-listhead"]')) return "listhead";
-              if (node.matches("ul.user-list-wrap")) return "users";
+              if (node.matches('[data-stylex-owner="site-user-list-row-list"]')) return "users";
               if (node.matches("#pagination")) return "pagination";
               return node.tagName;
             }),
@@ -190,7 +190,9 @@ test.describe("StyleX site user-list title/search shell", () => {
         ),
     ).toEqual([owners.title, "tabs", "listhead", "users", "pagination"]);
     await expect(
-      page.locator('.user-list-wrap > [data-stylex-owner="site-user-list-row"]'),
+      page.locator(
+        '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
+      ),
     ).toHaveCount(1);
   });
 
@@ -229,7 +231,9 @@ test.describe("StyleX site user-list title/search shell", () => {
         () => (window as Window & { __userSearchShell?: boolean }).__userSearchShell,
       ),
     ).toBe(true);
-    await expect(page.locator(".user-list-wrap")).toContainText("Alice Example");
+    await expect(page.locator('[data-stylex-owner="site-user-list-row-list"]')).toContainText(
+      "Alice Example",
+    );
   });
 
   for (const viewport of [

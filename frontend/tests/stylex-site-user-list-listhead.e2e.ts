@@ -122,8 +122,9 @@ test("populated ACTIVE listhead preserves desktop and mobile frozen output", asy
         tabsBottom: document
           .querySelector<HTMLElement>('[data-stylex-owner="site-user-list-state-tabs"]')!
           .getBoundingClientRect().bottom,
-        userListTop: document.querySelector<HTMLElement>(".user-list-wrap")!.getBoundingClientRect()
-          .top,
+        userListTop: document
+          .querySelector<HTMLElement>('[data-stylex-owner="site-user-list-row-list"]')!
+          .getBoundingClientRect().top,
       };
       fixture.remove();
       return result;

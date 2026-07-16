@@ -227,6 +227,58 @@ const styles = stylex.create({
     lineHeight: "20px",
     marginLeft: "5px",
   },
+  paginationRoot: {
+    clear: "both",
+    margin: "20px 0px",
+    textAlign: "center",
+    width: "100%",
+  },
+  paginationList: {
+    display: "inline-block",
+    fontSize: "0px",
+    listStyle: "none",
+    margin: "0px 0px 0px -120px",
+    padding: "0px",
+  },
+  paginationItem: {
+    color: siteUserListColors.paginationText,
+    display: "inline-block",
+    fontSize: "12px",
+    padding: "0px 10px",
+  },
+  paginationIconItem: { padding: "0px 5px" },
+  paginationDelimiter: {
+    color: siteUserListColors.paginationDelimiter,
+    padding: "0px 5px",
+  },
+  paginationInput: {
+    borderColor: {
+      default: siteUserListColors.paginationInputBorder,
+      ":hover": siteUserListColors.paginationAccent,
+      ":focus": siteUserListColors.paginationAccent,
+    },
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: {
+      default: "none",
+      ":hover": siteUserListColors.paginationFocusShadow,
+      ":focus": siteUserListColors.paginationFocusShadow,
+    },
+    color: {
+      default: null,
+      ":hover": siteUserListColors.paginationAccent,
+      ":focus": siteUserListColors.paginationAccent,
+    },
+    fontWeight: "700",
+    margin: "0px",
+    textAlign: "center",
+    width: "30px",
+  },
+  paginationLabel: {
+    color: siteUserListColors.paginationAccent,
+    fontSize: "11px",
+  },
+  paginationLabelDisabled: { color: siteUserListColors.paginationText },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -318,6 +370,20 @@ const emailStyleProps = stylex.props(styles.userEmail);
 const avatarStyleProps = stylex.props(styles.userAvatar);
 const userNameStyleProps = stylex.props(styles.userName);
 const userIdStyleProps = stylex.props(styles.userId);
+const paginationRootStyleProps = stylex.props(styles.paginationRoot);
+const paginationListStyleProps = stylex.props(styles.paginationList);
+const paginationItemStyleProps = stylex.props(styles.paginationItem);
+const paginationIconItemStyleProps = stylex.props(styles.paginationItem, styles.paginationIconItem);
+const paginationDelimiterStyleProps = stylex.props(
+  styles.paginationItem,
+  styles.paginationDelimiter,
+);
+const paginationInputStyleProps = stylex.props(styles.paginationInput);
+const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
+const paginationDisabledLabelStyleProps = stylex.props(
+  styles.paginationLabel,
+  styles.paginationLabelDisabled,
+);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -712,9 +778,13 @@ function UserListPagination({
   const nextPageLabel = t("button.nextPage");
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...paginationRootStyleProps}
+      id="pagination"
+      data-stylex-owner="site-user-list-pagination"
+    >
+      <ul {...paginationListStyleProps} data-stylex-owner="site-user-list-pagination-list">
+        <li {...paginationIconItemStyleProps} data-stylex-owner="site-user-list-pagination-item">
           {hasPrev ? (
             <Link
               {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
@@ -722,18 +792,31 @@ function UserListPagination({
               to="/sites/userList"
             >
               <i className="ico btn-pg-prev"></i>
-              <span>{prevPageLabel}</span>
+              <span
+                {...paginationLabelStyleProps}
+                data-stylex-owner="site-user-list-pagination-label"
+              >
+                {prevPageLabel}
+              </span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">{prevPageLabel}</span>
+              <span
+                {...paginationDisabledLabelStyleProps}
+                data-disabled="true"
+                data-stylex-owner="site-user-list-pagination-label"
+              >
+                {prevPageLabel}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li {...paginationItemStyleProps} data-stylex-owner="site-user-list-pagination-item">
           <input
-            className="input-mini nospinner"
+            {...paginationInputStyleProps}
+            className={`input-mini nospinner ${paginationInputStyleProps.className ?? ""}`}
+            data-stylex-owner="site-user-list-pagination-input"
             defaultValue={currentPage}
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -767,21 +850,36 @@ function UserListPagination({
             type="number"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li {...paginationDelimiterStyleProps} data-stylex-owner="site-user-list-pagination-item">
+          /
+        </li>
+        <li {...paginationItemStyleProps} data-stylex-owner="site-user-list-pagination-item">
+          {totalPages}
+        </li>
+        <li {...paginationIconItemStyleProps} data-stylex-owner="site-user-list-pagination-item">
           {hasNext ? (
             <Link
               {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
               search={search(currentPage + 1)}
               to="/sites/userList"
             >
-              <span>{nextPageLabel}</span>
+              <span
+                {...paginationLabelStyleProps}
+                data-stylex-owner="site-user-list-pagination-label"
+              >
+                {nextPageLabel}
+              </span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">{nextPageLabel}</span>
+              <span
+                {...paginationDisabledLabelStyleProps}
+                data-disabled="true"
+                data-stylex-owner="site-user-list-pagination-label"
+              >
+                {nextPageLabel}
+              </span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
