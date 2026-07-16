@@ -411,6 +411,57 @@ const styles = stylex.create({
     top: "0px",
     zIndex: 1040,
   },
+  deleteModalButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionDefaultSurface,
+      ":hover": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":focus": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":active": siteUserListColors.actionDefaultSurfaceInteractive,
+    },
+    borderColor: {
+      default: siteUserListColors.actionBorder,
+      ":hover": siteUserListColors.actionBorderInteractive,
+      ":focus": siteUserListColors.actionBorderInteractive,
+      ":active": siteUserListColors.actionBorderInteractive,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: siteUserListColors.actionShadow,
+    color: {
+      default: siteUserListColors.actionText,
+      ":hover": siteUserListColors.actionTextInteractive,
+      ":focus": siteUserListColors.actionTextInteractive,
+      ":active": siteUserListColors.actionTextInteractive,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginBottom: "0px",
+    marginLeft: "0.3em",
+    outline: "0 none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: "none",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  deleteModalButtonFirst: { marginLeft: "0px" },
+  deleteModalButtonDanger: {
+    backgroundColor: {
+      default: siteUserListColors.actionDanger,
+      ":hover": siteUserListColors.actionDangerBorder,
+      ":focus": siteUserListColors.actionDangerBorder,
+      ":active": siteUserListColors.actionDanger,
+    },
+    borderColor: siteUserListColors.actionDangerBorder,
+    color: siteUserListColors.actionTextInverse,
+  },
   actionButton: {
     backgroundColor: {
       default: siteUserListColors.actionDefaultSurface,
@@ -675,6 +726,12 @@ const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
 const deleteModalBodyStyleProps = stylex.props(styles.deleteModalBody);
 const deleteModalFooterStyleProps = stylex.props(styles.deleteModalFooter);
 const deleteModalBackdropStyleProps = stylex.props(styles.deleteModalBackdrop);
+const deleteModalConfirmButtonStyleProps = stylex.props(
+  styles.deleteModalButton,
+  styles.deleteModalButtonFirst,
+  styles.deleteModalButtonDanger,
+);
+const deleteModalDismissButtonStyleProps = stylex.props(styles.deleteModalButton);
 const actionButtonStyleProps = stylex.props(styles.actionButton);
 const actionSuccessButtonStyleProps = stylex.props(styles.actionButton, styles.actionSuccessButton);
 const actionInfoButtonStyleProps = stylex.props(styles.actionButton, styles.actionInfoButton);
@@ -1028,14 +1085,22 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   data-stylex-owner="site-user-list-delete-modal-footer"
                 >
                   <button
+                    {...deleteModalConfirmButtonStyleProps}
                     type="button"
                     id="accountToggleBtn"
-                    className="ybtn ybtn-danger"
+                    data-stylex-owner="site-user-list-delete-modal-button"
+                    data-variant="danger"
                     onClick={submitDelete}
                   >
                     <LegacyMessage messageKey="button.yes" />
                   </button>
-                  <button type="button" className="ybtn" onClick={dismissDeleteModal}>
+                  <button
+                    {...deleteModalDismissButtonStyleProps}
+                    type="button"
+                    data-stylex-owner="site-user-list-delete-modal-button"
+                    data-variant="default"
+                    onClick={dismissDeleteModal}
+                  >
                     <LegacyMessage messageKey="button.no" />
                   </button>
                 </div>

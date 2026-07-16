@@ -347,7 +347,11 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(accountDeleteButton).not.toHaveAttribute("data-user-name", /./u);
   await expect(page.locator('#alertDeletionWrap a[id="accountToggleBtn"]')).toHaveCount(0);
   await expect(page.locator("#accountToggleBtn")).toHaveAttribute("type", "button");
-  await expect(page.locator("#accountToggleBtn")).toHaveClass("ybtn ybtn-danger");
+  await expect(page.locator("#accountToggleBtn")).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-delete-modal-button",
+  );
+  await expect(page.locator("#accountToggleBtn")).not.toHaveClass(/\bybtn(?:-danger)?\b/u);
   await expect(page.locator('#alertDeletionWrap [data-dismiss="modal"]')).toHaveCount(0);
   const avatarImage = page.locator('[data-stylex-owner="site-user-list-row-avatar"] img');
   await expect(avatarImage).toHaveAttribute("alt", "Door TTS");
@@ -915,11 +919,9 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   const deleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   const deleteModal = page.locator("#alertDeletionWrap");
   const closeButton = page.locator('[data-stylex-owner="site-user-list-delete-modal-close"]');
-  const noButton = page
-    .locator('[data-stylex-owner="site-user-list-delete-modal-footer"] .ybtn')
-    .filter({
-      hasText: "No",
-    });
+  const noButton = page.locator('[data-stylex-owner="site-user-list-delete-modal-button"]').filter({
+    hasText: "No",
+  });
   const confirmButton = page.locator("#accountToggleBtn");
 
   await expect(deleteModal).toHaveAttribute("data-state", "initial");
@@ -945,6 +947,83 @@ test("site admin user delete modal stays route-owned across open dismiss and con
   await expect(closeButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(noButton).not.toHaveAttribute("data-dismiss", "modal");
   await expect(deleteModal.locator('[data-dismiss="modal"]')).toHaveCount(0);
+  const buttonStyle = (button: typeof confirmButton) =>
+    button.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        backgroundColor: style.backgroundColor,
+        borderColor: style.borderColor,
+        borderRadius: style.borderRadius,
+        borderStyle: style.borderStyle,
+        borderWidth: style.borderWidth,
+        boxShadow: style.boxShadow,
+        color: style.color,
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
+        marginLeft: style.marginLeft,
+        padding: style.padding,
+      };
+    });
+  await expect(confirmButton).toHaveAttribute("data-variant", "danger");
+  await expect(noButton).toHaveAttribute("data-variant", "default");
+  expect(await buttonStyle(confirmButton)).toEqual({
+    backgroundColor: "rgb(201, 52, 38)",
+    borderColor: "rgb(177, 52, 39)",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+    color: "rgb(255, 255, 255)",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginLeft: "0px",
+    padding: "4px 12px",
+  });
+  expect(await buttonStyle(noButton)).toEqual({
+    backgroundColor: "rgb(255, 255, 255)",
+    borderColor: "rgba(0, 0, 0, 0.15)",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+    color: "rgb(51, 51, 51)",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginLeft: "4.2px",
+    padding: "4px 12px",
+  });
+  await noButton.hover();
+  await expect
+    .poll(() => buttonStyle(noButton))
+    .toMatchObject({
+      backgroundColor: "rgb(241, 241, 241)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+  await confirmButton.hover();
+  await expect
+    .poll(() => buttonStyle(confirmButton))
+    .toMatchObject({
+      backgroundColor: "rgb(177, 52, 39)",
+      borderColor: "rgb(177, 52, 39)",
+      color: "rgb(255, 255, 255)",
+    });
+  await noButton.focus();
+  await expect
+    .poll(() => buttonStyle(noButton))
+    .toMatchObject({
+      backgroundColor: "rgb(241, 241, 241)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+  await confirmButton.focus();
+  await expect
+    .poll(() => buttonStyle(confirmButton))
+    .toMatchObject({
+      backgroundColor: "rgb(177, 52, 39)",
+      borderColor: "rgb(177, 52, 39)",
+      color: "rgb(255, 255, 255)",
+    });
   await expect(page).toHaveURL(userListUrl);
   expect(await spaMarker(page)).toBe("site-user-delete-modal");
   await expect

@@ -2043,6 +2043,16 @@ GREEN 1/1 (13.4s) for open, close, backdrop, Escape, and confirm behavior. The s
 populated-DOM check reaches only the pre-existing unrelated global-GNB `Feedback` fixture failure.
 This is not Wave 1 completion.
 
+The one-hundred-seventy-second slice migrates the open `/sites/userList` delete-modal footer's Yes
+and No controls from frozen `_yobiUI.less` ybtn base/default/danger cascades. A shared direct button
+owner plus first/danger variants preserves exact 14/20 type, 4×12 padding, `.3em` adjacency,
+transition, borders, shadow, and default/danger interaction states. Existing route action paint
+tokens are reused because their semantic values exactly match; no theme entry is added. The two
+buttons retire only `ybtn`/`ybtn-danger` while modal shell owners and React confirm/dismiss behavior
+remain unchanged. Main browser coverage is GREEN 1/1 (14.8s), pinning exact rest,
+transition-settled default/danger hover/focus paint, and full modal interactions without
+generated-class locators. This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
