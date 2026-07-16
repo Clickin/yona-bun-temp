@@ -1277,6 +1277,14 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       if (
         name === "class" &&
+        current.matches('[data-stylex-owner="site-issue-list-pagination-icon"]')
+      ) {
+        const isPrevious = current.closest("li")?.matches(":first-child") ?? false;
+        const isOff = current.getAttribute("data-pagination-state") === "off";
+        return `ico ${isPrevious ? "btn-pg-prev" : "btn-pg-next"}${isOff ? " off" : ""}`;
+      }
+      if (
+        name === "class" &&
         current.matches('[data-stylex-owner="site-issue-list-comments-icon"]')
       ) {
         return "yobicon-comments";

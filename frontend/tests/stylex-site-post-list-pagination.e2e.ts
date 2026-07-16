@@ -91,11 +91,15 @@ test.describe("StyleX site post-list pagination", () => {
       "paginationOffLabel",
       "paginationIcon",
       "paginationPrevIcon",
+      "paginationPrevIconDisabled",
       "paginationNextIcon",
+      "paginationNextIconDisabled",
     ]) {
       expect(route).toContain(`styles.${style}`);
     }
     expect(route).toContain("globalBreakpoints.mobile");
+    expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
+    expect(route).toContain('"--site-post-list-pagination-sprite": `url(${legacySpriteUrl})`');
     for (const token of [
       "sitePostListPaginationWrapperMargin",
       "sitePostListPaginationListDesktopMarginLeft",
@@ -144,12 +148,17 @@ test.describe("StyleX site post-list pagination", () => {
     await input.press("Enter");
     await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
     await expect(input).toHaveValue("3");
+    await expect(page.locator(owners.icon).first()).toHaveCSS(
+      "background-position",
+      "-136px -139px",
+    );
+    await expect(page.locator(owners.icon).last()).toHaveCSS("background-position", "-23px -13px");
     await input.fill("1.5");
     await input.press("Enter");
     await expect(input).toHaveValue("3");
   });
 
-  test("removes migrated selectors and retains only sprite fallbacks", async ({ page }) => {
+  test("removes all migrated pagination selectors", async ({ page }) => {
     const pagination = await openPagination(page);
     const classes = await pagination.evaluate((wrapper) =>
       [wrapper, ...wrapper.querySelectorAll<HTMLElement>("[data-stylex-owner]")].map((element) => ({
@@ -177,10 +186,8 @@ test.describe("StyleX site post-list pagination", () => {
       "input-mini",
     );
     for (const icon of await pagination.locator(owners.icon).all()) {
-      await expect(icon).toHaveClass(/\bico\b/u);
-      await expect(icon).toHaveClass(/\bbtn-pg-(?:prev|next)\b/u);
-      if ((await icon.getAttribute("data-pagination-state")) === "off") {
-        await expect(icon).toHaveClass(/\boff\b/u);
+      for (const token of ["ico", "btn-pg-prev", "btn-pg-next", "off"]) {
+        await expect(icon).not.toHaveClass(new RegExp(`\\b${token}\\b`, "u"));
       }
     }
     for (const label of await pagination.locator(owners.label).all()) {
@@ -222,11 +229,17 @@ test.describe("StyleX site post-list pagination", () => {
       await expect(labels.first()).toHaveCSS("color", "rgb(142, 144, 148)");
       await expect(labels.last()).toHaveCSS("color", "rgb(243, 108, 34)");
       for (const icon of await icons.all()) {
+        await expect(icon).toHaveCSS("background-image", /sprite[^)]*\.png/u);
+        await expect(icon).toHaveCSS("background-repeat", "no-repeat");
         await expect(icon).toHaveCSS("width", "6px");
         await expect(icon).toHaveCSS("height", "9px");
         await expect(icon).toHaveCSS("display", "inline-block");
         await expect(icon).toHaveCSS("vertical-align", "middle");
       }
+      await expect(icons.first()).toHaveCSS("background-position", "-164px -2px");
+      await expect(icons.first()).toHaveCSS("margin-right", "10px");
+      await expect(icons.last()).toHaveCSS("background-position", "-146px -139px");
+      await expect(icons.last()).toHaveCSS("margin-left", "10px");
 
       const metrics = await pagination.evaluate((wrapper) => {
         const list = wrapper.querySelector<HTMLElement>(
@@ -277,19 +290,32 @@ test.describe("StyleX site post-list pagination", () => {
           const input = wrapper.querySelector<HTMLElement>(
             '[data-stylex-owner="site-post-list-pagination-input"]',
           )!;
+          const icons = wrapper.querySelectorAll<HTMLElement>(
+            '[data-stylex-owner="site-post-list-pagination-icon"]',
+          );
           const style = (element: Element) => {
             const value = getComputedStyle(element);
             return {
+              backgroundImage: value.backgroundImage,
+              backgroundPosition: value.backgroundPosition,
+              backgroundRepeat: value.backgroundRepeat,
               color: value.color,
               display: value.display,
               fontSize: value.fontSize,
+              height: value.height,
               margin: value.margin,
               marginLeft: value.marginLeft,
+              marginRight: value.marginRight,
               padding: value.padding,
               width: value.width,
             };
           };
-          return { input: style(input), list: style(list), wrapper: style(wrapper) };
+          return {
+            icons: Array.from(icons, style),
+            input: style(input),
+            list: style(list),
+            wrapper: style(wrapper),
+          };
         };
         const migrated = capture();
         const classByOwner: Record<string, string[]> = {
@@ -310,8 +336,21 @@ test.describe("StyleX site post-list pagination", () => {
           if (element.dataset.paginationVariant === "delimiter") element.classList.add("delimiter");
           if (element.dataset.paginationState === "off") element.classList.add("off");
         }
+        const icons = wrapper.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="site-post-list-pagination-icon"]',
+        );
+        icons.item(0).classList.add("ico", "btn-pg-prev");
+        icons.item(1).classList.add("ico", "btn-pg-next");
         return { fallback: capture(), migrated };
       });
+      for (const icon of [...equivalence.fallback.icons, ...equivalence.migrated.icons]) {
+        expect(icon.backgroundImage).toMatch(/sprite\.png/u);
+      }
+      const normalizeAssetOwnershipUrl = (icons: typeof equivalence.migrated.icons) =>
+        icons.map((icon) => ({ ...icon, backgroundImage: "sprite.png" }));
+      expect(normalizeAssetOwnershipUrl(equivalence.fallback.icons)).toEqual(
+        normalizeAssetOwnershipUrl(equivalence.migrated.icons),
+      );
       expect(equivalence.fallback.input).toEqual(equivalence.migrated.input);
       expect(equivalence.fallback.wrapper).toEqual(equivalence.migrated.wrapper);
       if (viewport.name === "desktop") {

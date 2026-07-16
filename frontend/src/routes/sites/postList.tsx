@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
+import type { CSSProperties } from "react";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
@@ -12,6 +14,10 @@ import { sitePostListColors } from "./-postList.stylex";
 type PostListRouteSearch = {
   pageNum?: number;
 };
+
+const paginationSpriteStyle = {
+  "--site-post-list-pagination-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -301,16 +307,26 @@ const styles = stylex.create({
     color: sitePostListColors.mutedText,
   },
   paginationIcon: {
+    backgroundImage: "var(--site-post-list-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
     display: "inline-block",
     verticalAlign: "middle",
     width: "6px",
     height: "9px",
   },
   paginationPrevIcon: {
+    backgroundPosition: "-136px -139px",
     marginRight: "10px",
   },
+  paginationPrevIconDisabled: {
+    backgroundPosition: "-164px -2px",
+  },
   paginationNextIcon: {
+    backgroundPosition: "-146px -139px",
     marginLeft: "10px",
+  },
+  paginationNextIconDisabled: {
+    backgroundPosition: "-23px -13px",
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
@@ -342,7 +358,17 @@ const paginationOffLabelStyleProps = stylex.props(
   styles.paginationOffLabel,
 );
 const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationPrevDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationPrevIcon,
+  styles.paginationPrevIconDisabled,
+);
 const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const paginationNextDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationNextIcon,
+  styles.paginationNextIconDisabled,
+);
 
 export const Route = createFileRoute("/sites/postList")({
   component: SitePostListRoute,
@@ -480,8 +506,8 @@ function PostListPagination({
             >
               <i
                 {...paginationPrevIconStyleProps}
-                className={`ico btn-pg-prev ${paginationPrevIconStyleProps.className ?? ""}`}
                 data-stylex-owner="site-post-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -494,10 +520,10 @@ function PostListPagination({
           ) : (
             <>
               <i
-                {...paginationPrevIconStyleProps}
-                className={`ico btn-pg-prev off ${paginationPrevIconStyleProps.className ?? ""}`}
+                {...paginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -583,8 +609,8 @@ function PostListPagination({
               </span>
               <i
                 {...paginationNextIconStyleProps}
-                className={`ico btn-pg-next ${paginationNextIconStyleProps.className ?? ""}`}
                 data-stylex-owner="site-post-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </Link>
           ) : (
@@ -598,10 +624,10 @@ function PostListPagination({
                 {t("button.nextPage")}
               </span>
               <i
-                {...paginationNextIconStyleProps}
-                className={`ico btn-pg-next off ${paginationNextIconStyleProps.className ?? ""}`}
+                {...paginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </>
           )}

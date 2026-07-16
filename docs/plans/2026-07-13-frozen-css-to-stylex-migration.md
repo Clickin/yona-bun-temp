@@ -2268,6 +2268,19 @@ StyleX matrix is GREEN 88/88 (52.3s), and combined whole-screen coverage is GREE
 1.6m). Each route passes 7/8; only the same pre-existing missing global-GNB Feedback expectations
 remain, while all fourteen functional cases pass.
 
+The one-hundred-eighty-sixth slice completes the pagination sprite-icon residual for both
+`/sites/postList` and `/sites/issueList`. Each route imports `frontend/src/assets/legacy/sprite.png`
+through Vite, exposes it through a route-local CSS custom property, and keeps display, no-repeat,
+6×9 dimensions, vertical alignment, margins, and active/disabled prev/next background positions
+inline rather than in theme variables. Only the icon elements retire literal `ico`,
+`btn-pg-prev`, `btn-pg-next`, and `off`; `data-pagination-state`, navigation, and surrounding
+pagination ownership remain unchanged. Asset URL prefixes are normalized in evidence while the
+`sprite.png` basename, positions, and geometry remain exact. Final effective focused coverage is
+GREEN 12/12: post pagination 5/5 (17.1s), plus issue pagination 5/5 and post nospinner 2/2 from the
+preceding combined run. Complete combined StyleX is GREEN 88/88 (53.7s), and combined whole-screen
+coverage is GREEN 14/16 (about 1.6m); each route is 7/8 with only the same pre-existing missing GNB
+Feedback expectation, while all fourteen functional cases pass.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -24,6 +24,10 @@ const legacyResponsiveLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_responsive.less",
   import.meta.url,
 );
+const legacySpritesLessSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_sprites.less",
+  import.meta.url,
+);
 const owners = {
   icon: '[data-stylex-owner="site-issue-list-pagination-icon"]',
   input: '[data-stylex-owner="site-issue-list-pagination-input"]',
@@ -87,7 +91,7 @@ async function openPagination(page: Page, pageNum = 1) {
 
 test.describe("StyleX site issue-list pagination", () => {
   test("pins the frozen pagination source and declares six owners with route theme variables", async () => {
-    const [route, theme, template, legacyJs, commonLess, pageLess, responsiveLess] =
+    const [route, theme, template, legacyJs, commonLess, pageLess, responsiveLess, spritesLess] =
       await Promise.all([
         readFile(routeSource, "utf8"),
         readFile(themeSource, "utf8"),
@@ -96,6 +100,7 @@ test.describe("StyleX site issue-list pagination", () => {
         readFile(legacyCommonLessSource, "utf8"),
         readFile(legacyPageLessSource, "utf8"),
         readFile(legacyResponsiveLessSource, "utf8"),
+        readFile(legacySpritesLessSource, "utf8"),
       ]);
     expect(template).toContain('<div id="pagination"></div>');
     expect(legacyJs).toContain('c.addClass("page-navigation-wrap")');
@@ -105,6 +110,13 @@ test.describe("StyleX site issue-list pagination", () => {
     expect(commonLess).toContain(".nospinner { -moz-appearance:textfield; }");
     expect(pageLess).toContain("margin-left: -120px !important;");
     expect(responsiveLess).toContain("margin-left: 0;");
+    expect(spritesLess).toContain(".ico {");
+    expect(spritesLess).toContain(".btn-pg-prev {");
+    expect(spritesLess).toContain("background-position: -136px -139px;");
+    expect(spritesLess).toContain("background-position: -164px -2px;");
+    expect(spritesLess).toContain(".btn-pg-next {");
+    expect(spritesLess).toContain("background-position: -146px -139px;");
+    expect(spritesLess).toContain("background-position: -23px -13px;");
 
     for (const owner of Object.values(owners)) expect(route).toContain(owner.slice(1, -1));
     for (const style of [
@@ -118,12 +130,18 @@ test.describe("StyleX site issue-list pagination", () => {
       "issueListPaginationOffLabel",
       "issueListPaginationIcon",
       "issueListPaginationPrevIcon",
+      "issueListPaginationPrevDisabledIcon",
       "issueListPaginationNextIcon",
+      "issueListPaginationNextDisabledIcon",
     ])
       expect(route).toContain(`styles.${style}`);
     expect(route).toContain("globalBreakpoints.mobile");
     expect(route).toContain('MozAppearance: "textfield"');
+    expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
+    expect(route).toContain("--site-issue-list-pagination-sprite");
     expect(route).not.toContain("nospinner");
+    expect(route).not.toContain("className={`ico btn-pg-prev");
+    expect(route).not.toContain("className={`ico btn-pg-next");
     for (const token of [
       "siteIssueListPaginationWrapperMargin",
       "siteIssueListPaginationListDesktopMarginLeft",
@@ -189,7 +207,7 @@ test.describe("StyleX site issue-list pagination", () => {
     await expect(input).toHaveValue("3");
   });
 
-  test("retires migrated classes and keeps only sprite classes", async ({ page }) => {
+  test("retires migrated pagination and sprite classes", async ({ page }) => {
     const pagination = await openPagination(page);
     const owned = pagination.locator("[data-stylex-owner]");
     for (const element of await owned.all()) {
@@ -209,11 +227,15 @@ test.describe("StyleX site issue-list pagination", () => {
     await expect(pagination.locator(owners.input)).not.toHaveClass(/\bnospinner\b/u);
     await expect(pagination.locator(owners.input)).toHaveCSS("appearance", "auto");
     for (const icon of await pagination.locator(owners.icon).all()) {
-      await expect(icon).toHaveClass(/\bico\b/u);
-      await expect(icon).toHaveClass(/\bbtn-pg-(?:prev|next)\b/u);
-      if ((await icon.getAttribute("data-pagination-state")) === "off")
-        await expect(icon).toHaveClass(/\boff\b/u);
+      await expect(icon).not.toHaveClass(/\b(?:ico|btn-pg-prev|btn-pg-next|off)\b/u);
     }
+    await expect(pagination.locator(owners.icon).nth(0)).toHaveAttribute(
+      "data-pagination-state",
+      "off",
+    );
+    await expect(pagination.locator(owners.icon).nth(1)).not.toHaveAttribute(
+      "data-pagination-state",
+    );
     for (const label of await pagination.locator(owners.label).all())
       await expect(label).not.toHaveClass(/\boff\b/u);
   });
@@ -248,9 +270,15 @@ test.describe("StyleX site issue-list pagination", () => {
       await expect(labels.first()).toHaveCSS("color", "rgb(142, 144, 148)");
       await expect(labels.last()).toHaveCSS("color", "rgb(243, 108, 34)");
       for (const icon of await icons.all()) {
+        await expect(icon).toHaveCSS("background-image", /sprite[^)]*\.png/u);
         await expect(icon).toHaveCSS("width", "6px");
         await expect(icon).toHaveCSS("height", "9px");
+        await expect(icon).toHaveCSS("display", "inline-block");
+        await expect(icon).toHaveCSS("background-repeat", "no-repeat");
+        await expect(icon).toHaveCSS("vertical-align", "middle");
       }
+      await expect(icons.nth(0)).toHaveCSS("background-position", "-164px -2px");
+      await expect(icons.nth(1)).toHaveCSS("background-position", "-146px -139px");
 
       const metrics = await pagination.evaluate((wrapper) => {
         const list = wrapper.querySelector<HTMLElement>(
@@ -302,7 +330,29 @@ test.describe("StyleX site issue-list pagination", () => {
               width: value.width,
             };
           };
-          return { input: style(input), list: style(list), wrapper: style(wrapper) };
+          const icons = Array.from(
+            wrapper.querySelectorAll<HTMLElement>(
+              '[data-stylex-owner="site-issue-list-pagination-icon"]',
+            ),
+          );
+          return {
+            icons: icons.map((icon) => {
+              const value = getComputedStyle(icon);
+              return {
+                backgroundPosition: value.backgroundPosition,
+                backgroundRepeat: value.backgroundRepeat,
+                display: value.display,
+                height: value.height,
+                marginLeft: value.marginLeft,
+                marginRight: value.marginRight,
+                verticalAlign: value.verticalAlign,
+                width: value.width,
+              };
+            }),
+            input: style(input),
+            list: style(list),
+            wrapper: style(wrapper),
+          };
         };
         const migrated = capture();
         const classes: Record<string, string[]> = {
@@ -322,8 +372,14 @@ test.describe("StyleX site issue-list pagination", () => {
           if (element.dataset.paginationVariant === "delimiter") element.classList.add("delimiter");
           if (element.dataset.paginationState === "off") element.classList.add("off");
         }
+        const icons = wrapper.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="site-issue-list-pagination-icon"]',
+        );
+        icons[0]?.classList.add("ico", "btn-pg-prev");
+        icons[1]?.classList.add("ico", "btn-pg-next");
         return { fallback: capture(), migrated };
       });
+      expect(equivalence.fallback.icons).toEqual(equivalence.migrated.icons);
       expect(equivalence.fallback.input).toEqual(equivalence.migrated.input);
       expect(equivalence.fallback.wrapper).toEqual(equivalence.migrated.wrapper);
       if (viewport.name === "desktop")

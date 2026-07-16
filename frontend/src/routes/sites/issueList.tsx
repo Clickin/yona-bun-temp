@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { type KeyboardEvent } from "react";
+import { type CSSProperties, type KeyboardEvent } from "react";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   siteIssuesQueryOptions,
   siteUpdateQueryOptions,
@@ -24,6 +25,10 @@ type IssueListRouteSearch = {
   pageNum?: number;
   state?: string;
 } & Record<string, unknown>;
+
+const paginationSpriteStyle = {
+  "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -412,16 +417,26 @@ const styles = stylex.create({
     color: siteIssueListColors.mutedText,
   },
   issueListPaginationIcon: {
+    backgroundImage: "var(--site-issue-list-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
     display: "inline-block",
     verticalAlign: "middle",
     width: "6px",
     height: "9px",
   },
   issueListPaginationPrevIcon: {
+    backgroundPosition: "-136px -139px",
     marginRight: "10px",
   },
+  issueListPaginationPrevDisabledIcon: {
+    backgroundPosition: "-164px -2px",
+  },
   issueListPaginationNextIcon: {
+    backgroundPosition: "-146px -139px",
     marginLeft: "10px",
+  },
+  issueListPaginationNextDisabledIcon: {
+    backgroundPosition: "-23px -13px",
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
@@ -462,9 +477,19 @@ const issueListPaginationPrevIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationPrevIcon,
 );
+const issueListPaginationPrevDisabledIconStyleProps = stylex.props(
+  styles.issueListPaginationIcon,
+  styles.issueListPaginationPrevIcon,
+  styles.issueListPaginationPrevDisabledIcon,
+);
 const issueListPaginationNextIconStyleProps = stylex.props(
   styles.issueListPaginationIcon,
   styles.issueListPaginationNextIcon,
+);
+const issueListPaginationNextDisabledIconStyleProps = stylex.props(
+  styles.issueListPaginationIcon,
+  styles.issueListPaginationNextIcon,
+  styles.issueListPaginationNextDisabledIcon,
 );
 
 export const Route = createFileRoute("/sites/issueList")({
@@ -651,8 +676,8 @@ function IssueListPagination({
             >
               <i
                 {...issueListPaginationPrevIconStyleProps}
-                className={`ico btn-pg-prev ${issueListPaginationPrevIconStyleProps.className ?? ""}`}
                 data-stylex-owner="site-issue-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...issueListPaginationLabelStyleProps}
@@ -665,10 +690,10 @@ function IssueListPagination({
           ) : (
             <>
               <i
-                {...issueListPaginationPrevIconStyleProps}
-                className={`ico btn-pg-prev off ${issueListPaginationPrevIconStyleProps.className ?? ""}`}
+                {...issueListPaginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-issue-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...issueListPaginationOffLabelStyleProps}
@@ -738,8 +763,8 @@ function IssueListPagination({
               </span>
               <i
                 {...issueListPaginationNextIconStyleProps}
-                className={`ico btn-pg-next ${issueListPaginationNextIconStyleProps.className ?? ""}`}
                 data-stylex-owner="site-issue-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </Link>
           ) : (
@@ -753,10 +778,10 @@ function IssueListPagination({
                 {t("button.nextPage")}
               </span>
               <i
-                {...issueListPaginationNextIconStyleProps}
-                className={`ico btn-pg-next off ${issueListPaginationNextIconStyleProps.className ?? ""}`}
+                {...issueListPaginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-issue-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </>
           )}

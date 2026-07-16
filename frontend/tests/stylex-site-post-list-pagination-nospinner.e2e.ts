@@ -25,8 +25,8 @@ test("source retires only the pagination input nospinner residual", async () => 
   expect(route).toContain('data-stylex-owner="site-post-list-pagination-input"');
   expect(route).toContain('MozAppearance: "textfield"');
   expect(route).not.toContain("className={`nospinner");
-  expect(route).toContain("className={`ico btn-pg-prev");
-  expect(route).toContain("className={`ico btn-pg-next");
+  expect(route).not.toContain("className={`ico btn-pg-prev");
+  expect(route).not.toContain("className={`ico btn-pg-next");
   expect(route).not.toContain("className={`yobicon-comments");
 });
 

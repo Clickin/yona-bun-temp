@@ -1385,6 +1385,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           retiredPostListTokens.add("ikon");
           retiredPostListTokens.add("delimiter");
         }
+        if (current.matches("#pagination > .page-nums > .page-num.ikon i.ico")) {
+          retiredPostListTokens.add("ico");
+          retiredPostListTokens.add("btn-pg-prev");
+          retiredPostListTokens.add("btn-pg-next");
+          retiredPostListTokens.add("off");
+        }
         if (current.matches('#pagination input[name="pageNum"]')) {
           retiredPostListTokens.add("input-mini");
           retiredPostListTokens.add("nospinner");
