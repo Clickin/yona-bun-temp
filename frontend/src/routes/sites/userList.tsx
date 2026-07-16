@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
+import { useState, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -50,7 +50,6 @@ const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
 const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
   __legacySiteUserListSidebarActiveMarker: undefined,
 };
-const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
 const styles = stylex.create({
   breadcrumbOuter: {
     boxSizing: "border-box",
@@ -302,6 +301,86 @@ const styles = stylex.create({
   sidebarLinkActive: {
     backgroundColor: { default: "transparent", ":hover": "transparent" },
   },
+  actionButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionDefaultSurface,
+      ":hover": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":focus": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":active": siteUserListColors.actionDefaultSurfaceInteractive,
+    },
+    borderColor: {
+      default: siteUserListColors.actionBorder,
+      ":hover": siteUserListColors.actionBorderInteractive,
+      ":focus": siteUserListColors.actionBorderInteractive,
+      ":active": siteUserListColors.actionBorderInteractive,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: siteUserListColors.actionShadow,
+    color: {
+      default: siteUserListColors.actionText,
+      ":hover": siteUserListColors.actionTextInteractive,
+      ":focus": siteUserListColors.actionTextInteractive,
+      ":active": siteUserListColors.actionTextInteractive,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "13px",
+    lineHeight: "20px",
+    marginBottom: "2px",
+    marginLeft: "2px",
+    marginRight: "2px",
+    marginTop: "2px",
+    outline: "0 none",
+    padding: "3px 10px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: "none",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  actionSuccessButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionPrimary,
+      ":hover": siteUserListColors.actionPrimaryBorder,
+      ":focus": siteUserListColors.actionPrimaryBorder,
+      ":active": siteUserListColors.actionPrimaryBorder,
+    },
+    borderColor: siteUserListColors.actionPrimaryBorder,
+    color: siteUserListColors.actionTextInverse,
+  },
+  actionInfoButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionInfo,
+      ":hover": siteUserListColors.actionInfoBorder,
+      ":focus": siteUserListColors.actionInfoBorder,
+      ":active": siteUserListColors.actionInfo,
+    },
+    borderColor: siteUserListColors.actionInfoBorder,
+    color: siteUserListColors.actionTextInverse,
+  },
+  actionLabelInfoButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionLabelInfo,
+      ":hover": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":focus": siteUserListColors.actionDefaultSurfaceInteractive,
+      ":active": siteUserListColors.actionDefaultSurfaceInteractive,
+    },
+  },
+  actionDangerButton: {
+    backgroundColor: {
+      default: siteUserListColors.actionDanger,
+      ":hover": siteUserListColors.actionDangerBorder,
+      ":focus": siteUserListColors.actionDangerBorder,
+      ":active": siteUserListColors.actionDanger,
+    },
+    borderColor: siteUserListColors.actionDangerBorder,
+    color: siteUserListColors.actionTextInverse,
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -417,6 +496,14 @@ const sidebarActiveItemStyleProps = stylex.props(
 );
 const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarLinkActive);
+const actionButtonStyleProps = stylex.props(styles.actionButton);
+const actionSuccessButtonStyleProps = stylex.props(styles.actionButton, styles.actionSuccessButton);
+const actionInfoButtonStyleProps = stylex.props(styles.actionButton, styles.actionInfoButton);
+const actionLabelInfoButtonStyleProps = stylex.props(
+  styles.actionButton,
+  styles.actionLabelInfoButton,
+);
+const actionDangerButtonStyleProps = stylex.props(styles.actionButton, styles.actionDangerButton);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -1083,50 +1170,51 @@ function UserListItem({
         <span>{user.createdAt}</span>
       </div>
       {state !== "DELETED" ? (
-        <div
-          {...actionColumnStyleProps}
-          className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}
-          data-stylex-owner="site-user-list-row-action"
-        >
+        <div {...actionColumnStyleProps} data-stylex-owner="site-user-list-row-action">
           <button
+            {...(user.isGuest ? actionSuccessButtonStyleProps : actionButtonStyleProps)}
             type="button"
-            className={user.isGuest ? "ybtn ybtn-small ybtn-success" : "ybtn ybtn-small"}
+            data-action="guest"
+            data-stylex-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "guest")}
-            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {user.isGuest ? t("button.user.make.normal.mode") : t("button.user.make.guest.mode")}
           </button>
           <button
+            {...actionButtonStyleProps}
             type="button"
-            className="ybtn ybtn-small"
+            data-action="account-lock"
+            data-stylex-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "account-lock")}
-            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {t(`button.user.makeAccountUnlock.${user.state === "LOCKED"}`)}
           </button>
           <button
+            {...actionButtonStyleProps}
             type="button"
             id={user.loginId}
-            className="ybtn ybtn-small"
+            data-action="reset-password"
+            data-stylex-owner="site-user-list-row-action-button"
             onClick={() => onResetPasswordClick(user.loginId)}
           >
             {t("title.resetPassword")}
           </button>
           <button
+            {...(user.isSiteAdmin ? actionInfoButtonStyleProps : actionLabelInfoButtonStyleProps)}
             type="button"
-            className={
-              user.isSiteAdmin ? "ybtn ybtn-small ybtn-info" : "ybtn ybtn-small label-info"
-            }
+            data-action="site-admin"
+            data-stylex-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "site-admin")}
-            style={LEGACY_ACTION_ANCHOR_BUTTON_STYLE}
           >
             {user.isSiteAdmin
               ? t("button.user.revoke.site.admin.role")
               : t("button.user.upgrade.to.site.admin")}
           </button>
           <button
+            {...actionDangerButtonStyleProps}
             type="button"
-            className="ybtn ybtn-small ybtn-danger"
+            data-action="delete"
+            data-stylex-owner="site-user-list-row-action-button"
             onClick={(event) => onDeleteClick(event, user)}
           >
             {t("button.delete")}

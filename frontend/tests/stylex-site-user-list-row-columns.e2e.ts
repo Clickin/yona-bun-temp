@@ -27,7 +27,8 @@ test("row columns own the legacy grid and column declarations", () => {
     "span5 listitem-col action-buttons",
   ])
     expect(route).not.toContain(`className="${retired}"`);
-  expect(route).toContain('className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}');
+  expect(route).toContain('data-stylex-owner="site-user-list-row-action-button"');
+  expect(route).not.toContain("action-buttons");
   expect(route).not.toContain("globalColors.");
 });
 

@@ -27,7 +27,11 @@ test("row shell ownership follows the populated legacy list", () => {
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(route).toContain('className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}');
-  expect(route).toContain('className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}');
+  expect(route).toContain('data-stylex-owner="site-user-list-row-action"');
+  expect(route).toContain('data-stylex-owner="site-user-list-row-action-button"');
+  expect(route).not.toContain("action-buttons");
+  expect(pageLess).toContain("&.action-buttons {");
+  expect(pageLess).toContain("margin: 2px !important;");
   expect(theme).toContain('rowBorder: "#efefef"');
   expect(theme).toContain('rowAlternateSurface: "#f9f9f9"');
   expect(readFileSync("src/routes/$ownerName/$projectName/code/$branch.tsx", "utf8")).toContain(
@@ -215,9 +219,9 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
       // excluded action-button/copy descendants determine the final row height.
       expect(evidence.boxes.map((box) => box.height)).toEqual([115, 115, 115]);
     } else {
-      // Authenticated ko-KR legacy rows are 243px; excluded English copy/action descendants
-      // make this local fixture 223px without changing the owned shell declarations.
-      expect(evidence.boxes.map((box) => box.height)).toEqual([223, 223, 223]);
+      // Authenticated ko-KR legacy rows are 243px; this English fixture is exactly 231px after
+      // Slice 166 restored frozen `_page.less` 2px margins on all five action controls.
+      expect(evidence.boxes.map((box) => box.height)).toEqual([231, 231, 231]);
     }
     if (viewport.name === "desktop")
       expect(evidence.documentWidth).toBeLessThanOrEqual(viewport.width);

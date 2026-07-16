@@ -309,7 +309,12 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(shellBoxes!.feedback.top).toBeGreaterThanOrEqual(shellBoxes!.navbar.top);
   const guestToggleButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestToggleButton).toHaveAttribute("type", "button");
-  await expect(guestToggleButton).toHaveClass("ybtn ybtn-small");
+  await expect(guestToggleButton).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-row-action-button",
+  );
+  await expect(guestToggleButton).toHaveAttribute("data-action", "guest");
+  await expect(guestToggleButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(guestToggleButton).not.toHaveAttribute("data-request-method", /./u);
   await expect(guestToggleButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(page.getByRole("button", { exact: true, name: "Lock account" })).toHaveAttribute(
@@ -324,9 +329,16 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(resetPasswordButton).toHaveAttribute("id", "doortts");
   await expect(resetPasswordButton).not.toHaveAttribute("data-toggle", "reset-password");
   await expect(resetPasswordButton).not.toHaveAttribute("data-href", /./u);
-  await expect(
-    page.getByRole("button", { exact: true, name: "Upgrade to Site admin" }),
-  ).toHaveClass("ybtn ybtn-small label-info");
+  const siteAdminButton = page.getByRole("button", {
+    exact: true,
+    name: "Upgrade to Site admin",
+  });
+  await expect(siteAdminButton).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-row-action-button",
+  );
+  await expect(siteAdminButton).toHaveAttribute("data-action", "site-admin");
+  await expect(siteAdminButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small|label-info)(?:\s|$)/u);
   const accountDeleteButton = page.getByRole("button", { exact: true, name: "Delete" });
   await expect(accountDeleteButton).toHaveAttribute("type", "button");
   await expect(accountDeleteButton).not.toHaveAttribute("data-toggle", "account-delete");
@@ -789,13 +801,23 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
 
   const guestButton = page.getByRole("button", { exact: true, name: "Make Guest" });
   await expect(guestButton).toHaveText("Make Guest");
-  await expect(guestButton).toHaveClass("ybtn ybtn-small");
+  await expect(guestButton).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-row-action-button",
+  );
+  await expect(guestButton).toHaveAttribute("data-action", "guest");
+  await expect(guestButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(guestButton).not.toHaveAttribute("data-request-method", /./u);
   await expect(guestButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(guestButton).toHaveCSS("margin", "2px");
   const accountLockButton = page.getByRole("button", { exact: true, name: "Lock account" });
   await expect(accountLockButton).toHaveText("Lock account");
-  await expect(accountLockButton).toHaveClass("ybtn ybtn-small");
+  await expect(accountLockButton).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-row-action-button",
+  );
+  await expect(accountLockButton).toHaveAttribute("data-action", "account-lock");
+  await expect(accountLockButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small)(?:\s|$)/u);
   await expect(accountLockButton).not.toHaveAttribute("data-request-method", /./u);
   await expect(accountLockButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(accountLockButton).toHaveCSS("margin", "2px");
@@ -804,7 +826,12 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
     name: "Revoke site admin role",
   });
   await expect(revokeButton).toHaveText("Revoke site admin role");
-  await expect(revokeButton).toHaveClass("ybtn ybtn-small ybtn-info");
+  await expect(revokeButton).toHaveAttribute(
+    "data-stylex-owner",
+    "site-user-list-row-action-button",
+  );
+  await expect(revokeButton).toHaveAttribute("data-action", "site-admin");
+  await expect(revokeButton).not.toHaveClass(/(?:^|\s)(?:ybtn|ybtn-small|ybtn-info)(?:\s|$)/u);
   await expect(revokeButton).not.toHaveAttribute("data-request-method", /./u);
   await expect(revokeButton).not.toHaveAttribute("data-request-uri", /./u);
   await expect(revokeButton).toHaveCSS("margin", "2px");
@@ -843,8 +870,9 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
   });
 
   const routeSource = readFileSync(SITE_USER_LIST_ROUTE_SOURCE, "utf8");
-  expect(routeSource).toContain("LEGACY_ACTION_ANCHOR_BUTTON_STYLE");
-  expect(routeSource).toContain('user.isSiteAdmin ? "ybtn ybtn-small ybtn-info"');
+  expect(routeSource).not.toContain("LEGACY_ACTION_ANCHOR_BUTTON_STYLE");
+  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-action-button"');
+  expect(routeSource).toContain('data-action="site-admin"');
   expect(routeSource).toContain('t("button.user.revoke.site.admin.role")');
   expect(routeSource).toContain("state: search.state");
   expect(routeSource).not.toContain("legacySiteAdminRoleMutationPath");
@@ -1558,6 +1586,8 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (name === "class") {
         const owner = current.getAttribute("data-stylex-owner") ?? "";
+        if (owner === "site-user-list-row-action" || owner === "site-user-list-row-action-button")
+          return "";
         if (owner === "site-user-list-state-tabs") return "nav nav-tabs";
         if (owner === "site-user-list-state-tab-item") {
           return current.getAttribute("data-selected") === "true" ? "active" : "";
@@ -1775,7 +1805,9 @@ async function userListMetrics(page: Page) {
 
     return {
       actionColumnRatio: Number((actionColumnRect.width / firstRowRect.width).toFixed(2)),
-      actionRowButtonCount: actionColumn.querySelectorAll(".ybtn").length,
+      actionRowButtonCount: actionColumn.querySelectorAll(
+        ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
+      ).length,
       avatarHeight: Math.round(avatarRect.height),
       avatarWrapHeight: Math.round(avatarWrapRect.height),
       avatarWrapMarginRight: Math.round(parseFloat(avatarWrapStyle.marginRight)),
@@ -1849,17 +1881,19 @@ async function siteAdminStateLayoutFlags(page: Page) {
     const listHeadRect = listHead.getBoundingClientRect();
     const rowRect = row.getBoundingClientRect();
     const actionRect = actionColumn.getBoundingClientRect();
-    const actionButtonRects = Array.from(actionColumn.querySelectorAll<HTMLElement>(".ybtn")).map(
-      (button) => {
-        const rect = button.getBoundingClientRect();
-        return {
-          bottom: rect.bottom,
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-        };
-      },
-    );
+    const actionButtonRects = Array.from(
+      actionColumn.querySelectorAll<HTMLElement>(
+        ':scope > [data-stylex-owner="site-user-list-row-action-button"]',
+      ),
+    ).map((button) => {
+      const rect = button.getBoundingClientRect();
+      return {
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+      };
+    });
 
     return {
       actionColumnInsideRow: actionRect.right <= rowRect.right + 1,
@@ -1910,6 +1944,11 @@ async function canonicalizeHtml(page: Page, html: string) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       let value = current.getAttribute(name) ?? "";
       if (name === "class") {
+        if (
+          current.matches(".listitem-col.action-buttons") ||
+          current.matches(".listitem-col.action-buttons > .ybtn.ybtn-small")
+        )
+          return "";
         const retiredTitleToken = current.matches(
           ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
         )

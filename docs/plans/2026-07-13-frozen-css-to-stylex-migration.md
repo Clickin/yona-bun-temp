@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred sixty-five slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred sixty-six slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1965,6 +1965,24 @@ active hover stays transparent, and focus keeps the final global anchor underlin
 without inventing a focus surface. Focused browser coverage is GREEN 2/2, the complete user-list
 StyleX matrix is GREEN 30/30, and whole-screen coverage is GREEN 15/16 with only the pre-existing
 excluded global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
+
+The one-hundred-sixty-sixth slice migrates the authenticated populated-ACTIVE
+`/sites/userList` repeated row-action controls from `site/userList.scala.html`, `_page.less`,
+`_yobiUI.less`, and Bootstrap 2.3.1 label paint. One repeated semantic-button owner covers the
+default, success, info, label-info, and danger variants together with hover, focus, and active
+states; route-local variables contain only paint, border, text, and shadow values while geometry,
+type, transition, and the legacy five-anchor 2px margin remain inline. ACTIVE retires the
+`action-buttons`, `ybtn`, `ybtn-small`, `ybtn-success`, `ybtn-info`, `ybtn-danger`, and `label-info`
+presentation classes for these controls, while the separate delete modal keeps its independent
+`ybtn` consumer. The browser gate exposed and corrected the prior React omission that applied the
+legacy anchor margin to only three controls, plus a StyleX atomic collision that left label-info
+blue during interaction. Base output is exact against a complete frozen-ancestry fixture; colored
+interaction states are pinned directly to the frozen cascade where the temporary unlayered
+`app.css` bridge would otherwise contaminate the fixture. Desktop/mobile relative geometry,
+content-driven narrow overflow, all five variants and states, CSRF-backed guest mutation, and the
+delete modal boundary pass. Focused coverage is GREEN 2/2, the cumulative user-list StyleX matrix
+is GREEN 32/32, and whole-screen coverage is GREEN 15/16 with only the pre-existing excluded
+global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
