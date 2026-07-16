@@ -203,6 +203,34 @@ const styles = stylex.create({
     overflow: "hidden",
     padding: "15px 0px 10px",
   },
+  directoryOwnerAvatar: {
+    display: "inline",
+    float: "left",
+    height: "50px",
+    marginRight: "10px",
+    overflow: "hidden",
+    position: "relative",
+    width: "50px",
+  },
+  directoryHeader: {
+    fontSize: "20px",
+    fontWeight: "700",
+    marginBottom: "5px",
+    marginLeft: "10px",
+  },
+  directoryDescription: {
+    color: projectsDirectoryColors.descriptionText,
+    marginLeft: "10px",
+    maxHeight: "100px",
+    maxWidth: "647px",
+    overflowY: "auto",
+    textOverflow: "ellipsis",
+  },
+  directoryNameTag: {
+    color: projectsDirectoryColors.metadataText,
+    fontSize: "11px",
+    margin: "0px 0px 0px 10px",
+  },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -222,6 +250,10 @@ const directorySearchInputStyleProps = stylex.props(styles.directorySearchInput)
 const directorySearchButtonStyleProps = stylex.props(styles.directorySearchButton);
 const directoryListStyleProps = stylex.props(styles.directoryList);
 const directoryRowStyleProps = stylex.props(styles.directoryRow);
+const directoryOwnerAvatarStyleProps = stylex.props(styles.directoryOwnerAvatar);
+const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
+const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
+const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -517,7 +549,11 @@ function ProjectListItem({
         style={{ backgroundColor: "#fcfcfc" }}
       >
         <div className="info-wrap" style={{ opacity: 0.3 }}>
-          <div className="owner-avatar-wrap">
+          <div
+            {...directoryOwnerAvatarStyleProps}
+            className={`owner-avatar-wrap ${directoryOwnerAvatarStyleProps.className ?? ""}`}
+            data-stylex-owner="projects-directory-owner-avatar"
+          >
             <img
               src={prefixBasePath(basePath, "/assets/images/project_default_logo.png")}
               alt={projectName}
@@ -547,7 +583,11 @@ function ProjectListItem({
       data-stylex-owner="projects-directory-row"
     >
       <div className="info-wrap">
-        <div className="owner-avatar-wrap">
+        <div
+          {...directoryOwnerAvatarStyleProps}
+          className={`owner-avatar-wrap ${directoryOwnerAvatarStyleProps.className ?? ""}`}
+          data-stylex-owner="projects-directory-owner-avatar"
+        >
           <Link
             to="/$ownerName/$projectName"
             params={{ ownerName, projectName }}
@@ -561,7 +601,11 @@ function ProjectListItem({
           </Link>
         </div>
         <div style={{ float: "left" }}>
-          <div className="header">
+          <div
+            {...directoryHeaderStyleProps}
+            className={`header ${directoryHeaderStyleProps.className ?? ""}`}
+            data-stylex-owner="projects-directory-header"
+          >
             <Link
               to="/$ownerName/$projectName"
               params={{ ownerName, projectName }}
@@ -608,8 +652,13 @@ function ProjectListItem({
               <i className="yobicon-lock yobicon-small"></i>
             ) : null}
           </div>
-          <div className="desc">{stringField(project, "overview", "")}</div>
-          <p className="name-tag">
+          <div
+            {...directoryDescriptionStyleProps}
+            data-stylex-owner="projects-directory-description"
+          >
+            {stringField(project, "overview", "")}
+          </div>
+          <p {...directoryNameTagStyleProps} data-stylex-owner="projects-directory-name-tag">
             by{" "}
             <Link
               to="/$user"

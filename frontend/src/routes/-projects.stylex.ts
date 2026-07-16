@@ -1,6 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const projectsDirectoryColors = stylex.defineVars({
+  descriptionText: "#bababa",
+  metadataText: "#999999",
   rowDivider: "#dcdcdc",
   searchBorder: "#cccccc",
   searchSurface: "#ffffff",

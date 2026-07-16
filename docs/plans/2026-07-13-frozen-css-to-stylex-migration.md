@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-eight slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-nine slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2470,6 +2470,22 @@ list at `0,231,390x544`: the protected row is 91px and the three public member-b
 fixture-copy mismatch, through a 364px result that revealed the missing member DOM, to exact 544px
 GREEN geometry. Focused coverage is GREEN 3/3, the affected `/projects` matrix is GREEN 24/24,
 and the focused Rust REST contract verifies the member payload. This is not Wave 1 completion.
+
+The one-hundred-ninety-ninth slice migrates four authenticated populated-default `/projects`
+row-content owners from `project/list.scala.html`: the project-logo wrapper, title header,
+description, and creation/update metadata. Wrapper position/display/float/50px box/margin/overflow,
+header 20px bold rhythm, description bounds/overflow, and metadata 11px rhythm stay as literal
+route `stylex.create` declarations. Only the dark-mode-eligible description `#bababa` and metadata
+`#999` paints enter route-local `projectsDirectoryColors`. The wrapper retains
+`owner-avatar-wrap` because its excluded direct-image rule and legacy `3px !important` radius
+remain fallback; the header retains `header` for excluded private-lock and other state descendants.
+The fully owned `desc` and `name-tag` classes retire on this route. Fresh authenticated Java
+desktop pins the second row avatar at `10,307,50x50`, header/description/metadata at x80 and
+y307/332/352, while 390px mobile pins them at x0/x70 and y337/362/382 inside the 151px row with
+no overflow. The focused test records a genuine 3/3 absent-owner RED and becomes GREEN 3/3; the
+affected project list/list-shell/row-content matrix is GREEN 17/17 and the complete `/projects`
+StyleX matrix is GREEN 27/27. Live and local desktop/mobile captures were directly inspected. This
+is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

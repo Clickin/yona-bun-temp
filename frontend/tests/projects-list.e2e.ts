@@ -295,7 +295,9 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
 
   const projectLogoLink = page.locator(".all-projects .owner-avatar-wrap a");
   const projectNameLink = page.locator(".all-projects .header a.black");
-  const ownerNameLink = page.locator(".all-projects .name-tag a.owner-name-small");
+  const ownerNameLink = page.locator(
+    '[data-stylex-owner="projects-directory-name-tag"] a.owner-name-small',
+  );
 
   await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
@@ -464,7 +466,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=2`);
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
   await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-two");
-  await expect(page.locator(".all-projects .desc")).toHaveText("Legacy query page two");
+  await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
+    "Legacy query page two",
+  );
   await expect(page.locator(".all-projects .header a.project-label")).toHaveText("bug");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "2" });
@@ -473,7 +477,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
   await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-one");
-  await expect(page.locator(".all-projects .desc")).toHaveText("Legacy query page one");
+  await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
+    "Legacy query page one",
+  );
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "1" });
 });
 
@@ -932,8 +938,12 @@ async function readProjectsListMetrics(page: Page) {
     const avatar = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap");
     const avatarImage = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap img");
     const header = document.querySelector<HTMLElement>(".all-projects .header");
-    const description = document.querySelector<HTMLElement>(".all-projects .desc");
-    const nameTag = document.querySelector<HTMLElement>(".all-projects .name-tag");
+    const description = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-description"]',
+    );
+    const nameTag = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-name-tag"]',
+    );
     const stats = document.querySelector<HTMLElement>(".all-projects .stats-wrap");
     const members = document.querySelector<HTMLElement>(".all-projects .members");
     if (
@@ -1094,6 +1104,11 @@ async function canonicalizeScreenRoots(page: Page) {
         return "search-btn";
       if (attr.name === "class" && owner === "projects-directory-list") return "all-projects";
       if (attr.name === "class" && owner === "projects-directory-row") return "project";
+      if (attr.name === "class" && owner === "projects-directory-owner-avatar")
+        return "owner-avatar-wrap";
+      if (attr.name === "class" && owner === "projects-directory-header") return "header";
+      if (attr.name === "class" && owner === "projects-directory-description") return "desc";
+      if (attr.name === "class" && owner === "projects-directory-name-tag") return "name-tag";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")
