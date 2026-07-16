@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-seven slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-eight slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2452,6 +2452,24 @@ the same owner has `border-style:none` and zero width; production output proves 
 only that non-rendering computed color remains lower-layer fallback while visible border state is
 fully owned. The pre-implementation source contract was observed RED on absent owners; focused
 GREEN is 4/4 and the combined `/projects` matrix is GREEN 21/21. This is not Wave 1 completion.
+
+The one-hundred-ninety-eighth slice migrates only the authenticated populated-default `/projects`
+directory list and repeated row shells from `project/list.scala.html`. Exactly two direct owners
+cover `ul.all-projects` list reset/clear/margin and each `li.project` padding/overflow/bottom
+divider. Only the dark-mode-eligible `#dcdcdc` row divider enters route-local
+`projectsDirectoryColors`; list geometry and spacing remain inline. The `all-projects` and
+`project` classes intentionally remain because their frozen descendant rules still own project
+identity, description, metadata, stats, members, and avatars. Fresh authenticated Java evidence
+also exposed that the React/API translation omitted public-project member avatar rows and rendered
+a fallback project-logo image where Scala renders an empty logo link when no logo exists. The REST
+directory payload now reuses existing member summaries, React restores the public-only member
+Link/image sequence, and readable project logos render only when a URL exists. Live desktop pins
+the list at `10,201,1346x364` with four `1346x91` rows and pagination y585. Live mobile pins the
+list at `0,231,390x544`: the protected row is 91px and the three public member-bearing rows are
+151px, with pagination y795 and no horizontal overflow. The runtime test progressed from a 694px
+fixture-copy mismatch, through a 364px result that revealed the missing member DOM, to exact 544px
+GREEN geometry. Focused coverage is GREEN 3/3, the affected `/projects` matrix is GREEN 24/24,
+and the focused Rust REST contract verifies the member payload. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

@@ -13,7 +13,7 @@ use std::collections::HashMap;
 
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
-use crate::routes::utils::gravatar_url;
+use crate::routes::utils::{gravatar_url, project_member_summary_from_record};
 use crate::{
     absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
     build_organization_admin_response, build_organization_container_response,
@@ -1064,6 +1064,7 @@ struct RestProjectDirectoryItem {
     last_pushed_label: String,
     logo_url: String,
     member_count: u32,
+    members: Vec<ProjectMemberSummary>,
     overview: String,
     owner_name: String,
     project_name: String,
@@ -1393,17 +1394,23 @@ pub(crate) async fn rest_list_projects(
             .map_err(RestRouteError::from_connect_error)?;
         let mut items = Vec::with_capacity(records.len());
         for project in records {
+            let members = repository
+                .read_project_members(&project.owner_name, &project.project_name)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .members
+                .iter()
+                .map(project_member_summary_from_record)
+                .collect::<Vec<_>>();
             items.push(RestProjectDirectoryItem {
                 created_label: format_project_date_label(project.created_date),
                 last_pushed_label: format_project_date_label(project.last_pushed_date),
                 logo_url: project_logo_url(repository, &service.base_path, project.id)
                     .await
                     .map_err(RestRouteError::from_connect_error)?,
-                member_count: repository
-                    .count_project_members(project.id)
-                    .await
-                    .map_err(internal_error)
-                    .map_err(RestRouteError::from_connect_error)?,
+                member_count: members.len() as u32,
+                members,
                 overview: project.overview.unwrap_or_default(),
                 owner_name: project.owner_name,
                 project_name: project.project_name,

@@ -1705,6 +1705,11 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
     assert_eq!(listed["items"][0]["ownerName"], "owner");
     assert_eq!(listed["items"][0]["projectName"], "projectYobi");
     assert_eq!(listed["items"][0]["memberCount"], 1);
+    assert_eq!(listed["items"][0]["members"].as_array().unwrap().len(), 1);
+    assert_eq!(listed["items"][0]["members"][0]["loginId"], "owner");
+    assert!(listed["items"][0]["members"][0]["avatarUrl"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
     assert_eq!(listed["items"][0]["watchCount"], 0);
 
     let detail = ok_json(

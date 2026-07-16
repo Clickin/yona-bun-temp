@@ -32,6 +32,7 @@ type ProjectDirectoryItem = YoramRecord & {
   lastPushedLabel?: string;
   logoUrl?: string;
   memberCount?: number;
+  members?: YoramRecord[];
   overview?: string;
   ownerName?: string;
   projectName?: string;
@@ -190,6 +191,18 @@ const styles = stylex.create({
     right: "5px",
     top: "5px",
   },
+  directoryList: {
+    clear: "both",
+    listStyle: "none",
+    margin: "0px 0px 20px",
+  },
+  directoryRow: {
+    borderBottomColor: projectsDirectoryColors.rowDivider,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    overflow: "hidden",
+    padding: "15px 0px 10px",
+  },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -207,6 +220,8 @@ const directorySearchFormStyleProps = stylex.props(styles.directorySearchForm);
 const directorySearchBarStyleProps = stylex.props(styles.directorySearchBar);
 const directorySearchInputStyleProps = stylex.props(styles.directorySearchInput);
 const directorySearchButtonStyleProps = stylex.props(styles.directorySearchButton);
+const directoryListStyleProps = stylex.props(styles.directoryList);
+const directoryRowStyleProps = stylex.props(styles.directoryRow);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -343,7 +358,11 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           ) : (
             <>
-              <ul className="all-projects">
+              <ul
+                {...directoryListStyleProps}
+                className={`all-projects ${directoryListStyleProps.className ?? ""}`}
+                data-stylex-owner="projects-directory-list"
+              >
                 {projects.map((project) => (
                   <ProjectListItem
                     key={`${project.ownerName ?? ""}/${project.projectName ?? ""}`}
@@ -491,7 +510,12 @@ function ProjectListItem({
   const projectName = stringField(project, "projectName", "");
   if (!projectIsReadable(project)) {
     return (
-      <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
+      <li
+        {...directoryRowStyleProps}
+        className={`project ${directoryRowStyleProps.className ?? ""}`}
+        data-stylex-owner="projects-directory-row"
+        style={{ backgroundColor: "#fcfcfc" }}
+      >
         <div className="info-wrap" style={{ opacity: 0.3 }}>
           <div className="owner-avatar-wrap">
             <img
@@ -507,16 +531,21 @@ function ProjectListItem({
     );
   }
 
-  const logoUrl = stringField(project, "logoUrl", "/assets/images/project_default_logo.png");
+  const logoUrl = stringField(project, "logoUrl", "");
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
   const lastPushedLabel = stringField(project, "lastPushedLabel", "");
   const labels = projectLabels(project);
   const memberCount = numberField(project, "memberCount", 0);
+  const members = projectMembers(project);
   const watchCount = numberField(project, "watchCount", 0);
 
   return (
-    <li className="project">
+    <li
+      {...directoryRowStyleProps}
+      className={`project ${directoryRowStyleProps.className ?? ""}`}
+      data-stylex-owner="projects-directory-row"
+    >
       <div className="info-wrap">
         <div className="owner-avatar-wrap">
           <Link
@@ -528,7 +557,7 @@ function ProjectListItem({
               "data-status": undefined,
             }}
           >
-            <img src={logoUrl} alt={projectName} />
+            {logoUrl ? <img src={logoUrl} alt={projectName} /> : null}
           </Link>
         </div>
         <div style={{ float: "left" }}>
@@ -607,7 +636,30 @@ function ProjectListItem({
       {stringField(project, "projectScope", "public") === "public" ? (
         <div className="stats-wrap pull-right">
           <div className="members">
-            <ul className="unstyled"></ul>
+            <ul className="unstyled">
+              {members.map((member) => {
+                const loginId = stringField(member, "loginId", "");
+                return (
+                  <li key={loginId}>
+                    <Link
+                      activeProps={{
+                        "aria-current": undefined,
+                        className: "avatar-wrap",
+                        "data-status": undefined,
+                      }}
+                      className="avatar-wrap"
+                      params={{ user: loginId }}
+                      to="/$user"
+                    >
+                      <img
+                        alt={stringField(member, "userLabel", "")}
+                        src={stringField(member, "avatarUrl", "")}
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
             <p>
               <i className="yobicon-friends yobicon-middle"></i>
               <strong>{memberCount}</strong> <i className="yobicon-eye yobicon-middle"></i>{" "}
@@ -658,6 +710,14 @@ function projectLabels(project: YoramRecord): ProjectDirectoryLabel[] {
       },
     ];
   });
+}
+
+function projectMembers(project: ProjectDirectoryItem): YoramRecord[] {
+  return Array.isArray(project.members)
+    ? project.members.filter((member): member is YoramRecord =>
+        Boolean(member && typeof member === "object" && stringField(member, "loginId", "")),
+      )
+    : [];
 }
 
 function stringField(record: YoramRecord, key: string, fallback: string): string {

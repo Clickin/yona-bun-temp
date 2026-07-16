@@ -119,7 +119,10 @@ const EXPECTED_PROJECTS_LIST = `
         </div>
         <div class="stats-wrap pull-right">
           <div class="members">
-            <ul class="unstyled"></ul>
+            <ul class="unstyled">
+              <li><a href="__BASE_PATH__/member1" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" alt="Member One"></a></li>
+              <li><a href="__BASE_PATH__/member2" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" alt="Member Two"></a></li>
+            </ul>
             <p><i class="yobicon-friends yobicon-middle"></i><strong>2</strong> <i class="yobicon-eye yobicon-middle"></i> <strong>3</strong></p>
           </div>
         </div>
@@ -196,7 +199,7 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
     rowOverflow: "hidden",
     rowPadding: "15px 0px 10px",
     statsTextAlign: "right",
-    statsWidth: "76.1094px",
+    statsWidth: "120px",
   });
 });
 
@@ -737,6 +740,18 @@ function makeReadableProjectDirectoryItem(
     lastPushedLabel: "just now",
     logoUrl: "/assets/images/project_default_logo.png",
     memberCount: 2,
+    members: [
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "member1",
+        userLabel: "Member One",
+      },
+      {
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        loginId: "member2",
+        userLabel: "Member Two",
+      },
+    ],
     overview: "Sample project",
     ownerName: "admin",
     projectName: "sample",
@@ -1077,6 +1092,8 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-search-input") return "textbox";
       if (attr.name === "class" && owner === "projects-directory-search-button")
         return "search-btn";
+      if (attr.name === "class" && owner === "projects-directory-list") return "all-projects";
+      if (attr.name === "class" && owner === "projects-directory-row") return "project";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")
