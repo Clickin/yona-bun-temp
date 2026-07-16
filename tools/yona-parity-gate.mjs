@@ -136,6 +136,7 @@ const PARITY_SLICES = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/routes\/-help-views\.tsx$/i,
+      /^frontend\/src\/routes\/-help\.stylex\.ts$/i,
       /^frontend\/src\/routes\/\[_\]help\/route\.tsx$/i,
       /^frontend\/src\/routes\/\[_\]help\.tsx$/i,
     ],

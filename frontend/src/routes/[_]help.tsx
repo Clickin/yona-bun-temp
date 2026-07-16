@@ -1,9 +1,40 @@
 import * as React from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath } from "../runtime-config";
+import { globalBreakpoints } from "../theme.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { helpShellColors } from "./-help.stylex";
+
+const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: {
+    margin: "0px auto",
+  },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: { [globalBreakpoints.mobile]: "10px" },
+    padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" },
+    width: "100%",
+  },
+  pageWrap: {
+    backgroundColor: helpShellColors.pageSurface,
+    margin: "0px auto",
+  },
+});
 
 const legacyAnswerLinkActiveOptions = {
   exact: true,
@@ -85,13 +116,24 @@ function HelpTocScreen({ appName }: { appName: string }) {
 
   return (
     <>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t("title.help")}</h3>
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        data-stylex-owner="help-shell-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="help-shell-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="help-shell-breadcrumb-heading"
+          >
+            {t("title.help")}
+          </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
+      <div {...stylex.props(styles.pageWrapOuter)} data-stylex-owner="help-shell-page-wrap-outer">
+        <div {...stylex.props(styles.pageWrap)} data-stylex-owner="help-shell-page-wrap">
           <ul className="qas">
             <li
               className={isQuestionOpen(0) ? "qa open" : "qa"}

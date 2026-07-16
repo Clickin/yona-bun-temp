@@ -248,8 +248,8 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       .first()
       .evaluate((title) => title.innerHTML),
   ).toBe("Help");
-  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
-  await expect(page.locator(".page-wrap-outer")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="help-shell-page-wrap-outer"]')).toBeVisible();
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
   await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
   await expect(page.locator(".qas > .qa .question").first()).toHaveJSProperty("tagName", "BUTTON");
@@ -394,7 +394,7 @@ test("anonymous help FAQ keeps legacy mobile shell proportions", async ({ page }
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(`${basePath}/_help`);
-  await expect(page.locator(".site-breadcrumb-outer")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="help-shell-breadcrumb-outer"]')).toBeVisible();
 
   expect(await readMobileHelpMetrics(page)).toEqual({
     answerDisplayClosed: "none",
@@ -690,8 +690,12 @@ async function readDesktopHelpMetrics(page: Page) {
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
     const logo = document.querySelector<HTMLElement>(".logo-letter");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const breadcrumbHeading = document.querySelector<HTMLElement>(".site-breadcrumb-inner h3");
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-shell-page-wrap-outer"]',
+    );
+    const breadcrumbHeading = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-shell-breadcrumb-inner"] h3',
+    );
     const qas = document.querySelector<HTMLElement>(".qas");
     const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
     const questionWrap = document.querySelector<HTMLElement>(".qas > .qa .question-wrap");
@@ -784,8 +788,12 @@ async function readDesktopHelpMetrics(page: Page) {
 async function readMobileHelpMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
-    const siteBreadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const siteBreadcrumb = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-shell-breadcrumb-outer"]',
+    );
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-shell-page-wrap-outer"]',
+    );
     const qas = document.querySelector<HTMLElement>(".qas");
     const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
     const question = document.querySelector<HTMLElement>(".qas > .qa .question");
@@ -958,6 +966,11 @@ async function canonicalizeScreenRoots(page: Page) {
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
+          current.matches('[data-stylex-owner="help-shell-breadcrumb-heading"]') ||
+          current.matches('[data-stylex-owner="help-shell-breadcrumb-inner"]') ||
+          current.matches('[data-stylex-owner="help-shell-breadcrumb-outer"]') ||
+          current.matches('[data-stylex-owner="help-shell-page-wrap"]') ||
+          current.matches('[data-stylex-owner="help-shell-page-wrap-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||
           current.matches('[data-stylex-owner="site-footer-inner"]') ||
           current.matches('[data-stylex-owner="site-footer-provider"]'))
@@ -1028,7 +1041,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="help-shell-breadcrumb-outer"], [data-stylex-owner="help-shell-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1059,27 +1072,41 @@ async function canonicalizeHtml(page: Page, html: string) {
           name === "class" &&
           value.split(/\s+/u).includes("provider") &&
           current.matches("footer.page-footer-outer > div.page-footer > span.provider");
-        const retiredToken = isSiteLayoutFooterOuter
-          ? "page-footer-outer"
-          : isSiteLayoutFooterInner
-            ? "page-footer"
-            : isSiteLayoutFooterProvider
-              ? "provider"
-              : isSiteLayoutHeader && value.split(/\s+/u).includes("project-header")
-                ? "project-header"
-                : isSiteLayoutHeader
-                  ? "gnb-outer"
-                  : name === "class" &&
-                      value.split(/\s+/u).includes("gnb-inner") &&
-                      current.matches("header.gnb-outer > div.gnb-inner") &&
-                      current.querySelector('form[name="gnb-search-form"]') !== null
-                    ? "gnb-inner"
+        const retiredHelpShellToken =
+          name === "class"
+            ? [
+                ["site-breadcrumb-outer", ".site-breadcrumb-outer"],
+                ["site-breadcrumb-inner", ".site-breadcrumb-outer > .site-breadcrumb-inner"],
+                ["page-wrap-outer", ".page-wrap-outer"],
+                ["page-wrap", ".page-wrap-outer > .page-wrap"],
+              ].find(
+                ([token, selector]) =>
+                  value.split(/\s+/u).includes(token) && current.matches(selector),
+              )?.[0]
+            : undefined;
+        const retiredToken =
+          retiredHelpShellToken ??
+          (isSiteLayoutFooterOuter
+            ? "page-footer-outer"
+            : isSiteLayoutFooterInner
+              ? "page-footer"
+              : isSiteLayoutFooterProvider
+                ? "provider"
+                : isSiteLayoutHeader && value.split(/\s+/u).includes("project-header")
+                  ? "project-header"
+                  : isSiteLayoutHeader
+                    ? "gnb-outer"
                     : name === "class" &&
-                        value.split(/\s+/u).includes("gnb-nav") &&
-                        current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                        value.split(/\s+/u).includes("gnb-inner") &&
+                        current.matches("header.gnb-outer > div.gnb-inner") &&
                         current.querySelector('form[name="gnb-search-form"]') !== null
-                      ? "gnb-nav"
-                      : null;
+                      ? "gnb-inner"
+                      : name === "class" &&
+                          value.split(/\s+/u).includes("gnb-nav") &&
+                          current.matches("header.gnb-outer > .gnb-inner > ul.gnb-nav") &&
+                          current.querySelector('form[name="gnb-search-form"]') !== null
+                        ? "gnb-nav"
+                        : null);
         if (retiredToken) {
           return value
             .split(/\s+/u)

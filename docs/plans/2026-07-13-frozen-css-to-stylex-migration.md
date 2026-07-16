@@ -2281,6 +2281,17 @@ preceding combined run. Complete combined StyleX is GREEN 88/88 (53.7s), and com
 coverage is GREEN 14/16 (about 1.6m); each route is 7/8 with only the same pre-existing missing GNB
 Feedback expectation, while all fourteen functional cases pass.
 
+The one-hundred-eighty-seventh slice migrates only the closed-default `/_help` shell. Five stable
+owners in `frontend/src/routes/[_]help.tsx` cover breadcrumb outer/inner/heading and page
+outer/inner, with geometry inline and only the white page surface in the route-local dark-mode
+paint boundary. Live Java legacy fixes the desktop breadcrumb at `0,40,1366×45`, inner at
+`10,40,1346×45`, page outer at `0,115,1366×450`, and page at `10,115,1346` wide; mobile preserves
+45px breadcrumb height with 370px inner width and places the `390×450` page outer at y115 with a
+390px page at x0. The stale local app.css fallback instead produces a 46px breadcrumb and a
+1080px page centered at x133 on desktop, so it is explicitly excluded rather than compensated.
+Focused shell coverage is GREEN 3/3, broad help-toc succeeds, and check/build succeed with no
+frozen CSS edit.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
