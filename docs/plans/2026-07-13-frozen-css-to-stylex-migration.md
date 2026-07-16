@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred sixty-six slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred sixty-seven slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1983,6 +1983,19 @@ content-driven narrow overflow, all five variants and states, CSRF-backed guest 
 delete modal boundary pass. Focused coverage is GREEN 2/2, the cumulative user-list StyleX matrix
 is GREEN 32/32, and whole-screen coverage is GREEN 15/16 with only the pre-existing excluded
 global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
+
+The one-hundred-sixty-seventh slice migrates the authenticated populated-ACTIVE
+`/sites/userList` title-search form, wrapper, input, and submit control from
+`site/userList.scala.html`, `_yobiUI.less`, `_responsive.less`, and Bootstrap 2.3.1. Fresh
+authenticated live legacy Chrome evidence corrected the input to the actual 2px radius, no
+shadow, Helvetica Neue 12px desktop/16px mobile output and orange focus border; route variables
+contain only surface, border, focus-border, and text paint while every geometry, type, transition,
+and responsive value remains inline. The form and three direct child owners retire `form-search`,
+`pull-right`, `search-bar`, `textbox`, and `search-btn`; only the independent `yobicon-search`
+glyph primitive remains. The focused browser gate is GREEN 2/2, cumulative user-list StyleX is
+GREEN 34/34 after stale selectors move to stable owner boundaries, and whole-screen coverage is
+GREEN 15/16 with only the pre-existing excluded global-GNB `Feedback` fixture gap. This is not
+Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

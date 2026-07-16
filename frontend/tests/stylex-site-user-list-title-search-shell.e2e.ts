@@ -154,7 +154,9 @@ test.describe("StyleX site user-list title/search shell", () => {
     }
     expect(route).toContain('overflow: "hidden"');
     expect(route).toContain('float: "left"');
-    expect(route).toContain('titleSearchForm: {\n    margin: "0px"');
+    const formStyle = route.match(/titleSearchForm: \{([\s\S]*?)\n  \},/u)?.[1];
+    expect(formStyle).toContain('float: "right"');
+    expect(formStyle).toContain('margin: "0px"');
     expect(route).not.toContain("globalColors.");
   });
 
@@ -196,7 +198,7 @@ test.describe("StyleX site user-list title/search shell", () => {
     ).toHaveCount(1);
   });
 
-  test("retires only title_area/pull-left, preserves form classes, search SPA submission, and isolation", async ({
+  test("retires title and search presentation classes while preserving SPA submission and isolation", async ({
     page,
   }) => {
     const title = await openUserList(page);
@@ -204,10 +206,26 @@ test.describe("StyleX site user-list title/search shell", () => {
     const form = owner(title, owners.form);
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
-    await expect(form).toHaveClass(/\bform-search\b/u);
-    await expect(form).toHaveClass(/\bpull-right\b/u);
-    await expect(form.locator(":scope > .search-bar > input.textbox")).toHaveCount(1);
-    await expect(form.locator(":scope > .search-bar > button.search-btn")).toHaveCount(1);
+    await expect(form).not.toHaveClass(/\b(?:form-search|pull-right)\b/u);
+    const searchWrapper = form.locator(
+      ':scope > [data-stylex-owner="site-user-list-title-search-wrapper"]',
+    );
+    const searchInput = searchWrapper.locator(
+      ':scope > [data-stylex-owner="site-user-list-title-search-input"]',
+    );
+    const searchButton = searchWrapper.locator(
+      ':scope > [data-stylex-owner="site-user-list-title-search-button"]',
+    );
+    await expect(searchWrapper).toHaveCount(1);
+    await expect(searchInput).toHaveCount(1);
+    await expect(searchButton).toHaveCount(1);
+    await expect(searchWrapper).not.toHaveClass(/\bsearch-bar\b/u);
+    await expect(
+      searchWrapper.locator(":scope > .search-bar, :scope > .textbox, :scope > .search-btn"),
+    ).toHaveCount(0);
+    await expect(searchInput).not.toHaveClass(/\btextbox\b/u);
+    await expect(searchButton).not.toHaveClass(/\bsearch-btn\b/u);
+    await expect(searchButton.locator(":scope > i.yobicon-search")).toHaveCount(1);
     await expect(
       page.locator('[data-stylex-owner="site-user-list-setting-content-column"]'),
     ).toHaveCount(1);

@@ -76,10 +76,11 @@ test.describe("StyleX site user-list title strip", () => {
       owner.locator(':scope > h2[data-stylex-owner="site-user-list-title-heading"]'),
     ).toHaveText("Users");
     await expect(
-      owner.locator(
-        ':scope > form.form-search.pull-right[data-stylex-owner="site-user-list-title-search-form"]',
-      ),
+      owner.locator(':scope > form[data-stylex-owner="site-user-list-title-search-form"]'),
     ).toHaveCount(1);
+    await expect(
+      owner.locator(':scope > form[data-stylex-owner="site-user-list-title-search-form"]'),
+    ).not.toHaveClass(/\b(?:form-search|pull-right)\b/u);
     expect(
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),
@@ -87,7 +88,9 @@ test.describe("StyleX site user-list title strip", () => {
     ).toEqual(["H2", "FORM"]);
   });
 
-  test("owns title classes while retaining the form semantic fallbacks", async ({ page }) => {
+  test("owns title and form presentation classes while retaining semantic order", async ({
+    page,
+  }) => {
     const owner = await openUserList(page);
     const classes = await owner.evaluate((titleArea) => {
       const title = titleArea.querySelector("h2");

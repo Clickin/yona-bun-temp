@@ -433,12 +433,72 @@ const styles = stylex.create({
     float: "left",
   },
   titleSearchForm: {
+    float: "right",
     margin: "0px",
+  },
+  titleSearchWrapper: {
+    backgroundColor: siteUserListColors.searchSurface,
+    borderColor: siteUserListColors.searchBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    display: "block",
+    height: "20px",
+    lineHeight: "20px",
+    margin: {
+      default: "0px",
+      "@media (max-width: 720px)": "5px 0px",
+    },
+    padding: "4px 25px 4px 5px",
+    position: "relative",
+  },
+  titleSearchInput: {
+    backgroundColor: siteUserListColors.searchSurface,
+    borderColor: {
+      default: siteUserListColors.searchText,
+      ":focus": siteUserListColors.searchFocusBorder,
+    },
+    borderRadius: "2px",
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    color: siteUserListColors.searchText,
+    display: "inline-block",
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: {
+      default: "12px",
+      "@media (max-width: 720px)": "16px",
+    },
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "20px",
+    margin: "0px -5px",
+    outline: { default: null, ":focus": "0px" },
+    padding: "0px 5px",
+    transition: "width 0.15s",
+    verticalAlign: "middle",
+    width: {
+      default: "350px",
+      "@media (max-width: 720px)": "inherit",
+    },
+  },
+  titleSearchButton: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderWidth: "0px",
+    height: "20px",
+    outline: "0px",
+    position: "absolute",
+    right: "5px",
+    top: "5px",
   },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const titleSearchFormStyleProps = stylex.props(styles.titleSearchForm);
+const titleSearchWrapperStyleProps = stylex.props(styles.titleSearchWrapper);
+const titleSearchInputStyleProps = stylex.props(styles.titleSearchInput);
+const titleSearchButtonStyleProps = stylex.props(styles.titleSearchButton);
 const pageWrapOuterStyleProps = stylex.props(styles.pageWrapOuter);
 const settingWrapStyleProps = stylex.props(styles.settingWrap);
 const settingGridStyleProps = stylex.props(styles.settingGrid);
@@ -692,7 +752,6 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 </h2>
                 <form
                   {...titleSearchFormStyleProps}
-                  className={`form-search pull-right ${titleSearchFormStyleProps.className ?? ""}`}
                   data-stylex-owner="site-user-list-title-search-form"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/userList")}
                   onSubmit={(event) => {
@@ -714,15 +773,23 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   }}
                 >
                   <input type="hidden" name="state" value={search.state} />
-                  <div className="search-bar">
+                  <div
+                    {...titleSearchWrapperStyleProps}
+                    data-stylex-owner="site-user-list-title-search-wrapper"
+                  >
                     <input
-                      className="textbox"
+                      {...titleSearchInputStyleProps}
+                      data-stylex-owner="site-user-list-title-search-input"
                       name="query"
                       type="text"
                       placeholder={t("site.userList.search")}
                       defaultValue={search.query}
                     />
-                    <button type="submit" className="search-btn">
+                    <button
+                      {...titleSearchButtonStyleProps}
+                      type="submit"
+                      data-stylex-owner="site-user-list-title-search-button"
+                    >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>

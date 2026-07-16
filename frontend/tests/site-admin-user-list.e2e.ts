@@ -513,8 +513,10 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-users-search";
   });
-  await page.locator('.form-search input[name="query"]').fill("door");
-  await page.locator(".form-search").evaluate((form) => {
+  const titleSearchForm = page.locator('[data-stylex-owner="site-user-list-title-search-form"]');
+  await expect(titleSearchForm).not.toHaveClass(/\bform-search\b/u);
+  await page.locator('[data-stylex-owner="site-user-list-title-search-input"]').fill("door");
+  await titleSearchForm.evaluate((form) => {
     if (!(form instanceof HTMLFormElement)) {
       throw new Error("Expected user search form");
     }
@@ -702,7 +704,11 @@ test("site admin deleted user tab renders legacy leave column without action but
   await expect(
     page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Deleted user");
-  await expect(page.locator('.form-search input[name="state"]')).toHaveValue("DELETED");
+  const deletedSearchForm = page.locator('[data-stylex-owner="site-user-list-title-search-form"]');
+  await expect(deletedSearchForm).not.toHaveClass(/\bform-search\b/u);
+  await expect(
+    deletedSearchForm.locator(':scope > input[type="hidden"][name="state"]'),
+  ).toHaveValue("DELETED");
   await expect(
     page.locator(
       '[data-stylex-owner="site-user-list-listhead"] > [data-stylex-owner="site-user-list-listhead-column"] > strong',
@@ -772,10 +778,16 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
       '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] .num-badge',
     ),
   ).toHaveText("2");
-  await expect(page.locator('.form-search input[type="hidden"][name="state"]')).toHaveValue(
-    "SITE_ADMIN",
+  const siteAdminSearchForm = page.locator(
+    '[data-stylex-owner="site-user-list-title-search-form"]',
   );
-  await expect(page.locator('.form-search input[name="query"]')).toHaveValue("siteboss");
+  await expect(siteAdminSearchForm).not.toHaveClass(/\bform-search\b/u);
+  await expect(
+    siteAdminSearchForm.locator(':scope > input[type="hidden"][name="state"]'),
+  ).toHaveValue("SITE_ADMIN");
+  await expect(page.locator('[data-stylex-owner="site-user-list-title-search-input"]')).toHaveValue(
+    "siteboss",
+  );
   await expect(
     page.locator(
       '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
