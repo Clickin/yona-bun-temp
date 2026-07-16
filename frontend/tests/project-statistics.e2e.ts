@@ -5,28 +5,111 @@ const STATISTICS_ROUTE_SOURCE = readFileSync(
   "src/routes/$ownerName/$projectName/statistics.tsx",
   "utf8",
 );
+const STATISTICS_LEGACY_SOURCE = readFileSync(
+  "../yona-original/app/views/project/statistics.scala.html",
+  "utf8",
+);
+const LEGACY_PAGE_LESS_SOURCE = readFileSync(
+  "../yona-original/app/assets/stylesheets/less/_page.less",
+  "utf8",
+);
+const LEGACY_RESPONSIVE_LESS_SOURCE = readFileSync(
+  "../yona-original/app/assets/stylesheets/less/_responsive.less",
+  "utf8",
+);
+const LEGACY_BOOTSTRAP_SOURCE = readFileSync(
+  "../yona-original/public/bootstrap/css/bootstrap.css",
+  "utf8",
+);
+
+test("project statistics body owners follow the legacy two-wrapper skeleton", () => {
+  expect(STATISTICS_LEGACY_SOURCE).toContain(`<div class="page-wrap-outer">
+    <div class="project-page-wrap">
+        <h1>Under Construction</h1>`);
+  expect(LEGACY_PAGE_LESS_SOURCE).toContain(`.page-wrap-outer {
+    min-height: 450px;
+    margin-top: 10px;`);
+  expect(LEGACY_PAGE_LESS_SOURCE).toContain(`.project-page-wrap {
+    margin:20px auto 0;`);
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(`.page-wrap-outer {
+    min-width: 10px !important;
+    padding: 0 !important;`);
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(`.project-page-wrap {
+    width: 100%;
+    margin-top: 5px !important;`);
+  expect(LEGACY_BOOTSTRAP_SOURCE).toContain(`h1,
+h2,
+h3,
+h4,
+h5,
+h6 {`);
+  expect(STATISTICS_ROUTE_SOURCE).toContain('data-stylex-owner="project-statistics-page-outer"');
+  expect(STATISTICS_ROUTE_SOURCE).toContain('data-stylex-owner="project-statistics-page"');
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="page-wrap-outer"');
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain('className="project-page-wrap"');
+  expect(STATISTICS_ROUTE_SOURCE).not.toContain("defineVars");
+});
 
 test("project statistics matches legacy project/statistics.scala.html DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
   await mockProjectAdmin(page);
 
   await page.goto(`${basePath}/admin/sample/statistics`);
   await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
   await expect(page).toHaveTitle("statistics - admin/sample");
 
-  expect(await readDesktopStatisticsMetrics(page)).toEqual({
-    headingFontSize: "26px",
-    headingFontWeight: "400",
-    headingLineHeight: "32.5px",
-    headingMarginBottom: "18px",
+  expect(await readStatisticsMetrics(page)).toEqual({
+    documentScrollWidth: 1366,
+    headingBox: { height: 40, left: 10, width: 1346 },
+    headingTopEqualsPageWrapTop: true,
+    headingFontSize: "38.5px",
+    headingFontWeight: "700",
+    headingLineHeight: "40px",
+    headingMarginBottom: "0px",
     headingMarginTop: "0px",
     headingContainedInProjectPage: true,
-    pageWrapMinWidth: "1100px",
+    pageWrapMinWidth: "0px",
+    pageWrapBox: { height: 450, left: 0, width: 1366 },
+    pageWrapTopGapFromProjectHeader: 10,
     projectHeaderHeight: "120px",
     projectPageBelowProjectHeader: true,
     projectPageMarginTop: "5px",
-    projectPageWidth: 1260,
+    projectPageBox: { height: 40, left: 10, width: 1346 },
+    projectPageWidth: 1346,
+    projectPageTopEqualsPageWrapTop: true,
   });
+  expect(await statisticsFallbackEquivalence(page)).toBe(true);
+});
+
+test("project statistics body keeps the frozen max-720 shell geometry", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockProjectAdmin(page);
+
+  await page.goto(`${basePath}/admin/sample/statistics`);
+  await expect(page.getByRole("heading", { name: "Under Construction" })).toBeVisible();
+  expect(await readStatisticsMetrics(page)).toEqual({
+    documentScrollWidth: 390,
+    headingBox: { height: 40, left: 0, width: 390 },
+    headingTopEqualsPageWrapTop: true,
+    headingFontSize: "38.5px",
+    headingFontWeight: "700",
+    headingLineHeight: "40px",
+    headingMarginBottom: "0px",
+    headingMarginTop: "0px",
+    headingContainedInProjectPage: true,
+    pageWrapMinWidth: "10px",
+    pageWrapBox: { height: 450, left: 0, width: 390 },
+    pageWrapTopGapFromProjectHeader: 10,
+    projectHeaderHeight: "120px",
+    projectPageBelowProjectHeader: true,
+    projectPageMarginTop: "5px",
+    projectPageBox: { height: 40, left: 0, width: 390 },
+    projectPageWidth: 390,
+    projectPageTopEqualsPageWrapTop: true,
+  });
+  expect(await statisticsFallbackEquivalence(page)).toBe(true);
 });
 
 test("project statistics empty header assets stay inside configured application context", async ({
@@ -346,12 +429,12 @@ test("project statistics header renders legacy watch dropdown and toggles projec
   await expect(watchButton).toHaveText("Unwatch");
 });
 
-async function readDesktopStatisticsMetrics(page: Page) {
+async function readStatisticsMetrics(page: Page) {
   return page.evaluate(() => {
     const projectHeader = requireElement(".project-header-outer");
-    const pageWrapOuter = requireElement(".page-wrap-outer");
-    const projectPageWrap = requireElement(".project-page-wrap");
-    const heading = requireElement(".project-page-wrap h1");
+    const pageWrapOuter = requireElement('[data-stylex-owner="project-statistics-page-outer"]');
+    const projectPageWrap = requireElement('[data-stylex-owner="project-statistics-page"]');
+    const heading = requireElement('[data-stylex-owner="project-statistics-page"] > h1');
     const projectHeaderStyle = getComputedStyle(projectHeader);
     const pageWrapStyle = getComputedStyle(pageWrapOuter);
     const projectPageStyle = getComputedStyle(projectPageWrap);
@@ -361,6 +444,9 @@ async function readDesktopStatisticsMetrics(page: Page) {
     const projectPageBox = projectPageWrap.getBoundingClientRect();
     const headingBox = heading.getBoundingClientRect();
     return {
+      documentScrollWidth: document.documentElement.scrollWidth,
+      headingBox: box(headingBox),
+      headingTopEqualsPageWrapTop: headingBox.top === pageWrapBox.top,
       headingFontSize: headingStyle.fontSize,
       headingFontWeight: headingStyle.fontWeight,
       headingLineHeight: headingStyle.lineHeight,
@@ -372,17 +458,69 @@ async function readDesktopStatisticsMetrics(page: Page) {
         headingBox.right <= projectPageBox.right &&
         headingBox.bottom <= projectPageBox.bottom,
       pageWrapMinWidth: pageWrapStyle.minWidth,
+      pageWrapBox: box(pageWrapBox),
+      pageWrapTopGapFromProjectHeader: Math.round(pageWrapBox.top - projectHeaderBox.bottom),
       projectHeaderHeight: projectHeaderStyle.height,
       projectPageBelowProjectHeader: pageWrapBox.top >= projectHeaderBox.bottom,
       projectPageMarginTop: projectPageStyle.marginTop,
+      projectPageBox: box(projectPageBox),
       projectPageWidth: Math.round(projectPageWrap.getBoundingClientRect().width),
+      projectPageTopEqualsPageWrapTop: projectPageBox.top === pageWrapBox.top,
     };
+
+    function box(rect: DOMRect) {
+      return {
+        height: Math.round(rect.height),
+        left: Math.round(rect.left),
+        width: Math.round(rect.width),
+      };
+    }
 
     function requireElement(selector: string): HTMLElement {
       const element = document.querySelector<HTMLElement>(selector);
       if (!element) {
         throw new Error(`Missing ${selector}`);
       }
+      return element;
+    }
+  });
+}
+
+async function statisticsFallbackEquivalence(page: Page) {
+  return page.evaluate(() => {
+    const outer = requireElement('[data-stylex-owner="project-statistics-page-outer"]');
+    const projectPage = requireElement('[data-stylex-owner="project-statistics-page"]');
+    const capture = () => ({
+      outer: pick(outer),
+      projectPage: pick(projectPage),
+    });
+    const migrated = capture();
+    for (const element of [outer, projectPage]) {
+      for (const token of Array.from(element.classList)) {
+        if (token.startsWith("x")) element.classList.remove(token);
+      }
+    }
+    outer.classList.add("page-wrap-outer");
+    projectPage.classList.add("project-page-wrap");
+    return JSON.stringify(capture()) === JSON.stringify(migrated);
+
+    function pick(element: HTMLElement) {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return {
+        box: { height: box.height, left: box.left, top: box.top, width: box.width },
+        boxSizing: style.boxSizing,
+        marginTop: style.marginTop,
+        minHeight: style.minHeight,
+        paddingLeft: style.paddingLeft,
+        paddingRight: style.paddingRight,
+        width: style.width,
+      };
+    }
+
+    function requireElement(selector: string): HTMLElement {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
       return element;
     }
   });

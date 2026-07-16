@@ -1,16 +1,48 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { use } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { LegacyI18nProvider } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { globalBreakpoints } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectNestedShellContext } from "../$projectName";
 
 export const Route = createFileRoute("/$ownerName/$projectName/statistics")({
   component: ProjectStatisticsRoute,
+});
+
+const styles = stylex.create({
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      [globalBreakpoints.mobile]: "0px",
+    },
+    width: "100%",
+  },
+  projectPageWrap: {
+    margin: "5px auto 0px",
+    width: "100%",
+  },
+  heading: {
+    color: "inherit",
+    fontFamily: "inherit",
+    fontSize: "38.5px",
+    fontWeight: "bold",
+    lineHeight: "40px",
+    margin: "0px",
+    textRendering: "optimizeLegibility",
+  },
 });
 
 function ProjectStatisticsRoute() {
@@ -56,9 +88,12 @@ function ProjectStatisticsRouteShell({
   const body = (
     <>
       <title>{`statistics - ${ownerName}/${projectName}`}</title>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <h1>Under Construction</h1>
+      <div
+        {...stylex.props(styles.pageWrapOuter)}
+        data-stylex-owner="project-statistics-page-outer"
+      >
+        <div {...stylex.props(styles.projectPageWrap)} data-stylex-owner="project-statistics-page">
+          <h1 {...stylex.props(styles.heading)}>Under Construction</h1>
         </div>
       </div>
     </>
