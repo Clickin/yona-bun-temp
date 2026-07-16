@@ -136,7 +136,15 @@ const EXPECTED_PROJECTS_LIST = `
         </div>
       </li>
     </ul>
-    <div id="pagination"></div>
+    <div id="pagination" class="page-navigation-wrap">
+      <ul class="page-nums">
+        <li class="page-num ikon"><i class="ico btn-pg-prev off"></i><span class="off">Previous page</span></li>
+        <li class="page-num"><input class="input-mini nospinner" max="1" min="1" name="pageNum" pattern="[0-9]*" type="number" value="1"></li>
+        <li class="page-num delimiter">/</li>
+        <li class="page-num">1</li>
+        <li class="page-num ikon"><span class="off">Next page</span><i class="ico btn-pg-next off"></i></li>
+      </ul>
+    </div>
   </div>
 </div>
 <footer class="page-footer-outer">
@@ -496,7 +504,11 @@ test("projects list renders legacy pagination controls for multi-page project li
   await expect(pagination).toHaveClass("page-navigation-wrap");
   await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
   await expect(pagination.locator("li.page-num")).toHaveCount(5);
-  await expect(pagination.locator(".btn-pg-prev.off")).toHaveCount(1);
+  await expect(
+    pagination.locator(
+      '[data-stylex-owner="projects-directory-pagination-prev-icon"][data-disabled="true"]',
+    ),
+  ).toHaveCount(1);
   await expect(pagination.locator("span.off")).toHaveText("Previous page");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
@@ -546,7 +558,11 @@ test("projects list renders legacy pagination controls for multi-page project li
   await pageInput.press("Enter");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
   await expect(pageInput).toHaveValue("3");
-  await expect(pagination.locator(".btn-pg-next.off")).toHaveCount(1);
+  await expect(
+    pagination.locator(
+      '[data-stylex-owner="projects-directory-pagination-next-icon"][data-disabled="true"]',
+    ),
+  ).toHaveCount(1);
 });
 
 test("projects route source uses Link for project directory card navigation", () => {
@@ -1025,6 +1041,7 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-disabled" &&
             attr.name !== "data-projects-directory-tabs-scope" &&
             !(
               attr.name === "data-selected" &&
@@ -1047,6 +1064,12 @@ async function canonicalizeScreenRoots(page: Page) {
                 ) ||
                 (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
+            ) &&
+            !(
+              attr.name === "style" &&
+              attr.ownerElement?.matches(
+                '[data-stylex-owner="projects-directory-pagination-next-icon"], [data-stylex-owner="projects-directory-pagination-prev-icon"]',
+              )
             ) &&
             !attr.name.startsWith("data-v-"),
         )
@@ -1132,6 +1155,12 @@ async function canonicalizeScreenRoots(page: Page) {
         return attr.value.includes("yobicon-friends")
           ? "yobicon-friends yobicon-middle"
           : "yobicon-eye yobicon-middle";
+      if (attr.name === "class" && owner === "projects-directory-pagination-input")
+        return "input-mini nospinner";
+      if (attr.name === "class" && owner === "projects-directory-pagination-prev-icon")
+        return `ico btn-pg-prev${attr.ownerElement?.getAttribute("data-disabled") === "true" ? " off" : ""}`;
+      if (attr.name === "class" && owner === "projects-directory-pagination-next-icon")
+        return `ico btn-pg-next${attr.ownerElement?.getAttribute("data-disabled") === "true" ? " off" : ""}`;
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")

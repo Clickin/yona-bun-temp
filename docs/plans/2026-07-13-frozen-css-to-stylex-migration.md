@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred one slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred two slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -349,6 +349,23 @@ desktop pins the avatar/image to `1321,307,32x32` and icons to
 absent-owner RED is 0/3, focused GREEN is 3/3, and the affected matrix is GREEN 17/17. Target
 regions in live/local desktop and mobile captures were directly inspected. This is not Wave 1
 completion.
+
+The two-hundred-second slice migrates exactly three pagination residual owners in the same
+authenticated populated-default `/projects` state: the page-number input and previous/next sprite
+icons. The input directly owns the contextual 30px content width, zero margin, centered bold text,
+1px border, Firefox textfield appearance, and legacy hover/focus accent and inset shadow. Only its
+border/accent/shadow paints enter route-local `projectsDirectoryColors`; Bootstrap and `_yobiUI`
+continue to own the generic outer 44x30 box, padding/background, responsive font size, line height,
+radius, vertical alignment, and default text. The two icons import the canonical Vite-owned sprite
+and own generic icon display/background plus active/disabled positions and margins. Route literals
+`input-mini`, `nospinner`, `ico`, `btn-pg-prev`, `btn-pg-next`, and icon `off` retire; disabled text
+`off` and pagination wrapper/list/item classes remain fallback. React now renders the generated
+pagination for one-page results as legacy pagination.js does instead of leaving `#pagination`
+empty. Live desktop pins the root/input at `10,585,1346x30` / `581.375,585,44x30` and icons at
+`499.641/740.344,595.5,6x9`; mobile pins them at `0,795,390x30` /
+`93.375,795,44x30` and `11.641/252.344,805.5,6x9`. RED 0/4 becomes focused GREEN 4/4 and the
+complete adjacent `/projects` matrix is GREEN 37/37. Target regions in live/local captures were
+directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

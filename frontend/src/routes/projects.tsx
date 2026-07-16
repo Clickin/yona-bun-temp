@@ -2,10 +2,11 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
 import type { ListProjectsResponse, YoramRecord } from "../api/types";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -25,6 +26,10 @@ const LEGACY_PROJECTS_LINK_SEARCH = {
   labelIds: undefined,
   pageNum: undefined,
 };
+
+const paginationSpriteStyle = {
+  "--projects-directory-pagination-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
 
 type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
@@ -267,6 +272,46 @@ const styles = stylex.create({
     width: "100%",
   },
   directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
+  directoryPaginationInput: {
+    MozAppearance: "textfield",
+    borderColor: {
+      default: projectsDirectoryColors.paginationInputBorder,
+      ":hover": projectsDirectoryColors.paginationAccent,
+      ":focus": projectsDirectoryColors.paginationAccent,
+    },
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: {
+      ":hover": projectsDirectoryColors.paginationInputInteractiveShadow,
+      ":focus": projectsDirectoryColors.paginationInputInteractiveShadow,
+    },
+    color: {
+      ":hover": projectsDirectoryColors.paginationAccent,
+      ":focus": projectsDirectoryColors.paginationAccent,
+    },
+    fontWeight: "700",
+    margin: "0px",
+    textAlign: "center",
+    width: "30px",
+  },
+  directoryPaginationIcon: {
+    backgroundImage: "var(--projects-directory-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "9px",
+    verticalAlign: "middle",
+    width: "6px",
+  },
+  directoryPaginationPreviousIcon: {
+    backgroundPosition: "-136px -139px",
+    marginRight: "10px",
+  },
+  directoryPaginationPreviousIconDisabled: { backgroundPosition: "-164px -2px" },
+  directoryPaginationNextIcon: {
+    backgroundPosition: "-146px -139px",
+    marginLeft: "10px",
+  },
+  directoryPaginationNextIconDisabled: { backgroundPosition: "-23px -13px" },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -298,6 +343,25 @@ const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvata
 const directoryStatsIconStyleProps = stylex.props(styles.directoryStatsIcon);
 const directoryMemberAvatarImageStyleProps = stylex.props(styles.directoryMemberAvatarImage);
 const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
+const directoryPaginationInputStyleProps = stylex.props(styles.directoryPaginationInput);
+const directoryPaginationPreviousIconStyleProps = stylex.props(
+  styles.directoryPaginationIcon,
+  styles.directoryPaginationPreviousIcon,
+);
+const directoryPaginationPreviousDisabledIconStyleProps = stylex.props(
+  styles.directoryPaginationIcon,
+  styles.directoryPaginationPreviousIcon,
+  styles.directoryPaginationPreviousIconDisabled,
+);
+const directoryPaginationNextIconStyleProps = stylex.props(
+  styles.directoryPaginationIcon,
+  styles.directoryPaginationNextIcon,
+);
+const directoryPaginationNextDisabledIconStyleProps = stylex.props(
+  styles.directoryPaginationIcon,
+  styles.directoryPaginationNextIcon,
+  styles.directoryPaginationNextIconDisabled,
+);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -474,7 +538,7 @@ function ProjectsPagination({
 }) {
   const { t } = useLegacyMessages();
   const router = useRouter();
-  if (totalPages <= 1) {
+  if (totalPages <= 0) {
     return <div id="pagination"></div>;
   }
 
@@ -519,19 +583,30 @@ function ProjectsPagination({
               search={pageSearch(currentPage - 1)}
               to="/projects"
             >
-              <i className="ico btn-pg-prev"></i>
+              <i
+                {...directoryPaginationPreviousIconStyleProps}
+                data-disabled="false"
+                data-stylex-owner="projects-directory-pagination-prev-icon"
+                style={paginationSpriteStyle}
+              ></i>
               <span>{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
+              <i
+                {...directoryPaginationPreviousDisabledIconStyleProps}
+                data-disabled="true"
+                data-stylex-owner="projects-directory-pagination-prev-icon"
+                style={paginationSpriteStyle}
+              ></i>
               <span className="off">{t("button.prevPage")}</span>
             </>
           )}
         </li>
         <li className="page-num">
           <input
-            className="input-mini nospinner"
+            {...directoryPaginationInputStyleProps}
+            data-stylex-owner="projects-directory-pagination-input"
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -559,12 +634,22 @@ function ProjectsPagination({
               to="/projects"
             >
               <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <i
+                {...directoryPaginationNextIconStyleProps}
+                data-disabled="false"
+                data-stylex-owner="projects-directory-pagination-next-icon"
+                style={paginationSpriteStyle}
+              ></i>
             </Link>
           ) : (
             <>
               <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <i
+                {...directoryPaginationNextDisabledIconStyleProps}
+                data-disabled="true"
+                data-stylex-owner="projects-directory-pagination-next-icon"
+                style={paginationSpriteStyle}
+              ></i>
             </>
           )}
         </li>
