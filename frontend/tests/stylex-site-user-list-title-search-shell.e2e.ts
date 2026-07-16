@@ -174,18 +174,20 @@ test.describe("StyleX site user-list title/search shell", () => {
       await title.locator(":scope > *").evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["H2", "FORM"]);
     expect(
-      await page.locator(".site-setting-wrap > .row-fluid > .span10 > *").evaluateAll(
-        (nodes, titleOwner) =>
-          nodes.slice(0, 5).map((node) => {
-            if (node.getAttribute("data-stylex-owner") === titleOwner) return titleOwner;
-            if (node.matches("ul.nav.nav-tabs")) return "tabs";
-            if (node.matches("div.row-fluid.listhead")) return "listhead";
-            if (node.matches("ul.user-list-wrap")) return "users";
-            if (node.matches("#pagination")) return "pagination";
-            return node.tagName;
-          }),
-        owners.title,
-      ),
+      await page
+        .locator('[data-stylex-owner="site-user-list-setting-content-column"] > *')
+        .evaluateAll(
+          (nodes, titleOwner) =>
+            nodes.slice(0, 5).map((node) => {
+              if (node.getAttribute("data-stylex-owner") === titleOwner) return titleOwner;
+              if (node.matches("ul.nav.nav-tabs")) return "tabs";
+              if (node.matches("div.row-fluid.listhead")) return "listhead";
+              if (node.matches("ul.user-list-wrap")) return "users";
+              if (node.matches("#pagination")) return "pagination";
+              return node.tagName;
+            }),
+          owners.title,
+        ),
     ).toEqual([owners.title, "tabs", "listhead", "users", "pagination"]);
     await expect(page.locator(".user-list-wrap > li.row-fluid.listitem")).toHaveCount(1);
   });
@@ -202,7 +204,9 @@ test.describe("StyleX site user-list title/search shell", () => {
     await expect(form).toHaveClass(/\bpull-right\b/u);
     await expect(form.locator(":scope > .search-bar > input.textbox")).toHaveCount(1);
     await expect(form.locator(":scope > .search-bar > button.search-btn")).toHaveCount(1);
-    await expect(page.locator(".site-setting-wrap > .row-fluid > .span10")).toHaveCount(1);
+    await expect(
+      page.locator('[data-stylex-owner="site-user-list-setting-content-column"]'),
+    ).toHaveCount(1);
 
     for (const explicitOwner of Object.values(owners)) {
       const element = owner(page, explicitOwner);
@@ -258,7 +262,9 @@ test.describe("StyleX site user-list title/search shell", () => {
         const heading = get(ownerNames.heading);
         const form = get(ownerNames.form);
         const tabs = document
-          .querySelector<HTMLElement>(".site-setting-wrap .span10 > ul.nav-tabs")!
+          .querySelector<HTMLElement>(
+            '[data-stylex-owner="site-user-list-setting-content-column"] > ul.nav-tabs',
+          )!
           .getBoundingClientRect();
         return {
           form: form.toJSON(),

@@ -1806,6 +1806,26 @@ unrelated to these owners. Visual inspection of authenticated legacy
 side-by-side grid, page inset/content x, and row x/width/wrapping/flow. Locale, assets, global shell,
 and footer copy remain outside this claim.
 
+The one-hundred-fifty-seventh slice migrates exactly five authenticated populated-ACTIVE
+`/sites/userList` management-shell owners: the page wrapper, centered setting wrapper, direct
+clearfix grid, sidebar column, and content column. `site/siteMngLayout.scala.html`, included
+`site/userList.scala.html`, active Bootstrap 2.3.1 base, `_page.less`, and `_responsive.less`
+supply the complete geometry; the manifest-declared `bootstrap-responsive.css` remains
+reference-only/inactive. All dimensions and spacing are colocated inline StyleX declarations with
+no theme variable or new abstraction. Only `page-wrap-outer`, the direct `row-fluid`, and direct
+`span2`/`span10` retire. `site-setting-wrap` remains solely because excluded descendant fallback
+selectors still consume it; breadcrumb, title/search, tabs, listhead, rows, pagination, modal, and
+sidebar internals remain independent. Authenticated legacy captures establish desktop page/grid
+`1366/1346px`, sidebar/content `200.453/1116.891px`, and mobile side-by-side grid `390px` with
+sidebar/content `58.078/323.609px` and an `8.297px` gutter. Focused RED first proved the five
+owners absent; runtime follow-up isolated pre-existing English action-button and hidden-modal
+overflow from the five-owner boundary, after which exact owner containment, clearfix, percentages,
+and screenshots are GREEN 2/2. The complete user-list StyleX matrix is GREEN 13/13. Whole-screen
+coverage is GREEN 15/16; its sole failure is the pre-existing excluded global-GNB `Feedback` gap.
+Authenticated legacy/local desktop and mobile screenshots visually match the owned page inset and
+side-by-side management grid. Locale, fixture copy/data, excluded descendants, global shell, and
+footer remain outside this claim.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

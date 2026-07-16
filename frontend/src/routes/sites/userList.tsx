@@ -52,6 +52,42 @@ const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
 };
 const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
 const styles = stylex.create({
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      default: null,
+      "@media (max-width: 720px)": "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      "@media (max-width: 720px)": "0px",
+    },
+    width: "100%",
+  },
+  settingWrap: {
+    margin: "0px auto",
+  },
+  settingGrid: {
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    minHeight: "30px",
+  },
+  settingSidebarColumn: {
+    marginLeft: "0px",
+    width: "14.893617021276595%",
+  },
+  settingContentColumn: {
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
+  },
   titleArea: {
     overflow: "hidden",
     marginBottom: "29px",
@@ -74,6 +110,17 @@ const styles = stylex.create({
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const titleSearchFormStyleProps = stylex.props(styles.titleSearchForm);
+const pageWrapOuterStyleProps = stylex.props(styles.pageWrapOuter);
+const settingWrapStyleProps = stylex.props(styles.settingWrap);
+const settingGridStyleProps = stylex.props(styles.settingGrid);
+const settingSidebarColumnStyleProps = stylex.props(
+  styles.settingColumn,
+  styles.settingSidebarColumn,
+);
+const settingContentColumnStyleProps = stylex.props(
+  styles.settingColumn,
+  styles.settingContentColumn,
+);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -236,13 +283,23 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
-          <div className="row-fluid">
-            <div className="span2">
+      <div {...pageWrapOuterStyleProps} data-stylex-owner="site-user-list-page-wrap-outer">
+        <div
+          {...settingWrapStyleProps}
+          className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}
+          data-stylex-owner="site-user-list-setting-wrap"
+        >
+          <div {...settingGridStyleProps} data-stylex-owner="site-user-list-setting-grid">
+            <div
+              {...settingSidebarColumnStyleProps}
+              data-stylex-owner="site-user-list-setting-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...settingContentColumnStyleProps}
+              data-stylex-owner="site-user-list-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-user-list-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-user-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.userList" />

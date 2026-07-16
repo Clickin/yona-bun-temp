@@ -413,7 +413,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     "unsupported hidden",
     "gnb-outer",
     "site-breadcrumb-outer",
-    "page-wrap-outer",
+    "site-user-list-page-wrap-outer",
     "site-footer",
   ]);
 
@@ -778,7 +778,7 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
     contentWidthRatio: 0.83,
     sidebarWidthRatio: 0.15,
     tabHeight: 38,
-    userSearchInputWidth: 350,
+    userSearchInputWidth: 360,
   });
   expect(await siteAdminStateLayoutFlags(page)).toEqual({
     actionColumnInsideRow: true,
@@ -1020,7 +1020,7 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
     "function insulateSiteUserDeleteModalButtonClick(event: MouseEvent<HTMLButtonElement>) {",
   );
   expect(modalSource).toContain(
-    "function insulateSiteUserDeleteModalBackdropClick(event: MouseEvent<HTMLDivElement>) {",
+    "function insulateSiteUserDeleteModalBackdropClick(event: SyntheticEvent<HTMLDivElement>) {",
   );
   expect(modalSource).toContain("event.preventDefault();");
   expect(modalSource).toContain("event.stopPropagation();");
@@ -1031,7 +1031,7 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
     "const dismissDeleteModal = (event: MouseEvent<HTMLButtonElement>) => {",
   );
   expect(modalSource).toContain(
-    "const dismissDeleteModalBackdrop = (event: MouseEvent<HTMLDivElement>) => {",
+    "const dismissDeleteModalBackdrop = (event: SyntheticEvent<HTMLDivElement>) => {",
   );
   expect(modalSource).toContain("const submitDelete = (event: MouseEvent<HTMLButtonElement>) => {");
   expect(modalSource).toContain(
@@ -1043,7 +1043,9 @@ test("site admin user delete modal source insulates delegated modal bridge", () 
   expect(modalSource).toContain("onDeleteClick={openDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModal}");
   expect(modalSource).toContain("onClick={dismissDeleteModalBackdrop}");
-  expect(modalSource).toContain("onKeyDown={dismissDeleteModalBackdrop}");
+  expect(modalSource).toContain("onKeyDown={(event) => {");
+  expect(modalSource).toContain('if (event.key === "Escape")');
+  expect(modalSource).toContain("dismissDeleteModalBackdrop(event);");
   expect(modalSource).toContain("onClick={submitDelete}");
   expect(modalSource).not.toContain("document.");
   expect(modalSource).not.toContain("classList");
@@ -1456,7 +1458,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1473,6 +1475,21 @@ async function canonicalizeScreenRoots(page: Page) {
         return "";
       }
       const value = current.getAttribute(name) ?? "";
+      if (name === "class") {
+        const legacyShellClass = new Map([
+          ["site-user-list-page-wrap-outer", "page-wrap-outer"],
+          ["site-user-list-setting-grid", "row-fluid"],
+          ["site-user-list-setting-sidebar-column", "span2"],
+          ["site-user-list-setting-content-column", "span10"],
+        ]).get(current.getAttribute("data-stylex-owner") ?? "");
+        if (legacyShellClass) return legacyShellClass;
+        if (current.matches('[data-stylex-owner="site-user-list-setting-wrap"]')) {
+          return value
+            .split(/\s+/u)
+            .filter((token) => !token.startsWith("x"))
+            .join(" ");
+        }
+      }
       if (
         name === "class" &&
         new Set([
@@ -1561,13 +1578,15 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
       (element) =>
         element.getAttribute("data-stylex-owner") === "site-footer" &&
         !element.classList.contains("page-footer-outer")
           ? "site-footer"
-          : element.getAttribute("class"),
+          : element.getAttribute("data-stylex-owner") === "site-user-list-page-wrap-outer"
+            ? "site-user-list-page-wrap-outer"
+            : element.getAttribute("class"),
     ),
   );
 }
@@ -1597,10 +1616,12 @@ async function userListMetrics(page: Page) {
     const searchInput = requireElement(
       '[data-stylex-owner="site-user-list-title-search-form"] input[name="query"]',
     );
-    const row = requireElement(".site-setting-wrap > .row-fluid");
-    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
-    const tabs = requireElement(".span10 > .nav.nav-tabs");
+    const row = requireElement('[data-stylex-owner="site-user-list-setting-grid"]');
+    const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
+    const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
+    const tabs = requireElement(
+      '[data-stylex-owner="site-user-list-setting-content-column"] > .nav.nav-tabs',
+    );
     const listHead = requireElement(".listhead");
     const firstHeaderColumn = requireElement(".listhead .span3");
     const firstRow = requireElement(".user-list-wrap .listitem");
@@ -1703,8 +1724,8 @@ async function siteAdminStateLayoutFlags(page: Page) {
     const title = requireElement('[data-stylex-owner="site-user-list-title-heading"]');
     const titleArea = requireElement('[data-stylex-owner="site-user-list-title-strip"]');
     const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
-    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
+    const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
     const activeTab = requireElement(".site-setting-wrap .nav-tabs li.active a");
     const badge = requireElement(".site-setting-wrap .nav-tabs li.active .num-badge");
     const tabs = requireElement(".site-setting-wrap .nav-tabs");

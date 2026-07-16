@@ -146,7 +146,11 @@ test.describe("StyleX site user-list title strip", () => {
     await openUserList(page);
     const generatedDirectChildren = await page.evaluate(
       (selector) =>
-        Array.from(document.querySelectorAll(".site-setting-wrap .span10 > *"))
+        Array.from(
+          document.querySelectorAll(
+            '[data-stylex-owner="site-user-list-setting-content-column"] > *',
+          ),
+        )
           .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
           .filter((element) => !element.matches(selector))
           .map((element) => element.tagName),
