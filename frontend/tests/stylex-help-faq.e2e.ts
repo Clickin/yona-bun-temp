@@ -46,16 +46,15 @@ test("source fully owns the legacy help FAQ subtree without presentation classes
     content: "\\e48f";`);
   expect(route).toContain('import legacySpriteUrl from "../assets/legacy/sprite.png"');
   expect(route).toContain(`faqQuestionControl: {
-    display: "contents",`);
+    backgroundColor: "transparent",`);
   expect(route).toContain(`faqQuestion: {
     boxSizing: "content-box",
     color: helpColors.faqQuestionText,
     display: "table-cell",`);
   expect(route).toContain("lineHeight: 1.2");
   expect(route).toContain('textAlign: "start"');
-  expect(route).toContain('event.key !== " " && event.key !== "Enter"');
   expect(route).toContain("event.stopPropagation()");
-  expect(route).toContain("tabIndex={0}");
+  expect(route).not.toContain("tabIndex={0}");
   for (const name of [
     "list",
     "row",
@@ -112,7 +111,7 @@ for (const viewport of [
     await expect(first).toHaveAttribute("data-index", "0");
     await expect(first).toHaveAttribute("data-state", "closed");
     await expect(questionControl).toHaveAttribute("aria-expanded", "false");
-    await expect(questionControl).toHaveCSS("display", "contents");
+    await expect(questionControl).toHaveCSS("display", "block");
     await expect(question).toHaveCSS("display", "table-cell");
     await expect(answerWrap).toHaveCSS("display", "none");
     await expect(last).toHaveCSS("border-bottom-style", "none");
@@ -222,16 +221,15 @@ for (const viewport of [
     expect(open.answer.left).toBe(viewport.name === "desktop" ? 81 : 71);
     expect(open.answer.width).toBe(viewport.name === "desktop" ? 1260 : 304);
 
-    await expect(question).toHaveAttribute("tabindex", "0");
-    await question.focus();
-    await expect(question).toBeFocused();
-    await question.press("Space");
+    await questionControl.focus();
+    await expect(questionControl).toBeFocused();
+    await questionControl.press("Space");
     await expect(first).toHaveAttribute("data-state", "closed");
     await expect(questionControl).toHaveAttribute("aria-expanded", "false");
-    await question.press("Enter");
+    await questionControl.press("Enter");
     await expect(first).toHaveAttribute("data-state", "open");
     await expect(questionControl).toHaveAttribute("aria-expanded", "true");
-    await question.click();
+    await questionControl.click();
     await expect(first).toHaveAttribute("data-state", "closed");
     await expect(questionControl).toHaveAttribute("aria-expanded", "false");
     expect((await list.screenshot()).byteLength).toBeGreaterThan(0);

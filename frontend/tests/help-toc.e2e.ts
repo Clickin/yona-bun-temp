@@ -72,7 +72,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>Yoram를 설치하고 싶어요.</span></button>
+          <span><button type="button" class="question">Yoram를 설치하고 싶어요.</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -85,7 +85,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>프로젝트를 새로 생성하고 싶어요.</span></button>
+          <span><button type="button" class="question">프로젝트를 새로 생성하고 싶어요.</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -115,7 +115,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>내가 참여하는 프로젝트들은 어디서 볼수 있나요?</span></button>
+          <span><button type="button" class="question">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -131,7 +131,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>프로젝트 탈퇴는 어떻게 하나요.</span></button>
+          <span><button type="button" class="question">프로젝트 탈퇴는 어떻게 하나요.</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -145,7 +145,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>게시판에서는 어떠한 것들을 할수 있나요?</span></button>
+          <span><button type="button" class="question">게시판에서는 어떠한 것들을 할수 있나요?</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -166,7 +166,7 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question"><span>Yoram의 버그를 발견했어요.</span></button>
+          <span><button type="button" class="question">Yoram의 버그를 발견했어요.</button></span>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
@@ -1115,7 +1115,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           if (current.matches(".qas > .qa")) retiredHelpFaqTokens.add("qa");
           if (current.matches(".qas > .qa > .question-wrap"))
             retiredHelpFaqTokens.add("question-wrap");
-          if (current.matches(".qas > .qa > .question-wrap > .question"))
+          if (current.matches(".qas > .qa > .question-wrap > span > .question"))
             retiredHelpFaqTokens.add("question");
           if (current.matches(".qas > .qa > .question-wrap > i.yobicon-q.q")) {
             retiredHelpFaqTokens.add("yobicon-q");

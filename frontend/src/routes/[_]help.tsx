@@ -83,7 +83,20 @@ const styles = stylex.create({
     "::before": { content: '"\\e48f"' },
   },
   faqQuestionControl: {
-    display: "contents",
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    color: "inherit",
+    display: "block",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "inherit",
+    height: "100%",
+    lineHeight: "inherit",
+    padding: "0px",
+    textAlign: "inherit",
+    width: "100%",
   },
   faqQuestion: {
     boxSizing: "content-box",
@@ -398,26 +411,20 @@ function HelpFaqRow({
           {...stylex.props(styles.faqIcon, styles.faqQuestionIcon)}
           data-stylex-owner="help-faq-question-icon"
         />
-        <button
-          {...stylex.props(styles.faqQuestionControl)}
-          aria-expanded={isOpen}
-          data-stylex-owner="help-faq-question-control"
-          onKeyDown={(event) => {
-            if (event.key !== " " && event.key !== "Enter") return;
-            event.preventDefault();
-            event.stopPropagation();
-            onToggle(index);
-          }}
-          type="button"
-        >
-          <span
-            {...stylex.props(styles.faqQuestion)}
-            data-stylex-owner="help-faq-question"
-            tabIndex={0}
+        <span {...stylex.props(styles.faqQuestion)} data-stylex-owner="help-faq-question">
+          <button
+            {...stylex.props(styles.faqQuestionControl)}
+            aria-expanded={isOpen}
+            data-stylex-owner="help-faq-question-control"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggle(index);
+            }}
+            type="button"
           >
             {question}
-          </span>
-        </button>
+          </button>
+        </span>
         <i
           {...stylex.props(styles.faqToggleIcon, isOpen && styles.faqToggleIconOpen)}
           aria-hidden="true"
