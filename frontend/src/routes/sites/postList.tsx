@@ -261,6 +261,7 @@ const styles = stylex.create({
     padding: "0px 5px",
   },
   paginationInput: {
+    MozAppearance: "textfield",
     margin: "0px",
     width: "30px",
     textAlign: "center",
@@ -505,7 +506,6 @@ function PostListPagination({
         >
           <input
             {...paginationInputStyleProps}
-            className={`nospinner ${paginationInputStyleProps.className ?? ""}`}
             data-stylex-owner="site-post-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
             max={totalPages}

@@ -2249,6 +2249,15 @@ StyleX matrix is GREEN 60/60 (46.9s), and whole-screen coverage is GREEN 7/8 (48
 badge and six other functional cases pass; only the same pre-existing broad DOM-equality gap
 outside this owner remains.
 
+The one-hundred-eighty-fourth slice completes the Firefox-only pagination input residual for both
+`/sites/postList` and `/sites/issueList`. Their existing pagination-input owners now carry inline
+`MozAppearance: "textfield"`, matching frozen `_common.less` `.nospinner`; Chromium's standard
+computed appearance remains `auto`. Exactly those two `nospinner` consumers retire, with no theme,
+paint, global, frozen, app CSS, geometry, or behavior change. Focused combined coverage is GREEN
+12/12 (19.8s), the complete combined post/issue StyleX matrix is GREEN 88/88 (52.4s), and combined
+whole-screen coverage is GREEN 14/16 (about 1.6m). Each route passes 7/8; only the two pre-existing
+missing global-GNB Feedback expectations remain, while all fourteen functional cases pass.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -1384,6 +1384,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         }
         if (current.matches('#pagination input[name="pageNum"]')) {
           retiredPostListTokens.add("input-mini");
+          retiredPostListTokens.add("nospinner");
         }
         if (current.matches("#pagination span.off")) {
           retiredPostListTokens.add("off");

@@ -149,9 +149,7 @@ test.describe("StyleX site post-list pagination", () => {
     await expect(input).toHaveValue("3");
   });
 
-  test("removes migrated selectors and retains only sprite and Firefox fallbacks", async ({
-    page,
-  }) => {
+  test("removes migrated selectors and retains only sprite fallbacks", async ({ page }) => {
     const pagination = await openPagination(page);
     const classes = await pagination.evaluate((wrapper) =>
       [wrapper, ...wrapper.querySelectorAll<HTMLElement>("[data-stylex-owner]")].map((element) => ({
@@ -172,8 +170,8 @@ test.describe("StyleX site post-list pagination", () => {
         ]),
       );
     }
-    expect(classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes).toEqual(
-      expect.arrayContaining(["nospinner"]),
+    expect(classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes).not.toContain(
+      "nospinner",
     );
     expect(classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes).not.toContain(
       "input-mini",

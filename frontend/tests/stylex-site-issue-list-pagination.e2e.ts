@@ -102,6 +102,7 @@ test.describe("StyleX site issue-list pagination", () => {
     expect(legacyJs).toContain("y.append([d,a,v,b,g])");
     expect(commonLess).toContain(".page-navigation-wrap {");
     expect(commonLess).toContain(".input-mini {");
+    expect(commonLess).toContain(".nospinner { -moz-appearance:textfield; }");
     expect(pageLess).toContain("margin-left: -120px !important;");
     expect(responsiveLess).toContain("margin-left: 0;");
 
@@ -121,6 +122,8 @@ test.describe("StyleX site issue-list pagination", () => {
     ])
       expect(route).toContain(`styles.${style}`);
     expect(route).toContain("globalBreakpoints.mobile");
+    expect(route).toContain('MozAppearance: "textfield"');
+    expect(route).not.toContain("nospinner");
     for (const token of [
       "siteIssueListPaginationWrapperMargin",
       "siteIssueListPaginationListDesktopMarginLeft",
@@ -186,9 +189,7 @@ test.describe("StyleX site issue-list pagination", () => {
     await expect(input).toHaveValue("3");
   });
 
-  test("retires migrated classes and keeps only sprite and Firefox fallback classes", async ({
-    page,
-  }) => {
+  test("retires migrated classes and keeps only sprite classes", async ({ page }) => {
     const pagination = await openPagination(page);
     const owned = pagination.locator("[data-stylex-owner]");
     for (const element of await owned.all()) {
@@ -205,7 +206,8 @@ test.describe("StyleX site issue-list pagination", () => {
         ]),
       );
     }
-    await expect(pagination.locator(owners.input)).toHaveClass(/\bnospinner\b/u);
+    await expect(pagination.locator(owners.input)).not.toHaveClass(/\bnospinner\b/u);
+    await expect(pagination.locator(owners.input)).toHaveCSS("appearance", "auto");
     for (const icon of await pagination.locator(owners.icon).all()) {
       await expect(icon).toHaveClass(/\bico\b/u);
       await expect(icon).toHaveClass(/\bbtn-pg-(?:prev|next)\b/u);

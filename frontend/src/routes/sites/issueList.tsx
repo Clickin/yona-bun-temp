@@ -372,6 +372,7 @@ const styles = stylex.create({
     padding: "0px 5px",
   },
   issueListPaginationInput: {
+    MozAppearance: "textfield",
     margin: "0px",
     width: "30px",
     textAlign: "center",
@@ -676,7 +677,7 @@ function IssueListPagination({
         >
           <input
             {...issueListPaginationInputStyleProps}
-            className={`nospinner ${issueListPaginationInputStyleProps.className ?? ""}`}
+            className={issueListPaginationInputStyleProps.className}
             data-stylex-owner="site-issue-list-pagination-input"
             defaultValue={currentPage}
             max={totalPages}
