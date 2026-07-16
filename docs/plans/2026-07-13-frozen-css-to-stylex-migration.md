@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred three slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred four slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -380,6 +380,20 @@ root/list to `10,585,1346x30` / `494.641,585,256.703x30`, while mobile pins them
 `0,795,390x30` / `6.641,795,256.703x30`; all five item and two label boxes also match exactly.
 RED 0/4 becomes focused GREEN 4/4 and complete adjacent `/projects` coverage is GREEN 41/41.
 Target live/local captures were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-fourth slice migrates exactly three owners in the filtered-empty `/projects`
+state: the empty-state wrapper, the error sprite icon, and the message paragraph. Route StyleX
+owns the frozen `_page.less` 100px vertical padding and centered alignment, `_sprites.less`
+inline sprite display/62x82 geometry/position, and the message's 30px margin plus 16px/700 type.
+Only the dark-mode-eligible `#898989` message paint enters route-local
+`projectsDirectoryColors`; all geometry and typography stay literal in `stylex.create`. This
+route consumer retires `error-wrap`, `ico`, and `ico-err1`, while the corresponding global
+fallback rules remain active for their many other route consumers. Verified Java desktop
+1366x900 pins the wrapper/icon/message to `10,158,1346x362`, `652,258,62x82`, and
+`10,370,1346x20`; 390px mobile pins them to `0,128,390x362`, `164,228,62x82`, and
+`0,340,390x20` with no overflow. RED 0/3 becomes focused GREEN 3/3 and complete adjacent
+`/projects` coverage is GREEN 44/44. Target live/local captures were directly inspected. This is
+not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 
 export const projectsDirectoryColors = stylex.defineVars({
   descriptionText: "#bababa",
+  emptyText: "#898989",
   memberAvatarSurface: "#dddddd",
   memberCountText: "#51aacc",
   metadataText: "#999999",

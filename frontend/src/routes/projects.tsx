@@ -31,6 +31,10 @@ const paginationSpriteStyle = {
   "--projects-directory-pagination-sprite": `url(${legacySpriteUrl})`,
 } as CSSProperties;
 
+const emptyStateSpriteStyle = {
+  "--projects-directory-empty-state-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
+
 type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
   createdTitle?: string;
@@ -272,6 +276,26 @@ const styles = stylex.create({
     width: "100%",
   },
   directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
+  directoryEmptyState: {
+    padding: "100px 0px",
+    textAlign: "center",
+  },
+  directoryEmptyIcon: {
+    backgroundImage: "var(--projects-directory-empty-state-sprite)",
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  },
+  directoryEmptyMessage: {
+    color: projectsDirectoryColors.emptyText,
+    fontSize: "16px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    margin: "30px 0px",
+  },
   directoryPagination: {
     clear: "both",
     margin: "20px 0px",
@@ -372,6 +396,9 @@ const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvata
 const directoryStatsIconStyleProps = stylex.props(styles.directoryStatsIcon);
 const directoryMemberAvatarImageStyleProps = stylex.props(styles.directoryMemberAvatarImage);
 const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
+const directoryEmptyStateStyleProps = stylex.props(styles.directoryEmptyState);
+const directoryEmptyIconStyleProps = stylex.props(styles.directoryEmptyIcon);
+const directoryEmptyMessageStyleProps = stylex.props(styles.directoryEmptyMessage);
 const directoryPaginationStyleProps = stylex.props(styles.directoryPagination);
 const directoryPaginationListStyleProps = stylex.props(styles.directoryPaginationList);
 const directoryPaginationItemStyleProps = stylex.props(styles.directoryPaginationItem);
@@ -537,9 +564,21 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           </div>
           {projects.length === 0 ? (
-            <div className="error-wrap">
-              <i className="ico ico-err1"></i>
-              <p>{t("project.is.empty")}</p>
+            <div
+              {...directoryEmptyStateStyleProps}
+              data-stylex-owner="projects-directory-empty-state"
+            >
+              <i
+                {...directoryEmptyIconStyleProps}
+                data-stylex-owner="projects-directory-empty-icon"
+                style={emptyStateSpriteStyle}
+              ></i>
+              <p
+                {...directoryEmptyMessageStyleProps}
+                data-stylex-owner="projects-directory-empty-message"
+              >
+                {t("project.is.empty")}
+              </p>
             </div>
           ) : (
             <>
