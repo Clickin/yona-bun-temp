@@ -29,6 +29,7 @@ import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-wor
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { globalBreakpoints } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
@@ -550,7 +551,10 @@ function ProjectMembersBody({
             </div>
           ) : null}
 
-          <ul className="members project row-fluid">
+          <ul
+            className={`${stylex.props(styles.memberList).className} members project row-fluid`}
+            data-stylex-owner="project-members-list-shell"
+          >
             {members.members.map((member) => (
               <ProjectMemberListItem
                 key={stringField(member.userId, member.loginId)}
@@ -684,7 +688,10 @@ function ProjectMemberListItem({
   }
 
   return (
-    <li className="member span6 span-hard-wrap">
+    <li
+      className={`${stylex.props(styles.memberRow).className} member span6 span-hard-wrap`}
+      data-stylex-owner="project-members-row-shell"
+    >
       <Link
         activeOptions={legacyLinkActiveOptions}
         activeProps={legacyLinkActiveProps}
@@ -709,7 +716,10 @@ function ProjectMemberListItem({
         @{loginId}
         {booleanField(memberRecord.isGuest) ? <span className="guest">GUEST</span> : null}
       </div>
-      <div className="member-setting">
+      <div
+        className={`${stylex.props(styles.memberSetting).className} member-setting`}
+        data-stylex-owner="project-members-setting-shell"
+      >
         {!booleanField(member.isOwner) ? (
           <>
             <div className={`btn-group${isRoleMenuOpen ? " open" : ""}`}>
@@ -752,7 +762,12 @@ function ProjectMemberListItem({
             </button>
           </>
         ) : (
-          <span className="label owner">{t("user.role.owner")}</span>
+          <span
+            className={`${stylex.props(styles.ownerLabel).className} label owner`}
+            data-stylex-owner="project-members-owner-label"
+          >
+            {t("user.role.owner")}
+          </span>
         )}
       </div>
     </li>
@@ -760,6 +775,44 @@ function ProjectMemberListItem({
 }
 
 const styles = stylex.create({
+  // Bootstrap 2.3.1 `.row-fluid` plus _page.less `.members.project`.
+  memberList: {
+    listStyle: "none",
+    margin: "0px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  // Bootstrap `.row-fluid [class*="span"]` / `.span6`, then _page.less `.member`.
+  // The losing mobile `width: 100vw` is omitted; only the winning 95% minimum applies.
+  memberRow: {
+    borderBottomColor: projectMembersTheme.rowBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "5px",
+    minHeight: "30px",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "95%",
+    },
+    padding: "10px 5px",
+    position: "relative",
+    width: "48.93617021276595%",
+  },
+  // _page.less `.members.project .member .member-setting`.
+  memberSetting: {
+    position: "absolute",
+    right: "0px",
+    top: "15px",
+  },
+  // _page.less `.members.project .member .member-setting .owner`.
+  ownerLabel: {
+    marginTop: "5px",
+    padding: "5px",
+  },
   // _yobiUI.less `.avatar-wrap.mlarge`, Bootstrap `.pull-left`, and _common.less `.mr10`.
   memberAvatar: {
     backgroundColor: projectMembersTheme.avatarSurface,

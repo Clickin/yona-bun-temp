@@ -5,4 +5,5 @@ import * as stylex from "@stylexjs/stylex";
 export const projectMembersTheme = stylex.defineVars({
   avatarSurface: "#dddddd",
   memberIdText: "#cccccc",
+  rowBorder: "#dddddd",
 });

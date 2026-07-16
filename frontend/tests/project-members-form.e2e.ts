@@ -143,6 +143,132 @@ test("project members four StyleX identity owners preserve populated desktop and
   });
 });
 
+test("project members four StyleX list row setting owners preserve the owner-only state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, {
+    enrollmentRequests: [],
+    members: [
+      {
+        avatarUrl: "",
+        isOwner: true,
+        loginId: "admin",
+        role: "manager",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator('[data-stylex-owner="project-members-list-shell"]')).toHaveClass(
+    /\bmembers project row-fluid\b/u,
+  );
+  await expect(page.locator('[data-stylex-owner="project-members-row-shell"]')).toHaveClass(
+    /\bmember span6 span-hard-wrap\b/u,
+  );
+  await expect(page.locator('[data-stylex-owner="project-members-setting-shell"]')).toHaveClass(
+    /\bmember-setting\b/u,
+  );
+  await expect(page.locator('[data-stylex-owner="project-members-owner-label"]')).toHaveClass(
+    /\blabel owner\b/u,
+  );
+  expect(await memberShellMetrics(page)).toEqual({
+    listAfterClear: "both",
+    listAfterDisplay: "table",
+    listBeforeDisplay: "table",
+    listHeight: 63,
+    listLeft: 10,
+    listListStyle: "none",
+    listMargin: "0px",
+    listMatchesProjectPageContentWidth: true,
+    listTop: 311,
+    listWidth: 1260,
+    ownerHeight: 24,
+    ownerMarginTop: "5px",
+    ownerPadding: "5px",
+    ownerRightAlignedToRow: true,
+    ownerTopOffsetFromRow: 20,
+    ownerWidth: 92.734375,
+    ownerWidthMatchesSetting: true,
+    rowBorder: "1px solid rgb(221, 221, 221)",
+    rowBoxSizing: "border-box",
+    rowDisplay: "block",
+    rowFloat: "left",
+    rowHeight: 63,
+    rowLeft: 15,
+    rowMarginLeft: "5px",
+    rowMinHeight: "30px",
+    rowMinWidth: "0px",
+    rowPadding: "10px 5px",
+    rowPosition: "relative",
+    rowInsetFromList: 5,
+    rowTop: 311,
+    rowTopMatchesList: true,
+    rowWidth: 616.59375,
+    rowWidthRatio: 0.4893601,
+    settingHeight: 29,
+    settingPosition: "absolute",
+    settingRight: "0px",
+    settingRightAlignedToRow: true,
+    settingTop: "15px",
+    settingTopOffsetFromRow: 15,
+    settingWidth: 92.734375,
+  });
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-list-row-desktop.png"),
+  });
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  expect(await memberShellMetrics(page)).toMatchObject({
+    listHeight: 63,
+    listLeft: 0,
+    listWidth: 390,
+    ownerHeight: 24,
+    ownerRightAlignedToRow: true,
+    ownerTopOffsetFromRow: 20,
+    ownerWidthMatchesSetting: true,
+    rowHeight: 63,
+    rowLeft: 5,
+    rowMarginLeft: "5px",
+    rowMinWidth: "95%",
+    rowInsetFromList: 5,
+    rowTopMatchesList: true,
+    rowWidth: 370.5,
+    rowWidthRatio: 0.95,
+    settingHeight: 29,
+    settingRightAlignedToRow: true,
+    settingTopOffsetFromRow: 15,
+  });
+  const mobileContainment = await page.evaluate(() => {
+    const viewportWidth = window.innerWidth;
+    const owners = [
+      "project-members-list-shell",
+      "project-members-row-shell",
+      "project-members-setting-shell",
+      "project-members-owner-label",
+    ].map((owner) =>
+      document
+        .querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!
+        .getBoundingClientRect(),
+    );
+    return {
+      allOwnersInsideViewport: owners.every(
+        (rect) => rect.left >= 0 && rect.right <= viewportWidth,
+      ),
+      viewportWidth,
+    };
+  });
+  expect(mobileContainment).toEqual({ allOwnersInsideViewport: true, viewportWidth: 390 });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-list-row-mobile.png"),
+  });
+});
+
 test("project members mention stylesheet keeps the configured base path", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);
@@ -608,18 +734,22 @@ test("project members route source keeps navigation in Link, mutation URLs out o
   for (const owner of [
     "project-members-avatar",
     "project-members-avatar-image",
+    "project-members-list-shell",
     "project-members-member-name",
     "project-members-member-id",
+    "project-members-owner-label",
+    "project-members-row-shell",
+    "project-members-setting-shell",
   ]) {
     expect(source).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(source).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
   expect(source).not.toContain('className="member-name"');
   expect(source).not.toContain('className="member-id"');
-  expect(source).toContain('className="members project row-fluid"');
-  expect(source).toContain('className="member span6 span-hard-wrap"');
-  expect(source).toContain('className="member-setting"');
-  expect(source).toContain('className="label owner"');
+  expect(source).toContain("members project row-fluid");
+  expect(source).toContain("member span6 span-hard-wrap");
+  expect(source).toContain("member-setting");
+  expect(source).toContain("label owner");
   expect(source).toContain("function enrolledUserCount(project: ProjectContainer)");
   expect(source).toContain(
     '<CountBadge count={enrolledUserCount(project)} className="num-badge" />',
@@ -1787,8 +1917,12 @@ async function canonicalizeScreenRoots(page: Page) {
     const legacyClassesByOwner: Record<string, string> = {
       "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
+      "project-members-list-shell": "members project row-fluid",
       "project-members-member-name": "member-name",
       "project-members-member-id": "member-id",
+      "project-members-owner-label": "label owner",
+      "project-members-row-shell": "member span6 span-hard-wrap",
+      "project-members-setting-shell": "member-setting",
     };
     const roots = Array.from(
       document.querySelectorAll(
@@ -1917,8 +2051,12 @@ async function canonicalizeLocator(page: Page, selector: string) {
     const legacyClassesByOwner: Record<string, string> = {
       "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
+      "project-members-list-shell": "members project row-fluid",
       "project-members-member-name": "member-name",
       "project-members-member-id": "member-id",
+      "project-members-owner-label": "label owner",
+      "project-members-row-shell": "member span6 span-hard-wrap",
+      "project-members-setting-shell": "member-setting",
     };
     const roots = Array.from(document.querySelectorAll(valueSelector));
     return roots.map((root) => visit(root)).join("");
@@ -2050,6 +2188,75 @@ async function memberPageMetrics(page: Page) {
       memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
       memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
       ownerPadding: Math.round(parseFloat(ownerLabelStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function memberShellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const list = requireElement('[data-stylex-owner="project-members-list-shell"]');
+    const row = requireElement('[data-stylex-owner="project-members-row-shell"]');
+    const setting = requireElement('[data-stylex-owner="project-members-setting-shell"]');
+    const owner = requireElement('[data-stylex-owner="project-members-owner-label"]');
+    const projectPage = requireElement(".project-page-wrap");
+    const listStyle = getComputedStyle(list);
+    const rowStyle = getComputedStyle(row);
+    const settingStyle = getComputedStyle(setting);
+    const ownerStyle = getComputedStyle(owner);
+    const listRect = list.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const settingRect = setting.getBoundingClientRect();
+    const ownerRect = owner.getBoundingClientRect();
+
+    return {
+      listAfterClear: getComputedStyle(list, "::after").clear,
+      listAfterDisplay: getComputedStyle(list, "::after").display,
+      listBeforeDisplay: getComputedStyle(list, "::before").display,
+      listHeight: listRect.height,
+      listLeft: listRect.left,
+      listListStyle: listStyle.listStyleType,
+      listMargin: listStyle.margin,
+      listMatchesProjectPageContentWidth: listRect.width === projectPage.clientWidth,
+      listTop: listRect.top,
+      listWidth: listRect.width,
+      ownerHeight: ownerRect.height,
+      ownerMarginTop: ownerStyle.marginTop,
+      ownerPadding: ownerStyle.padding,
+      ownerRightAlignedToRow: ownerRect.right === rowRect.right,
+      ownerTopOffsetFromRow: ownerRect.top - rowRect.top,
+      ownerWidth: ownerRect.width,
+      ownerWidthMatchesSetting: ownerRect.width === settingRect.width,
+      rowBorder: rowStyle.borderBottom,
+      rowBoxSizing: rowStyle.boxSizing,
+      rowDisplay: rowStyle.display,
+      rowFloat: rowStyle.float,
+      rowHeight: rowRect.height,
+      rowLeft: rowRect.left,
+      rowMarginLeft: rowStyle.marginLeft,
+      rowMinHeight: rowStyle.minHeight,
+      rowMinWidth: rowStyle.minWidth,
+      rowPadding: rowStyle.padding,
+      rowPosition: rowStyle.position,
+      rowInsetFromList: rowRect.left - listRect.left,
+      rowTop: rowRect.top,
+      rowTopMatchesList: rowRect.top === listRect.top,
+      rowWidth: rowRect.width,
+      rowWidthRatio: Number((rowRect.width / listRect.width).toFixed(7)),
+      settingHeight: settingRect.height,
+      settingPosition: settingStyle.position,
+      settingRight: settingStyle.right,
+      settingRightAlignedToRow: settingRect.right === rowRect.right,
+      settingTop: settingStyle.top,
+      settingTopOffsetFromRow: settingRect.top - rowRect.top,
+      settingWidth: settingRect.width,
     };
 
     function requireElement(selector: string) {

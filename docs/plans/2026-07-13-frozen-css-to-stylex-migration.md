@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-two slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-three slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2372,6 +2372,25 @@ separate fallback owners and receive no leaf compensation. Focused owner/source/
 are GREEN 3/3 and the remaining affected behavior matrix is GREEN 15/15 after excluding four
 already-known shared-shell/error canonicalizer cases. Persistent desktop/mobile legacy and local
 screenshots were directly inspected. This is not Wave 1 completion.
+
+The one-hundred-ninety-third slice migrates only the list, repeated row, member-setting, and
+owner-label presentation in the authenticated owner-only `/admin/sample/members` state. The list
+owns the frozen zero margin/list style plus Bootstrap width/clearfix; the row owns the exact fluid
+span width, 5px inset, 1px border structure, padding, float, box sizing, position, and winning 95%
+mobile minimum; setting and owner label own the 15px absolute offset and 5px margin/padding. The
+existing route theme gains only `rowBorder:#ddd`; every geometry value remains literal. The
+specificity-losing mobile `width:100vw` is not copied. Live Java desktop pins the list/row at
+`1346/658.671875px`, while local retains the existing shared 1260px project-page ancestry and
+therefore renders `1260/616.59375px`; exact owner percentages, inset, relative offsets, clearfix,
+box model, and alignment match without compensation. Locale-dependent owner/setting width remains
+`84.765625px` for live Korean and `92.734375px` for local English. At 390px both render a 390px
+list and `370.5px @x5` row, so this StyleX owner restores the live first-row inset previously lost
+to the duplicated app bridge order. The four legacy class groups remain intentionally because
+excluded role/delete/guest and generic label/button descendant fallbacks still consume them; this
+slice claims declarations, not class retirement. Focused browser coverage is GREEN 1/1, the
+affected identity/role/delete/typeahead/navigation matrix is GREEN 16/16, typecheck and Vitest
+11/11 pass, production build/StyleX verification keeps hash `6417f445…16f`, and persistent live/
+local desktop/mobile screenshots were inspected. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
