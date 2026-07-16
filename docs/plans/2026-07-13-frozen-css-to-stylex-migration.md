@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred seven slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred eight slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -435,6 +435,19 @@ x80/y171,262,353, owner Links at x95.813/y221,312,403, and the visible update sp
 `119.406x12 @170.953,524`, with no overflow. RED 0/3 becomes focused GREEN 3/3 and complete
 adjacent `/projects` coverage is GREEN 53/53. Base and interactive live/local captures were
 directly inspected. This is not Wave 1 completion.
+
+The two-hundred-eighth slice completes exactly two repeated populated-default `/projects` stats
+owners: the six member/watch icons and six numeric counts. The icon owner directly absorbs the
+frozen `_common.less` `.yobicon-middle` bottom alignment and 3px bottom margin, so that helper
+class retires from this route; `yobicon-friends` and `yobicon-eye` remain only for the Yobicon
+font primitive and generated glyph content. The count owner directly absorbs Bootstrap `strong`
+700 weight while retaining its existing route-local paint. No theme variable, new paint,
+responsive compensation, or frozen source edit is introduced. Live Java desktop pins the icon
+pairs to x1288.656/1324.828 at y214/305/396 and the counts to x1309.656/1349.422 at
+y215/306/397; mobile pins them to x322.656/358.828 at y279/430/581 and x343.656/383.422 at
+y280/431/582, with exact glyph, 16px icon boxes, count type, and no overflow. RED 0/3 becomes
+focused GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 56/56. Target live/local
+captures were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

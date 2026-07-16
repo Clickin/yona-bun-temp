@@ -200,8 +200,10 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
   }
   expect(route).not.toContain("stats-wrap");
   expect(route.match(/data-stylex-owner="projects-directory-stats-icon"/gu)?.length).toBe(2);
-  expect(route).toContain("yobicon-friends yobicon-middle");
-  expect(route).toContain("yobicon-eye yobicon-middle");
+  expect(route).toContain("className={`yobicon-friends ${");
+  expect(route).toContain("className={`yobicon-eye ${");
+  expect(route).not.toContain("yobicon-friends yobicon-middle");
+  expect(route).not.toContain("yobicon-eye yobicon-middle");
   expect(route).not.toContain(
     'className={`members ${directoryMembersStyleProps.className ?? ""}`}',
   );
@@ -223,6 +225,11 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
     route.indexOf("directoryMemberCount: {"),
   );
   expect(avatarStyle).toContain('borderRadius: "3px"');
+  const countStyle = route.slice(
+    route.indexOf("directoryMemberCount: {"),
+    route.indexOf("directoryEmptyState: {"),
+  );
+  expect(countStyle).toContain('fontWeight: "700"');
 });
 
 for (const viewport of [

@@ -181,8 +181,10 @@ test("icon/avatar-image wave owns exactly two repeated targets and retires only 
   expect(route).not.toContain(
     'className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}',
   );
-  expect(route).toContain("className={`yobicon-friends yobicon-middle");
-  expect(route).toContain("className={`yobicon-eye yobicon-middle");
+  expect(route).toContain("className={`yobicon-friends ${");
+  expect(route).toContain("className={`yobicon-eye ${");
+  expect(route).not.toContain("yobicon-friends yobicon-middle");
+  expect(route).not.toContain("yobicon-eye yobicon-middle");
   expect(route).not.toContain("globalColors.");
   const iconStyle = route.slice(
     route.indexOf("directoryStatsIcon: {"),
@@ -227,8 +229,10 @@ for (const viewport of [
     await expect(avatarImage).toHaveAttribute("alt", "Alice Kim");
     await expect(avatarImage).toHaveAttribute("src", memberAvatarDataUrl);
     await expect(icons).toHaveCount(2);
-    await expect(icons.nth(0)).toHaveClass(/yobicon-friends yobicon-middle/u);
-    await expect(icons.nth(1)).toHaveClass(/yobicon-eye yobicon-middle/u);
+    await expect(icons.nth(0)).toHaveClass(/(?:^|\s)yobicon-friends(?:\s|$)/u);
+    await expect(icons.nth(1)).toHaveClass(/(?:^|\s)yobicon-eye(?:\s|$)/u);
+    await expect(icons.nth(0)).not.toHaveClass(/(?:^|\s)yobicon-middle(?:\s|$)/u);
+    await expect(icons.nth(1)).not.toHaveClass(/(?:^|\s)yobicon-middle(?:\s|$)/u);
     await expect(members.locator("p > *")).toHaveCount(4);
     await expect(members.locator("p > *").nth(0)).toHaveAttribute("data-stylex-owner", owners.icon);
     await expect(members.locator("p > *").nth(2)).toHaveAttribute("data-stylex-owner", owners.icon);
@@ -330,9 +334,10 @@ for (const viewport of [
       },
     ]);
     expect(actual.icons.map(({ className }) => className)).toEqual([
-      expect.stringContaining("yobicon-friends yobicon-middle"),
-      expect.stringContaining("yobicon-eye yobicon-middle"),
+      expect.stringContaining("yobicon-friends"),
+      expect.stringContaining("yobicon-eye"),
     ]);
+    expect(actual.icons.every(({ className }) => !className.includes("yobicon-middle"))).toBe(true);
     expect(actual.icons.map(({ glyph }) => glyph)).toEqual(['""', '""']);
     for (const icon of actual.icons) {
       expect(icon).toMatchObject({

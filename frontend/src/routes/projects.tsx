@@ -305,14 +305,19 @@ const styles = stylex.create({
   },
   directoryStatsIcon: {
     fontSize: "16px",
+    marginBottom: "3px",
     marginLeft: "5px",
     marginRight: "5px",
+    verticalAlign: "bottom",
   },
   directoryMemberAvatarImage: {
     verticalAlign: "top",
     width: "100%",
   },
-  directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
+  directoryMemberCount: {
+    color: projectsDirectoryColors.memberCountText,
+    fontWeight: "700",
+  },
   directoryEmptyState: {
     padding: "100px 0px",
     textAlign: "center",
@@ -1045,7 +1050,7 @@ function ProjectListItem({
             <p>
               <i
                 {...directoryStatsIconStyleProps}
-                className={`yobicon-friends yobicon-middle ${directoryStatsIconStyleProps.className ?? ""}`}
+                className={`yobicon-friends ${directoryStatsIconStyleProps.className ?? ""}`}
                 data-stylex-owner="projects-directory-stats-icon"
               ></i>
               <strong
@@ -1056,7 +1061,7 @@ function ProjectListItem({
               </strong>{" "}
               <i
                 {...directoryStatsIconStyleProps}
-                className={`yobicon-eye yobicon-middle ${directoryStatsIconStyleProps.className ?? ""}`}
+                className={`yobicon-eye ${directoryStatsIconStyleProps.className ?? ""}`}
                 data-stylex-owner="projects-directory-stats-icon"
               ></i>{" "}
               <strong
