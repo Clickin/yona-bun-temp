@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const siteUserListColors = stylex.defineVars({
+  avatarSurface: "#dddddd",
   identityId: "#999999",
   identityName: "#0088cc",
   paginationAccent: "#f36c22",

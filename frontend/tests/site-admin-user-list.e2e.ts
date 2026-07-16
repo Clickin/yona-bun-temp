@@ -432,6 +432,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).toMatch(/<button\s+type="button"\s+id=\{user\.loginId\}/u);
   expect(routeSource).toMatch(/className="ybtn ybtn-small ybtn-danger"/u);
   expect(routeSource).toContain('data-stylex-owner="site-user-list-row-avatar"');
+  expect(routeSource).toContain('data-stylex-owner="site-user-list-row-avatar-image"');
   expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-name"');
   expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-id"');
   expect(await siteLayoutRootOrder(page)).toEqual([
@@ -594,7 +595,7 @@ test("site admin user profile links preserve legacy hrefs and use SPA navigation
   const userNameLink = page.locator('[data-stylex-owner="site-user-list-row-user-name"]');
   const userIdLink = page.locator('[data-stylex-owner="site-user-list-row-user-id"]');
   await expect(avatarLink).toHaveAttribute("href", `${basePath}/doortts`);
-  await expect(avatarLink).toHaveClass(/avatar-wrap/u);
+  await expect(avatarLink).not.toHaveClass(/avatar-wrap/u);
   await expect(avatarLink).not.toHaveClass(/list-avatar/u);
   await expect(userNameLink).toHaveAttribute("href", `${basePath}/doortts`);
   await expect(userNameLink).not.toHaveClass(/user-name/u);

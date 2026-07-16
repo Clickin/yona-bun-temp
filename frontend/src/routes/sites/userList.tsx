@@ -204,12 +204,18 @@ const styles = stylex.create({
   userActionColumn: { padding: "0px 0px 10px", width: "40.42553191489362%" },
   userEmail: { fontSize: "13px", lineHeight: "43px" },
   userAvatar: {
+    backgroundColor: siteUserListColors.avatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
     float: "left",
     height: "45px",
     marginRight: "10px",
     marginTop: "3px",
+    overflow: "hidden",
+    verticalAlign: "middle",
     width: "45px",
   },
+  userAvatarImage: { verticalAlign: "top", width: "100%" },
   userName: {
     color: siteUserListColors.identityName,
     display: "block",
@@ -555,6 +561,7 @@ const leaveDateColumnStyleProps = stylex.props(styles.userColumn, styles.userLea
 const actionColumnStyleProps = stylex.props(styles.userColumn, styles.userActionColumn);
 const emailStyleProps = stylex.props(styles.userEmail);
 const avatarStyleProps = stylex.props(styles.userAvatar);
+const avatarImageStyleProps = stylex.props(styles.userAvatarImage);
 const userNameStyleProps = stylex.props(styles.userName);
 const userIdStyleProps = stylex.props(styles.userId);
 const paginationRootStyleProps = stylex.props(styles.paginationRoot);
@@ -1232,16 +1239,26 @@ function UserListItem({
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           {...avatarStyleProps}
-          className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}
           data-stylex-owner="site-user-list-row-avatar"
           params={{ user: user.loginId }}
           to="/$user"
         >
           {isDefaultUserAvatar(user.avatarUrl) ? (
             /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-            <img src={user.avatarUrl} />
+            <img
+              {...avatarImageStyleProps}
+              data-stylex-owner="site-user-list-row-avatar-image"
+              src={user.avatarUrl}
+            />
           ) : (
-            <img src={user.avatarUrl} alt={user.displayName} width="32" height="32" />
+            <img
+              {...avatarImageStyleProps}
+              data-stylex-owner="site-user-list-row-avatar-image"
+              src={user.avatarUrl}
+              alt={user.displayName}
+              width="32"
+              height="32"
+            />
           )}
         </Link>
         <Link

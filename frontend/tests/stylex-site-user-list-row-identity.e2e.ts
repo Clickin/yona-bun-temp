@@ -1,13 +1,15 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const owners = {
   avatar: "site-user-list-row-avatar",
+  avatarImage: "site-user-list-row-avatar-image",
   id: "site-user-list-row-user-id",
   name: "site-user-list-row-user-name",
 } as const;
 
-test("identity descendants own legacy overrides while generic avatar fallback remains", () => {
+test("identity descendants own the complete legacy avatar, name, and ID surface", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
   const theme = readFileSync("src/routes/sites/-userList.stylex.ts", "utf8");
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
@@ -20,15 +22,18 @@ test("identity descendants own legacy overrides while generic avatar fallback re
   expect(yobiUi).toContain("img {\n        width:100%;\n        vertical-align:top;");
   for (const owner of Object.values(owners))
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route).toContain('className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}');
-  for (const retired of ["user-list-wrap", "list-avatar", "user-name", "user-id"])
+  expect(route).toContain("backgroundColor: siteUserListColors.avatarSurface");
+  expect(route).toContain('data-stylex-owner="site-user-list-row-avatar-image"');
+  expect(route).toContain('userAvatarImage: { verticalAlign: "top", width: "100%" }');
+  for (const retired of ["user-list-wrap", "avatar-wrap", "list-avatar", "user-name", "user-id"])
     expect(route).not.toContain(`className="${retired}"`);
+  expect(theme).toContain('avatarSurface: "#dddddd"');
   expect(theme).toContain('identityName: "#0088cc"');
   expect(theme).toContain('identityId: "#999999"');
   expect(route).not.toContain("globalColors.");
 });
 
-test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geometry", async ({
+test("ACTIVE identity preserves links, complete avatar output, and desktop/mobile geometry", async ({
   page,
 }) => {
   await installFixture(page);
@@ -57,7 +62,7 @@ test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geom
         generic: node.classList.contains("avatar-wrap"),
         generated: Array.from(node.classList).some((token) => token.startsWith("x")),
       })),
-    ).toEqual({ generic: true, generated: true });
+    ).toEqual({ generic: false, generated: true });
     const evidence = await row.evaluate((row, owners) => {
       const get = (owner: string) =>
         row.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
@@ -85,10 +90,28 @@ test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geom
         };
       };
       const before = { avatar: style(avatar), id: style(id), name: style(name) };
-      const image = style(avatar.querySelector("img")!);
-      avatar.classList.remove("avatar-wrap");
-      const withoutGeneric = { avatar: style(avatar), id: style(id), name: style(name) };
-      avatar.classList.add("avatar-wrap");
+      const image = style(get(owners.avatarImage));
+      const imageElement = get(owners.avatarImage);
+      const imageGeneratedClasses = Array.from(imageElement.classList).filter((token) =>
+        token.startsWith("x"),
+      );
+      const matchedImageRules: string[] = [];
+      const visitRules = (rules: CSSRuleList) => {
+        for (const rule of rules) {
+          if (rule instanceof CSSStyleRule) {
+            if (imageElement.matches(rule.selectorText)) matchedImageRules.push(rule.cssText);
+          } else if ("cssRules" in rule) {
+            visitRules((rule as CSSGroupingRule).cssRules);
+          }
+        }
+      };
+      for (const sheet of document.styleSheets) {
+        try {
+          visitRules(sheet.cssRules);
+        } catch {
+          // Cross-origin sheets cannot be inspected; local StyleX sheets remain readable.
+        }
+      }
       const fixture = document.createElement("a");
       fixture.className = "avatar-wrap";
       row.append(fixture);
@@ -99,7 +122,8 @@ test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geom
         boxes: { avatar: box(avatar), id: box(id), name: box(name), row: box(row) },
         genericFallback,
         image,
-        withoutGeneric,
+        imageGeneratedClasses,
+        matchedImageRules,
       };
     }, owners);
     expect(evidence.before.avatar).toMatchObject({
@@ -113,13 +137,6 @@ test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geom
       verticalAlign: "middle",
       width: "45px",
     });
-    expect(evidence.withoutGeneric.avatar).toMatchObject({
-      display: "block",
-      float: "left",
-      height: "45px",
-      margin: "3px 10px 0px 0px",
-      width: "45px",
-    });
     expect(evidence.genericFallback).toMatchObject({
       backgroundColor: "rgb(221, 221, 221)",
       borderRadius: "3px",
@@ -127,9 +144,10 @@ test("ACTIVE identity preserves links, generic fallback, and desktop/mobile geom
       overflow: "hidden",
       verticalAlign: "middle",
     });
-    // The local default-avatar fixture URL is intentionally unresolved and renders a 16px
-    // broken-image intrinsic box; the owned wrapper remains 45px and frozen source owns width.
-    expect(evidence.image.verticalAlign).toBe("top");
+    expect(evidence.imageGeneratedClasses.length).toBeGreaterThanOrEqual(2);
+    expect(evidence.matchedImageRules.some((rule) => /width:\s*100%/u.test(rule))).toBe(true);
+    expect(evidence.boxes.avatar.width).toBe(45);
+    expect(evidence.image).toMatchObject({ verticalAlign: "top", width: "45px" });
     expect(evidence.before.name).toMatchObject({
       color: "rgb(0, 136, 204)",
       display: "block",
@@ -162,6 +180,12 @@ async function installFixture(page: Page) {
     });
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
     await page.route(url, session);
+  await page.route("**/assets/images/default-avatar-32.png", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      path: resolve("src/assets/legacy/default-avatar-34.png"),
+    }),
+  );
   await page.route("**/api/v1/site/update", (route) =>
     route.fulfill({ json: { versionToUpdate: null } }),
   );

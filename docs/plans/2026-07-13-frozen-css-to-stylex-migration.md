@@ -2020,6 +2020,18 @@ coverage is GREEN 4/4 after recording Edge/macOS's computed normalization of leg
 `BlinkMacSystemFont` to `system-ui`; the implementation retains the exact frozen font literal.
 This is not Wave 1 completion.
 
+The one-hundred-seventieth slice completes the authenticated populated-ACTIVE
+`/sites/userList` row-avatar owner from `site/userList.scala.html`, `_common.less` `.avatar-wrap`,
+`_yobiUI.less`'s later generic avatar surface, and `_page.less`'s list-avatar override. The owner
+now directly carries display, overflow, vertical alignment, 3px radius, 45px geometry, float, and
+spacing; a descendant owner preserves the generic image's 100% width and top alignment on both
+branches. Only the genuine `#ddd` surface extends the route-local paint registry. The semantic
+TanStack Link and Vite-owned avatar URL branches remain unchanged, while this consumer retires
+`avatar-wrap` in addition to the already retired `list-avatar`. Focused/static verification covers
+the exact frozen cascade and independent generic fallback consumer; main browser coverage is
+GREEN 2/2 after the default-avatar fixture resolves to the existing PNG. This is not Wave 1
+completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -22,11 +22,12 @@ test("row shell ownership follows the populated legacy list", () => {
   expect(route).not.toContain('className="span4 listitem-col"');
   for (const owner of [
     "site-user-list-row-avatar",
+    "site-user-list-row-avatar-image",
     "site-user-list-row-user-name",
     "site-user-list-row-user-id",
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route).toContain('className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}');
+  expect(route).not.toContain('className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}');
   expect(route).toContain('data-stylex-owner="site-user-list-row-action"');
   expect(route).toContain('data-stylex-owner="site-user-list-row-action-button"');
   expect(route).not.toContain("action-buttons");
