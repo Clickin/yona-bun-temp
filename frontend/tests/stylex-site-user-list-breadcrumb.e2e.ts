@@ -67,13 +67,19 @@ test("breadcrumb owns only declarations lost with its two presentation classes",
     'padding: "10px 10px 5px"',
   ])
     expect(route).toContain(declaration);
+  const breadcrumbHeadingBlock = route.slice(
+    route.indexOf("breadcrumbHeading: {"),
+    route.indexOf("stateTabs: {"),
+  );
+  expect(breadcrumbHeadingBlock).toContain('lineHeight: "30px"');
+  expect(breadcrumbHeadingBlock).toContain('padding: "10px 10px 5px"');
   for (const sharedHeadingDeclaration of [
     'fontFamily: "inherit"',
     'fontSize: "24.5px"',
     'fontWeight: "700"',
     'textRendering: "auto"',
   ])
-    expect(route).not.toContain(sharedHeadingDeclaration);
+    expect(breadcrumbHeadingBlock).not.toContain(sharedHeadingDeclaration);
 });
 
 test("breadcrumb preserves authenticated desktop and mobile output in one browser", async ({

@@ -180,7 +180,7 @@ test.describe("StyleX site user-list title/search shell", () => {
           (nodes, titleOwner) =>
             nodes.slice(0, 5).map((node) => {
               if (node.getAttribute("data-stylex-owner") === titleOwner) return titleOwner;
-              if (node.matches("ul.nav.nav-tabs")) return "tabs";
+              if (node.matches('[data-stylex-owner="site-user-list-state-tabs"]')) return "tabs";
               if (node.matches("div.row-fluid.listhead")) return "listhead";
               if (node.matches("ul.user-list-wrap")) return "users";
               if (node.matches("#pagination")) return "pagination";
@@ -263,7 +263,7 @@ test.describe("StyleX site user-list title/search shell", () => {
         const form = get(ownerNames.form);
         const tabs = document
           .querySelector<HTMLElement>(
-            '[data-stylex-owner="site-user-list-setting-content-column"] > ul.nav-tabs',
+            '[data-stylex-owner="site-user-list-setting-content-column"] > [data-stylex-owner="site-user-list-state-tabs"]',
           )!
           .getBoundingClientRect();
         return {

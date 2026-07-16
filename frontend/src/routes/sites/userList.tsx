@@ -68,6 +68,89 @@ const styles = stylex.create({
     lineHeight: "30px",
     padding: "10px 10px 5px",
   },
+  stateTabs: {
+    borderBottomColor: siteUserListColors.stateTabBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    listStyle: "none",
+    marginBottom: "20px",
+    marginLeft: "0px",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  stateTabItem: {
+    float: "left",
+    marginBottom: "-1px",
+  },
+  stateTabLink: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": siteUserListColors.stateTabHoverBackground,
+      ":focus": siteUserListColors.stateTabHoverBackground,
+    },
+    borderTopColor: {
+      default: "transparent",
+      ":hover": siteUserListColors.stateTabHoverBorder,
+      ":focus": siteUserListColors.stateTabHoverBorder,
+    },
+    borderRightColor: {
+      default: "transparent",
+      ":hover": siteUserListColors.stateTabHoverBorder,
+      ":focus": siteUserListColors.stateTabHoverBorder,
+    },
+    borderBottomColor: {
+      default: "transparent",
+      ":hover": siteUserListColors.stateTabBorder,
+      ":focus": siteUserListColors.stateTabBorder,
+    },
+    borderLeftColor: {
+      default: "transparent",
+      ":hover": siteUserListColors.stateTabHoverBorder,
+      ":focus": siteUserListColors.stateTabHoverBorder,
+    },
+    borderRadius: "4px 4px 0px 0px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: siteUserListColors.stateTabText,
+    display: "block",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginRight: "2px",
+    padding: {
+      default: "8px 30px",
+      "@media (max-width: 720px)": "8px 5px",
+    },
+    textDecoration: "none",
+  },
+  stateTabLinkActive: {
+    backgroundColor: {
+      default: siteUserListColors.stateTabActiveBackground,
+      ":hover": siteUserListColors.stateTabActiveBackground,
+      ":focus": siteUserListColors.stateTabActiveBackground,
+    },
+    borderTopColor: {
+      default: siteUserListColors.stateTabBorder,
+      ":hover": siteUserListColors.stateTabBorder,
+      ":focus": siteUserListColors.stateTabBorder,
+    },
+    borderRightColor: {
+      default: siteUserListColors.stateTabBorder,
+      ":hover": siteUserListColors.stateTabBorder,
+      ":focus": siteUserListColors.stateTabBorder,
+    },
+    borderLeftColor: {
+      default: siteUserListColors.stateTabBorder,
+      ":hover": siteUserListColors.stateTabBorder,
+      ":focus": siteUserListColors.stateTabBorder,
+    },
+    borderBottomColor: {
+      default: "transparent",
+      ":hover": "transparent",
+      ":focus": "transparent",
+    },
+    color: siteUserListColors.stateTabActiveText,
+    cursor: "default",
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -140,6 +223,7 @@ const settingContentColumnStyleProps = stylex.props(
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
+const stateTabsStyleProps = stylex.props(styles.stateTabs);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -661,21 +745,36 @@ function UserStateTabs({
   ];
 
   return (
-    <ul className="nav nav-tabs">
-      {items.map((item) => (
-        <li className={item.state === currentState ? "active" : ""} key={item.state}>
-          <Link
-            {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
-            search={{ state: item.state }}
-            to="/sites/userList"
+    <ul {...stateTabsStyleProps} data-stylex-owner="site-user-list-state-tabs">
+      {items.map((item) => {
+        const isActive = item.state === currentState;
+        const itemStyleProps = stylex.props(styles.stateTabItem);
+        const linkStyleProps = stylex.props(
+          styles.stateTabLink,
+          isActive && styles.stateTabLinkActive,
+        );
+        return (
+          <li
+            {...itemStyleProps}
+            data-selected={isActive ? "true" : undefined}
+            data-stylex-owner="site-user-list-state-tab-item"
+            key={item.state}
           >
-            <LegacyMessage messageKey={item.labelKey} />
-            {item.state === "SITE_ADMIN" ? (
-              <span className="num-badge">{legacySiteAdminBadgeCount}</span>
-            ) : null}
-          </Link>
-        </li>
-      ))}
+            <Link
+              {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
+              {...linkStyleProps}
+              data-stylex-owner="site-user-list-state-tab-link"
+              search={{ state: item.state }}
+              to="/sites/userList"
+            >
+              <LegacyMessage messageKey={item.labelKey} />
+              {item.state === "SITE_ADMIN" ? (
+                <span className="num-badge">{legacySiteAdminBadgeCount}</span>
+              ) : null}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

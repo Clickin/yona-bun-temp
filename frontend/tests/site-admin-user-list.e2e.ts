@@ -358,7 +358,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await expect(lockedTab).not.toHaveAttribute("class", "");
   await expect(lockedTab).not.toHaveAttribute("title", "");
   expect(await linkActiveMarkerLeaks(lockedTab)).toEqual([]);
-  await expect(page.locator(".nav-tabs .num-badge")).toHaveText("2");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-state-tabs"] .num-badge'),
+  ).toHaveText("2");
   const userNameAnchor = page.locator(".user-list-wrap .user-name");
   await expect(userNameAnchor).toHaveAttribute("href", `${basePath}/doortts`);
   await expect(userNameAnchor).toHaveText("Door TTS");
@@ -466,9 +468,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("ACTIVE");
-  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText(
-    "Unlocked user",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+  ).toHaveText("Unlocked user");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-users-pagination");
@@ -478,7 +480,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   });
   await lockedTab.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("state")).toBe("LOCKED");
-  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Locked user");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+  ).toHaveText("Locked user");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-users-tabs");
@@ -661,7 +665,9 @@ test("site admin deleted user tab renders legacy leave column without action but
 
   await page.goto(`${basePath}/sites/userList?state=DELETED`);
 
-  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Deleted user");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+  ).toHaveText("Deleted user");
   await expect(page.locator('.form-search input[name="state"]')).toHaveValue("DELETED");
   await expect(page.locator(".listhead .listhead-title strong")).toHaveText([
     "Name",
@@ -719,8 +725,14 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
       query: "siteboss",
       state: "SITE_ADMIN",
     });
-  await expect(page.locator(".site-setting-wrap .nav-tabs li.active a")).toHaveText("Site admin2");
-  await expect(page.locator(".site-setting-wrap .nav-tabs li.active .num-badge")).toHaveText("2");
+  await expect(
+    page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
+  ).toHaveText("Site admin2");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] .num-badge',
+    ),
+  ).toHaveText("2");
   await expect(page.locator('.form-search input[type="hidden"][name="state"]')).toHaveValue(
     "SITE_ADMIN",
   );
@@ -1476,6 +1488,11 @@ async function canonicalizeScreenRoots(page: Page) {
       }
       const value = current.getAttribute(name) ?? "";
       if (name === "class") {
+        const owner = current.getAttribute("data-stylex-owner") ?? "";
+        if (owner === "site-user-list-state-tabs") return "nav nav-tabs";
+        if (owner === "site-user-list-state-tab-item") {
+          return current.getAttribute("data-selected") === "true" ? "active" : "";
+        }
         const legacyShellClass = new Map([
           ["site-user-list-breadcrumb-outer", "site-breadcrumb-outer"],
           ["site-user-list-breadcrumb-inner", "site-breadcrumb-inner"],
@@ -1499,6 +1516,9 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-user-list-title-heading",
           "site-user-list-title-search-form",
           "site-user-list-breadcrumb-heading",
+          "site-user-list-state-tabs",
+          "site-user-list-state-tab-item",
+          "site-user-list-state-tab-link",
         ]).has(current.getAttribute("data-stylex-owner") ?? "")
       ) {
         return value
@@ -1624,9 +1644,7 @@ async function userListMetrics(page: Page) {
     const row = requireElement('[data-stylex-owner="site-user-list-setting-grid"]');
     const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
     const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
-    const tabs = requireElement(
-      '[data-stylex-owner="site-user-list-setting-content-column"] > .nav.nav-tabs',
-    );
+    const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
     const listHead = requireElement(".listhead");
     const firstHeaderColumn = requireElement(".listhead .span3");
     const firstRow = requireElement(".user-list-wrap .listitem");
@@ -1731,9 +1749,13 @@ async function siteAdminStateLayoutFlags(page: Page) {
     const searchForm = requireElement('[data-stylex-owner="site-user-list-title-search-form"]');
     const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
     const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
-    const activeTab = requireElement(".site-setting-wrap .nav-tabs li.active a");
-    const badge = requireElement(".site-setting-wrap .nav-tabs li.active .num-badge");
-    const tabs = requireElement(".site-setting-wrap .nav-tabs");
+    const activeTab = requireElement(
+      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a',
+    );
+    const badge = requireElement(
+      '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] .num-badge',
+    );
+    const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
     const listHead = requireElement(".site-setting-wrap .listhead");
     const row = requireElement(".user-list-wrap .listitem");
     const actionColumn = requireElement(".user-list-wrap .action-buttons");

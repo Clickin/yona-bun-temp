@@ -1846,6 +1846,25 @@ matrix is GREEN 15/15. Whole-screen is GREEN 15/16 with only the pre-existing ex
 rhythm, full width, 10px inset, and following-page spacing; locale, fixture content, excluded GNB,
 rows, footer, and their offsets remain outside this claim.
 
+The one-hundred-fifty-ninth slice migrates exactly three authenticated populated-ACTIVE
+`/sites/userList` state-tab responsibilities: the list root, repeated item, and repeated link with
+selected, hover, focus, and max-720 responsive states. `site/userList.scala.html`, active Bootstrap
+2.3.1, `_yobiUI.less`, and `_responsive.less` provide the complete DOM and cascade evidence.
+Route-scoped `siteUserListColors` owns only the six paint values; all spacing and geometry remain
+inline in the StyleX declarations. This consumer retires `nav`, `nav-tabs`, and item `active`,
+replacing selection with stable `data-selected`; the separately excluded `.num-badge` remains a
+real frozen fallback consumer. Fresh authenticated legacy evidence pins desktop tabs at
+`239.078,206,1116.891×38` with 30px inline link padding and mobile tabs at
+`66.375,216,323.609×75`, wrapping three-plus-two with 5px link padding. Focused source RED is 0/1.
+Runtime review first exposed a stale copy expectation, two earlier route-wide test guards, an
+active-border shorthand/longhand conflict, and hover state leakage in the fallback fixture; each
+was corrected without weakening owner geometry or cascade assertions. The focused state-tab gate
+is GREEN 2/2. Together with the preceding 16 passing user-list StyleX cases, the complete matrix is
+GREEN 17/17. Whole-screen coverage remains GREEN 15/16 with only the pre-existing excluded global
+GNB `Feedback` fixture gap. Authenticated legacy/local desktop and mobile screenshots match the
+owned tab box, wrapping, padding, paint, and listhead rhythm; locale, fixture data, global shell,
+rows, and footer remain outside this owner claim.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
