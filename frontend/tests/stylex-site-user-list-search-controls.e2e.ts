@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const owners = {
   button: "site-user-list-title-search-button",
   form: "site-user-list-title-search-form",
+  icon: "site-user-list-title-search-icon",
   input: "site-user-list-title-search-input",
   wrapper: "site-user-list-title-search-wrapper",
 } as const;
@@ -19,6 +20,7 @@ test("title search controls retire the bounded legacy fallback", () => {
     "utf8",
   );
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
+  const yobicon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
   expect(legacy).toContain('<form class="form-search pull-right"');
   expect(legacy).toContain('<div class="search-bar">');
   expect(legacy).toContain('<input class="textbox" name="query" type="text"');
@@ -34,7 +36,10 @@ test("title search controls retire the bounded legacy fallback", () => {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   for (const retired of ["form-search", "pull-right", "search-bar", "textbox", "search-btn"])
     expect(route).not.toContain(`className="${retired}"`);
-  expect(route).toContain('className="yobicon-search"');
+  expect(yobicon).toContain('[class^="yobicon-"]');
+  expect(yobicon).toContain('.yobicon-search:before {\n    content: "\\e225";');
+  expect(route).not.toContain('className="yobicon-search"');
+  expect(route).toContain('data-stylex-owner="site-user-list-title-search-icon"');
   for (const paint of ["searchBorder", "searchFocusBorder", "searchSurface", "searchText"])
     expect(theme).toContain(paint);
   expect(route).not.toContain("globalColors.");
@@ -54,6 +59,7 @@ test("title search controls preserve frozen desktop and mobile output and submit
     const wrapper = page.locator(`[data-stylex-owner="${owners.wrapper}"]`);
     const input = page.locator(`[data-stylex-owner="${owners.input}"]`);
     const button = page.locator(`[data-stylex-owner="${owners.button}"]`);
+    const icon = page.locator(`[data-stylex-owner="${owners.icon}"]`);
     await expect(form).toHaveCount(1);
     await expect(wrapper.locator(":scope > input[type=hidden][name=state]")).toHaveCount(0);
     await expect(form.locator(":scope > input[type=hidden][name=state]")).toHaveValue("ACTIVE");
@@ -61,7 +67,8 @@ test("title search controls preserve frozen desktop and mobile output and submit
       1,
     );
     await expect(input).toHaveAttribute("placeholder", "Find user by login ID, user name or email");
-    await expect(button.locator(":scope > i.yobicon-search")).toHaveCount(1);
+    await expect(button.locator(`:scope > [data-stylex-owner="${owners.icon}"]`)).toHaveCount(1);
+    await expect(icon).not.toHaveClass(/\byobicon-search\b/u);
     await expect(
       form.locator("[data-toggle], [data-request-method], [data-request-uri]"),
     ).toHaveCount(0);
@@ -114,6 +121,7 @@ test("title search controls preserve frozen desktop and mobile output and submit
     const frozenWrapper = frozenForm.locator(".search-bar");
     const frozenInput = frozenForm.locator(".textbox");
     const frozenButton = frozenForm.locator(".search-btn");
+    const frozenIcon = frozenButton.locator(".yobicon-search");
     const relativeGeometry = (locator: typeof form) =>
       locator.evaluate((formNode) => {
         const formRect = formNode.getBoundingClientRect();
@@ -225,6 +233,55 @@ test("title search controls preserve frozen desktop and mobile output and submit
       `400 ${viewport.name === "desktop" ? "12px" : "16px"}/20px -apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"`,
     );
     expect(await computed(button)).toEqual(await computed(frozenButton));
+    const iconEvidence = async (locator: typeof icon) =>
+      locator.evaluate((node) => {
+        const style = getComputedStyle(node);
+        const before = getComputedStyle(node, "::before");
+        const rect = node.getBoundingClientRect();
+        return {
+          computed: {
+            backgroundImage: style.backgroundImage,
+            display: style.display,
+            fontFamily: style.fontFamily,
+            fontStyle: style.fontStyle,
+            fontVariant: style.fontVariant,
+            fontWeight: style.fontWeight,
+            lineHeight: style.lineHeight,
+            textDecoration: style.textDecoration,
+            verticalAlign: style.verticalAlign,
+          },
+          glyph: before.content,
+          rect: { height: rect.height, width: rect.width },
+        };
+      });
+    const actualIcon = await iconEvidence(icon);
+    const frozenIconEvidence = await iconEvidence(frozenIcon);
+    expect(actualIcon).toEqual(frozenIconEvidence);
+    expect(actualIcon).toMatchObject({
+      computed: {
+        backgroundImage: "none",
+        display: "inline-block",
+        fontFamily: "yobicon",
+        fontStyle: "normal",
+        fontVariant: "normal",
+        fontWeight: "400",
+        verticalAlign: "baseline",
+      },
+      glyph: '""',
+    });
+    const retiredIconClassEvidence = await icon.evaluate((node) => {
+      const snapshot = () => ({
+        content: getComputedStyle(node, "::before").content,
+        fontFamily: getComputedStyle(node).fontFamily,
+        rect: node.getBoundingClientRect().toJSON(),
+      });
+      const without = snapshot();
+      node.classList.add("yobicon-search");
+      const withRetiredClass = snapshot();
+      node.classList.remove("yobicon-search");
+      return { withRetiredClass, without };
+    });
+    expect(retiredIconClassEvidence.withRetiredClass).toEqual(retiredIconClassEvidence.without);
     const focusedSnapshot = async (locator: typeof input) => {
       await locator.focus();
       await expect(locator).toBeFocused();

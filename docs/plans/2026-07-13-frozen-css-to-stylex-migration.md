@@ -2076,6 +2076,17 @@ labels, and disabled navigation remain unchanged. This is not Wave 1 completion.
 verification is GREEN 3/3 (14.7s): desktop/mobile one-page
 exact fallback/computed/geometry plus enabled navigation and Enter behavior all pass.
 
+The one-hundred-seventy-fifth slice completes the last `/sites/userList` route presentation-class
+retirement. The existing setting-wrap owner directly owns the frozen auto margin and
+`.site-admin-page` 100% width after every descendant class consumer has already moved to a stable
+owner, so `site-setting-wrap` no longer participates in the cascade. A stable search-icon owner
+directly reproduces Yobicon's generic font declarations and the `::before` `\\e225` glyph, leaving
+only the global `@font-face` resource as an unavoidable primitive and retiring `yobicon-search`.
+Geometry and type remain inline and no theme or fallback CSS is added. Focused source/static gates
+and browser coverage are GREEN. The final focused page-management/search-control/title-search-shell
+suite passes 9/9 (16.8s), including desktop/mobile exact fallback/computed/glyph/geometry/screenshots
+and SPA submission.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

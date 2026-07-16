@@ -56,9 +56,9 @@ test("moves only the active legacy user-list management shell to five StyleX own
 
   for (const owner of owners) expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(route).not.toContain('className="page-wrap-outer"');
-  expect(route).toContain(
-    'className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}',
-  );
+  expect(route).not.toContain("site-setting-wrap");
+  expect(route.match(/className=/gu)).toEqual(["className="]);
+  expect(route).toContain("className={userListStyleProps.className}");
   for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
     expect(route).not.toContain(retired);
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
@@ -87,7 +87,7 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
     const sidebar = get(owners[3]);
     const content = get(owners[4]);
     await expect(pageWrap).not.toHaveClass(/\bpage-wrap-outer\b/u);
-    await expect(setting).toHaveClass(/\bsite-setting-wrap\b/u);
+    await expect(setting).not.toHaveClass(/\bsite-setting-wrap\b/u);
     await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
     await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
     await expect(content).not.toHaveClass(/\bspan10\b/u);
@@ -174,7 +174,10 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
           width: pageStyle.width,
         },
         pseudos: [pseudo("::before"), pseudo("::after")],
-        settingMargin: getComputedStyle(setting).margin,
+        setting: {
+          margin: getComputedStyle(setting).margin,
+          width: getComputedStyle(setting).width,
+        },
       };
     }, owners);
     const [pageBox, settingBox, gridBox, sidebarBox, contentBox] = evidence.boxes;
@@ -187,7 +190,19 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
       padding: viewport.name === "mobile" ? "0px" : "0px 10px",
       width: `${viewport.width}px`,
     });
-    expect(evidence.settingMargin).toBe("0px");
+    expect(evidence.setting).toEqual({ margin: "0px", width: `${expectedGridWidth}px` });
+    const retiredClassEvidence = await setting.evaluate((node) => {
+      const read = () => {
+        const style = getComputedStyle(node);
+        return { margin: style.margin, width: style.width };
+      };
+      const without = read();
+      node.classList.add("site-setting-wrap");
+      const withRetiredClass = read();
+      node.classList.remove("site-setting-wrap");
+      return { withRetiredClass, without };
+    });
+    expect(retiredClassEvidence.withRetiredClass).toEqual(retiredClassEvidence.without);
     expect(evidence.pseudos).toEqual([
       { clear: "none", content: '""', display: "table", lineHeight: "0px" },
       { clear: "both", content: '""', display: "table", lineHeight: "0px" },

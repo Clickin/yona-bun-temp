@@ -225,7 +225,9 @@ test.describe("StyleX site user-list title/search shell", () => {
     ).toHaveCount(0);
     await expect(searchInput).not.toHaveClass(/\btextbox\b/u);
     await expect(searchButton).not.toHaveClass(/\bsearch-btn\b/u);
-    await expect(searchButton.locator(":scope > i.yobicon-search")).toHaveCount(1);
+    await expect(
+      searchButton.locator(':scope > [data-stylex-owner="site-user-list-title-search-icon"]'),
+    ).toHaveCount(1);
     await expect(
       page.locator('[data-stylex-owner="site-user-list-setting-content-column"]'),
     ).toHaveCount(1);
@@ -311,6 +313,7 @@ test.describe("StyleX site user-list title/search shell", () => {
 
       const fallback = await title.evaluate((actualTitle, ownerNames) => {
         const fixture = document.createElement("div");
+        fixture.className = "site-setting-wrap";
         fixture.style.position = "absolute";
         fixture.style.left = "-10000px";
         fixture.style.width = `${actualTitle.getBoundingClientRect().width}px`;

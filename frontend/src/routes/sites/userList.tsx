@@ -610,6 +610,7 @@ const styles = stylex.create({
   },
   settingWrap: {
     margin: "0px auto",
+    width: "100%",
   },
   settingGrid: {
     width: "100%",
@@ -705,6 +706,20 @@ const styles = stylex.create({
     right: "5px",
     top: "5px",
   },
+  titleSearchIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "400",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e225"' },
+  },
 });
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
@@ -712,6 +727,7 @@ const titleSearchFormStyleProps = stylex.props(styles.titleSearchForm);
 const titleSearchWrapperStyleProps = stylex.props(styles.titleSearchWrapper);
 const titleSearchInputStyleProps = stylex.props(styles.titleSearchInput);
 const titleSearchButtonStyleProps = stylex.props(styles.titleSearchButton);
+const titleSearchIconStyleProps = stylex.props(styles.titleSearchIcon);
 const pageWrapOuterStyleProps = stylex.props(styles.pageWrapOuter);
 const settingWrapStyleProps = stylex.props(styles.settingWrap);
 const settingGridStyleProps = stylex.props(styles.settingGrid);
@@ -977,11 +993,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         </div>
       </div>
       <div {...pageWrapOuterStyleProps} data-stylex-owner="site-user-list-page-wrap-outer">
-        <div
-          {...settingWrapStyleProps}
-          className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}
-          data-stylex-owner="site-user-list-setting-wrap"
-        >
+        <div {...settingWrapStyleProps} data-stylex-owner="site-user-list-setting-wrap">
           <div {...settingGridStyleProps} data-stylex-owner="site-user-list-setting-grid">
             <div
               {...settingSidebarColumnStyleProps}
@@ -1037,7 +1049,10 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                       type="submit"
                       data-stylex-owner="site-user-list-title-search-button"
                     >
-                      <i className="yobicon-search"></i>
+                      <i
+                        {...titleSearchIconStyleProps}
+                        data-stylex-owner="site-user-list-title-search-icon"
+                      ></i>
                     </button>
                   </div>
                 </form>

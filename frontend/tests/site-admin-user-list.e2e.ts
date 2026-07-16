@@ -440,6 +440,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-name"');
   expect(routeSource).toContain('data-stylex-owner="site-user-list-row-user-id"');
   expect(routeSource).toContain('data-stylex-owner="site-user-list-pagination-icon"');
+  expect(routeSource).toContain('data-stylex-owner="site-user-list-title-search-icon"');
+  expect(routeSource).not.toContain('className="yobicon-search"');
+  expect(routeSource).not.toContain("site-setting-wrap");
   expect(routeSource).not.toContain('className="ico btn-pg-');
   expect(routeSource).not.toContain("input-mini nospinner");
   expect(await siteLayoutRootOrder(page)).toEqual([
