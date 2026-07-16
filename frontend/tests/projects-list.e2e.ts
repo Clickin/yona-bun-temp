@@ -1034,7 +1034,9 @@ async function readProjectsListMetrics(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll("[data-stylex-owner=projects-breadcrumb-outer], .page-wrap-outer"),
+      document.querySelectorAll(
+        "[data-stylex-owner=projects-breadcrumb-outer], [data-stylex-owner=projects-directory-page-wrap]",
+      ),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -1138,6 +1140,9 @@ async function canonicalizeScreenRoots(page: Page) {
         return "site-breadcrumb-outer";
       if (attr.name === "class" && owner === "projects-breadcrumb-inner")
         return "site-breadcrumb-inner";
+      if (attr.name === "class" && owner === "projects-directory-page-wrap")
+        return "page-wrap-outer";
+      if (attr.name === "class" && owner === "projects-directory-page") return "project-page-wrap";
       if (attr.name === "class" && owner === "projects-directory-tabs-list") return "nav nav-tabs";
       if (
         attr.name === "class" &&

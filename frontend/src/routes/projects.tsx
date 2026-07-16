@@ -63,6 +63,18 @@ const styles = stylex.create({
     width: "100%",
   },
   breadcrumbInner: { margin: "0px auto" },
+  directoryPageWrap: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
+    padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" },
+    width: "100%",
+  },
+  directoryPage: {
+    margin: "5px auto 0px",
+    width: "100%",
+  },
   directoryTabsList: {
     borderBottomColor: projectsDirectoryColors.tabBorder,
     borderBottomStyle: "solid",
@@ -369,6 +381,8 @@ const styles = stylex.create({
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const directoryPageWrapStyleProps = stylex.props(styles.directoryPageWrap);
+const directoryPageStyleProps = stylex.props(styles.directoryPage);
 const directoryTabsListStyleProps = stylex.props(styles.directoryTabsList);
 const directoryTabsItemStyleProps = stylex.props(styles.directoryTabsItem);
 const directoryTabsLinkStyleProps = stylex.props(styles.directoryTabsLink);
@@ -522,8 +536,8 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div {...directoryPageWrapStyleProps} data-stylex-owner="projects-directory-page-wrap">
+        <div {...directoryPageStyleProps} data-stylex-owner="projects-directory-page">
           <div
             {...directorySearchWrapStyleProps}
             data-stylex-owner="projects-directory-search-wrap"

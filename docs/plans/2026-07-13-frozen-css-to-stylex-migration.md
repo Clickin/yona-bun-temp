@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred four slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred five slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -394,6 +394,19 @@ fallback rules remain active for their many other route consumers. Verified Java
 `0,340,390x20` with no overflow. RED 0/3 becomes focused GREEN 3/3 and complete adjacent
 `/projects` coverage is GREEN 44/44. Target live/local captures were directly inspected. This is
 not Wave 1 completion.
+
+The two-hundred-fifth slice migrates exactly two wrappers in the populated-default `/projects`
+state: the outer page frame and its direct project-directory page. The outer owner directly owns
+the frozen `_page.less` 450px minimum height and 10px top margin plus final `_responsive.less`
+border-box/full-width padding and max-720 zero-padding/10px minimum. The inner owner owns the final
+`@media all` full width and 5px top/auto-inline margin. No paint, theme variable, background,
+`!important`, or compensating value is added. This route retires `page-wrap-outer` and
+`project-page-wrap`; global fallback remains for other routes, and the unmatched nested label,
+h4, nav-tab, and project-breadcrumb rules remain excluded. Verified Java desktop 1366x900 pins
+the outer/inner to `0,108,1366x450` and `10,108,1346x373`; 390px mobile pins both to
+`0,108,390x553`, with exact search/list containment and no overflow. RED 0/3 becomes focused
+GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 47/47. Target live/local captures
+were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720
