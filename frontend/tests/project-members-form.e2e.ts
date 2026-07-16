@@ -1,10 +1,12 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const PROJECT_MEMBERS_ROUTE_SOURCE = new URL(
   "../src/routes/$ownerName/$projectName/members.tsx",
   import.meta.url,
 );
+const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright", "visual-sweep");
 
 const EXPECTED_PROJECT_MEMBERS = `
 <div class="unsupported hidden"><div class="unsupported-inner"><p id="unsupported-content"></p></div></div>
@@ -67,6 +69,77 @@ test("project members matches legacy project/members.scala.html DOM", async ({ p
     memberRowWidthRatio: 0.49,
     memberSettingOffsetTop: 15,
     ownerPadding: 5,
+  });
+});
+
+test("project members four StyleX identity owners preserve populated desktop and mobile output", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, {
+    enrollmentRequests: [],
+    members: [
+      {
+        avatarUrl: "",
+        isOwner: true,
+        loginId: "admin",
+        role: "manager",
+        userId: 1,
+        userLabel: "Site Admin",
+      },
+    ],
+  });
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await expect(page.locator(".members.project.row-fluid")).toBeAttached();
+  await expect(page.locator(".members.project .member.span6.span-hard-wrap")).toHaveCount(1);
+  for (const owner of [
+    "project-members-avatar",
+    "project-members-avatar-image",
+    "project-members-member-name",
+    "project-members-member-id",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).not.toHaveClass(
+      /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
+    );
+  }
+  expect(await memberOwnedDesktopMetrics(page)).toEqual({
+    avatarBackground: "rgb(221, 221, 221)",
+    avatarBorderRadius: "3px",
+    avatarFloat: "left",
+    avatarHeight: 40,
+    avatarImageHeight: 40,
+    avatarImageVerticalAlign: "top",
+    avatarWidth: 40,
+    memberIdColor: "rgb(204, 204, 204)",
+    memberIdLineHeight: "20px",
+    memberNameFontWeight: "700",
+    memberNameLineHeight: "20px",
+    memberSettingOffsetTop: 15,
+    ownerPadding: 5,
+  });
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-desktop.png"),
+  });
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  expect(await memberOwnedMobileMetrics(page)).toEqual({
+    avatarHeight: 40,
+    avatarWidth: 40,
+    memberIdWidth: 360.5,
+    memberIdLineHeight: "20px",
+    memberNameWidth: 360.5,
+    memberNameLineHeight: "20px",
+    memberSettingOffsetTop: 15,
+    ownerMaxRightFromRow: 365.5,
+    ownerPadding: 5,
+    viewportWidth: 390,
+  });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-members-mobile.png"),
   });
 });
 
@@ -345,18 +418,14 @@ test("project members converted internal links render legacy hrefs and navigate 
     "Project configuration1",
     null,
   );
-  await expectLegacyAnchor(
-    page.locator(".members.project .avatar-wrap").nth(0),
-    `${basePath}/admin`,
-    "",
-    "avatar-wrap mlarge pull-left mr10",
-  );
-  await expectLegacyAnchor(
-    page.locator(".members.project .avatar-wrap").nth(1),
-    `${basePath}/alice`,
-    "",
-    "avatar-wrap mlarge pull-left mr10",
-  );
+  const memberAvatars = page.locator('[data-stylex-owner="project-members-avatar"]');
+  await expect(memberAvatars.nth(0)).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(memberAvatars.nth(0)).toHaveText("");
+  await expect(memberAvatars.nth(1)).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(memberAvatars.nth(1)).toHaveText("");
+  for (const avatar of [memberAvatars.nth(0), memberAvatars.nth(1)]) {
+    await expect(avatar).not.toHaveClass(/(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u);
+  }
   await expectLegacyAnchor(
     page.locator(".row-fluid .span2 .pull-left a").nth(0),
     `${basePath}/bob`,
@@ -533,9 +602,24 @@ test("project members route source keeps navigation in Link, mutation URLs out o
   expect(source).toContain('to="/$ownerName/$projectName/setting"');
   expect(source).toContain('to="/$ownerName/$projectName/issue/labelsform"');
   expect(source).toContain('to="/users/loginform"');
-  expect(source).toContain("mask={{ to: `/users/loginform?redirectUrl=${loginRedirectPath}` }}");
+  expect(source).not.toContain("mask={{");
   expect(source).toContain("search={{ redirectUrl: loginRedirectPath }}");
   expect(source).toContain('to="/$user"');
+  for (const owner of [
+    "project-members-avatar",
+    "project-members-avatar-image",
+    "project-members-member-name",
+    "project-members-member-id",
+  ]) {
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(source).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
+  expect(source).not.toContain('className="member-name"');
+  expect(source).not.toContain('className="member-id"');
+  expect(source).toContain('className="members project row-fluid"');
+  expect(source).toContain('className="member span6 span-hard-wrap"');
+  expect(source).toContain('className="member-setting"');
+  expect(source).toContain('className="label owner"');
   expect(source).toContain("function enrolledUserCount(project: ProjectContainer)");
   expect(source).toContain(
     '<CountBadge count={enrolledUserCount(project)} className="num-badge" />',
@@ -754,7 +838,9 @@ test("project members role dropdown and delete confirm stay route-owned", async 
 
   await expect.poll(() => requests.deletedUserIds).toEqual(["2"]);
   await expect(page.locator(".members.project .member")).toHaveCount(1);
-  await expect(page.locator(".members.project .member-id", { hasText: "@alice" })).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="project-members-member-id"]', { hasText: "@alice" }),
+  ).toHaveCount(0);
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
   await expect
     .poll(() =>
@@ -1698,6 +1784,12 @@ function projectSettings({
 
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
+    const legacyClassesByOwner: Record<string, string> = {
+      "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
+      "project-members-avatar-image": "",
+      "project-members-member-name": "member-name",
+      "project-members-member-id": "member-id",
+    };
     const roots = Array.from(
       document.querySelectorAll(
         ".unsupported, [data-stylex-owner=global-gnb-outer], .project-header-outer, .project-menu-outer, .page-wrap-outer, link[href$='/assets/javascripts/lib/mentionjs/mention.css'], [data-stylex-owner=site-footer]",
@@ -1712,10 +1804,13 @@ async function canonicalizeScreenRoots(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
+      const owner = node.getAttribute("data-stylex-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            !(owner && owner in legacyClassesByOwner && attr.name === "data-style-src") &&
+            !(owner && owner in legacyClassesByOwner && attr.name === "data-stylex-owner") &&
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -1734,7 +1829,13 @@ async function canonicalizeScreenRoots(page: Page) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .filter((attr) => !(owner && attr.name === "class" && !legacyClassesByOwner[owner]))
+        .map(
+          (attr) =>
+            `${attr.name}=${JSON.stringify(
+              owner && attr.name === "class" ? legacyClassesByOwner[owner] : normalizeAttr(attr),
+            )}`,
+        )
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
@@ -1813,6 +1914,12 @@ async function canonicalizeScreenRoots(page: Page) {
 
 async function canonicalizeLocator(page: Page, selector: string) {
   return page.evaluate((valueSelector) => {
+    const legacyClassesByOwner: Record<string, string> = {
+      "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
+      "project-members-avatar-image": "",
+      "project-members-member-name": "member-name",
+      "project-members-member-id": "member-id",
+    };
     const roots = Array.from(document.querySelectorAll(valueSelector));
     return roots.map((root) => visit(root)).join("");
 
@@ -1823,10 +1930,13 @@ async function canonicalizeLocator(page: Page, selector: string) {
       if (!(node instanceof Element)) {
         return "";
       }
+      const owner = node.getAttribute("data-stylex-owner");
       const attrs = Array.from(node.attributes)
         .filter(
           (attr) =>
             !attr.name.startsWith("data-v-") &&
+            !(owner && owner in legacyClassesByOwner && attr.name === "data-style-src") &&
+            !(owner && owner in legacyClassesByOwner && attr.name === "data-stylex-owner") &&
             attr.name !== "alt" &&
             !attr.name.startsWith("aria-") &&
             attr.name !== "data-login" &&
@@ -1845,7 +1955,13 @@ async function canonicalizeLocator(page: Page, selector: string) {
               (attr.name !== "aria-current" && attr.name !== "data-status")),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .filter((attr) => !(owner && attr.name === "class" && !legacyClassesByOwner[owner]))
+        .map(
+          (attr) =>
+            `${attr.name}=${JSON.stringify(
+              owner && attr.name === "class" ? legacyClassesByOwner[owner] : normalizeAttr(attr),
+            )}`,
+        )
         .join(" ");
       const open = attrs ? `<${canonicalTagName(node)} ${attrs}>` : `<${canonicalTagName(node)}>`;
       return `${open}${Array.from(node.childNodes)
@@ -1900,9 +2016,9 @@ async function memberPageMetrics(page: Page) {
     const addInput = requireElement("#loginId");
     const memberList = requireElement(".members.project");
     const firstMember = requireElement(".members.project .member");
-    const memberName = requireElement(".members.project .member .member-name");
+    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
     const ownerLabel = requireElement(".members.project .member .owner");
-    const avatar = requireElement(".members.project .member .avatar-wrap.mlarge");
+    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
     const memberSetting = requireElement(".members.project .member .member-setting");
     const roleButton = requireElement('.members.project button[data-loginid="alice"]');
     const roleControl = roleButton.closest(".btn-group");
@@ -1934,6 +2050,84 @@ async function memberPageMetrics(page: Page) {
       memberRowWidthRatio: Number((firstMemberRect.width / memberListRect.width).toFixed(2)),
       memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
       ownerPadding: Math.round(parseFloat(ownerLabelStyle.paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function memberOwnedDesktopMetrics(page: Page) {
+  return page.evaluate(() => {
+    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
+    const avatarImage = requireElement('[data-stylex-owner="project-members-avatar-image"]');
+    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
+    const memberId = requireElement('[data-stylex-owner="project-members-member-id"]');
+    const firstMember = requireElement(".members.project .member");
+    const memberSetting = requireElement(".members.project .member .member-setting");
+    const ownerLabel = requireElement(".members.project .member .owner");
+    const avatarStyle = getComputedStyle(avatar);
+    const avatarRect = avatar.getBoundingClientRect();
+
+    return {
+      avatarBackground: avatarStyle.backgroundColor,
+      avatarBorderRadius: avatarStyle.borderRadius,
+      avatarFloat: avatarStyle.float,
+      avatarHeight: Math.round(avatarRect.height),
+      avatarImageHeight: Math.round(avatarImage.getBoundingClientRect().height),
+      avatarImageVerticalAlign: getComputedStyle(avatarImage).verticalAlign,
+      avatarWidth: Math.round(avatarRect.width),
+      memberIdColor: getComputedStyle(memberId).color,
+      memberIdLineHeight: getComputedStyle(memberId).lineHeight,
+      memberNameFontWeight: getComputedStyle(memberName).fontWeight,
+      memberNameLineHeight: getComputedStyle(memberName).lineHeight,
+      memberSettingOffsetTop: Math.round(
+        memberSetting.getBoundingClientRect().top - firstMember.getBoundingClientRect().top,
+      ),
+      ownerPadding: Math.round(parseFloat(getComputedStyle(ownerLabel).paddingTop)),
+    };
+
+    function requireElement(selector: string) {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) {
+        throw new Error(`Missing ${selector}`);
+      }
+      return element;
+    }
+  });
+}
+
+async function memberOwnedMobileMetrics(page: Page) {
+  return page.evaluate(() => {
+    const avatar = requireElement('[data-stylex-owner="project-members-avatar"]');
+    const memberName = requireElement('[data-stylex-owner="project-members-member-name"]');
+    const memberId = requireElement('[data-stylex-owner="project-members-member-id"]');
+    const firstMember = requireElement(".members.project .member");
+    const memberSetting = requireElement(".members.project .member .member-setting");
+    const ownerLabel = requireElement(".members.project .member .owner");
+    const avatarRect = avatar.getBoundingClientRect();
+    const memberSettingRect = memberSetting.getBoundingClientRect();
+    const firstMemberRect = firstMember.getBoundingClientRect();
+    const memberNameRect = memberName.getBoundingClientRect();
+    const memberIdRect = memberId.getBoundingClientRect();
+
+    return {
+      avatarHeight: Math.round(avatarRect.height),
+      avatarWidth: Math.round(avatarRect.width),
+      memberIdWidth: memberIdRect.width,
+      memberIdLineHeight: getComputedStyle(memberId).lineHeight,
+      memberNameWidth: memberNameRect.width,
+      memberNameLineHeight: getComputedStyle(memberName).lineHeight,
+      memberSettingOffsetTop: Math.round(memberSettingRect.top - firstMemberRect.top),
+      ownerMaxRightFromRow:
+        Math.max(avatarRect.right, memberNameRect.right, memberIdRect.right) - firstMemberRect.left,
+      ownerPadding: Math.round(parseFloat(getComputedStyle(ownerLabel).paddingTop)),
+      viewportWidth: window.innerWidth,
     };
 
     function requireElement(selector: string) {

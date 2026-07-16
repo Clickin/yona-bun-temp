@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-one slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-two slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2354,6 +2354,24 @@ list/row width while all owner-relative paint, type, box, rhythm, and containmen
 verified by the focused GREEN 13/13 route matrix and persistent desktop/mobile screenshots;
 typecheck, Vitest, production build/StyleX verification, frozen/hash, theme-boundary, parity-gate,
 format/lint, and diff gates also pass. This is not Wave 1 completion.
+
+The one-hundred-ninety-second slice migrates only the four member-identity leaf owners in the
+authenticated populated `/admin/sample/members` state: avatar Link, avatar image, member name,
+and member ID. The list/row, settings control, owner/guest labels, role/delete controls, add form,
+and enrollment branch remain frozen fallback owners. `projectMembersTheme` contains only the
+avatar surface and member-ID text paint; every dimension, float, clipping, radius, spacing, image
+alignment, and typography value stays inline in `stylex.create`. These nodes retire only
+`avatar-wrap mlarge pull-left mr10`, `member-name`, and `member-id`. Fresh Java evidence pins the
+40×40 avatar/image, 20px name/ID rhythm, 700 name weight, exact `#ddd`/`#ccc` paint, 15px setting
+offset, 5px owner padding, and mobile 360.5px name/ID widths. The focused fixture uses the existing
+Vite-imported default avatar so visual screenshots contain the actual asset. At 390px, the four
+owners preserve the exact 365.5px row-relative right edge. The local absolute row starts 5px left
+of live because the existing duplicated app bridge reverses the Bootstrap/Yobi first-child margin
+cascade, and the shared project-menu count retains its existing 8px document overflow; both are
+separate fallback owners and receive no leaf compensation. Focused owner/source/navigation tests
+are GREEN 3/3 and the remaining affected behavior matrix is GREEN 15/15 after excluding four
+already-known shared-shell/error canonicalizer cases. Persistent desktop/mobile legacy and local
+screenshots were directly inspected. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

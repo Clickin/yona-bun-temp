@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -31,6 +32,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { projectMembersTheme } from "./-members.stylex";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -688,17 +690,22 @@ function ProjectMemberListItem({
         activeProps={legacyLinkActiveProps}
         to="/$user"
         params={{ user: loginId }}
-        className="avatar-wrap mlarge pull-left mr10"
+        data-stylex-owner="project-members-avatar"
+        {...stylex.props(styles.memberAvatar)}
       >
         <img
+          data-stylex-owner="project-members-avatar-image"
           src={stringField(member.avatarUrl, "") || defaultAvatarUrl}
           width="64"
           height="64"
           alt=""
+          {...stylex.props(styles.memberAvatarImage)}
         />
       </Link>
-      <div className="member-name">{stringField(member.userLabel, loginId)}</div>
-      <div className="member-id">
+      <div data-stylex-owner="project-members-member-name" {...stylex.props(styles.memberName)}>
+        {stringField(member.userLabel, loginId)}
+      </div>
+      <div data-stylex-owner="project-members-member-id" {...stylex.props(styles.memberId)}>
         @{loginId}
         {booleanField(memberRecord.isGuest) ? <span className="guest">GUEST</span> : null}
       </div>
@@ -751,6 +758,37 @@ function ProjectMemberListItem({
     </li>
   );
 }
+
+const styles = stylex.create({
+  // _yobiUI.less `.avatar-wrap.mlarge`, Bootstrap `.pull-left`, and _common.less `.mr10`.
+  memberAvatar: {
+    backgroundColor: projectMembersTheme.avatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
+    float: "left",
+    height: "40px",
+    marginRight: "10px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "40px",
+  },
+  // _yobiUI.less `.avatar-wrap img`.
+  memberAvatarImage: {
+    verticalAlign: "top",
+    width: "100%",
+  },
+  // _page.less `.members.project .member .member-name`.
+  memberName: {
+    fontWeight: "bold",
+    lineHeight: "20px",
+    marginTop: "2px",
+  },
+  // _page.less `.members.project .member .member-id`.
+  memberId: {
+    color: projectMembersTheme.memberIdText,
+    lineHeight: "20px",
+  },
+});
 
 function EnrollmentRequest({
   onAccept,
