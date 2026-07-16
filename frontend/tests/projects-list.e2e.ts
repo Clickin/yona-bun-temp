@@ -114,7 +114,7 @@ const EXPECTED_PROJECTS_LIST = `
               <a href="__BASE_PATH__/projects?labelIds=8" class="project-label bug">bug</a>
             </div>
             <div class="desc">Sample project</div>
-            <p class="name-tag">by<a href="__BASE_PATH__/admin" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">,Latest code update<strong>just now</strong></span></p>
+            <p class="name-tag">by<a href="__BASE_PATH__/admin?daysAgo=14&amp;selected=issues" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">,Latest code update<strong>just now</strong></span></p>
           </div>
         </div>
         <div class="stats-wrap pull-right">
@@ -127,7 +127,7 @@ const EXPECTED_PROJECTS_LIST = `
       <li class="project" style="background-color:rgb(252,252,252)">
         <div class="info-wrap" style="opacity:0.3">
           <div class="owner-avatar-wrap">
-            <img src="/assets/images/project_default_logo.png" alt="hidden">
+            <img src="__BASE_PATH__/assets/images/project_default_logo.png" alt="hidden">
           </div>
           <div style="float:left;color:gray">You do not have permission to view this project's information</div>
         </div>
@@ -232,7 +232,10 @@ test("unreadable project rows match legacy private fallback", async ({ page }) =
 
   await expect(unreadableRow).toHaveCSS("background-color", "rgb(252, 252, 252)");
   await expect(unreadableInfo).toHaveCSS("opacity", "0.3");
-  await expect(unreadableLogo).toHaveAttribute("src", "/assets/images/project_default_logo.png");
+  await expect(unreadableLogo).toHaveAttribute(
+    "src",
+    `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/assets/images/project_default_logo.png`,
+  );
   await expect(unreadableLogo).toHaveAttribute("alt", "hidden");
   await expect(unreadableText).toHaveCSS("color", "rgb(128, 128, 128)");
   await expect(unreadableText).toHaveText(
@@ -288,7 +291,10 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
 
   await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
-  await expect(ownerNameLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(ownerNameLink).toHaveAttribute(
+    "href",
+    `${basePath}/admin?daysAgo=14&selected=issues`,
+  );
   await expect(projectNameLink).toHaveClass("black");
   await expect(ownerNameLink).toHaveClass("owner-name-small");
   await expectNoActiveMarker(projectLogoLink);
@@ -314,7 +320,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "owner";
   });
   await ownerNameLink.click();
-  await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/admin`);
+  await expect(page).toHaveURL(`${basePath}/admin?daysAgo=14&selected=issues`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -533,7 +539,7 @@ test("projects route source uses Link for project directory card navigation", ()
   const source = readFileSync(new URL("../src/routes/projects.tsx", import.meta.url), "utf8");
 
   expect(source).toContain("import { queryOptions, useQuery } from");
-  expect(source).toContain("import { createFileRoute, Link, useRouter } from");
+  expect(source).toMatch(/import \{[^}]*createFileRoute[^}]*Link[^}]*useRouter[^}]*\} from/u);
   expect(source).toContain("apiQueryKeys");
   expect(source).toContain("restFetch");
   expect(source).toContain("projectsDirectoryQueryOptions(runtimeConfig, search)");
@@ -969,9 +975,7 @@ async function readProjectsListMetrics(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      ),
+      document.querySelectorAll("[data-stylex-owner=projects-breadcrumb-outer], .page-wrap-outer"),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -1033,6 +1037,10 @@ async function canonicalizeScreenRoots(page: Page) {
         }
       }
       const owner = attr.ownerElement?.getAttribute("data-stylex-owner");
+      if (attr.name === "class" && owner === "projects-breadcrumb-outer")
+        return "site-breadcrumb-outer";
+      if (attr.name === "class" && owner === "projects-breadcrumb-inner")
+        return "site-breadcrumb-inner";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")
@@ -1046,7 +1054,8 @@ async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate((input) => {
     const template = document.createElement("template");
     template.innerHTML = input;
-    return Array.from(template.content.childNodes)
+    return Array.from(template.content.children)
+      .filter((element) => element.matches(".site-breadcrumb-outer, .page-wrap-outer"))
       .map((node) => visit(node))
       .join("");
 

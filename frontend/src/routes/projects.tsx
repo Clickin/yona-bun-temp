@@ -1,6 +1,7 @@
 /* oxlint-disable jsx-a11y/no-autofocus -- legacy project/list.scala.html sets autofocus on the directory filter input. */
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
@@ -8,6 +9,7 @@ import type { ListProjectsResponse, YoramRecord } from "../api/types";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalBreakpoints } from "../theme.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ProjectsSearch = {
@@ -41,6 +43,19 @@ type ProjectDirectoryLabel = {
   id: string;
   name: string;
 };
+
+const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+});
+
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -83,8 +98,8 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return (
     <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
       <title>{t("title.projectList")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="projects-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="projects-breadcrumb-inner">
           <div className="title_area">
             <ul className="nav nav-tabs">
               <li className="active">

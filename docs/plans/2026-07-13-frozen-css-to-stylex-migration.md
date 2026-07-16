@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-three slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-five slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2405,6 +2405,19 @@ following-page y=138 match exactly. Four stale earlier-owner assertions now use 
 scoped style blocks, so the final mass-mail matrix is 47/48; only the known global GNB `Feedback`
 whole-screen gap remains outside this owner. No frozen/app CSS, compensation, behavior, or new
 abstraction changes.
+
+The one-hundred-ninety-fifth slice migrates only the authenticated populated-default `/projects`
+directory breadcrumb wrappers from `project/list.scala.html`. Exactly two route-local owners cover
+outer 100% width, 0px 10px padding, border-box sizing and max-720 10px minimum width, plus inner
+auto margin. All geometry remains inline and no theme variable, paint, border, or compensation is
+added. Only literal `site-breadcrumb-outer` and `site-breadcrumb-inner` retire; direct
+`title_area`, nav/tabs/links, search, project list, pagination, and all descendant fallback and
+React/TanStack behavior remain unchanged. Live Java pins desktop outer/inner at
+`0,93,1366x38`/`10,93,1346x38` with page y151 and mobile at
+`0,93,390x68`/`10,93,370x68` with page y181, 10px mobile minimum, no border, and viewport-wide
+scroll width. Focused RED is 3/3 solely on the absent owners; the combined focused/affected browser
+matrix is GREEN 14/14, including exact desktop/mobile geometry and saved screenshot checks. This is
+not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
