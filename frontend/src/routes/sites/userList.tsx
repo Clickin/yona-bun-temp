@@ -279,6 +279,29 @@ const styles = stylex.create({
     fontSize: "11px",
   },
   paginationLabelDisabled: { color: siteUserListColors.paginationText },
+  sidebarNav: { listStyle: "none" },
+  sidebarItem: {
+    borderLeftColor: siteUserListColors.sidebarBorder,
+    borderLeftStyle: "solid",
+    borderLeftWidth: "4px",
+    fontSize: "14px",
+    lineHeight: "30px",
+    marginTop: "3px",
+  },
+  sidebarItemFirst: { marginTop: "0px" },
+  sidebarItemActive: {
+    borderLeftColor: siteUserListColors.sidebarAccent,
+    fontWeight: "700",
+  },
+  sidebarLink: {
+    backgroundColor: { default: "transparent", ":hover": siteUserListColors.sidebarHoverSurface },
+    display: "block",
+    padding: "5px 10px",
+    textDecoration: { default: null, ":hover": "none" },
+  },
+  sidebarLinkActive: {
+    backgroundColor: { default: "transparent", ":hover": "transparent" },
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -384,6 +407,16 @@ const paginationDisabledLabelStyleProps = stylex.props(
   styles.paginationLabel,
   styles.paginationLabelDisabled,
 );
+const sidebarNavStyleProps = stylex.props(styles.sidebarNav);
+const sidebarItemStyleProps = stylex.props(styles.sidebarItem);
+const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarItemFirst);
+const sidebarActiveItemStyleProps = stylex.props(
+  styles.sidebarItem,
+  styles.sidebarItemFirst,
+  styles.sidebarItemActive,
+);
+const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
+const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarLinkActive);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -890,49 +923,40 @@ function UserListPagination({
 }
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
+  const items = [
+    { active: true, label: "site.sidebar.userList", to: "/sites/userList", update: false },
+    { active: false, label: "site.sidebar.postList", to: "/sites/postList", update: false },
+    { active: false, label: "site.sidebar.issueList", to: "/sites/issueList", update: false },
+    { active: false, label: "site.sidebar.projectList", to: "/sites/projectList", update: false },
+    { active: false, label: "site.sidebar.mailSend", to: "/sites/mail", update: false },
+    { active: false, label: "site.sidebar.massMail", to: "/sites/massmail", update: false },
+    { active: false, label: "site.sidebar.update", to: "/sites/update", update: true },
+    { active: false, label: "site.sidebar.diagnostics", to: "/sites/diagnostic", update: false },
+  ] as const;
   return (
-    <ul className="site-setting-nav">
-      <li className="active">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/userList">
-          <LegacyMessage messageKey="site.sidebar.userList" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/postList">
-          <LegacyMessage messageKey="site.sidebar.postList" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/issueList">
-          <LegacyMessage messageKey="site.sidebar.issueList" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/projectList">
-          <LegacyMessage messageKey="site.sidebar.projectList" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/mail">
-          <LegacyMessage messageKey="site.sidebar.mailSend" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/massmail">
-          <LegacyMessage messageKey="site.sidebar.massMail" />
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/update">
-          <LegacyMessage messageKey="site.sidebar.update" />
-          {showUpdateBadge ? <span className="notification-badge">1</span> : null}
-        </Link>
-      </li>
-      <li className="">
-        <Link {...LEGACY_SITE_SETTING_NAV_LINK_PROPS} to="/sites/diagnostic">
-          <LegacyMessage messageKey="site.sidebar.diagnostics" />
-        </Link>
-      </li>
+    <ul {...sidebarNavStyleProps} data-stylex-owner="site-user-list-sidebar-nav">
+      {items.map((item, index) => (
+        <li
+          {...(item.active
+            ? sidebarActiveItemStyleProps
+            : index === 0
+              ? sidebarFirstItemStyleProps
+              : sidebarItemStyleProps)}
+          data-selected={item.active ? "true" : undefined}
+          data-stylex-owner="site-user-list-sidebar-item"
+          key={item.to}
+        >
+          <Link
+            {...LEGACY_SITE_SETTING_NAV_LINK_PROPS}
+            {...(item.active ? sidebarActiveLinkStyleProps : sidebarLinkStyleProps)}
+            data-stylex-owner="site-user-list-sidebar-link"
+            to={item.to}
+          >
+            <LegacyMessage messageKey={item.label} />
+            {item.update && showUpdateBadge ? <span className="notification-badge">1</span> : null}
+          </Link>
+        </li>
+      ))}
     </ul>
   );
 }

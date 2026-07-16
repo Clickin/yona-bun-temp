@@ -209,8 +209,15 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  const sidebarRoot = page.locator('[data-stylex-owner="site-user-list-sidebar-nav"]');
+  const sidebarLinks = sidebarRoot.locator('[data-stylex-owner="site-user-list-sidebar-link"]');
+  const selectedSidebarItem = sidebarRoot.locator(
+    ':scope > [data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"]',
+  );
+  await expect(
+    selectedSidebarItem.locator('[data-stylex-owner="site-user-list-sidebar-link"]'),
+  ).toHaveText("Users");
+  await expect(sidebarLinks).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -222,7 +229,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ]);
   expect(
     await page
-      .locator(".site-setting-nav a")
+      .locator('[data-stylex-owner="site-user-list-sidebar-link"]')
       .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
   ).toEqual([
     `${basePath}/sites/userList`,
@@ -234,14 +241,12 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
     `${basePath}/sites/update`,
     `${basePath}/sites/diagnostic`,
   ]);
-  await expect(page.locator(".site-setting-nav li").nth(0)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveAttribute(
-    "href",
-    `${basePath}/sites/userList`,
-  );
+  await expect(selectedSidebarItem).toHaveCount(1);
+  await expect(
+    selectedSidebarItem.locator('[data-stylex-owner="site-user-list-sidebar-link"]'),
+  ).toHaveAttribute("href", `${basePath}/sites/userList`);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
-  await expect(page.locator('.site-setting-nav a[href$="/sites/setting"]')).toHaveCount(0);
+  await expect(sidebarLinks.locator('[href$="/sites/setting"]')).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).not.toContainText("TODO");
   const actionOwner = page.locator('[data-stylex-owner="site-user-list-row-action"]');
   await expect(actionOwner.locator("a[data-request-method]")).toHaveCount(0);
@@ -534,7 +539,9 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   ).toBe("site-users-pagination-query");
 
   await mockPosts(page);
-  const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
+  const postsLink = page.locator('[data-stylex-owner="site-user-list-sidebar-link"]', {
+    hasText: "Posts",
+  });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-posts-nav";
@@ -628,7 +635,11 @@ test("site admin user pagination input selects and clamps like legacy yobi.Pagin
   });
 
   await page.goto(`${basePath}/sites/userList?state=ACTIVE&pageNum=2`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+    ),
+  ).toHaveText("Users");
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   const pageNumInput = page.locator('#pagination input[name="pageNum"]');
   await expect(pageNumInput).toHaveValue("2");
@@ -1055,7 +1066,11 @@ test("site admin user delete forbidden reloads legacy page", async ({ page }) =>
   await page.locator("#accountToggleBtn").click();
   await reloadPromise;
 
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+    ),
+  ).toHaveText("Users");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBeUndefined();
@@ -1208,7 +1223,11 @@ test("site admin user role toggle success reloads like legacy requestAs", async 
   await reloadPromise;
 
   await expect.poll(() => requests.toggledActions).toEqual(["doortts:guest"]);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Users");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-user-list-sidebar-link"]',
+    ),
+  ).toHaveText("Users");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBeUndefined();
@@ -1228,7 +1247,9 @@ test("site admin user list renders legacy update notification badge", async ({ p
 
   await page.goto(`${basePath}/sites/userList`);
 
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-user-list-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
@@ -1670,9 +1691,12 @@ async function siteLayoutRootOrder(page: Page) {
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-user-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
       const leaked = ["class", "aria-current", "data-status"].filter((name) => {
+        if (name === "class") {
+          return link.classList.contains("active") || link.classList.contains("pending");
+        }
         return link.hasAttribute(name);
       });
       return leaked.map((name) => `${link.getAttribute("href") ?? ""}:${name}`);

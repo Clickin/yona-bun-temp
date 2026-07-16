@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred fifty-six slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred sixty-five slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1951,6 +1951,20 @@ user-list StyleX matrix is GREEN 28/28 after stale presentation selectors move t
 Whole-screen coverage is GREEN 15/16 with only the pre-existing excluded global-GNB `Feedback`
 fixture gap.
 This is not Wave 1 completion.
+
+The one-hundred-sixty-fifth slice migrates the authenticated populated-ACTIVE
+`/sites/userList` site-management sidebar navigation from `site/siteMngLayout.scala.html` and the
+frozen `.site-setting-wrap .site-setting-nav` cascade. Exactly three route-local owners cover the
+UL, repeated LI default/first/active variants, and direct Links. Neutral border, hover surface, and
+active border are route paint variables; list geometry, border width/style, typography, spacing,
+and text decoration remain inline. This route retires `site-setting-nav`, LI `active`, and empty LI
+classes while preserving eight-link copy/order/hrefs, TanStack active-marker suppression, stable
+`data-selected`, and the independently owned `notification-badge`. Frozen fallback equivalence and
+fresh baseline screenshots pin desktop and 390px wrapping. Hover keeps the legacy neutral surface,
+active hover stays transparent, and focus keeps the final global anchor underline/color cascade
+without inventing a focus surface. Focused browser coverage is GREEN 2/2, the complete user-list
+StyleX matrix is GREEN 30/30, and whole-screen coverage is GREEN 15/16 with only the pre-existing
+excluded global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
