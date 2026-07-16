@@ -34,6 +34,42 @@ const legacyLinkSuppressionProps = {
 };
 
 const styles = stylex.create({
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      [globalBreakpoints.mobile]: "0px",
+    },
+    width: "100%",
+  },
+  settingWrap: {
+    margin: "0px auto",
+  },
+  settingGrid: {
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    minHeight: "30px",
+  },
+  settingSidebarColumn: {
+    marginLeft: "0px",
+    width: "14.893617021276595%",
+  },
+  settingContentColumn: {
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
+  },
   sidebarNav: {
     listStyle: "none",
     margin: "0px",
@@ -519,6 +555,17 @@ const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sideb
 const sidebarActiveItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarActiveItem);
 const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarActiveLink);
+const pageWrapOuterStyleProps = stylex.props(styles.pageWrapOuter);
+const settingWrapStyleProps = stylex.props(styles.settingWrap);
+const settingGridStyleProps = stylex.props(styles.settingGrid);
+const settingSidebarColumnStyleProps = stylex.props(
+  styles.settingColumn,
+  styles.settingSidebarColumn,
+);
+const settingContentColumnStyleProps = stylex.props(
+  styles.settingColumn,
+  styles.settingContentColumn,
+);
 const deleteModalStyleProps = stylex.props(styles.deleteModal);
 const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
@@ -645,13 +692,23 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
-          <div className="row-fluid">
-            <div className="span2">
+      <div {...pageWrapOuterStyleProps} data-stylex-owner="site-project-list-page-wrap-outer">
+        <div
+          {...settingWrapStyleProps}
+          className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}
+          data-stylex-owner="site-project-list-setting-wrap"
+        >
+          <div {...settingGridStyleProps} data-stylex-owner="site-project-list-setting-grid">
+            <div
+              {...settingSidebarColumnStyleProps}
+              data-stylex-owner="site-project-list-setting-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...settingContentColumnStyleProps}
+              data-stylex-owner="site-project-list-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-project-list-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-project-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.projectList" />

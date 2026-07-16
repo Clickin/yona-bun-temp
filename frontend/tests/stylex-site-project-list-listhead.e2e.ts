@@ -169,7 +169,11 @@ test.describe("StyleX site project-list list header", () => {
   }) => {
     await openProjectList(page);
     const generatedOwnerIds = await page.evaluate(() =>
-      Array.from(document.querySelectorAll(".site-setting-wrap .span10 *"))
+      Array.from(
+        document.querySelectorAll(
+          '[data-stylex-owner="site-project-list-setting-content-column"] *',
+        ),
+      )
         .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
         .map(
           (element) =>

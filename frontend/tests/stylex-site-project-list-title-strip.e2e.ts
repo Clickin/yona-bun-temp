@@ -148,7 +148,9 @@ test.describe("StyleX site project-list title strip", () => {
     const ownership = await page.evaluate(
       (selector) => ({
         generatedDirectChildren: Array.from(
-          document.querySelectorAll(".site-setting-wrap .span10 > *"),
+          document.querySelectorAll(
+            '[data-stylex-owner="site-project-list-setting-content-column"] > *',
+          ),
         )
           .filter((element) => Array.from(element.classList).some((token) => token.startsWith("x")))
           .filter((element) => !element.matches(selector))

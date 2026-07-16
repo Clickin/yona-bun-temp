@@ -257,7 +257,9 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
       });
       const widths = await page.evaluate(() => ({
         document: document.documentElement.scrollWidth,
-        pageWrap: document.querySelector<HTMLElement>(".page-wrap-outer")!.scrollWidth,
+        pageWrap: document.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-project-list-page-wrap-outer"]',
+        )!.scrollWidth,
       }));
       for (const child of [box.name, box.action]) {
         expect(child.left).toBeGreaterThanOrEqual(box.row.left - 1);
@@ -283,7 +285,9 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
         const deleteAction = list.querySelector<HTMLElement>(
           '[data-stylex-owner="site-project-list-delete-action"]',
         )!;
-        const pageWrap = document.querySelector<HTMLElement>(".page-wrap-outer")!;
+        const pageWrap = document.querySelector<HTMLElement>(
+          '[data-stylex-owner="site-project-list-page-wrap-outer"]',
+        )!;
         const rect = (element: Element) => {
           const box = element.getBoundingClientRect();
           return {

@@ -158,7 +158,7 @@ test.describe("StyleX site project-list title/search shell", () => {
     ).toEqual(["H2", "FORM"]);
     expect(
       await page
-        .locator(".site-setting-wrap > .row-fluid > .span10 > *")
+        .locator('[data-stylex-owner="site-project-list-setting-content-column"] > *')
         .evaluateAll((nodes) =>
           nodes.slice(0, 5).map((node) => node.getAttribute("data-stylex-owner") ?? node.id),
         ),

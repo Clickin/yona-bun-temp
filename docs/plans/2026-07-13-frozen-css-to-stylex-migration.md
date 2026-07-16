@@ -2121,6 +2121,30 @@ captures remain under `output/playwright/stylex-site-project-list-pagination-bas
 Visual inspection confirms identical eight-copy order, 4px rails, Projects active paint, 5×10 inset,
 desktop rhythm, and mobile ko-KR wrapping with no owner-visible drift.
 
+The one-hundred-seventy-eighth slice migrates only the authenticated populated-first-page
+`/sites/projectList` page/management grid skeleton from `siteMngLayout.scala.html` to five direct
+owners: page outer, retained-class setting wrapper, clearfix grid, sidebar column, and content
+column. Inline geometry reproduces the frozen page box/responsive padding, natural setting margin,
+Bootstrap fluid clearfix, and exact span percentages while preserving the mobile side-by-side
+layout. `page-wrap-outer` and only the direct `row-fluid`/`span2`/`span10` retire;
+`site-setting-wrap` deliberately remains because excluded descendant listhead/row selectors still
+consume it. No theme, fallback, stacking, compensation, or inactive bootstrap-responsive behavior
+is added. Focused RED source evidence was recorded before implementation; source/static and main
+browser coverage are GREEN 3/3 (14.6s).
+The focused frozen-class mutation treats the current app bridge's desktop `min-width:1100px` as
+explicit deletion evidence: fresh live and direct ownership are `0px`, all shared boxes/declarations
+remain exact, and mobile is `10px` on both paths. No stale bridge value is ported or compensated.
+Local shell captures at
+`output/playwright/visual-sweep/stylex-site-project-list-page-management-shell-{desktop,mobile}.png`
+match fresh authenticated live baselines under
+`output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/` for column
+placement/gap, title/list/pagination horizontal rhythm, desktop 10px inset, and mobile side-by-side
+58.078/323.609 widths with natural 420px overflow. The local fixture's broken placeholder image is
+an excluded child asset-fixture difference; child pixel parity is not claimed.
+Four adjacent project-list suites move only five retired shell-class locators to stable page/content
+owners, without generated-class locators or assertion weakening. Focused coverage is GREEN 3/3
+(14.6s), and the complete projectList StyleX matrix is GREEN 57/57 (44.4s, workers=1).
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
