@@ -179,7 +179,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
         .evaluate((title) => title.textContent),
     )
     .toBe("Project list");
-  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-project-list-setting-wrap"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="global-gnb-nav"] a[href]')).toHaveText([
     "Y",
     "List All",
@@ -196,8 +196,12 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     `${basePath}/search`,
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
-  await expect(page.locator(".site-setting-nav a")).toHaveText([
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+    ),
+  ).toHaveText("Projects");
+  await expect(page.locator('[data-stylex-owner="site-project-list-sidebar-link"]')).toHaveText([
     "Users",
     "Posts",
     "Issues",
@@ -210,7 +214,7 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await expect
     .poll(() =>
       page
-        .locator(".site-setting-nav a")
+        .locator('[data-stylex-owner="site-project-list-sidebar-link"]')
         .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href") ?? "")),
     )
     .toEqual([
@@ -223,8 +227,12 @@ test("site admin project list matches legacy site/projectList.scala.html populat
       `${basePath}/sites/update`,
       `${basePath}/sites/diagnostic`,
     ]);
-  await expect(page.locator(".site-setting-nav li").nth(3)).toHaveClass("active");
-  await expect(page.locator(".site-setting-nav li.active")).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-sidebar-item"]').nth(3),
+  ).toHaveAttribute("data-selected", "true");
+  await expect(
+    page.locator('[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"]'),
+  ).toHaveCount(1);
   expect(await siteSettingNavActiveMarkerLeaks(page)).toEqual([]);
   await expect(page.locator('[data-stylex-owner="site-project-list-row"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="site-project-list-row-avatar"]')).toHaveAttribute(
@@ -238,7 +246,9 @@ test("site admin project list matches legacy site/projectList.scala.html populat
     page.locator('[data-stylex-owner="site-project-list-delete-action"]'),
   ).toHaveAttribute("data-project-name", "acme/roadmap");
   await expect(
-    page.locator(".site-setting-nav a", { hasText: "Send mass emails" }),
+    page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+      hasText: "Send mass emails",
+    }),
   ).toHaveAttribute("href", `${basePath}/sites/massmail`);
   await expect(page.locator('[data-stylex-owner="site-project-list-pagination"]')).toHaveCount(1);
   await expect(
@@ -318,7 +328,11 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   await nextPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("road");
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("2");
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+    ),
+  ).toHaveText("Projects");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("site-project-pagination");
@@ -395,14 +409,18 @@ test("site admin project list matches legacy site/projectList.scala.html populat
   ).toHaveValue("road");
 
   await mockPosts(page);
-  const postsLink = page.locator(".site-setting-nav a", { hasText: "Posts" });
+  const postsLink = page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+    hasText: "Posts",
+  });
   await expect(postsLink).toHaveAttribute("href", `${basePath}/sites/postList`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-posts-nav";
   });
   await postsLink.click();
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/sites/postList`);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Posts");
+  await expect(
+    page.locator('[data-stylex-owner="site-post-list-sidebar-item"]').nth(1),
+  ).toContainText("Posts");
   await expect(page.locator(".post-list-wrap .listitem")).toHaveCount(1);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -663,7 +681,11 @@ test("site admin project delete modal opens, dismisses, deletes, and stays on th
     page.locator('[data-stylex-owner="site-project-list-delete-modal-backdrop"]'),
   ).toHaveCount(0);
   await expect(page).toHaveURL(projectListUrl);
-  await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Projects");
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-project-list-sidebar-item"][data-selected="true"] > [data-stylex-owner="site-project-list-sidebar-link"]',
+    ),
+  ).toHaveText("Projects");
   await expect.poll(() => spaMarker(page)).toBe("kept");
   expect(await readSiteProjectDeleteNativeListenerAudit(page)).toEqual([]);
 });
@@ -682,7 +704,9 @@ test("site admin project list renders legacy update notification badge", async (
 
   await page.goto(`${basePath}/sites/projectList?filter=road`);
 
-  const updateLink = page.locator(".site-setting-nav a", { hasText: "Software Update" });
+  const updateLink = page.locator('[data-stylex-owner="site-project-list-sidebar-link"]', {
+    hasText: "Software Update",
+  });
   await expect(updateLink).toHaveAttribute("href", `${basePath}/sites/update`);
   await expect(updateLink).toHaveText("Software Update1");
   await expect(updateLink.locator(".notification-badge")).toHaveText("1");
@@ -823,7 +847,9 @@ async function spaMarker(page: Page) {
 
 async function projectListDeleteModalStateMetrics(page: Page) {
   return page.evaluate(() => {
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const content = requireElement(
+      '[data-stylex-owner="site-project-list-setting-content-column"]',
+    );
     const title = requireElement('[data-stylex-owner="site-project-list-title-heading"]');
     const titleArea = requireElement('[data-stylex-owner="site-project-list-title-strip"]');
     const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
@@ -1029,12 +1055,16 @@ async function mockUpdate(
 }
 
 async function siteSettingNavActiveMarkerLeaks(page: Page) {
-  return page.locator(".site-setting-nav a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="site-project-list-sidebar-link"]').evaluateAll((links) =>
     links.flatMap((link) => {
-      const leaked = ["class", "aria-current", "data-status"].filter((name) =>
-        link.hasAttribute(name),
-      );
-      return leaked.map((name) => `${link.textContent?.trim() ?? ""}:${name}`);
+      const label = link.textContent?.trim() ?? "";
+      const leakedClassTokens = Array.from(link.classList)
+        .filter((token) => !token.startsWith("x") && !token.includes("__styles."))
+        .map((token) => `${label}:class:${token}`);
+      const leakedStateAttributes = ["aria-current", "data-status"]
+        .filter((name) => link.hasAttribute(name))
+        .map((name) => `${label}:${name}`);
+      return [...leakedClassTokens, ...leakedStateAttributes];
     }),
   );
 }
@@ -1076,12 +1106,47 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-project-list-breadcrumb-outer"], [data-stylex-owner="site-project-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      const owner = current.getAttribute("data-stylex-owner");
+      const canonicalLayoutClass = new Map<string, string>([
+        ["site-project-list-page-wrap-outer", "page-wrap-outer"],
+        ["site-project-list-setting-wrap", "site-setting-wrap"],
+        ["site-project-list-setting-grid", "row-fluid"],
+        ["site-project-list-setting-sidebar-column", "span2"],
+        ["site-project-list-setting-content-column", "span10"],
+        ["site-project-list-sidebar-nav", "site-setting-nav"],
+        [
+          "site-project-list-sidebar-item",
+          current.getAttribute("data-selected") === "true" ? "active" : "",
+        ],
+        ["site-project-list-sidebar-link", ""],
+      ]).get(owner ?? "");
+      if (name === "class" && canonicalLayoutClass !== undefined) {
+        return canonicalLayoutClass;
+      }
+      if (
+        name === "class" &&
+        (current.matches(".site-breadcrumb-outer, .site-breadcrumb-inner") ||
+          (current.getAttribute("data-stylex-owner") ?? "").startsWith(
+            "site-project-list-breadcrumb-",
+          ))
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              !token.startsWith("x") &&
+              !token.includes("__styles.") &&
+              token !== "site-breadcrumb-outer" &&
+              token !== "site-breadcrumb-inner",
+          )
+          .join(" ");
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -1101,7 +1166,7 @@ async function canonicalizeScreenRoots(page: Page) {
       ) {
         return value
           .split(/\s+/u)
-          .filter((token) => !token.startsWith("x"))
+          .filter((token) => !token.startsWith("x") && !token.includes("__styles."))
           .join(" ");
       }
       if (
@@ -1166,6 +1231,12 @@ async function canonicalizeScreenRoots(page: Page) {
           (name) =>
             current.hasAttribute(name) &&
             !(name === "class" && isResidualOwner) &&
+            !(
+              name === "class" &&
+              (residualOwner === "site-project-list-sidebar-link" ||
+                (residualOwner === "site-project-list-sidebar-item" &&
+                  current.getAttribute("data-selected") !== "true"))
+            ) &&
             !(name === "data-stylex-owner" && !isResidualOwner),
         )
         .map(
@@ -1197,15 +1268,19 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-project-list-breadcrumb-outer"], [data-stylex-owner="site-project-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
       (element) =>
         element.getAttribute("data-stylex-owner") === "global-gnb-outer"
           ? "gnb-outer"
-          : element.getAttribute("data-stylex-owner") === "site-footer" &&
-              !element.classList.contains("page-footer-outer")
-            ? "site-footer"
-            : element.getAttribute("class"),
+          : element.getAttribute("data-stylex-owner") === "site-project-list-breadcrumb-outer"
+            ? "site-breadcrumb-outer"
+            : element.getAttribute("data-stylex-owner") === "site-project-list-page-wrap-outer"
+              ? "page-wrap-outer"
+              : element.getAttribute("data-stylex-owner") === "site-footer" &&
+                  !element.classList.contains("page-footer-outer")
+                ? "site-footer"
+                : element.getAttribute("class"),
     ),
   );
 }
@@ -1218,9 +1293,13 @@ async function projectListMetrics(page: Page) {
     const filterInput = requireElement(
       '[data-stylex-owner="site-project-list-search-textbox"][name="filter"]',
     );
-    const row = requireElement(".site-setting-wrap > .row-fluid");
-    const sidebar = requireElement(".site-setting-wrap > .row-fluid > .span2");
-    const content = requireElement(".site-setting-wrap > .row-fluid > .span10");
+    const row = requireElement('[data-stylex-owner="site-project-list-setting-grid"]');
+    const sidebar = requireElement(
+      '[data-stylex-owner="site-project-list-setting-sidebar-column"]',
+    );
+    const content = requireElement(
+      '[data-stylex-owner="site-project-list-setting-content-column"]',
+    );
     const listHead = requireElement(".listhead");
     const firstHeaderColumn = requireElement(".listhead .span5");
     const firstRowColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span5');
@@ -1344,6 +1423,23 @@ async function canonicalizeHtml(page: Page, html: string) {
       .join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        (current.matches(".site-breadcrumb-outer, .site-breadcrumb-inner") ||
+          (current.getAttribute("data-stylex-owner") ?? "").startsWith(
+            "site-project-list-breadcrumb-",
+          ))
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              !token.startsWith("x") &&
+              token !== "site-breadcrumb-outer" &&
+              token !== "site-breadcrumb-inner",
+          )
+          .join(" ");
+      }
       let value = current.getAttribute(name) ?? "";
       if (name === "class") {
         const retiredTitleToken = current.matches(

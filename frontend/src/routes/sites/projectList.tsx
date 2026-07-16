@@ -34,6 +34,22 @@ const legacyLinkSuppressionProps = {
 };
 
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: {
+    margin: "0px auto",
+  },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -555,6 +571,9 @@ const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sideb
 const sidebarActiveItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarActiveItem);
 const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarActiveLink);
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const pageWrapOuterStyleProps = stylex.props(styles.pageWrapOuter);
 const settingWrapStyleProps = stylex.props(styles.settingWrap);
 const settingGridStyleProps = stylex.props(styles.settingGrid);
@@ -685,9 +704,12 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
   return (
     <>
       <title>{t("title.projectList")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-project-list-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-project-list-breadcrumb-inner">
+          <h3
+            {...breadcrumbHeadingStyleProps}
+            data-stylex-owner="site-project-list-breadcrumb-heading"
+          >
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

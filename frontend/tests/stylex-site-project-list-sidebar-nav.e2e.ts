@@ -177,9 +177,8 @@ for (const viewport of [
       height: viewport.name === "desktop" ? 341 : 611,
       width: viewport.name === "desktop" ? 200.453125 : 58.078125,
     });
-    // Live ko-KR is y=138; local's pre-existing outer site-admin shell is uniformly 1px lower.
-    // The sidebar owner itself remains exact against the in-page frozen-class fixture.
-    expect(evidence.actualPosition).toEqual({ x: viewport.name === "desktop" ? 10 : 0, y: 139 });
+    // Slice 179 retires the stale breadcrumb border, so local and live ko-KR now both start at y=138.
+    expect(evidence.actualPosition).toEqual({ x: viewport.name === "desktop" ? 10 : 0, y: 138 });
     expect(evidence.actual.items.map(({ box }) => box.height)).toEqual(
       viewport.name === "desktop"
         ? [40, 40, 40, 40, 40, 40, 40, 40]

@@ -2113,9 +2113,8 @@ new abstraction, or behavior changes. The focused runtime fixture uses the fresh
 ko-KR locale/copy rather than weakening its absolute wrapped geometry. Focused RED source evidence
 was recorded before implementation; source/static verification and main browser coverage are GREEN
 3/3 (14.1s).
-The local outer site-admin shell places the otherwise exact sidebar at y139 versus fresh live y138;
-this pre-existing uniform 1px shell gap is excluded from the sidebar owner and receives no CSS
-compensation. Local captures are saved at
+Slice 179's breadcrumb retirement removes the stale local 1px border, so sidebar local/live now both
+start at y138 without CSS compensation. Local captures are saved at
 `output/playwright/visual-sweep/stylex-site-project-list-sidebar-nav-{desktop,mobile}.png`; fresh live
 captures remain under `output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/`.
 Visual inspection confirms identical eight-copy order, 4px rails, Projects active paint, 5×10 inset,
@@ -2144,6 +2143,42 @@ an excluded child asset-fixture difference; child pixel parity is not claimed.
 Four adjacent project-list suites move only five retired shell-class locators to stable page/content
 owners, without generated-class locators or assertion weakening. Focused coverage is GREEN 3/3
 (14.6s), and the complete projectList StyleX matrix is GREEN 57/57 (44.4s, workers=1).
+
+The one-hundred-seventy-ninth slice migrates only the authenticated populated `/sites/projectList`
+management breadcrumb from `siteMngLayout.scala.html` to three direct outer/inner/h3 owners. It
+colocates only outer width/padding/box-sizing/mobile min-width, inner auto margin, and heading
+padding/line-height; generic h3 color/family/size/weight/margin/text-rendering remain frozen shared
+fallback. This consumer retires only `site-breadcrumb-outer` and `site-breadcrumb-inner`, with no
+theme, registry, compensation, or frozen edit. Same-element fallback mutation proves the owned
+geometry while recording the retired local app bridge's non-legacy 1px border and 400 heading
+weight as deletion evidence. Local and fresh live outer y83, owner height/width, and the 55px
+breadcrumb-to-page rhythm are exact without compensation.
+Focused source RED was recorded before implementation, source/static verification is GREEN, and
+main focused browser verification is GREEN 3/3 (15.6s). Local
+`output/playwright/visual-sweep/stylex-site-project-list-breadcrumb-{desktop,mobile}.png` versus
+live `output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/page-2026-07-16T10-17-52-323Z.png`
+and `page-2026-07-16T10-18-56-459Z.png` confirms exact y83, owned title start, 45px rhythm,
+10px inset, typography, and mobile overlap/layout. Fixture/content outside the outer screenshot is
+excluded.
+The initial 56/60 matrix exposed only four stale y139 expectations in page-management-shell and
+sidebar-nav desktop/mobile cases; both now assert the live-matching y138 produced by this deletion.
+The final complete projectList StyleX matrix is GREEN 60/60 (46.1s, workers=1).
+The subsequent whole-screen `site-admin-project-list.e2e.ts` run was initially 5/8: its three
+failures were stale runtime locators for the already-retired Slice 177 sidebar and Slice 178
+page/content classes. Runtime roots, navigation/current state, and metric helpers now use the
+explicit Slice 177–179 owners while the legacy expected HTML fixture and retained nested row
+fallback classes remain unchanged; the resulting whole-screen rerun reached 7/8. Its sole failure
+was a helper false positive that treated all eight intentional generated StyleX link class tokens
+as active-marker leaks. The second 7/8 run exposed the development debug-token form
+`projectList__styles.*`; the helper and actual-side breadcrumb/title canonicalization now recognize
+only established `x`-prefixed or `__styles.` generated forms, still report every other class token
+with detail, and continue to reject `aria-current`/`data-status`. The final whole-screen result is
+GREEN 7/8 (49.8s): all seven behavior/route/modal/update/default-logo/typed-link tests pass, while
+the populated-DOM equality case still exposes pre-existing global GNB/footer React translation
+(button/div structure, plugin attributes, shell generated classes/copy/assets) and prior project
+search/listhead/row/pagination generated-class canonicalization gaps. This is not only a
+`Feedback` fixture mismatch and is outside the breadcrumb owner; the goal rule requires splitting
+shared/global and prior-owner canonicalization into separate follow-up work.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
