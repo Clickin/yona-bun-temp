@@ -412,7 +412,7 @@ test("site admin user list matches legacy site/userList.scala.html populated DOM
   expect(await siteLayoutRootOrder(page)).toEqual([
     "unsupported hidden",
     "gnb-outer",
-    "site-breadcrumb-outer",
+    "site-user-list-breadcrumb-outer",
     "site-user-list-page-wrap-outer",
     "site-footer",
   ]);
@@ -1458,7 +1458,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-user-list-breadcrumb-outer"], [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1477,6 +1477,8 @@ async function canonicalizeScreenRoots(page: Page) {
       const value = current.getAttribute(name) ?? "";
       if (name === "class") {
         const legacyShellClass = new Map([
+          ["site-user-list-breadcrumb-outer", "site-breadcrumb-outer"],
+          ["site-user-list-breadcrumb-inner", "site-breadcrumb-inner"],
           ["site-user-list-page-wrap-outer", "page-wrap-outer"],
           ["site-user-list-setting-grid", "row-fluid"],
           ["site-user-list-setting-sidebar-column", "span2"],
@@ -1496,6 +1498,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-user-list-title-strip",
           "site-user-list-title-heading",
           "site-user-list-title-search-form",
+          "site-user-list-breadcrumb-heading",
         ]).has(current.getAttribute("data-stylex-owner") ?? "")
       ) {
         return value
@@ -1578,15 +1581,17 @@ async function siteLayoutRootOrder(page: Page) {
   return page.evaluate(() =>
     Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-user-list-breadcrumb-outer"], [data-stylex-owner="site-user-list-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
       (element) =>
         element.getAttribute("data-stylex-owner") === "site-footer" &&
         !element.classList.contains("page-footer-outer")
           ? "site-footer"
-          : element.getAttribute("data-stylex-owner") === "site-user-list-page-wrap-outer"
-            ? "site-user-list-page-wrap-outer"
-            : element.getAttribute("class"),
+          : element.getAttribute("data-stylex-owner") === "site-user-list-breadcrumb-outer"
+            ? "site-user-list-breadcrumb-outer"
+            : element.getAttribute("data-stylex-owner") === "site-user-list-page-wrap-outer"
+              ? "site-user-list-page-wrap-outer"
+              : element.getAttribute("class"),
     ),
   );
 }

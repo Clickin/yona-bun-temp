@@ -52,6 +52,22 @@ const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
 };
 const LEGACY_ACTION_ANCHOR_BUTTON_STYLE: CSSProperties = { margin: 2 };
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: {
+      default: null,
+      "@media (max-width: 720px)": "10px",
+    },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: {
+    margin: "0px auto",
+  },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -121,6 +137,9 @@ const settingContentColumnStyleProps = stylex.props(
   styles.settingColumn,
   styles.settingContentColumn,
 );
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -276,9 +295,12 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
   return (
     <>
       <LegacySiteUserListTitle />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-user-list-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-user-list-breadcrumb-inner">
+          <h3
+            {...breadcrumbHeadingStyleProps}
+            data-stylex-owner="site-user-list-breadcrumb-heading"
+          >
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

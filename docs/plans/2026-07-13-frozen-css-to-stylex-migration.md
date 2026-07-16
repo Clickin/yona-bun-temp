@@ -1826,6 +1826,26 @@ Authenticated legacy/local desktop and mobile screenshots visually match the own
 side-by-side management grid. Locale, fixture copy/data, excluded descendants, global shell, and
 footer remain outside this claim.
 
+The one-hundred-fifty-eighth slice migrates only the three authenticated populated-ACTIVE
+`/sites/userList` management-breadcrumb owners. `site/siteMngLayout.scala.html`, included
+`site/userList.scala.html`, the full `yobi.less` chain, and active Bootstrap 2.3.1 establish the
+direct `DIV > DIV > H3` skeleton and final cascade. Colocated StyleX moves only declarations lost
+when this route retires `site-breadcrumb-outer` and `site-breadcrumb-inner`: outer full-width
+border box, 10px inline padding and max-720 minimum width; centered inner margin; and the direct
+heading's 10/10/5px padding plus 30px line height. Generic `h3` font family, 24.5px size, 700
+weight, color, zero margin, and forced-auto text rendering remain frozen fallback-owned for their
+shared consumers. No theme variable or abstraction is added. Fresh authenticated legacy evidence
+pins desktop `0,83,1366×45` and mobile `0,83,390×45` outer boxes, 10px inner insets, heading
+height 45, and page start `y=138`. Source RED is 0/1 on the absent owners. Post-implementation
+runtime first exposed only two excluded whole-screen offsets: the existing 23px mobile GNB height
+delta and the independently proven 3px English action-row overflow. The focused gate therefore
+keeps exact desktop absolute y/document width while using exact owner-local mobile viewport
+containment and breadcrumb-to-page spacing; focused GREEN is 2/2 and the complete user-list StyleX
+matrix is GREEN 15/15. Whole-screen is GREEN 15/16 with only the pre-existing excluded global-GNB
+`Feedback` gap. Authenticated legacy/local screenshots confirm the owned x=20 heading start, 45px
+rhythm, full width, 10px inset, and following-page spacing; locale, fixture content, excluded GNB,
+rows, footer, and their offsets remain outside this claim.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
