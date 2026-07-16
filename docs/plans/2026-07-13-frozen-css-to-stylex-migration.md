@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-one slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2337,6 +2337,23 @@ confirms the migrated token controls retain the legacy 20/30px rhythm and paint.
 user-settings page-width/tab ancestry, locale-dependent intrinsic button width, global shell, and
 Yoram footer differences remain outside this owner and receive no numeric compensation; the next
 user-settings shell wave must own those shared boundaries. This is not Wave 1 completion.
+
+The one-hundred-ninety-first slice migrates only the authenticated populated
+`/admin/sample/watchers` member list. Six direct owners cover the list/clearfix, repeated fluid
+row, avatar Link/image, member name, and member ID. This consumer retires `members project
+row-fluid`, `member span6 span-hard-wrap`, `avatar-wrap mlarge pull-left mr10`, `member-name`, and
+`member-id`; project/page shell ownership and independent organization/project-member/avatar
+consumers remain frozen fallback. `projectWatchersTheme` contains only the row-border,
+avatar-surface, and member-ID text paint, while every grid, dimension, spacing, border structure,
+and typography value stays inline. Fresh Java evidence pins desktop list/row/avatar at
+`1346×63`, `658.671875×63`, and `40×40`, and mobile at `390×63`, `370.5×63`, and `40×40` with no
+horizontal overflow. The frozen mobile `width:100vw` loses to the more-specific Bootstrap
+`.row-fluid .span6`; preserving the active span width plus the winning 95% minimum reproduces the
+actual cascade without compensation. The local shared shell retains its existing `1260/617`
+list/row width while all owner-relative paint, type, box, rhythm, and containment match. This is
+verified by the focused GREEN 13/13 route matrix and persistent desktop/mobile screenshots;
+typecheck, Vitest, production build/StyleX verification, frozen/hash, theme-boundary, parity-gate,
+format/lint, and diff gates also pass. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { use } from "react";
 import {
   readProjectContainerQueryOptions,
@@ -11,8 +12,10 @@ import defaultAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { globalBreakpoints } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
+import { projectWatchersTheme } from "./-watchers.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/watchers")({
   component: ProjectWatchersRoute,
@@ -95,22 +98,25 @@ function ProjectWatchersBody({
           <strong>{t("project.watcher.title")}</strong>
         </h4>
         <p>{t("project.watcher.description")}</p>
-        <ul className="members project row-fluid">
+        <ul data-stylex-owner="project-watchers-list" {...stylex.props(styles.memberList)}>
           {watchers.watchers.map((watcher) => {
             const loginId = stringField(watcher.loginId, "");
             return (
               <li
-                className="member span6 span-hard-wrap"
+                data-stylex-owner="project-watchers-member"
                 key={stringField(watcher.userId, loginId)}
+                {...stylex.props(styles.member)}
               >
                 <Link
                   to="/$user"
                   params={{ user: loginId }}
-                  className="avatar-wrap mlarge pull-left mr10"
+                  data-stylex-owner="project-watchers-avatar"
                   activeOptions={legacyLinkActiveOptions}
                   activeProps={legacyLinkActiveProps}
+                  {...stylex.props(styles.avatar)}
                 >
                   <img
+                    data-stylex-owner="project-watchers-avatar-image"
                     src={
                       stringField(watcher.avatarUrl, "") ||
                       prefixBasePath(basePath, defaultAvatarUrl)
@@ -118,10 +124,21 @@ function ProjectWatchersBody({
                     width="64"
                     height="64"
                     alt=""
+                    {...stylex.props(styles.avatarImage)}
                   />
                 </Link>
-                <div className="member-name">{stringField(watcher.userLabel, loginId)}</div>
-                <div className="member-id">@{loginId}</div>
+                <div
+                  data-stylex-owner="project-watchers-member-name"
+                  {...stylex.props(styles.memberName)}
+                >
+                  {stringField(watcher.userLabel, loginId)}
+                </div>
+                <div
+                  data-stylex-owner="project-watchers-member-id"
+                  {...stylex.props(styles.memberId)}
+                >
+                  @{loginId}
+                </div>
               </li>
             );
           })}
@@ -130,6 +147,65 @@ function ProjectWatchersBody({
     </div>
   );
 }
+
+const styles = stylex.create({
+  // Bootstrap 2.3.1 `.row-fluid` plus _page.less `.members.project`.
+  memberList: {
+    listStyle: "none",
+    margin: "0px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  // Bootstrap `.row-fluid [class*="span"]` / `.span6`, then _page.less `.member`
+  // and _responsive.less `.span-hard-wrap` min-width at max-width 720px. Its `width: 100vw`
+  // loses to Bootstrap's more-specific `.row-fluid .span6`, so the active width stays 48.936%.
+  member: {
+    borderBottomColor: projectWatchersTheme.rowBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "5px",
+    minHeight: "30px",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "95%",
+    },
+    padding: "10px 5px",
+    position: "relative",
+    width: "48.93617021276595%",
+  },
+  // _yobiUI.less `.avatar-wrap.mlarge`, Bootstrap `.pull-left`, and _common.less `.mr10`.
+  avatar: {
+    backgroundColor: projectWatchersTheme.avatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
+    float: "left",
+    height: "40px",
+    marginRight: "10px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "40px",
+  },
+  // _yobiUI.less `.avatar-wrap img`.
+  avatarImage: {
+    verticalAlign: "top",
+    width: "100%",
+  },
+  // _page.less `.members.project .member .member-name`.
+  memberName: {
+    fontWeight: "bold",
+    lineHeight: "20px",
+    marginTop: "2px",
+  },
+  // _page.less `.members.project .member .member-id`.
+  memberId: {
+    color: projectWatchersTheme.memberIdText,
+    lineHeight: "20px",
+  },
+});
 
 const legacyLinkActiveOptions = {
   exact: true,

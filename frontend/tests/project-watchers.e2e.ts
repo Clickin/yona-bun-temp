@@ -1,7 +1,9 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const PROJECT_WATCHERS_ROUTE_SOURCE = "src/routes/$ownerName/$projectName/watchers.tsx";
+const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright", "visual-sweep");
 
 const EXPECTED_PROJECT_WATCHERS_BODY = `<div class="page-wrap-outer"><div class="project-page-wrap"><h4><strong>This projects watcher list.</strong></h4><p>* This list contains only those who can access this project.</p><ul class="members project row-fluid"><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/alice" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Alice Doe</div><div class="member-id">@alice</div></li><li class="member span6 span-hard-wrap"><a href="__BASE_PATH__/bob" class="avatar-wrap mlarge pull-left mr10"><img src="/assets/images/default-avatar-32.png" width="64" height="64"></a><div class="member-name">Bob Smith</div><div class="member-id">@bob</div></li></ul></div></div>`;
 
@@ -18,9 +20,27 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
       EXPECTED_PROJECT_WATCHERS_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  for (const owner of [
+    "project-watchers-list",
+    "project-watchers-member",
+    "project-watchers-avatar",
+    "project-watchers-avatar-image",
+    "project-watchers-member-name",
+    "project-watchers-member-id",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`).first()).not.toHaveClass(
+      /(?:^|\s)(?:members|project|row-fluid|member|span6|span-hard-wrap|avatar-wrap|mlarge|pull-left|mr10|member-name|member-id)(?:\s|$)/u,
+    );
+  }
   expect(await readDesktopWatchersMetrics(page)).toEqual({
+    avatarBackground: "rgb(221, 221, 221)",
+    avatarBorderRadius: "3px",
+    avatarFloat: "left",
     avatarHeight: "40px",
     avatarImageHeight: "64",
+    avatarImageRenderedHeight: 40,
+    avatarImageRenderedWidth: 40,
+    avatarImageVerticalAlign: "top",
     avatarImageWidth: "64",
     avatarMarginRight: "10px",
     avatarWidth: "40px",
@@ -28,10 +48,17 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     descriptionMarginTop: "0px",
     firstMemberFloat: "left",
     firstMemberMinHeight: "30px",
+    firstMemberBorderBottom: "1px solid rgb(221, 221, 221)",
+    firstMemberBoxSizing: "border-box",
+    firstMemberMarginLeft: "5px",
+    firstMemberPadding: "10px 5px",
+    firstMemberPosition: "relative",
     firstMemberWidth: 617,
     memberIdColor: "rgb(204, 204, 204)",
     memberIdLineHeight: "20px",
     memberListMarginLeft: "0px",
+    memberListWidth: 1260,
+    memberNameFontWeight: "700",
     memberNameLineHeight: "20px",
     pageWrapMinWidth: "1100px",
     projectMenuWidth: 684,
@@ -41,6 +68,11 @@ test("project watchers matches legacy project/watchers.scala.html DOM", async ({
     watchActionWidth: 86,
     watcherCountWidth: 31,
     watcherUtilWidth: 132,
+  });
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-watchers-desktop.png"),
   });
 });
 
@@ -59,9 +91,11 @@ test("project watchers internal links render legacy hrefs and navigate through t
     "href",
     `${basePath}/admin/sample/code`,
   );
-  const firstWatcherAvatar = page.locator(".members.project .avatar-wrap").first();
+  const firstWatcherAvatar = page.locator('[data-stylex-owner="project-watchers-avatar"]').first();
   await expect(firstWatcherAvatar).toHaveAttribute("href", `${basePath}/alice`);
-  await expect(firstWatcherAvatar).toHaveClass("avatar-wrap mlarge pull-left mr10");
+  await expect(firstWatcherAvatar).not.toHaveClass(
+    /(?:^|\s)(?:avatar-wrap|mlarge|pull-left|mr10)(?:\s|$)/u,
+  );
   await expect(firstWatcherAvatar).not.toHaveAttribute("aria-current", /.+/);
   await expect(firstWatcherAvatar).not.toHaveAttribute("data-status", /.+/);
   await expect(page.locator(".project-author a")).not.toHaveAttribute("aria-current", /.+/);
@@ -92,7 +126,7 @@ test("project watchers empty avatar URL loads the Vite-managed legacy fallback u
   });
 
   await page.goto(`${basePath}/admin/sample/watchers`);
-  const avatar = page.locator(".members.project img").first();
+  const avatar = page.locator('[data-stylex-owner="project-watchers-avatar-image"]').first();
   await expect(avatar).toBeVisible();
 
   expect(
@@ -140,8 +174,8 @@ test("project watchers preserves the legacy empty member-list state", async ({ p
   await page.goto(`${basePath}/admin/sample/watchers`);
 
   await expect(page.locator(".project-page-wrap h4")).toHaveText("This projects watcher list.");
-  await expect(page.locator(".members.project.row-fluid")).toBeAttached();
-  await expect(page.locator(".members.project .member")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="project-watchers-list"]')).toBeAttached();
+  await expect(page.locator('[data-stylex-owner="project-watchers-member"]')).toHaveCount(0);
 });
 
 test("project watchers mobile member list stays inside the legacy page wrapper", async ({
@@ -160,6 +194,11 @@ test("project watchers mobile member list stays inside the legacy page wrapper",
     firstMemberWidth: 371,
     menuHasActiveItem: false,
     twoMembersStackVertically: true,
+  });
+  mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(SCREENSHOT_DIRECTORY, "stylex-project-watchers-mobile.png"),
   });
 });
 
@@ -256,7 +295,6 @@ test("protected org-owned project watchers expose legacy project-header search s
   await expect(page.locator(".project-util .watcher-count")).toHaveClass(/watch-on/);
 
   expect(await readProtectedPortalWatchersShellMetrics(page)).toEqual({
-    gnbClassName: "gnb-outer project-header",
     pageWrapBelowMenu: true,
     projectMenuBelowHeader: true,
     searchBottomWithinNavbar: true,
@@ -317,6 +355,21 @@ test("project watchers route source uses Link for internal app navigation", () =
   expect(source).toContain("activeProps={legacyLinkActiveProps}");
   expect(source).toContain("includeSearch: true");
   expect(source).toContain('"data-status": undefined');
+  for (const owner of [
+    "project-watchers-list",
+    "project-watchers-member",
+    "project-watchers-avatar",
+    "project-watchers-avatar-image",
+    "project-watchers-member-name",
+    "project-watchers-member-id",
+  ]) {
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(source).not.toContain('className="members project row-fluid"');
+  expect(source).not.toContain('className="member span6 span-hard-wrap"');
+  expect(source).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
+  expect(source).not.toContain('className="member-name"');
+  expect(source).not.toContain('className="member-id"');
   expect(source).not.toContain("<a ");
   expect(source).not.toContain("<a\n");
   expect(source).not.toContain("href={prefixBasePath");
@@ -487,12 +540,12 @@ async function readDesktopWatchersMetrics(page: Page) {
     const projectPageWrap = requireElement(".project-page-wrap");
     const title = requireElement(".project-page-wrap h4");
     const description = requireElement(".project-page-wrap > p");
-    const memberList = requireElement(".members.project.row-fluid");
-    const firstMember = requireElement(".members.project .member");
-    const firstAvatar = requireElement(".members.project .avatar-wrap");
-    const firstImage = requireElement(".members.project img");
-    const firstName = requireElement(".members.project .member-name");
-    const firstId = requireElement(".members.project .member-id");
+    const memberList = requireElement('[data-stylex-owner="project-watchers-list"]');
+    const firstMember = requireElement('[data-stylex-owner="project-watchers-member"]');
+    const firstAvatar = requireElement('[data-stylex-owner="project-watchers-avatar"]');
+    const firstImage = requireElement('[data-stylex-owner="project-watchers-avatar-image"]');
+    const firstName = requireElement('[data-stylex-owner="project-watchers-member-name"]');
+    const firstId = requireElement('[data-stylex-owner="project-watchers-member-id"]');
     const projectMenu = requireElement(".project-menu-gruop");
     const watcherCount = requireElement(".project-util .watcher-count");
     const watchAction = requireElement(".project-util .down-arrow");
@@ -503,22 +556,36 @@ async function readDesktopWatchersMetrics(page: Page) {
     const descriptionStyle = getComputedStyle(description);
     const memberStyle = getComputedStyle(firstMember);
     const avatarStyle = getComputedStyle(firstAvatar);
+    const imageStyle = getComputedStyle(firstImage);
     const nameStyle = getComputedStyle(firstName);
     const idStyle = getComputedStyle(firstId);
     return {
+      avatarBackground: avatarStyle.backgroundColor,
+      avatarBorderRadius: avatarStyle.borderRadius,
+      avatarFloat: avatarStyle.float,
       avatarHeight: avatarStyle.height,
       avatarImageHeight: firstImage.getAttribute("height"),
+      avatarImageRenderedHeight: Math.round(firstImage.getBoundingClientRect().height),
+      avatarImageRenderedWidth: Math.round(firstImage.getBoundingClientRect().width),
+      avatarImageVerticalAlign: imageStyle.verticalAlign,
       avatarImageWidth: firstImage.getAttribute("width"),
       avatarMarginRight: avatarStyle.marginRight,
       avatarWidth: avatarStyle.width,
       descriptionMarginBottom: descriptionStyle.marginBottom,
       descriptionMarginTop: descriptionStyle.marginTop,
       firstMemberFloat: memberStyle.float,
+      firstMemberBorderBottom: memberStyle.borderBottom,
+      firstMemberBoxSizing: memberStyle.boxSizing,
+      firstMemberMarginLeft: memberStyle.marginLeft,
       firstMemberMinHeight: memberStyle.minHeight,
+      firstMemberPadding: memberStyle.padding,
+      firstMemberPosition: memberStyle.position,
       firstMemberWidth: Math.round(firstMember.getBoundingClientRect().width),
       memberIdColor: idStyle.color,
       memberIdLineHeight: idStyle.lineHeight,
       memberListMarginLeft: getComputedStyle(memberList).marginLeft,
+      memberListWidth: Math.round(memberList.getBoundingClientRect().width),
+      memberNameFontWeight: nameStyle.fontWeight,
       memberNameLineHeight: nameStyle.lineHeight,
       pageWrapMinWidth: pageWrapStyle.minWidth,
       projectMenuWidth: Math.round(projectMenu.getBoundingClientRect().width),
@@ -542,7 +609,6 @@ async function readDesktopWatchersMetrics(page: Page) {
 
 async function readProtectedPortalWatchersShellMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnb = requireElement("[data-stylex-owner=global-gnb-outer]");
     const navbar = requireElement('[data-stylex-owner="global-gnb-inner"]');
     const search = requireElement('[data-stylex-owner="global-gnb-search-box"]');
     const projectHeader = requireElement(".project-header-outer");
@@ -555,7 +621,6 @@ async function readProtectedPortalWatchersShellMetrics(page: Page) {
     const pageWrapBox = pageWrap.getBoundingClientRect();
 
     return {
-      gnbClassName: gnb.className,
       pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
       projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
       searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
@@ -577,7 +642,9 @@ async function readProtectedPortalWatchersShellMetrics(page: Page) {
 async function readMobileWatchersMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrap = requireElement(".project-page-wrap");
-    const members = Array.from(document.querySelectorAll<HTMLElement>(".members.project .member"));
+    const members = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-stylex-owner="project-watchers-member"]'),
+    );
     const first = members[0];
     const second = members[1];
     if (!first || !second) {
@@ -906,6 +973,14 @@ function watcherFixture(loginId: string, userId: number, userLabel: string) {
 
 async function canonicalizeWatchersBody(page: Page) {
   return page.evaluate(() => {
+    const legacyClassesByOwner: Record<string, string> = {
+      "project-watchers-list": "members project row-fluid",
+      "project-watchers-member": "member span6 span-hard-wrap",
+      "project-watchers-avatar": "avatar-wrap mlarge pull-left mr10",
+      "project-watchers-avatar-image": "",
+      "project-watchers-member-name": "member-name",
+      "project-watchers-member-id": "member-id",
+    };
     const roots = Array.from(document.querySelectorAll(".page-wrap-outer"));
     return roots.map((root) => visit(root)).join("");
 
@@ -916,13 +991,31 @@ async function canonicalizeWatchersBody(page: Page) {
       if (!(node instanceof Element)) {
         return "";
       }
+      const owner = node.getAttribute("data-stylex-owner");
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter(
+          (attr) =>
+            !attr.name.startsWith("data-v-") &&
+            attr.name !== "data-style-src" &&
+            attr.name !== "alt" &&
+            attr.name !== "data-stylex-owner" &&
+            !(owner && attr.name === "class" && !legacyClassesByOwner[owner]),
+        )
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
+        .map(
+          (attr) =>
+            `${attr.name}=${JSON.stringify(
+              owner && attr.name === "class" ? legacyClassesByOwner[owner] : normalizeAttr(attr),
+            )}`,
+        )
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+      const legacyClass = owner && legacyClassesByOwner[owner];
+      const normalizedAttrs =
+        legacyClass && !node.hasAttribute("class")
+          ? `${attrs ? `${attrs} ` : ""}class=${JSON.stringify(legacyClass)}`
+          : attrs;
+      const open = normalizedAttrs
+        ? `<${node.tagName.toLowerCase()} ${normalizedAttrs}>`
         : `<${node.tagName.toLowerCase()}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
