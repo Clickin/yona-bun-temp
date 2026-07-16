@@ -198,8 +198,8 @@ test("pagination input/icon wave owns exactly three targets and preserves exclud
   expect(route).not.toContain('className="input-mini nospinner"');
   expect(route).not.toContain('className="ico btn-pg-prev');
   expect(route).not.toContain('className="ico btn-pg-next');
-  expect(route).toContain('<span className="off">{t("button.prevPage")}</span>');
-  expect(route).toContain('<span className="off">{t("button.nextPage")}</span>');
+  expect(route).toContain('data-stylex-owner="projects-directory-pagination-label"');
+  expect(route).not.toContain('className="off"');
   expect(route).not.toContain("globalColors.");
   expect(theme).toContain('paginationInputBorder: "#eeeeee"');
   expect(theme).toContain('paginationAccent: "#f36c22"');
@@ -217,13 +217,17 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await open(page);
-    const pagination = page.locator("#pagination");
+    const pagination = page.locator('[data-stylex-owner="projects-directory-pagination"]');
     const input = pagination.locator(`[data-stylex-owner="${owners.input}"]`);
     const previous = pagination.locator(`[data-stylex-owner="${owners.previous}"]`);
     const next = pagination.locator(`[data-stylex-owner="${owners.next}"]`);
 
-    await expect(pagination).toHaveClass("page-navigation-wrap");
-    await expect(pagination.locator(":scope > ul.page-nums > li.page-num")).toHaveCount(5);
+    await expect(pagination).not.toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
+    await expect(
+      pagination.locator(
+        ':scope > [data-stylex-owner="projects-directory-pagination-list"] > [data-stylex-owner="projects-directory-pagination-item"]',
+      ),
+    ).toHaveCount(5);
     await expect(input).toHaveAttribute("name", "pageNum");
     await expect(input).toHaveAttribute("type", "number");
     await expect(input).toHaveAttribute("pattern", "[0-9]*");
@@ -235,9 +239,15 @@ for (const viewport of [
     await expect(next).toHaveAttribute("data-disabled", "true");
     await expect(previous).not.toHaveClass(/(?:^|\s)(?:ico|btn-pg-prev|off)(?:\s|$)/u);
     await expect(next).not.toHaveClass(/(?:^|\s)(?:ico|btn-pg-next|off)(?:\s|$)/u);
-    await expect(previous.locator("xpath=following-sibling::span[1]")).toHaveClass("off");
+    await expect(previous.locator("xpath=following-sibling::span[1]")).toHaveAttribute(
+      "data-disabled",
+      "true",
+    );
     await expect(previous.locator("xpath=following-sibling::span[1]")).toHaveText("이전 페이지");
-    await expect(next.locator("xpath=preceding-sibling::span[1]")).toHaveClass("off");
+    await expect(next.locator("xpath=preceding-sibling::span[1]")).toHaveAttribute(
+      "data-disabled",
+      "true",
+    );
     await expect(next.locator("xpath=preceding-sibling::span[1]")).toHaveText("다음 페이지");
     await expect(pagination.locator("a")).toHaveCount(0);
 
@@ -406,7 +416,7 @@ test("active pagination icons keep sprite positions and existing SPA navigation"
   page,
 }) => {
   await open(page, 3, 2);
-  const pagination = page.locator("#pagination");
+  const pagination = page.locator('[data-stylex-owner="projects-directory-pagination"]');
   const previous = pagination.locator(`[data-stylex-owner="${owners.previous}"]`);
   const next = pagination.locator(`[data-stylex-owner="${owners.next}"]`);
   const input = pagination.locator(`[data-stylex-owner="${owners.input}"]`);

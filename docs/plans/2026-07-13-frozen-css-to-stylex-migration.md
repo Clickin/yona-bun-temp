@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred two slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred three slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -366,6 +366,20 @@ empty. Live desktop pins the root/input at `10,585,1346x30` / `581.375,585,44x30
 `93.375,795,44x30` and `11.641/252.344,805.5,6x9`. RED 0/4 becomes focused GREEN 4/4 and the
 complete adjacent `/projects` matrix is GREEN 37/37. Target regions in live/local captures were
 directly inspected. This is not Wave 1 completion.
+
+The two-hundred-third slice migrates the remaining four visible pagination shell owner types in
+the same state: root, list, five repeated items with exact variants, and previous/next labels.
+Root flow, list reset/inline formatting, item 12px rhythm/padding, icon/delimiter variants, and
+11px active/disabled label paint now live in route `stylex.create`. Only pagination text and
+delimiter paint are added to route-local `projectsDirectoryColors`; the existing accent is reused.
+`page-navigation-wrap`, `page-num`, `ikon`, `delimiter`, and label `off` retire. Literal
+`page-nums` remains solely for frozen `_page.less` `margin-left:-120px !important`, which keeps
+winning at desktop and mobile; StyleX owns every other list declaration. The legacy nth-child
+branches match none of the fixed five generated nodes and are not recreated. Live desktop pins
+root/list to `10,585,1346x30` / `494.641,585,256.703x30`, while mobile pins them to
+`0,795,390x30` / `6.641,795,256.703x30`; all five item and two label boxes also match exactly.
+RED 0/4 becomes focused GREEN 4/4 and complete adjacent `/projects` coverage is GREEN 41/41.
+Target live/local captures were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

@@ -500,21 +500,30 @@ test("projects list renders legacy pagination controls for multi-page project li
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=1`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
-  const pagination = page.locator("#pagination");
-  await expect(pagination).toHaveClass("page-navigation-wrap");
-  await expect(pagination.locator("ul.page-nums")).toHaveCount(1);
-  await expect(pagination.locator("li.page-num")).toHaveCount(5);
+  const pagination = page.locator('[data-stylex-owner="projects-directory-pagination"]');
+  await expect(pagination).not.toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
+  await expect(
+    pagination.locator(':scope > [data-stylex-owner="projects-directory-pagination-list"]'),
+  ).toHaveCount(1);
+  const paginationItems = pagination.locator(
+    '[data-stylex-owner="projects-directory-pagination-item"]',
+  );
+  await expect(paginationItems).toHaveCount(5);
   await expect(
     pagination.locator(
       '[data-stylex-owner="projects-directory-pagination-prev-icon"][data-disabled="true"]',
     ),
   ).toHaveCount(1);
-  await expect(pagination.locator("span.off")).toHaveText("Previous page");
+  await expect(
+    pagination.locator(
+      '[data-stylex-owner="projects-directory-pagination-label"][data-disabled="true"]',
+    ),
+  ).toHaveText("Previous page");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("min", "1");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "3");
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
-  await expect(pagination.locator(".page-num").nth(2)).toHaveText("/");
-  await expect(pagination.locator(".page-num").nth(3)).toHaveText("3");
+  await expect(paginationItems.nth(2)).toHaveText("/");
+  await expect(paginationItems.nth(3)).toHaveText("3");
 
   const nextPageLink = pagination.locator("a", { hasText: "Next page" });
   await expectNoActiveMarker(nextPageLink);
@@ -1042,6 +1051,7 @@ async function canonicalizeScreenRoots(page: Page) {
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
             attr.name !== "data-disabled" &&
+            attr.name !== "data-pagination-kind" &&
             attr.name !== "data-projects-directory-tabs-scope" &&
             !(
               attr.name === "data-selected" &&
@@ -1062,6 +1072,10 @@ async function canonicalizeScreenRoots(page: Page) {
                 attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-member-avatar-image"]',
                 ) ||
+                (attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-pagination-label"]',
+                ) &&
+                  attr.ownerElement.getAttribute("data-disabled") === "false") ||
                 (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
             ) &&
@@ -1157,6 +1171,20 @@ async function canonicalizeScreenRoots(page: Page) {
           : "yobicon-eye yobicon-middle";
       if (attr.name === "class" && owner === "projects-directory-pagination-input")
         return "input-mini nospinner";
+      if (attr.name === "class" && owner === "projects-directory-pagination")
+        return "page-navigation-wrap";
+      if (attr.name === "class" && owner === "projects-directory-pagination-list")
+        return "page-nums";
+      if (attr.name === "class" && owner === "projects-directory-pagination-item") {
+        const kind = attr.ownerElement?.getAttribute("data-pagination-kind");
+        return kind === "icon"
+          ? "page-num ikon"
+          : kind === "delimiter"
+            ? "page-num delimiter"
+            : "page-num";
+      }
+      if (attr.name === "class" && owner === "projects-directory-pagination-label")
+        return attr.ownerElement?.getAttribute("data-disabled") === "true" ? "off" : "";
       if (attr.name === "class" && owner === "projects-directory-pagination-prev-icon")
         return `ico btn-pg-prev${attr.ownerElement?.getAttribute("data-disabled") === "true" ? " off" : ""}`;
       if (attr.name === "class" && owner === "projects-directory-pagination-next-icon")

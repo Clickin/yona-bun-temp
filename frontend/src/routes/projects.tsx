@@ -272,6 +272,35 @@ const styles = stylex.create({
     width: "100%",
   },
   directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
+  directoryPagination: {
+    clear: "both",
+    margin: "20px 0px",
+    textAlign: "center",
+    width: "100%",
+  },
+  directoryPaginationList: {
+    display: "inline-block",
+    fontSize: "0px",
+    listStyle: "none",
+    margin: "0px",
+    padding: "0px",
+  },
+  directoryPaginationItem: {
+    color: projectsDirectoryColors.paginationText,
+    display: "inline-block",
+    fontSize: "12px",
+    padding: "0px 10px",
+  },
+  directoryPaginationIconItem: { padding: "0px 5px" },
+  directoryPaginationDelimiterItem: {
+    color: projectsDirectoryColors.paginationDelimiter,
+    padding: "0px 5px",
+  },
+  directoryPaginationLabel: {
+    color: projectsDirectoryColors.paginationAccent,
+    fontSize: "11px",
+  },
+  directoryPaginationLabelDisabled: { color: projectsDirectoryColors.paginationText },
   directoryPaginationInput: {
     MozAppearance: "textfield",
     borderColor: {
@@ -343,6 +372,22 @@ const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvata
 const directoryStatsIconStyleProps = stylex.props(styles.directoryStatsIcon);
 const directoryMemberAvatarImageStyleProps = stylex.props(styles.directoryMemberAvatarImage);
 const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
+const directoryPaginationStyleProps = stylex.props(styles.directoryPagination);
+const directoryPaginationListStyleProps = stylex.props(styles.directoryPaginationList);
+const directoryPaginationItemStyleProps = stylex.props(styles.directoryPaginationItem);
+const directoryPaginationIconItemStyleProps = stylex.props(
+  styles.directoryPaginationItem,
+  styles.directoryPaginationIconItem,
+);
+const directoryPaginationDelimiterItemStyleProps = stylex.props(
+  styles.directoryPaginationItem,
+  styles.directoryPaginationDelimiterItem,
+);
+const directoryPaginationLabelStyleProps = stylex.props(styles.directoryPaginationLabel);
+const directoryPaginationDisabledLabelStyleProps = stylex.props(
+  styles.directoryPaginationLabel,
+  styles.directoryPaginationLabelDisabled,
+);
 const directoryPaginationInputStyleProps = stylex.props(styles.directoryPaginationInput);
 const directoryPaginationPreviousIconStyleProps = stylex.props(
   styles.directoryPaginationIcon,
@@ -570,9 +615,21 @@ function ProjectsPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...directoryPaginationStyleProps}
+      data-stylex-owner="projects-directory-pagination"
+      id="pagination"
+    >
+      <ul
+        {...directoryPaginationListStyleProps}
+        className={`page-nums ${directoryPaginationListStyleProps.className ?? ""}`}
+        data-stylex-owner="projects-directory-pagination-list"
+      >
+        <li
+          {...directoryPaginationIconItemStyleProps}
+          data-pagination-kind="icon"
+          data-stylex-owner="projects-directory-pagination-item"
+        >
           {hasPrev ? (
             <Link
               activeProps={{
@@ -589,7 +646,13 @@ function ProjectsPagination({
                 data-stylex-owner="projects-directory-pagination-prev-icon"
                 style={paginationSpriteStyle}
               ></i>
-              <span>{t("button.prevPage")}</span>
+              <span
+                {...directoryPaginationLabelStyleProps}
+                data-disabled="false"
+                data-stylex-owner="projects-directory-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
@@ -599,11 +662,21 @@ function ProjectsPagination({
                 data-stylex-owner="projects-directory-pagination-prev-icon"
                 style={paginationSpriteStyle}
               ></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <span
+                {...directoryPaginationDisabledLabelStyleProps}
+                data-disabled="true"
+                data-stylex-owner="projects-directory-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...directoryPaginationItemStyleProps}
+          data-pagination-kind="standard"
+          data-stylex-owner="projects-directory-pagination-item"
+        >
           <input
             {...directoryPaginationInputStyleProps}
             data-stylex-owner="projects-directory-pagination-input"
@@ -620,9 +693,25 @@ function ProjectsPagination({
             type="number"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...directoryPaginationDelimiterItemStyleProps}
+          data-pagination-kind="delimiter"
+          data-stylex-owner="projects-directory-pagination-item"
+        >
+          /
+        </li>
+        <li
+          {...directoryPaginationItemStyleProps}
+          data-pagination-kind="standard"
+          data-stylex-owner="projects-directory-pagination-item"
+        >
+          {totalPages}
+        </li>
+        <li
+          {...directoryPaginationIconItemStyleProps}
+          data-pagination-kind="icon"
+          data-stylex-owner="projects-directory-pagination-item"
+        >
           {hasNext ? (
             <Link
               activeProps={{
@@ -633,7 +722,13 @@ function ProjectsPagination({
               search={pageSearch(currentPage + 1)}
               to="/projects"
             >
-              <span>{t("button.nextPage")}</span>
+              <span
+                {...directoryPaginationLabelStyleProps}
+                data-disabled="false"
+                data-stylex-owner="projects-directory-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
               <i
                 {...directoryPaginationNextIconStyleProps}
                 data-disabled="false"
@@ -643,7 +738,13 @@ function ProjectsPagination({
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
+              <span
+                {...directoryPaginationDisabledLabelStyleProps}
+                data-disabled="true"
+                data-stylex-owner="projects-directory-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
               <i
                 {...directoryPaginationNextDisabledIconStyleProps}
                 data-disabled="true"
