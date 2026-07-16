@@ -6,10 +6,25 @@ import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { siteDataColors } from "./-data.stylex";
 
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -112,6 +127,9 @@ const styles = stylex.create({
 
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const warningSurfaceStyleProps = stylex.props(styles.warningSurface);
 const warningStyleProps = stylex.props(styles.warning);
 
@@ -151,9 +169,11 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return (
     <>
       <title>{t("title.siteSetting")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t("site.sidebar")}</h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-data-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-data-breadcrumb-inner">
+          <h3 {...breadcrumbHeadingStyleProps} data-stylex-owner="site-data-breadcrumb-heading">
+            {t("site.sidebar")}
+          </h3>
         </div>
       </div>
       <div className="page-wrap-outer">

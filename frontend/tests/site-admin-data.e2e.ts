@@ -146,6 +146,12 @@ test("site admin data matches legacy site/data.scala.html DOM", async ({ page })
   );
   await expect(page.locator("#gnb-search-scope-title")).toHaveCount(0);
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-data-breadcrumb-outer"]')).not.toHaveClass(
+    /\bsite-breadcrumb-outer\b/u,
+  );
+  await expect(page.locator('[data-stylex-owner="site-data-breadcrumb-inner"]')).not.toHaveClass(
+    /\bsite-breadcrumb-inner\b/u,
+  );
   await expect(page.locator(".span10 h2")).toHaveText("Data");
   await expectSiteAdminSidebar(page, basePath);
   await expect(page.locator('[data-stylex-owner="site-data-sidebar"]')).not.toContainText("Data");
@@ -382,7 +388,7 @@ async function readSiteDataMetrics(page: Page) {
     const row = requireElement(".site-setting-wrap > .row-fluid");
     const sidebar = requireElement(".site-setting-wrap .span2");
     const content = requireElement(".site-setting-wrap .span10");
-    const breadcrumbHeading = requireElement(".site-breadcrumb-inner h3");
+    const breadcrumbHeading = requireElement('[data-stylex-owner="site-data-breadcrumb-heading"]');
     const cuDesc = requireElement('[data-stylex-owner="site-data-warning-surface"]');
     const navItem = requireElement('[data-stylex-owner="site-data-sidebar-item"]');
     const navAnchor = requireElement('[data-stylex-owner="site-data-sidebar-link"]');
@@ -534,12 +540,21 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="site-data-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        (current.getAttribute("data-stylex-owner") ?? "").startsWith("site-data-breadcrumb-")
+      ) {
+        return (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((token) => token && !token.startsWith("x") && !token.includes("__styles."))
+          .join(" ");
+      }
       if (
         name === "class" &&
         [
@@ -645,6 +660,14 @@ async function canonicalizeHtml(page: Page, html: string) {
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
       let value = current.getAttribute(name) ?? "";
       if (name === "class") {
+        if (current.matches(".site-breadcrumb-outer, .site-breadcrumb-inner")) {
+          return value
+            .split(/\s+/u)
+            .filter(
+              (token) => token !== "site-breadcrumb-outer" && token !== "site-breadcrumb-inner",
+            )
+            .join(" ");
+        }
         const retiredDataToken = current.matches(
           ".site-setting-wrap > .row-fluid > .span10 > div.title_area",
         )

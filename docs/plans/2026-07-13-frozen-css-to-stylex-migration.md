@@ -2310,6 +2310,16 @@ generated fallback hash remains `6417f445…16f`, and actual live/local global 1
 match with frozen CSS unchanged. Build updates only the fallback manifest's app.css source inventory
 hash from `afefe…` to `c4df…`; emitted `legacy-fallback.css` remains `6417f445…16f`.
 
+The one-hundred-eighty-ninth slice migrates only the default `/sites/data` site-management
+breadcrumb. Three route-inline owners cover outer width/padding/box sizing/mobile minimum, inner
+auto margin, and heading padding/30px line height. Exactly `site-breadcrumb-outer` and
+`site-breadcrumb-inner` retire on this route; generic h3 paint/type/margin/rendering and every
+page/grid/sidebar/body/form owner remain frozen fallback. The slice has no paint, so
+`frontend/src/routes/sites/-data.stylex.ts` and global theme registries do not change. Focused
+source/class retirement and exact 1366×900/390×844 geometry coverage is GREEN 3/3. The adjacent
+whole-screen data suite passes its four owner-independent cases and retains only the pre-existing
+global GNB `Feedback` fixture mismatch. No compensation or frozen/app CSS change is introduced.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
