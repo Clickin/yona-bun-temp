@@ -1885,6 +1885,27 @@ gates pass. Authenticated legacy/local screenshots match the owned header paint,
 gutter, padding, border, and rhythm; locale, fixture rows, global shell, and footer remain outside
 this claim.
 
+The one-hundred-sixty-first slice migrates exactly two authenticated populated-ACTIVE
+`/sites/userList` responsibilities: the `UL` list style and repeated `LI` row shell. The legacy
+template, `_common.less`, `_page.less`, and active Bootstrap 2.3.1 establish list-style removal,
+full-width clearfix rows, the 1px bottom border, 70px line height, and alternating surface. Only
+the row border and alternate-surface paint use route-scoped `siteUserListColors`; width,
+line-height, border structure, and clearfix stay inline. The `user-list-wrap` and row
+`row-fluid listitem` classes deliberately remain: excluded child span-grid, avatar, name, id, and
+column selectors still require those ancestors. They may retire only with those child-owner waves.
+Fresh authenticated legacy evidence records a desktop list at `239.078,310,1116.891×333` with
+three 111px rows and a mobile list at `66.375,417,323.609×729` with three 243px rows. The local
+English fixture keeps the same owned placement, width, paint, line height, clearfix, adjacency,
+and containment while excluded action/copy descendants produce 115px desktop and 223px mobile
+rows. Focused source RED is 0/1 and browser GREEN is 2/2. Visual review caught and rejected an
+intermediate false green where fixed `className` props replaced generated StyleX classes and
+removing the ancestry collapsed the child grid; the final test proves both higher-layer StyleX
+ownership with ancestry temporarily removed and preserved legacy child geometry with ancestry
+restored. The complete user-list StyleX matrix is GREEN 21/21, and whole-screen coverage is GREEN
+15/16 with only the pre-existing excluded global-GNB `Feedback` gap. Typecheck, Vitest 11/11,
+production StyleX build, unchanged frozen/app/manifest hashes, TS/TSX-only formatting, lint with
+zero errors, inspected screenshots, and diff gates pass. This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -159,6 +159,7 @@ test.describe("StyleX site user-list title strip", () => {
     expect(generatedDirectChildren).toEqual([
       "site-user-list-state-tabs",
       "site-user-list-listhead",
+      "site-user-list-row-list",
     ]);
   });
 });

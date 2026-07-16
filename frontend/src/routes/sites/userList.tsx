@@ -175,6 +175,17 @@ const styles = stylex.create({
   listheadSpan3: { width: "23.404255319148934%" },
   listheadSpan2: { width: "14.893617021276595%" },
   listheadSpan4: { width: "31.914893617021278%" },
+  userList: { listStyle: "none" },
+  userRow: {
+    borderBottomColor: siteUserListColors.rowBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    lineHeight: "70px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  userRowEven: { backgroundColor: siteUserListColors.rowAlternateSurface },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -255,6 +266,9 @@ const listheadColumnStyleProps = [
   stylex.props(styles.listheadColumn, styles.listheadSpan2),
   stylex.props(styles.listheadColumn, styles.listheadSpan4),
 ] as const;
+const userListStyleProps = stylex.props(styles.userList);
+const userRowStyleProps = stylex.props(styles.userRow);
+const userRowEvenStyleProps = stylex.props(styles.userRow, styles.userRowEven);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -521,9 +535,14 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                   </strong>
                 </div>
               </div>
-              <ul className="user-list-wrap">
-                {(response?.users ?? []).map((user) => (
+              <ul
+                {...userListStyleProps}
+                className={`user-list-wrap ${userListStyleProps.className ?? ""}`}
+                data-stylex-owner="site-user-list-row-list"
+              >
+                {(response?.users ?? []).map((user, index) => (
                   <UserListItem
+                    even={index % 2 === 1}
                     key={user.id}
                     onDeleteClick={openDeleteModal}
                     onResetPasswordClick={(loginId) => resetPasswordMutation.mutate(loginId)}
@@ -823,6 +842,7 @@ function UserStateTabs({
 }
 
 function UserListItem({
+  even,
   onDeleteClick,
   onDismissPasswordResetAlert,
   onResetPasswordClick,
@@ -831,6 +851,7 @@ function UserListItem({
   state,
   user,
 }: {
+  even: boolean;
   onDeleteClick: (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => void;
   onDismissPasswordResetAlert: (event: MouseEvent<HTMLButtonElement>, loginId: string) => void;
   onResetPasswordClick: (loginId: string) => void;
@@ -840,8 +861,13 @@ function UserListItem({
   user: SiteUser;
 }) {
   const { t } = useLegacyMessages();
+  const rowStyleProps = even ? userRowEvenStyleProps : userRowStyleProps;
   return (
-    <li className="row-fluid listitem">
+    <li
+      {...rowStyleProps}
+      className={`row-fluid listitem ${rowStyleProps.className ?? ""}`}
+      data-stylex-owner="site-user-list-row"
+    >
       <div className="span3 listitem-col">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}

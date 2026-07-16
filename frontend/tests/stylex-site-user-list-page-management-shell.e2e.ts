@@ -62,7 +62,8 @@ test("moves only the active legacy user-list management shell to five StyleX own
   for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
     expect(route).not.toContain(retired);
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
-  expect(route).toContain('className="row-fluid listitem"');
+  expect(route).toContain('data-stylex-owner="site-user-list-row"');
+  expect(route).toContain('className={`row-fluid listitem ${rowStyleProps.className ?? ""}`}');
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("siteUserListColors.page");
 });
