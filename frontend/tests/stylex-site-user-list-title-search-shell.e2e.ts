@@ -189,7 +189,9 @@ test.describe("StyleX site user-list title/search shell", () => {
           owners.title,
         ),
     ).toEqual([owners.title, "tabs", "listhead", "users", "pagination"]);
-    await expect(page.locator(".user-list-wrap > li.row-fluid.listitem")).toHaveCount(1);
+    await expect(
+      page.locator('.user-list-wrap > [data-stylex-owner="site-user-list-row"]'),
+    ).toHaveCount(1);
   });
 
   test("retires only title_area/pull-left, preserves form classes, search SPA submission, and isolation", async ({

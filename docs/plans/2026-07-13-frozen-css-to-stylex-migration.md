@@ -1906,6 +1906,24 @@ restored. The complete user-list StyleX matrix is GREEN 21/21, and whole-screen 
 production StyleX build, unchanged frozen/app/manifest hashes, TS/TSX-only formatting, lint with
 zero errors, inspected screenshots, and diff gates pass. This is not Wave 1 completion.
 
+The one-hundred-sixty-second slice migrates five tightly coupled authenticated populated-ACTIVE
+`/sites/userList` responsibilities: the identity, email, date, and action columns plus the ACTIVE
+row's Bootstrap grid ancestry. `site/userList.scala.html`, active Bootstrap 2.3.1, `_page.less`,
+and fresh authenticated legacy computed evidence establish the two 23.404255% columns, the
+14.893617% date column, the 40.425532% action column, 2.12766% gutters, common column typography,
+email typography, and the canonical action wrap. Every geometry, spacing, and typography value is
+inline in route-local `stylex.create`; this slice adds no paint or theme variable. ACTIVE rows
+retire `row-fluid`, `span3`/`span2`/`span5`, `listitem-col`, and `created-date`. `listitem` and
+`user-list-wrap` remain for the excluded avatar/name/id descendants, `action-buttons` remains for
+its excluded descendant fallback, and DELETED rows retain `row-fluid` for their excluded `span4`
+branch. Fresh legacy desktop widths are `261.391/261.391/166.344/451.5px` with `23.75px` gutters;
+at 390px they are `75.734/75.734/48.188/130.813px` with `6.875px` gutters. Exact action height and
+vertical position are intentionally content-relative because local action controls and localized
+date copy remain excluded; structural wrap, owner declarations, widths, gutters, and containment
+are exact. Focused browser coverage is GREEN 2/2 and the complete user-list StyleX matrix is GREEN
+23/23 after stale ancestry selectors move to stable owner boundaries. This is not Wave 1
+completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

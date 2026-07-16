@@ -17,17 +17,12 @@ test("row shell ownership follows the populated legacy list", () => {
   expect(route).toContain(`data-stylex-owner="${owners.list}"`);
   expect(route).toContain(`data-stylex-owner="${owners.row}"`);
   expect(route).toContain('className={`user-list-wrap ${userListStyleProps.className ?? ""}`}');
-  expect(route).toContain('className={`row-fluid listitem ${rowStyleProps.className ?? ""}`}');
-  for (const child of [
-    "span3 listitem-col",
-    "avatar-wrap list-avatar",
-    "user-name",
-    "user-id",
-    "email",
-    "span2 listitem-col created-date",
-    "span5 listitem-col action-buttons",
-  ])
+  expect(route).toContain(
+    'className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}',
+  );
+  for (const child of ["avatar-wrap list-avatar", "user-name", "user-id"])
     expect(route).toContain(`className="${child}"`);
+  expect(route).toContain('className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}');
   expect(theme).toContain('rowBorder: "#efefef"');
   expect(theme).toContain('rowAlternateSurface: "#f9f9f9"');
   expect(readFileSync("src/routes/$ownerName/$projectName/code/$branch.tsx", "utf8")).toContain(
@@ -60,13 +55,14 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
           generated: Array.from(node.classList).some(
             (token) => token !== "row-fluid" && token !== "listitem",
           ),
-          legacy: ["row-fluid", "listitem"].every((c) => node.classList.contains(c)),
+          listitem: node.classList.contains("listitem"),
+          rowFluid: node.classList.contains("row-fluid"),
         })),
       ),
     ).toEqual([
-      { children: 4, generated: true, legacy: true },
-      { children: 4, generated: true, legacy: true },
-      { children: 4, generated: true, legacy: true },
+      { children: 4, generated: true, listitem: true, rowFluid: false },
+      { children: 4, generated: true, listitem: true, rowFluid: false },
+      { children: 4, generated: true, listitem: true, rowFluid: false },
     ]);
     const evidence = await page.evaluate((owners) => {
       const list = document.querySelector<HTMLElement>(`[data-stylex-owner="${owners.list}"]`)!;

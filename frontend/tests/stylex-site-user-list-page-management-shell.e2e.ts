@@ -63,7 +63,9 @@ test("moves only the active legacy user-list management shell to five StyleX own
     expect(route).not.toContain(retired);
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
   expect(route).toContain('data-stylex-owner="site-user-list-row"');
-  expect(route).toContain('className={`row-fluid listitem ${rowStyleProps.className ?? ""}`}');
+  expect(route).toContain(
+    'className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}',
+  );
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("siteUserListColors.page");
 });
@@ -89,14 +91,32 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
     await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
     await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
     await expect(content).not.toHaveClass(/\bspan10\b/u);
-    await expect(page.locator(".user-list-wrap > li.row-fluid.listitem")).toHaveCount(3);
-    await expect(page.locator(".user-list-wrap > li > .span3")).toHaveCount(6);
-    await expect(page.locator(".user-list-wrap > li > .span2")).toHaveCount(3);
-    await expect(page.locator(".user-list-wrap > li > .span5")).toHaveCount(3);
+    const userRows = page.locator('.user-list-wrap > [data-stylex-owner="site-user-list-row"]');
+    await expect(userRows).toHaveCount(3);
+    expect(
+      await userRows.evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          listitem: node.classList.contains("listitem"),
+          rowFluid: node.classList.contains("row-fluid"),
+        })),
+      ),
+    ).toEqual([
+      { listitem: true, rowFluid: false },
+      { listitem: true, rowFluid: false },
+      { listitem: true, rowFluid: false },
+    ]);
+    await expect(
+      userRows.locator(':scope > [data-stylex-owner="site-user-list-row-column"]'),
+    ).toHaveCount(6);
+    await expect(
+      userRows.locator(':scope > [data-stylex-owner="site-user-list-row-date"]'),
+    ).toHaveCount(3);
+    await expect(
+      userRows.locator(':scope > [data-stylex-owner="site-user-list-row-action"]'),
+    ).toHaveCount(3);
     await expect(page.locator('[data-stylex-owner="site-user-list-listhead-column"]')).toHaveCount(
       4,
     );
-    const userRows = page.locator(".user-list-wrap > li.row-fluid.listitem");
     for (const [index, visibleCopy] of [
       [0, ["Bob Park", "@bob", "bob@example.com"]],
       [1, ["Alice Kim", "@alice", "alice@example.com"]],

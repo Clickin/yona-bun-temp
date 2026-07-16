@@ -739,7 +739,9 @@ test("site admin user list renders SITE_ADMIN query state with revoke controls",
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".user-list-wrap .user-name")).toHaveText("Site Boss");
   await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@siteboss");
-  await expect(page.locator(".user-list-wrap .email")).toHaveText("siteboss@example.com");
+  await expect(page.locator('[data-stylex-owner="site-user-list-row-email"]')).toHaveText(
+    "siteboss@example.com",
+  );
   await expect(page.locator(".user-list-wrap .list-avatar")).toHaveAttribute(
     "href",
     `${basePath}/siteboss`,
@@ -1653,14 +1655,14 @@ async function userListMetrics(page: Page) {
     const firstHeaderColumn = requireElement(
       '[data-stylex-owner="site-user-list-listhead-column"]',
     );
-    const firstRow = requireElement(".user-list-wrap .listitem");
-    const firstRowColumn = requireElement(".user-list-wrap .listitem .span3");
-    const actionColumn = requireElement(".user-list-wrap .action-buttons");
+    const firstRow = requireElement('[data-stylex-owner="site-user-list-row"]');
+    const firstRowColumn = requireElement('[data-stylex-owner="site-user-list-row-column"]');
+    const actionColumn = requireElement('[data-stylex-owner="site-user-list-row-action"]');
     const avatarWrap = requireElement(".user-list-wrap .list-avatar");
     const avatar = requireElement(".user-list-wrap .list-avatar img");
     const userName = requireElement(".user-list-wrap .user-name");
     const userId = requireElement(".user-list-wrap .user-id");
-    const email = requireElement(".user-list-wrap .email");
+    const email = requireElement('[data-stylex-owner="site-user-list-row-email"]');
     const pagination = requireElement("#pagination");
     const modal = requireElement("#alertDeletionWrap");
     const titleAreaRect = titleArea.getBoundingClientRect();

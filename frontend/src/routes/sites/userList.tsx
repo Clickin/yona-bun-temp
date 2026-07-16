@@ -186,6 +186,23 @@ const styles = stylex.create({
     "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
   },
   userRowEven: { backgroundColor: siteUserListColors.rowAlternateSurface },
+  userColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    fontSize: "12px",
+    lineHeight: "20px",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    padding: "10px 0px",
+    textOverflow: "ellipsis",
+    width: "23.404255319148934%",
+    wordBreak: "break-all",
+  },
+  userIdentityColumn: { marginLeft: "0px" },
+  userDateColumn: { width: "14.893617021276595%" },
+  userActionColumn: { padding: "0px 0px 10px", width: "40.42553191489362%" },
+  userEmail: { fontSize: "13px", lineHeight: "43px" },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -269,6 +286,11 @@ const listheadColumnStyleProps = [
 const userListStyleProps = stylex.props(styles.userList);
 const userRowStyleProps = stylex.props(styles.userRow);
 const userRowEvenStyleProps = stylex.props(styles.userRow, styles.userRowEven);
+const identityColumnStyleProps = stylex.props(styles.userColumn, styles.userIdentityColumn);
+const emailColumnStyleProps = stylex.props(styles.userColumn);
+const dateColumnStyleProps = stylex.props(styles.userColumn, styles.userDateColumn);
+const actionColumnStyleProps = stylex.props(styles.userColumn, styles.userActionColumn);
+const emailStyleProps = stylex.props(styles.userEmail);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -865,10 +887,10 @@ function UserListItem({
   return (
     <li
       {...rowStyleProps}
-      className={`row-fluid listitem ${rowStyleProps.className ?? ""}`}
+      className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}
       data-stylex-owner="site-user-list-row"
     >
-      <div className="span3 listitem-col">
+      <div {...identityColumnStyleProps} data-stylex-owner="site-user-list-row-column">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
           className="avatar-wrap list-avatar"
@@ -899,14 +921,20 @@ function UserListItem({
           @{user.loginId}
         </Link>
       </div>
-      <div className="span3 listitem-col">
-        <span className="email">{user.emailAddress}</span>
+      <div {...emailColumnStyleProps} data-stylex-owner="site-user-list-row-column">
+        <span {...emailStyleProps} data-stylex-owner="site-user-list-row-email">
+          {user.emailAddress}
+        </span>
       </div>
-      <div className="span2 listitem-col created-date">
+      <div {...dateColumnStyleProps} data-stylex-owner="site-user-list-row-date">
         <span>{user.createdAt}</span>
       </div>
       {state !== "DELETED" ? (
-        <div className="span5 listitem-col action-buttons">
+        <div
+          {...actionColumnStyleProps}
+          className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}
+          data-stylex-owner="site-user-list-row-action"
+        >
           <button
             type="button"
             className={user.isGuest ? "ybtn ybtn-small ybtn-success" : "ybtn ybtn-small"}
