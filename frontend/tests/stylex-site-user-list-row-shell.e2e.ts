@@ -16,12 +16,17 @@ test("row shell ownership follows the populated legacy list", () => {
   expect(bootstrap).toContain(".row-fluid {\n  width: 100%;");
   expect(route).toContain(`data-stylex-owner="${owners.list}"`);
   expect(route).toContain(`data-stylex-owner="${owners.row}"`);
-  expect(route).toContain('className={`user-list-wrap ${userListStyleProps.className ?? ""}`}');
+  expect(route).toContain("className={userListStyleProps.className}");
   expect(route).toContain(
-    'className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}',
+    'className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}',
   );
-  for (const child of ["avatar-wrap list-avatar", "user-name", "user-id"])
-    expect(route).toContain(`className="${child}"`);
+  for (const owner of [
+    "site-user-list-row-avatar",
+    "site-user-list-row-user-name",
+    "site-user-list-row-user-id",
+  ])
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  expect(route).toContain('className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}');
   expect(route).toContain('className={`action-buttons ${actionColumnStyleProps.className ?? ""}`}');
   expect(theme).toContain('rowBorder: "#efefef"');
   expect(theme).toContain('rowAlternateSurface: "#f9f9f9"');
@@ -41,13 +46,15 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
     const list = page.locator(`[data-stylex-owner="${owners.list}"]`);
     const rows = list.locator(`:scope > [data-stylex-owner="${owners.row}"]`);
     await expect(rows).toHaveCount(3);
-    await expect(rows.locator(":scope .user-name")).toHaveText(["Alice", "Bob", "Carol"]);
+    await expect(
+      rows.locator(':scope [data-stylex-owner="site-user-list-row-user-name"]'),
+    ).toHaveText(["Alice", "Bob", "Carol"]);
     expect(
       await list.evaluate((node) => ({
         generated: Array.from(node.classList).some((token) => token !== "user-list-wrap"),
         legacy: node.classList.contains("user-list-wrap"),
       })),
-    ).toEqual({ generated: true, legacy: true });
+    ).toEqual({ generated: true, legacy: false });
     expect(
       await rows.evaluateAll((nodes) =>
         nodes.map((node) => ({
@@ -60,9 +67,9 @@ test("three ACTIVE rows preserve frozen row-shell output", async ({ page }) => {
         })),
       ),
     ).toEqual([
-      { children: 4, generated: true, listitem: true, rowFluid: false },
-      { children: 4, generated: true, listitem: true, rowFluid: false },
-      { children: 4, generated: true, listitem: true, rowFluid: false },
+      { children: 4, generated: true, listitem: false, rowFluid: false },
+      { children: 4, generated: true, listitem: false, rowFluid: false },
+      { children: 4, generated: true, listitem: false, rowFluid: false },
     ]);
     const evidence = await page.evaluate((owners) => {
       const list = document.querySelector<HTMLElement>(`[data-stylex-owner="${owners.list}"]`)!;

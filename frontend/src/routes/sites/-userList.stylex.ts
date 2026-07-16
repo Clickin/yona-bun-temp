@@ -1,6 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const siteUserListColors = stylex.defineVars({
+  identityId: "#999999",
+  identityName: "#0088cc",
   listheadBorder: "#efefef",
   listheadSurface: "#f7f7f7",
   rowAlternateSurface: "#f9f9f9",

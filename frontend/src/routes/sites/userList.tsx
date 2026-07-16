@@ -203,6 +203,30 @@ const styles = stylex.create({
   userDateColumn: { width: "14.893617021276595%" },
   userActionColumn: { padding: "0px 0px 10px", width: "40.42553191489362%" },
   userEmail: { fontSize: "13px", lineHeight: "43px" },
+  userAvatar: {
+    float: "left",
+    height: "45px",
+    marginRight: "10px",
+    marginTop: "3px",
+    width: "45px",
+  },
+  userName: {
+    color: siteUserListColors.identityName,
+    display: "block",
+    fontSize: "14px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginLeft: "5px",
+    marginTop: "8px",
+  },
+  userId: {
+    color: siteUserListColors.identityId,
+    display: "block",
+    fontSize: "13px",
+    fontStyle: "italic",
+    lineHeight: "20px",
+    marginLeft: "5px",
+  },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -291,6 +315,9 @@ const emailColumnStyleProps = stylex.props(styles.userColumn);
 const dateColumnStyleProps = stylex.props(styles.userColumn, styles.userDateColumn);
 const actionColumnStyleProps = stylex.props(styles.userColumn, styles.userActionColumn);
 const emailStyleProps = stylex.props(styles.userEmail);
+const avatarStyleProps = stylex.props(styles.userAvatar);
+const userNameStyleProps = stylex.props(styles.userName);
+const userIdStyleProps = stylex.props(styles.userId);
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -559,7 +586,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
               </div>
               <ul
                 {...userListStyleProps}
-                className={`user-list-wrap ${userListStyleProps.className ?? ""}`}
+                className={userListStyleProps.className}
                 data-stylex-owner="site-user-list-row-list"
               >
                 {(response?.users ?? []).map((user, index) => (
@@ -887,13 +914,15 @@ function UserListItem({
   return (
     <li
       {...rowStyleProps}
-      className={`${state === "DELETED" ? "row-fluid " : ""}listitem ${rowStyleProps.className ?? ""}`}
+      className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}
       data-stylex-owner="site-user-list-row"
     >
       <div {...identityColumnStyleProps} data-stylex-owner="site-user-list-row-column">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
-          className="avatar-wrap list-avatar"
+          {...avatarStyleProps}
+          className={`avatar-wrap ${avatarStyleProps.className ?? ""}`}
+          data-stylex-owner="site-user-list-row-avatar"
           params={{ user: user.loginId }}
           to="/$user"
         >
@@ -906,7 +935,8 @@ function UserListItem({
         </Link>
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
-          className="user-name"
+          {...userNameStyleProps}
+          data-stylex-owner="site-user-list-row-user-name"
           params={{ user: user.loginId }}
           to="/$user"
         >
@@ -914,7 +944,8 @@ function UserListItem({
         </Link>
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
-          className="user-id"
+          {...userIdStyleProps}
+          data-stylex-owner="site-user-list-row-user-id"
           params={{ user: user.loginId }}
           to="/$user"
         >

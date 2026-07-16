@@ -20,7 +20,7 @@ test("row columns own the legacy grid and column declarations", () => {
     "site-user-list-row-action",
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route).toContain('state === "DELETED" ? "row-fluid " : ""');
+  expect(route).toContain('state === "DELETED" ? "row-fluid listitem " : ""');
   for (const retired of [
     "span3 listitem-col",
     "span2 listitem-col created-date",

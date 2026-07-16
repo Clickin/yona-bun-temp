@@ -1924,6 +1924,18 @@ are exact. Focused browser coverage is GREEN 2/2 and the complete user-list Styl
 23/23 after stale ancestry selectors move to stable owner boundaries. This is not Wave 1
 completion.
 
+The one-hundred-sixty-third slice migrates five coupled populated-ACTIVE `/sites/userList`
+identity responsibilities: obsolete list and row ancestry, the 45px list-avatar override, user
+name, and user ID. Only the legacy `#0088cc` name and `#999` ID paint use route variables; all
+geometry and typography remain inline. ACTIVE retires `user-list-wrap`, `listitem`, `list-avatar`,
+`user-name`, and `user-id`, while generic `avatar-wrap` remains for its shared background, radius,
+overflow, and image rules. DELETED retains `row-fluid listitem` for its excluded recovery column.
+Fresh legacy desktop/mobile evidence pins the wrapper at 45×45, the exact 5px text inset, 20px
+line rhythm, paint, and content-aware wrapping. Focused browser coverage is GREEN 2/2. The local
+default-avatar fixture's unresolved base-path URL yields a 16px broken-image intrinsic box, so
+the gate preserves the frozen image source rule and exact wrapper geometry without adding numeric
+compensation. This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading
