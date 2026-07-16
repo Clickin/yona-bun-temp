@@ -2063,6 +2063,19 @@ inline. React/TanStack pending→success/failure and dismiss behavior remains un
 verification is GREEN 4/4 (22.1s) across success, pending dismissal, transport failure, and logical
 failure flows. This is not Wave 1 completion.
 
+The one-hundred-seventy-fourth slice completes the `/sites/userList` pagination input and previous/
+next sprite primitives from Bootstrap input-mini, frozen `.nospinner`, and `_sprites.less`. The
+existing input owner absorbs textfield appearance while four direct icon variants own shared
+sprite display/size/alignment plus previous/next enabled/disabled positions and margins. The
+canonical sprite is imported through Vite and passed only as a route-local CSS custom-property URL
+because the StyleX compiler cannot evaluate a PNG import inside `stylex.create`; StyleX retains
+background-image ownership through `var(...)`. Geometry
+and type remain inline; existing pagination paint variables remain sufficient. This consumer
+retires `input-mini`, `nospinner`, `ico`, `btn-pg-prev`, `btn-pg-next`, and icon `off` while behavior,
+labels, and disabled navigation remain unchanged. This is not Wave 1 completion. Focused browser
+verification is GREEN 3/3 (14.7s): desktop/mobile one-page
+exact fallback/computed/geometry plus enabled navigation and Enter behavior all pass.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

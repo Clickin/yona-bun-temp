@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useState, type MouseEvent, type SyntheticEvent } from "react";
+import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   deleteSiteUserRest,
   resetSiteUserPasswordRest,
@@ -50,6 +51,9 @@ const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
 const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
   __legacySiteUserListSidebarActiveMarker: undefined,
 };
+const paginationSpriteStyle = {
+  "--site-user-list-pagination-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
 const styles = stylex.create({
   breadcrumbOuter: {
     boxSizing: "border-box",
@@ -258,6 +262,7 @@ const styles = stylex.create({
     padding: "0px 5px",
   },
   paginationInput: {
+    appearance: "textfield",
     borderColor: {
       default: siteUserListColors.paginationInputBorder,
       ":hover": siteUserListColors.paginationAccent,
@@ -280,6 +285,18 @@ const styles = stylex.create({
     textAlign: "center",
     width: "30px",
   },
+  paginationIcon: {
+    backgroundImage: "var(--site-user-list-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "9px",
+    verticalAlign: "middle",
+    width: "6px",
+  },
+  paginationPrevIcon: { backgroundPosition: "-136px -139px", marginRight: "10px" },
+  paginationPrevIconDisabled: { backgroundPosition: "-164px -2px" },
+  paginationNextIcon: { backgroundPosition: "-146px -139px", marginLeft: "10px" },
+  paginationNextIconDisabled: { backgroundPosition: "-23px -13px" },
   paginationLabel: {
     color: siteUserListColors.paginationAccent,
     fontSize: "11px",
@@ -739,6 +756,18 @@ const paginationDelimiterStyleProps = stylex.props(
   styles.paginationDelimiter,
 );
 const paginationInputStyleProps = stylex.props(styles.paginationInput);
+const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationPrevDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationPrevIcon,
+  styles.paginationPrevIconDisabled,
+);
+const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const paginationNextDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationNextIcon,
+  styles.paginationNextIconDisabled,
+);
 const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
 const paginationDisabledLabelStyleProps = stylex.props(
   styles.paginationLabel,
@@ -1218,7 +1247,12 @@ function UserListPagination({
               search={search(currentPage - 1)}
               to="/sites/userList"
             >
-              <i className="ico btn-pg-prev"></i>
+              <i
+                {...paginationPrevIconStyleProps}
+                data-disabled="false"
+                data-stylex-owner="site-user-list-pagination-icon"
+                style={paginationSpriteStyle}
+              ></i>
               <span
                 {...paginationLabelStyleProps}
                 data-stylex-owner="site-user-list-pagination-label"
@@ -1228,7 +1262,12 @@ function UserListPagination({
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
+              <i
+                {...paginationPrevDisabledIconStyleProps}
+                data-disabled="true"
+                data-stylex-owner="site-user-list-pagination-icon"
+                style={paginationSpriteStyle}
+              ></i>
               <span
                 {...paginationDisabledLabelStyleProps}
                 data-disabled="true"
@@ -1242,7 +1281,6 @@ function UserListPagination({
         <li {...paginationItemStyleProps} data-stylex-owner="site-user-list-pagination-item">
           <input
             {...paginationInputStyleProps}
-            className={`input-mini nospinner ${paginationInputStyleProps.className ?? ""}`}
             data-stylex-owner="site-user-list-pagination-input"
             defaultValue={currentPage}
             key={`${currentPage}-${totalPages}`}
@@ -1296,7 +1334,12 @@ function UserListPagination({
               >
                 {nextPageLabel}
               </span>
-              <i className="ico btn-pg-next"></i>
+              <i
+                {...paginationNextIconStyleProps}
+                data-disabled="false"
+                data-stylex-owner="site-user-list-pagination-icon"
+                style={paginationSpriteStyle}
+              ></i>
             </Link>
           ) : (
             <>
@@ -1307,7 +1350,12 @@ function UserListPagination({
               >
                 {nextPageLabel}
               </span>
-              <i className="ico btn-pg-next off"></i>
+              <i
+                {...paginationNextDisabledIconStyleProps}
+                data-disabled="true"
+                data-stylex-owner="site-user-list-pagination-icon"
+                style={paginationSpriteStyle}
+              ></i>
             </>
           )}
         </li>

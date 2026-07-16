@@ -2,7 +2,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-test("pagination owns only plugin presentation while retaining generic input and sprites", () => {
+test("pagination directly owns plugin presentation, input variants, and sprite icons", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
   const theme = readFileSync("src/routes/sites/-userList.stylex.ts", "utf8");
   const plugin = readFileSync(
@@ -30,11 +30,10 @@ test("pagination owns only plugin presentation while retaining generic input and
     "page-num delimiter",
   ])
     expect(route).not.toContain(`className="${retired}"`);
-  expect(route).toContain(
-    'className={`input-mini nospinner ${paginationInputStyleProps.className ?? ""}`}',
-  );
-  expect(route).toContain('className="ico btn-pg-prev off"');
-  expect(route).toContain('className="ico btn-pg-next off"');
+  for (const retired of ["input-mini", "nospinner", "ico", "btn-pg-prev", "btn-pg-next", "off"])
+    expect(route).not.toContain(`className="${retired}`);
+  expect(route).toContain('data-stylex-owner="site-user-list-pagination-icon"');
+  expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
   for (const paint of [
     "paginationAccent",
     "paginationDelimiter",
@@ -65,7 +64,12 @@ test("one-page pagination preserves desktop and mobile generated output", async 
     await expect(
       root.locator('[data-stylex-owner="site-user-list-pagination-label"][data-disabled="true"]'),
     ).toHaveCount(2);
-    await expect(root.locator("i.ico.btn-pg-prev.off, i.ico.btn-pg-next.off")).toHaveCount(2);
+    const icons = root.locator('[data-stylex-owner="site-user-list-pagination-icon"]');
+    await expect(icons).toHaveCount(2);
+    for (let index = 0; index < 2; index += 1) {
+      await expect(icons.nth(index)).toHaveAttribute("data-disabled", "true");
+      await expect(icons.nth(index)).not.toHaveClass(/\b(?:ico|btn-pg-prev|btn-pg-next|off)\b/u);
+    }
     const evidence = await page.evaluate(() => {
       const root = document.querySelector<HTMLElement>(
         '[data-stylex-owner="site-user-list-pagination"]',
@@ -77,6 +81,9 @@ test("one-page pagination preserves desktop and mobile generated output", async 
       const input = root.querySelector<HTMLInputElement>(
         '[data-stylex-owner="site-user-list-pagination-input"]',
       )!;
+      const icons = Array.from(
+        root.querySelectorAll<HTMLElement>('[data-stylex-owner="site-user-list-pagination-icon"]'),
+      );
       const box = (node: Element) => node.getBoundingClientRect().toJSON();
       const dimensions = (node: Element) => {
         const rect = node.getBoundingClientRect();
@@ -98,6 +105,20 @@ test("one-page pagination preserves desktop and mobile generated output", async 
           width: s.width,
         };
       };
+      const iconStyle = (node: Element) => {
+        const s = getComputedStyle(node);
+        return {
+          backgroundImage: s.backgroundImage,
+          backgroundPosition: s.backgroundPosition,
+          backgroundRepeat: s.backgroundRepeat,
+          display: s.display,
+          height: s.height,
+          marginLeft: s.marginLeft,
+          marginRight: s.marginRight,
+          verticalAlign: s.verticalAlign,
+          width: s.width,
+        };
+      };
       const fixture = document.createElement("div");
       fixture.className = "page-navigation-wrap";
       fixture.style.cssText = `position:absolute;left:-10000px;width:${root.getBoundingClientRect().width}px`;
@@ -112,6 +133,7 @@ test("one-page pagination preserves desktop and mobile generated output", async 
           list: dimensions(fixtureList),
         },
         input: style(fixture.querySelector("input")!),
+        icons: Array.from(fixture.querySelectorAll("i")).map(iconStyle),
         items: Array.from(fixtureList.children).map(style),
         labels: Array.from(fixture.querySelectorAll("span")).map(style),
         list: style(fixtureList),
@@ -120,6 +142,7 @@ test("one-page pagination preserves desktop and mobile generated output", async 
       const actual = {
         boxes: { input: dimensions(input), items: items.map(dimensions), list: dimensions(list) },
         input: style(input),
+        icons: icons.map(iconStyle),
         items: items.map(style),
         labels: Array.from(
           root.querySelectorAll('[data-stylex-owner="site-user-list-pagination-label"]'),
@@ -137,7 +160,39 @@ test("one-page pagination preserves desktop and mobile generated output", async 
         root: actual.root,
       };
     });
-    expect(evidence.actual).toEqual(evidence.fallback);
+    const { icons: actualIcons, ...actualWithoutIcons } = evidence.actual;
+    const { icons: fallbackIcons, ...fallbackWithoutIcons } = evidence.fallback;
+    expect(actualWithoutIcons).toEqual(fallbackWithoutIcons);
+    expect(actualIcons.map(({ backgroundImage: _backgroundImage, ...icon }) => icon)).toEqual(
+      fallbackIcons.map(({ backgroundImage: _backgroundImage, ...icon }) => icon),
+    );
+    for (const icon of [...actualIcons, ...fallbackIcons]) {
+      expect(icon.backgroundImage).toMatch(/sprite(?:-[^)]+)?\.png/u);
+    }
+    expect(evidence.actual.icons).toEqual([
+      {
+        backgroundImage: expect.stringMatching(/sprite(?:-[^)]+)?\.png/u),
+        backgroundPosition: "-164px -2px",
+        backgroundRepeat: "no-repeat",
+        display: "inline-block",
+        height: "9px",
+        marginLeft: "0px",
+        marginRight: "10px",
+        verticalAlign: "middle",
+        width: "6px",
+      },
+      {
+        backgroundImage: expect.stringMatching(/sprite(?:-[^)]+)?\.png/u),
+        backgroundPosition: "-23px -13px",
+        backgroundRepeat: "no-repeat",
+        display: "inline-block",
+        height: "9px",
+        marginLeft: "10px",
+        marginRight: "0px",
+        verticalAlign: "middle",
+        width: "6px",
+      },
+    ]);
     expect(evidence.root).toMatchObject({
       clear: "both",
       margin: "20px 0px",
@@ -184,6 +239,42 @@ test("three-page links and Enter navigation stay React-owned", async ({ page }) 
   await expect(root.locator("a")).toHaveCount(2);
   await expect(root.locator("a").first()).toHaveAttribute("href", /pageNum=1/u);
   await expect(root.locator("a").last()).toHaveAttribute("href", /pageNum=3/u);
+  const enabledIcons = root.locator(
+    '[data-stylex-owner="site-user-list-pagination-icon"][data-disabled="false"]',
+  );
+  await expect(enabledIcons).toHaveCount(2);
+  expect(
+    await enabledIcons.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const style = getComputedStyle(node);
+        return {
+          backgroundImage: style.backgroundImage,
+          backgroundPosition: style.backgroundPosition,
+          height: style.height,
+          marginLeft: style.marginLeft,
+          marginRight: style.marginRight,
+          width: style.width,
+        };
+      }),
+    ),
+  ).toEqual([
+    {
+      backgroundImage: expect.stringMatching(/sprite(?:-[^)]+)?\.png/u),
+      backgroundPosition: "-136px -139px",
+      height: "9px",
+      marginLeft: "0px",
+      marginRight: "10px",
+      width: "6px",
+    },
+    {
+      backgroundImage: expect.stringMatching(/sprite(?:-[^)]+)?\.png/u),
+      backgroundPosition: "-146px -139px",
+      height: "9px",
+      marginLeft: "10px",
+      marginRight: "0px",
+      width: "6px",
+    },
+  ]);
   const input = root.locator('input[name="pageNum"]');
   await input.fill("9");
   await input.press("Enter");
