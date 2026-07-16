@@ -2009,6 +2009,17 @@ frozen-cascade fixture without cross-state compensation. Focused coverage is GRE
 user-list StyleX is GREEN 36/36, and whole-screen coverage is GREEN 15/16 with only the existing
 excluded global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
 
+The one-hundred-sixty-ninth slice migrates the authenticated populated-ACTIVE
+`/sites/userList` update-notification and site-admin numeric badge consumers from
+`siteMngLayout.scala.html`, `userList.scala.html`, `_common.less`, and `_yobiUI.less`. The update
+badge directly owns its border, radius, shadow, typography, and spacing; only its four paint/shadow
+values extend the existing route-local color registry. The numeric badge owns only its legacy
+typography and spacing because its paint is intentionally inherited from the state-tab link.
+`notification-badge` and `num-badge` retire only for these two consumers. Main-agent browser
+coverage is GREEN 4/4 after recording Edge/macOS's computed normalization of legacy
+`BlinkMacSystemFont` to `system-ui`; the implementation retains the exact frozen font literal.
+This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

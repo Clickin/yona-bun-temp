@@ -302,6 +302,29 @@ const styles = stylex.create({
   sidebarLinkActive: {
     backgroundColor: { default: "transparent", ":hover": "transparent" },
   },
+  sidebarNotificationBadge: {
+    backgroundColor: siteUserListColors.notificationBackground,
+    borderColor: siteUserListColors.notificationBorder,
+    borderRadius: "10px",
+    borderStyle: "solid",
+    borderWidth: "2px",
+    boxShadow: siteUserListColors.notificationShadow,
+    color: siteUserListColors.notificationText,
+    fontSize: "12px",
+    lineHeight: "20px",
+    padding: "0px 5px",
+  },
+  stateTabNumericBadge: {
+    borderRadius: "2px",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "13px",
+    fontWeight: "700",
+    marginLeft: "3px",
+    padding: "2px 4px",
+    textShadow: "none",
+    verticalAlign: "top",
+  },
   actionButton: {
     backgroundColor: {
       default: siteUserListColors.actionDefaultSurface,
@@ -558,6 +581,8 @@ const sidebarActiveItemStyleProps = stylex.props(
 );
 const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
 const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarLinkActive);
+const sidebarNotificationBadgeStyleProps = stylex.props(styles.sidebarNotificationBadge);
+const stateTabNumericBadgeStyleProps = stylex.props(styles.stateTabNumericBadge);
 const actionButtonStyleProps = stylex.props(styles.actionButton);
 const actionSuccessButtonStyleProps = stylex.props(styles.actionButton, styles.actionSuccessButton);
 const actionInfoButtonStyleProps = stylex.props(styles.actionButton, styles.actionInfoButton);
@@ -1109,7 +1134,14 @@ function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
             to={item.to}
           >
             <LegacyMessage messageKey={item.label} />
-            {item.update && showUpdateBadge ? <span className="notification-badge">1</span> : null}
+            {item.update && showUpdateBadge ? (
+              <span
+                {...sidebarNotificationBadgeStyleProps}
+                data-stylex-owner="site-user-list-sidebar-notification-badge"
+              >
+                1
+              </span>
+            ) : null}
           </Link>
         </li>
       ))}
@@ -1158,7 +1190,12 @@ function UserStateTabs({
             >
               <LegacyMessage messageKey={item.labelKey} />
               {item.state === "SITE_ADMIN" ? (
-                <span className="num-badge">{legacySiteAdminBadgeCount}</span>
+                <span
+                  {...stateTabNumericBadgeStyleProps}
+                  data-stylex-owner="site-user-list-state-tab-numeric-badge"
+                >
+                  {legacySiteAdminBadgeCount}
+                </span>
               ) : null}
             </Link>
           </li>

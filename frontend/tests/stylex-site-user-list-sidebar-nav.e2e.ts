@@ -19,7 +19,9 @@ test("sidebar nav owns only UL, repeated LI variants, and direct Links", () => {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   for (const retired of ["site-setting-nav", "active"])
     expect(route).not.toContain(`className="${retired}"`);
-  expect(route).toContain('className="notification-badge"');
+  expect(route).not.toContain('className="notification-badge"');
+  expect(route).toContain('data-stylex-owner="site-user-list-sidebar-notification-badge"');
+  expect(route).toContain("styles.sidebarNotificationBadge");
   for (const paint of ["sidebarAccent", "sidebarBorder", "sidebarHoverSurface"])
     expect(theme).toContain(paint);
   expect(route).not.toContain("globalColors.");
@@ -71,7 +73,35 @@ test("sidebar copy, navigation, variants, and frozen output survive desktop/mobi
         "/sites/diagnostic",
       ].map((path) => `${basePath}${path}`),
     );
-    await expect(root.locator(".notification-badge")).toHaveText("1");
+    const badge = root.locator('[data-stylex-owner="site-user-list-sidebar-notification-badge"]');
+    await expect(badge).toHaveText("1");
+    await expect(badge).not.toHaveClass(/\bnotification-badge\b/u);
+    await expect
+      .poll(() =>
+        badge.evaluate((node) => {
+          const style = getComputedStyle(node);
+          return {
+            backgroundColor: style.backgroundColor,
+            border: style.border,
+            borderRadius: style.borderRadius,
+            boxShadow: style.boxShadow,
+            color: style.color,
+            fontSize: style.fontSize,
+            lineHeight: style.lineHeight,
+            padding: style.padding,
+          };
+        }),
+      )
+      .toEqual({
+        backgroundColor: "rgb(255, 115, 50)",
+        border: "2px solid rgb(255, 255, 255)",
+        borderRadius: "10px",
+        boxShadow: "rgba(0, 0, 0, 0.2) 0px 1px 1px 0px, rgba(0, 0, 0, 0.1) 0px 1px 1px 0px inset",
+        color: "rgb(236, 240, 241)",
+        fontSize: "12px",
+        lineHeight: "20px",
+        padding: "0px 5px",
+      });
     expect(
       await items.evaluateAll((nodes) =>
         nodes.map((node) => ({

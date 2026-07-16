@@ -38,8 +38,9 @@ test("state tabs own exactly the legacy root, repeated item, and repeated link s
   expect(route).not.toContain('className={item.state === currentState ? "active" : ""}');
   expect(route).toContain('data-selected={isActive ? "true" : undefined}');
   expect(route).toContain("styles.stateTabLinkActive");
-  expect(route).toContain('className="num-badge"');
-  expect(route).not.toContain('data-stylex-owner="site-user-list-state-tab-badge"');
+  expect(route).not.toContain('className="num-badge"');
+  expect(route).toContain('data-stylex-owner="site-user-list-state-tab-numeric-badge"');
+  expect(route).toContain("styles.stateTabNumericBadge");
   for (const color of [
     "stateTabActiveBackground",
     "stateTabActiveText",
@@ -81,6 +82,35 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
       "Guest User",
       "Site admin2",
     ]);
+    const badge = tabs.locator('[data-stylex-owner="site-user-list-state-tab-numeric-badge"]');
+    await expect(badge).toHaveText("2");
+    await expect(badge).not.toHaveClass(/\bnum-badge\b/u);
+    expect(
+      await badge.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return {
+          borderRadius: style.borderRadius,
+          fontFamily: style.fontFamily,
+          fontSize: style.fontSize,
+          fontWeight: style.fontWeight,
+          marginLeft: style.marginLeft,
+          padding: style.padding,
+          textShadow: style.textShadow,
+          verticalAlign: style.verticalAlign,
+        };
+      }),
+    ).toEqual({
+      borderRadius: "2px",
+      // Edge/macOS normalizes BlinkMacSystemFont from the legacy stack to system-ui.
+      fontFamily:
+        '-apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+      fontSize: "13px",
+      fontWeight: "700",
+      marginLeft: "3px",
+      padding: "2px 4px",
+      textShadow: "none",
+      verticalAlign: "top",
+    });
     expect(
       await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href"))),
     ).toEqual(
@@ -88,7 +118,9 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
         (state) => `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/sites/userList?state=${state}`,
       ),
     );
-    await expect(links.last().locator(":scope > .num-badge")).toHaveText("2");
+    await expect(
+      links.last().locator(':scope > [data-stylex-owner="site-user-list-state-tab-numeric-badge"]'),
+    ).toHaveText("2");
     await expect(links.first()).toHaveCSS("color", "rgb(85, 85, 85)");
     await expect(links.first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await expect(links.nth(1)).toHaveCSS("color", "rgb(53, 146, 181)");
