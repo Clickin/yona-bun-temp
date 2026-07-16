@@ -462,6 +462,41 @@ const styles = stylex.create({
     borderColor: siteUserListColors.actionDangerBorder,
     color: siteUserListColors.actionTextInverse,
   },
+  passwordResetAlert: {
+    backgroundColor: siteUserListColors.alertSurface,
+    borderColor: siteUserListColors.alertBorder,
+    borderRadius: "4px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: siteUserListColors.alertText,
+    marginBottom: "20px",
+    padding: "8px 35px 8px 14px",
+    textShadow: siteUserListColors.alertTextShadow,
+  },
+  passwordResetAlertSuccess: {
+    backgroundColor: siteUserListColors.alertSuccessSurface,
+    borderColor: siteUserListColors.alertSuccessBorder,
+    color: siteUserListColors.alertSuccessText,
+  },
+  passwordResetAlertClose: {
+    appearance: "none",
+    backgroundColor: "transparent",
+    borderWidth: "0px",
+    color: siteUserListColors.modalText,
+    cursor: "pointer",
+    float: "right",
+    fontSize: "20px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    opacity: { default: 0.2, ":hover": 0.4, ":focus": 0.4 },
+    padding: "0px",
+    position: "relative",
+    right: "-21px",
+    textDecoration: { default: "none", ":hover": "none", ":focus": "none" },
+    textShadow: siteUserListColors.modalCloseShadow,
+    top: "-2px",
+  },
+  passwordResetAlertHeading: { color: "inherit", margin: "0px" },
   actionButton: {
     backgroundColor: {
       default: siteUserListColors.actionDefaultSurface,
@@ -732,6 +767,13 @@ const deleteModalConfirmButtonStyleProps = stylex.props(
   styles.deleteModalButtonDanger,
 );
 const deleteModalDismissButtonStyleProps = stylex.props(styles.deleteModalButton);
+const passwordResetAlertStyleProps = stylex.props(styles.passwordResetAlert);
+const passwordResetSuccessAlertStyleProps = stylex.props(
+  styles.passwordResetAlert,
+  styles.passwordResetAlertSuccess,
+);
+const passwordResetAlertCloseStyleProps = stylex.props(styles.passwordResetAlertClose);
+const passwordResetAlertHeadingStyleProps = stylex.props(styles.passwordResetAlertHeading);
 const actionButtonStyleProps = stylex.props(styles.actionButton);
 const actionSuccessButtonStyleProps = stylex.props(styles.actionButton, styles.actionSuccessButton);
 const actionInfoButtonStyleProps = stylex.props(styles.actionButton, styles.actionInfoButton);
@@ -1554,11 +1596,23 @@ function PasswordResetAlert({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="alert alert-success">
-      <button type="button" className="close" onClick={onDismiss}>
+    <div
+      {...passwordResetSuccessAlertStyleProps}
+      data-stylex-owner="site-user-list-password-reset-alert"
+      data-variant="success"
+    >
+      <button
+        {...passwordResetAlertCloseStyleProps}
+        type="button"
+        data-stylex-owner="site-user-list-password-reset-alert-close"
+        onClick={onDismiss}
+      >
         &times;
       </button>
-      <h4>
+      <h4
+        {...passwordResetAlertHeadingStyleProps}
+        data-stylex-owner="site-user-list-password-reset-alert-heading"
+      >
         {t("user.newPassword")}: {newPassword}
       </h4>
     </div>
@@ -1571,11 +1625,25 @@ function RequestWaitingAlert({
   onDismiss: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
-    <div className="alert alert-fail">
-      <button type="button" className="close" onClick={onDismiss}>
+    <div
+      {...passwordResetAlertStyleProps}
+      data-stylex-owner="site-user-list-password-reset-alert"
+      data-variant="pending"
+    >
+      <button
+        {...passwordResetAlertCloseStyleProps}
+        type="button"
+        data-stylex-owner="site-user-list-password-reset-alert-close"
+        onClick={onDismiss}
+      >
         &times;
       </button>
-      <h4>{"sending requestHeader" + "..."}</h4>
+      <h4
+        {...passwordResetAlertHeadingStyleProps}
+        data-stylex-owner="site-user-list-password-reset-alert-heading"
+      >
+        {"sending requestHeader" + "..."}
+      </h4>
     </div>
   );
 }

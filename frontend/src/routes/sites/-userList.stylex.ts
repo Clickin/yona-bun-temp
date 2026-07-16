@@ -1,6 +1,13 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const siteUserListColors = stylex.defineVars({
+  alertBorder: "#fbeed5",
+  alertSuccessBorder: "#d6e9c6",
+  alertSuccessSurface: "#dff0d8",
+  alertSuccessText: "#468847",
+  alertSurface: "#fcf8e3",
+  alertText: "#c09853",
+  alertTextShadow: "0 1px 0 rgba(255, 255, 255, 0.5)",
   avatarSurface: "#dddddd",
   identityId: "#999999",
   identityName: "#0088cc",

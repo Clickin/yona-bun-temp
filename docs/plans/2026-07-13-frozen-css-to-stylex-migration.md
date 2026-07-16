@@ -2053,6 +2053,16 @@ remain unchanged. Main browser coverage is GREEN 1/1 (14.8s), pinning exact rest
 transition-settled default/danger hover/focus paint, and full modal interactions without
 generated-class locators. This is not Wave 1 completion.
 
+The one-hundred-seventy-third slice migrates the `/sites/userList` reset-password pending and
+success alerts from Bootstrap 2.3.1 alert/success/close/heading rules and the legacy template
+skeleton. Four responsibilities cover a common root, success paint variant, common close control,
+and common heading. `alert-fail` has no frozen declaration, so pending receives only the common
+alert surface and no invented variant. Alert paint/border/text-shadow values extend the route
+theme; close paint/shadow reuse exact modal-close tokens, while geometry/type/position/opacity stay
+inline. React/TanStack pending→success/failure and dismiss behavior remains unchanged. Browser
+verification is GREEN 4/4 (22.1s) across success, pending dismissal, transport failure, and logical
+failure flows. This is not Wave 1 completion.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

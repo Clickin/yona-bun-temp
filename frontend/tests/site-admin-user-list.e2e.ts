@@ -1129,11 +1129,11 @@ test("site admin user actions follow legacy reset-password alert flow", async ({
 
   await page.getByRole("button", { exact: true, name: "Reset password" }).click();
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-success h4'),
+    page.locator('[data-stylex-owner="site-user-list-password-reset-alert-heading"]'),
   ).toHaveText("New password: reset-1234");
   await expect(
     page.locator('[data-stylex-owner="site-user-list-row-action"] > *').last(),
-  ).toHaveClass("alert alert-success");
+  ).not.toHaveClass(/\balert(?:-success)?\b/u);
   expect(requests.resetLoginIds).toEqual(["doortts"]);
 });
 
@@ -1142,7 +1142,7 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockSiteAdminSession(page);
-  await mockSiteUsers(page, { resetDelayMs: 500 });
+  await mockSiteUsers(page, { resetDelayMs: 2_000 });
   await mockUpdate(page, {
     currentVersion: "1.0.0",
     error: null,
@@ -1156,29 +1156,60 @@ test("site admin user reset-password alerts dismiss through route-owned state", 
   await rememberSpaMarker(page, "site-user-reset-alert-dismiss");
 
   await page.getByRole("button", { exact: true, name: "Reset password" }).click();
-  const waitingAlert = page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-fail');
+  const waitingAlert = page.locator(
+    '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
+  );
+  const alertClose = waitingAlert.locator(
+    '[data-stylex-owner="site-user-list-password-reset-alert-close"]',
+  );
   await expect(waitingAlert).toHaveText("×sending requestHeader...");
-  await expect(waitingAlert.locator(".close")).not.toHaveAttribute("data-dismiss", /./u);
+  await expect(waitingAlert).toHaveCSS("background-color", "rgb(252, 248, 227)");
+  await expect(waitingAlert).toHaveCSS("border-color", "rgb(251, 238, 213)");
+  await expect(waitingAlert).toHaveCSS("border-radius", "4px");
+  await expect(waitingAlert).toHaveCSS("color", "rgb(192, 152, 83)");
+  await expect(waitingAlert).toHaveCSS("margin-bottom", "20px");
+  await expect(waitingAlert).toHaveCSS("padding", "8px 35px 8px 14px");
+  await expect(waitingAlert).toHaveCSS("text-shadow", "rgba(255, 255, 255, 0.5) 0px 1px 0px");
+  await expect(alertClose).toHaveCSS("opacity", "0.2");
+  await expect(alertClose).toHaveCSS("font-size", "20px");
+  await expect(alertClose).toHaveCSS("line-height", "20px");
+  await expect(alertClose).toHaveCSS("right", "-21px");
+  await expect(alertClose).toHaveCSS("top", "-2px");
+  await alertClose.hover();
+  await expect(alertClose).toHaveCSS("opacity", "0.4");
+  await alertClose.focus();
+  await expect(alertClose).toHaveCSS("opacity", "0.4");
+  await expect(alertClose).not.toHaveAttribute("data-dismiss", /./u);
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert [data-dismiss="alert"]'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]',
+    ),
   ).toHaveCount(0);
-  expect(await dispatchCancelableClick(waitingAlert.locator(".close"))).toBe(false);
+  expect(await dispatchCancelableClick(alertClose)).toBe(false);
   await expect(waitingAlert).toHaveCount(0);
   await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
   expect(await spaMarker(page)).toBe("site-user-reset-alert-dismiss");
 
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-success h4'),
+    page.locator('[data-stylex-owner="site-user-list-password-reset-alert-heading"]'),
   ).toHaveText("New password: reset-1234");
   const successAlert = page.locator(
-    '[data-stylex-owner="site-user-list-row-action"] .alert-success',
+    '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
   );
-  await expect(successAlert).toHaveClass("alert alert-success");
-  await expect(successAlert.locator(".close")).not.toHaveAttribute("data-dismiss", /./u);
+  await expect(successAlert).toHaveCSS("background-color", "rgb(223, 240, 216)");
+  await expect(successAlert).toHaveCSS("border-color", "rgb(214, 233, 198)");
+  await expect(successAlert).toHaveCSS("color", "rgb(70, 136, 71)");
+  await expect(successAlert).not.toHaveClass(/\balert(?:-success)?\b/u);
+  const successClose = successAlert.locator(
+    '[data-stylex-owner="site-user-list-password-reset-alert-close"]',
+  );
+  await expect(successClose).not.toHaveAttribute("data-dismiss", /./u);
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert [data-dismiss="alert"]'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"] [data-dismiss="alert"]',
+    ),
   ).toHaveCount(0);
-  expect(await dispatchCancelableClick(successAlert.locator(".close"))).toBe(false);
+  expect(await dispatchCancelableClick(successClose)).toBe(false);
   await expect(successAlert).toHaveCount(0);
   await expect.poll(() => alertDismissBridgeAuditHits(page)).toBe(0);
   expect(await spaMarker(page)).toBe("site-user-reset-alert-dismiss");
@@ -1310,10 +1341,14 @@ test("site admin user reset password failure uses legacy alert text", async ({ p
   expect(alert.message()).toBe("password change failed: reset service unavailable");
   await alert.accept();
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-fail'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
+    ),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-success'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
+    ),
   ).toHaveCount(0);
 });
 
@@ -1337,10 +1372,14 @@ test("site admin user reset password logical failure uses legacy alert text", as
   expect(alert.message()).toBe("password change failed: password policy rejected");
   await alert.accept();
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-fail'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="pending"]',
+    ),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-stylex-owner="site-user-list-row-action"] .alert-success'),
+    page.locator(
+      '[data-stylex-owner="site-user-list-password-reset-alert"][data-variant="success"]',
+    ),
   ).toHaveCount(0);
 });
 
