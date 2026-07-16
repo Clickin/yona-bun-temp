@@ -1771,6 +1771,17 @@ Side-by-side geometry and no overflow match. Locale, fixture content, and exclud
 outside this claim. The complete post-list StyleX matrix is GREEN 38/38. Whole-screen post-list is
 GREEN 7/8 with only the pre-existing excluded global-GNB `Feedback` gap, unrelated to this grid.
 
+The one-hundred-fifty-fifth slice migrates exactly two independent `/sites/postList` owners. The
+direct page wrapper owns `_page.less` 450px minimum height/10px top margin plus the final
+`_responsive.less` all-viewport box model and max-720 zero padding/minimum width. The existing
+repeated row owner absorbs only Bootstrap base `.row-fluid` width and clearfix pseudos. This route
+retires only `page-wrap-outer` and the post-row `row-fluid`; other consumers retain global fallback.
+Focused source RED becomes GREEN 2/2. The complete post-list StyleX matrix is GREEN 40/40 with a
+normal exit using `CI` workers=1. Whole-screen post-list is GREEN 7/8; its sole failure is the
+pre-existing excluded global-GNB `Feedback` fixture gap, unrelated to wrapper/row. New local
+desktop/mobile screenshots were visually compared with authenticated legacy captures: page
+inset/content x and row x/width/height/flow match; locale and excluded global shell/footer copy differ.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

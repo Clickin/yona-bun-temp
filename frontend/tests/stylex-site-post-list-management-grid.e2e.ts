@@ -151,7 +151,7 @@ test("direct management grid preserves the active desktop and mobile proportions
       "site-post-list-container",
       "site-post-list-pagination",
     ]);
-    expect(evidence.nestedClass.split(/\s+/u)).toContain("row-fluid");
+    expect(evidence.nestedClass.split(/\s+/u)).not.toContain("row-fluid");
     expect(evidence.scrollWidth).toBe(viewport.width);
     mkdirSync(resolve("..", "output", "playwright"), { recursive: true });
     await page.screenshot({

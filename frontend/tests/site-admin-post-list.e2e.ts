@@ -1196,7 +1196,7 @@ async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-post-list-breadcrumb-outer], .page-wrap-outer, [data-stylex-owner=site-footer]",
+        ".unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner=site-post-list-breadcrumb-outer], [data-stylex-owner=site-post-list-page-wrap-outer], [data-stylex-owner=site-footer]",
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1220,6 +1220,7 @@ async function canonicalizeScreenRoots(page: Page) {
           "site-post-list-breadcrumb-outer",
           "site-post-list-breadcrumb-inner",
           "site-post-list-breadcrumb-heading",
+          "site-post-list-page-wrap-outer",
           "site-post-list-setting-wrap",
           "site-post-list-setting-grid",
           "site-post-list-setting-sidebar-column",
@@ -1354,10 +1355,12 @@ async function canonicalizeHtml(page: Page, html: string) {
           current.matches(".post-list-wrap > .listitem") ||
           current.matches(".post-list-wrap > .listitem > .avatar-wrap.list-avatar")
         ) {
+          retiredPostListTokens.add("row-fluid");
           retiredPostListTokens.add("listitem");
           retiredPostListTokens.add("avatar-wrap");
           retiredPostListTokens.add("list-avatar");
         }
+        if (current.matches(".page-wrap-outer")) retiredPostListTokens.add("page-wrap-outer");
         if (current.matches(".post-meta-wrap")) {
           retiredPostListTokens.add("post-meta-wrap");
         }

@@ -205,7 +205,7 @@ test.describe("StyleX site post-list populated row content", () => {
     await expect(title).toHaveAttribute("data-stylex-owner", owners.title);
 
     await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
-    await expect(row).toHaveClass(/\brow-fluid\b/u);
+    await expect(row).not.toHaveClass(/\brow-fluid\b/u);
     await expect(row).not.toHaveClass(/\blistitem\b/u);
     for (const [element, retiredClass] of [
       [info, "post-info-wrap"],

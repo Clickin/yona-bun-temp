@@ -220,7 +220,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
     await expect(first).toHaveAttribute("data-stylex-owner", owners.row);
     await expect(avatar).toHaveAttribute("data-stylex-owner", owners.avatar);
     await expect(avatarImage).toHaveAttribute("data-stylex-owner", owners.avatarImage);
-    await expect(first).toHaveClass(/\brow-fluid\b/u);
+    await expect(first).not.toHaveClass(/\brow-fluid\b/u);
     await expect(first).not.toHaveClass(/\blistitem\b/u);
     await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
     await expect(avatar).not.toHaveClass(/\blist-avatar\b/u);

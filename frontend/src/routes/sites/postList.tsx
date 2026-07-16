@@ -54,6 +54,14 @@ const styles = stylex.create({
     padding: "10px 10px 5px",
     textRendering: "optimizeLegibility",
   },
+  pageWrapOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: { "@media (max-width: 720px)": "10px" },
+    padding: { default: "0px 10px", "@media (max-width: 720px)": "0px" },
+    width: "100%",
+  },
   settingWrap: { margin: "0px auto" },
   settingGrid: {
     width: "100%",
@@ -149,6 +157,9 @@ const styles = stylex.create({
     },
   },
   postListRow: {
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
     paddingBlock: "10px",
     paddingInline: "0px",
     borderBottomColor: sitePostListColors.rowBorder,
@@ -368,7 +379,10 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
+      <div
+        {...stylex.props(styles.pageWrapOuter)}
+        data-stylex-owner="site-post-list-page-wrap-outer"
+      >
         <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-post-list-setting-wrap">
           <div
             {...stylex.props(styles.settingGrid)}
@@ -697,7 +711,7 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
   return (
     <li
       {...postListRowStyleProps}
-      className={`row-fluid ${postListRowStyleProps.className ?? ""}`}
+      className={postListRowStyleProps.className}
       data-stylex-owner="site-post-list-row"
     >
       <Link

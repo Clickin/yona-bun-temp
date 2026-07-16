@@ -188,7 +188,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     await expect(settingGrid).not.toHaveClass(/row-fluid/u);
     await expect(sidebarColumn).not.toHaveClass(/span2/u);
     await expect(contentColumn).not.toHaveClass(/span10/u);
-    await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).toHaveClass(
+    await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).not.toHaveClass(
       /\brow-fluid\b/u,
     );
 
