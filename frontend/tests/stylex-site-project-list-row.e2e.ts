@@ -243,6 +243,10 @@ test.describe("StyleX site project-list populated rows", () => {
           };
         };
         const actual = capture();
+        const setting = element.closest<HTMLElement>(
+          '[data-stylex-owner="site-project-list-setting-wrap"]',
+        )!;
+        const originalSettingClassName = setting.className;
         const nodes = [element, ...columns];
         const originals = nodes.map((node) => node.className);
         nodes.forEach((node) => {
@@ -250,6 +254,7 @@ test.describe("StyleX site project-list populated rows", () => {
             if (token.startsWith("x") || token.includes("__styles.")) node.classList.remove(token);
           });
         });
+        setting.classList.add("site-setting-wrap");
         element.classList.add("row-fluid", "listitem");
         ["span5", "span4", "span2", "span1"].forEach((span, index) =>
           columns[index]!.classList.add(span, "listitem-col"),
@@ -258,6 +263,7 @@ test.describe("StyleX site project-list populated rows", () => {
         nodes.forEach((node, index) => {
           node.className = originals[index]!;
         });
+        setting.className = originalSettingClassName;
         return { actual, fallback };
       });
       expect(gridEvidence.fallback).toEqual(gridEvidence.actual);

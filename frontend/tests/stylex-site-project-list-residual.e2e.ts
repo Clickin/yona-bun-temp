@@ -348,6 +348,11 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
         };
 
         const migrated = capture();
+        const setting = list.closest<HTMLElement>(
+          '[data-stylex-owner="site-project-list-setting-wrap"]',
+        )!;
+        const originalSettingClassName = setting.className;
+        setting.classList.add("site-setting-wrap");
         for (const owner of [list, ...list.querySelectorAll<HTMLElement>("[data-stylex-owner]")]) {
           const ownerName = owner.getAttribute("data-stylex-owner");
           if (
@@ -367,7 +372,9 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
           }
         }
 
-        return { fallback: capture(), migrated };
+        const fallback = capture();
+        setting.className = originalSettingClassName;
+        return { fallback, migrated };
       });
       expect(equivalence.fallback.styles).toEqual(equivalence.migrated.styles);
       for (const owner of ["list", "name", "action"] as const) {

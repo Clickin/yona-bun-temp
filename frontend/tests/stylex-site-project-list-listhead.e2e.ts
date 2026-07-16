@@ -209,12 +209,17 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
       };
       const actual = capture();
       const elements = [row, ...columns];
+      const setting = row.closest<HTMLElement>(
+        '[data-stylex-owner="site-project-list-setting-wrap"]',
+      )!;
+      const originalSettingClassName = setting.className;
       const originalClassNames = elements.map((element) => element.className);
       for (const element of elements) {
         for (const token of Array.from(element.classList)) {
           if (token.startsWith("x") || token.includes("__styles.")) element.classList.remove(token);
         }
       }
+      setting.classList.add("site-setting-wrap");
       row.classList.add("row-fluid", "listhead");
       const spans = ["span5", "span4", "span2", "span1"];
       columns.forEach((column, index) => column.classList.add(spans[index]!, "listhead-title"));
@@ -222,6 +227,7 @@ test("listhead preserves exact desktop and mobile live fluid-grid output in one 
       elements.forEach((element, index) => {
         element.className = originalClassNames[index]!;
       });
+      setting.className = originalSettingClassName;
       return { ...actual, fallback };
     }, owners);
 

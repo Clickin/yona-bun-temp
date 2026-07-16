@@ -80,7 +80,7 @@ test.describe("StyleX site project-list title strip", () => {
     ).toHaveText("Projects");
     const search = owner.locator(':scope > form[data-stylex-owner="site-project-list-search"]');
     await expect(search).toHaveCount(1);
-    await expect(search).toHaveClass(/\bpull-right\b/);
+    await expect(search).not.toHaveClass(/\bpull-right\b/);
     expect(
       await owner.evaluate((titleArea) =>
         Array.from(titleArea.children).map((child) => child.tagName),

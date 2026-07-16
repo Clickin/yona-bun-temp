@@ -6,6 +6,7 @@ const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.u
 const owners = {
   button: '[data-stylex-owner="site-project-list-search-button"]',
   form: '[data-stylex-owner="site-project-list-search"]',
+  icon: '[data-stylex-owner="site-project-list-search-icon"]',
   bar: '[data-stylex-owner="site-project-list-search-bar"]',
   textbox: '[data-stylex-owner="site-project-list-search-textbox"]',
 };
@@ -64,7 +65,7 @@ async function openProjectSearch(page: Page, initialFilter = "road", pageNum = 3
 }
 
 test.describe("StyleX site project-list title search", () => {
-  test("uses four stable owners with inline geometry and a route paint theme", async () => {
+  test("uses five stable owners with inline geometry and a route paint theme", async () => {
     const route = await readFile(routeSource, "utf8");
 
     for (const owner of Object.values(owners)) {
@@ -75,6 +76,7 @@ test.describe("StyleX site project-list title search", () => {
       "projectSearchBar",
       "projectSearchTextbox",
       "projectSearchButton",
+      "projectSearchIcon",
     ]) {
       expect(route).toContain(`styles.${style}`);
     }
@@ -85,6 +87,9 @@ test.describe("StyleX site project-list title search", () => {
     expect(route).toContain('default: "350px"');
     expect(route).toContain('[globalBreakpoints.mobile]: "inherit"');
     expect(route).toContain('position: "absolute"');
+    expect(route).toContain('float: "right"');
+    expect(route).toContain(String.raw`content: '"\\e225"'`);
+    expect(route).not.toContain('className="yobicon-search"');
     expect(route).not.toContain("globalColors.");
   });
 
@@ -102,7 +107,7 @@ test.describe("StyleX site project-list title search", () => {
     await expect(textbox).toHaveAttribute("placeholder", "Search by keyword");
     await expect(textbox).toHaveValue("road");
     await expect(button).toHaveAttribute("type", "submit");
-    await expect(button.locator(":scope > i.yobicon-search")).toHaveCount(1);
+    await expect(button.locator(`:scope > i${owners.icon}`)).toHaveCount(1);
     await expect(bar.locator(":scope > input + button")).toHaveCount(1);
 
     await page.evaluate(() => {
@@ -139,15 +144,17 @@ test.describe("StyleX site project-list title search", () => {
       return Object.fromEntries(entries) as Record<string, string[]>;
     }, owners);
 
-    expect(classes.form).toContain("pull-right");
+    expect(classes.form).not.toContain("pull-right");
     expect(classes.form).not.toContain("form-search");
     expect(classes.bar).not.toContain("search-bar");
     expect(classes.textbox).not.toContain("textbox");
     expect(classes.button).not.toContain("search-btn");
     for (const ownerClasses of Object.values(classes)) {
-      expect(ownerClasses.some((token) => token.startsWith("x"))).toBe(true);
+      expect(
+        ownerClasses.some((token) => token.startsWith("x") || token.includes("__styles.")),
+      ).toBe(true);
     }
-    await expect(page.locator(`${owners.button} > .yobicon-search`)).toHaveCount(1);
+    await expect(page.locator(`${owners.button} > ${owners.icon}`)).toHaveCount(1);
   });
 
   for (const viewport of [
@@ -163,8 +170,10 @@ test.describe("StyleX site project-list title search", () => {
       const bar = page.locator(owners.bar);
       const textbox = page.locator(owners.textbox);
       const button = page.locator(owners.button);
+      const icon = page.locator(owners.icon);
 
       await expect(form).toHaveCSS("margin", "0px");
+      await expect(form).toHaveCSS("float", "right");
       await expect(bar).toHaveCSS("background-color", "rgb(255, 255, 255)");
       await expect(bar).toHaveCSS("border", "1px solid rgb(204, 204, 204)");
       await expect(bar).toHaveCSS("border-radius", "3px");
@@ -184,6 +193,13 @@ test.describe("StyleX site project-list title search", () => {
       await expect(button).toHaveCSS("position", "absolute");
       await expect(button).toHaveCSS("top", "5px");
       await expect(button).toHaveCSS("right", "5px");
+      await expect(icon).toHaveCSS("font-family", "yobicon");
+      await expect(icon).toHaveCSS("font-style", "normal");
+      await expect(icon).toHaveCSS("font-weight", "400");
+      await expect(icon).toHaveCSS("line-height", "12px");
+      expect(await icon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(
+        '"\ue225"',
+      );
       await textbox.focus();
       await expect(textbox).toHaveCSS("box-shadow", "none");
       await expect(textbox).toHaveCSS("border-width", "0px");
@@ -260,7 +276,21 @@ test.describe("StyleX site project-list title search", () => {
             right: style.right,
             top: style.top,
           }))(getComputedStyle(nodes.button)),
-          form: { margin: getComputedStyle(nodes.form).margin },
+          form: {
+            float: getComputedStyle(nodes.form).float,
+            margin: getComputedStyle(nodes.form).margin,
+          },
+          icon: ((style, before) => ({
+            backgroundImage: style.backgroundImage,
+            content: before.content,
+            display: style.display,
+            fontFamily: style.fontFamily,
+            fontStyle: style.fontStyle,
+            fontVariant: style.fontVariant,
+            fontWeight: style.fontWeight,
+            textDecoration: style.textDecoration,
+            verticalAlign: style.verticalAlign,
+          }))(getComputedStyle(nodes.icon), getComputedStyle(nodes.icon, "::before")),
           textbox: ((style) => ({
             borderWidth: style.borderWidth,
             height: style.height,
@@ -273,18 +303,20 @@ test.describe("StyleX site project-list title search", () => {
         const migrated = capture();
         for (const node of Object.values(nodes)) {
           for (const token of Array.from(node.classList)) {
-            if (token.startsWith("x")) node.classList.remove(token);
+            if (token.startsWith("x") || token.includes("__styles.")) node.classList.remove(token);
           }
         }
-        nodes.form.classList.add("form-search");
+        nodes.form.classList.add("form-search", "pull-right");
         nodes.bar.classList.add("search-bar");
         nodes.textbox.classList.add("textbox");
         nodes.button.classList.add("search-btn");
+        nodes.icon.classList.add("yobicon-search");
         return { fallback: capture(), migrated };
       }, owners);
       expect(equivalence.fallback.bar).toEqual(equivalence.migrated.bar);
       expect(equivalence.fallback.button).toEqual(equivalence.migrated.button);
       expect(equivalence.fallback.form).toEqual(equivalence.migrated.form);
+      expect(equivalence.fallback.icon).toEqual(equivalence.migrated.icon);
       expect(equivalence.fallback.textbox).toEqual(equivalence.migrated.textbox);
       for (const name of Object.keys(equivalence.fallback.boxes)) {
         for (const edge of ["height", "left", "top", "width"] as const) {

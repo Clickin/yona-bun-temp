@@ -35,6 +35,7 @@ const bootstrapSource = new URL(
 
 const owners = {
   heading: "site-project-list-title-heading",
+  icon: "site-project-list-search-icon",
   search: "site-project-list-search",
   title: "site-project-list-title-strip",
 } as const;
@@ -90,7 +91,7 @@ async function openProjectList(page: Page) {
 }
 
 test.describe("StyleX site project-list title/search shell", () => {
-  test("pins the Scala shell, full cascade, and exactly three title boundaries", async () => {
+  test("pins the Scala shell, full cascade, three title boundaries, and search icon", async () => {
     const [route, template, layout, yobi, pageLess, responsive, yobiUi, override, bootstrap] =
       await Promise.all([
         readFile(routeSource, "utf8"),
@@ -137,6 +138,7 @@ test.describe("StyleX site project-list title/search shell", () => {
       "site-project-list-search-bar",
       "site-project-list-search-textbox",
       "site-project-list-search-button",
+      "site-project-list-search-icon",
     ])
       expect(route).toContain(`data-stylex-owner="${searchOwner}"`);
   });
@@ -185,7 +187,7 @@ test.describe("StyleX site project-list title/search shell", () => {
     await expect(title).not.toHaveClass(/\btitle_area\b/u);
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
     await expect(search).not.toHaveClass(/\bform-search\b/u);
-    await expect(search).toHaveClass(/\bpull-right\b/u);
+    await expect(search).not.toHaveClass(/\bpull-right\b/u);
     for (const childOwner of [
       "site-project-list-search-bar",
       "site-project-list-search-textbox",
@@ -208,6 +210,7 @@ test.describe("StyleX site project-list title/search shell", () => {
       "site-project-list-search-bar",
       "site-project-list-search-textbox",
       "site-project-list-search-button",
+      "site-project-list-search-icon",
     ]);
 
     await page.evaluate(() => {
@@ -276,6 +279,11 @@ test.describe("StyleX site project-list title/search shell", () => {
       ).toBe(true);
 
       const fallback = await title.evaluate((actualTitle, ownerNames) => {
+        const setting = actualTitle.closest<HTMLElement>(
+          '[data-stylex-owner="site-project-list-setting-wrap"]',
+        )!;
+        const originalSettingClassName = setting.className;
+        setting.classList.add("site-setting-wrap");
         const fixture = document.createElement("div");
         fixture.style.position = "absolute";
         fixture.style.left = "-10000px";
@@ -324,6 +332,7 @@ test.describe("StyleX site project-list title/search shell", () => {
             ]),
           ],
         };
+        setting.className = originalSettingClassName;
         fixture.remove();
         return result;
       }, owners);

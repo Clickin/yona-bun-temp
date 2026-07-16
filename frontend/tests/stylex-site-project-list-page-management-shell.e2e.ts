@@ -115,10 +115,11 @@ test("management shell directly owns only the five legacy layout boundaries", ()
     "inactive in legacy layout.scala.html and retained as parity evidence",
   );
   for (const owner of owners) expect(route).toContain(`data-stylex-owner="${owner}"`);
+  const settingWrap = route.match(/settingWrap:\s*\{(?<body>[\s\S]*?)\n  \},/u)?.groups?.body;
+  expect(settingWrap).toContain('margin: "0px auto"');
+  expect(settingWrap).not.toContain("width:");
   expect(route).not.toContain('<div className="page-wrap-outer">');
-  expect(route).toContain(
-    'className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}',
-  );
+  expect(route).not.toContain("site-setting-wrap ${");
   for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
     expect(route).not.toContain(retired);
   expect(route).not.toContain("listitem-col");
@@ -143,7 +144,7 @@ for (const viewport of [
     const sidebar = get(owners[3]);
     const content = get(owners[4]);
     await expect(pageWrap).not.toHaveClass(/\bpage-wrap-outer\b/u);
-    await expect(setting).toHaveClass(/\bsite-setting-wrap\b/u);
+    await expect(setting).not.toHaveClass(/\bsite-setting-wrap\b/u);
     await expect(grid).not.toHaveClass(/\brow-fluid\b/u);
     await expect(sidebar).not.toHaveClass(/\bspan2\b/u);
     await expect(content).not.toHaveClass(/\bspan10\b/u);

@@ -2220,6 +2220,23 @@ final full projectList StyleX matrix is GREEN 56/56 (45.1s). Whole-screen is GRE
 seven behavior/routes/modal/update/default-logo/typed-link cases pass, with only the same
 pre-existing broad DOM equality gap outside this owner.
 
+The one-hundred-eighty-second slice completes only the `/sites/projectList` root/search geometry
+and glyph residuals. The existing setting wrapper already owns the active `_page.less`
+`margin: 0 auto`, so its final presentation class retires without adding a declaration; the
+`app.css` `.site-admin-page .site-setting-wrap` 100% width bridge is inactive for this route and is
+explicitly excluded rather than copied as compensation. The existing search-form owner adds
+Bootstrap right float, and one new icon owner moves the generic
+Yobicon font declarations plus `::before` `\e225` glyph. Exactly `site-setting-wrap`, `pull-right`,
+and `yobicon-search` retire; notification badge, paint, and all other owners remain separate. Every
+new declaration is inline geometry/type/glyph output with no theme/global/frozen/app CSS change or
+compensation. Source RED was recorded on the absent icon owner. Verification corrected three
+evidence defects without changing the implementation contract: the project-list button cascade
+computes unit `lineHeight: 1` to 12px, the app.css width bridge is inactive, and fallback fixtures
+must temporarily restore the retired `site-setting-wrap` ancestor before descendant classes.
+Focused search is GREEN 5/5 (15.0s), the final projectList StyleX matrix is GREEN 56/56 (46.4s),
+and whole-screen coverage is GREEN 7/8 (48.7s). Its seven behavior/route/modal/update/default-logo/
+typed-link cases pass; only the pre-existing broad DOM-equality gap outside this owner remains.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

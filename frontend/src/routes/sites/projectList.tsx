@@ -145,6 +145,7 @@ const styles = stylex.create({
     float: "left",
   },
   projectSearchForm: {
+    float: "right",
     margin: "0px",
   },
   projectSearchBar: {
@@ -182,6 +183,20 @@ const styles = stylex.create({
     position: "absolute",
     right: "5px",
     top: "5px",
+  },
+  projectSearchIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "400",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e225"' },
   },
   listHead: {
     backgroundColor: siteProjectListTheme.listHeadSurface,
@@ -562,6 +577,7 @@ const projectSearchFormStyleProps = stylex.props(styles.projectSearchForm);
 const projectSearchBarStyleProps = stylex.props(styles.projectSearchBar);
 const projectSearchTextboxStyleProps = stylex.props(styles.projectSearchTextbox);
 const projectSearchButtonStyleProps = stylex.props(styles.projectSearchButton);
+const projectSearchIconStyleProps = stylex.props(styles.projectSearchIcon);
 const listHeadStyleProps = stylex.props(styles.listHead);
 const listHeadColumnStyleProps = {
   action: stylex.props(styles.listHeadColumn, styles.listHeadActionColumn),
@@ -760,7 +776,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       <div {...pageWrapOuterStyleProps} data-stylex-owner="site-project-list-page-wrap-outer">
         <div
           {...settingWrapStyleProps}
-          className={`site-setting-wrap ${settingWrapStyleProps.className ?? ""}`}
+          className={settingWrapStyleProps.className}
           data-stylex-owner="site-project-list-setting-wrap"
         >
           <div {...settingGridStyleProps} data-stylex-owner="site-project-list-setting-grid">
@@ -780,7 +796,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                 </h2>
                 <form
                   {...projectSearchFormStyleProps}
-                  className={`pull-right ${projectSearchFormStyleProps.className ?? ""}`}
+                  className={projectSearchFormStyleProps.className}
                   data-stylex-owner="site-project-list-search"
                   action={prefixBasePath(runtimeConfig.basePath, "/sites/projectList")}
                   onSubmit={(event) => {
@@ -817,7 +833,11 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
                       className={projectSearchButtonStyleProps.className}
                       data-stylex-owner="site-project-list-search-button"
                     >
-                      <i className="yobicon-search"></i>
+                      <i
+                        {...projectSearchIconStyleProps}
+                        className={projectSearchIconStyleProps.className}
+                        data-stylex-owner="site-project-list-search-icon"
+                      ></i>
                     </button>
                   </div>
                 </form>
