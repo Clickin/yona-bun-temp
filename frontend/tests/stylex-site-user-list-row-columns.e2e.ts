@@ -18,9 +18,10 @@ test("row columns own the legacy grid and column declarations", () => {
     "site-user-list-row-email",
     "site-user-list-row-date",
     "site-user-list-row-action",
+    "site-user-list-row-leave-date",
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route).toContain('state === "DELETED" ? "row-fluid listitem " : ""');
+  expect(route).not.toContain('state === "DELETED" ? "row-fluid listitem "');
   for (const retired of [
     "span3 listitem-col",
     "span2 listitem-col created-date",
@@ -29,6 +30,7 @@ test("row columns own the legacy grid and column declarations", () => {
     expect(route).not.toContain(`className="${retired}"`);
   expect(route).toContain('data-stylex-owner="site-user-list-row-action-button"');
   expect(route).not.toContain("action-buttons");
+  expect(route).not.toContain('className="span4 listitem-col"');
   expect(route).not.toContain("globalColors.");
 });
 

@@ -719,9 +719,11 @@ test("site admin deleted user tab renders legacy leave column without action but
       '[data-stylex-owner="site-user-list-row-list"] > [data-stylex-owner="site-user-list-row"]',
     ),
   ).toHaveCount(1);
-  await expect(
-    page.locator('[data-stylex-owner="site-user-list-row"] .span4.listitem-col'),
-  ).toHaveText("2026-07-01 10:30:00");
+  const leaveDate = page.locator(
+    '[data-stylex-owner="site-user-list-row"] > [data-stylex-owner="site-user-list-row-leave-date"]',
+  );
+  await expect(leaveDate).toHaveText("2026-07-01 10:30:00");
+  await expect(leaveDate).not.toHaveClass(/\b(?:span4|listitem-col)\b/u);
   await expect(page.locator('[data-stylex-owner="site-user-list-row-action"]')).toHaveCount(0);
   await expect(
     page.locator(

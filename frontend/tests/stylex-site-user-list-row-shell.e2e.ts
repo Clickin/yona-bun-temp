@@ -17,9 +17,9 @@ test("row shell ownership follows the populated legacy list", () => {
   expect(route).toContain(`data-stylex-owner="${owners.list}"`);
   expect(route).toContain(`data-stylex-owner="${owners.row}"`);
   expect(route).toContain("className={userListStyleProps.className}");
-  expect(route).toContain(
-    'className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}',
-  );
+  expect(route).toContain('data-stylex-owner="site-user-list-row-leave-date"');
+  expect(route).not.toContain('state === "DELETED" ? "row-fluid listitem "');
+  expect(route).not.toContain('className="span4 listitem-col"');
   for (const owner of [
     "site-user-list-row-avatar",
     "site-user-list-row-user-name",

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred sixty-seven slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred sixty-eight slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -1996,6 +1996,18 @@ glyph primitive remains. The focused browser gate is GREEN 2/2, cumulative user-
 GREEN 34/34 after stale selectors move to stable owner boundaries, and whole-screen coverage is
 GREEN 15/16 with only the pre-existing excluded global-GNB `Feedback` fixture gap. This is not
 Wave 1 completion.
+
+The one-hundred-sixty-eighth slice migrates the authenticated populated-DELETED
+`/sites/userList` repeated row and leave-date column from `site/userList.scala.html`, active
+Bootstrap 2.3.1, and `_page.less`. The existing row owner now covers DELETED without conditional
+legacy ancestry, while a direct leave-date owner composes the existing common column declarations
+with the frozen span4 width; all geometry and type remain inline and no theme value is added.
+DELETED retires row `row-fluid listitem` and leave `span4 listitem-col`, preserving the first three
+columns, exact leave date, action absence, state/copy, and navigation. The live seeded legacy state
+contains zero deleted rows, so populated geometry is proven against the Scala skeleton and complete
+frozen-cascade fixture without cross-state compensation. Focused coverage is GREEN 2/2, cumulative
+user-list StyleX is GREEN 36/36, and whole-screen coverage is GREEN 15/16 with only the existing
+excluded global-GNB `Feedback` fixture gap. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

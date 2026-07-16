@@ -63,9 +63,9 @@ test("moves only the active legacy user-list management shell to five StyleX own
     expect(route).not.toContain(retired);
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
   expect(route).toContain('data-stylex-owner="site-user-list-row"');
-  expect(route).toContain(
-    'className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}',
-  );
+  expect(route).toContain('data-stylex-owner="site-user-list-row-leave-date"');
+  expect(route).not.toContain('state === "DELETED" ? "row-fluid listitem "');
+  expect(route).not.toContain('className="span4 listitem-col"');
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("siteUserListColors.page");
 });

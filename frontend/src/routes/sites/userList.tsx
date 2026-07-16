@@ -200,6 +200,7 @@ const styles = stylex.create({
   },
   userIdentityColumn: { marginLeft: "0px" },
   userDateColumn: { width: "14.893617021276595%" },
+  userLeaveDateColumn: { width: "31.914893617021278%" },
   userActionColumn: { padding: "0px 0px 10px", width: "40.42553191489362%" },
   userEmail: { fontSize: "13px", lineHeight: "43px" },
   userAvatar: {
@@ -527,6 +528,7 @@ const userRowEvenStyleProps = stylex.props(styles.userRow, styles.userRowEven);
 const identityColumnStyleProps = stylex.props(styles.userColumn, styles.userIdentityColumn);
 const emailColumnStyleProps = stylex.props(styles.userColumn);
 const dateColumnStyleProps = stylex.props(styles.userColumn, styles.userDateColumn);
+const leaveDateColumnStyleProps = stylex.props(styles.userColumn, styles.userLeaveDateColumn);
 const actionColumnStyleProps = stylex.props(styles.userColumn, styles.userActionColumn);
 const emailStyleProps = stylex.props(styles.userEmail);
 const avatarStyleProps = stylex.props(styles.userAvatar);
@@ -1188,11 +1190,7 @@ function UserListItem({
   const { t } = useLegacyMessages();
   const rowStyleProps = even ? userRowEvenStyleProps : userRowStyleProps;
   return (
-    <li
-      {...rowStyleProps}
-      className={`${state === "DELETED" ? "row-fluid listitem " : ""}${rowStyleProps.className ?? ""}`}
-      data-stylex-owner="site-user-list-row"
-    >
+    <li {...rowStyleProps} data-stylex-owner="site-user-list-row">
       <div {...identityColumnStyleProps} data-stylex-owner="site-user-list-row-column">
         <Link
           {...LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS}
@@ -1299,7 +1297,9 @@ function UserListItem({
           ) : null}
         </div>
       ) : (
-        <div className="span4 listitem-col">{legacyLastStateModifiedDate(user)}</div>
+        <div {...leaveDateColumnStyleProps} data-stylex-owner="site-user-list-row-leave-date">
+          {legacyLastStateModifiedDate(user)}
+        </div>
       )}
     </li>
   );
