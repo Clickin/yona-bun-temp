@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-five slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-six slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2418,6 +2418,22 @@ React/TanStack behavior remain unchanged. Live Java pins desktop outer/inner at
 scroll width. Focused RED is 3/3 solely on the absent owners; the combined focused/affected browser
 matrix is GREEN 14/14, including exact desktop/mobile geometry and saved screenshot checks. This is
 not Wave 1 completion.
+
+The one-hundred-ninety-sixth slice migrates only the authenticated populated-default `/projects`
+directory tab strip from `project/list.scala.html`. Three direct owners cover the list border,
+margin/reset and clearfix pseudo-elements; repeated item float/type/rhythm; and repeated Link
+structure, responsive padding, type, border, radius, text decoration, plus inactive and active
+default/hover/focus states. `projectsDirectoryColors` contains only the seven route paints that can
+vary in dark mode; transparent values and every geometry/type/border-structure declaration remain
+inline. This subtree retires only `title_area`, `nav nav-tabs`, and `active`, retaining the exact
+div > ul > li > Link skeleton, Korean copy/order, hrefs, TanStack navigation props, and all
+search/list/pagination behavior. Live desktop pins list `1346x38 @10,93`, items
+`182.359/123.188x38`, links `180.359/121.188x38`, 8x30 padding, and page y151. Live mobile pins
+list `370x68 @10,93`, wrapped items at `10,93` and `142.359,123`, 8x5 padding, page y181, and
+390px scroll width. Focused RED is 3/3 because owners, route paint, and retirement were absent; the
+combined focused/affected browser matrix is GREEN 17/17. Authenticated Java and local
+desktop/mobile captures visually preserve the active border/surface, type, one-line desktop strip,
+and canonical mobile wrap. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

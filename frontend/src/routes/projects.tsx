@@ -11,6 +11,7 @@ import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { globalBreakpoints } from "../theme.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { projectsDirectoryColors } from "./-projects.stylex";
 
 type ProjectsSearch = {
   filter: string;
@@ -52,10 +53,104 @@ const styles = stylex.create({
     width: "100%",
   },
   breadcrumbInner: { margin: "0px auto" },
+  directoryTabsList: {
+    borderBottomColor: projectsDirectoryColors.tabBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    listStyle: "none",
+    margin: "10px 0px 20px",
+    padding: "0px",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+  },
+  directoryTabsItem: {
+    float: "left",
+    fontSize: "16px",
+    fontWeight: "400",
+    marginBottom: "-1px",
+  },
+  directoryTabsLink: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": projectsDirectoryColors.tabHoverSurface,
+      ":focus": projectsDirectoryColors.tabFocusSurface,
+    },
+    borderBottomColor: {
+      default: "transparent",
+      ":hover": projectsDirectoryColors.tabBorder,
+      ":focus": projectsDirectoryColors.tabBorder,
+    },
+    borderLeftColor: {
+      default: "transparent",
+      ":hover": projectsDirectoryColors.tabHoverBorder,
+      ":focus": projectsDirectoryColors.tabHoverBorder,
+    },
+    borderRightColor: {
+      default: "transparent",
+      ":hover": projectsDirectoryColors.tabHoverBorder,
+      ":focus": projectsDirectoryColors.tabHoverBorder,
+    },
+    borderTopColor: {
+      default: "transparent",
+      ":hover": projectsDirectoryColors.tabHoverBorder,
+      ":focus": projectsDirectoryColors.tabHoverBorder,
+    },
+    borderRadius: "4px 4px 0px 0px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: projectsDirectoryColors.tabText,
+    display: "block",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginRight: "2px",
+    padding: { default: "8px 30px", [globalBreakpoints.mobile]: "8px 5px" },
+    textDecoration: { default: "none", ":hover": "none", ":focus": "none" },
+  },
+  directoryTabsActiveLink: {
+    backgroundColor: {
+      default: projectsDirectoryColors.tabSurface,
+      ":hover": projectsDirectoryColors.tabSurface,
+      ":focus": projectsDirectoryColors.tabSurface,
+    },
+    borderBottomColor: { default: "transparent", ":hover": "transparent", ":focus": "transparent" },
+    borderLeftColor: {
+      default: projectsDirectoryColors.tabBorder,
+      ":hover": projectsDirectoryColors.tabBorder,
+      ":focus": projectsDirectoryColors.tabBorder,
+    },
+    borderRightColor: {
+      default: projectsDirectoryColors.tabBorder,
+      ":hover": projectsDirectoryColors.tabBorder,
+      ":focus": projectsDirectoryColors.tabBorder,
+    },
+    borderTopColor: {
+      default: projectsDirectoryColors.tabBorder,
+      ":hover": projectsDirectoryColors.tabBorder,
+      ":focus": projectsDirectoryColors.tabBorder,
+    },
+    color: projectsDirectoryColors.tabActiveText,
+    cursor: "default",
+  },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const directoryTabsListStyleProps = stylex.props(styles.directoryTabsList);
+const directoryTabsItemStyleProps = stylex.props(styles.directoryTabsItem);
+const directoryTabsLinkStyleProps = stylex.props(styles.directoryTabsLink);
+const directoryTabsActiveLinkStyleProps = stylex.props(
+  styles.directoryTabsLink,
+  styles.directoryTabsActiveLink,
+);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -100,10 +195,15 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <title>{t("title.projectList")}</title>
       <div {...breadcrumbOuterStyleProps} data-stylex-owner="projects-breadcrumb-outer">
         <div {...breadcrumbInnerStyleProps} data-stylex-owner="projects-breadcrumb-inner">
-          <div className="title_area">
-            <ul className="nav nav-tabs">
-              <li className="active">
+          <div data-projects-directory-tabs-scope="">
+            <ul {...directoryTabsListStyleProps} data-stylex-owner="projects-directory-tabs-list">
+              <li
+                {...directoryTabsItemStyleProps}
+                data-selected="true"
+                data-stylex-owner="projects-directory-tabs-item"
+              >
                 <Link
+                  {...directoryTabsActiveLinkStyleProps}
                   activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                   activeProps={{
                     "aria-current": undefined,
@@ -111,18 +211,25 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     "data-status": undefined,
                   }}
                   search={LEGACY_PROJECTS_LINK_SEARCH}
+                  data-stylex-owner="projects-directory-tabs-link"
                   to="/projects"
                 >
                   {t("project.public")} {t("title.projectList")}
                 </Link>
               </li>
-              <li>
+              <li
+                {...directoryTabsItemStyleProps}
+                data-selected="false"
+                data-stylex-owner="projects-directory-tabs-item"
+              >
                 <Link
+                  {...directoryTabsLinkStyleProps}
                   activeProps={{
                     "aria-current": undefined,
                     className: undefined,
                     "data-status": undefined,
                   }}
+                  data-stylex-owner="projects-directory-tabs-link"
                   to="/orgs"
                 >
                   {t("title.organization.list")}

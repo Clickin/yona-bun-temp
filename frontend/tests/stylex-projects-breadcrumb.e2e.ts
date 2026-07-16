@@ -128,11 +128,16 @@ for (const viewport of [
     const outer = page.locator(`[data-stylex-owner="${owners.outer}"]`);
     const inner = page.locator(`[data-stylex-owner="${owners.inner}"]`);
     await expect(outer.locator(`:scope > [data-stylex-owner="${owners.inner}"]`)).toHaveCount(1);
-    const titleArea = inner.locator(":scope > .title_area");
+    const titleArea = inner.locator(":scope > [data-projects-directory-tabs-scope]");
     await expect(titleArea).toHaveCount(1);
-    await expect(titleArea.locator(":scope > .nav.nav-tabs > li")).toHaveCount(2);
-    await expect(titleArea.locator("li").nth(0)).toHaveText("공개 프로젝트 목록");
-    await expect(titleArea.locator("li").nth(1)).toHaveText("그룹 목록");
+    const tabs = titleArea.locator(':scope > [data-stylex-owner="projects-directory-tabs-list"]');
+    await expect(tabs).toHaveCount(1);
+    const items = tabs.locator(':scope > [data-stylex-owner="projects-directory-tabs-item"]');
+    await expect(items).toHaveCount(2);
+    const links = items.locator(':scope > [data-stylex-owner="projects-directory-tabs-link"]');
+    await expect(links).toHaveCount(2);
+    await expect(links.nth(0)).toHaveText("공개 프로젝트 목록");
+    await expect(links.nth(1)).toHaveText("그룹 목록");
     await expect(outer).not.toHaveClass(/\bsite-breadcrumb-outer\b/u);
     await expect(inner).not.toHaveClass(/\bsite-breadcrumb-inner\b/u);
 
@@ -143,7 +148,9 @@ for (const viewport of [
       const inner = document.querySelector<HTMLElement>(
         `[data-stylex-owner="${ownerNames.inner}"]`,
       )!;
-      const title = inner.querySelector<HTMLElement>(":scope > .title_area")!;
+      const title = inner.querySelector<HTMLElement>(
+        ":scope > [data-projects-directory-tabs-scope]",
+      )!;
       const pageOuter = outer.nextElementSibling as HTMLElement;
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();

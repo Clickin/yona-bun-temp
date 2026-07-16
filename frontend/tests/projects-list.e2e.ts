@@ -253,14 +253,19 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await page.goto(`${basePath}/projects?filter=sample`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
-  const projectTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(0);
-  const organizationTabItem = page.locator(".title_area > .nav.nav-tabs > li").nth(1);
-  const projectTabLink = projectTabItem.locator("a");
-  const organizationTabLink = organizationTabItem.locator("a");
+  const tabItems = page.locator('[data-stylex-owner="projects-directory-tabs-item"]');
+  const projectTabItem = tabItems.nth(0);
+  const organizationTabItem = tabItems.nth(1);
+  const projectTabLink = projectTabItem.locator(
+    ':scope > [data-stylex-owner="projects-directory-tabs-link"]',
+  );
+  const organizationTabLink = organizationTabItem.locator(
+    ':scope > [data-stylex-owner="projects-directory-tabs-link"]',
+  );
   const navbarProjectLink = page.locator('[data-stylex-owner="global-gnb-project-list-link"]');
 
-  await expect(projectTabItem).toHaveAttribute("class", "active");
-  await expect(organizationTabItem).not.toHaveAttribute("class", /active/);
+  await expect(projectTabItem).toHaveAttribute("data-selected", "true");
+  await expect(organizationTabItem).toHaveAttribute("data-selected", "false");
   await expect(projectTabLink).toHaveAttribute("href", `${basePath}/projects`);
   await expect(organizationTabLink).toHaveAttribute("href", `${basePath}/orgs`);
   await expect(projectTabLink).not.toHaveAttribute("class", /active/);
@@ -991,13 +996,27 @@ async function canonicalizeScreenRoots(page: Page) {
           (attr) =>
             attr.name !== "data-style-src" &&
             attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-projects-directory-tabs-scope" &&
+            !(
+              attr.name === "data-selected" &&
+              attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]')
+            ) &&
+            !(
+              attr.name === "class" &&
+              (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-link"]') ||
+                (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
+                  attr.ownerElement.getAttribute("data-selected") === "false"))
+            ) &&
             !attr.name.startsWith("data-v-"),
         )
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
-      const open = attrs
-        ? `<${node.tagName.toLowerCase()} ${attrs}>`
+      const canonicalAttrs = node.matches("[data-projects-directory-tabs-scope]")
+        ? 'class="title_area"'
+        : attrs;
+      const open = canonicalAttrs
+        ? `<${node.tagName.toLowerCase()} ${canonicalAttrs}>`
         : `<${node.tagName.toLowerCase()}>`;
       return `${open}${Array.from(node.childNodes)
         .map((child) => visit(child))
@@ -1041,6 +1060,13 @@ async function canonicalizeScreenRoots(page: Page) {
         return "site-breadcrumb-outer";
       if (attr.name === "class" && owner === "projects-breadcrumb-inner")
         return "site-breadcrumb-inner";
+      if (attr.name === "class" && owner === "projects-directory-tabs-list") return "nav nav-tabs";
+      if (
+        attr.name === "class" &&
+        owner === "projects-directory-tabs-item" &&
+        attr.ownerElement?.getAttribute("data-selected") === "true"
+      )
+        return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")
