@@ -2200,6 +2200,26 @@ coverage is GREEN 7/8 (57.5s): behavior/routes/modal/update/default-logo/typed-l
 the sole failure is the pre-existing broad DOM equality gap across GNB/footer and prior generated
 class canonicalization, outside this listhead owner.
 
+The one-hundred-eighty-first slice migrates only the populated `/sites/projectList` repeated
+project-row fluid grid. The existing row owner adds width and Bootstrap table clearfix; four direct
+column owners compose the existing inline listitem typography/spacing with block/left-float,
+border-box, min-height, gutter, and exact span5/4/2/1 widths. Row `row-fluid` and direct column
+`span* listitem-col` retire with zero fallback, while avatar/link/action behavior and all paint
+variables remain unchanged. Desktop live evidence fixes the row at (239.078125,252),
+1116.890625×69 and columns 451.5/356.453125/166.34375/71.28125. Mobile fixes the row at
+(66.375,352), 323.609375×81 and columns 130.8125/103.265625/48.1875/20.640625 with the legacy
+68/80/60/50 heights and float wrap. Source RED was recorded before implementation; focused
+desktop/mobile browser verification is GREEN 6/6 (16.5s). Same-element fallback equivalence and
+live-exact mobile width/gutters/pseudos/computed output pass; the local en-US fixture renders at
+y345/h69 with content-driven column heights 68/40/60/50, versus the ko-KR live full-screen
+y352/h81 and 68/80/60/50. The test now records both scalars without compensation.
+The initial full projectList matrix's only three failures were page-management-shell assertions
+that still named the retired direct `listitem-col`. Source now rejects that class and runtime counts
+the same 16 direct columns through stable owners; page-shell focused is GREEN 3/3 (15.8s) and the
+final full projectList StyleX matrix is GREEN 56/56 (45.1s). Whole-screen is GREEN 7/8 (48.5s):
+seven behavior/routes/modal/update/default-logo/typed-link cases pass, with only the same
+pre-existing broad DOM equality gap outside this owner.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

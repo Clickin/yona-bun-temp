@@ -221,6 +221,9 @@ const styles = stylex.create({
     borderBottomWidth: "1px",
     borderBottomColor: siteProjectListTheme.listBorder,
     lineHeight: "70px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
   },
   projectRowEven: {
     backgroundColor: siteProjectListTheme.rowEvenSurface,
@@ -242,12 +245,21 @@ const styles = stylex.create({
     verticalAlign: "top",
   },
   projectRowColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
     fontSize: "12px",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
     padding: "10px 0px",
     textOverflow: "ellipsis",
     wordBreak: "break-all",
     lineHeight: "20px",
   },
+  projectRowNameColumn: { marginLeft: "0px", width: "40.42553191489362%" },
+  projectRowDescriptionColumn: { width: "31.914893617021278%" },
+  projectRowCreatedColumn: { width: "14.893617021276595%" },
+  projectRowActionColumn: { width: "6.382978723404255%" },
   projectListContainer: {
     listStyle: "none",
   },
@@ -561,7 +573,12 @@ const projectRowStyleProps = stylex.props(styles.projectRow);
 const projectRowEvenStyleProps = stylex.props(styles.projectRow, styles.projectRowEven);
 const projectRowAvatarStyleProps = stylex.props(styles.projectRowAvatar);
 const projectRowAvatarImageStyleProps = stylex.props(styles.projectRowAvatarImage);
-const projectRowColumnStyleProps = stylex.props(styles.projectRowColumn);
+const projectRowColumnStyleProps = {
+  action: stylex.props(styles.projectRowColumn, styles.projectRowActionColumn),
+  created: stylex.props(styles.projectRowColumn, styles.projectRowCreatedColumn),
+  description: stylex.props(styles.projectRowColumn, styles.projectRowDescriptionColumn),
+  name: stylex.props(styles.projectRowColumn, styles.projectRowNameColumn),
+};
 const projectListContainerStyleProps = stylex.props(styles.projectListContainer);
 const projectListProjectNameStyleProps = stylex.props(styles.projectListProjectName);
 const projectListDeleteActionStyleProps = stylex.props(styles.projectListDeleteAction);
@@ -1267,13 +1284,13 @@ function ProjectListItem({
   return (
     <li
       {...rowStyleProps}
-      className={`row-fluid ${rowStyleProps.className ?? ""}`}
+      className={rowStyleProps.className}
       data-stylex-owner="site-project-list-row"
     >
       <div
-        {...projectRowColumnStyleProps}
-        className={`span5 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
-        data-stylex-owner="site-project-list-row-columns"
+        {...projectRowColumnStyleProps.name}
+        className={projectRowColumnStyleProps.name.className}
+        data-stylex-owner="site-project-list-row-name-column"
       >
         <Link
           to="/$ownerName/$projectName"
@@ -1302,23 +1319,23 @@ function ProjectListItem({
         </Link>
       </div>
       <div
-        {...projectRowColumnStyleProps}
-        className={`span4 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
-        data-stylex-owner="site-project-list-row-columns"
+        {...projectRowColumnStyleProps.description}
+        className={projectRowColumnStyleProps.description.className}
+        data-stylex-owner="site-project-list-row-description-column"
       >
         {project.overview}
       </div>
       <div
-        {...projectRowColumnStyleProps}
-        className={`span2 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
-        data-stylex-owner="site-project-list-row-columns"
+        {...projectRowColumnStyleProps.created}
+        className={projectRowColumnStyleProps.created.className}
+        data-stylex-owner="site-project-list-row-created-column"
       >
         {project.createdAt}
       </div>
       <div
-        {...projectRowColumnStyleProps}
-        className={`span1 listitem-col ${projectRowColumnStyleProps.className ?? ""}`}
-        data-stylex-owner="site-project-list-row-columns"
+        {...projectRowColumnStyleProps.action}
+        className={projectRowColumnStyleProps.action.className}
+        data-stylex-owner="site-project-list-row-action-column"
       >
         <button
           {...projectListDeleteActionStyleProps}

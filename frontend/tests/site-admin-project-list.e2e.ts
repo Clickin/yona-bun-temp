@@ -855,7 +855,9 @@ async function projectListDeleteModalStateMetrics(page: Page) {
     const searchForm = requireElement('[data-stylex-owner="site-project-list-search"]');
     const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
     const projectName = requireElement('[data-stylex-owner="site-project-list-project-name"]');
-    const createdColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span2');
+    const createdColumn = requireElement(
+      '[data-stylex-owner="site-project-list-row-created-column"]',
+    );
     const deleteButton = requireElement('[data-stylex-owner="site-project-list-delete-action"]');
     const modal = requireElement("#alertDeletionWrap");
     const modalFooter = requireElement(
@@ -1130,6 +1132,10 @@ async function canonicalizeScreenRoots(page: Page) {
         ["site-project-list-listhead-description-column", "span4 listhead-title"],
         ["site-project-list-listhead-created-column", "span2 listhead-title"],
         ["site-project-list-listhead-action-column", "span1 listhead-title"],
+        ["site-project-list-row-name-column", "span5 listitem-col"],
+        ["site-project-list-row-description-column", "span4 listitem-col"],
+        ["site-project-list-row-created-column", "span2 listitem-col"],
+        ["site-project-list-row-action-column", "span1 listitem-col"],
       ]).get(owner ?? "");
       if (name === "class" && canonicalLayoutClass !== undefined) {
         return canonicalLayoutClass;
@@ -1309,7 +1315,9 @@ async function projectListMetrics(page: Page) {
     const firstHeaderColumn = requireElement(
       '[data-stylex-owner="site-project-list-listhead-name-column"]',
     );
-    const firstRowColumn = requireElement('[data-stylex-owner="site-project-list-row"] .span5');
+    const firstRowColumn = requireElement(
+      '[data-stylex-owner="site-project-list-row-name-column"]',
+    );
     const firstRow = requireElement('[data-stylex-owner="site-project-list-row"]');
     const avatarWrap = requireElement('[data-stylex-owner="site-project-list-row-avatar"]');
     const avatar = requireElement('[data-stylex-owner="site-project-list-row-avatar-image"]');

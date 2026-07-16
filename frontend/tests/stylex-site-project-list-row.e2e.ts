@@ -1,8 +1,11 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const rowSelector = '[data-stylex-owner="site-project-list-row"]';
+const columnSelector =
+  ':scope > [data-stylex-owner^="site-project-list-row-"][data-stylex-owner$="-column"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
 
 async function openProjectList(page: Page) {
@@ -68,7 +71,8 @@ test.describe("StyleX site project-list populated rows", () => {
     expect(route).toContain('data-stylex-owner="site-project-list-row"');
     expect(route).toContain('data-stylex-owner="site-project-list-row-avatar"');
     expect(route).toContain('data-stylex-owner="site-project-list-row-avatar-image"');
-    expect(route).toContain('data-stylex-owner="site-project-list-row-columns"');
+    for (const owner of ["name", "description", "created", "action"])
+      expect(route).toContain(`data-stylex-owner="site-project-list-row-${owner}-column"`);
     expect(route).toContain("styles.projectRow");
     expect(route).toContain("styles.projectRowAvatar");
     expect(route).toContain("styles.projectRowAvatarImage");
@@ -78,6 +82,14 @@ test.describe("StyleX site project-list populated rows", () => {
     expect(route).toContain('width: "45px"');
     expect(route).toContain('display: "inline-block"');
     expect(route).toContain('wordBreak: "break-all"');
+    expect(route).not.toContain("className={`row-fluid ${rowStyleProps.className");
+    for (const retired of [
+      "span5 listitem-col",
+      "span4 listitem-col",
+      "span2 listitem-col",
+      "span1 listitem-col",
+    ])
+      expect(route).not.toContain(retired);
     expect(route).not.toContain("globalColors.");
   });
 
@@ -85,21 +97,25 @@ test.describe("StyleX site project-list populated rows", () => {
     const rows = await openProjectList(page);
     const first = rows.first();
 
-    await expect(
-      first.locator(':scope > [data-stylex-owner="site-project-list-row-columns"]'),
-    ).toHaveCount(4);
-    await expect(
-      first.locator(':scope > [data-stylex-owner="site-project-list-row-columns"]'),
-    ).toHaveText([/acme\/roadmap/, "Release planning", "2026-06-29", "Delete"]);
+    await expect(first.locator(columnSelector)).toHaveCount(4);
+    await expect(first.locator(columnSelector)).toHaveText([
+      /acme\/roadmap/,
+      "Release planning",
+      "2026-06-29",
+      "Delete",
+    ]);
     expect(
       await first
-        .locator(':scope > [data-stylex-owner="site-project-list-row-columns"]')
+        .locator(columnSelector)
         .evaluateAll((columns) =>
-          columns.map((column) =>
-            column.className.split(" ").find((name) => name.startsWith("span")),
-          ),
+          columns.map((column) => column.getAttribute("data-stylex-owner")),
         ),
-    ).toEqual(["span5", "span4", "span2", "span1"]);
+    ).toEqual([
+      "site-project-list-row-name-column",
+      "site-project-list-row-description-column",
+      "site-project-list-row-created-column",
+      "site-project-list-row-action-column",
+    ]);
     await expect(
       first.locator('[data-stylex-owner="site-project-list-row-avatar"]'),
     ).toHaveAttribute("href", /\/acme\/roadmap$/);
@@ -122,13 +138,15 @@ test.describe("StyleX site project-list populated rows", () => {
         row.querySelector('[data-stylex-owner="site-project-list-row-avatar-image"]')!.classList,
       ),
       columns: Array.from(
-        row.querySelectorAll(':scope > [data-stylex-owner="site-project-list-row-columns"]'),
+        row.querySelectorAll(
+          ':scope > [data-stylex-owner^="site-project-list-row-"][data-stylex-owner$="-column"]',
+        ),
         (column) => Array.from(column.classList),
       ),
       row: Array.from(row.classList),
     }));
 
-    expect(classes.row).toContain("row-fluid");
+    expect(classes.row).not.toContain("row-fluid");
     expect(classes.row).not.toContain("listitem");
     expect(classes.row.some((token) => token.startsWith("x"))).toBe(true);
     expect(classes.avatar).not.toContain("avatar-wrap");
@@ -136,7 +154,7 @@ test.describe("StyleX site project-list populated rows", () => {
     expect(classes.avatar.some((token) => token.startsWith("x"))).toBe(true);
     expect(classes.avatarImage.some((token) => token.startsWith("x"))).toBe(true);
     for (const column of classes.columns) {
-      expect(column).toContain("listitem-col");
+      expect(column).not.toContain("listitem-col");
       expect(column.some((token) => token.startsWith("x"))).toBe(true);
     }
     await expect(rows.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -155,7 +173,7 @@ test.describe("StyleX site project-list populated rows", () => {
       const row = rows.first();
       const avatar = row.locator('[data-stylex-owner="site-project-list-row-avatar"]');
       const avatarImage = row.locator('[data-stylex-owner="site-project-list-row-avatar-image"]');
-      const columns = row.locator(':scope > [data-stylex-owner="site-project-list-row-columns"]');
+      const columns = row.locator(columnSelector);
 
       await expect(rows.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
       await expect(rows.nth(1)).toHaveCSS("background-color", "rgb(249, 249, 249)");
@@ -187,10 +205,110 @@ test.describe("StyleX site project-list populated rows", () => {
         await expect(column).toHaveCSS("line-height", "20px");
       }
 
+      const gridEvidence = await row.evaluate((element) => {
+        const columns = Array.from(
+          element.querySelectorAll<HTMLElement>(
+            ':scope > [data-stylex-owner^="site-project-list-row-"][data-stylex-owner$="-column"]',
+          ),
+        );
+        const capture = () => {
+          const rowRect = element.getBoundingClientRect();
+          return {
+            columns: columns.map((column) => {
+              const rect = column.getBoundingClientRect();
+              const style = getComputedStyle(column);
+              return {
+                boxSizing: style.boxSizing,
+                float: style.float,
+                height: rect.height,
+                left: rect.left,
+                marginLeft: Number.parseFloat(style.marginLeft),
+                minHeight: Number.parseFloat(style.minHeight),
+                padding: style.padding,
+                textOverflow: style.textOverflow,
+                width: rect.width,
+                wordBreak: style.wordBreak,
+              };
+            }),
+            pseudos: {
+              after: getComputedStyle(element, "::after").clear,
+              before: getComputedStyle(element, "::before").display,
+            },
+            row: {
+              height: rowRect.height,
+              left: rowRect.left,
+              top: rowRect.top,
+              width: rowRect.width,
+            },
+          };
+        };
+        const actual = capture();
+        const nodes = [element, ...columns];
+        const originals = nodes.map((node) => node.className);
+        nodes.forEach((node) => {
+          Array.from(node.classList).forEach((token) => {
+            if (token.startsWith("x") || token.includes("__styles.")) node.classList.remove(token);
+          });
+        });
+        element.classList.add("row-fluid", "listitem");
+        ["span5", "span4", "span2", "span1"].forEach((span, index) =>
+          columns[index]!.classList.add(span, "listitem-col"),
+        );
+        const fallback = capture();
+        nodes.forEach((node, index) => {
+          node.className = originals[index]!;
+        });
+        return { actual, fallback };
+      });
+      expect(gridEvidence.fallback).toEqual(gridEvidence.actual);
+      const expected =
+        viewport.name === "desktop"
+          ? {
+              columns: [
+                [239.078125, 451.5, 68, 0],
+                [714.328125, 356.453125, 40, 23.75],
+                [1094.53125, 166.34375, 40, 23.75],
+                [1284.625, 71.28125, 50, 23.75],
+              ],
+              row: [239.078125, 252, 1116.890625, 69],
+            }
+          : {
+              columns: [
+                [66.375, 130.8125, 68, 0],
+                [204.0625, 103.265625, 40, 6.875],
+                [314.203125, 48.1875, 60, 6.875],
+                [369.265625, 20.640625, 50, 6.875],
+              ],
+              row: [66.375, 345, 323.609375, 69],
+            };
+      expect([
+        gridEvidence.actual.row.left,
+        gridEvidence.actual.row.top,
+        gridEvidence.actual.row.width,
+        gridEvidence.actual.row.height,
+      ]).toEqual(expected.row);
+      gridEvidence.actual.columns.forEach((column, index) => {
+        const expectedColumn = expected.columns[index]!;
+        expect([column.left, column.width, column.height, column.marginLeft]).toEqual(
+          expectedColumn,
+        );
+        expect(column).toMatchObject({
+          boxSizing: "border-box",
+          float: "left",
+          minHeight: 30,
+          padding: "10px 0px",
+          textOverflow: "ellipsis",
+          wordBreak: "break-all",
+        });
+      });
+      expect(gridEvidence.actual.pseudos).toEqual({ after: "both", before: "table" });
+
       const boxes = await row.evaluate((element) => {
         const rowBox = element.getBoundingClientRect();
         const columnBoxes = Array.from(
-          element.querySelectorAll(':scope > [data-stylex-owner="site-project-list-row-columns"]'),
+          element.querySelectorAll(
+            ':scope > [data-stylex-owner^="site-project-list-row-"][data-stylex-owner$="-column"]',
+          ),
           (column) => column.getBoundingClientRect(),
         );
         const avatarBox = element
@@ -243,10 +361,11 @@ test.describe("StyleX site project-list populated rows", () => {
       expect(boxes.avatarImage.right).toBeCloseTo(boxes.avatar.right, 0);
       expect(boxes.avatarImage.top).toBeGreaterThanOrEqual(boxes.avatar.top - 1);
       expect(boxes.avatarImage.bottom).toBeLessThanOrEqual(boxes.avatar.bottom + 1);
-      expect(
-        (await page.locator('[data-stylex-owner="site-project-list-container"]').screenshot())
-          .byteLength,
-      ).toBeGreaterThan(0);
+      const outputDirectory = resolve("../output/playwright/visual-sweep");
+      await mkdir(outputDirectory, { recursive: true });
+      await row.screenshot({
+        path: resolve(outputDirectory, `stylex-site-project-list-row-${viewport.name}.png`),
+      });
     });
   }
 
@@ -267,7 +386,10 @@ test.describe("StyleX site project-list populated rows", () => {
         "site-project-list-row",
         "site-project-list-row-avatar",
         "site-project-list-row-avatar-image",
-        "site-project-list-row-columns",
+        "site-project-list-row-name-column",
+        "site-project-list-row-description-column",
+        "site-project-list-row-created-column",
+        "site-project-list-row-action-column",
         "site-project-list-project-name",
         "site-project-list-delete-action",
       ]),
