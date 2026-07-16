@@ -178,7 +178,7 @@ test("icon/avatar-image wave owns exactly two repeated targets and retires only 
     1,
   );
   expect(route).not.toContain("stats-wrap");
-  expect(route).toContain(
+  expect(route).not.toContain(
     'className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}',
   );
   expect(route).toContain("className={`yobicon-friends yobicon-middle");
@@ -222,7 +222,7 @@ for (const viewport of [
     const avatarImage = avatar.locator(`:scope > [data-stylex-owner="${owners.avatarImage}"]`);
     const icons = members.locator(`p > [data-stylex-owner="${owners.icon}"]`);
     await expect(stats).not.toHaveClass(/(?:^|\s)stats-wrap(?:\s|$)/u);
-    await expect(avatar).toHaveClass(/(?:^|\s)avatar-wrap(?:\s|$)/u);
+    await expect(avatar).not.toHaveClass(/(?:^|\s)avatar-wrap(?:\s|$)/u);
     await expect(avatar).toHaveAttribute("href", `${basePath}/alice`);
     await expect(avatarImage).toHaveAttribute("alt", "Alice Kim");
     await expect(avatarImage).toHaveAttribute("src", memberAvatarDataUrl);

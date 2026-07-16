@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred five slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred six slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -407,6 +407,18 @@ the outer/inner to `0,108,1366x450` and `10,108,1346x373`; 390px mobile pins bot
 `0,108,390x553`, with exact search/list containment and no overflow. RED 0/3 becomes focused
 GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 47/47. Target live/local captures
 were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-sixth slice retires the final two populated-default `/projects` presentation-class
+residuals: the pagination list's frozen `_page.less` `-120px !important` left offset and the member
+avatar Link's frozen `_yobiUI.less` 3px radius. Both geometry values stay literal in the existing
+route owners; no theme variable, paint, new `!important`, or compensating responsive value is
+added. `page-nums` and `avatar-wrap` retire from this route, while their global fallback remains
+for other consumers. The max-720 normal `page-nums` margin remains excluded because it loses to
+the later important rule in the actual cascade. Verified Java desktop 1366x900 pins the list to
+`494.641,451,256.703x30` and the three avatars to x1321/y173,264,355 at 32x32; 390px mobile pins
+the list to `6.641,631,256.703x30` and avatars to x355/y238,389,540, with a 3px radius and no
+overflow. RED 0/3 becomes focused GREEN 3/3 and complete adjacent `/projects` coverage is GREEN
+50/50. Target live/local captures were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

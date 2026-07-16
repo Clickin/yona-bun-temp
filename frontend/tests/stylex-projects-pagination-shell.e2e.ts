@@ -180,7 +180,9 @@ test("pagination shell owns exactly four direct target types and preserves one i
     ].sort(),
   ).toEqual(Object.values(owners).sort());
   expect(route.match(/data-pagination-kind="(?:icon|standard|delimiter)"/gu)).toHaveLength(5);
-  expect(route).toContain("className={`page-nums ${directoryPaginationListStyleProps.className");
+  expect(route).not.toContain(
+    "className={`page-nums ${directoryPaginationListStyleProps.className",
+  );
   expect(route).not.toContain('className="page-navigation-wrap"');
   expect(route).not.toMatch(/className="page-num(?:\s|"|$)/u);
   expect(route).not.toContain('className="off"');
@@ -207,7 +209,7 @@ for (const viewport of [
     const labels = list.locator(`[data-stylex-owner="${owners.label}"]`);
 
     await expect(root).not.toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
-    await expect(list).toHaveClass(/(?:^|\s)page-nums(?:\s|$)/u);
+    await expect(list).not.toHaveClass(/(?:^|\s)page-nums(?:\s|$)/u);
     await expect(items).toHaveCount(5);
     expect(
       await items.evaluateAll((nodes) =>

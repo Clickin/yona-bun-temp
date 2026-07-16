@@ -208,7 +208,7 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
   expect(route).toContain(
     '<div {...directoryMembersStyleProps} data-stylex-owner="projects-directory-members">',
   );
-  expect(route).toContain(
+  expect(route).not.toContain(
     'className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}',
   );
   expect(route).not.toContain('className="stats-wrap pull-right"');
@@ -222,7 +222,7 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
     route.indexOf("directoryMemberAvatar: {"),
     route.indexOf("directoryMemberCount: {"),
   );
-  expect(avatarStyle).not.toContain("borderRadius");
+  expect(avatarStyle).toContain('borderRadius: "3px"');
 });
 
 for (const viewport of [

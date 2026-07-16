@@ -271,6 +271,7 @@ const styles = stylex.create({
   },
   directoryMemberAvatar: {
     backgroundColor: projectsDirectoryColors.memberAvatarSurface,
+    borderRadius: "3px",
     display: "inline-block",
     height: "32px",
     margin: "0px 3px 3px 0px",
@@ -319,6 +320,7 @@ const styles = stylex.create({
     fontSize: "0px",
     listStyle: "none",
     margin: "0px",
+    marginLeft: "-120px",
     padding: "0px",
   },
   directoryPaginationItem: {
@@ -675,7 +677,6 @@ function ProjectsPagination({
     >
       <ul
         {...directoryPaginationListStyleProps}
-        className={`page-nums ${directoryPaginationListStyleProps.className ?? ""}`}
         data-stylex-owner="projects-directory-pagination-list"
       >
         <li
@@ -984,10 +985,10 @@ function ProjectListItem({
                       {...directoryMemberAvatarStyleProps}
                       activeProps={{
                         "aria-current": undefined,
-                        className: `avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`,
+                        className: directoryMemberAvatarStyleProps.className,
                         "data-status": undefined,
                       }}
-                      className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}
+                      className={directoryMemberAvatarStyleProps.className}
                       data-stylex-owner="projects-directory-member-avatar"
                       params={{ user: loginId }}
                       to="/$user"
