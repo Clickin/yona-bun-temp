@@ -1,4 +1,6 @@
 import { readFile } from "node:fs/promises";
+import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -79,7 +81,9 @@ test.describe("StyleX site project-list pagination", () => {
       "paginationOffLabel",
       "paginationIcon",
       "paginationPrevIcon",
+      "paginationPrevDisabledIcon",
       "paginationNextIcon",
+      "paginationNextDisabledIcon",
     ]) {
       expect(route).toContain(`styles.${style}`);
     }
@@ -90,6 +94,12 @@ test.describe("StyleX site project-list pagination", () => {
     expect(route).toContain("default: siteProjectListTheme.paginationInputBorder");
     expect(route).toContain("siteProjectListTheme.paginationInputInteractiveShadow");
     expect(route).toContain('width: "6px"');
+    expect(route).toContain('MozAppearance: "textfield"');
+    expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
+    expect(route).toContain("--site-project-list-pagination-sprite");
+    expect(route).not.toContain("className={`nospinner");
+    expect(route).not.toContain("className={`ico btn-pg-prev");
+    expect(route).not.toContain("className={`ico btn-pg-next");
     expect(route).not.toContain("globalColors.");
   });
 
@@ -117,18 +127,27 @@ test.describe("StyleX site project-list pagination", () => {
       )
       .toBe(true);
     await expect(page.locator(owners.input)).toHaveValue("2");
+    await expect(page.locator(owners.icon).nth(0)).toHaveCSS(
+      "background-position",
+      "-136px -139px",
+    );
+    await expect(page.locator(owners.icon).nth(1)).toHaveCSS(
+      "background-position",
+      "-146px -139px",
+    );
 
     const input = page.locator(owners.input);
     await input.fill("9");
     await input.press("Enter");
     await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("3");
     await expect(input).toHaveValue("3");
+    await expect(page.locator(owners.icon).nth(1)).toHaveCSS("background-position", "-23px -13px");
     await input.fill("1.5");
     await input.press("Enter");
     await expect(input).toHaveValue("3");
   });
 
-  test("removes migrated selectors and keeps only sprite and Firefox fallbacks", async ({
+  test("directly owns sprite and Firefox input residuals without legacy classes", async ({
     page,
   }) => {
     const pagination = await openPagination(page);
@@ -151,16 +170,14 @@ test.describe("StyleX site project-list pagination", () => {
         ]),
       );
     }
-    expect(classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes).toEqual(
-      expect.arrayContaining(["nospinner"]),
-    );
-    expect(classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes).not.toContain(
-      "input-mini",
-    );
+    const inputClasses = classes.find(({ owner }) => owner?.endsWith("pagination-input"))?.classes;
+    expect(inputClasses).not.toContain("input-mini");
+    expect(inputClasses).not.toContain("nospinner");
     for (const icon of await pagination.locator(owners.icon).all()) {
-      await expect(icon).toHaveClass(/\bico\b/u);
-      await expect(icon).toHaveClass(/\bbtn-pg-(?:prev|next)\b/u);
+      await expect(icon).not.toHaveClass(/\b(?:ico|btn-pg-prev|btn-pg-next|off)\b/u);
     }
+    await expect(pagination.locator(owners.icon).nth(0)).toHaveAttribute("data-disabled", "true");
+    await expect(pagination.locator(owners.icon).nth(1)).toHaveAttribute("data-disabled", "false");
   });
 
   for (const viewport of [
@@ -186,6 +203,8 @@ test.describe("StyleX site project-list pagination", () => {
       await expect(list).toHaveCSS("list-style-type", "none");
       await expect(list).toHaveCSS("margin-left", viewport.name === "desktop" ? "-120px" : "0px");
       await expect(input).toHaveCSS("width", "30px");
+      await expect(input).toHaveCSS("appearance", "auto");
+      await expect(input).toHaveCSS("font-size", viewport.name === "desktop" ? "12px" : "16px");
       await expect(input).toHaveCSS("font-weight", "700");
       await expect(input).toHaveCSS("border-color", "rgb(238, 238, 238)");
       await input.hover();
@@ -201,7 +220,14 @@ test.describe("StyleX site project-list pagination", () => {
         await expect(icon).toHaveCSS("height", "9px");
         await expect(icon).toHaveCSS("display", "inline-block");
         await expect(icon).toHaveCSS("vertical-align", "middle");
+        await expect(icon).toHaveCSS("background-repeat", "no-repeat");
       }
+      await expect(icons.nth(0)).toHaveCSS("background-position", "-164px -2px");
+      await expect(icons.nth(0)).toHaveCSS("margin-right", "10px");
+      await expect(icons.nth(1)).toHaveCSS("background-position", "-146px -139px");
+      await expect(icons.nth(1)).toHaveCSS("margin-left", "10px");
+      await expect(input).toHaveJSProperty("offsetWidth", 44);
+      await expect(input).toHaveJSProperty("offsetHeight", 30);
 
       const metrics = await pagination.evaluate((wrapper) => {
         const list = wrapper.querySelector<HTMLElement>(
@@ -242,7 +268,17 @@ test.describe("StyleX site project-list pagination", () => {
       expect(metrics.list.left).toBeGreaterThanOrEqual(metrics.wrapper.left - 121);
       expect(metrics.list.right).toBeLessThanOrEqual(metrics.wrapper.right + 1);
       expect(metrics.wrapper.right - metrics.wrapper.left).toBeGreaterThan(0);
-      expect((await pagination.screenshot()).byteLength).toBeGreaterThan(0);
+      mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
+      const screenshot = await pagination.screenshot({
+        path: resolve(
+          "..",
+          "output",
+          "playwright",
+          "visual-sweep",
+          `stylex-site-project-list-pagination-${viewport.name}.png`,
+        ),
+      });
+      expect(screenshot.byteLength).toBeGreaterThan(0);
 
       const equivalence = await pagination.evaluate((wrapper) => {
         const capture = () => {
@@ -255,6 +291,7 @@ test.describe("StyleX site project-list pagination", () => {
           const style = (element: Element) => {
             const value = getComputedStyle(element);
             return {
+              appearance: value.appearance,
               color: value.color,
               display: value.display,
               fontSize: value.fontSize,
@@ -264,7 +301,26 @@ test.describe("StyleX site project-list pagination", () => {
               width: value.width,
             };
           };
-          return { input: style(input), list: style(list), wrapper: style(wrapper) };
+          const icons = Array.from(
+            wrapper.querySelectorAll<HTMLElement>(
+              '[data-stylex-owner="site-project-list-pagination-icon"]',
+            ),
+          ).map((icon) => {
+            const value = getComputedStyle(icon);
+            const box = icon.getBoundingClientRect();
+            return {
+              backgroundImage: value.backgroundImage,
+              backgroundPosition: value.backgroundPosition,
+              backgroundRepeat: value.backgroundRepeat,
+              display: value.display,
+              height: box.height,
+              marginLeft: value.marginLeft,
+              marginRight: value.marginRight,
+              verticalAlign: value.verticalAlign,
+              width: box.width,
+            };
+          });
+          return { icons, input: style(input), list: style(list), wrapper: style(wrapper) };
         };
         const migrated = capture();
         const classByOwner: Record<string, string[]> = {
@@ -285,10 +341,24 @@ test.describe("StyleX site project-list pagination", () => {
           if (element.dataset.paginationVariant === "delimiter") element.classList.add("delimiter");
           if (element.dataset.paginationState === "off") element.classList.add("off");
         }
+        const icons = wrapper.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="site-project-list-pagination-icon"]',
+        );
+        icons[0]?.classList.add("ico", "btn-pg-prev");
+        icons[1]?.classList.add("ico", "btn-pg-next");
         return { fallback: capture(), migrated };
       });
       expect(equivalence.fallback.input).toEqual(equivalence.migrated.input);
       expect(equivalence.fallback.wrapper).toEqual(equivalence.migrated.wrapper);
+      const omitSpriteUrl = ({
+        backgroundImage: _backgroundImage,
+        ...icon
+      }: (typeof equivalence.migrated.icons)[number]) => icon;
+      expect(equivalence.fallback.icons.map(omitSpriteUrl)).toEqual(
+        equivalence.migrated.icons.map(omitSpriteUrl),
+      );
+      for (const icon of [...equivalence.fallback.icons, ...equivalence.migrated.icons])
+        expect(icon.backgroundImage).toMatch(/sprite(?:-[^)]+)?\.png/u);
       if (viewport.name === "desktop") {
         expect(equivalence.fallback.list).toEqual(equivalence.migrated.list);
       } else {

@@ -2087,6 +2087,21 @@ and browser coverage are GREEN. The final focused page-management/search-control
 suite passes 9/9 (16.8s), including desktop/mobile exact fallback/computed/glyph/geometry/screenshots
 and SPA submission.
 
+The one-hundred-seventy-sixth slice completes only the authenticated populated-first-page
+`/sites/projectList` pagination input and previous/next sprite residual. The existing input owner
+directly carries frozen Firefox-only `MozAppearance:textfield` without changing Chrome's computed
+`appearance:auto`. Four icon variants own the canonical Vite-imported sprite image/repeat,
+6×9 display/alignment, directional margins, and enabled/disabled positions through the proven
+URL-only route custom-property bridge. This consumer retires `nospinner`, `ico`, `btn-pg-prev`,
+`btn-pg-next`, and icon `off`; geometry/type remain inline, no theme or fallback CSS changes, and
+React/TanStack navigation/input behavior remains unchanged. Source/static verification is GREEN;
+focused browser verification is GREEN 5/5 (15.9s). Local pagination screenshots are saved at
+`output/playwright/visual-sweep/stylex-site-project-list-pagination-{desktop,mobile}.png`; fresh live
+legacy full-screen baselines remain under
+`output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/`. Desktop/mobile
+inspection confirms the recorded 44×30 input, 12px/16px font, and identical 6×9 sprite rhythm
+without visible drift.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

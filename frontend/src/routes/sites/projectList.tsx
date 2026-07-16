@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useState, type MouseEvent, type SyntheticEvent } from "react";
+import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -15,6 +15,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { globalBreakpoints } from "../../theme.stylex";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { siteProjectListTheme } from "./-projectList.stylex";
 
@@ -22,6 +23,10 @@ type ProjectListSearch = {
   filter?: string;
   pageNum?: number;
 };
+
+const paginationSpriteStyle = {
+  "--site-project-list-pagination-sprite": `url(${legacySpriteUrl})`,
+} as CSSProperties;
 
 const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -212,6 +217,7 @@ const styles = stylex.create({
     padding: "0px 5px",
   },
   paginationInput: {
+    MozAppearance: "textfield",
     margin: "0px",
     width: "30px",
     textAlign: "center",
@@ -240,16 +246,26 @@ const styles = stylex.create({
     color: siteProjectListTheme.paginationText,
   },
   paginationIcon: {
+    backgroundImage: "var(--site-project-list-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
     display: "inline-block",
     verticalAlign: "middle",
     width: "6px",
     height: "9px",
   },
   paginationPrevIcon: {
+    backgroundPosition: "-136px -139px",
     marginRight: "10px",
   },
+  paginationPrevDisabledIcon: {
+    backgroundPosition: "-164px -2px",
+  },
   paginationNextIcon: {
+    backgroundPosition: "-146px -139px",
     marginLeft: "10px",
+  },
+  paginationNextDisabledIcon: {
+    backgroundPosition: "-23px -13px",
   },
   deleteModal: {
     position: "fixed",
@@ -443,7 +459,17 @@ const paginationOffLabelStyleProps = stylex.props(
   styles.paginationOffLabel,
 );
 const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
+const paginationPrevDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationPrevIcon,
+  styles.paginationPrevDisabledIcon,
+);
 const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
+const paginationNextDisabledIconStyleProps = stylex.props(
+  styles.paginationIcon,
+  styles.paginationNextIcon,
+  styles.paginationNextDisabledIcon,
+);
 const deleteModalStyleProps = stylex.props(styles.deleteModal);
 const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
@@ -814,8 +840,9 @@ function ProjectListPagination({
             >
               <i
                 {...paginationPrevIconStyleProps}
-                className={`ico btn-pg-prev ${paginationPrevIconStyleProps.className ?? ""}`}
+                data-disabled="false"
                 data-stylex-owner="site-project-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -828,10 +855,11 @@ function ProjectListPagination({
           ) : (
             <>
               <i
-                {...paginationPrevIconStyleProps}
-                className={`ico btn-pg-prev off ${paginationPrevIconStyleProps.className ?? ""}`}
+                {...paginationPrevDisabledIconStyleProps}
+                data-disabled="true"
                 data-pagination-state="off"
                 data-stylex-owner="site-project-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -851,7 +879,6 @@ function ProjectListPagination({
         >
           <input
             {...paginationInputStyleProps}
-            className={`nospinner ${paginationInputStyleProps.className ?? ""}`}
             data-stylex-owner="site-project-list-pagination-input"
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -917,8 +944,9 @@ function ProjectListPagination({
               </span>
               <i
                 {...paginationNextIconStyleProps}
-                className={`ico btn-pg-next ${paginationNextIconStyleProps.className ?? ""}`}
+                data-disabled="false"
                 data-stylex-owner="site-project-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </Link>
           ) : (
@@ -932,10 +960,11 @@ function ProjectListPagination({
                 {t("button.nextPage")}
               </span>
               <i
-                {...paginationNextIconStyleProps}
-                className={`ico btn-pg-next off ${paginationNextIconStyleProps.className ?? ""}`}
+                {...paginationNextDisabledIconStyleProps}
+                data-disabled="true"
                 data-pagination-state="off"
                 data-stylex-owner="site-project-list-pagination-icon"
+                style={paginationSpriteStyle}
               ></i>
             </>
           )}
