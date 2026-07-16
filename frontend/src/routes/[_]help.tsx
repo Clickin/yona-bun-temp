@@ -5,8 +5,13 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath } from "../runtime-config";
 import { globalBreakpoints } from "../theme.stylex";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { helpShellColors } from "./-help.stylex";
+import { helpColors } from "./-help.stylex";
+
+const faqSpriteStyle = {
+  "--help-faq-sprite": `url(${legacySpriteUrl})`,
+} as React.CSSProperties;
 
 const styles = stylex.create({
   breadcrumbOuter: {
@@ -31,8 +36,105 @@ const styles = stylex.create({
     width: "100%",
   },
   pageWrap: {
-    backgroundColor: helpShellColors.pageSurface,
+    backgroundColor: helpColors.pageSurface,
     margin: "0px auto",
+  },
+  faqList: {
+    listStyle: "none",
+    margin: "30px 0px 0px",
+    padding: "0px",
+  },
+  faqRow: {
+    borderBottomColor: helpColors.faqBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    marginBottom: "14px",
+  },
+  faqLastRow: {
+    borderBottomStyle: "none",
+  },
+  faqQuestionWrap: {
+    boxSizing: "content-box",
+    display: "table",
+    lineHeight: 1.2,
+    marginBottom: "14px",
+    padding: "0px 15px",
+    width: "100%",
+  },
+  faqQuestionWrapOpen: {
+    marginBottom: "16px",
+  },
+  faqIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontSize: "2em",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "bold",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "middle",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+  },
+  faqQuestionIcon: {
+    color: helpColors.faqQuestionIcon,
+    "::before": { content: '"\\e48f"' },
+  },
+  faqQuestionControl: {
+    display: "contents",
+  },
+  faqQuestion: {
+    boxSizing: "content-box",
+    color: helpColors.faqQuestionText,
+    display: "table-cell",
+    fontSize: "14px",
+    lineHeight: 1.2,
+    textAlign: "start",
+    textDecoration: "none",
+    verticalAlign: "middle",
+    width: "85%",
+  },
+  faqToggleIcon: {
+    backgroundImage: "var(--help-faq-sprite)",
+    backgroundPosition: "-3px -144px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "14px",
+    margin: "17px",
+    verticalAlign: "middle",
+    width: "14px",
+  },
+  faqToggleIconOpen: {
+    backgroundPosition: "-20px -144px",
+  },
+  faqAnswerWrap: {
+    backgroundColor: helpColors.faqAnswerSurface,
+    borderTopColor: helpColors.faqBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    boxSizing: "content-box",
+    display: "none",
+    padding: "15px",
+  },
+  faqAnswerWrapOpen: {
+    display: "table",
+  },
+  faqAnswerIcon: {
+    color: helpColors.faqAnswerIcon,
+    marginRight: "30px",
+    "::before": { content: '"\\e480"' },
+  },
+  faqAnswer: {
+    boxSizing: "content-box",
+    display: "table-cell",
+    lineHeight: "180%",
+    paddingRight: "9%",
+    textAlign: "justify",
+    verticalAlign: "top",
+    width: "100%",
+    wordBreak: "break-all",
   },
 });
 
@@ -134,39 +236,18 @@ function HelpTocScreen({ appName }: { appName: string }) {
       </div>
       <div {...stylex.props(styles.pageWrapOuter)} data-stylex-owner="help-shell-page-wrap-outer">
         <div {...stylex.props(styles.pageWrap)} data-stylex-owner="help-shell-page-wrap">
-          <ul className="qas">
-            <li
-              className={isQuestionOpen(0) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(0)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 0)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  {appName}를 설치하고 싶어요.
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>공개 저장소가 준비되면 설치 안내를 제공할 예정입니다.</Answer>
-              </div>
-            </li>
-            <li
-              className={isQuestionOpen(1) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(1)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 1)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  프로젝트를 새로 생성하고 싶어요.
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>
+          <ul {...stylex.props(styles.faqList)} data-stylex-owner="help-faq-list">
+            <HelpFaqRow
+              answer="공개 저장소가 준비되면 설치 안내를 제공할 예정입니다."
+              index={0}
+              isOpen={isQuestionOpen(0)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question={`${appName}를 설치하고 싶어요.`}
+            />
+            <HelpFaqRow
+              answer={
+                <>
                   <p>상단의 "새 프로젝트 시작"을 클릭하신후 필요한 정보를 입력하시면 됩니다.</p>
                   <p>
                     공개설정에서 공개를 택하게 되면 해당 프로젝트의 멤버가 아닌 사용자들도 해당
@@ -183,24 +264,17 @@ function HelpTocScreen({ appName }: { appName: string }) {
                     위의 내용을 다 작성하셨다면 "프로젝트 생성" 버튼을 누르면 새로운 프로젝트를
                     생성하실수 있습니다.
                   </p>
-                </Answer>
-              </div>
-            </li>
-            <li
-              className={isQuestionOpen(2) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(2)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 2)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  내가 참여하는 프로젝트들은 어디서 볼수 있나요?
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>
+                </>
+              }
+              index={1}
+              isOpen={isQuestionOpen(1)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question="프로젝트를 새로 생성하고 싶어요."
+            />
+            <HelpFaqRow
+              answer={
+                <>
                   <Link
                     to="/"
                     activeOptions={legacyAnswerLinkActiveOptions}
@@ -219,24 +293,17 @@ function HelpTocScreen({ appName }: { appName: string }) {
                     정보 페이지
                   </Link>
                   에서도 확인하실수 있습니다.
-                </Answer>
-              </div>
-            </li>
-            <li
-              className={isQuestionOpen(3) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(3)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 3)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  프로젝트 탈퇴는 어떻게 하나요.
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>
+                </>
+              }
+              index={2}
+              isOpen={isQuestionOpen(2)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question="내가 참여하는 프로젝트들은 어디서 볼수 있나요?"
+            />
+            <HelpFaqRow
+              answer={
+                <>
                   자신의{" "}
                   <Link
                     to={infoPath}
@@ -248,24 +315,17 @@ function HelpTocScreen({ appName }: { appName: string }) {
                   </Link>
                   에서 참여하고 있는 프로젝트 목록을 볼 수있고 탈퇴도 할수 있습니다. 자신이
                   프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
-                </Answer>
-              </div>
-            </li>
-            <li
-              className={isQuestionOpen(4) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(4)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 4)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  게시판에서는 어떠한 것들을 할수 있나요?
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>
+                </>
+              }
+              index={3}
+              isOpen={isQuestionOpen(3)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question="프로젝트 탈퇴는 어떻게 하나요."
+            />
+            <HelpFaqRow
+              answer={
+                <>
                   게시판에서는 다음과 같은 기능이 가능합니다.
                   <ul>
                     <li>게시물 읽기: 사용자는 게시물의 내용을 볼 수 있다.</li>
@@ -275,29 +335,28 @@ function HelpTocScreen({ appName }: { appName: string }) {
                     <li>관리자 게시물 댓글 삭제: 프로젝트 관리자는 댓글을 삭제할 수 있다.</li>
                     <li>관리자 게시물 수정: 프로젝트 관리자는 게시물을 편집/삭제 할 수 있다.</li>
                   </ul>
-                </Answer>
-              </div>
-            </li>
-            <li
-              className={isQuestionOpen(5) ? "qa open" : "qa"}
-              onClick={() => toggleQuestion(5)}
-              onKeyDown={(event) => handleQuestionRowKeyDown(event, 5)}
-            >
-              <div className="question-wrap">
-                <i className="yobicon-q q" />
-                <button type="button" className="question" style={questionButtonStyle}>
-                  {appName}의 버그를 발견했어요.
-                </button>
-                <i className="ico icor" />
-              </div>
-              <div className="answer-wrap">
-                <i className="yobicon-a a" />
-                <Answer>
+                </>
+              }
+              index={4}
+              isOpen={isQuestionOpen(4)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question="게시판에서는 어떠한 것들을 할수 있나요?"
+            />
+            <HelpFaqRow
+              answer={
+                <>
                   {appName}는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를
                   통해 버그를 제보하거나 패치를 보내실 수 있습니다.
-                </Answer>
-              </div>
-            </li>
+                </>
+              }
+              index={5}
+              isLast
+              isOpen={isQuestionOpen(5)}
+              onKeyDown={handleQuestionRowKeyDown}
+              onToggle={toggleQuestion}
+              question={`${appName}의 버그를 발견했어요.`}
+            />
           </ul>
         </div>
       </div>
@@ -305,19 +364,80 @@ function HelpTocScreen({ appName }: { appName: string }) {
   );
 }
 
-const questionButtonStyle = {
-  background: "transparent",
-  border: 0,
-  boxShadow: "none",
-  lineHeight: "inherit",
-  padding: 0,
-  textAlign: "left",
-} satisfies React.CSSProperties;
-
-function Answer({ children }: React.PropsWithChildren) {
+function HelpFaqRow({
+  answer,
+  index,
+  isLast = false,
+  isOpen,
+  onKeyDown,
+  onToggle,
+  question,
+}: {
+  answer: React.ReactNode;
+  index: number;
+  isLast?: boolean;
+  isOpen: boolean;
+  onKeyDown: (event: React.KeyboardEvent<HTMLLIElement>, index: number) => void;
+  onToggle: (index: number) => void;
+  question: React.ReactNode;
+}) {
   return (
-    <div className="answer" style={{ width: "100%" }}>
-      {children}
-    </div>
+    <li
+      {...stylex.props(styles.faqRow, isLast && styles.faqLastRow)}
+      data-index={index}
+      data-state={isOpen ? "open" : "closed"}
+      data-stylex-owner="help-faq-row"
+      onClick={() => onToggle(index)}
+      onKeyDown={(event) => onKeyDown(event, index)}
+    >
+      <div
+        {...stylex.props(styles.faqQuestionWrap, isOpen && styles.faqQuestionWrapOpen)}
+        data-stylex-owner="help-faq-question-wrap"
+      >
+        <i
+          {...stylex.props(styles.faqIcon, styles.faqQuestionIcon)}
+          data-stylex-owner="help-faq-question-icon"
+        />
+        <button
+          {...stylex.props(styles.faqQuestionControl)}
+          aria-expanded={isOpen}
+          data-stylex-owner="help-faq-question-control"
+          onKeyDown={(event) => {
+            if (event.key !== " " && event.key !== "Enter") return;
+            event.preventDefault();
+            event.stopPropagation();
+            onToggle(index);
+          }}
+          type="button"
+        >
+          <span
+            {...stylex.props(styles.faqQuestion)}
+            data-stylex-owner="help-faq-question"
+            tabIndex={0}
+          >
+            {question}
+          </span>
+        </button>
+        <i
+          {...stylex.props(styles.faqToggleIcon, isOpen && styles.faqToggleIconOpen)}
+          aria-hidden="true"
+          data-stylex-owner="help-faq-toggle-icon"
+          style={faqSpriteStyle}
+        />
+      </div>
+      <div
+        {...stylex.props(styles.faqAnswerWrap, isOpen && styles.faqAnswerWrapOpen)}
+        data-state={isOpen ? "open" : "closed"}
+        data-stylex-owner="help-faq-answer-wrap"
+      >
+        <i
+          {...stylex.props(styles.faqIcon, styles.faqAnswerIcon)}
+          data-stylex-owner="help-faq-answer-icon"
+        />
+        <div {...stylex.props(styles.faqAnswer)} data-stylex-owner="help-faq-answer">
+          {answer}
+        </div>
+      </div>
+    </li>
   );
 }

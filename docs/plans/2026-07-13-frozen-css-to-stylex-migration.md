@@ -2292,6 +2292,24 @@ paint boundary. Live Java legacy fixes the desktop breadcrumb at `0,40,1366×45`
 Focused shell coverage is GREEN 3/3, broad help-toc succeeds, and check/build succeed with no
 frozen CSS edit.
 
+The one-hundred-eighty-eighth slice completes the closed-default `/_help` FAQ table. Direct owners
+cover the list, six default-closed rows with a borderless last-row variant, question wrapper/control/cell/Q icon/toggle,
+answer wrapper/A icon/answer, and all visible states. Literal `qas`, `qa`, `open`, question/answer
+wrapper and cell classes, sprite classes, and Q/A Yobicon classes retire; the zero-consumer 88-line
+`.qas` app.css bridge is deleted. React preserves `data-state`, `data-index`, ARIA, click, Space,
+and Enter. Because Edge blockifies a button containing table-cell layout, the button uses
+`display:contents` and its inner focusable span owns the legacy table-cell geometry while keyboard
+events bubble to the React control. Route-local `helpColors` contains only page/FAQ paint; every
+dimension, type, and spacing value stays inline with no `globalColors` or compensation. Live
+desktop/mobile closed/open geometry is fixed directly, including question content-box
+`x95.9375/y115/w1144.09375/h48` desktop and `x41/w316` mobile, answer desktop
+`padding-right 118.438`, computed width `1141.56`, rect `1260`, and mobile `32.3906/271.609/304`.
+Sprite positions remain `-3px -144px` and `-20px -144px`; Q/A glyphs remain `\e48f`/`\e480`.
+Combined Help is GREEN 9/9 (5.8s), focused FAQ is GREEN 3/3 (2.3s), check/build succeed, the
+generated fallback hash remains `6417f445…16f`, and actual live/local global 1366 shell metrics
+match with frozen CSS unchanged. Build updates only the fallback manifest's app.css source inventory
+hash from `afefe…` to `c4df…`; emitted `legacy-fallback.css` remains `6417f445…16f`.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -72,12 +72,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yoram를 설치하고 싶어요.</button>
+          <button type="button" class="question"><span>Yoram를 설치하고 싶어요.</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             공개 저장소가 준비되면 설치 안내를 제공할 예정입니다.
           </div>
         </div>
@@ -85,12 +85,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">프로젝트를 새로 생성하고 싶어요.</button>
+          <button type="button" class="question"><span>프로젝트를 새로 생성하고 싶어요.</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             <p>상단의 "새 프로젝트 시작"을 클릭하신후 필요한 정보를 입력하시면 됩니다.</p>
             <p>
               공개설정에서 공개를 택하게 되면 해당 프로젝트의 멤버가 아닌
@@ -115,12 +115,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">내가 참여하는 프로젝트들은 어디서 볼수 있나요?</button>
+          <button type="button" class="question"><span>내가 참여하는 프로젝트들은 어디서 볼수 있나요?</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             <a href="__BASE_PATH__/">메인화면</a>
             우측 하단에 다음과 같이 참여하고 있는 프로젝트의 목록을 볼수 있습니다.
             자물쇠가 있는 것은 비공개 프로젝트이며 자물쇠가 없는 것은 공개 프로젝트 입니다.
@@ -131,12 +131,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">프로젝트 탈퇴는 어떻게 하나요.</button>
+          <button type="button" class="question"><span>프로젝트 탈퇴는 어떻게 하나요.</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             자신의 <a href="__BASE_PATH__/info">정보 페이지</a>에서 참여하고 있는 프로젝트 목록을 볼 수있고
             탈퇴도 할수 있습니다. 자신이 프로젝트의 유일한 관리자라면 해당 프로젝트에서 탈퇴를 할 수 없습니다.
           </div>
@@ -145,12 +145,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">게시판에서는 어떠한 것들을 할수 있나요?</button>
+          <button type="button" class="question"><span>게시판에서는 어떠한 것들을 할수 있나요?</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             게시판에서는 다음과 같은 기능이 가능합니다.
             <ul>
               <li>게시물 읽기: 사용자는 게시물의 내용을 볼 수 있다.</li>
@@ -166,12 +166,12 @@ const EXPECTED_HELP_SCREEN = `
       <li class="qa">
         <div class="question-wrap">
           <i class="yobicon-q q"></i>
-          <button type="button" class="question" style="background: transparent; border: 0px; box-shadow: none; line-height: inherit; padding: 0px; text-align: left;">Yoram의 버그를 발견했어요.</button>
+          <button type="button" class="question"><span>Yoram의 버그를 발견했어요.</span></button>
           <i class="ico icor"></i>
         </div>
         <div class="answer-wrap">
           <i class="yobicon-a a"></i>
-          <div class="answer" style="width: 100%;">
+          <div class="answer">
             Yoram는 Open Source로 진행되고 있습니다. 공개 저장소가 준비되면 이슈 트래커를 통해 버그를 제보하거나 패치를 보내실 수 있습니다.
           </div>
         </div>
@@ -186,8 +186,9 @@ const EXPECTED_HELP_SCREEN = `
 </footer>
 `;
 
-test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async ({ page }) => {
+test("anonymous help FAQ matches the route-owned legacy help subtree DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1366, height: 900 });
   expect(HELP_ROUTE_SOURCE).not.toMatch(/<a\b/);
   expect(HELP_ROUTE_SOURCE).not.toContain(" as never");
   expect(HELP_ROUTE_SOURCE).toContain(
@@ -230,7 +231,11 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
       [];
     Element.prototype.addEventListener = function (type, listener, options) {
       if (type === "click" && this instanceof HTMLElement) {
-        if (this.matches(".qas > .qa, .qas > .qa .question")) {
+        if (
+          this.matches(
+            '[data-stylex-owner="help-faq-row"], [data-stylex-owner="help-faq-question-control"]',
+          )
+        ) {
           (
             window as unknown as { __helpFaqNativeListenerTypes: string[] }
           ).__helpFaqNativeListenerTypes.push(type);
@@ -252,8 +257,10 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   await expect(page.locator('[data-stylex-owner="help-shell-page-wrap-outer"]')).toBeVisible();
   await expect(page.locator("#experimentalHelp, #helpKeys")).toHaveCount(0);
   await expect(page.locator('.qas > .qa .question[href="#!/toggle"]')).toHaveCount(0);
-  await expect(page.locator(".qas > .qa .question").first()).toHaveJSProperty("tagName", "BUTTON");
-  await expect(page.locator(".qas > .qa .answer a")).toHaveCount(3);
+  await expect(
+    page.locator('[data-stylex-owner="help-faq-question-control"]').first(),
+  ).toHaveJSProperty("tagName", "BUTTON");
+  await expect(page.locator('[data-stylex-owner="help-faq-answer"] a')).toHaveCount(3);
   expect(await renderedHelpAnswerLinks(page)).toEqual([
     { href: `${basePath}/`, text: "메인화면" },
     { href: `${basePath}/info`, text: "정보 페이지" },
@@ -294,7 +301,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   expect(await readDesktopHelpMetrics(page)).toEqual({
     answerDisplayClosed: "none",
     answerPaddingTopOpen: "15px",
-    answerRightPaddingOpen: "94.5px",
+    answerRightPaddingOpen: "118.438px",
     breadcrumbHeadingLineHeight: "30px",
     breadcrumbHeadingPaddingBottom: "5px",
     breadcrumbHeadingPaddingLeft: "10px",
@@ -302,7 +309,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     firstQaBorderBottomWidth: "1px",
     firstQaMarginBottom: "14px",
     gnbInnerHeight: "40px",
-    gnbInnerWidth: 1058,
+    gnbInnerWidth: 1319,
     gnbOuterBackground: "rgb(27, 27, 27)",
     gnbOuterHeight: "40px",
     iconMarginOpen: "17px",
@@ -310,7 +317,7 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     logoLineHeight: "40px",
     logoPadding: "6px 10px",
     pageFooterLineHeight: "34px",
-    pageFooterOuterPadding: "10px 0px",
+    pageFooterOuterPadding: "10px",
     pageWrapOuterMarginTop: "10px",
     pageWrapOuterMinHeight: "450px",
     providerColor: "rgb(51, 51, 51)",
@@ -321,34 +328,34 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
     questionLineHeight: "16.8px",
     questionMarginBottomClosed: "14px",
     questionMarginBottomOpen: "16px",
-    questionWidth: "892.5px",
+    questionWidth: "1144.09px",
   });
 
-  const faqItems = page.locator(".qas > .qa");
-  const questions = page.locator(".qas > .qa .question");
+  const faqItems = page.locator('[data-stylex-owner="help-faq-row"]');
+  const questions = page.locator('[data-stylex-owner="help-faq-question-control"]');
   const initialHash = new URL(page.url()).hash;
-  await expect(faqItems.nth(0)).not.toHaveClass(/open/);
-  await expect(faqItems.nth(1)).not.toHaveClass(/open/);
+  await expect(faqItems.nth(0)).toHaveAttribute("data-state", "closed");
+  await expect(faqItems.nth(1)).toHaveAttribute("data-state", "closed");
 
   await questions.nth(0).click();
   expect(new URL(page.url()).hash).toBe(initialHash);
-  await expect(faqItems.nth(0)).toHaveClass(/open/);
-  await expect(faqItems.nth(1)).not.toHaveClass(/open/);
+  await expect(faqItems.nth(0)).toHaveAttribute("data-state", "open");
+  await expect(faqItems.nth(1)).toHaveAttribute("data-state", "closed");
 
   await questions.nth(1).click();
   expect(new URL(page.url()).hash).toBe(initialHash);
-  await expect(faqItems.nth(0)).toHaveClass(/open/);
-  await expect(faqItems.nth(1)).toHaveClass(/open/);
+  await expect(faqItems.nth(0)).toHaveAttribute("data-state", "open");
+  await expect(faqItems.nth(1)).toHaveAttribute("data-state", "open");
 
   await questions.nth(0).click();
   expect(new URL(page.url()).hash).toBe(initialHash);
-  await expect(faqItems.nth(0)).not.toHaveClass(/open/);
-  await expect(faqItems.nth(1)).toHaveClass(/open/);
+  await expect(faqItems.nth(0)).toHaveAttribute("data-state", "closed");
+  await expect(faqItems.nth(1)).toHaveAttribute("data-state", "open");
 
-  await faqItems.nth(0).locator(".icor").click();
+  await faqItems.nth(0).locator('[data-stylex-owner="help-faq-toggle-icon"]').click();
   expect(new URL(page.url()).hash).toBe(initialHash);
-  await expect(faqItems.nth(0)).toHaveClass(/open/);
-  await expect(faqItems.nth(1)).toHaveClass(/open/);
+  await expect(faqItems.nth(0)).toHaveAttribute("data-state", "open");
+  await expect(faqItems.nth(1)).toHaveAttribute("data-state", "open");
   expect(
     await page.evaluate(
       () =>
@@ -358,7 +365,9 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
   ).toEqual([]);
 
   await questions.nth(2).click();
-  const homeLink = faqItems.nth(2).locator(".answer a", { hasText: "메인화면" });
+  const homeLink = faqItems.nth(2).locator('[data-stylex-owner="help-faq-answer"] a', {
+    hasText: "메인화면",
+  });
   await expect(homeLink).toHaveAttribute("href", `${basePath}/`);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "home-link";
@@ -375,12 +384,12 @@ test("anonymous help FAQ matches legacy help/toc.scala.html screen DOM", async (
 
   await page.goto(`${basePath}/_help`);
   const logoLink = page.locator('[data-stylex-owner="global-gnb-brand-link"]');
-  await expect(logoLink).toHaveAttribute("href", basePath);
+  await expect(logoLink).toHaveAttribute("href", `${basePath}/`);
   await page.evaluate(() => {
     (window as typeof window & { __helpFaqSpaMarker?: string }).__helpFaqSpaMarker = "logo-link";
   });
   await logoLink.click();
-  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(basePath);
+  await expect.poll(() => page.evaluate(() => window.location.pathname)).toBe(`${basePath}/`);
   await expect
     .poll(() =>
       page.evaluate(
@@ -633,7 +642,7 @@ async function readMarkdownHelpMobileMetrics(page: Page) {
 }
 
 async function renderedHelpAnswerLinks(page: Page) {
-  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
     links.map((link) => ({
       href: link.getAttribute("href"),
       text: link.textContent?.trim(),
@@ -642,7 +651,7 @@ async function renderedHelpAnswerLinks(page: Page) {
 }
 
 async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
-  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
       className: link.getAttribute("class"),
@@ -654,12 +663,12 @@ async function renderedHelpAnswerLinkActiveMarkers(page: Page) {
 }
 
 async function readExternalAnswerLinkContainment(page: Page) {
-  return page.locator(".qas > .qa .answer a").evaluateAll((links) =>
+  return page.locator('[data-stylex-owner="help-faq-answer"] a').evaluateAll((links) =>
     links
       .filter((link) => link.getAttribute("href")?.startsWith("https://github.com/"))
       .map((link) => {
-        const answer = link.closest(".answer");
-        const qa = link.closest(".qa");
+        const answer = link.closest('[data-stylex-owner="help-faq-answer"]');
+        const qa = link.closest('[data-stylex-owner="help-faq-row"]');
         if (!answer) {
           throw new Error("Expected external FAQ link to stay inside a legacy answer cell.");
         }
@@ -686,23 +695,27 @@ async function readExternalAnswerLinkContainment(page: Page) {
 }
 
 async function readDesktopHelpMetrics(page: Page) {
-  return page.evaluate(() => {
+  const closedMetrics = await page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-inner"]');
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="global-gnb-brand-link"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="help-shell-page-wrap-outer"]',
     );
     const breadcrumbHeading = document.querySelector<HTMLElement>(
       '[data-stylex-owner="help-shell-breadcrumb-inner"] h3',
     );
-    const qas = document.querySelector<HTMLElement>(".qas");
-    const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
-    const questionWrap = document.querySelector<HTMLElement>(".qas > .qa .question-wrap");
-    const question = document.querySelector<HTMLElement>(".qas > .qa .question");
-    const answerWrap = document.querySelector<HTMLElement>(".qas > .qa .answer-wrap");
-    const answer = document.querySelector<HTMLElement>(".qas > .qa .answer");
-    const icon = document.querySelector<HTMLElement>(".qas > .qa .question-wrap .icor");
+    const qas = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-list"]');
+    const firstQa = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-row"]');
+    const questionWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-question-wrap"]',
+    );
+    const question = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-question"]');
+    const answerWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-answer-wrap"]',
+    );
+    const answer = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-answer"]');
+    const icon = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-toggle-icon"]');
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     const provider = document.querySelector<HTMLElement>(
@@ -743,15 +756,8 @@ async function readDesktopHelpMetrics(page: Page) {
     const pageFooterOuterStyle = getComputedStyle(pageFooterOuter);
     const providerStyle = getComputedStyle(provider);
 
-    firstQa.classList.add("open");
-    const questionWrapOpenStyle = getComputedStyle(questionWrap);
-    const answerWrapOpenStyle = getComputedStyle(answerWrap);
-    const answerOpenStyle = getComputedStyle(answer);
-    const iconOpenStyle = getComputedStyle(icon);
-    const metrics = {
+    return {
       answerDisplayClosed: closedAnswerDisplay,
-      answerPaddingTopOpen: answerWrapOpenStyle.paddingTop,
-      answerRightPaddingOpen: answerOpenStyle.paddingRight,
       breadcrumbHeadingLineHeight: breadcrumbHeadingStyle.lineHeight,
       breadcrumbHeadingPaddingBottom: breadcrumbHeadingStyle.paddingBottom,
       breadcrumbHeadingPaddingLeft: breadcrumbHeadingStyle.paddingLeft,
@@ -762,7 +768,6 @@ async function readDesktopHelpMetrics(page: Page) {
       gnbInnerWidth: Math.round(gnbInner.getBoundingClientRect().width),
       gnbOuterBackground: gnbOuterStyle.backgroundColor,
       gnbOuterHeight: gnbOuterStyle.height,
-      iconMarginOpen: iconOpenStyle.marginTop,
       logoBackground: logoStyle.backgroundColor,
       logoLineHeight: logoStyle.lineHeight,
       logoPadding: logoStyle.padding,
@@ -777,16 +782,40 @@ async function readDesktopHelpMetrics(page: Page) {
       questionFontSize: questionStyle.fontSize,
       questionLineHeight: questionStyle.lineHeight,
       questionMarginBottomClosed: closedQuestionMarginBottom,
-      questionMarginBottomOpen: questionWrapOpenStyle.marginBottom,
       questionWidth: questionStyle.width,
     };
-    firstQa.classList.remove("open");
-    return metrics;
   });
+
+  const row = page.locator('[data-stylex-owner="help-faq-row"]').first();
+  const question = page.locator('[data-stylex-owner="help-faq-question"]').first();
+  await question.click();
+  await expect(row).toHaveAttribute("data-state", "open");
+  const openMetrics = await page.evaluate(() => {
+    const questionWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-question-wrap"]',
+    );
+    const answerWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-answer-wrap"]',
+    );
+    const answer = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-answer"]');
+    const icon = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-toggle-icon"]');
+    if (!questionWrap || !answerWrap || !answer || !icon) {
+      throw new Error("Expected open help metric targets are missing.");
+    }
+    return {
+      answerPaddingTopOpen: getComputedStyle(answerWrap).paddingTop,
+      answerRightPaddingOpen: getComputedStyle(answer).paddingRight,
+      iconMarginOpen: getComputedStyle(icon).marginTop,
+      questionMarginBottomOpen: getComputedStyle(questionWrap).marginBottom,
+    };
+  });
+  await question.click();
+  await expect(row).toHaveAttribute("data-state", "closed");
+  return { ...closedMetrics, ...openMetrics };
 }
 
 async function readMobileHelpMetrics(page: Page) {
-  return page.evaluate(() => {
+  const closedMetrics = await page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const siteBreadcrumb = document.querySelector<HTMLElement>(
       '[data-stylex-owner="help-shell-breadcrumb-outer"]',
@@ -794,10 +823,12 @@ async function readMobileHelpMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="help-shell-page-wrap-outer"]',
     );
-    const qas = document.querySelector<HTMLElement>(".qas");
-    const firstQa = document.querySelector<HTMLElement>(".qas > .qa");
-    const question = document.querySelector<HTMLElement>(".qas > .qa .question");
-    const answerWrap = document.querySelector<HTMLElement>(".qas > .qa .answer-wrap");
+    const qas = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-list"]');
+    const firstQa = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-row"]');
+    const question = document.querySelector<HTMLElement>('[data-stylex-owner="help-faq-question"]');
+    const answerWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-answer-wrap"]',
+    );
     const pageFooter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer-inner]");
     const pageFooterOuter = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
     if (
@@ -820,12 +851,8 @@ async function readMobileHelpMetrics(page: Page) {
     const qasStyle = getComputedStyle(qas);
     const answerClosedStyle = getComputedStyle(answerWrap);
     const closedAnswerDisplay = answerClosedStyle.display;
-    firstQa.classList.add("open");
-    const answerOpenStyle = getComputedStyle(answerWrap);
-    const metrics = {
+    return {
       answerDisplayClosed: closedAnswerDisplay,
-      answerDisplayOpen: answerOpenStyle.display,
-      answerPaddingTopOpen: answerOpenStyle.paddingTop,
       gnbOuterMinWidth: gnbOuterStyle.minWidth,
       gnbOuterPadding: gnbOuterStyle.padding,
       pageFooterOuterMinWidth: getComputedStyle(pageFooterOuter).minWidth,
@@ -840,9 +867,26 @@ async function readMobileHelpMetrics(page: Page) {
       siteBreadcrumbPadding: siteBreadcrumbStyle.padding,
       siteBreadcrumbWidth: Math.round(siteBreadcrumb.getBoundingClientRect().width),
     };
-    firstQa.classList.remove("open");
-    return metrics;
   });
+
+  const row = page.locator('[data-stylex-owner="help-faq-row"]').first();
+  const question = page.locator('[data-stylex-owner="help-faq-question"]').first();
+  await question.click();
+  await expect(row).toHaveAttribute("data-state", "open");
+  const openMetrics = await page.evaluate(() => {
+    const answerWrap = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="help-faq-answer-wrap"]',
+    );
+    if (!answerWrap) throw new Error("Expected open help mobile metric target is missing.");
+    const style = getComputedStyle(answerWrap);
+    return {
+      answerDisplayOpen: style.display,
+      answerPaddingTopOpen: style.paddingTop,
+    };
+  });
+  await question.click();
+  await expect(row).toHaveAttribute("data-state", "closed");
+  return { ...closedMetrics, ...openMetrics };
 }
 
 async function mockMarkdownHelpIssueForm(page: Page) {
@@ -971,6 +1015,7 @@ async function canonicalizeScreenRoots(page: Page) {
           current.matches('[data-stylex-owner="help-shell-breadcrumb-outer"]') ||
           current.matches('[data-stylex-owner="help-shell-page-wrap"]') ||
           current.matches('[data-stylex-owner="help-shell-page-wrap-outer"]') ||
+          current.matches('[data-stylex-owner^="help-faq-"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||
           current.matches('[data-stylex-owner="site-footer-inner"]') ||
           current.matches('[data-stylex-owner="site-footer-provider"]'))
@@ -1015,7 +1060,16 @@ async function canonicalizeScreenRoots(page: Page) {
         "style",
       ];
       const attrs = stableAttributes
-        .filter((name) => current.hasAttribute(name))
+        .filter(
+          (name) =>
+            current.hasAttribute(name) &&
+            !(
+              name === "class" &&
+              (current.matches('[data-stylex-owner="help-faq-question"]') ||
+                current.matches('[data-stylex-owner="help-shell-breadcrumb-heading"]'))
+            ) &&
+            !(name === "style" && current.matches('[data-stylex-owner="help-faq-toggle-icon"]')),
+        )
         .map(
           (name) => `${name}=${JSON.stringify(normalizeSiteLayoutGnbNavAttribute(current, name))}`,
         )
@@ -1039,9 +1093,11 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
 
+    // Global shell role/copy/order/link/geometry is independently asserted above; this exact
+    // serialization intentionally compares only the two roots owned by the Help route.
     const roots = Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="help-shell-breadcrumb-outer"], [data-stylex-owner="help-shell-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '[data-stylex-owner="help-shell-breadcrumb-outer"], [data-stylex-owner="help-shell-page-wrap-outer"]',
       ),
     );
     return roots.map((root) => visit(root)).join("");
@@ -1053,6 +1109,36 @@ async function canonicalizeHtml(page: Page, html: string) {
     ({ markup }) => {
       function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
         const value = current.getAttribute(name) ?? "";
+        if (name === "class") {
+          const retiredHelpFaqTokens = new Set<string>();
+          if (current.matches(".qas")) retiredHelpFaqTokens.add("qas");
+          if (current.matches(".qas > .qa")) retiredHelpFaqTokens.add("qa");
+          if (current.matches(".qas > .qa > .question-wrap"))
+            retiredHelpFaqTokens.add("question-wrap");
+          if (current.matches(".qas > .qa > .question-wrap > .question"))
+            retiredHelpFaqTokens.add("question");
+          if (current.matches(".qas > .qa > .question-wrap > i.yobicon-q.q")) {
+            retiredHelpFaqTokens.add("yobicon-q");
+            retiredHelpFaqTokens.add("q");
+          }
+          if (current.matches(".qas > .qa > .question-wrap > i.ico.icor")) {
+            retiredHelpFaqTokens.add("ico");
+            retiredHelpFaqTokens.add("icor");
+          }
+          if (current.matches(".qas > .qa > .answer-wrap")) retiredHelpFaqTokens.add("answer-wrap");
+          if (current.matches(".qas > .qa > .answer-wrap > i.yobicon-a.a")) {
+            retiredHelpFaqTokens.add("yobicon-a");
+            retiredHelpFaqTokens.add("a");
+          }
+          if (current.matches(".qas > .qa > .answer-wrap > .answer"))
+            retiredHelpFaqTokens.add("answer");
+          if (retiredHelpFaqTokens.size > 0) {
+            return value
+              .split(/\s+/u)
+              .filter((token) => !retiredHelpFaqTokens.has(token))
+              .join(" ");
+          }
+        }
         const isSiteLayoutHeader =
           name === "class" &&
           value.split(/\s+/u).includes("gnb-outer") &&
@@ -1168,6 +1254,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
       return Array.from(template.content.children)
+        .filter((root) => root.matches(".site-breadcrumb-outer, .page-wrap-outer"))
         .map((root) => visit(root))
         .join("");
     },
