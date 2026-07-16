@@ -2102,6 +2102,25 @@ legacy full-screen baselines remain under
 inspection confirms the recorded 44×30 input, 12px/16px font, and identical 6×9 sprite rhythm
 without visible drift.
 
+The one-hundred-seventy-seventh slice migrates only the authenticated populated-first-page
+`/sites/projectList` site-management sidebar navigation. Three route-local owners reproduce the
+legacy UL, repeated LI default/first/Projects-active variants, and direct TanStack Router Links from
+`siteMngLayout.scala.html`; `notification-badge` remains an excluded independent owner. Inline
+geometry/type preserve the eight-link copy/order/hrefs and desktop/mobile wrapping, while four
+route paint variables cover neutral border, active border, link text, and hover surface. This route
+consumer retires `site-setting-nav`, LI `active`, and empty LI class strings without fallback CSS,
+new abstraction, or behavior changes. The focused runtime fixture uses the fresh live baseline's
+ko-KR locale/copy rather than weakening its absolute wrapped geometry. Focused RED source evidence
+was recorded before implementation; source/static verification and main browser coverage are GREEN
+3/3 (14.1s).
+The local outer site-admin shell places the otherwise exact sidebar at y139 versus fresh live y138;
+this pre-existing uniform 1px shell gap is excluded from the sidebar owner and receives no CSS
+compensation. Local captures are saved at
+`output/playwright/visual-sweep/stylex-site-project-list-sidebar-nav-{desktop,mobile}.png`; fresh live
+captures remain under `output/playwright/stylex-site-project-list-pagination-baseline/.playwright-cli/`.
+Visual inspection confirms identical eight-copy order, 4px rails, Projects active paint, 5×10 inset,
+desktop rhythm, and mobile ko-KR wrapping with no owner-visible drift.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

@@ -34,6 +34,49 @@ const legacyLinkSuppressionProps = {
 };
 
 const styles = stylex.create({
+  sidebarNav: {
+    listStyle: "none",
+    margin: "0px",
+    padding: "0px",
+  },
+  sidebarItem: {
+    borderLeftColor: siteProjectListTheme.sidebarBorder,
+    borderLeftStyle: "solid",
+    borderLeftWidth: "4px",
+    fontSize: "14px",
+    lineHeight: "30px",
+    marginTop: "3px",
+  },
+  sidebarFirstItem: {
+    marginTop: "0px",
+  },
+  sidebarActiveItem: {
+    borderLeftColor: siteProjectListTheme.sidebarActiveBorder,
+    fontWeight: "700",
+  },
+  sidebarLink: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": siteProjectListTheme.sidebarHoverSurface,
+    },
+    color: {
+      default: siteProjectListTheme.sidebarLinkText,
+      ":hover": siteProjectListTheme.sidebarActiveBorder,
+      ":focus": siteProjectListTheme.sidebarActiveBorder,
+    },
+    display: "block",
+    padding: "5px 10px",
+    textDecoration: {
+      default: "none",
+      ":hover": "none",
+      ":focus": "underline",
+    },
+  },
+  sidebarActiveLink: {
+    backgroundColor: {
+      ":hover": "transparent",
+    },
+  },
   titleArea: {
     overflow: "hidden",
     marginBottom: "29px",
@@ -470,6 +513,12 @@ const paginationNextDisabledIconStyleProps = stylex.props(
   styles.paginationNextIcon,
   styles.paginationNextDisabledIcon,
 );
+const sidebarNavStyleProps = stylex.props(styles.sidebarNav);
+const sidebarItemStyleProps = stylex.props(styles.sidebarItem);
+const sidebarFirstItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarFirstItem);
+const sidebarActiveItemStyleProps = stylex.props(styles.sidebarItem, styles.sidebarActiveItem);
+const sidebarLinkStyleProps = stylex.props(styles.sidebarLink);
+const sidebarActiveLinkStyleProps = stylex.props(styles.sidebarLink, styles.sidebarActiveLink);
 const deleteModalStyleProps = stylex.props(styles.deleteModal);
 const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
@@ -976,45 +1025,117 @@ function ProjectListPagination({
 
 function SiteAdminSidebar({ showUpdateBadge }: { showUpdateBadge: boolean }) {
   return (
-    <ul className="site-setting-nav">
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/userList">
+    <ul {...sidebarNavStyleProps} data-stylex-owner="site-project-list-sidebar-nav">
+      <li
+        {...sidebarFirstItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/userList"
+        >
           <LegacyMessage messageKey="site.sidebar.userList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/postList">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/postList"
+        >
           <LegacyMessage messageKey="site.sidebar.postList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/issueList">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/issueList"
+        >
           <LegacyMessage messageKey="site.sidebar.issueList" />
         </Link>
       </li>
-      <li className="active">
-        <Link {...legacyLinkSuppressionProps} to="/sites/projectList">
+      <li
+        {...sidebarActiveItemStyleProps}
+        data-selected="true"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarActiveLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/projectList"
+        >
           <LegacyMessage messageKey="site.sidebar.projectList" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/mail">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/mail"
+        >
           <LegacyMessage messageKey="site.sidebar.mailSend" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/massmail">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/massmail"
+        >
           <LegacyMessage messageKey="site.sidebar.massMail" />
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/update">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/update"
+        >
           <LegacyMessage messageKey="site.sidebar.update" />
           {showUpdateBadge ? <span className="notification-badge">1</span> : null}
         </Link>
       </li>
-      <li className="">
-        <Link {...legacyLinkSuppressionProps} to="/sites/diagnostic">
+      <li
+        {...sidebarItemStyleProps}
+        data-selected="false"
+        data-stylex-owner="site-project-list-sidebar-item"
+      >
+        <Link
+          {...legacyLinkSuppressionProps}
+          {...sidebarLinkStyleProps}
+          data-stylex-owner="site-project-list-sidebar-link"
+          to="/sites/diagnostic"
+        >
           <LegacyMessage messageKey="site.sidebar.diagnostics" />
         </Link>
       </li>
