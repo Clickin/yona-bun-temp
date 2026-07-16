@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-nine slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -317,6 +317,23 @@ weight remain fallback because their frozen declarations are `!important`; addin
 `!important` or claiming normal StyleX ownership would violate the migration rules. Bootstrap
 `.label`, anchor, inner shell, tabs/content, and scrollbar declarations remain later owners. This
 is not Wave 1 completion.
+
+The two-hundredth slice migrates exactly six public stats/member owners in the authenticated
+populated-default `/projects` state: the right-floated stats wrapper, members wrapper, member list,
+repeated member item, avatar Link, and both count values. Final float/alignment/width, reset/list
+geometry, 20px item rhythm, and 32px avatar box/margins stay literal in route `stylex.create`.
+Only the avatar `#ddd` surface and count `#51aacc` paint enter route-local
+`projectsDirectoryColors`. `pull-right`, `unstyled`, and the fully owned `members` class retire.
+The `stats-wrap` class remains only because the separate frozen global `.stats-wrap i` rule still
+visibly owns both icons' 16px size and 5px inline margins; `avatar-wrap` remains for its excluded
+child-image rule and legacy `3px !important` radius. Focused source and runtime assertions pin both
+fallback boundaries. Live desktop pins stats/members at `1271,307,85x60`, list at
+`1271,307,85x35`, item/avatar at x1321 with 35/32px boxes, and the first count at
+`1309.656,349`. Mobile preserves the same boxes at x305/x355 and y402, with the count at
+`343.656,444`, the 151px row, and 390px scroll width. A genuine absent-owner RED is 0/3, focused
+GREEN is 3/3, the affected matrix is GREEN 17/17, and complete `/projects` StyleX coverage is
+GREEN 30/30. Live/local desktop and mobile captures were directly inspected. This is not Wave 1
+completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

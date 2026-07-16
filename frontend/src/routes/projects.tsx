@@ -231,6 +231,33 @@ const styles = stylex.create({
     fontSize: "11px",
     margin: "0px 0px 0px 10px",
   },
+  directoryStats: {
+    float: "right",
+    marginTop: "0px",
+    textAlign: "right",
+  },
+  directoryMembers: { width: "100%" },
+  directoryMembersList: {
+    display: "inline-block",
+    listStyle: "none",
+    margin: "0px",
+    overflow: "hidden",
+    paddingLeft: "50px",
+  },
+  directoryMemberItem: {
+    float: "right",
+    lineHeight: "20px",
+  },
+  directoryMemberAvatar: {
+    backgroundColor: projectsDirectoryColors.memberAvatarSurface,
+    display: "inline-block",
+    height: "32px",
+    margin: "0px 3px 3px 0px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "32px",
+  },
+  directoryMemberCount: { color: projectsDirectoryColors.memberCountText },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -254,6 +281,12 @@ const directoryOwnerAvatarStyleProps = stylex.props(styles.directoryOwnerAvatar)
 const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
 const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
 const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
+const directoryStatsStyleProps = stylex.props(styles.directoryStats);
+const directoryMembersStyleProps = stylex.props(styles.directoryMembers);
+const directoryMembersListStyleProps = stylex.props(styles.directoryMembersList);
+const directoryMemberItemStyleProps = stylex.props(styles.directoryMemberItem);
+const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvatar);
+const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -683,20 +716,33 @@ function ProjectListItem({
         </div>
       </div>
       {stringField(project, "projectScope", "public") === "public" ? (
-        <div className="stats-wrap pull-right">
-          <div className="members">
-            <ul className="unstyled">
+        <div
+          {...directoryStatsStyleProps}
+          className={`stats-wrap ${directoryStatsStyleProps.className ?? ""}`}
+          data-stylex-owner="projects-directory-stats"
+        >
+          <div {...directoryMembersStyleProps} data-stylex-owner="projects-directory-members">
+            <ul
+              {...directoryMembersListStyleProps}
+              data-stylex-owner="projects-directory-members-list"
+            >
               {members.map((member) => {
                 const loginId = stringField(member, "loginId", "");
                 return (
-                  <li key={loginId}>
+                  <li
+                    {...directoryMemberItemStyleProps}
+                    data-stylex-owner="projects-directory-member-item"
+                    key={loginId}
+                  >
                     <Link
+                      {...directoryMemberAvatarStyleProps}
                       activeProps={{
                         "aria-current": undefined,
-                        className: "avatar-wrap",
+                        className: `avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`,
                         "data-status": undefined,
                       }}
-                      className="avatar-wrap"
+                      className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}
+                      data-stylex-owner="projects-directory-member-avatar"
                       params={{ user: loginId }}
                       to="/$user"
                     >
@@ -711,8 +757,19 @@ function ProjectListItem({
             </ul>
             <p>
               <i className="yobicon-friends yobicon-middle"></i>
-              <strong>{memberCount}</strong> <i className="yobicon-eye yobicon-middle"></i>{" "}
-              <strong>{watchCount}</strong>
+              <strong
+                {...directoryMemberCountStyleProps}
+                data-stylex-owner="projects-directory-member-count"
+              >
+                {memberCount}
+              </strong>{" "}
+              <i className="yobicon-eye yobicon-middle"></i>{" "}
+              <strong
+                {...directoryMemberCountStyleProps}
+                data-stylex-owner="projects-directory-member-count"
+              >
+                {watchCount}
+              </strong>
             </p>
           </div>
         </div>

@@ -945,7 +945,9 @@ async function readProjectsListMetrics(page: Page) {
       '[data-stylex-owner="projects-directory-name-tag"]',
     );
     const stats = document.querySelector<HTMLElement>(".all-projects .stats-wrap");
-    const members = document.querySelector<HTMLElement>(".all-projects .members");
+    const members = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-members"]',
+    );
     if (
       !list ||
       !row ||
@@ -1032,6 +1034,12 @@ async function canonicalizeScreenRoots(page: Page) {
                 attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-search-form"]',
                 ) ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-member-item"]',
+                ) ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-member-count"]',
+                ) ||
                 (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
             ) &&
@@ -1109,6 +1117,12 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-header") return "header";
       if (attr.name === "class" && owner === "projects-directory-description") return "desc";
       if (attr.name === "class" && owner === "projects-directory-name-tag") return "name-tag";
+      if (attr.name === "class" && owner === "projects-directory-stats")
+        return "stats-wrap pull-right";
+      if (attr.name === "class" && owner === "projects-directory-members") return "members";
+      if (attr.name === "class" && owner === "projects-directory-members-list") return "unstyled";
+      if (attr.name === "class" && owner === "projects-directory-member-avatar")
+        return "avatar-wrap";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")

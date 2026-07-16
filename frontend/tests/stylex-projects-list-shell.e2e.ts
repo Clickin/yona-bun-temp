@@ -167,7 +167,9 @@ for (const viewport of [
     for (let index = 1; index < 4; index++) {
       const memberLinks = rows
         .nth(index)
-        .locator(":scope > .stats-wrap .members > ul.unstyled > li > a.avatar-wrap");
+        .locator(
+          ':scope > [data-stylex-owner="projects-directory-stats"] [data-stylex-owner="projects-directory-members-list"] > [data-stylex-owner="projects-directory-member-item"] > [data-stylex-owner="projects-directory-member-avatar"]',
+        );
       await expect(memberLinks).toHaveCount(1);
       await expect(memberLinks).toHaveAttribute(
         "href",
