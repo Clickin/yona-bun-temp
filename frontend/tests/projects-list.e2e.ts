@@ -114,7 +114,7 @@ const EXPECTED_PROJECTS_LIST = `
               <a href="__BASE_PATH__/projects?labelIds=8" class="project-label bug">bug</a>
             </div>
             <div class="desc">Sample project</div>
-            <p class="name-tag">by<a href="__BASE_PATH__/admin?daysAgo=14&amp;selected=issues" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">,Latest code update<strong>just now</strong></span></p>
+            <p class="name-tag">by<a href="__BASE_PATH__/admin?daysAgo=14&amp;selected=issues" class="owner-name-small">admin</a>at<strong title="2026-06-30">just now</strong><span class="small-font">, Latest code update<strong>just now</strong></span></p>
           </div>
         </div>
         <div class="stats-wrap pull-right">
@@ -302,10 +302,8 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
   const projectLogoLink = page.locator(".all-projects .owner-avatar-wrap a");
-  const projectNameLink = page.locator(".all-projects .header a.black");
-  const ownerNameLink = page.locator(
-    '[data-stylex-owner="projects-directory-name-tag"] a.owner-name-small',
-  );
+  const projectNameLink = page.locator('[data-stylex-owner="projects-directory-title-link"]');
+  const ownerNameLink = page.locator('[data-stylex-owner="projects-directory-owner-link"]');
 
   await expect(projectLogoLink).toHaveAttribute("href", `${basePath}/admin/sample`);
   await expect(projectNameLink).toHaveAttribute("href", `${basePath}/admin/sample`);
@@ -313,8 +311,8 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     "href",
     `${basePath}/admin?daysAgo=14&selected=issues`,
   );
-  await expect(projectNameLink).toHaveClass("black");
-  await expect(ownerNameLink).toHaveClass("owner-name-small");
+  await expect(projectNameLink).not.toHaveClass(/(?:^|\s)black(?:\s|$)/u);
+  await expect(ownerNameLink).not.toHaveClass(/(?:^|\s)owner-name-small(?:\s|$)/u);
   await expectNoActiveMarker(projectLogoLink);
   await expectNoActiveMarker(projectNameLink);
   await expectNoActiveMarker(ownerNameLink);
@@ -397,7 +395,9 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect.poll(() => new URL(page.url()).searchParams.get("labelIds")).toBe("8");
   await expect.poll(() => new URL(page.url()).searchParams.has("filter")).toBe(false);
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
-  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-bug");
+  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+    "sample-bug",
+  );
   expect(projectRequests).toContainEqual({ filter: null, labelIds: "8" });
   await expect
     .poll(() =>
@@ -473,7 +473,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
 
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=2`);
   await expect(page.locator(".all-projects .project")).toHaveCount(1);
-  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-two");
+  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+    "sample-page-two",
+  );
   await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
     "Legacy query page two",
   );
@@ -484,7 +486,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   const previousPageLink = page.locator("#pagination a", { hasText: "Previous page" });
   await previousPageLink.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("pageNum")).toBe("1");
-  await expect(page.locator(".all-projects .header a.black")).toHaveText("sample-page-one");
+  await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
+    "sample-page-one",
+  );
   await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
     "Legacy query page one",
   );
@@ -1164,6 +1168,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-header") return "header";
       if (attr.name === "class" && owner === "projects-directory-description") return "desc";
       if (attr.name === "class" && owner === "projects-directory-name-tag") return "name-tag";
+      if (attr.name === "class" && owner === "projects-directory-title-link") return "black";
+      if (attr.name === "class" && owner === "projects-directory-owner-link")
+        return "owner-name-small";
+      if (attr.name === "class" && owner === "projects-directory-code-update") return "small-font";
       if (attr.name === "class" && owner === "projects-directory-stats")
         return "stats-wrap pull-right";
       if (attr.name === "class" && owner === "projects-directory-members") return "members";

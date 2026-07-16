@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred six slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred seven slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -419,6 +419,22 @@ the later important rule in the actual cascade. Verified Java desktop 1366x900 p
 the list to `6.641,631,256.703x30` and avatars to x355/y238,389,540, with a 3px radius and no
 overflow. RED 0/3 becomes focused GREEN 3/3 and complete adjacent `/projects` coverage is GREEN
 50/50. Target live/local captures were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-seventh slice migrates exactly three populated-default `/projects` text owners:
+the repeated project-title Link, repeated owner-profile Link, and repeated last-code-update span.
+The two Links directly own the final Bootstrap plus `_common.less` anchor cascade: route-local
+`#333333` title and reused `#999999` metadata base paint, route-local `#005580` hover/focus paint,
+no outline, and underline only while interactive. The code-update owner moves `_common.less`
+`.small-font` 10px/400 type while keeping 20px inherited rhythm explicit; all geometry and type
+remain literals. This route retires `black`, `owner-name-small`, and `small-font`, while generic
+anchor/small-font and organization/user consumers remain fallback. React now also preserves the
+Scala template's always-present code-update span, including two empty `0x12` spans when no last
+push exists, instead of conditionally deleting the element. Live Java desktop title Links are at
+x80/y171,262,353, owner Links at x95.813/y221,312,403, and the visible update span is
+`119.406x12 @180.953,404`; mobile moves them to x70/y171,322,473, x85.813/y221,372,523, and
+`119.406x12 @170.953,524`, with no overflow. RED 0/3 becomes focused GREEN 3/3 and complete
+adjacent `/projects` coverage is GREEN 53/53. Base and interactive live/local captures were
+directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

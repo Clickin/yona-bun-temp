@@ -177,7 +177,9 @@ for (const viewport of [
     await expect(nameTag).not.toHaveClass(/(?:^|\s)name-tag(?:\s|$)/u);
     await expect(avatar.locator(":scope > a")).toHaveCount(1);
     await expect(avatar.locator(":scope > a > img")).toHaveCount(0);
-    await expect(header.locator(":scope > a.black")).toHaveText("sample");
+    await expect(
+      header.locator(':scope > [data-stylex-owner="projects-directory-title-link"]'),
+    ).toHaveText("sample");
     await expect(description).toHaveText("Parity seed project for the alice workspace");
     await expect(nameTag).toContainText("by alice at 07-07");
 

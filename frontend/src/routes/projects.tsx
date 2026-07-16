@@ -252,6 +252,30 @@ const styles = stylex.create({
     fontSize: "11px",
     margin: "0px 0px 0px 10px",
   },
+  directoryTitleLink: {
+    color: {
+      default: projectsDirectoryColors.titleText,
+      ":hover": projectsDirectoryColors.linkInteractive,
+      ":focus": projectsDirectoryColors.linkInteractive,
+    },
+    outlineStyle: "none",
+    textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
+  },
+  directoryOwnerLink: {
+    color: {
+      default: projectsDirectoryColors.metadataText,
+      ":hover": projectsDirectoryColors.linkInteractive,
+      ":focus": projectsDirectoryColors.linkInteractive,
+    },
+    outlineStyle: "none",
+    textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
+  },
+  directoryCodeUpdate: {
+    color: projectsDirectoryColors.metadataText,
+    fontSize: "10px",
+    fontWeight: "400",
+    lineHeight: "20px",
+  },
   directoryStats: {
     float: "right",
     marginTop: "0px",
@@ -404,6 +428,9 @@ const directoryOwnerAvatarStyleProps = stylex.props(styles.directoryOwnerAvatar)
 const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
 const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
 const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
+const directoryTitleLinkStyleProps = stylex.props(styles.directoryTitleLink);
+const directoryOwnerLinkStyleProps = stylex.props(styles.directoryOwnerLink);
+const directoryCodeUpdateStyleProps = stylex.props(styles.directoryCodeUpdate);
 const directoryStatsStyleProps = stylex.props(styles.directoryStats);
 const directoryMembersStyleProps = stylex.props(styles.directoryMembers);
 const directoryMembersListStyleProps = stylex.props(styles.directoryMembersList);
@@ -891,12 +918,14 @@ function ProjectListItem({
             data-stylex-owner="projects-directory-header"
           >
             <Link
+              {...directoryTitleLinkStyleProps}
               to="/$ownerName/$projectName"
               params={{ ownerName, projectName }}
-              className="black"
+              className={directoryTitleLinkStyleProps.className}
+              data-stylex-owner="projects-directory-title-link"
               activeProps={{
                 "aria-current": undefined,
-                className: "black",
+                className: directoryTitleLinkStyleProps.className,
                 "data-status": undefined,
               }}
             >
@@ -943,26 +972,35 @@ function ProjectListItem({
             {stringField(project, "overview", "")}
           </div>
           <p {...directoryNameTagStyleProps} data-stylex-owner="projects-directory-name-tag">
-            by{" "}
+            {"by "}
             <Link
+              {...directoryOwnerLinkStyleProps}
               to="/$user"
               params={{ user: ownerName }}
               search={{ daysAgo: 14, selected: "issues" }}
-              className="owner-name-small"
+              className={directoryOwnerLinkStyleProps.className}
+              data-stylex-owner="projects-directory-owner-link"
               activeProps={{
                 "aria-current": undefined,
-                className: "owner-name-small",
+                className: directoryOwnerLinkStyleProps.className,
                 "data-status": undefined,
               }}
             >
               {ownerName}
-            </Link>{" "}
-            at <strong title={createdTitle}>{createdLabel}</strong>{" "}
-            {lastPushedLabel ? (
-              <span className="small-font">
-                , {t("project.codeUpdate")} <strong>{lastPushedLabel}</strong>
-              </span>
-            ) : null}
+            </Link>
+            {" at "}
+            <strong title={createdTitle}>{createdLabel}</strong>{" "}
+            <span
+              {...directoryCodeUpdateStyleProps}
+              data-stylex-owner="projects-directory-code-update"
+            >
+              {lastPushedLabel ? (
+                <>
+                  {`, ${t("project.codeUpdate")} `}
+                  <strong>{lastPushedLabel}</strong>
+                </>
+              ) : null}
+            </span>
           </p>
         </div>
       </div>
