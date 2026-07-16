@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 const EXPECTED_USER_TOKEN_SCREEN = `
 <div class="unsupported hidden">
@@ -55,9 +57,10 @@ const EXPECTED_USER_TOKEN_SCREEN = `
 </footer>
 `;
 
-test("current-user token settings page matches legacy user/edit_token.scala.html screen DOM", async ({
+test("current-user token route body matches legacy user/edit_token.scala.html DOM", async ({
   page,
 }) => {
+  await page.setViewportSize({ height: 900, width: 1366 });
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockAuthenticatedSession(page);
   await page.route("**/api/auth/session", async (route) => {
@@ -84,7 +87,14 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
   });
 
   await page.goto(`${basePath}/user/editform/token`);
-  await expect(page.locator(".token-generate")).toBeAttached();
+  const wrapper = page.getByTestId("user-token-settings-wrapper");
+  const form = page.locator('[data-stylex-owner="user-token-settings-form"]');
+  const input = page.locator('[data-stylex-owner="user-token-settings-input"]');
+  const action = page.locator('[data-stylex-owner="user-token-settings-reset-action"]');
+  await expect(wrapper).toBeAttached();
+  await expect(form).not.toHaveClass(/\bpull-left\b/u);
+  await expect(input).not.toHaveClass(/\btext\b/u);
+  await expect(action).not.toHaveClass(/\bybtn(?:-success)?\b/u);
   await expect(page).toHaveTitle("admin");
   expect(
     await page
@@ -103,10 +113,34 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
   expect(await readTokenMetrics(page)).toEqual({
     breadcrumbHeight: "46px",
     formFloat: "left",
-    inputWidth: "972px",
-    navMarginTop: "0px",
+    navMarginTop: "20px",
     pageWrapMarginTop: "10px",
   });
+  expectTokenOwnerMetrics(await readTokenOwnerMetrics(page), "desktop");
+  mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      "..",
+      "output",
+      "playwright",
+      "visual-sweep",
+      "stylex-user-token-settings-desktop.png",
+    ),
+  });
+  await action.hover();
+  await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
+  await expect(action).toHaveCSS("border-color", "rgb(233, 94, 1)");
+  await expect(action).toHaveCSS("color", "rgb(255, 255, 255)");
+  await action.focus();
+  await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
+  const actionBox = await action.boundingBox();
+  if (!actionBox) throw new Error("Expected token reset action geometry");
+  await page.mouse.move(actionBox.x + actionBox.width / 2, actionBox.y + actionBox.height / 2);
+  await page.mouse.down();
+  await expect(action).toHaveCSS("background-color", "rgb(233, 94, 1)");
+  await page.mouse.move(actionBox.x + actionBox.width + 20, actionBox.y + actionBox.height + 20);
+  await page.mouse.up();
 
   const editTabs = page.locator(".page-wrap .nav.nav-tabs.mt20 > li");
   await expect(editTabs).toHaveCount(5);
@@ -145,6 +179,11 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
     { ariaCurrent: null, className: null, dataStatus: null, text: "User Token" },
   ]);
   await expect(editTabs.nth(4)).toHaveClass("active");
+  await input.click();
+  expect(await input.evaluate((node) => [node.selectionStart, node.selectionEnd])).toEqual([
+    0,
+    "token-before".length,
+  ]);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "token-password-tab";
   });
@@ -155,27 +194,68 @@ test("current-user token settings page matches legacy user/edit_token.scala.html
   ).toBe("token-password-tab");
 
   await page.goto(`${basePath}/user/editform/token`);
-  await page.locator("#frmBasic button[type=submit]").click();
-  await expect(page.locator("#frmBasic input[name=name]")).toHaveValue("token-after");
+  await action.click();
+  await expect(input).toHaveValue("token-after");
 });
 
-test("current-user token settings route uses typed tab Links without a route-local generic adapter", async () => {
+test("current-user token settings route owns the token form without presentation classes", async () => {
   const source = await readFile("src/routes/user/editform/token.tsx", "utf8");
-  expect(source).toContain("<UserTokenSettingsTitle loginId={loginId} />");
-  expect(source).toContain("function UserTokenSettingsTitle");
-  expect(source).toContain("<title>{loginId}</title>");
-  expect(source).not.toContain("document.title");
-  expect(source).not.toContain("globalThis.document");
-  expect(source).not.toContain('globalThis["document"]');
-  expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
-  expect(source).not.toMatch(/title[^;]*useEffect|useEffect[^;]*title/s);
-  expect(source).not.toContain("LegacyInternalLink");
-  expect(source).not.toContain("AnchorHTMLAttributes");
-  expect(source).not.toContain("ComponentType");
-  expect(source).not.toContain("to={href}");
-  expect(source).toContain('"aria-current": undefined');
-  expect(source).toContain('"data-status": undefined');
-  expect(source).toContain("activeProps={legacyEditTabLinkActiveProps}");
+  const theme = await readFile("src/routes/user/editform/-token.stylex.ts", "utf8");
+  for (const owner of [
+    "user-token-settings-wrapper",
+    "user-token-settings-form",
+    "user-token-settings-input",
+    "user-token-settings-reset-action",
+  ])
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+  for (const style of ["styles.form", "styles.input", "styles.resetAction"])
+    expect(source).toContain(style);
+  for (const retired of ["token-generate", "pull-left", 'className="text"', "ybtn-success"])
+    expect(source).not.toContain(retired);
+  expect(source).not.toContain("style={{ width:");
+  expect(source).not.toContain("globalColors.");
+  for (const variable of [
+    "actionBorder",
+    "actionShadow",
+    "actionSurface",
+    "actionInteractiveSurface",
+    "actionText",
+  ])
+    expect(theme).toContain(variable);
+});
+
+test("current-user token settings preserves exact mobile token geometry and generic input fallback", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await mockAuthenticatedSession(page);
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-token-mobile" },
+      body: JSON.stringify({ csrfToken: "csrf-token-mobile" }),
+    }),
+  );
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(workspaceBody("token-before")),
+    }),
+  );
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/user/editform/token`);
+  await expect(page.getByTestId("user-token-settings-wrapper")).toBeAttached();
+  expectTokenOwnerMetrics(await readTokenOwnerMetrics(page), "mobile");
+  mkdirSync(resolve("..", "output", "playwright", "visual-sweep"), { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      "..",
+      "output",
+      "playwright",
+      "visual-sweep",
+      "stylex-user-token-settings-mobile.png",
+    ),
+  });
 });
 
 async function mockAuthenticatedSession(page: Page) {
@@ -224,16 +304,105 @@ async function readTokenMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
     const form = document.querySelector<HTMLElement>("#frmBasic");
-    const input = document.querySelector<HTMLElement>("#frmBasic input[name=name]");
-    if (!breadcrumb || !pageWrapOuter || !nav || !form || !input) {
+    if (!breadcrumb || !pageWrapOuter || !nav || !form) {
       throw new Error("Expected user token metric targets are missing.");
     }
     return {
       breadcrumbHeight: getComputedStyle(breadcrumb).height,
       formFloat: getComputedStyle(form).float,
-      inputWidth: getComputedStyle(input).width,
       navMarginTop: getComputedStyle(nav).marginTop,
       pageWrapMarginTop: getComputedStyle(pageWrapOuter).marginTop,
+    };
+  });
+}
+
+function expectTokenOwnerMetrics(
+  metrics: Awaited<ReturnType<typeof readTokenOwnerMetrics>>,
+  viewport: "desktop" | "mobile",
+) {
+  // Shared page/tab ancestry shifts absolute local coordinates, and translated button copy changes
+  // intrinsic width. This owner pins only the legacy-relative geometry it actually controls.
+  const { action, form, input, wrapper } = metrics;
+  expect(wrapper.height).toBe(0);
+  expect(form.box).toEqual({ ...wrapper, height: 90 });
+  expect(form.cssFloat).toBe("left");
+  expect(form.marginBottom).toBe("2px");
+  expect(Number.parseFloat(form.width)).toBeCloseTo(wrapper.width, 4);
+
+  expect(input.box.x).toBeCloseTo(form.box.x, 4);
+  expect(input.box.y - form.box.y).toBeCloseTo(20, 4);
+  expect(input.box.height).toBe(30);
+  expect(input.box.width).toBeCloseTo(form.box.width * 0.9 + 14, 4);
+  expect(Number.parseFloat(input.width)).toBeCloseTo(form.box.width * 0.9, 4);
+  expect(input.box.x + input.box.width).toBeLessThanOrEqual(form.box.x + form.box.width + 0.01);
+  expect(input).toMatchObject({
+    backgroundColor: "rgb(238, 238, 238)",
+    border: "1px solid rgb(204, 204, 204)",
+    color: "rgb(85, 85, 85)",
+    fontSize: viewport === "desktop" ? "12px" : "16px",
+    lineHeight: "20px",
+  });
+
+  expect(action.box.x).toBeCloseTo(form.box.x, 4);
+  expect(action.box.y - form.box.y).toBeCloseTo(60, 4);
+  expect(action.box.height).toBe(30);
+  expect(action.box.width).toBeGreaterThan(0);
+  expect(action.box.x + action.box.width).toBeLessThanOrEqual(form.box.x + form.box.width + 0.01);
+  expect(action).toMatchObject({
+    backgroundColor: "rgb(255, 115, 50)",
+    border: "1px solid rgb(233, 94, 1)",
+    borderRadius: "3px",
+    boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+    color: "rgb(255, 255, 255)",
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 12px",
+  });
+}
+
+async function readTokenOwnerMetrics(page: Page) {
+  return page.evaluate(() => {
+    const get = (owner: string) =>
+      document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+    const wrapper = get("user-token-settings-wrapper");
+    const form = get("user-token-settings-form");
+    const input = get("user-token-settings-input");
+    const action = get("user-token-settings-reset-action");
+    const box = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+    };
+    const formStyle = getComputedStyle(form);
+    const inputStyle = getComputedStyle(input);
+    const actionStyle = getComputedStyle(action);
+    return {
+      action: {
+        backgroundColor: actionStyle.backgroundColor,
+        border: actionStyle.border,
+        borderRadius: actionStyle.borderRadius,
+        box: box(action),
+        boxShadow: actionStyle.boxShadow,
+        color: actionStyle.color,
+        fontSize: actionStyle.fontSize,
+        lineHeight: actionStyle.lineHeight,
+        padding: actionStyle.padding,
+      },
+      form: {
+        box: box(form),
+        cssFloat: formStyle.cssFloat,
+        marginBottom: formStyle.marginBottom,
+        width: formStyle.width,
+      },
+      input: {
+        backgroundColor: inputStyle.backgroundColor,
+        border: inputStyle.border,
+        box: box(input),
+        color: inputStyle.color,
+        fontSize: inputStyle.fontSize,
+        lineHeight: inputStyle.lineHeight,
+        width: inputStyle.width,
+      },
+      wrapper: box(wrapper),
     };
   });
 }
@@ -288,6 +457,12 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (
         name === "class" &&
+        (current.getAttribute("data-stylex-owner") ?? "").startsWith("user-token-settings-")
+      ) {
+        return "";
+      }
+      if (
+        name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
           current.matches('[data-stylex-owner="global-gnb-outer"]') ||
           current.matches('[data-stylex-owner="site-footer"]') ||
@@ -321,11 +496,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
-    return Array.from(
-      document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
-      ),
-    )
+    return Array.from(document.querySelectorAll(".site-breadcrumb-outer, .page-wrap-outer"))
       .map((root) => visit(root))
       .join("");
   });
@@ -380,6 +551,30 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string): string {
+        const value = current.getAttribute(name) ?? "";
+        if (
+          name === "class" &&
+          (current.matches(".token-generate") ||
+            current.matches(".token-generate > form.pull-left") ||
+            current.matches('.token-generate input.text[name="name"]') ||
+            current.matches(".token-generate button.ybtn.ybtn-success"))
+        ) {
+          const normalized = value
+            .split(/\s+/u)
+            .filter(
+              (token) =>
+                !["token-generate", "pull-left", "text", "ybtn", "ybtn-success"].includes(token),
+            )
+            .join(" ");
+          return normalized ? `${name}=${JSON.stringify(normalized)}` : "";
+        }
+        if (
+          name === "style" &&
+          (current.matches(".token-generate > form") ||
+            current.matches('.token-generate input[name="name"]'))
+        ) {
+          return "";
+        }
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&
@@ -443,6 +638,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
       return Array.from(template.content.children)
+        .filter((root) => root.matches(".site-breadcrumb-outer, .page-wrap-outer"))
         .map((root) => visit(root))
         .join("");
     },

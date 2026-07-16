@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred sixty-eight slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2319,6 +2319,24 @@ page/grid/sidebar/body/form owner remain frozen fallback. The slice has no paint
 source/class retirement and exact 1366×900/390×844 geometry coverage is GREEN 3/3. The adjacent
 whole-screen data suite passes its four owner-independent cases and retains only the pre-existing
 global GNB `Feedback` fixture mismatch. No compensation or frozen/app CSS change is introduced.
+
+The one-hundred-ninetieth slice migrates only the authenticated token-present
+`/user/editform/token` form. Three direct owners cover the floated 100%-wide form, 90%-wide
+readonly token input, and complete `_yobiUI.less` success-action rest/hover/focus/active cascade;
+an unstyled stable wrapper replaces the declaration-free `token-generate` class. This consumer
+retires `token-generate`, `pull-left`, `text`, `ybtn`, `ybtn-success`, and both inline width
+attributes. `tokenSettingsColors` contains only action surface/text/border/shadow paint while
+float, widths, margin, border structure, radius, padding, type, transition, and positioning remain
+inline in `stylex.create`. Generic input element fallback and React/TanStack selection, CSRF reset,
+and workspace-cache behavior remain unchanged. Fresh live Java evidence pins desktop form/input/
+action at `10,206,1346×90`, `10,226,1225.390625×30`, and `10,266,138.78125×30`; mobile pins
+`0,206,390×90`, `0,226,365×30`, and `0,266,138.78125×30`. The focused gate is GREEN 3/3
+with exact computed paint/type and owner-relative geometry at 1366×900 and 390×844, class/source
+retirement, click selection, mutation/CSRF/cache behavior, and screenshots. Visual inspection
+confirms the migrated token controls retain the legacy 20/30px rhythm and paint. Existing shared
+user-settings page-width/tab ancestry, locale-dependent intrinsic button width, global shell, and
+Yoram footer differences remain outside this owner and receive no numeric compensation; the next
+user-settings shell wave must own those shared boundaries. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,

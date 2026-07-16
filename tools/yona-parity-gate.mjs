@@ -123,7 +123,13 @@ const PARITY_SLICES = [
       /^frontend\/src\/routes\/orgs\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
-    testKeywords: ["organization", "organizations-new", "organization-directory-route", "orgs", "directory-parity"],
+    testKeywords: [
+      "organization",
+      "organizations-new",
+      "organization-directory-route",
+      "orgs",
+      "directory-parity",
+    ],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/ui-parity-reports/template-first-p6-organization-directory-workspace.md",
@@ -551,6 +557,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/user\/editform\/notifications\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/password\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/token\.tsx$/i,
+      /^frontend\/src\/routes\/user\/editform\/-token\.stylex\.ts$/i,
       /^frontend\/src\/routes\/user\/editform\/index\.tsx$/i,
       /^frontend\/src\/routes\/user\/files\/route\.tsx$/i,
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
