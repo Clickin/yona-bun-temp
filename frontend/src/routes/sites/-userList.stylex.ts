@@ -1,6 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const siteUserListColors = stylex.defineVars({
+  listheadBorder: "#efefef",
+  listheadSurface: "#f7f7f7",
   stateTabActiveBackground: "#ffffff",
   stateTabActiveText: "#555555",
   stateTabBorder: "#dddddd",

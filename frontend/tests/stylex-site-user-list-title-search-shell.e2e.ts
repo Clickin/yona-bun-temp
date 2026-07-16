@@ -181,7 +181,7 @@ test.describe("StyleX site user-list title/search shell", () => {
             nodes.slice(0, 5).map((node) => {
               if (node.getAttribute("data-stylex-owner") === titleOwner) return titleOwner;
               if (node.matches('[data-stylex-owner="site-user-list-state-tabs"]')) return "tabs";
-              if (node.matches("div.row-fluid.listhead")) return "listhead";
+              if (node.matches('[data-stylex-owner="site-user-list-listhead"]')) return "listhead";
               if (node.matches("ul.user-list-wrap")) return "users";
               if (node.matches("#pagination")) return "pagination";
               return node.tagName;

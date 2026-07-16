@@ -151,6 +151,30 @@ const styles = stylex.create({
     color: siteUserListColors.stateTabActiveText,
     cursor: "default",
   },
+  listhead: {
+    backgroundColor: siteUserListColors.listheadSurface,
+    borderBottomColor: siteUserListColors.listheadBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    lineHeight: "30px",
+    marginBottom: "5px",
+    padding: "5px 0px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  listheadColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    padding: "0px 20px",
+  },
+  listheadFirstColumn: { marginLeft: "0px" },
+  listheadSpan3: { width: "23.404255319148934%" },
+  listheadSpan2: { width: "14.893617021276595%" },
+  listheadSpan4: { width: "31.914893617021278%" },
   pageWrapOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -224,6 +248,13 @@ const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const stateTabsStyleProps = stylex.props(styles.stateTabs);
+const listheadStyleProps = stylex.props(styles.listhead);
+const listheadColumnStyleProps = [
+  stylex.props(styles.listheadColumn, styles.listheadFirstColumn, styles.listheadSpan3),
+  stylex.props(styles.listheadColumn, styles.listheadSpan3),
+  stylex.props(styles.listheadColumn, styles.listheadSpan2),
+  stylex.props(styles.listheadColumn, styles.listheadSpan4),
+] as const;
 
 export const Route = createFileRoute("/sites/userList")({
   component: SiteUserListRoute,
@@ -452,23 +483,35 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 currentState={search.state}
                 siteAdminCount={response?.siteAdminCount ?? 0}
               />
-              <div className="row-fluid listhead">
-                <div className="span3 listhead-title">
+              <div {...listheadStyleProps} data-stylex-owner="site-user-list-listhead">
+                <div
+                  {...listheadColumnStyleProps[0]}
+                  data-stylex-owner="site-user-list-listhead-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="user.name" />
                   </strong>
                 </div>
-                <div className="span3 listhead-title">
+                <div
+                  {...listheadColumnStyleProps[1]}
+                  data-stylex-owner="site-user-list-listhead-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="user.email" />
                   </strong>
                 </div>
-                <div className="span2 listhead-title">
+                <div
+                  {...listheadColumnStyleProps[2]}
+                  data-stylex-owner="site-user-list-listhead-column"
+                >
                   <strong>
                     <LegacyMessage messageKey="userinfo.since" />
                   </strong>
                 </div>
-                <div className="span4 listhead-title">
+                <div
+                  {...listheadColumnStyleProps[3]}
+                  data-stylex-owner="site-user-list-listhead-column"
+                >
                   <strong>
                     {search.state === "DELETED" ? (
                       <LegacyMessage messageKey="userinfo.leave" />

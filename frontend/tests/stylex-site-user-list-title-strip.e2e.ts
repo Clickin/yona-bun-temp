@@ -156,6 +156,9 @@ test.describe("StyleX site user-list title strip", () => {
           .map((element) => element.getAttribute("data-stylex-owner")),
       ownerSelector,
     );
-    expect(generatedDirectChildren).toEqual(["site-user-list-state-tabs"]);
+    expect(generatedDirectChildren).toEqual([
+      "site-user-list-state-tabs",
+      "site-user-list-listhead",
+    ]);
   });
 });

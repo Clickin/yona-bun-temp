@@ -669,12 +669,11 @@ test("site admin deleted user tab renders legacy leave column without action but
     page.locator('[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] a'),
   ).toHaveText("Deleted user");
   await expect(page.locator('.form-search input[name="state"]')).toHaveValue("DELETED");
-  await expect(page.locator(".listhead .listhead-title strong")).toHaveText([
-    "Name",
-    "Email address",
-    "Member since",
-    "Date of leaving",
-  ]);
+  await expect(
+    page.locator(
+      '[data-stylex-owner="site-user-list-listhead"] > [data-stylex-owner="site-user-list-listhead-column"] > strong',
+    ),
+  ).toHaveText(["Name", "Email address", "Member since", "Date of leaving"]);
   await expect(page.locator(".user-list-wrap .listitem")).toHaveCount(1);
   await expect(page.locator(".user-list-wrap .listitem .span4.listitem-col")).toHaveText(
     "2026-07-01 10:30:00",
@@ -1493,6 +1492,11 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "site-user-list-state-tab-item") {
           return current.getAttribute("data-selected") === "true" ? "active" : "";
         }
+        if (owner === "site-user-list-listhead") return "row-fluid listhead";
+        if (owner === "site-user-list-listhead-column") {
+          const index = Array.from(current.parentElement?.children ?? []).indexOf(current);
+          return `${index < 2 ? "span3" : index === 2 ? "span2" : "span4"} listhead-title`;
+        }
         const legacyShellClass = new Map([
           ["site-user-list-breadcrumb-outer", "site-breadcrumb-outer"],
           ["site-user-list-breadcrumb-inner", "site-breadcrumb-inner"],
@@ -1645,8 +1649,10 @@ async function userListMetrics(page: Page) {
     const sidebar = requireElement('[data-stylex-owner="site-user-list-setting-sidebar-column"]');
     const content = requireElement('[data-stylex-owner="site-user-list-setting-content-column"]');
     const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
-    const listHead = requireElement(".listhead");
-    const firstHeaderColumn = requireElement(".listhead .span3");
+    const listHead = requireElement('[data-stylex-owner="site-user-list-listhead"]');
+    const firstHeaderColumn = requireElement(
+      '[data-stylex-owner="site-user-list-listhead-column"]',
+    );
     const firstRow = requireElement(".user-list-wrap .listitem");
     const firstRowColumn = requireElement(".user-list-wrap .listitem .span3");
     const actionColumn = requireElement(".user-list-wrap .action-buttons");
@@ -1756,7 +1762,7 @@ async function siteAdminStateLayoutFlags(page: Page) {
       '[data-stylex-owner="site-user-list-state-tab-item"][data-selected="true"] .num-badge',
     );
     const tabs = requireElement('[data-stylex-owner="site-user-list-state-tabs"]');
-    const listHead = requireElement(".site-setting-wrap .listhead");
+    const listHead = requireElement('[data-stylex-owner="site-user-list-listhead"]');
     const row = requireElement(".user-list-wrap .listitem");
     const actionColumn = requireElement(".user-list-wrap .action-buttons");
     const titleRect = title.getBoundingClientRect();

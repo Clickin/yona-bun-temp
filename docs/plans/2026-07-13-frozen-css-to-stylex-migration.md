@@ -1865,6 +1865,26 @@ GNB `Feedback` fixture gap. Authenticated legacy/local desktop and mobile screen
 owned tab box, wrapping, padding, paint, and listhead rhythm; locale, fixture data, global shell,
 rows, and footer remain outside this owner claim.
 
+The one-hundred-sixtieth slice migrates exactly two authenticated populated-ACTIVE
+`/sites/userList` list-header responsibilities: the header root and its four repeated grid
+columns. `site/userList.scala.html`, active Bootstrap 2.3.1, and `_page.less` provide the DOM,
+clearfix, fluid-column percentages/gutter, padding, line height, surface, and border evidence.
+Only the route-scoped surface and border paint use `siteUserListColors`; widths, gutter, spacing,
+and box model remain inline StyleX declarations. This consumer retires `row-fluid`, `listhead`,
+`span2`/`span3`/`span4`, and `listhead-title`, while other consumers retain the generic frozen
+fallback. Fresh authenticated legacy evidence pins the desktop root at
+`239.078,264,1116.891×41`, with `23.75px` gutters and 30px columns. At 390px the same percentages
+and `6.875px` gutters remain; localized copy alone changes column wrapping and root height, so the
+mobile gate preserves exact owner-local geometry and tab-to-header rhythm without attributing the
+excluded global-GNB offset to this owner. Focused source RED 0/1 becomes GREEN 2/2. After stale
+consumer selectors were moved to stable owner boundaries, the complete user-list StyleX matrix is
+GREEN 19/19. Whole-screen coverage is GREEN 15/16 with only the pre-existing excluded global-GNB
+`Feedback` gap. Typecheck, Vitest 11/11, production StyleX build, unchanged frozen/app/manifest
+hashes, TS/TSX-only formatting, lint with zero errors, screenshots, visual inspection, and diff
+gates pass. Authenticated legacy/local screenshots match the owned header paint, percentages,
+gutter, padding, border, and rhythm; locale, fixture rows, global shell, and footer remain outside
+this claim.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

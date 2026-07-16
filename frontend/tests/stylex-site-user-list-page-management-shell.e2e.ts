@@ -61,7 +61,7 @@ test("moves only the active legacy user-list management shell to five StyleX own
   );
   for (const retired of ['className="row-fluid"', 'className="span2"', 'className="span10"'])
     expect(route).not.toContain(retired);
-  expect(route).toContain('className="row-fluid listhead"');
+  expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
   expect(route).toContain('className="row-fluid listitem"');
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("siteUserListColors.page");
@@ -92,7 +92,9 @@ test("preserves the populated ACTIVE shell across desktop and mobile in one brow
     await expect(page.locator(".user-list-wrap > li > .span3")).toHaveCount(6);
     await expect(page.locator(".user-list-wrap > li > .span2")).toHaveCount(3);
     await expect(page.locator(".user-list-wrap > li > .span5")).toHaveCount(3);
-    await expect(page.locator(".listhead > .span4")).toHaveCount(1);
+    await expect(page.locator('[data-stylex-owner="site-user-list-listhead-column"]')).toHaveCount(
+      4,
+    );
     const userRows = page.locator(".user-list-wrap > li.row-fluid.listitem");
     for (const [index, visibleCopy] of [
       [0, ["Bob Park", "@bob", "bob@example.com"]],

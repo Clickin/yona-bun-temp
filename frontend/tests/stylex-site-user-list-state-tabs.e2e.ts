@@ -148,7 +148,9 @@ test("populated ACTIVE tabs preserve order, interaction, and responsive geometry
           box: link.getBoundingClientRect().toJSON(),
           padding: getComputedStyle(link).padding,
         })),
-        listHeadTop: document.querySelector<HTMLElement>(".listhead")!.getBoundingClientRect().top,
+        listHeadTop: document
+          .querySelector<HTMLElement>('[data-stylex-owner="site-user-list-listhead"]')!
+          .getBoundingClientRect().top,
         tabs: tabs.getBoundingClientRect().toJSON(),
       };
     }, owners);
