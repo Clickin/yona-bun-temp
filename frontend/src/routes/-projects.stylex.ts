@@ -1,6 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const projectsDirectoryColors = stylex.defineVars({
+  searchBorder: "#cccccc",
+  searchSurface: "#ffffff",
+  searchText: "#555555",
   tabActiveText: "#555555",
   tabBorder: "#dddddd",
   tabFocusSurface: "#eeeeee",

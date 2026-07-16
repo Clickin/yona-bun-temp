@@ -140,6 +140,56 @@ const styles = stylex.create({
     color: projectsDirectoryColors.tabActiveText,
     cursor: "default",
   },
+  directorySearchWrap: {
+    clear: "both",
+    height: { default: "30px", [globalBreakpoints.mobile]: "inherit" },
+    padding: "10px 0px",
+  },
+  directorySearchContainer: { float: "left" },
+  directorySearchForm: { margin: "0px 0px 2px" },
+  directorySearchBar: {
+    backgroundColor: projectsDirectoryColors.searchSurface,
+    borderColor: projectsDirectoryColors.searchBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    height: "20px",
+    lineHeight: "20px",
+    margin: { default: "0px", [globalBreakpoints.mobile]: "5px 0px" },
+    padding: "4px 25px 4px 5px",
+    position: "relative",
+  },
+  directorySearchInput: {
+    backgroundColor: projectsDirectoryColors.searchSurface,
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    color: projectsDirectoryColors.searchText,
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    height: "20px",
+    margin: "0px -5px",
+    outlineStyle: "none",
+    outlineWidth: "0px",
+    padding: "0px 5px",
+    transition: "width 0.15s ease",
+    width: { default: "350px", [globalBreakpoints.mobile]: "inherit" },
+  },
+  directorySearchButton: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": "transparent",
+      ":focus": "transparent",
+    },
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    height: "20px",
+    outlineStyle: "none",
+    outlineWidth: "0px",
+    position: "absolute",
+    right: "5px",
+    top: "5px",
+  },
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -151,6 +201,12 @@ const directoryTabsActiveLinkStyleProps = stylex.props(
   styles.directoryTabsLink,
   styles.directoryTabsActiveLink,
 );
+const directorySearchWrapStyleProps = stylex.props(styles.directorySearchWrap);
+const directorySearchContainerStyleProps = stylex.props(styles.directorySearchContainer);
+const directorySearchFormStyleProps = stylex.props(styles.directorySearchForm);
+const directorySearchBarStyleProps = stylex.props(styles.directorySearchBar);
+const directorySearchInputStyleProps = stylex.props(styles.directorySearchInput);
+const directorySearchButtonStyleProps = stylex.props(styles.directorySearchButton);
 
 export const Route = createFileRoute("/projects")({
   component: ProjectsRoute,
@@ -241,19 +297,39 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="search-wrap">
-            <div id="search" className="pull-left">
-              <form action={prefixBasePath(runtimeConfig.basePath, "/projects")} method="get">
-                <div className="search-bar">
+          <div
+            {...directorySearchWrapStyleProps}
+            data-stylex-owner="projects-directory-search-wrap"
+          >
+            <div
+              {...directorySearchContainerStyleProps}
+              data-stylex-owner="projects-directory-search-container"
+              id="search"
+            >
+              <form
+                {...directorySearchFormStyleProps}
+                action={prefixBasePath(runtimeConfig.basePath, "/projects")}
+                data-stylex-owner="projects-directory-search-form"
+                method="get"
+              >
+                <div
+                  {...directorySearchBarStyleProps}
+                  data-stylex-owner="projects-directory-search-bar"
+                >
                   <input
+                    {...directorySearchInputStyleProps}
+                    data-stylex-owner="projects-directory-search-input"
                     name="filter"
-                    className="textbox"
                     type="text"
                     placeholder={t("site.project.filter")}
                     defaultValue={filter}
                     autoFocus
                   />
-                  <button type="submit" className="search-btn">
+                  <button
+                    {...directorySearchButtonStyleProps}
+                    data-stylex-owner="projects-directory-search-button"
+                    type="submit"
+                  >
                     <i className="yobicon-search"></i>
                   </button>
                 </div>

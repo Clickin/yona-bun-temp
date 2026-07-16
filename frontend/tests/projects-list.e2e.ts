@@ -1004,6 +1004,9 @@ async function canonicalizeScreenRoots(page: Page) {
             !(
               attr.name === "class" &&
               (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-link"]') ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-search-form"]',
+                ) ||
                 (attr.ownerElement?.matches('[data-stylex-owner="projects-directory-tabs-item"]') &&
                   attr.ownerElement.getAttribute("data-selected") === "false"))
             ) &&
@@ -1067,6 +1070,13 @@ async function canonicalizeScreenRoots(page: Page) {
         attr.ownerElement?.getAttribute("data-selected") === "true"
       )
         return "active";
+      if (attr.name === "class" && owner === "projects-directory-search-wrap") return "search-wrap";
+      if (attr.name === "class" && owner === "projects-directory-search-container")
+        return "pull-left";
+      if (attr.name === "class" && owner === "projects-directory-search-bar") return "search-bar";
+      if (attr.name === "class" && owner === "projects-directory-search-input") return "textbox";
+      if (attr.name === "class" && owner === "projects-directory-search-button")
+        return "search-btn";
       if (attr.name === "class" && owner === "global-gnb-project-list-item") return "active";
       if (attr.name === "class" && owner === "global-gnb-project-list-divider") return "divider";
       if (attr.name === "class" && owner === "global-gnb-project-list-link")

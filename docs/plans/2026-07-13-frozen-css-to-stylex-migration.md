@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after one hundred ninety-six slices; theme-boundary correction complete
+Status: Wave 1 active after one hundred ninety-seven slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -2434,6 +2434,24 @@ list `370x68 @10,93`, wrapped items at `10,93` and `142.359,123`, 8x5 padding, p
 combined focused/affected browser matrix is GREEN 17/17. Authenticated Java and local
 desktop/mobile captures visually preserve the active border/surface, type, one-line desktop strip,
 and canonical mobile wrap. This is not Wave 1 completion.
+
+The one-hundred-ninety-seventh slice migrates only the authenticated populated-default `/projects`
+directory search strip from `project/list.scala.html`. Six direct owners cover the outer clear and
+desktop/mobile height flow, floated search container, exact frozen form margin, search-bar box and
+route paint, textbox box/focus/font behavior, and submit-button position/interaction. The exact
+Scala skeleton, GET action/method, localized placeholder, autofocus, submit query, and Yobicon
+child remain unchanged. `projectsDirectoryColors` adds only the route-local white search surface,
+gray border, and text paint; every dimension, font, border structure, transition, and offset stays
+inline. Live comparison exposed two pre-existing React bridge drifts rather than permitting numeric
+compensation: the frozen `_yobiUI.less` 2px form margin restores the desktop float height, and the
+Bootstrap `Helvetica Neue` input stack restores the mobile intrinsic width. Desktop now preserves
+the `382x30` bar at `(10,161)`, `360x20` input, `12x20` submit, list y201, and 1366px scroll width;
+mobile preserves the canonical outer zero-height float flow, `205x30` bar at `(0,196)`, `183x20`
+input, submit x187, list y231, and 390px scroll width. StyleX 0.19 removes border-color atoms when
+the same owner has `border-style:none` and zero width; production output proves no such atom, so
+only that non-rendering computed color remains lower-layer fallback while visible border state is
+fully owned. The pre-implementation source contract was observed RED on absent owners; focused
+GREEN is 4/4 and the combined `/projects` matrix is GREEN 21/21. This is not Wave 1 completion.
 
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
