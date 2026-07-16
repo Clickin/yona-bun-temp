@@ -2258,6 +2258,16 @@ paint, global, frozen, app CSS, geometry, or behavior change. Focused combined c
 whole-screen coverage is GREEN 14/16 (about 1.6m). Each route passes 7/8; only the two pre-existing
 missing global-GNB Feedback expectations remain, while all fourteen functional cases pass.
 
+The one-hundred-eighty-fifth slice completes the comments Yobicon residual for both
+`/sites/postList` and `/sites/issueList`. Their existing comments metadata owners now directly own
+the generic Yobicon font family/style/weight/display/smoothing declarations and `::before`
+`\e4b7`, while the frozen `_page.less` middle alignment remains preserved. Exactly the two literal
+`yobicon-comments` classes retire, with no theme, paint, global variable, geometry, navigation, or
+behavior change. Focused combined metadata coverage is GREEN 9/9 (17.7s), the complete combined
+StyleX matrix is GREEN 88/88 (52.3s), and combined whole-screen coverage is GREEN 14/16 (about
+1.6m). Each route passes 7/8; only the same pre-existing missing global-GNB Feedback expectations
+remain, while all fourteen functional cases pass.
+
 The one-hundred-thirty-seventh slice completes the authenticated populated `/sites/postList`
 title/list shell fallback retirement from `site/postList.scala.html`, Bootstrap 2.3.1,
 `_page.less`, and `_responsive.less`. The existing title and list owners plus a new direct heading

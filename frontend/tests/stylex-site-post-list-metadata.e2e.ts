@@ -20,6 +20,10 @@ const legacyYobiUiLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
 );
+const legacyYobiconSource = new URL(
+  "../../yona-original/public/stylesheets/yobicon/style.css",
+  import.meta.url,
+);
 
 const owners = {
   avatar: "site-post-list-author-avatar",
@@ -110,14 +114,16 @@ async function openPostList(page: Page) {
 
 test.describe("StyleX site post-list metadata subtree", () => {
   test("declares the five explicit metadata owners from the frozen final cascade", async () => {
-    const [route, theme, template, commonLess, pageLess, yobiUiLess] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(legacyTemplateSource, "utf8"),
-      readFile(legacyCommonLessSource, "utf8"),
-      readFile(legacyPageLessSource, "utf8"),
-      readFile(legacyYobiUiLessSource, "utf8"),
-    ]);
+    const [route, theme, template, commonLess, pageLess, yobiUiLess, yobiconCss] =
+      await Promise.all([
+        readFile(routeSource, "utf8"),
+        readFile(themeSource, "utf8"),
+        readFile(legacyTemplateSource, "utf8"),
+        readFile(legacyCommonLessSource, "utf8"),
+        readFile(legacyPageLessSource, "utf8"),
+        readFile(legacyYobiUiLessSource, "utf8"),
+        readFile(legacyYobiconSource, "utf8"),
+      ]);
 
     expect(template).toContain('<div class="post-meta-wrap">');
     expect(template).toContain('class="avatar-wrap"');
@@ -152,6 +158,14 @@ test.describe("StyleX site post-list metadata subtree", () => {
 
             .post-comments {
                 i { vertical-align: middle;}`);
+    expect(yobiconCss).toContain(`[class^="yobicon-"],
+[class*=" yobicon-"] {
+    font-family: 'yobicon';`);
+    expect(yobiconCss).toContain(`.yobicon-comments:before {
+    content: "\\e4b7";`);
+    expect(route).toContain('fontFamily: "yobicon"');
+    expect(route).toContain("content: '\"\\\\e4b7\"'");
+    expect(route).not.toContain("className={`yobicon-comments");
 
     for (const explicitOwner of Object.values(owners).filter((value) => value !== owners.row)) {
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
@@ -264,7 +278,18 @@ test.describe("StyleX site post-list metadata subtree", () => {
         await expect(item).not.toHaveClass(/\bpost-meta-item\b/u);
       }
       await expect(items.nth(2)).not.toHaveClass(/\bpost-comments\b/u);
-      await expect(commentsIcon).toHaveClass(/\byobicon-comments\b/u);
+      await expect(commentsIcon).not.toHaveClass(/\byobicon-comments\b/u);
+      await expect(commentsIcon).toHaveCSS("display", "inline-block");
+      await expect(commentsIcon).toHaveCSS("font-family", "yobicon");
+      await expect(commentsIcon).toHaveCSS("font-style", "normal");
+      await expect(commentsIcon).toHaveCSS("font-variant", "normal");
+      await expect(commentsIcon).toHaveCSS("font-weight", "400");
+      await expect(commentsIcon).toHaveCSS("line-height", "11px");
+      await expect(commentsIcon).toHaveCSS("text-decoration-line", "none");
+      await expect(commentsIcon).toHaveCSS("background-image", "none");
+      expect(
+        await commentsIcon.evaluate((node) => getComputedStyle(node, "::before").content),
+      ).toBe('"\ue4b7"');
       for (const element of [meta, avatar, avatarImage, ...(await items.all()), commentsIcon]) {
         expect(
           await element.evaluate((node) =>

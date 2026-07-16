@@ -20,6 +20,10 @@ const legacyYobiUiLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
 );
+const legacyYobiconCssSource = new URL(
+  "../../yona-original/public/stylesheets/yobicon/style.css",
+  import.meta.url,
+);
 
 const owners = {
   authorAvatar: "site-issue-list-author-avatar",
@@ -100,14 +104,16 @@ async function openIssueList(page: Page) {
 
 test.describe("StyleX site issue-list metadata", () => {
   test("declares five explicit owners from the frozen final cascade", async () => {
-    const [route, theme, template, commonLess, pageLess, yobiUiLess] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(themeSource, "utf8"),
-      readFile(legacyTemplateSource, "utf8"),
-      readFile(legacyCommonLessSource, "utf8"),
-      readFile(legacyPageLessSource, "utf8"),
-      readFile(legacyYobiUiLessSource, "utf8"),
-    ]);
+    const [route, theme, template, commonLess, pageLess, yobiUiLess, yobiconCss] =
+      await Promise.all([
+        readFile(routeSource, "utf8"),
+        readFile(themeSource, "utf8"),
+        readFile(legacyTemplateSource, "utf8"),
+        readFile(legacyCommonLessSource, "utf8"),
+        readFile(legacyPageLessSource, "utf8"),
+        readFile(legacyYobiUiLessSource, "utf8"),
+        readFile(legacyYobiconCssSource, "utf8"),
+      ]);
 
     expect(template).toContain('<div class="post-meta-wrap">');
     expect(template).toContain('class="post-comments post-meta-item"');
@@ -134,6 +140,10 @@ test.describe("StyleX site issue-list metadata", () => {
     expect(yobiUiLess).toContain(`img {
         width:100%;
         vertical-align:top;`);
+    expect(yobiconCss).toContain('[class^="yobicon-"],');
+    expect(yobiconCss).toContain("font-family: 'yobicon';");
+    expect(yobiconCss).toContain(`.yobicon-comments:before {
+    content: "\\e4b7";`);
 
     for (const explicitOwner of [
       owners.metadata,
@@ -153,6 +163,9 @@ test.describe("StyleX site issue-list metadata", () => {
     ]) {
       expect(route).toContain(`styles.${styleName}`);
     }
+    expect(route).toContain('fontFamily: "yobicon"');
+    expect(route).toContain('"::before": { content: \'"\\\\e4b7"\' }');
+    expect(route).not.toContain("yobicon-comments");
     for (const variable of [
       "siteIssueListMetadataFontSize",
       "siteIssueListMetadataLineHeight",
@@ -235,7 +248,7 @@ test.describe("StyleX site issue-list metadata", () => {
     expect(new URL(page.url()).searchParams.get("state")).toBe("open");
   });
 
-  test("retires only metadata fallbacks while preserving the comments glyph", async ({ page }) => {
+  test("retires metadata fallbacks while preserving the owned comments glyph", async ({ page }) => {
     const metadata = await openIssueList(page);
     const first = metadata.nth(0);
     const avatar = owner(first, owners.authorAvatar);
@@ -247,7 +260,7 @@ test.describe("StyleX site issue-list metadata", () => {
     await expect(avatar).not.toHaveClass(/\bavatar-wrap\b/u);
     await expect(first.locator(".post-meta-item")).toHaveCount(0);
     await expect(first.locator(".post-comments")).toHaveCount(0);
-    await expect(icon).toHaveClass(/\byobicon-comments\b/u);
+    await expect(icon).not.toHaveClass(/\byobicon-comments\b/u);
     await expect(icon).not.toHaveClass(/\bpost-comments\b/u);
     for (const element of [
       first,
@@ -284,6 +297,14 @@ test.describe("StyleX site issue-list metadata", () => {
       await expect(item).toHaveCSS("margin-left", "5px");
     }
     await expect(icon).toHaveCSS("vertical-align", "middle");
+    await expect(icon).toHaveCSS("display", "inline-block");
+    await expect(icon).toHaveCSS("font-family", "yobicon");
+    await expect(icon).toHaveCSS("font-style", "normal");
+    await expect(icon).toHaveCSS("font-weight", "400");
+    await expect(icon).toHaveCSS("line-height", "11px");
+    expect(await icon.evaluate((node) => getComputedStyle(node, "::before").content)).toBe(
+      '"\ue4b7"',
+    );
 
     const unauthorizedOwners = await first.evaluate((element) => {
       const allowed = new Set([

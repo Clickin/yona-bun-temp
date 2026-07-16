@@ -228,7 +228,18 @@ const styles = stylex.create({
     marginInline: "5px",
   },
   postCommentsIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
     verticalAlign: "middle",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e4b7"' },
   },
   paginationWrapper: {
     width: "100%",
@@ -804,11 +815,7 @@ function PostListItem({ even, post }: { even: boolean; post: SitePost }) {
             }}
             to="/$ownerName/$projectName/post/$postNumber"
           >
-            <i
-              {...postCommentsIconStyleProps}
-              className={`yobicon-comments ${postCommentsIconStyleProps.className ?? ""}`}
-              data-stylex-owner="site-post-list-comments-icon"
-            ></i>
+            <i {...postCommentsIconStyleProps} data-stylex-owner="site-post-list-comments-icon"></i>
             {post.commentCount}
           </Link>
         </span>

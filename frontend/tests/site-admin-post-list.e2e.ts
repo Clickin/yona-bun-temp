@@ -1371,6 +1371,9 @@ async function canonicalizeHtml(page: Page, html: string) {
           retiredPostListTokens.add("post-meta-item");
           retiredPostListTokens.add("post-comments");
         }
+        if (current.matches(".post-meta-wrap > .post-comments > a > i.yobicon-comments")) {
+          retiredPostListTokens.add("yobicon-comments");
+        }
         if (current.matches("#pagination.page-navigation-wrap")) {
           retiredPostListTokens.add("page-navigation-wrap");
         }

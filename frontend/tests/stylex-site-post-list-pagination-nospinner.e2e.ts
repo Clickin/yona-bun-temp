@@ -27,7 +27,7 @@ test("source retires only the pagination input nospinner residual", async () => 
   expect(route).not.toContain("className={`nospinner");
   expect(route).toContain("className={`ico btn-pg-prev");
   expect(route).toContain("className={`ico btn-pg-next");
-  expect(route).toContain("className={`yobicon-comments");
+  expect(route).not.toContain("className={`yobicon-comments");
 });
 
 test("keeps the populated pagination input semantics without the presentation class", async ({

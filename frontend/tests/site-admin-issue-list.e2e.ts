@@ -614,9 +614,9 @@ test("site admin issue list renders legacy closed issue rows with closed paginat
   await expect(row.locator('[data-stylex-owner="site-issue-list-metadata-item"] a')).toHaveText(
     "8",
   );
-  await expect(
-    row.locator('[data-stylex-owner="site-issue-list-comments-icon"].yobicon-comments'),
-  ).toHaveCount(1);
+  const commentsIcon = row.locator('[data-stylex-owner="site-issue-list-comments-icon"]');
+  await expect(commentsIcon).toHaveCount(1);
+  await expect(commentsIcon).not.toHaveClass(/\byobicon-comments\b/u);
 
   await expect(page.locator('[data-stylex-owner="site-issue-list-pagination"]')).not.toHaveClass(
     /\bpage-navigation-wrap\b/u,
@@ -1275,6 +1275,12 @@ async function canonicalizeScreenRoots(page: Page) {
     return roots.map((root) => visit(root)).join("");
 
     function normalizeSiteLayoutGnbNavAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        current.matches('[data-stylex-owner="site-issue-list-comments-icon"]')
+      ) {
+        return "yobicon-comments";
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||

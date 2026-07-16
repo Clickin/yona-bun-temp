@@ -339,7 +339,18 @@ const styles = stylex.create({
     marginInline: "5px",
   },
   issueListCommentsIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: 1,
+    textDecoration: "none",
     verticalAlign: "middle",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e4b7"' },
   },
   issueListPaginationWrapper: {
     width: "100%",
@@ -1000,7 +1011,6 @@ function IssueListItem({ index, issue }: { index: number; issue: SiteIssue }) {
           >
             <i
               {...issueListCommentsIconStyleProps}
-              className={`yobicon-comments ${issueListCommentsIconStyleProps.className ?? ""}`}
               data-stylex-owner="site-issue-list-comments-icon"
             ></i>
             {issue.commentCount}
