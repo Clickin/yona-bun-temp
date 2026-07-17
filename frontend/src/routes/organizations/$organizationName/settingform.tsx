@@ -132,10 +132,11 @@ function OrganizationSettingsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="organization-setting-page">
+        <div className="project-page-wrap" data-stylex-owner="organization-setting-shell">
           <OrganizationSettingMenu active="setting" organizationName={organizationName} />
           <form
+            data-stylex-owner="organization-setting-form"
             id="saveSetting"
             method="post"
             action={organizationSettingHref(runtimeConfig.basePath, organizationName)}
@@ -174,6 +175,7 @@ function OrganizationSettingsBody({
                           <div className="nbtn medium white fake-file-wrap">
                             <i className="yobicon-upload"></i> {t("button.upload")}
                             <input
+                              data-stylex-owner="organization-setting-name-input"
                               id="logoPath"
                               key={logoInputKey}
                               type="file"

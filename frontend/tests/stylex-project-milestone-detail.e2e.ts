@@ -19,6 +19,7 @@ test("records milestone detail owners and responsive geometry", async ({ page })
   expect(template).toContain('class="milesion-wrap"');
   expect(template).toContain('class="progress progress-success"');
   expect(route).toContain('data-stylex-owner="milestone-detail-progress"');
+  expect(route).toContain('data-stylex-owner="milestone-detail-description"');
   expect(theme).toContain("export const milestoneDetailColors");
   await mockMilestone(page);
   for (const viewport of [

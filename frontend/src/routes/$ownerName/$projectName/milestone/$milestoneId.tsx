@@ -331,7 +331,7 @@ function ProjectMilestoneDetailBody({
           </div>
 
           {stringField(milestone.contentsMarkdown) ? (
-            <div className="milestone-desc">
+            <div className="milestone-desc" data-stylex-owner="milestone-detail-description">
               <div className="markdown-wrap">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {stringField(milestone.contentsMarkdown)}

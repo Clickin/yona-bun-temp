@@ -80,7 +80,7 @@ function ProjectCodeFolderBody({
     <div className="page-wrap-outer" data-stylex-owner="project-code-branch-page">
       <div className="project-page-wrap">
         <div className="code-browse-wrap" data-stylex-owner="project-code-branch-browser">
-          <ul className="nav nav-tabs">
+          <ul className="nav nav-tabs" data-stylex-owner="project-code-branch-tabs">
             <li className="active">
               <Link
                 activeOptions={{
@@ -150,6 +150,7 @@ function ProjectCodeFolderBody({
             <div
               className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               style={{ width: 220 }}
+              data-stylex-owner="project-code-branch-picker"
             >
               <button
                 type="button"
@@ -347,7 +348,7 @@ function ProjectCodeFolderBody({
             ) : null}
           </div>
 
-          <div className="code-viewer-wrap">
+          <div className="code-viewer-wrap" data-stylex-owner="project-code-branch-viewer">
             <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
             <FolderList code={code} />
           </div>
@@ -365,7 +366,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap">
+    <div className="list-wrap" data-stylex-owner="project-code-branch-list">
       <div className="row-fluid listhead">
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
@@ -379,7 +380,11 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
       </div>
 
       {code.entries.length === 0 ? (
-        <div className="alert alert-warning nm" style={{ borderTop: 0, paddingLeft: "23px" }}>
+        <div
+          className="alert alert-warning nm"
+          style={{ borderTop: 0, paddingLeft: "23px" }}
+          data-stylex-owner="project-code-branch-empty"
+        >
           {t("code.nofiles")}
         </div>
       ) : null}
