@@ -208,7 +208,7 @@ function ProjectPostsBody({
               <BoardFilters ownerName={ownerName} projectName={projectName} search={search} />
             ) : null}
             {posts.notices.length > 0 ? (
-              <ul className="post-list-wrap notice-wrap">
+              <ul className="post-list-wrap notice-wrap" data-stylex-owner="project-posts-notices">
                 {posts.notices.map((post) => (
                   <ProjectBoardPost
                     basePath={runtimeConfig.basePath}
@@ -221,7 +221,7 @@ function ProjectPostsBody({
                 ))}
               </ul>
             ) : null}
-            <ul className="post-list-wrap">
+            <ul className="post-list-wrap" data-stylex-owner="project-posts-items">
               {posts.items.map((post) => (
                 <ProjectBoardPost
                   basePath={runtimeConfig.basePath}
@@ -513,7 +513,7 @@ function ProjectBoardPost({
   } satisfies LegacyPostItemAttrs;
 
   return (
-    <li {...legacyPostItemAttrs}>
+    <li {...legacyPostItemAttrs} data-stylex-owner="project-posts-item">
       <Link
         to={authorRoutePath}
         activeProps={legacyRouteLocalActiveProps}

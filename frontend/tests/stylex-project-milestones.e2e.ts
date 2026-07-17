@@ -16,6 +16,8 @@ test("records milestone list ownership and populated issue filtering", async ({ 
   expect(pageLess).toContain(".milestones {");
   expect(route).toContain('data-stylex-owner="project-milestones-list"');
   expect(route).toContain('data-stylex-owner="project-milestones-issue-link"');
+  expect(route).toContain('data-stylex-owner="project-milestones-issue-count"');
+  expect(route).toContain('data-stylex-owner="project-milestones-issue-number"');
   expect(theme).toContain("export const milestoneColors");
 
   await mockMilestones(page);

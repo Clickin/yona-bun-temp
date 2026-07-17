@@ -300,11 +300,18 @@ function MilestoneRow({
           >
             {stringField(milestone.title)}
           </Link>
-          <span {...sx.separator}>|</span>
-          <span {...sx.issue}>{`${closedCount} / ${totalCount}`}</span>
+          <span {...sx.separator} data-stylex-owner="project-milestones-separator">
+            |
+          </span>
+          <span
+            {...sx.issue}
+            data-stylex-owner="project-milestones-issue-count"
+          >{`${closedCount} / ${totalCount}`}</span>
           {search.state === "all" ? (
             <>
-              <span className="sp">|</span>
+              <span {...sx.separator} data-stylex-owner="project-milestones-separator">
+                |
+              </span>
               <span style={{ color: isClosed ? "#51aacc" : "#5dbbe0" }}>
                 {t(`milestone.state.${isClosed ? "closed" : "open"}`)}
               </span>
@@ -312,12 +319,16 @@ function MilestoneRow({
           ) : null}
           {dueDateLabel ? (
             <>
-              <span className="sp">|</span>
+              <span {...sx.separator} data-stylex-owner="project-milestones-separator">
+                |
+              </span>
               <span {...(booleanField(milestone.dueDateOverdue) ? sx.dueOver : sx.due)}>
                 {t("label.dueDate")}
                 <strong>{dueDateLabel}</strong>
                 {isClosed ? null : (
-                  <span className="date">({stringField(milestone.untilLabel)})</span>
+                  <span data-stylex-owner="project-milestones-until">
+                    ({stringField(milestone.untilLabel)})
+                  </span>
                 )}
               </span>
             </>
@@ -403,7 +414,7 @@ function MilestoneIssueLink({
           {state === "closed" ? <i className="yobicon-checkmark"></i> : null}
         </span>
         <span className="item-name">
-          <span className="number">#{issueNumber}</span>
+          <span data-stylex-owner="project-milestones-issue-number">#{issueNumber}</span>
           {titleText}
           {sortLabels(issue.labels).map((label) => (
             <span

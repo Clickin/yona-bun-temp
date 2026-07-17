@@ -190,6 +190,7 @@ export function ProjectCodeHistoryBody({
             <div
               className={`select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               style={{ width: 220 }}
+              data-stylex-owner="project-commits-branch-picker"
             >
               <button
                 type="button"
@@ -294,7 +295,11 @@ export function ProjectCodeHistoryBody({
               ))}
             </select>
 
-            <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
+            <ul
+              className="nav nav-tabs"
+              style={{ marginBottom: "20px" }}
+              data-stylex-owner="project-commits-tabs"
+            >
               <li>
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
@@ -347,7 +352,10 @@ export function ProjectCodeHistoryBody({
               className={`${stylex.props(styles.history).className} commit-wrap`}
               data-stylex-owner="project-commits-history"
             >
-              <table className="code-table commits">
+              <table
+                className={`${stylex.props(styles.table).className} code-table commits`}
+                data-stylex-owner="project-commits-table"
+              >
                 <thead className="thead">
                   <tr>
                     <td className="commit-id">
@@ -425,7 +433,7 @@ export function ProjectCodeHistoryBody({
             </div>
           </div>
 
-          <div className="actrow margin-top-20">
+          <div className="actrow margin-top-20" data-stylex-owner="project-commits-pagination">
             {history.hasNewer ? (
               <Link
                 to="/$ownerName/$projectName/commits"
