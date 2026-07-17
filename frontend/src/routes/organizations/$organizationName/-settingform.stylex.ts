@@ -9,3 +9,7 @@ export const organizationSettingColors = stylex.defineVars({
   saveText: "#ffffff",
   warningText: "#f36c22",
 });
+
+export const organizationSettingStyles = stylex.create({
+  topBox: { paddingTop: "20px" },
+});

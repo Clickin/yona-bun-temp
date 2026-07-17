@@ -10,7 +10,7 @@ import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { organizationSettingColors } from "./-settingform.stylex";
+import { organizationSettingColors, organizationSettingStyles } from "./-settingform.stylex";
 
 // Legacy output source: yona-original/app/views/organization/setting.scala.html.
 
@@ -151,9 +151,8 @@ function OrganizationSettingsBody({
               data-stylex-owner="organization-setting-bubble"
             >
               <div
-                className="box-wrap top clearfix frm-wrap"
-                style={{ paddingTop: 20 }}
-                data-stylex-owner="organization-setting-body"
+                className={`box-wrap top clearfix frm-wrap ${stylex.props(organizationSettingStyles.topBox).className}`}
+                data-stylex-owner="organization-setting-top-box"
               >
                 <div className="setting-box left">
                   <div
