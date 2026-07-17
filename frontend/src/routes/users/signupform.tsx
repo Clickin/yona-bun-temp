@@ -290,10 +290,12 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 : "center-wrap tag-line-wrap signup"
             }
             data-stylex-part={standardPasswordSignup ? "standalone-signup-tagline" : undefined}
+            data-stylex-owner={standardPasswordSignup ? "standalone-signup-tagline" : undefined}
           >
             <h1
               className={standardPasswordSignup ? `title ${titleClassName}` : "title"}
               data-stylex-part={standardPasswordSignup ? "standalone-signup-title" : undefined}
+              data-stylex-owner={standardPasswordSignup ? "standalone-signup-title" : undefined}
             >
               <HighlightedLegacyMessage message={title} />
             </h1>
@@ -330,6 +332,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 : "signup-form-wrap frm-wrap"
             }
             data-stylex-part={standardPasswordSignup ? "standalone-signup-form-wrap" : undefined}
+            data-stylex-owner={standardPasswordSignup ? "standalone-signup-form-wrap" : undefined}
           >
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/users/signup")}

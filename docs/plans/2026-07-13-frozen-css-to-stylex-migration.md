@@ -3258,6 +3258,8 @@ Batch 242 applied the workflow to project no-head code, board post creation, and
 
 Batch 243 applied the workflow to milestone detail, project code branch browsing, and organization settings. The integrated 4-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed.
 
+Batch 244 applied the workflow to site-admin issue listing, standalone signup, and pull-request changes. The integrated 7-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

@@ -59,6 +59,12 @@ test.describe("StyleX standalone signup form", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner={standardPasswordSignup ? "standalone-signup-form"');
+    expect(route).toContain(
+      'data-stylex-owner={standardPasswordSignup ? "standalone-signup-title"',
+    );
+    expect(route).toContain(
+      'data-stylex-owner={standardPasswordSignup ? "standalone-signup-form-wrap"',
+    );
     expect(route).toContain('"standalone-signup-login-id"');
     expect(route).toContain('"standalone-signup-submit"');
     expect(route).toContain("stylex.props(styles.textInput, styles.passwordInput)");

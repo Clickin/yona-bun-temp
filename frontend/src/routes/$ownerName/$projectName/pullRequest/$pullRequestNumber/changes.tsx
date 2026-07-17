@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -28,6 +29,14 @@ import {
   PullRequestHeader,
   PullRequestStateInfo,
 } from "../$pullRequestNumber";
+import { styles } from "./-pull-request-changes.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  browse: stylex.props(styles.browse),
+  author: stylex.props(styles.author),
+  diffs: stylex.props(styles.diffs),
+} as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 const legacyLinkActiveOptions = { exact: true, explicitUndefined: true };
@@ -294,9 +303,9 @@ function ProjectPullRequestChangesBody({
 
   return (
     <>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div className="code-browse-wrap">
+      <div {...sx.page} data-stylex-owner="pull-request-changes-page">
+        <div data-stylex-owner="pull-request-changes-shell">
+          <div {...sx.browse} data-stylex-owner="pull-request-changes-browse">
             <PullRequestHeader
               activeTab="changes"
               project={project}
@@ -304,8 +313,8 @@ function ProjectPullRequestChangesBody({
               runtimeConfig={runtimeConfig}
             />
 
-            <div className="board-body mb20">
-              <div className="author-info right-txt" style={{ marginTop: "20px" }}>
+            <div data-stylex-owner="pull-request-changes-body">
+              <div {...sx.author} data-stylex-owner="pull-request-changes-author">
                 <Link
                   to="/$user"
                   params={{ user: pullRequest.contributor.loginId }}
@@ -333,7 +342,7 @@ function ProjectPullRequestChangesBody({
                   <i className="yobicon-restore"></i>
                 </button>
               ) : null}
-              <div id="changes" className="diffs-wrap">
+              <div {...sx.diffs} data-stylex-owner="pull-request-changes-diffs" id="changes">
                 <CommitDropdown
                   commitId={commitId}
                   commits={changes.commits}
