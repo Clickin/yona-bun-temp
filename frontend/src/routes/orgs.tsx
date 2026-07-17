@@ -29,9 +29,12 @@ const sx = {
   icon: stylex.props(styles.icon),
   list: stylex.props(styles.list),
   row: stylex.props(styles.row),
+  privateRow: stylex.props(styles.privateRow),
   avatar: stylex.props(styles.avatar),
   avatarImage: stylex.props(styles.avatarImage),
   identity: stylex.props(styles.identity),
+  privateIdentity: stylex.props(styles.privateIdentity),
+  privateMessage: stylex.props(styles.privateMessage),
   header: stylex.props(styles.header),
   titleLink: stylex.props(styles.titleLink),
   description: stylex.props(styles.description),
@@ -351,11 +354,16 @@ function OrganizationListItem({
   const organizationName = organizationDisplayName(organization);
   if (!organizationIsReadable(organization)) {
     return (
-      <li {...sx.row} data-stylex-owner="organization-directory-row">
+      <li
+        {...sx.row}
+        {...sx.privateRow}
+        data-stylex-owner="organization-directory-row"
+        data-stylex-owner-private="organization-directory-private-row"
+      >
         <div
           {...sx.identity}
+          {...sx.privateIdentity}
           data-stylex-owner="organization-directory-private"
-          style={{ opacity: 0.3 }}
         >
           <div {...sx.avatar}>
             <img
@@ -363,7 +371,7 @@ function OrganizationListItem({
               alt={organizationName}
             />
           </div>
-          <div style={{ float: "left", color: "gray" }}>
+          <div {...sx.privateMessage} data-stylex-owner="organization-directory-private-message">
             You do not have permission to view this project's information
           </div>
         </div>

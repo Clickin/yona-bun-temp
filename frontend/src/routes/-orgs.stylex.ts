@@ -112,6 +112,7 @@ export const styles = stylex.create({
     overflow: "hidden",
     padding: "15px 0px 10px",
   },
+  privateRow: { backgroundColor: "#fcfcfc" },
   avatar: {
     borderRadius: "3px",
     display: "inline",
@@ -124,6 +125,8 @@ export const styles = stylex.create({
   },
   avatarImage: { height: "100%", verticalAlign: "top", width: "100%" },
   identity: { float: "left" },
+  privateIdentity: { opacity: 0.3 },
+  privateMessage: { color: "gray", float: "left" },
   header: { fontSize: "20px", fontWeight: "700", marginBottom: "5px", marginLeft: "10px" },
   titleLink: { color: organizationDirectoryColors.titleText, textDecoration: "none" },
   description: {

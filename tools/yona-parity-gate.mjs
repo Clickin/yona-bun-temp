@@ -121,6 +121,7 @@ const PARITY_SLICES = [
       /^frontend\/src\/routes\/organizations\/new\.tsx$/i,
       /^frontend\/src\/routes\/organizations\/\$organizationName\/deleteForm\.tsx$/i,
       /^frontend\/src\/routes\/orgs\.tsx$/i,
+      /^frontend\/src\/routes\/-orgs\.stylex\.ts$/i,
       /^frontend\/src\/routes\/orgs\/route\.tsx$/i,
       /^frontend\/src\/app\.css$/i,
     ],
