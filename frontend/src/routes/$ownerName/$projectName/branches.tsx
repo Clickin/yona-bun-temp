@@ -64,7 +64,10 @@ function ProjectBranchesBody({
       <div className="project-page-wrap">
         <div className="bubble-wrap dark-gray repo-wrap">
           <div className="code-browse-wrap">
-            <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
+            <ul
+              className={`${stylex.props(styles.branchTabs).className} nav nav-tabs`}
+              data-stylex-owner="project-branches-tabs"
+            >
               <li>
                 <Link
                   to="/$ownerName/$projectName/code/$branch"
@@ -374,6 +377,9 @@ function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
 }
 
 const styles = stylex.create({
+  branchTabs: {
+    marginBottom: "20px",
+  },
   branchTable: {
     width: "100%",
   },
