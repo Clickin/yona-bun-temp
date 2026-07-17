@@ -526,14 +526,8 @@ function ProjectMembersBody({
                     >
                       <button
                         type="button"
-                        style={{
-                          background: "transparent",
-                          border: 0,
-                          display: "block",
-                          padding: "3px 20px",
-                          textAlign: "left",
-                          width: "100%",
-                        }}
+                        data-stylex-owner="project-members-suggestion-action"
+                        {...stylex.props(styles.suggestionAction)}
                         onMouseDown={(event) => {
                           event.preventDefault();
                           selectSuggestion(suggestion);
@@ -841,6 +835,20 @@ const styles = stylex.create({
     color: projectMembersTheme.memberIdText,
     lineHeight: "20px",
   },
+  // Legacy project/members.scala.html typeahead action button declarations.
+  suggestionAction: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderWidth: 0,
+    display: "block",
+    padding: "3px 20px",
+    textAlign: "left",
+    width: "100%",
+  },
+  // Legacy project/members.scala.html enrolled-user details column.
+  enrollmentDetails: {
+    width: "60px",
+  },
 });
 
 function EnrollmentRequest({
@@ -871,7 +879,10 @@ function EnrollmentRequest({
           />
         </Link>
       </div>
-      <div className="pull-left" style={{ width: "60px" }}>
+      <div
+        className={`${stylex.props(styles.enrollmentDetails).className} pull-left`}
+        data-stylex-owner="project-members-enrollment-details"
+      >
         <span>
           <Link
             activeOptions={legacyLinkActiveOptions}
