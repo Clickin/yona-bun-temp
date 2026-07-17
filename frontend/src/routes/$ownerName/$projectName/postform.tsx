@@ -247,9 +247,13 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               </dd>
             </dl>
 
-            {canShowUploader ? <BoardPostFileUploader /> : null}
+            {canShowUploader ? (
+              <div data-stylex-owner="project-postform-uploader">
+                <BoardPostFileUploader />
+              </div>
+            ) : null}
 
-            <div className="right-txt mt10 mb10">
+            <div className="right-txt mt10 mb10" data-stylex-owner="project-postform-options">
               {canShowNotice ? (
                 <label className="checkbox">
                   <input type="checkbox" id="notice" name="notice" />

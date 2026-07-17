@@ -168,6 +168,7 @@ function ProjectMilestoneEditFormBody({
                       name="title"
                       defaultValue={stringField(milestone.title, "")}
                       className="zen-mode text title "
+                      data-stylex-owner="milestone-edit-form-title"
                       maxLength={250}
                       tabIndex={1}
                       placeholder={t("title")}

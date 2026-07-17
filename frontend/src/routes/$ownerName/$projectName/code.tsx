@@ -142,7 +142,7 @@ function ProjectCodeNoHead({
         className="page-wrap-outer"
         data-stylex-owner="project-code-nohead-page"
       >
-        <div className="project-page-wrap">
+        <div className="project-page-wrap" data-stylex-owner="project-code-nohead-shell">
           <div className="row-fluid">
             <div
               {...stylex.props(styles.noHeadColumn)}
