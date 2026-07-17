@@ -9,6 +9,7 @@ export const forkColors = stylex.defineVars({
   labelText: "#333333",
   radioText: "#333333",
   helpInlineText: "#b94a48",
+  existingLink: "#f36c22",
 });
 
 export const styles = stylex.create({
@@ -24,6 +25,13 @@ export const styles = stylex.create({
   },
   helpImage: { border: "1px solid #ddd", padding: "4px", verticalAlign: "middle" },
   helpMessages: { marginLeft: "20px" },
+  existing: { marginLeft: "10px", textAlign: "center" },
+  existingMessage: { fontSize: "120%" },
+  existingRow: { textAlign: "center" },
+  existingIcon: { display: "inline-block" },
+  existingSource: { verticalAlign: "middle" },
+  existingArrow: { display: "inline-block", verticalAlign: "middle" },
+  existingLink: { color: forkColors.existingLink, verticalAlign: "middle" },
   group: { marginBottom: "20px" },
   label: {
     color: forkColors.labelText,

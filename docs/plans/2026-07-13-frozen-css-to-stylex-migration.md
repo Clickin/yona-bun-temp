@@ -316,6 +316,8 @@ build, StyleX verifier, and unchanged fallback hash also pass. The local user-fi
 documented shared-ancestry offset from the live Java shell; owner-local geometry remains exact and
 no route-specific compensation was added.
 
+Batch 264 fork route commit: populated `/$ownerName/$projectName/newFork/` notice ownership was migrated and its focused browser gate passed 1/1. The independent code-branch state is being committed separately to preserve the one-screen audit guard.
+
 Batch 227 applied the same workflow to `/orgs`, organization settings, and `/user/issues` in one
 assembled Playwright invocation (5 focused tests, GREEN 5/5). The three workers added 12 route-local
 paint owners, kept geometry/type values inline, and recorded one Scala audit row per route. The

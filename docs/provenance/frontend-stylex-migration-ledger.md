@@ -519,6 +519,12 @@ This batch used a single visible route state; no multi-screen exception was requ
 
 This batch used a single visible route state; no multi-screen exception was required.
 
+## Batch 264 migration rows
+
+- `/$ownerName/$projectName/newFork/` populated existing-fork state: migrated the existing-fork notice, error icon, source/arrow/link row, and notice copy owners from `git/fork.scala.html` and the project shell; fork query, owner/scope controls, submit mutation, and navigation remain React-owned. Focused `stylex-project-new-fork-index.e2e.ts` passed 1/1 with populated copy/link assertions, desktop/mobile containment, and empty-state image absence.
+
+The code-branch candidate is isolated for the next route-scoped commit so the Scala audit guard retains one screen state per commit.
+
 ## Batch 261 migration rows
 
 - `/$ownerName/$projectName/issue/$issueNumber` open detail: migrated the comment timeline, add-comment form/editor/upload, sidebar metadata, and index timeline owners from the issue detail/comment partials; comment/event rendering, mutations, editor/upload behavior, metadata controls, and navigation remain React-owned. Focused `stylex-project-issue-detail-owners.e2e.ts` passed 2/2 with desktop/mobile containment; live legacy visual comparison is recorded as unverified because the legacy render was unavailable.

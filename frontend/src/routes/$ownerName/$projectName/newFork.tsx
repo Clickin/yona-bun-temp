@@ -25,6 +25,13 @@ const sx = {
   help: stylex.props(styles.help),
   helpImage: stylex.props(styles.helpImage),
   helpMessages: stylex.props(styles.helpMessages),
+  existing: stylex.props(styles.existing),
+  existingMessage: stylex.props(styles.existingMessage),
+  existingRow: stylex.props(styles.existingRow),
+  existingIcon: stylex.props(styles.existingIcon),
+  existingSource: stylex.props(styles.existingSource),
+  existingArrow: stylex.props(styles.existingArrow),
+  existingLink: stylex.props(styles.existingLink),
   group: stylex.props(styles.group),
   label: stylex.props(styles.label),
   controls: stylex.props(styles.controls),
@@ -308,19 +315,45 @@ function ProjectForkBody({
                       </div>
                     </>
                   ) : (
-                    <div className="help-messages center-txt">
-                      <i className="ico ico-err2"></i>
-                      <p>{t("fork.already.exist")}</p>
+                    <div
+                      {...sx.existing}
+                      className={`${sx.existing.className} help-messages center-txt`}
+                      data-stylex-owner="project-fork-existing"
+                    >
+                      <i
+                        {...sx.existingIcon}
+                        className={`${sx.existingIcon.className} ico ico-err2`}
+                        data-stylex-owner="project-fork-existing-icon"
+                      ></i>
+                      <p {...sx.existingMessage} data-stylex-owner="project-fork-existing-message">
+                        {t("fork.already.exist")}
+                      </p>
                       {options.existingForks.map((forkedProject) => {
                         const forkOwnerName = stringField(forkedProject.ownerName, "");
                         const forkProjectName = stringField(forkedProject.projectName, "");
                         return (
-                          <p key={`${forkOwnerName}/${forkProjectName}`}>
-                            <strong className="vmiddle">{`${ownerName} / ${projectName}`}</strong>
-                            <i className="yobicon-right vmiddle"></i>
+                          <p
+                            {...sx.existingRow}
+                            key={`${forkOwnerName}/${forkProjectName}`}
+                            data-stylex-owner="project-fork-existing-row"
+                          >
+                            <strong
+                              {...sx.existingSource}
+                              className={`${sx.existingSource.className} vmiddle`}
+                              data-stylex-owner="project-fork-existing-source"
+                            >
+                              {`${ownerName} / ${projectName}`}
+                            </strong>
+                            <i
+                              {...sx.existingArrow}
+                              className={`${sx.existingArrow.className} yobicon-right vmiddle`}
+                              data-stylex-owner="project-fork-existing-arrow"
+                            ></i>
                             <Link
                               to={projectPath(forkOwnerName, forkProjectName)}
-                              className="vmiddle primary-txt"
+                              {...sx.existingLink}
+                              className={`${sx.existingLink.className} vmiddle primary-txt`}
+                              data-stylex-owner="project-fork-existing-link"
                               activeOptions={legacyProjectShellLinkActiveOptions}
                               activeProps={legacyProjectShellLinkActiveProps}
                             >
