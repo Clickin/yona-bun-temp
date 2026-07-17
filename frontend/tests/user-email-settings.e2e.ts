@@ -505,6 +505,8 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-email-primary-avatar") return "";
         if (owner === "user-email-primary-address") return 'class="ml10"';
         if (owner === "user-email-primary-badge") return 'class="label-head vmiddle ml10"';
+        if (owner === "user-email-description-separator" || owner === "user-email-description")
+          return "";
       }
       if (
         name === "class" &&

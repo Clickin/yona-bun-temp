@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twenty slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twenty-one slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -608,6 +608,17 @@ their identity content, all row actions, and mutations remain unchanged. IE-only
 and `-ms-interpolation-mode` remain frozen fallback evidence because they have no modern StyleX
 runtime effect. Genuine RED 2/2 becomes GREEN 2/2; exact desktop/mobile live geometry, fallback
 equivalence, screenshots, and adjacent table/add-form coverage pass. This is not Wave 1 completion.
+
+The two-hundred-twenty-first slice migrates the two visible description-boundary owners in the
+same actual primary-only `/user/editform/emails` state: the separator HR and two-line description
+P. The HR owns Bootstrap's final 20px block margin, zero side borders, and 1px top/bottom borders;
+only the `#eeeeee`/`#ffffff` border paint enters route-local
+`emailDescriptionSeparatorColors`. The P owns the later winning `_common.less` reset
+`margin:0; padding:0`; Bootstrap's earlier `margin-bottom:10px` is recorded only as overridden
+cascade evidence and is not applied. The BR, copy/order, add form, table, identity, secondary rows,
+and actions remain unchanged. Genuine RED 2/2 becomes GREEN 2/2; all adjacent email StyleX
+coverage is GREEN 10/10 with exact desktop/mobile live geometry, fallback equivalence, and
+screenshots. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

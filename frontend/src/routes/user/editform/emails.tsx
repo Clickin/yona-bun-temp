@@ -12,7 +12,12 @@ import {
 import defaultEmailAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { emailAddColors, emailPrimaryBadgeColors, emailTableColors } from "./-emails.stylex";
+import {
+  emailAddColors,
+  emailDescriptionSeparatorColors,
+  emailPrimaryBadgeColors,
+  emailTableColors,
+} from "./-emails.stylex";
 
 const styles = stylex.create({
   addForm: {
@@ -86,6 +91,23 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
     zIndex: "2",
   },
+  descriptionSeparator: {
+    borderBottomColor: emailDescriptionSeparatorColors.bottomBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderLeftStyle: "none",
+    borderLeftWidth: "0px",
+    borderRightStyle: "none",
+    borderRightWidth: "0px",
+    borderTopColor: emailDescriptionSeparatorColors.topBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    margin: "20px 0px",
+  },
+  description: {
+    margin: "0px",
+    padding: "0px",
+  },
   primaryAvatar: {
     border: "0px",
     height: "auto",
@@ -137,6 +159,8 @@ const styles = stylex.create({
 const addFormStyleProps = stylex.props(styles.addForm);
 const addInputStyleProps = stylex.props(styles.addInput);
 const addActionStyleProps = stylex.props(styles.addAction);
+const descriptionSeparatorStyleProps = stylex.props(styles.descriptionSeparator);
+const descriptionStyleProps = stylex.props(styles.description);
 const primaryAvatarStyleProps = stylex.props(styles.primaryAvatar);
 const primaryAddressStyleProps = stylex.props(styles.primaryAddress);
 const primaryBadgeStyleProps = stylex.props(styles.primaryBadge);
@@ -241,9 +265,12 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         </button>
       </form>
 
-      <hr />
+      <hr
+        {...descriptionSeparatorStyleProps}
+        data-stylex-owner="user-email-description-separator"
+      />
 
-      <p>
+      <p {...descriptionStyleProps} data-stylex-owner="user-email-description">
         {t("emails.main.email.descr")}
         <br />
         {t("emails.sub.email.descr")}

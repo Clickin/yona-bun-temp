@@ -24,3 +24,9 @@ export const emailPrimaryBadgeColors = stylex.defineVars({
   surface: "#ffffff",
   text: "#0088cc",
 });
+
+// user/edit_emails.scala.html separator paint only.
+export const emailDescriptionSeparatorColors = stylex.defineVars({
+  bottomBorder: "#ffffff",
+  topBorder: "#eeeeee",
+});

@@ -73,7 +73,10 @@ test("records the primary-only legacy identity and exact three-owner boundary", 
   expect(badgeStyle).toContain('padding: "3px 5px"');
   expect(badgeStyle).toContain('verticalAlign: "middle"');
 
-  const badgeTheme = theme.slice(theme.indexOf("export const emailPrimaryBadgeColors"));
+  const badgeTheme = theme.slice(
+    theme.indexOf("export const emailPrimaryBadgeColors"),
+    theme.indexOf("export const emailDescriptionSeparatorColors"),
+  );
   expect(badgeTheme).toContain('border: "rgba(0, 0, 0, 0.1)"');
   expect(badgeTheme).toContain('surface: "#ffffff"');
   expect(badgeTheme).toContain('text: "#0088cc"');
