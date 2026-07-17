@@ -3232,6 +3232,8 @@ The migration is complete only when:
 
 Batch 230 applied the batched workflow to project creation, milestone creation, and board post creation. The three route-local implementations were integrated before one assembled Playwright run (6 tests), followed by shared typecheck, formatting, Vitest, production build, and StyleX fallback verification. This keeps independent route ownership while amortizing server startup and global gates.
 
+Batch 231 applied the same workflow to issue creation, issue-label management, and project settings. The integrated wave passed one assembled 6-test Playwright run plus shared typecheck, formatting, Vitest, production build, and StyleX fallback verification.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

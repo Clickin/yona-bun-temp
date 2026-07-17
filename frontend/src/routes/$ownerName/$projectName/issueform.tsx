@@ -2,6 +2,7 @@
 /* oxlint-disable react-doctor/query-mutation-missing-invalidation -- project header mutations share invalidateProject and issue creation invalidates source/target issue caches. */
 /* oxlint-disable react-doctor/no-many-boolean-props -- backend ACL capability flags are the minimal legacy form visibility contract. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   createFileRoute,
@@ -69,6 +70,7 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { useRootToast } from "../../__root";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { projectIssueFormTheme } from "./-issueform.stylex";
 
 const CHECKLIST_TEMPLATE = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const DRAFT_SAVE_DELAY_MS = 5_000;
@@ -1040,9 +1042,15 @@ function ProjectIssueFormBody({
   };
 
   return (
-    <div className="page-wrap-outer issue-form-page-wrap">
+    <div
+      className="page-wrap-outer issue-form-page-wrap"
+      data-stylex-owner="project-issue-form-page"
+    >
       <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
+        <div
+          className={`${stylex.props(styles.form).className} content-wrap frm-wrap`}
+          data-stylex-owner="project-issue-form"
+        >
           <form
             id="issue-form"
             action={prefixBasePath(
@@ -1060,7 +1068,10 @@ function ProjectIssueFormBody({
               <div className="span12">
                 <dl>
                   <dd>
-                    <div className="span12 issue-title-row">
+                    <div
+                      className={`${stylex.props(styles.titleRow).className} span12 issue-title-row`}
+                      data-stylex-owner="project-issue-form-title-row"
+                    >
                       <div className="span11 issue-title-field">
                         <TitleInput
                           ownerName={ownerName}
@@ -1090,7 +1101,11 @@ function ProjectIssueFormBody({
                       </button>
                     </div>
                     {submitError ? (
-                      <div className="message issue-form-error" role="alert">
+                      <div
+                        className={`${stylex.props(styles.error).className} message issue-form-error`}
+                        role="alert"
+                        data-stylex-owner="project-issue-form-error"
+                      >
                         {submitError}
                       </div>
                     ) : null}
@@ -1119,10 +1134,16 @@ function ProjectIssueFormBody({
                   </dd>
                 </dl>
               </div>
-              <div className="row-fluid issue-form-columns">
+              <div
+                className={`${stylex.props(styles.columns).className} row-fluid issue-form-columns`}
+                data-stylex-owner="project-issue-form-columns"
+              >
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd className="issue-editor-cell">
+                    <dd
+                      className={`${stylex.props(styles.editorCell).className} issue-editor-cell`}
+                      data-stylex-owner="project-issue-form-editor"
+                    >
                       <IssueMarkdownEditor
                         bodyMarkdown={bodyMarkdown}
                         bodyRef={bodyRef}
@@ -1157,7 +1178,10 @@ function ProjectIssueFormBody({
                     onInsert={insertAttachment}
                     onRemove={(row) => void removeAttachment(row)}
                   />
-                  <div className="actrow right-txt">
+                  <div
+                    className={`${stylex.props(styles.actions).className} actrow right-txt`}
+                    data-stylex-owner="project-issue-form-actions"
+                  >
                     <button
                       type="submit"
                       id="button-save"
@@ -1185,7 +1209,10 @@ function ProjectIssueFormBody({
                     </button>
                   </div>
                 </div>
-                <div className="span3 span-hard-wrap right-menu">
+                <div
+                  className={`${stylex.props(styles.rightMenu).className} span3 span-hard-wrap right-menu`}
+                  data-stylex-owner="project-issue-form-right-menu"
+                >
                   {canCreateIssueAssignee ? (
                     <IssueAssigneeSelect
                       ownerName={ownerName}
@@ -3558,6 +3585,16 @@ function projectIdNumber(project: ProjectContainer) {
   const projectId = Number(project.projectId);
   return Number.isFinite(projectId) ? projectId : 0;
 }
+
+const styles = stylex.create({
+  form: { position: "relative" },
+  titleRow: { display: "block" },
+  error: { color: projectIssueFormTheme.errorText },
+  columns: { display: "block" },
+  editorCell: { position: "relative" },
+  actions: { textAlign: "right" },
+  rightMenu: { display: "block" },
+});
 
 function normalizeIssueDueDate(value: string): string | null {
   const trimmed = value.trim();

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   Fragment,
   useRef,
@@ -24,6 +25,55 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { labelsFormColors } from "./-labelsform.stylex";
+
+const styles = stylex.create({
+  copyForm: { margin: "30px auto" },
+  newForm: { margin: "30px auto" },
+  formLegend: { display: "block", marginBottom: "10px" },
+  formWrap: { display: "inline-block", position: "relative", verticalAlign: "top" },
+  input: {
+    borderColor: labelsFormColors.fieldBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: labelsFormColors.mutedText,
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 6px",
+    width: "214px",
+  },
+  submitInfo: {
+    backgroundColor: labelsFormColors.actionInfo,
+    borderColor: labelsFormColors.actionBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: labelsFormColors.white,
+    cursor: "pointer",
+    minWidth: "100px",
+    padding: "4px 12px",
+    textAlign: "center",
+    verticalAlign: "top",
+  },
+  submitPrimary: {
+    backgroundColor: labelsFormColors.actionPrimary,
+    borderColor: labelsFormColors.actionPrimary,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: labelsFormColors.white,
+    cursor: "pointer",
+    minWidth: "100px",
+    padding: "4px 12px",
+    textAlign: "center",
+    verticalAlign: "top",
+  },
+  list: { margin: "0 auto" },
+  listHead: {
+    backgroundColor: labelsFormColors.listSurface,
+    borderTopColor: labelsFormColors.border,
+    borderTopStyle: "solid",
+    borderTopWidth: "2px",
+  },
+});
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -411,7 +461,10 @@ function ProjectLabelsBody({
   return (
     <>
       <div className="page-wrap-outer">
-        <div className="project-page-wrap label-editor-wrap">
+        <div
+          className="project-page-wrap label-editor-wrap"
+          data-stylex-owner="project-labels-form-page"
+        >
           <ProjectSettingMenu
             active="labels"
             ownerName={ownerName}
@@ -428,25 +481,43 @@ function ProjectLabelsBody({
                   `/${ownerName}/${projectName}/copyLabels`,
                 )}
                 method="post"
-                className="new-label-wrap"
+                {...stylex.props(styles.copyForm)}
+                className={stylex.props(styles.copyForm).className}
+                data-stylex-owner="project-labels-copy-form"
                 onSubmit={onCopy}
               >
-                <strong className="form-legend">{t("label.copy.append")}</strong>
-                <div className="form-wrap">
+                <strong
+                  {...stylex.props(styles.formLegend)}
+                  className={stylex.props(styles.formLegend).className}
+                  data-stylex-owner="project-labels-copy-legend"
+                >
+                  {t("label.copy.append")}
+                </strong>
+                <div
+                  {...stylex.props(styles.formWrap)}
+                  className={stylex.props(styles.formWrap).className}
+                >
                   <input
                     type="text"
                     name="owner"
-                    className="input-label mr5"
+                    {...stylex.props(styles.input)}
+                    className={`${stylex.props(styles.input).className} mr5`}
                     placeholder={t("project.owner")}
                   />
                   <input
                     type="text"
                     name="projectName"
-                    className="input-label"
+                    {...stylex.props(styles.input)}
+                    className={stylex.props(styles.input).className}
                     placeholder={t("project.name")}
                   />
                 </div>
-                <button type="submit" className="ybtn ybtn-info btn-submit">
+                <button
+                  {...stylex.props(styles.submitInfo)}
+                  type="submit"
+                  className={stylex.props(styles.submitInfo).className}
+                  data-stylex-owner="project-labels-copy-submit"
+                >
                   {t("label.copy")}
                 </button>
                 <div>{t("label.copy.description")}</div>
@@ -459,16 +530,27 @@ function ProjectLabelsBody({
                   `/${ownerName}/${projectName}/issue/labels`,
                 )}
                 method="post"
-                className="new-label-wrap"
+                {...stylex.props(styles.newForm)}
+                className={stylex.props(styles.newForm).className}
+                data-stylex-owner="project-labels-new-form"
                 onSubmit={onCreate}
               >
-                <strong className="form-legend">{t("label.new")}</strong>
-                <div className="form-wrap">
+                <strong
+                  {...stylex.props(styles.formLegend)}
+                  className={stylex.props(styles.formLegend).className}
+                >
+                  {t("label.new")}
+                </strong>
+                <div
+                  {...stylex.props(styles.formWrap)}
+                  className={stylex.props(styles.formWrap).className}
+                >
                   <div style={showCategoryTypeahead ? { position: "relative" } : undefined}>
                     <input
                       type="text"
                       name="category"
-                      className="input-label mr5"
+                      {...stylex.props(styles.input)}
+                      className={`${stylex.props(styles.input).className} mr5`}
                       maxLength={250}
                       autoComplete="off"
                       placeholder={t("label.category")}
@@ -499,7 +581,8 @@ function ProjectLabelsBody({
                       placeholder={t("label.name")}
                       onFocus={onNameFocus}
                       style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
-                      className={`input-label${contrastClass(newLabelNameColor)}`}
+                      {...stylex.props(styles.input)}
+                      className={`${stylex.props(styles.input).className}${contrastClass(newLabelNameColor)}`}
                     />
                     {showCategoryTypeahead ? (
                       <ul
@@ -574,14 +657,24 @@ function ProjectLabelsBody({
                     />
                   </div>
                 </div>
-                <button type="submit" className="ybtn ybtn-primary btn-submit">
+                <button
+                  {...stylex.props(styles.submitPrimary)}
+                  type="submit"
+                  className={stylex.props(styles.submitPrimary).className}
+                  data-stylex-owner="project-labels-new-submit"
+                >
                   {t("label.add")}
                 </button>
               </form>
             </>
           ) : null}
 
-          <div id="labelsList" className="issue-label-list-wrap">
+          <div
+            {...stylex.props(styles.list)}
+            id="labelsList"
+            className={stylex.props(styles.list).className}
+            data-stylex-owner="project-labels-list"
+          >
             <ProjectLabelsList
               basePath={runtimeConfig.basePath}
               onDeleteLabel={setPendingLabelDeletion}
@@ -716,7 +809,11 @@ function ProjectLabelsList({
 
   return (
     <>
-      <div className="row-fluid list-head">
+      <div
+        {...stylex.props(styles.listHead)}
+        className="row-fluid list-head"
+        data-stylex-owner="project-labels-list-head"
+      >
         <div className="span3 category">
           <strong>{t("label.category")}</strong>
         </div>

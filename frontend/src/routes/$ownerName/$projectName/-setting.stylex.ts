@@ -1,0 +1,47 @@
+import * as stylex from "@stylexjs/stylex";
+
+export const projectSettingColors = stylex.defineVars({
+  action: "#51a351",
+  inputBorder: "#cccccc",
+  inputText: "#555555",
+  logoSurface: "#eeeeee",
+  noteText: "#999999",
+});
+
+export const styles = stylex.create({
+  page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  form: { margin: "0px" },
+  frame: { overflow: "visible" },
+  topBox: { paddingTop: "20px" },
+  logo: {
+    backgroundColor: projectSettingColors.logoSurface,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+    height: "140px",
+    width: "140px",
+  },
+  input: {
+    borderColor: projectSettingColors.inputBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: projectSettingColors.inputText,
+    padding: "4px",
+  },
+  textarea: {
+    borderColor: projectSettingColors.inputBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: projectSettingColors.inputText,
+    padding: "4px",
+  },
+  save: {
+    backgroundColor: projectSettingColors.action,
+    borderColor: projectSettingColors.action,
+    borderRadius: "4px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: "#fff",
+    padding: "4px 12px",
+  },
+});

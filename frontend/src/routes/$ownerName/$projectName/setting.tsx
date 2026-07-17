@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { codeBranchesQueryOptions, setDefaultCodeBranchRest } from "../../../api/code-branches";
@@ -20,6 +21,18 @@ import {
   ProjectHeader as SharedProjectHeader,
   ProjectMenu as SharedProjectMenu,
 } from "../$projectName";
+import { styles } from "./-setting.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  form: stylex.props(styles.form),
+  frame: stylex.props(styles.frame),
+  topBox: stylex.props(styles.topBox),
+  logo: stylex.props(styles.logo),
+  input: stylex.props(styles.input),
+  textarea: stylex.props(styles.textarea),
+  save: stylex.props(styles.save),
+} as const;
 
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
@@ -340,8 +353,8 @@ function ProjectSettingBody({
   }
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div {...sx.page} data-stylex-owner="project-setting-page">
+      <div data-stylex-owner="project-setting-shell">
         <ProjectSettingMenu
           active="setting"
           showCode={menuCodeChecked}
@@ -356,20 +369,22 @@ function ProjectSettingBody({
           method="post"
           action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/setting`)}
           encType="multipart/form-data"
-          className="nm"
+          {...sx.form}
+          data-stylex-owner="project-setting-form"
           onSubmit={onSubmit}
         >
-          <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
+          <div {...sx.frame} data-stylex-owner="project-setting-frame">
             <input type="hidden" name="id" value={projectId(project)} />
             <input
               type="hidden"
               name="watchingCount"
               value={numberField(recordField(project).watchCount)}
             />
-            <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: "20px" }}>
+            <div {...sx.topBox} data-stylex-owner="project-setting-top-box">
               <div className="setting-box left">
                 <div
-                  className="logo-wrap"
+                  {...sx.logo}
+                  data-stylex-owner="project-setting-logo"
                   style={{
                     backgroundImage: `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
                   }}
@@ -410,6 +425,8 @@ function ProjectSettingBody({
                 </dt>
                 <dd style={{ position: "relative" }}>
                   <input
+                    {...sx.input}
+                    data-stylex-owner="project-setting-name-input"
                     id="project-name"
                     type="text"
                     name="name"
@@ -452,6 +469,8 @@ function ProjectSettingBody({
                     id="project-desc"
                     name="overview"
                     maxLength={250}
+                    {...sx.textarea}
+                    data-stylex-owner="project-setting-description"
                     className="textarea"
                     style={{
                       height: `${overviewHeight}px`,
@@ -726,7 +745,7 @@ function ProjectSettingBody({
           </div>
 
           <div className="box-wrap bottom">
-            <button id="save" type="submit" className="ybtn ybtn-success">
+            <button {...sx.save} data-stylex-owner="project-setting-save" id="save" type="submit">
               {t("button.save")}
             </button>
           </div>
