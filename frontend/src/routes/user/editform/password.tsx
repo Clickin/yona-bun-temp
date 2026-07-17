@@ -143,7 +143,6 @@ const styles = stylex.create({
     padding: "0px",
   },
   resetSection: { marginTop: "10px" },
-  resetDescription: { marginTop: "10px" },
 });
 
 const formStyleProps = stylex.props(styles.form);
@@ -155,7 +154,6 @@ const inputStyleProps = stylex.props(styles.input);
 const submitActionStyleProps = stylex.props(styles.action, styles.submitAction);
 const separatorStyleProps = stylex.props(styles.separator);
 const resetSectionStyleProps = stylex.props(styles.resetSection);
-const resetDescriptionStyleProps = stylex.props(styles.resetDescription);
 const resetActionStyleProps = stylex.props(styles.action);
 
 export const Route = createFileRoute("/user/editform/password")({
@@ -290,9 +288,11 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
       </form>
       <hr {...separatorStyleProps} data-stylex-owner="user-password-separator" />
       <div {...resetSectionStyleProps} data-stylex-owner="user-password-reset-section">
-        <dl>
-          <dt>{t("site.resetPasswordEmail.desc")}</dt>
-          <dd {...resetDescriptionStyleProps} data-stylex-owner="user-password-reset-description">
+        <dl {...listStyleProps} data-stylex-owner="user-password-reset-list">
+          <dt {...termStyleProps} data-stylex-owner="user-password-reset-term">
+            {t("site.resetPasswordEmail.desc")}
+          </dt>
+          <dd {...spacedDescriptionStyleProps} data-stylex-owner="user-password-reset-description">
             <Link
               {...resetActionStyleProps}
               to="/lostPassword"

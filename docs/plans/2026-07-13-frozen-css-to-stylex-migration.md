@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twenty-two slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twenty-three slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -634,6 +634,16 @@ GREEN 4/4. Authenticated live/local desktop and mobile action geometry, paint, i
 wrapping, screenshots, validation, and reset SPA navigation pass. The broad password screen test
 still reaches its pre-existing global-shell canonical DOM mismatch after the new owner boundary
 passes. This is not Wave 1 completion.
+
+The two-hundred-twenty-third slice migrates the remaining three reset-list skeleton owners in the
+same authenticated `/user/editform/password` state: classless DL, direct DT, and the existing DD.
+No new style or theme registry is introduced. The route reuses its already-evidenced list, term,
+and spaced-description StyleX props, deletes the redundant margin-only reset-description style,
+and thereby owns Bootstrap line-height/weight plus the later winning `_common.less` zero
+margin/padding output. Shared generic DL/DT/DD fallback remains for other consumers. Genuine RED
+on the absent reset-list owner becomes focused GREEN 4/4; Slice 222 actions and the existing form
+remain GREEN 8/8. Authenticated live/local desktop and mobile copy, order, wrapping, exact
+geometry, screenshots, and reset SPA navigation pass. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

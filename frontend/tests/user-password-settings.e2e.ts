@@ -371,6 +371,8 @@ async function canonicalizeScreenRoots(page: Page) {
           owner === "user-password-form" ||
           owner === "user-password-input" ||
           owner === "user-password-list" ||
+          owner === "user-password-reset-list" ||
+          owner === "user-password-reset-term" ||
           owner === "user-password-term"
         )
           return "";
