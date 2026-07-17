@@ -238,7 +238,6 @@ function PullRequestOverviewBody({
           >
             <div
               className={`${stylex.props(styles.author).className} author-info left-txt`}
-              style={{ marginTop: "20px" }}
               data-stylex-owner="pull-request-detail-author"
             >
               <Link
@@ -743,8 +742,15 @@ export function PullRequestHeader({
       <div className="pull-right">
         {showReviewerControls ? (
           <>
-            <div id="reviewers" style={{ display: "inline-block", marginRight: "5px" }}>
-              <span style={{ fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }}>
+            <div
+              id="reviewers"
+              className={stylex.props(styles.reviewers).className}
+              data-stylex-owner="pull-request-detail-reviewers"
+            >
+              <span
+                className={stylex.props(styles.reviewerSummary).className}
+                data-stylex-owner="pull-request-detail-reviewer-summary"
+              >
                 {messageWithStrong(
                   t("pullRequest.review.participants", { args: ["__COUNT__"] }),
                   "__COUNT__",
