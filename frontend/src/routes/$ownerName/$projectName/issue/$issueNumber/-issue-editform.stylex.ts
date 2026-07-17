@@ -27,6 +27,11 @@ export const styles = stylex.create({
     minHeight: "300px",
     width: "100%",
   },
+  editorPositioned: { position: "relative" },
+  editorTabContent: { position: "relative", overflow: "visible" },
+  assigneeInput: { width: "100%" },
+  assigneePicker: { width: "100%" },
+  pasteHelp: { display: "block" },
   actions: { margin: "10px 0px", textAlign: "right" },
   issueOption: {
     borderTopColor: issueEditColors.optionBorder,

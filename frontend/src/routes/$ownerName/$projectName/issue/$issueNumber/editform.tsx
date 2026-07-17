@@ -30,6 +30,11 @@ const sx = {
   form: stylex.props(styles.form),
   title: stylex.props(styles.title),
   editor: stylex.props(styles.editor),
+  editorPositioned: stylex.props(styles.editorPositioned),
+  editorTabContent: stylex.props(styles.editorTabContent),
+  assigneeInput: stylex.props(styles.assigneeInput),
+  assigneePicker: stylex.props(styles.assigneePicker),
+  pasteHelp: stylex.props(styles.pasteHelp),
   actions: stylex.props(styles.actions),
   issueOption: stylex.props(styles.issueOption),
   sidebar: stylex.props(styles.sidebar),
@@ -356,7 +361,7 @@ function ProjectIssueEditFormBody({
               <div className="row-fluid">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd style={{ position: "relative" }}>
+                    <dd {...sx.editorPositioned} data-stylex-owner="issue-editform-editor-wrapper">
                       <IssueEditMarkdownEditor
                         focusRequest={bodyFocusRequest}
                         value={stringField(issue.bodyMarkdown, "")}
@@ -442,7 +447,8 @@ function ProjectIssueEditFormBody({
                         placeholder={t("issue.noAssignee")}
                         value={assigneeLoginId}
                         readOnly
-                        style={{ width: "100%" }}
+                        {...sx.assigneeInput}
+                        data-stylex-owner="issue-editform-assignee-input"
                       />
                       <LegacyEditSingleSelect
                         label={t("issue.assignee")}
@@ -870,8 +876,8 @@ function LegacyEditSingleSelect({
   return (
     <div
       id={id}
-      className={`select2-container ${className}${open ? " select2-dropdown-open" : ""}`}
-      style={className === "bigdrop" ? { width: "100%" } : undefined}
+      className={`select2-container ${className}${className === "bigdrop" ? ` ${sx.assigneePicker.className}` : ""}${open ? " select2-dropdown-open" : ""}`}
+      data-stylex-owner={className === "bigdrop" ? "issue-editform-assignee-picker" : undefined}
     >
       <div
         className="select2-choice"
@@ -1051,7 +1057,11 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className="tab-content"
+        {...sx.editorTabContent}
+        data-stylex-owner="issue-editform-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
@@ -1101,7 +1111,11 @@ function IssuePostFileUploader({ resourceId }: { resourceId: string }) {
           </div>
         </div>
         <span className="plain">{t("common.attach.clickbutton")}</span>
-        <span className="help help-pastable" style={{ display: "block" }}>
+        <span
+          className="help help-pastable"
+          {...sx.pasteHelp}
+          data-stylex-owner="issue-editform-paste-help"
+        >
           {t("common.attach.pastehere")}
         </span>
       </div>
