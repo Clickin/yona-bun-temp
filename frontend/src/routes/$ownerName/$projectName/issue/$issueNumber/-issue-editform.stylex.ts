@@ -31,6 +31,8 @@ export const styles = stylex.create({
   editorTabContent: { position: "relative", overflow: "visible" },
   assigneeInput: { width: "100%" },
   assigneePicker: { width: "100%" },
+  labelPicker: { display: "inline-block" },
+  labelSearchInput: { width: "10px" },
   pasteHelp: { display: "block" },
   actions: { margin: "10px 0px", textAlign: "right" },
   issueOption: {

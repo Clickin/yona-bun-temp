@@ -34,6 +34,8 @@ const sx = {
   editorTabContent: stylex.props(styles.editorTabContent),
   assigneeInput: stylex.props(styles.assigneeInput),
   assigneePicker: stylex.props(styles.assigneePicker),
+  labelPicker: stylex.props(styles.labelPicker),
+  labelSearchInput: stylex.props(styles.labelSearchInput),
   pasteHelp: stylex.props(styles.pasteHelp),
   actions: stylex.props(styles.actions),
   issueOption: stylex.props(styles.issueOption),
@@ -970,17 +972,17 @@ function LegacyEditLabelSelect({
   }
   return (
     <div
-      className="select2-container select2-container-multi hide issue-labels bordered fullsize"
-      style={{ display: "inline-block" }}
+      className={`select2-container select2-container-multi hide issue-labels bordered fullsize ${sx.labelPicker.className}`}
+      data-stylex-owner="issue-editform-label-picker"
     >
       <ul className="select2-choices">
         {selectedLabelElements}
         <li className="select2-search-field">
           <input
-            className="select2-input"
+            className={`select2-input ${sx.labelSearchInput.className}`}
             aria-label={t("label.select")}
             autoComplete="off"
-            style={{ width: "10px" }}
+            data-stylex-owner="issue-editform-label-search-input"
           />
         </li>
       </ul>
