@@ -309,7 +309,10 @@ function ProjectNewPullRequestBody({
                     setIsUserHasTyped(true);
                   }}
                 />
-                <div style={{ position: "relative" }}>
+                <div
+                  className={stylex.props(styles.editorWrapper).className}
+                  data-stylex-owner="new-pull-request-editor-wrapper"
+                >
                   <PullRequestMarkdownEditor
                     bodyValue={bodyValue}
                     mergeSuggestionRevision={mergeSuggestionRevision}
@@ -329,7 +332,7 @@ function ProjectNewPullRequestBody({
                   </button>
                 </div>
               </div>
-              <ul className="nav nav-tabs mt20">
+              <ul className="nav nav-tabs mt20" data-stylex-owner="new-pull-request-tabs">
                 <li className="active">
                   <button type="button">
                     <span className="vmiddle-inline">{t("pullRequest.menu.commit")}</span>
@@ -542,7 +545,11 @@ function PullRequestSelect2Closed({
   label: string;
 }) {
   return (
-    <div id={`s2id_${controlId}`} className="select2-container" style={{ width: 220 }}>
+    <div
+      id={`s2id_${controlId}`}
+      className={`${stylex.props(styles.branchPicker).className} select2-container`}
+      data-stylex-owner={`new-pull-request-${controlId}-picker`}
+    >
       <button
         type="button"
         className="select2-choice"
@@ -624,7 +631,10 @@ function PullRequestMarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
+        data-stylex-owner="new-pull-request-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
@@ -708,11 +718,11 @@ function PullRequestConflictConfirmModal({
     <>
       <div
         id="pullRequestConflictConfirm"
-        className={isOpen ? "modal hide yobiDialog in" : "modal hide yobiDialog"}
         tabIndex={-1}
         role="dialog"
         aria-hidden={isOpen ? "false" : "true"}
-        style={{ display: isOpen ? "block" : "none" }}
+        className={`${isOpen ? stylex.props(styles.conflictModalOpen).className : stylex.props(styles.conflictModalClosed).className} modal hide yobiDialog${isOpen ? " in" : ""}`}
+        data-stylex-owner="new-pull-request-conflict-modal"
       >
         <div className="btn-dismiss">
           <button type="button" className="btn-transparent" onClick={onClose}>
