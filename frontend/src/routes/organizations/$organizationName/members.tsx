@@ -288,14 +288,8 @@ function OrganizationMembersBody({
                   >
                     <button
                       type="button"
-                      style={{
-                        background: "transparent",
-                        border: 0,
-                        display: "block",
-                        padding: "3px 20px",
-                        textAlign: "left",
-                        width: "100%",
-                      }}
+                      {...stylex.props(styles.suggestionAction)}
+                      data-stylex-owner="organization-members-suggestion-action"
                       onMouseDown={(event) => {
                         event.preventDefault();
                         selectSuggestion(suggestion);
@@ -503,6 +497,21 @@ function OrganizationMember({
 }
 
 const styles = stylex.create({
+  // Legacy organization/members.scala.html typeahead action declarations.
+  suggestionAction: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderColor: "transparent",
+    borderWidth: 0,
+    display: "block",
+    padding: "3px 20px",
+    textAlign: "left",
+    width: "100%",
+  },
+  // Legacy organization/members.scala.html enrolled-user details column.
+  enrollmentDetails: {
+    width: "60px",
+  },
   memberList: {
     listStyle: "none",
     margin: "0px",
@@ -584,7 +593,11 @@ function EnrollmentRequest({
           />
         </Link>
       </div>
-      <div className="pull-left" style={{ width: "60px" }}>
+      <div
+        className="pull-left"
+        {...stylex.props(styles.enrollmentDetails)}
+        data-stylex-owner="organization-members-enrollment-details"
+      >
         <span>
           <Link
             activeProps={{
