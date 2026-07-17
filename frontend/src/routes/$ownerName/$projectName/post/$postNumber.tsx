@@ -39,8 +39,12 @@ const sx = {
   page: stylex.props(styles.page),
   header: stylex.props(styles.header),
   body: stylex.props(styles.body),
+  author: stylex.props(styles.author),
   content: stylex.props(styles.content),
   actions: stylex.props(styles.actions),
+  comments: stylex.props(styles.comments),
+  sidebar: stylex.props(styles.sidebar),
+  footer: stylex.props(styles.footer),
   watch: stylex.props(styles.watch),
 } as const;
 
@@ -361,7 +365,10 @@ function ProjectPostDetailBody({
 
         <div {...sx.body} data-stylex-owner="post-detail-body">
           <div className="span9 span-left-pane">
-            <div className="author-info">
+            <div
+              className={`${sx.author.className} author-info`}
+              data-stylex-owner="post-detail-author"
+            >
               <Link
                 to="/$user"
                 params={{ user: stringField(post.authorLoginId) }}
@@ -480,7 +487,10 @@ function ProjectPostDetailBody({
           </div>
 
           <div className="span3 span-right-pane mb20">
-            <div className="issue-info board-labels">
+            <div
+              className={`${sx.sidebar.className} issue-info board-labels`}
+              data-stylex-owner="post-detail-sidebar"
+            >
               <dl>
                 {canCreate ? (
                   <dd className="project-btn-item">
@@ -525,7 +535,10 @@ function ProjectPostDetailBody({
           </div>
         </div>
 
-        <div className="board-footer">
+        <div
+          className={`${sx.footer.className} board-footer`}
+          data-stylex-owner="post-detail-footer"
+        >
           <BoardDetailKeymap
             onClose={() => setOpenPostModal(null)}
             onOpen={() => setOpenPostModal("helpKeys")}
@@ -1046,7 +1059,11 @@ function PostComments({
   const canComment = booleanField(post.permissions.canComment);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   return (
-    <div id="comments" className="board-comment-wrap">
+    <div
+      id="comments"
+      className={`${sx.comments.className} board-comment-wrap`}
+      data-stylex-owner="post-detail-comments"
+    >
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
