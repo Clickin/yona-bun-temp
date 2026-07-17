@@ -179,6 +179,10 @@ const styles = stylex.create({
   },
   avatarForm: {
     borderLeftColor: userSettingsProfileColors.divider,
+    borderLeftStyle: "solid",
+    borderLeftWidth: "1px",
+    marginLeft: "50px",
+    paddingLeft: "50px",
   },
   avatarProgress: {
     backgroundColor: userSettingsProfileColors.progressSurface,
@@ -448,7 +452,6 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
         className={stylex.props(styles.avatarForm).className + " pull-left"}
         data-stylex-owner="user-settings-avatar-form"
-        style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
         onSubmit={(event) => {
           event.preventDefault();
           if (avatarFile) {
