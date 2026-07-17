@@ -12,7 +12,7 @@ import {
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
-import { postEditFormTheme } from "./-post-editform.stylex";
+import { postEditFormTheme, styles } from "./-post-editform.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber/editform")({
   component: ProjectBoardEditFormRoute,
@@ -136,7 +136,10 @@ function ProjectBoardEditFormBody({
                     }}
                   />
                 </dd>
-                <dd style={{ position: "relative" }} data-stylex-owner="post-edit-form-editor">
+                <dd
+                  {...stylex.props(styles.editorWrapper)}
+                  data-stylex-owner="post-edit-form-editor"
+                >
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}
@@ -350,13 +353,3 @@ function stringFormValue(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
 }
-
-const styles = stylex.create({
-  form: { position: "relative" },
-  actions: { textAlign: "right" },
-  options: { textAlign: "right" },
-  editorTabs: { position: "relative" },
-  editorContent: { overflow: "visible", position: "relative" },
-  notificationReceiver: { color: postEditFormTheme.notificationText },
-  upload: { backgroundColor: postEditFormTheme.uploadSurface },
-});
