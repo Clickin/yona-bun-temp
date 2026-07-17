@@ -3294,6 +3294,8 @@ Batch 260 applied the workflow to the authenticated open milestone detail state.
 
 Batch 261 applied the workflow to the authenticated open project issue-detail state. Its focused browser gate and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
 
+Batch 262 applies the workflow to the authenticated issue edit form, board post detail, and commit detail states. Their three focused browser gates are assembled after route-local work, followed by one shared typecheck, formatting, Vitest, production build, and StyleX fallback verification.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

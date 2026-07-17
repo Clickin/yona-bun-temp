@@ -31,6 +31,9 @@ const sx = {
   title: stylex.props(styles.title),
   editor: stylex.props(styles.editor),
   actions: stylex.props(styles.actions),
+  issueOption: stylex.props(styles.issueOption),
+  sidebar: stylex.props(styles.sidebar),
+  subtask: stylex.props(styles.subtask),
   save: stylex.props(styles.save),
 } as const;
 
@@ -423,7 +426,10 @@ function ProjectIssueEditFormBody({
                   </div>
                 </div>
 
-                <div className="span3 span-hard-wrap right-menu">
+                <div
+                  className={`span3 span-hard-wrap right-menu ${sx.sidebar.className}`}
+                  data-stylex-owner="issue-editform-sidebar"
+                >
                   <StateOption state={stringField(issue.state, "open")} />
                   <dl className="issue-option">
                     <dt>{t("issue.assignee")}</dt>
@@ -529,7 +535,10 @@ function StateOption({ state }: { state: string }) {
     { label: t("issue.state.closed"), value: "CLOSED" },
   ];
   return (
-    <dl className="issue-option">
+    <dl
+      className={`issue-option ${sx.issueOption.className}`}
+      data-stylex-owner="issue-editform-state"
+    >
       <dt>{t("issue.state")}</dt>
       <dd>
         <div id="state" className={`btn-group auto${isMenuOpen ? " open" : ""}`}>
@@ -687,7 +696,10 @@ function SubtaskSelects({
   const [targetProjectId, setTargetProjectId] = useState(() => stringField(project.id, ""));
   const [selectedParentIssueId, setSelectedParentIssueId] = useState(parentIssueId);
   return (
-    <div className={`subtask-wrap ${showOption ? "show" : ""}`}>
+    <div
+      className={`subtask-wrap ${showOption ? "show" : ""} ${sx.subtask.className}`}
+      data-stylex-owner="issue-editform-subtask"
+    >
       <div className="span3">
         <select
           id="targetProjectId"
@@ -775,7 +787,10 @@ function IssueLabelSelect({
   }
   const selectedIds = new Set(selectedLabelIds);
   return (
-    <dl className="issue-option">
+    <dl
+      className={`issue-option ${sx.issueOption.className}`}
+      data-stylex-owner="issue-editform-labels"
+    >
       <dt>
         {t("label")}{" "}
         <Link

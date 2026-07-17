@@ -524,3 +524,11 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/$ownerName/$projectName/issue/$issueNumber` open detail: migrated the comment timeline, add-comment form/editor/upload, sidebar metadata, and index timeline owners from the issue detail/comment partials; comment/event rendering, mutations, editor/upload behavior, metadata controls, and navigation remain React-owned. Focused `stylex-project-issue-detail-owners.e2e.ts` passed 2/2 with desktop/mobile containment; live legacy visual comparison is recorded as unverified because the legacy render was unavailable.
 
 This batch used a single visible route state; no multi-screen exception was required.
+
+## Batch 262 migration rows
+
+- `/$ownerName/$projectName/issue/$issueNumber/editform` loaded/open: migrated the issue edit sidebar, state selector, subtask selector, and label selector owners from the issue edit partials; form/query/mutation behavior, editor, uploader, and navigation remain React-owned. Focused `stylex-project-issue-editform-owners.e2e.ts` passed 1/1 with desktop containment and mobile overflow checks.
+- `/$ownerName/$projectName/post/$postNumber` populated board post detail: migrated author, comment timeline/form, sidebar metadata, and footer owners from board/comment partials; post/comment mutations, labels, editor/upload behavior, modal state, and navigation remain React-owned. Focused `stylex-project-post-detail-owners.e2e.ts` passed 1/1; mobile assertion scopes to the route body because shared authenticated sidenav content remains a separate legacy consumer.
+- `/$ownerName/$projectName/commit/$commitId` populated commit diff: migrated diff layout, file metadata/code, commit message/description, and review panel owners from code diff partials; review, watch, comment, and navigation behavior remain React-owned. Focused `stylex-project-commit-detail-owners.e2e.ts` passed 1/1 with desktop containment and mobile no-overflow.
+
+This batch used three independent route states in one supervised integration; each route retains its own legacy evidence and focused browser contract.

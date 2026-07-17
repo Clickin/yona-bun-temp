@@ -5,6 +5,7 @@ export const issueEditColors = stylex.defineVars({
   inputBorder: "#cccccc",
   inputText: "#555555",
   editorBorder: "#dddddd",
+  optionBorder: "#dddddd",
 });
 
 export const styles = stylex.create({
@@ -27,6 +28,12 @@ export const styles = stylex.create({
     width: "100%",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
+  issueOption: {
+    borderTopColor: issueEditColors.optionBorder,
+    width: "100%",
+  },
+  sidebar: { minWidth: "0px" },
+  subtask: { display: "block" },
   save: {
     backgroundColor: issueEditColors.action,
     borderColor: issueEditColors.action,
