@@ -890,7 +890,11 @@ function PullRequestFileDiff({
       <div className="diff-partial-inner">
         {/* oxlint-disable jsx-a11y/click-events-have-key-events -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
         {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy partial_filediff.scala.html uses a clickable plain div here. */}
-        <div className="diff-partial-meta" onClick={toggleExpanded} style={{ cursor: "pointer" }}>
+        <div
+          className={`${stylex.props(styles.diffMeta).className ?? ""} diff-partial-meta`}
+          data-stylex-owner="pull-request-changes-diff-meta"
+          onClick={toggleExpanded}
+        >
           <div className="diff-partial-commit">
             <div className="diff-partial-commit-id">{"\u00a0"}</div>
             <div className="diff-partial-commit-id">{"\u00a0"}</div>
@@ -1646,8 +1650,8 @@ function ReviewForm({
   return (
     <div
       id="review-form"
-      className="review-form"
-      style={visible ? { display: "block" } : undefined}
+      className={`${(visible ? stylex.props(styles.visibleForm).className : "") ?? ""} review-form`}
+      data-stylex-owner={visible ? "pull-request-changes-visible-form" : undefined}
     >
       <form action={action} method="post" encType="multipart/form-data">
         {hiddenFields.map(([name, value]) => (

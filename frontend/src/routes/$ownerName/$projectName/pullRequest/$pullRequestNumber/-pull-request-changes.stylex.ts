@@ -15,4 +15,6 @@ export const styles = stylex.create({
     color: pullRequestChangesColors.surface,
     overflowX: "auto",
   },
+  diffMeta: { cursor: "pointer" },
+  visibleForm: { display: "block" },
 });
