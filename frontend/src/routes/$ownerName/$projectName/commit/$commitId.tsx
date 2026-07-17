@@ -39,6 +39,9 @@ const sx = {
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
   diffBody: stylex.props(styles.diffBody),
+  browseTabs: stylex.props(styles.browseTabs),
+  reviewTabs: stylex.props(styles.reviewTabs),
+  editorTabContent: stylex.props(styles.editorTabContent),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -283,7 +286,11 @@ function ProjectCommitDetailBody({
       <div {...sx.page} data-stylex-owner="commit-detail-page">
         <div data-stylex-owner="commit-detail-shell">
           <div {...sx.browse} data-stylex-owner="commit-detail-browse" id="code-browse-wrap">
-            <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
+            <ul
+              {...sx.browseTabs}
+              className={`${sx.browseTabs.className} nav nav-tabs`}
+              data-stylex-owner="commit-detail-browse-tabs"
+            >
               <li>
                 <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
               </li>
@@ -458,7 +465,11 @@ function ProjectCommitDetailBody({
                   >
                     <i className="yobicon-maximize"></i>
                   </button>
-                  <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
+                  <ul
+                    {...sx.reviewTabs}
+                    className={`${sx.reviewTabs.className} nav nav-tabs`}
+                    data-stylex-owner="commit-detail-review-tabs"
+                  >
                     <li className={reviewCardTab === "open" ? "active" : undefined}>
                       <button type="button" onClick={() => setReviewCardTab("open")}>
                         {`${t("issue.state.open")} ${openThreads.length}`}
@@ -588,7 +599,11 @@ function SvnCommitDetailBody({
             </ul>
           </div>
 
-          <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
+          <ul
+            {...sx.browseTabs}
+            className={`${sx.browseTabs.className} nav nav-tabs`}
+            data-stylex-owner="commit-detail-svn-browse-tabs"
+          >
             <li>
               <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
             </li>
@@ -1649,7 +1664,7 @@ function Editor({
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
     <div className="mt10">
-      <ul className="nav nav-tabs nm small">
+      <ul className="nav nav-tabs nm small" data-stylex-owner="commit-detail-editor-tabs">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>
             {t("common.editor.edit")}
@@ -1687,7 +1702,11 @@ function Editor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        {...sx.editorTabContent}
+        className={`${sx.editorTabContent.className} tab-content`}
+        data-stylex-owner="commit-detail-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">

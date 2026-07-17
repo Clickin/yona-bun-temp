@@ -10,6 +10,9 @@ export const commitDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  browseTabs: { marginBottom: "20px" },
+  reviewTabs: { marginBottom: "10px" },
+  editorTabContent: { overflow: "visible", position: "relative" },
   codediffLayout: { position: "relative" },
   diffsLayout: { display: "block", marginRight: "282px", position: "relative" },
   reviewPanel: {
