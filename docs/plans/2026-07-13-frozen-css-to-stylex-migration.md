@@ -29,11 +29,11 @@ presentation classes, `app.css` responsibility, active generated-fallback bytes/
 retired fallback modules. A large slice count with unchanged fallback modules must not be reported
 as near completion.
 
-The post-slice-224 execution baseline is 30/116 route TSX files importing StyleX, 82/116 route TSX
+The post-Batch225 execution snapshot is 31/116 route TSX files importing StyleX, 83/116 route TSX
 files still containing `className` syntax, 7,865 `app.css` lines, and a 25,177-line /
 526,260-byte generated fallback. No major Bootstrap, Yobi, usermenu, or plugin module is fully
 retired. This supports a conservative 20–30% overall completion estimate and is the baseline the
-batch protocol must improve.
+next batch must improve.
 
 ## 2. Scope and fixed boundaries
 
