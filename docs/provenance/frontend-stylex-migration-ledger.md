@@ -545,3 +545,11 @@ The labels-management and board-post edit-form candidates remain deferred to a f
 - `/$ownerName/$projectName/code/$branch/` populated folder state: migrated the branch tabs/picker/header, breadcrumbs, folder list header, and repeated folder/file rows from `code/view.scala.html`/`partial_view_folder.scala.html` and the code browser LESS rules; branch navigation and file links remain React/TanStack Router-owned. Focused `stylex-project-code-branch-index.e2e.ts` passed 2/2 with branch interaction and desktop/mobile geometry checks.
 
 This batch used two independent route states because the third candidate (`/info/leave/$ownerName/$projectName`) is a redirect-only legacy endpoint with no persistent user-visible screen and was correctly rejected rather than adding a hidden StyleX owner. Shared checks ran once after the assembled browser wave.
+
+## Batch 265 migration rows
+
+- `/$ownerName/$projectName/issue/labelsform` populated state: migrated category rows, list cells/actions, category and label edit modal forms, and preset-color buttons from the project label templates; the existing label query/mutation and modal state remain React-owned. The corrected parent `/container` fixture enabled the real populated shell. Focused `stylex-project-labelsform-owners.e2e.ts` passed 2/2.
+- `/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes` populated diff/review state: migrated clickable diff metadata cursor and dynamic review-form display declarations; diff selection, inline review state, mutations, and navigation remain React-owned. Focused `stylex-project-pull-request-changes-residual.e2e.ts` passed 2/2.
+- `/sites/issueList` populated route-theme boundary: removed non-theme `badgeShadow` and `inputShadow` from `siteIssueListColors` and kept exact literals in the owning StyleX declarations. Focused `stylex-site-issue-list-residual.e2e.ts` passed runtime desktop/mobile shadow checks.
+
+The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, production build/StyleX verifier, formatting, and unchanged fallback hash passed once for the batch.

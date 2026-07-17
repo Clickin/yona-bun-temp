@@ -3300,6 +3300,8 @@ Batch 263 applies the workflow to the authenticated milestone edit form. The lab
 
 Batch 264 applies the workflow to the populated project fork notice and populated code branch folder states. The assembled two-route browser wave passed 3/3, followed by one shared typecheck, Vitest, formatting, production build, and StyleX fallback verification. The explored `/info/leave/$ownerName/$projectName` redirect-only endpoint was rejected as a non-visible state and was not recorded as a migration row.
 
+Batch 265 applies the workflow to the populated project labels form, pull-request changes residual owners, and site issue-list theme-boundary correction. The assembled six-test browser wave passed 6/6, followed by one shared typecheck, Vitest, formatting, production build, and StyleX fallback verification. The labels fixture was repaired by mocking the parent project `/container` request; the site issue-list change removes non-theme shadow tokens rather than adding a new visible owner.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
