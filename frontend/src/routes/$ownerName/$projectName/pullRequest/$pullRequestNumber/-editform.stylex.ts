@@ -39,6 +39,7 @@ export const styles = stylex.create({
     width: "97%",
   },
   editorWrap: { position: "relative" },
+  editorTabContent: { overflow: "visible", position: "relative" },
   editor: {
     borderColor: pullRequestEditColors.editorBorder,
     borderStyle: "solid",

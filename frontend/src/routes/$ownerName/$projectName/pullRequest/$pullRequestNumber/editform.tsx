@@ -453,7 +453,10 @@ function PullRequestMarkdownEditor({ value }: { value: string }) {
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(sx.editorTabContent).className} tab-content`}
+        data-stylex-owner="pull-request-edit-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
