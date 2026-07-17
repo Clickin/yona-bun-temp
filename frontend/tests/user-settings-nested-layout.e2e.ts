@@ -15,13 +15,17 @@ test("user profile to email settings keeps the legacy user-settings shell DOM no
   await expectUserSettingsGeometry(page);
 
   await page
-    .locator(`${settingsPageSelector} > .nav-tabs a[href$="/user/editform/emails"]`)
+    .locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-link"][href$="/user/editform/emails"]`,
+    )
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/emails`);
   await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeVisible();
-  await expect(page.locator(`${settingsPageSelector} > .nav-tabs > li.active`)).toHaveText(
-    "Email settings",
-  );
+  await expect(
+    page.locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]`,
+    ),
+  ).toHaveText("Email settings");
   await expectUserSettingsShellNodesToPersist(page);
   await expectUserSettingsGeometry(page);
 
@@ -44,13 +48,17 @@ test("user email to password settings keeps the legacy user-settings shell DOM n
   await expectUserSettingsGeometry(page);
 
   await page
-    .locator(`${settingsPageSelector} > .nav-tabs a[href$="/user/editform/password"]`)
+    .locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-link"][href$="/user/editform/password"]`,
+    )
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/password`);
   await expect(page.locator("#frmPassword")).toBeVisible();
-  await expect(page.locator(`${settingsPageSelector} > .nav-tabs > li.active`)).toHaveText(
-    "Change password",
-  );
+  await expect(
+    page.locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]`,
+    ),
+  ).toHaveText("Change password");
   await expectUserSettingsShellNodesToPersist(page);
   await expectUserSettingsGeometry(page);
 
@@ -72,12 +80,18 @@ test("user password to token settings keeps the legacy user-settings shell DOM n
   await captureUserSettingsShellNodes(page);
   await expectUserSettingsGeometry(page);
 
-  await page.locator(`${settingsPageSelector} > .nav-tabs a[href$="/user/editform/token"]`).click();
+  await page
+    .locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-link"][href$="/user/editform/token"]`,
+    )
+    .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/token`);
   await expect(page.locator('[data-stylex-owner="user-token-settings-form"]')).toBeVisible();
-  await expect(page.locator(`${settingsPageSelector} > .nav-tabs > li.active`)).toHaveText(
-    "User Token",
-  );
+  await expect(
+    page.locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]`,
+    ),
+  ).toHaveText("User Token");
   await expectUserSettingsShellNodesToPersist(page);
   await expectUserSettingsGeometry(page);
 
@@ -100,13 +114,17 @@ test("user token to notification settings keeps the legacy user-settings shell D
   await expectUserSettingsGeometry(page);
 
   await page
-    .locator(`${settingsPageSelector} > .nav-tabs a[href$="/user/editform/notifications"]`)
+    .locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-link"][href$="/user/editform/notifications"]`,
+    )
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications`);
   await expect(page.locator("#notification-projects")).toBeVisible();
-  await expect(page.locator(`${settingsPageSelector} > .nav-tabs > li.active`)).toHaveText(
-    "Notification settings",
-  );
+  await expect(
+    page.locator(
+      `${settingsPageSelector} [data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]`,
+    ),
+  ).toHaveText("Notification settings");
   await expectUserSettingsShellNodesToPersist(page);
   await expectUserSettingsGeometry(page);
 
@@ -165,7 +183,7 @@ async function captureUserSettingsShellNodes(page: Page) {
       breadcrumb: document.querySelector('[data-stylex-owner="user-settings-breadcrumb-outer"]'),
       gnb: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       pageWrap: document.querySelector('[data-stylex-owner="user-settings-page-wrap-outer"]'),
-      tabs: document.querySelector('[data-stylex-owner="user-settings-page-wrap"] > .nav-tabs'),
+      tabs: document.querySelector('[data-stylex-owner="user-settings-edit-tabs"]'),
     };
     if (Object.values(shell).some((element) => !element)) {
       throw new Error("Missing legacy user settings shell");
@@ -187,8 +205,7 @@ async function expectUserSettingsShellNodesToPersist(page: Page) {
             document.querySelector('[data-stylex-owner="user-settings-breadcrumb-outer"]') &&
           previous.pageWrap ===
             document.querySelector('[data-stylex-owner="user-settings-page-wrap-outer"]') &&
-          previous.tabs ===
-            document.querySelector('[data-stylex-owner="user-settings-page-wrap"] > .nav-tabs'),
+          previous.tabs === document.querySelector('[data-stylex-owner="user-settings-edit-tabs"]'),
         );
       }),
     )
@@ -205,7 +222,7 @@ async function expectUserSettingsGeometry(page: Page) {
     const breadcrumb = rect('[data-stylex-owner="user-settings-breadcrumb-outer"]');
     const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = rect('[data-stylex-owner="user-settings-page-wrap-outer"]');
-    const tabs = rect('[data-stylex-owner="user-settings-page-wrap"] > .nav-tabs');
+    const tabs = rect('[data-stylex-owner="user-settings-edit-tabs"]');
     const body = rect(
       '[data-stylex-owner="user-settings-page-wrap"] > form, [data-stylex-owner="user-settings-page-wrap"] > #frmBasic, [data-stylex-owner="user-token-settings-form"], [data-stylex-owner="user-settings-page-wrap"] > div > #notification-projects',
     );

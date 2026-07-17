@@ -14,7 +14,7 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { userSettingsPageColors } from "./-editform.stylex";
+import { userSettingsPageColors, userSettingsTabColors } from "./-editform.stylex";
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -51,6 +51,106 @@ const styles = stylex.create({
     margin: "0px",
     padding: "10px 10px 5px",
     textRendering: "auto",
+  },
+  editTabs: {
+    backgroundColor: "transparent",
+    borderBottomColor: userSettingsTabColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    boxSizing: "content-box",
+    color: userSettingsTabColors.rootText,
+    display: "block",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    listStyle: "none",
+    margin: "20px 0px",
+    padding: "0px",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  editTabItem: {
+    backgroundColor: "transparent",
+    borderWidth: "0px",
+    boxSizing: "content-box",
+    color: "inherit",
+    display: "list-item",
+    float: "left",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    listStyle: "none",
+    margin: "0px 0px -1px",
+    padding: "0px",
+  },
+  editTabLink: {
+    backgroundColor: {
+      default: "transparent",
+      ":hover": userSettingsTabColors.hoverSurface,
+      ":focus": userSettingsTabColors.focusSurface,
+    },
+    borderTopColor: {
+      default: "transparent",
+      ":hover": userSettingsTabColors.hoverBorder,
+      ":focus": userSettingsTabColors.hoverBorder,
+    },
+    borderRightColor: {
+      default: "transparent",
+      ":hover": userSettingsTabColors.hoverBorder,
+      ":focus": userSettingsTabColors.hoverBorder,
+    },
+    borderBottomColor: {
+      default: "transparent",
+      ":hover": userSettingsTabColors.border,
+      ":focus": userSettingsTabColors.border,
+    },
+    borderLeftColor: {
+      default: "transparent",
+      ":hover": userSettingsTabColors.hoverBorder,
+      ":focus": userSettingsTabColors.hoverBorder,
+    },
+    borderRadius: "4px 4px 0px 0px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxSizing: "content-box",
+    color: userSettingsTabColors.linkText,
+    cursor: "pointer",
+    display: "block",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    margin: "0px 2px 0px 0px",
+    outline: "none",
+    padding: { default: "8px 30px", [globalBreakpoints.mobile]: "8px 5px" },
+    textDecoration: { default: "none", ":hover": "none", ":focus": "none" },
+  },
+  editTabLinkActive: {
+    backgroundColor: {
+      default: userSettingsTabColors.activeSurface,
+      ":hover": userSettingsTabColors.activeSurface,
+      ":focus": userSettingsTabColors.activeSurface,
+    },
+    borderTopColor: {
+      default: userSettingsTabColors.border,
+      ":hover": userSettingsTabColors.border,
+      ":focus": userSettingsTabColors.border,
+    },
+    borderRightColor: {
+      default: userSettingsTabColors.border,
+      ":hover": userSettingsTabColors.border,
+      ":focus": userSettingsTabColors.border,
+    },
+    borderBottomColor: { default: "transparent", ":hover": "transparent", ":focus": "transparent" },
+    borderLeftColor: {
+      default: userSettingsTabColors.border,
+      ":hover": userSettingsTabColors.border,
+      ":focus": userSettingsTabColors.border,
+    },
+    color: userSettingsTabColors.activeText,
+    cursor: "default",
   },
   settingsPageOuter: {
     boxSizing: "border-box",
@@ -405,59 +505,42 @@ function UserProfileSettingsTitle({ loginId }: { loginId: string }) {
 
 function EditTabMenu({ active }: { active: string }) {
   const { t } = useLegacyMessages();
+  const tabs = [
+    { key: "profile", message: "userinfo.editProfile", to: "/user/editform" },
+    { key: "password", message: "userinfo.changePassword", to: "/user/editform/password" },
+    {
+      key: "notifications",
+      message: "userinfo.changeNotifications",
+      to: "/user/editform/notifications",
+    },
+    { key: "emails", message: "userinfo.changeEmails", to: "/user/editform/emails" },
+    { key: "token", message: "userinfo.token", to: "/user/editform/token" },
+  ] as const;
 
   return (
-    <ul className="nav nav-tabs mt20">
-      <li className={active === "profile" ? "active" : undefined}>
-        <Link
-          to="/user/editform"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.editProfile")}
-        </Link>
-      </li>
-      <li className={active === "password" ? "active" : undefined}>
-        <Link
-          to="/user/editform/password"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changePassword")}
-        </Link>
-      </li>
-      <li className={active === "notifications" ? "active" : undefined}>
-        <Link
-          to="/user/editform/notifications"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changeNotifications")}
-        </Link>
-      </li>
-      <li className={active === "emails" ? "active" : undefined}>
-        <Link
-          to="/user/editform/emails"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.changeEmails")}
-        </Link>
-      </li>
-      <li className={active === "token" ? "active" : undefined}>
-        <Link
-          to="/user/editform/token"
-          search={legacyEditTabLinkInactiveSearch}
-          activeOptions={legacyEditTabLinkActiveOptions}
-          activeProps={legacyEditTabLinkActiveProps}
-        >
-          {t("userinfo.token")}
-        </Link>
-      </li>
+    <ul {...stylex.props(styles.editTabs)} data-stylex-owner="user-settings-edit-tabs">
+      {tabs.map((tab) => {
+        const selected = active === tab.key;
+        return (
+          <li
+            key={tab.key}
+            {...stylex.props(styles.editTabItem)}
+            data-selected={selected}
+            data-stylex-owner="user-settings-edit-tab-item"
+          >
+            <Link
+              {...stylex.props(styles.editTabLink, selected && styles.editTabLinkActive)}
+              to={tab.to}
+              search={legacyEditTabLinkInactiveSearch}
+              activeOptions={legacyEditTabLinkActiveOptions}
+              activeProps={legacyEditTabLinkActiveProps}
+              data-stylex-owner="user-settings-edit-tab-link"
+            >
+              {t(tab.message)}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }

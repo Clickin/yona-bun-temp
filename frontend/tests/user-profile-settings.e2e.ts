@@ -169,14 +169,15 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 
   await expectProfileEditTabs(page, basePath);
 
-  await expect(page.locator('.nav-tabs a:has-text("Change password")')).toHaveAttribute(
-    "href",
-    `${basePath}/user/editform/password`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")'),
+  ).toHaveAttribute("href", `${basePath}/user/editform/password`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "profile-password-tab";
   });
-  await page.locator('.nav-tabs a:has-text("Change password")').click();
+  await page
+    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")')
+    .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/password`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -543,7 +544,9 @@ async function readProfileSettingsMetrics(page: Page) {
       '[data-stylex-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
+    const nav = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-edit-tabs"]',
+    );
     const form = document.querySelector<HTMLElement>("#frmBasic");
     const avatarForm = document.querySelector<HTMLElement>("#frmAvatar");
     const avatarWrap = document.querySelector<HTMLElement>("#frmAvatar .avatar-wrap.xlarge");
@@ -562,7 +565,7 @@ async function readProfileSettingsMetrics(page: Page) {
 }
 
 async function expectProfileEditTabs(page: Page, basePath: string) {
-  const tabs = page.locator(".page-wrap > .nav.nav-tabs.mt20");
+  const tabs = page.locator('[data-stylex-owner="user-settings-edit-tabs"]');
   await expect(tabs).toBeAttached();
   await expect(tabs.locator("a")).toHaveText([
     "Edit profile",
@@ -744,6 +747,10 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
+        if (owner === "user-settings-edit-tabs") return 'class="nav nav-tabs mt20"';
+        if (owner === "user-settings-edit-tab-item")
+          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
+        if (owner === "user-settings-edit-tab-link") return "";
       }
       if (
         name === "class" &&

@@ -115,8 +115,8 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     tableDisplay: "table",
   });
 
-  const tabItems = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li");
-  const tabLinks = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a");
+  const tabItems = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
+  const tabLinks = page.locator('[data-stylex-owner="user-settings-edit-tab-link"]');
   await expect(tabItems).toHaveCount(5);
   expect(
     await tabItems.evaluateAll((items) => items.map((item) => item.getAttribute("class"))),
@@ -169,16 +169,20 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
       text: "User Token",
     },
   ]);
-  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a[aria-current]")).toHaveCount(
-    0,
-  );
-  await expect(page.locator(".page-wrap > .nav.nav-tabs.mt20 > li > a[data-status]")).toHaveCount(
-    0,
-  );
-  await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active")).toHaveCount(1);
-  await expect(page.locator(".page-wrap .nav.nav-tabs.mt20 > li.active > a")).toHaveText(
-    "Email settings",
-  );
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-link"][aria-current]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-link"][data-status]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '[data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"] > [data-stylex-owner="user-settings-edit-tab-link"]',
+    ),
+  ).toHaveText("Email settings");
   await expect(page.locator("table.table.mt20 img")).toHaveCount(3);
   expect(
     await page
@@ -222,14 +226,15 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
     `${basePath}/api/v1/workspace/emails/12/validation`,
   );
 
-  await expect(page.locator('.nav-tabs a:has-text("User Token")')).toHaveAttribute(
-    "href",
-    `${basePath}/user/editform/token`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
+  ).toHaveAttribute("href", `${basePath}/user/editform/token`);
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "emails-token-tab";
   });
-  await page.locator('.nav-tabs a:has-text("User Token")').click();
+  await page
+    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")')
+    .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/token`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -372,7 +377,9 @@ async function readEmailSettingsMetrics(page: Page) {
       '[data-stylex-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
+    const nav = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-edit-tabs"]',
+    );
     const addForm = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-email-add-form"]',
     );
@@ -447,6 +454,10 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
+        if (owner === "user-settings-edit-tabs") return 'class="nav nav-tabs mt20"';
+        if (owner === "user-settings-edit-tab-item")
+          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
+        if (owner === "user-settings-edit-tab-link") return "";
         if (owner === "user-email-add-form") return 'class="form-inline inner-bubble"';
         if (owner === "user-email-add-input") return 'class="text uname"';
         if (owner === "user-email-add-action") return 'class="ybtn ybtn-success"';

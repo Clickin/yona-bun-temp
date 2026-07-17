@@ -123,10 +123,9 @@ test("current-user password settings page matches legacy user/edit_password.scal
 
   await expectPasswordEditTabs(page, basePath);
 
-  await expect(page.locator('.nav-tabs a:has-text("User Token")')).toHaveAttribute(
-    "href",
-    `${basePath}/user/editform/token`,
-  );
+  await expect(
+    page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
+  ).toHaveAttribute("href", `${basePath}/user/editform/token`);
   await expect(page.locator(".page-wrap > .mt10 a.ybtn-fail")).toHaveAttribute(
     "href",
     `${basePath}/lostPassword`,
@@ -166,7 +165,9 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "password-token-tab";
   });
-  await page.locator('.nav-tabs a:has-text("User Token")').click();
+  await page
+    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")')
+    .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/token`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -216,7 +217,7 @@ async function expectPasswordValidationPopovers(page: Page, messages: string[]) 
 }
 
 async function expectPasswordEditTabs(page: Page, basePath: string) {
-  const tabItems = page.locator(".page-wrap > .nav.nav-tabs.mt20 > li");
+  const tabItems = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
   const tabLinks = tabItems.locator("a");
   const expectedTabs = [
     { href: `${basePath}/user/editform`, text: "Edit profile" },
@@ -287,7 +288,9 @@ async function readPasswordSettingsMetrics(page: Page) {
       '[data-stylex-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
+    const nav = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-edit-tabs"]',
+    );
     const form = document.querySelector<HTMLElement>("#frmPassword");
     const resetLink = document.querySelector<HTMLElement>(".page-wrap > .mt10 .ybtn-fail");
     if (!breadcrumb || !pageWrapOuter || !nav || !form || !resetLink) {
@@ -353,6 +356,10 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
+        if (owner === "user-settings-edit-tabs") return 'class="nav nav-tabs mt20"';
+        if (owner === "user-settings-edit-tab-item")
+          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
+        if (owner === "user-settings-edit-tab-link") return "";
         if (owner === "user-password-description")
           return current.querySelector('input[type="password"]') ? 'class="mt10"' : "";
         if (

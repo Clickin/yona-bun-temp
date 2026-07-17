@@ -142,7 +142,7 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
   await page.mouse.move(actionBox.x + actionBox.width + 20, actionBox.y + actionBox.height + 20);
   await page.mouse.up();
 
-  const editTabs = page.locator(".page-wrap .nav.nav-tabs.mt20 > li");
+  const editTabs = page.locator('[data-stylex-owner="user-settings-edit-tab-item"]');
   await expect(editTabs).toHaveCount(5);
   await expect(editTabs).toHaveText([
     "Edit profile",
@@ -187,7 +187,9 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "token-password-tab";
   });
-  await page.locator('.nav-tabs a:has-text("Change password")').click();
+  await page
+    .locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("Change password")')
+    .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/password`);
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
@@ -304,7 +306,9 @@ async function readTokenMetrics(page: Page) {
       '[data-stylex-owner="user-settings-breadcrumb-outer"]',
     );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
+    const nav = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-edit-tabs"]',
+    );
     const form = document.querySelector<HTMLElement>("#frmBasic");
     if (!breadcrumb || !pageWrapOuter || !nav || !form) {
       throw new Error("Expected user token metric targets are missing.");
@@ -462,6 +466,10 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
         if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
         if (owner === "user-settings-breadcrumb-heading") return "";
+        if (owner === "user-settings-edit-tabs") return 'class="nav nav-tabs mt20"';
+        if (owner === "user-settings-edit-tab-item")
+          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
+        if (owner === "user-settings-edit-tab-link") return "";
       }
       if (
         name === "class" &&

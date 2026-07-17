@@ -189,7 +189,10 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
   expect(route).toContain('padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" }');
   expect(route).not.toContain("globalColors.");
   expect(route).not.toContain("!important");
-  expect(theme.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#ffffff"]);
+  const pageTheme = theme.match(
+    /export const userSettingsPageColors = stylex\.defineVars\(\{[\s\S]*?\n\}\);/u,
+  )?.[0];
+  expect(pageTheme?.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#ffffff"]);
   expect(appCss).toContain("body:has(.site-breadcrumb-outer) .page-wrap {\n    width: 1080px;");
 });
 
@@ -216,7 +219,9 @@ test("keeps the two wrappers mounted while all five settings routes transition",
     "/user/editform/emails",
     "/user/editform/token",
   ]) {
-    await wrap.locator(`:scope > .nav-tabs a[href$="${path}"]`).click();
+    await wrap
+      .locator(`[data-stylex-owner="user-settings-edit-tab-link"][href$="${path}"]`)
+      .click();
     await expect(page).toHaveURL(`${basePath}${path}`);
     expect(
       await page.evaluate((ownerNames) => {
@@ -242,7 +247,7 @@ for (const viewport of [
     await openNotifications(page);
     const outer = owner(page, owners.outer);
     const wrap = owner(outer, owners.wrap);
-    const tabs = wrap.locator(":scope > .nav-tabs");
+    const tabs = wrap.locator(':scope > [data-stylex-owner="user-settings-edit-tabs"]');
     const body = wrap.locator(":scope > div").first();
 
     await expect(outer).toHaveCSS("box-sizing", "border-box");
@@ -263,7 +268,7 @@ for (const viewport of [
         root.querySelector<HTMLElement>(selector)!;
       const outer = get(`[data-stylex-owner="${ownerNames.outer}"]`);
       const wrap = get(`[data-stylex-owner="${ownerNames.wrap}"]`, outer);
-      const tabs = get(":scope > .nav-tabs", wrap);
+      const tabs = get(':scope > [data-stylex-owner="user-settings-edit-tabs"]', wrap);
       const body = get(":scope > div", wrap);
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred seventeen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred eighteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -574,6 +574,16 @@ Live Java desktop pins form/input/action to `1346x30 @10,206`, `398x30 @10,206`,
 `50.234375x30 @415.78125,206`; mobile pins `390x30 @0,206`, `187x30 @0,206`, and the action at
 `194.78125,206` with no overflow. Genuine RED 0/3 becomes focused GREEN 3/3; focus, hover,
 POST/CSRF/reset, screenshots, typecheck, and scoped format/lint/diff pass. This is not Wave 1
+completion.
+
+The two-hundred-eighteenth slice migrates the shared five-tab strip across all authenticated
+`/user/editform` states. Exactly three owner types cover the root list, repeated items, and
+repeated TanStack Links, including base, selected, hover, focus, clearfix, and max-720 output.
+`userSettingsTabColors` contains only route-owned surface/text/border paint; spacing, sizing,
+border geometry, and typography remain literal in `stylex.create`. Only `nav nav-tabs mt20` and
+selected-item `active` retire. Live Java desktop pins the root to `1346x38 @10,105` with
+`8px 30px` links; mobile pins it to `390x38 @0,105`, one row, and `8px 5px` links. Genuine RED
+0/4 becomes focused GREEN 4/4, and the combined settings gate is GREEN 16/16. This is not Wave 1
 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns

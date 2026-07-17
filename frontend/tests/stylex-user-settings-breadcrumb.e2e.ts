@@ -70,7 +70,10 @@ test("records the five-template source, exact three-owner contract, and retired 
     expect(route).toContain(declaration);
   expect(route).toContain('[globalBreakpoints.mobile]: "10px"');
   expect(route).not.toContain("globalColors.");
-  expect(theme.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#ffffff"]);
+  const pageTheme = theme.match(
+    /export const userSettingsPageColors = stylex\.defineVars\(\{[\s\S]*?\n\}\);/u,
+  )?.[0];
+  expect(pageTheme?.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#ffffff"]);
   expect(theme).not.toMatch(/(?:margin|padding|width|height|size)/u);
   expect(appCss).toContain(".site-breadcrumb-outer {\n  border-bottom: 1px solid #ddd;");
   expect(appCss).toContain("font-weight: 400;");
