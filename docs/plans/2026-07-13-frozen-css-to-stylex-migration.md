@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred sixteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred seventeen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -564,6 +564,17 @@ consumers. Authenticated live Java desktop/mobile evidence pins the 206px conten
 30px boxes, dt/dd rhythm, focus output, and max-720 16px input type. Genuine RED becomes focused
 GREEN 4/4 with validation, CSRF mutation, redirect, screenshots, typecheck, and scoped
 format/lint/diff green. This is not Wave 1 completion.
+
+The two-hundred-seventeenth slice migrates exactly three owners on authenticated
+`/user/editform/emails`: the add form, input, and add action. The route theme contains only their
+surface/text/border/shadow-color paint; form geometry, the 384px desktop/inherited mobile input,
+font metrics, and the source-derived `.3em` action margin remain literal. The six presentation
+classes on this subtree retire while the table, rows, row actions, labels, and icons stay separate.
+Live Java desktop pins form/input/action to `1346x30 @10,206`, `398x30 @10,206`, and
+`50.234375x30 @415.78125,206`; mobile pins `390x30 @0,206`, `187x30 @0,206`, and the action at
+`194.78125,206` with no overflow. Genuine RED 0/3 becomes focused GREEN 3/3; focus, hover,
+POST/CSRF/reset, screenshots, typecheck, and scoped format/lint/diff pass. This is not Wave 1
+completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

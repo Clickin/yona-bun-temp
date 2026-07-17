@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import {
   addWorkspaceEmailRest,
@@ -10,6 +11,85 @@ import {
 } from "../../../api/workspace";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { emailAddColors } from "./-emails.stylex";
+
+const styles = stylex.create({
+  addForm: {
+    margin: "0px 0px 10px",
+    position: "relative",
+  },
+  addInput: {
+    backgroundColor: emailAddColors.inputSurface,
+    borderColor: {
+      default: emailAddColors.inputBorder,
+      ":focus": emailAddColors.inputFocusBorder,
+    },
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: emailAddColors.inputText,
+    display: "inline-block",
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: {
+      default: "12px",
+      "@media (max-width: 720px)": "16px",
+    },
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "20px",
+    margin: "0px",
+    outline: { ":focus": "0 none" },
+    padding: "4px 6px",
+    transition: "border 0.2s linear, box-shadow 0.2s linear",
+    verticalAlign: "middle",
+    width: {
+      default: "384px",
+      "@media (max-width: 720px)": "inherit",
+    },
+  },
+  addAction: {
+    backgroundColor: {
+      default: emailAddColors.actionSurface,
+      ":hover": emailAddColors.actionInteractiveSurface,
+      ":focus": emailAddColors.actionInteractiveSurface,
+      ":active": emailAddColors.actionInteractiveSurface,
+    },
+    borderColor: emailAddColors.actionBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: `0 1px 0 ${emailAddColors.actionShadow}`,
+    color: emailAddColors.actionText,
+    cursor: "pointer",
+    display: "inline-block",
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: "14px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    margin: "0px 0px 0px 4.2px",
+    outline: "0 none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: {
+      default: "none",
+      ":hover": "none",
+      ":focus": "none",
+      ":active": "none",
+    },
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+});
+
+const addFormStyleProps = stylex.props(styles.addForm);
+const addInputStyleProps = stylex.props(styles.addInput);
+const addActionStyleProps = stylex.props(styles.addAction);
 
 export const Route = createFileRoute("/user/editform/emails")({
   component: UserEmailSettingsRoute,
@@ -77,9 +157,10 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
   return (
     <>
       <form
+        {...addFormStyleProps}
         action={prefixBasePath(runtimeConfig.basePath, "/user/email")}
         method="post"
-        className="form-inline inner-bubble"
+        data-stylex-owner="user-email-add-form"
         onSubmit={(event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -87,8 +168,14 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
           addMutation.mutate(email, { onSuccess: () => form.reset() });
         }}
       >
-        <input type="text" placeholder={t("user.email.new")} name="email" className="text uname" />
-        <button type="submit" className="ybtn ybtn-success">
+        <input
+          {...addInputStyleProps}
+          type="text"
+          placeholder={t("user.email.new")}
+          name="email"
+          data-stylex-owner="user-email-add-input"
+        />{" "}
+        <button {...addActionStyleProps} type="submit" data-stylex-owner="user-email-add-action">
           {t("button.add")}
         </button>
       </form>

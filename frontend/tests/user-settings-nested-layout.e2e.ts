@@ -18,7 +18,7 @@ test("user profile to email settings keeps the legacy user-settings shell DOM no
     .locator(`${settingsPageSelector} > .nav-tabs a[href$="/user/editform/emails"]`)
     .click();
   await expect(page).toHaveURL(`${basePath}/user/editform/emails`);
-  await expect(page.locator("form.form-inline.inner-bubble")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeVisible();
   await expect(page.locator(`${settingsPageSelector} > .nav-tabs > li.active`)).toHaveText(
     "Email settings",
   );
@@ -26,7 +26,7 @@ test("user profile to email settings keeps the legacy user-settings shell DOM no
   await expectUserSettingsGeometry(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator("form.form-inline.inner-bubble")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeVisible();
   await expectUserSettingsShellNodesToPersist(page);
   await expectUserSettingsGeometry(page);
 });
@@ -39,7 +39,7 @@ test("user email to password settings keeps the legacy user-settings shell DOM n
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${basePath}/user/editform/emails`);
-  await expect(page.locator("form.form-inline.inner-bubble")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeVisible();
   await captureUserSettingsShellNodes(page);
   await expectUserSettingsGeometry(page);
 
@@ -162,7 +162,7 @@ function workspaceBody() {
 async function captureUserSettingsShellNodes(page: Page) {
   await page.evaluate(() => {
     const shell = {
-      breadcrumb: document.querySelector(".site-breadcrumb-outer"),
+      breadcrumb: document.querySelector('[data-stylex-owner="user-settings-breadcrumb-outer"]'),
       gnb: document.querySelector("[data-stylex-owner=global-gnb-outer]"),
       pageWrap: document.querySelector('[data-stylex-owner="user-settings-page-wrap-outer"]'),
       tabs: document.querySelector('[data-stylex-owner="user-settings-page-wrap"] > .nav-tabs'),
@@ -183,7 +183,8 @@ async function expectUserSettingsShellNodesToPersist(page: Page) {
         return Boolean(
           previous &&
           previous.gnb === document.querySelector("[data-stylex-owner=global-gnb-outer]") &&
-          previous.breadcrumb === document.querySelector(".site-breadcrumb-outer") &&
+          previous.breadcrumb ===
+            document.querySelector('[data-stylex-owner="user-settings-breadcrumb-outer"]') &&
           previous.pageWrap ===
             document.querySelector('[data-stylex-owner="user-settings-page-wrap-outer"]') &&
           previous.tabs ===
@@ -201,7 +202,7 @@ async function expectUserSettingsGeometry(page: Page) {
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const breadcrumb = rect(".site-breadcrumb-outer");
+    const breadcrumb = rect('[data-stylex-owner="user-settings-breadcrumb-outer"]');
     const gnb = rect("[data-stylex-owner=global-gnb-outer]");
     const pageWrap = rect('[data-stylex-owner="user-settings-page-wrap-outer"]');
     const tabs = rect('[data-stylex-owner="user-settings-page-wrap"] > .nav-tabs');

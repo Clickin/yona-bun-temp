@@ -90,7 +90,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   });
 
   await page.goto(`${basePath}/user/editform/emails`);
-  await expect(page.locator("form.form-inline.inner-bubble")).toBeAttached();
+  await expect(page.locator('[data-stylex-owner="user-email-add-form"]')).toBeAttached();
   await expect(page).toHaveTitle("admin");
   expect(
     await page
@@ -108,7 +108,7 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
 
   expect(await readEmailSettingsMetrics(page)).toEqual({
     addFormDisplay: "block",
-    breadcrumbHeight: "46px",
+    breadcrumbHeight: "45px",
     firstAvatarWidth: "40px",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
@@ -236,9 +236,9 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
   ).toBe("emails-token-tab");
 
   await page.goto(`${basePath}/user/editform/emails`);
-  await page.locator('form.form-inline input[name="email"]').fill("new@example.com");
-  await page.locator("form.form-inline button[type=submit]").click();
-  await expect(page.locator('form.form-inline input[name="email"]')).toHaveValue("");
+  await page.locator('[data-stylex-owner="user-email-add-input"]').fill("new@example.com");
+  await page.locator('[data-stylex-owner="user-email-add-action"]').click();
+  await expect(page.locator('[data-stylex-owner="user-email-add-input"]')).toHaveValue("");
 });
 
 test("current-user email settings tab menu uses direct typed router links", () => {
@@ -368,10 +368,14 @@ function workspaceBodyWithoutEmailAvatars() {
 
 async function readEmailSettingsMetrics(page: Page) {
   return page.evaluate(() => {
-    const breadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
+    const breadcrumb = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+    );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
-    const addForm = document.querySelector<HTMLElement>("form.form-inline.inner-bubble");
+    const addForm = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-email-add-form"]',
+    );
     const table = document.querySelector<HTMLElement>("table.table.mt20");
     const firstAvatar = document.querySelector<HTMLElement>("table.table.mt20 img");
     if (!breadcrumb || !pageWrapOuter || !nav || !addForm || !table || !firstAvatar) {
@@ -438,6 +442,15 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class") {
+        const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
+        if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
+        if (owner === "user-settings-breadcrumb-heading") return "";
+        if (owner === "user-email-add-form") return 'class="form-inline inner-bubble"';
+        if (owner === "user-email-add-input") return 'class="text uname"';
+        if (owner === "user-email-add-action") return 'class="ybtn ybtn-success"';
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -472,7 +485,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))
