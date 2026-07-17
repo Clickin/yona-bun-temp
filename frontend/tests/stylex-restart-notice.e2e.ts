@@ -13,6 +13,9 @@ async function openRestart(page: Page, failed = false) {
   await page.goto(`${basePath}/restart${failed ? "?hasFailedToUpdateSecret=true" : ""}`);
   const owner = page.locator('[data-stylex-owner="restart-notice"]');
   await expect(owner).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="restart-page"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="restart-shell"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="restart-footer"]')).toBeVisible();
   return owner;
 }
 

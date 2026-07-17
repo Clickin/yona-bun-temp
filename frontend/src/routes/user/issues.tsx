@@ -278,13 +278,13 @@ function UserIssuesBody({
   };
 
   return (
-    <div className="page-wrap-outer">
-      <div className="page-wrap">
+    <div className="page-wrap-outer" data-stylex-owner="user-issues-page">
+      <div {...stylex.props(issueStyles.page)} data-stylex-owner="user-issues-shell">
         <MySeriesMenuTabs
           hideDefaultLoginPageButton={isDefaultLoginPageSet}
           onSetDefaultLoginPage={(path) => setDefaultLoginPage.mutate(path)}
         />
-        <div className="row-fluid issue-list-wrap">
+        <div className="row-fluid issue-list-wrap" data-stylex-owner="user-issues-list-shell">
           <div className="left-menu span2 span-hard-wrap">
             <div className="inner advanced">
               <QuickSearch
@@ -309,15 +309,23 @@ function UserIssuesBody({
                 <input type="hidden" name="sharerId" value={activeFilterIds.sharerId} />
                 <input type="hidden" name="favoriteId" value={activeFilterIds.favoriteId} />
                 <div className="search myissues-search-input">
-                  <div className="search-bar">
+                  <div
+                    {...stylex.props(issueStyles.searchBar)}
+                    data-stylex-owner="user-issues-search-bar"
+                  >
                     <input
                       name="filter"
-                      className="textbox full"
+                      {...stylex.props(issueStyles.searchInput)}
+                      data-stylex-owner="user-issues-search-input"
                       type="text"
                       placeholder={t("issue.search")}
                       defaultValue={search.query}
                     />
-                    <button type="submit" className="search-btn">
+                    <button
+                      {...stylex.props(issueStyles.searchButton)}
+                      data-stylex-owner="user-issues-search-button"
+                      type="submit"
+                    >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>
@@ -326,7 +334,7 @@ function UserIssuesBody({
             </div>
           </div>
           <div className="span10 span-hard-wrap" id="span10">
-            <ul className="nav nav-tabs nm">
+            <ul {...stylex.props(issueStyles.tabs)} data-stylex-owner="user-issues-tabs">
               <StateTab
                 active={search.state === "open"}
                 count={issues.openIssueCount}
@@ -371,7 +379,7 @@ function UserIssuesBody({
                 ) : (
                   <div className="filter-wrap small-heights"></div>
                 )}
-                <ul className="post-list-wrap my-issues">
+                <ul className="post-list-wrap my-issues" data-stylex-owner="user-issues-items">
                   {issues.items.map((issue) => (
                     <UserIssueItem
                       basePath={basePath}

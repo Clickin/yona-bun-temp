@@ -3266,6 +3266,8 @@ Batch 246 applied the workflow to the project home and organization home shells.
 
 Batch 247 applied the workflow to the project import form. Its focused browser gate, shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed; a pull-request edit-form target was reverted before integration because its runtime fixture could not establish a valid success state.
 
+Batch 248 applied the workflow to the restart notice, organization boards, and user issues visible states. The assembled 11-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

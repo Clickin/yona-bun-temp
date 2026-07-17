@@ -116,8 +116,8 @@ function OrganizationBoardsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="organization-boards-page">
+        <div className="project-page-wrap" data-stylex-owner="organization-boards-shell">
           <div
             {...stylex.props(styles.search)}
             className="search-wrap underline"
@@ -168,7 +168,7 @@ function OrganizationBoardsBody({
           </div>
 
           {!hasPosts ? (
-            <div className="error-wrap">
+            <div className="error-wrap" data-stylex-owner="organization-boards-empty">
               <i className="ico ico-err1"></i>
               <p>{t("post.is.empty")}</p>
             </div>
@@ -208,7 +208,7 @@ function OrganizationBoardsBody({
             </>
           )}
 
-          <div className="write-btn-wrap"></div>
+          <div className="write-btn-wrap" data-stylex-owner="organization-boards-actions"></div>
           <BoardPagination boards={boards} organizationName={organizationName} search={search} />
         </div>
       </div>
@@ -320,7 +320,11 @@ function BoardPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
+    <div
+      id="pagination"
+      className="page-navigation-wrap"
+      data-stylex-owner="organization-boards-pagination"
+    >
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (

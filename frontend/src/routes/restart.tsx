@@ -71,8 +71,8 @@ function RestartScreen({ siteName }: { siteName: string }) {
   return (
     <>
       <title>{t("app.restart.welcome")}</title>
-      <div className="page-wrap-outer">
-        <div className="container page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="restart-page">
+        <div className="container page-wrap" data-stylex-owner="restart-shell">
           <div className="page">
             <div
               className={`secret-wrap ${restartNoticeClassName} ${restartWrapClassName}`}
@@ -101,7 +101,7 @@ function RestartScreen({ siteName }: { siteName: string }) {
           </div>
         </div>
       </div>
-      <footer className="page-footer-outer">
+      <footer className="page-footer-outer" data-stylex-owner="restart-footer">
         <div className="page-footer">
           <span className="provider">
             Powered by <strong>{siteName}</strong>

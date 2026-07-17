@@ -19,16 +19,19 @@ const styleSource = readFileSync(
 );
 const owners = [
   "organization-boards-search",
+  "organization-boards-page",
+  "organization-boards-shell",
   "organization-boards-search-input",
   "organization-boards-filters",
   "organization-boards-notice-list",
   "organization-boards-list",
   "organization-boards-row",
   "organization-boards-title",
+  "organization-boards-pagination",
 ] as const;
 
 test("organization boards exposes direct StyleX owners for search, filters, and rows", () => {
-  expect(new Set(owners).size).toBe(7);
+  expect(new Set(owners).size).toBe(owners.length);
   for (const owner of owners) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -52,6 +55,39 @@ test("organization boards translates legacy filters and two-column controls to R
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("addEventListener");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("organization boards keeps the visible shell within a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/v1/organizations/weblabs/container", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { organizationName: "weblabs", viewerCanUpdate: true },
+    }),
+  );
+  await page.route("**/api/v1/organizations/weblabs/boards**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        items: [],
+        notices: [],
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 15,
+        totalCount: 0,
+        visibleProjects: [],
+      },
+    }),
+  );
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/organizations/weblabs/boards`);
+  const pageOwner = page.locator('[data-stylex-owner="organization-boards-page"]');
+  await expect(pageOwner).toBeVisible();
+  const rect = await pageOwner.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { left: box.left, right: box.right, width: box.width };
+  });
+  expect(rect.left).toBeGreaterThanOrEqual(0);
+  expect(rect.right).toBeLessThanOrEqual(390);
 });
 
 test("organization boards renders populated post and submits filter through router state", async ({

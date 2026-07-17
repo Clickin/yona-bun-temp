@@ -17,6 +17,9 @@ test("user issues keeps the legacy issue title paint owner across desktop and mo
   );
   expect(pageLess).toContain(".post-item {");
   expect(routeSource).toContain('data-stylex-owner="user-issues-issue-title"');
+  expect(routeSource).toContain('data-stylex-owner="user-issues-search-input"');
+  expect(routeSource).toContain('data-stylex-owner="user-issues-tabs"');
+  expect(routeSource).toContain('data-stylex-owner="user-issues-items"');
   expect(routeSource).not.toContain('className="title"');
 
   await mockUserIssues(page);
@@ -27,6 +30,12 @@ test("user issues keeps the legacy issue title paint owner across desktop and mo
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/user/issues`);
     const title = page.locator('[data-stylex-owner="user-issues-issue-title"]');
+    await expect(page.locator('[data-stylex-owner="user-issues-search-input"]')).toHaveAttribute(
+      "name",
+      "filter",
+    );
+    await expect(page.locator('[data-stylex-owner="user-issues-tabs"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="user-issues-items"]')).toBeVisible();
     await expect(title).toHaveText("First issue");
     await expect(title).toHaveCSS("color", "rgb(51, 51, 51)");
     await expect(title).toHaveCSS("font-size", "15px");

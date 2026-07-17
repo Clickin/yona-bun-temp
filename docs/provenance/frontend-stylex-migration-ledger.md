@@ -428,3 +428,11 @@ Manual multi-screen exception note: Batch246 intentionally coordinated the indep
 - `/_import`: migrated project import page/form-wrap/heading/fields/advanced owners from `project/importing.scala.html` and project form partials; route-local paint remains StyleX-owned while options query, owner/auth/scope state, validation, import mutation, and navigation remain React-owned. Focused `stylex-project-import.e2e.ts` passed in the assembled browser gate.
 
 Manual single-route note: Batch247 kept the project import row as the only integrated target after the independent pull-request edit-form attempt was reverted because its runtime fixture could not establish a valid success state.
+
+## Batch 248 migration rows
+
+- `/restart`: migrated page, shell, and footer ownership from `welcome/restart.scala.html` and layout/footer partials; existing notice/logo StyleX paint and query-driven failed-copy/navigation behavior remain intact. Focused `stylex-restart-notice.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/boards`: migrated page, shell, empty/actions, and pagination owners from `organization/group_board_list.scala.html` and board/organization partials; route-local paint, search/filter/query navigation, row rendering, and pagination behavior remain React-owned. Focused `stylex-organization-boards.e2e.ts` passed in the assembled browser gate.
+- `/user/issues`: migrated page/list shell, search controls, state tabs, and repeated-item owners from `user/partial_issues.scala.html` and user issue partials; route-local paint, query/filter/sort/pagination behavior, and issue title ownership remain React-owned. Focused `stylex-user-issues-list.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch248 intentionally coordinated the independent restart, organization boards, and user issues route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once. Follow-up: preserve the one-route/one-row default unless another supervised batch records equivalent evidence.
