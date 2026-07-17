@@ -1,0 +1,111 @@
+import { readFileSync } from "node:fs";
+import { expect, test, type Page, type Route } from "@playwright/test";
+
+const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${name}"]`).first();
+
+test.use({ locale: "en-US" });
+
+test("moves static review progress spacing into StyleX and keeps dynamic width inline", async ({
+  page,
+}) => {
+  const route = readFileSync("src/routes/organizations/$organizationName/pullrequests.tsx", "utf8");
+  const stylex = readFileSync(
+    "src/routes/organizations/$organizationName/-organization-pullrequests.stylex.ts",
+    "utf8",
+  );
+  const template = readFileSync(
+    "../yona-original/app/views/organization/group_pullrequest_list_partial.scala.html",
+    "utf8",
+  );
+  expect(template).toContain('style="margin-right:20px;"');
+  expect(route).toContain('data-stylex-owner="organization-pullrequests-row-progress"');
+  expect(route).toContain("style={{ width: `${percent}%` }}");
+  expect(route).not.toContain("style={{ marginRight: 20 }}");
+  expect(stylex).toContain('progressMeta: { marginRight: "20px" }');
+
+  await mockPopulatedPullRequests(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/organizations/weblabs/pullrequests`);
+    const progress = owner(page, "organization-pullrequests-row-progress");
+    const progressFill = owner(page, "organization-pullrequests-row-progress-fill");
+    await expect(progress).toBeVisible();
+    await expect(progress).toHaveCSS("margin-right", "20px");
+    await expect(progressFill).toHaveCSS("width", "15px");
+    expect(await progressFill.getAttribute("style")).toContain("width: 50%");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+  }
+});
+
+async function mockPopulatedPullRequests(page: Page) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      supportedLanguages: ["en-US"],
+    };
+  }, basePath);
+  const session = {
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "admin",
+    preferredLanguage: "en-US",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
+    await page.route(url, (route: Route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
+  }
+  await page.route("**/api/v1/organizations/weblabs/container", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { organizationName: "weblabs", viewerCanUpdate: true },
+    }),
+  );
+  await page.route("**/api/v1/organizations/weblabs/pull-requests**", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        category: "open",
+        closedCount: 0,
+        items: [
+          {
+            closedCommentThreadCount: 1,
+            commentThreadCount: 2,
+            conflict: false,
+            contributorLabel: "Dev Member",
+            contributorLoginId: "dev",
+            createdLabel: "Jul 1, 2026",
+            fromBranch: "feature",
+            fromOwnerName: "dev",
+            fromProjectName: "sample",
+            id: 3,
+            ownerName: "weblabs",
+            projectName: "sample",
+            pullRequestNumber: 3,
+            receiverLabel: "Site Admin",
+            receiverLoginId: "admin",
+            reviewerCount: 0,
+            reviewerNames: [],
+            state: "OPEN",
+            title: "Fix login redirect",
+            toBranch: "main",
+            updatedLabel: "Jul 1, 2026",
+          },
+        ],
+        openCount: 1,
+        pageNum: 1,
+        pageSize: 20,
+        recentlyPushedBranches: [],
+        sentCount: 0,
+        totalCount: 1,
+      },
+    }),
+  );
+}

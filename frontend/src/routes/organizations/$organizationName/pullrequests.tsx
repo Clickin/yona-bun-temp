@@ -29,6 +29,7 @@ const sx = {
   state: stylex.props(styles.state),
   pagination: stylex.props(styles.pagination),
   progress: stylex.props(styles.progress),
+  progressMeta: stylex.props(styles.progress, styles.progressMeta),
   progressFill: stylex.props(styles.progressFill),
 } as const;
 
@@ -487,10 +488,9 @@ function OrganizationPullRequestItem({
           </Link>
           {pullRequest.commentThreadCount > 0 ? (
             <div
-              {...sx.progress}
-              className={`${sx.progress.className} infos-item`}
+              {...sx.progressMeta}
+              className={`${sx.progressMeta.className} infos-item`}
               data-stylex-owner="organization-pullrequests-row-progress"
-              style={{ marginRight: 20 }}
             >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">

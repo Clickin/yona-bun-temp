@@ -66,5 +66,6 @@ export const styles = stylex.create({
   state: { color: organizationPullRequestColors.stateText },
   pagination: { color: organizationPullRequestColors.metaText },
   progress: { backgroundColor: organizationPullRequestColors.progressSurface },
+  progressMeta: { marginRight: "20px" },
   progressFill: { backgroundColor: organizationPullRequestColors.progressFill },
 });
