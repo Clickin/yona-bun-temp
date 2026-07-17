@@ -332,6 +332,12 @@ dot; delete and milestone fixtures were aligned to the `/api/v1/owners/**/projec
 Typecheck, Vitest 11/11, format/diff checks, production build, StyleX verifier, and unchanged
 fallback hash `6417f445…16f` all pass.
 
+Batch 229 applied the same workflow to project VCS change, project transfer, and the populated fork
+form. The assembled Playwright invocation used three workers and finished GREEN 6/6 in 14.3 seconds.
+Typecheck, Vitest 11/11, format/diff checks, production build, StyleX verifier, and unchanged
+fallback hash `6417f445…16f` pass. The batch also records the post-Batch228 delete-form viewport
+assertion correction as a test-only follow-up; no route geometry compensation was added.
+
 ## 6. E2E selector migration policy
 
 Selector updates follow this order:

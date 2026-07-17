@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Outlet, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { use, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   forkProjectRest,
@@ -15,6 +16,22 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { LastOutletTransition } from "../../-last-outlet-transition";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { ProjectNestedShellContext } from "../$projectName";
+import { styles } from "./-newFork.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  form: stylex.props(styles.form),
+  heading: stylex.props(styles.heading),
+  help: stylex.props(styles.help),
+  helpImage: stylex.props(styles.helpImage),
+  helpMessages: stylex.props(styles.helpMessages),
+  group: stylex.props(styles.group),
+  label: stylex.props(styles.label),
+  controls: stylex.props(styles.controls),
+  input: stylex.props(styles.input),
+  action: stylex.props(styles.action),
+  cancel: stylex.props(styles.action, styles.cancel),
+} as const;
 
 type ForkCloneProgress = {
   originalOwnerName: string;
@@ -251,29 +268,31 @@ function ProjectForkBody({
   }
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
+    <div {...sx.page} data-stylex-owner="project-fork-page">
+      <div data-stylex-owner="project-fork-shell">
+        <div data-stylex-owner="project-fork-form-wrap">
           <form
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/fork`)}
             method="post"
-            className="form-horizontal nm"
+            {...sx.form}
+            data-stylex-owner="project-fork-form"
             onSubmit={onSubmit}
           >
             <input type="hidden" name="owner" value={selectedOwner} />
             <fieldset>
               <legend>
-                <h4 style={{ paddingTop: "10px" }}>
+                <h4 {...sx.heading} data-stylex-owner="project-fork-heading">
                   {`${ownerName} / ${projectName} ${t("fork")}`}
                 </h4>
               </legend>
-              <div id="helpMessage" className="well">
+              <div {...sx.help} data-stylex-owner="project-fork-help" id="helpMessage">
                 <div className="row-fluid">
                   {options.existingForks.length === 0 ? (
                     <>
                       <div className="pull-left">
                         <img
-                          className="img-polaroid"
+                          {...sx.helpImage}
+                          data-stylex-owner="project-fork-help-image"
                           src={prefixBasePath(
                             runtimeConfig.basePath,
                             "/legacy-assets/images/fork-pull/fork.jpg",
@@ -282,7 +301,7 @@ function ProjectForkBody({
                         />
                         <br />
                       </div>
-                      <div className="pull-left help-messages">
+                      <div {...sx.helpMessages} data-stylex-owner="project-fork-help-copy">
                         <p className="lead">{t("fork.help.title")}</p>
                         <p>{t("fork.help.message.1")}</p>
                         <p>{t("fork.help.message.2")}</p>
@@ -314,11 +333,11 @@ function ProjectForkBody({
                   )}
                 </div>
               </div>
-              <div className="control-group">
-                <label className="control-label" htmlFor="inputOwner">
+              <div {...sx.group} data-stylex-owner="project-fork-owner-group">
+                <label {...sx.label} htmlFor="inputOwner">
                   {t("project.owner")}
                 </label>
-                <div className="controls">
+                <div {...sx.controls}>
                   <select
                     id="project-owner"
                     name="owner"
@@ -336,18 +355,25 @@ function ProjectForkBody({
                   </select>
                 </div>
               </div>
-              <div className="control-group">
-                <label className="control-label" htmlFor="inputName">
+              <div {...sx.group} data-stylex-owner="project-fork-name-group">
+                <label {...sx.label} htmlFor="inputName">
                   {t("project.name")}
                 </label>
-                <div className="controls">
-                  <input type="text" id="inputName" name="name" defaultValue={selectedName} />
+                <div {...sx.controls}>
+                  <input
+                    {...sx.input}
+                    data-stylex-owner="project-fork-name-input"
+                    type="text"
+                    id="inputName"
+                    name="name"
+                    defaultValue={selectedName}
+                  />
                   <span className="help-inline">{t("project.name.alert")} </span>
                 </div>
               </div>
-              <div className="control-group">
-                <label className="control-label">{t("project.shareOption")}</label>
-                <div className="controls">
+              <div {...sx.group} data-stylex-owner="project-fork-scope-group">
+                <label {...sx.label}>{t("project.shareOption")}</label>
+                <div {...sx.controls}>
                   <input
                     name="projectScope"
                     type="radio"
@@ -390,14 +416,15 @@ function ProjectForkBody({
                   </label>
                 </div>
               </div>
-              <div className="control-group">
-                <div className="controls">
-                  <button type="submit" className="ybtn ybtn-info">
+              <div {...sx.group} data-stylex-owner="project-fork-actions">
+                <div {...sx.controls}>
+                  <button {...sx.action} data-stylex-owner="project-fork-submit" type="submit">
                     {t("fork")}
                   </button>{" "}
                   <Link
                     to={pullRequestsPath(ownerName, projectName)}
-                    className="ybtn"
+                    {...sx.cancel}
+                    data-stylex-owner="project-fork-cancel"
                     activeOptions={legacyProjectShellLinkActiveOptions}
                     activeProps={legacyProjectShellLinkActiveProps}
                   >

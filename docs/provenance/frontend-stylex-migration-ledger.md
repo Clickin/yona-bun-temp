@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch228 snapshot is 40 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch229 snapshot is 43 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -317,3 +317,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/branches`: migrated branch table/head/row/identity/commit/pull-request/action owners from `code/branches.scala.html` and `partial_branchrow.scala.html`; route-local theme contains paint only. Focused `stylex-project-branches.e2e.ts` passed in the assembled 6/6 gate.
 - `/$ownerName/$projectName/deleteform`: migrated delete action/modal/header/body/footer/backdrop owners from `project/delete.scala.html` and setting-menu/project shell partials; React modal and mutation behavior remain unchanged. Focused `stylex-project-delete-form.e2e.ts` passed in the assembled 6/6 gate.
 - `/$ownerName/$projectName/milestones`: migrated populated milestone tabs/filter/list/progress/issue owners from `milestone/list.scala.html` and project shell partials; route-local theme contains paint only. Focused `stylex-project-milestones.e2e.ts` passed in the assembled 6/6 gate.
+
+## Batch 229 migration rows
+
+- `/$ownerName/$projectName/changeVCS`: migrated the VCS-change agreement/action and confirmation modal owners from `project/change_vcs.scala.html`; route-local theme owns paint only. Focused `stylex-project-change-vcs.e2e.ts` passed in the assembled 6/6 gate.
+- `/$ownerName/$projectName/transfer`: migrated the owner/agreement/action and confirmation modal owners from `project/transfer.scala.html`; React transfer mutation and modal state remain unchanged. Focused `stylex-project-transfer.e2e.ts` passed in the assembled 6/6 gate.
+- `/$ownerName/$projectName/newFork`: migrated the populated fork form/help/field/action owners from `git/fork.scala.html`; route-local theme owns paint only and fork navigation remains unchanged. Focused `stylex-project-new-fork.e2e.ts` passed in the assembled 6/6 gate.

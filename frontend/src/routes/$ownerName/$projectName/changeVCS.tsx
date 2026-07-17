@@ -1,6 +1,7 @@
 import { useState, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   changeProjectVcsRest,
   readProjectContainerQueryOptions,
@@ -18,6 +19,7 @@ import {
   ProjectHeader as SharedProjectHeader,
   ProjectMenu as SharedProjectMenu,
 } from "../$projectName";
+import { projectChangeVcsTheme } from "./-changeVCS.stylex";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -232,17 +234,29 @@ function ProjectChangeVcsBody({
             project={shellProject}
             projectName={projectName}
           />
-          <div className="bubble-wrap gray wp">
-            <div className="row-fluid">
-              <h3>
+          <div
+            className={`${stylex.props(styles.bubble).className} bubble-wrap gray wp`}
+            data-stylex-owner="project-change-vcs-bubble"
+          >
+            <div className="row-fluid" data-stylex-owner="project-change-vcs-row">
+              <h3 data-stylex-owner="project-change-vcs-heading">
                 {currentVcs} <i className="yobicon-right-2 vmiddle"></i> {nextVcs}
               </h3>
-              <div className="cu-desc">
-                <ul>
-                  <li className="notice">
+              <div
+                className={`${stylex.props(styles.description).className} cu-desc`}
+                data-stylex-owner="project-change-vcs-description"
+              >
+                <ul data-stylex-owner="project-change-vcs-notices">
+                  <li
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-change-vcs-notice"
+                  >
                     <strong>{t("project.changeVCS.description1", { args: [nextVcs] })}</strong>
                   </li>
-                  <li className="notice">
+                  <li
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-change-vcs-notice"
+                  >
                     <strong>{t("project.changeVCS.description2")}</strong>
                   </li>
                 </ul>
@@ -250,23 +264,32 @@ function ProjectChangeVcsBody({
                   <input
                     id="acceptChangeVCS"
                     type="checkbox"
-                    className="checkbox"
+                    className={`${stylex.props(styles.checkbox).className} checkbox`}
+                    data-stylex-owner="project-change-vcs-checkbox"
                     autoComplete="off"
                     checked={acceptedChangeVcs}
                     onChange={(event) => setAcceptedChangeVcs(event.currentTarget.checked)}
                   />
-                  <label htmlFor="acceptChangeVCS" className="bg-checkbox label-agreement">
+                  <label
+                    htmlFor="acceptChangeVCS"
+                    className={`${stylex.props(styles.agreementLabel).className} bg-checkbox label-agreement`}
+                    data-stylex-owner="project-change-vcs-agreement-label"
+                  >
                     {t("project.changeVCS.accept")}
                   </label>
                 </p>
               </div>
             </div>
           </div>
-          <div className="box-wrap bottom">
+          <div
+            className={`${stylex.props(styles.actionBox).className} box-wrap bottom`}
+            data-stylex-owner="project-change-vcs-action-box"
+          >
             <button
               id="btnChangeVCS"
               type="button"
               className="ybtn ybtn-danger"
+              data-stylex-owner="project-change-vcs-open-button"
               onClick={openChangeVcsModal}
             >
               <i className="yobicon-database"></i> {t("project.changeVCS.this")}
@@ -274,7 +297,8 @@ function ProjectChangeVcsBody({
           </div>
           <div
             id="alertChangeVCS"
-            className={`modal hide${changeVcsModalOpen ? " in" : ""}`}
+            className={`${stylex.props(styles.modal).className} modal hide${changeVcsModalOpen ? " in" : ""}`}
+            data-stylex-owner="project-change-vcs-modal"
             aria-hidden={changeVcsModalOpen ? false : changeVcsModalTouched ? true : undefined}
             style={
               changeVcsModalOpen
@@ -284,17 +308,17 @@ function ProjectChangeVcsBody({
                   : undefined
             }
           >
-            <div className="modal-header">
+            <div className="modal-header" data-stylex-owner="project-change-vcs-modal-header">
               <button type="button" className="close" onClick={dismissChangeVcsModal}>
                 ×
               </button>
               <h3>{t("project.changeVCS.requestion", { args: [nextVcs] })}</h3>
             </div>
-            <div className="modal-body">
+            <div className="modal-body" data-stylex-owner="project-change-vcs-modal-body">
               <p>{t("project.changeVCS.description2")}</p>
               <p>{t("project.changeVCS.reaccept")}</p>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" data-stylex-owner="project-change-vcs-modal-footer">
               <button
                 id="btnChangeVCSExec"
                 type="button"
@@ -310,7 +334,12 @@ function ProjectChangeVcsBody({
           </div>
         </div>
       </div>
-      {changeVcsModalOpen ? <div className="modal-backdrop in"></div> : null}
+      {changeVcsModalOpen ? (
+        <div
+          className={`${stylex.props(styles.backdrop).className} modal-backdrop in`}
+          data-stylex-owner="project-change-vcs-backdrop"
+        ></div>
+      ) : null}
     </>
   );
 }
@@ -424,6 +453,36 @@ function CountBadge({
 }) {
   return count > 0 ? <span className={className}>{count}</span> : null;
 }
+
+const styles = stylex.create({
+  bubble: {
+    backgroundColor: projectChangeVcsTheme.bubbleBackground,
+  },
+  description: {
+    display: "inline-block",
+  },
+  notice: {
+    color: projectChangeVcsTheme.noticeText,
+  },
+  checkbox: {
+    margin: "0px",
+  },
+  agreementLabel: {
+    verticalAlign: "middle",
+  },
+  actionBox: {
+    borderBottomColor: projectChangeVcsTheme.bottomBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    textAlign: "center",
+  },
+  modal: {
+    backgroundColor: projectChangeVcsTheme.modalBackground,
+  },
+  backdrop: {
+    backgroundColor: projectChangeVcsTheme.backdrop,
+  },
+});
 
 function recordField(value: unknown) {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};

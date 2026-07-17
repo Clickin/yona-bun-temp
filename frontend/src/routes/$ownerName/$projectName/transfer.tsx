@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type MouseEvent } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
@@ -14,6 +15,144 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { projectTransferColors } from "./-transfer.stylex";
+
+const styles = stylex.create({
+  actionBox: {
+    padding: { default: "20px 0 12px", "@media (max-width: 720px)": "10px 0" },
+    textAlign: "center",
+  },
+  action: {
+    backgroundColor: {
+      default: projectTransferColors.actionSurface,
+      ":hover": projectTransferColors.actionHoverSurface,
+      ":focus": projectTransferColors.actionHoverSurface,
+      ":active": projectTransferColors.actionHoverSurface,
+    },
+    borderColor: {
+      default: projectTransferColors.actionBorder,
+      ":hover": projectTransferColors.actionHoverBorder,
+      ":focus": projectTransferColors.actionHoverBorder,
+      ":active": projectTransferColors.actionHoverBorder,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: projectTransferColors.actionShadow,
+    color: {
+      default: projectTransferColors.actionText,
+      ":hover": projectTransferColors.actionHoverText,
+      ":focus": projectTransferColors.actionHoverText,
+      ":active": projectTransferColors.actionHoverText,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    margin: "0 0 0 .3em",
+    outline: "0 none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: { default: "none", ":hover": "none", ":focus": "none", ":active": "none" },
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  firstAction: { marginLeft: "0" },
+  dangerAction: {
+    backgroundColor: {
+      default: projectTransferColors.dangerSurface,
+      ":hover": projectTransferColors.dangerBorder,
+      ":focus": projectTransferColors.dangerBorder,
+      ":active": projectTransferColors.dangerBorder,
+    },
+    borderColor: {
+      default: projectTransferColors.dangerBorder,
+      ":hover": projectTransferColors.dangerBorder,
+      ":focus": projectTransferColors.dangerBorder,
+      ":active": projectTransferColors.dangerBorder,
+    },
+    color: {
+      default: projectTransferColors.primaryText,
+      ":hover": projectTransferColors.primaryText,
+      ":focus": projectTransferColors.primaryText,
+      ":active": projectTransferColors.primaryText,
+    },
+  },
+  modal: {
+    backgroundColor: projectTransferColors.modalSurface,
+    borderColor: projectTransferColors.modalBorder,
+    borderRadius: "6px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: projectTransferColors.modalShadow,
+    color: projectTransferColors.modalText,
+    left: { default: "50%", "@media (max-width: 720px)": "0" },
+    marginLeft: { default: "-280px", "@media (max-width: 720px)": "0" },
+    outline: "none",
+    position: "fixed",
+    top: "10%",
+    width: { default: "560px", "@media (max-width: 720px)": "100%" },
+    zIndex: "1050",
+  },
+  modalClosed: { display: "none" },
+  modalOpen: { display: "block" },
+  header: {
+    borderBottomColor: projectTransferColors.footerBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    padding: "9px 15px",
+  },
+  close: {
+    background: "transparent",
+    border: "0",
+    color: projectTransferColors.backdrop,
+    cursor: "pointer",
+    float: "right",
+    fontSize: "20px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginTop: "2px",
+    opacity: { default: "0.2", ":hover": "0.4", ":focus": "0.4" },
+    padding: "0",
+    textShadow: projectTransferColors.closeTextShadow,
+  },
+  heading: { fontSize: "24.5px", fontWeight: "700", lineHeight: "30px", margin: "0" },
+  body: { maxHeight: "400px", overflowY: "auto", padding: "15px", position: "relative" },
+  footer: {
+    backgroundColor: projectTransferColors.footerSurface,
+    borderRadius: "0 0 6px 6px",
+    borderTopColor: projectTransferColors.footerBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    boxShadow: projectTransferColors.footerShadow,
+    padding: "14px 15px 15px",
+    textAlign: "right",
+  },
+  backdrop: {
+    backgroundColor: projectTransferColors.backdrop,
+    bottom: "0",
+    left: "0",
+    opacity: "0.5",
+    position: "fixed",
+    right: "0",
+    top: "0",
+    zIndex: "1040",
+  },
+});
+
+const actionBoxStyleProps = stylex.props(styles.actionBox);
+const dangerActionStyleProps = stylex.props(styles.action, styles.firstAction, styles.dangerAction);
+const defaultActionStyleProps = stylex.props(styles.action);
+const headerStyleProps = stylex.props(styles.header);
+const closeStyleProps = stylex.props(styles.close);
+const headingStyleProps = stylex.props(styles.heading);
+const bodyStyleProps = stylex.props(styles.body);
+const footerStyleProps = stylex.props(styles.footer);
+const backdropStyleProps = stylex.props(styles.backdrop);
 
 const legacyLinkActiveOptions = {
   exact: true,
@@ -266,36 +405,72 @@ function ProjectTransferBody({
               </div>
             </div>
           </div>
-          <div className="box-wrap bottom">
+          <div
+            {...actionBoxStyleProps}
+            className={actionBoxStyleProps.className}
+            data-stylex-owner="project-transfer-action"
+          >
             <button
+              {...dangerActionStyleProps}
               type="button"
               id="btnTransfer"
-              className="ybtn ybtn-danger"
+              className={dangerActionStyleProps.className}
+              data-stylex-owner="project-transfer-action"
               onClick={openTransferModal}
             >
               <i className="yobicon-database"></i> {t("project.transfer.this")}
             </button>
           </div>
           <div
+            {...stylex.props(
+              styles.modal,
+              isTransferModalOpen ? styles.modalOpen : styles.modalClosed,
+            )}
             id="alertTransfer"
-            className={isTransferModalOpen ? "modal hide in" : "modal hide"}
-            style={isTransferModalOpen ? { display: "block" } : undefined}
+            data-stylex-owner="project-transfer-modal"
+            aria-hidden={!isTransferModalOpen}
           >
-            <div className="modal-header">
-              <button type="button" className="close" onClick={dismissTransferModal}>
+            <div
+              {...headerStyleProps}
+              className={headerStyleProps.className}
+              data-stylex-owner="project-transfer-modal-header"
+            >
+              <button
+                {...closeStyleProps}
+                type="button"
+                className={closeStyleProps.className}
+                data-stylex-owner="project-transfer-modal-header"
+                onClick={dismissTransferModal}
+              >
                 ×
               </button>
-              <h3>{t("project.transfer.requestion")}</h3>
+              <h3
+                {...headingStyleProps}
+                className={headingStyleProps.className}
+                data-stylex-owner="project-transfer-modal-header"
+              >
+                {t("project.transfer.requestion")}
+              </h3>
             </div>
-            <div className="modal-body">
+            <div
+              {...bodyStyleProps}
+              className={bodyStyleProps.className}
+              data-stylex-owner="project-transfer-modal-body"
+            >
               <p>{t("project.transfer.description")}</p>
               <p>{t("project.transfer.reaccept")}</p>
             </div>
-            <div className="modal-footer">
+            <div
+              {...footerStyleProps}
+              className={footerStyleProps.className}
+              data-stylex-owner="project-transfer-modal-footer"
+            >
               <button
+                {...dangerActionStyleProps}
                 id="btnTransferExec"
                 type="button"
-                className="ybtn ybtn-danger"
+                className={dangerActionStyleProps.className}
+                data-stylex-owner="project-transfer-modal-footer"
                 disabled={hasTransferRequestStarted || transferMutation.isPending}
                 onClick={() => {
                   if (hasTransferRequestStarted || transferMutation.isPending) {
@@ -307,14 +482,25 @@ function ProjectTransferBody({
               >
                 {t("button.yes")}
               </button>
-              <button type="button" className="ybtn" onClick={dismissTransferModal}>
+              <button
+                {...defaultActionStyleProps}
+                type="button"
+                className={defaultActionStyleProps.className}
+                data-stylex-owner="project-transfer-modal-footer"
+                onClick={dismissTransferModal}
+              >
                 {t("button.no")}
               </button>
             </div>
           </div>
           {isTransferModalOpen ? (
             // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- legacy Bootstrap backdrop is a div and dismisses the transfer modal on click.
-            <div className="modal-backdrop fade in" onClick={closeTransferModal}></div>
+            <div
+              {...backdropStyleProps}
+              className={backdropStyleProps.className}
+              data-stylex-owner="project-transfer-modal-backdrop"
+              onClick={closeTransferModal}
+            />
           ) : null}
         </div>
       </div>

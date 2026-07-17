@@ -3,36 +3,35 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const routeSource = readFileSync(
-  fileURLToPath(new URL("../src/routes/$ownerName/$projectName/deleteform.tsx", import.meta.url)),
+  fileURLToPath(new URL("../src/routes/$ownerName/$projectName/transfer.tsx", import.meta.url)),
   "utf8",
 );
 const styleSource = readFileSync(
   fileURLToPath(
-    new URL("../src/routes/$ownerName/$projectName/-deleteform.stylex.ts", import.meta.url),
+    new URL("../src/routes/$ownerName/$projectName/-transfer.stylex.ts", import.meta.url),
   ),
   "utf8",
 );
-
 const owners = [
-  "project-delete-action",
-  "project-delete-modal",
-  "project-delete-modal-header",
-  "project-delete-modal-body",
-  "project-delete-modal-footer",
-  "project-delete-modal-backdrop",
+  "project-transfer-action",
+  "project-transfer-modal",
+  "project-transfer-modal-header",
+  "project-transfer-modal-body",
+  "project-transfer-modal-footer",
+  "project-transfer-modal-backdrop",
 ] as const;
 
-test("project delete default and confirmation states have six direct StyleX owners", () => {
+test("project transfer default and confirmation states have six direct StyleX owners", () => {
   expect(new Set(owners).size).toBe(6);
   for (const owner of owners) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(routeSource).toContain('import * as stylex from "@stylexjs/stylex"');
-  expect(routeSource).toContain('from "./-deleteform.stylex"');
+  expect(routeSource).toContain('from "./-transfer.stylex"');
   expect(styleSource).toContain("stylex.defineVars({");
 });
 
-test("project delete route keeps geometry inline and moves only paint to the route theme", () => {
+test("project transfer keeps geometry inline and uses a paint-only route theme", () => {
   for (const geometryProperty of [
     "height:",
     "margin:",
@@ -51,7 +50,7 @@ test("project delete route keeps geometry inline and moves only paint to the rou
   expect(routeSource).toContain('top: "10%"');
 });
 
-test("project delete migrated owners retire legacy presentation and plugin hooks", () => {
+test("project transfer retires modal/button presentation hooks at owned nodes", () => {
   for (const retiredSource of [
     'className="box-wrap bottom"',
     'className="ybtn ybtn-danger"',
@@ -69,11 +68,11 @@ test("project delete migrated owners retire legacy presentation and plugin hooks
   }
   expect(routeSource).not.toMatch(/document\.(querySelector|getElementById|addEventListener)/);
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
-  expect(routeSource).toContain('setDeletionModalState("open")');
-  expect(routeSource).toContain("deleteMutation.mutate()");
+  expect(routeSource).toContain("setIsTransferModalOpen(true)");
+  expect(routeSource).toContain("transferMutation.mutate()");
 });
 
-test("project delete browser state preserves modal geometry and React dismissal", async ({
+test("project transfer browser state preserves modal geometry and React dismissal", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -83,11 +82,7 @@ test("project delete browser state preserves modal geometry and React dismissal"
       contentType: "application/json",
       body: JSON.stringify({
         actorId: 1,
-        avatarUrl: "/assets/images/default-avatar-32.png",
-        defaultLandingPath: "/",
-        emailAddress: "admin@example.com",
         isAnonymous: false,
-        isConfirmed: true,
         isSiteAdmin: true,
         loginId: "admin",
         userLabel: "Site Admin",
@@ -97,7 +92,7 @@ test("project delete browser state preserves modal geometry and React dismissal"
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
-      headers: { "x-csrf-token": "csrf-delete" },
+      headers: { "x-csrf-token": "csrf-transfer" },
       body: JSON.stringify({
         isAuthenticated: true,
         user: { loginId: "admin", name: "Site Admin" },
@@ -117,7 +112,6 @@ test("project delete browser state preserves modal geometry and React dismissal"
       pullRequest: true,
       review: true,
     },
-    organizationName: "",
     ownerName: "admin",
     projectName: "sample",
     vcs: "GIT",
@@ -125,33 +119,41 @@ test("project delete browser state preserves modal geometry and React dismissal"
     viewerCanUpdate: true,
     viewerCanWatch: false,
   };
-  // Both route queries are served by the owner/project REST container boundary;
-  // keep the parent project response available before the screen renders.
   await page.route("**/api/v1/owners/admin/projects/sample/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname.endsWith("/settings") || pathname.endsWith("/container")) {
       await route.fulfill({ contentType: "application/json", body: JSON.stringify(project) });
       return;
     }
+    if (pathname.endsWith("/transfer") && route.request().method() === "GET") {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          ownerName: "admin",
+          projectName: "sample",
+          viewerCanTransfer: true,
+        }),
+      });
+      return;
+    }
     await route.fallback();
   });
-  await page.goto(`${basePath}/admin/sample/deleteform`);
-  const action = page.locator('[data-stylex-owner="project-delete-action"]').last();
-  const modal = page.locator('[data-stylex-owner="project-delete-modal"]');
+  await page.goto(`${basePath}/admin/sample/transfer`);
+  const action = page.locator('[data-stylex-owner="project-transfer-action"]').last();
+  const modal = page.locator('[data-stylex-owner="project-transfer-modal"]');
   await expect(action).toBeVisible();
   await expect(modal).toHaveCSS("display", "none");
   await page.locator("#accept").check();
-  await page.locator("#btnDelete").click();
+  await page.locator("#btnTransfer").click();
   await expect(modal).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-delete-modal-backdrop"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-transfer-modal-backdrop"]')).toBeVisible();
   const geometry = await modal.evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    return { height: rect.height, left: rect.left, top: rect.top, width: rect.width };
+    return { left: rect.left, top: rect.top, width: rect.width };
   });
   expect(geometry.width).toBe(562);
-  // The legacy project shell centers the modal in its 1280px content frame.
-  expect(geometry.left).toBeCloseTo(360, 0);
-  expect(geometry.top).toBeCloseTo(72, 0);
-  await page.locator('[data-stylex-owner="project-delete-modal-footer"] button').last().click();
+  expect(geometry.left).toBeCloseTo(403, 0);
+  expect(geometry.top).toBeCloseTo(90, 0);
+  await page.locator('[data-stylex-owner="project-transfer-modal-footer"] button').last().click();
   await expect(modal).toBeHidden();
 });
