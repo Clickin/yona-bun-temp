@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twenty-one slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twenty-two slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -619,6 +619,21 @@ cascade evidence and is not applied. The BR, copy/order, add form, table, identi
 and actions remain unchanged. Genuine RED 2/2 becomes GREEN 2/2; all adjacent email StyleX
 coverage is GREEN 10/10 with exact desktop/mobile live geometry, fallback equivalence, and
 screenshots. This is not Wave 1 completion.
+
+The two-hundred-twenty-second slice migrates exactly five visible action-boundary owners in the
+authenticated `/user/editform/password` state: submit button, separator HR, reset section, reset
+action row, and reset Link. The complete live `.ybtn` base/interaction output moves to both action
+owners and `.ybtn-success` paint moves to the submit owner; undeclared `.ybtn-fail` contributes no
+rule. The two `_common.less .mt10` consumers and Bootstrap HR output move to their direct owners.
+`passwordActionColors` and `passwordSeparatorColors` remain separate paint-only route registries;
+geometry, type, spacing, and border structure stay literal. The two ybtn class sets and two mt10
+classes retire only from this state. Shared ybtn, generic HR/element reset, reset DL/DT, fields,
+validation popovers, and other consumers remain frozen fallback or independent owners. Genuine
+RED on the missing submit owner becomes focused GREEN 4/4 and the existing password-form suite is
+GREEN 4/4. Authenticated live/local desktop and mobile action geometry, paint, interaction,
+wrapping, screenshots, validation, and reset SPA navigation pass. The broad password screen test
+still reaches its pre-existing global-shell canonical DOM mismatch after the new owner boundary
+passes. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

@@ -126,7 +126,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await expect(
     page.locator('[data-stylex-owner="user-settings-edit-tab-link"]:has-text("User Token")'),
   ).toHaveAttribute("href", `${basePath}/user/editform/token`);
-  await expect(page.locator(".page-wrap > .mt10 a.ybtn-fail")).toHaveAttribute(
+  await expect(page.locator('[data-stylex-owner="user-password-reset-action"]')).toHaveAttribute(
     "href",
     `${basePath}/lostPassword`,
   );
@@ -362,6 +362,11 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-settings-edit-tab-link") return "";
         if (owner === "user-password-description")
           return current.querySelector('input[type="password"]') ? 'class="mt10"' : "";
+        if (owner === "user-password-submit-action") return 'class="ybtn ybtn-success"';
+        if (owner === "user-password-reset-section") return 'class="mt10"';
+        if (owner === "user-password-reset-description") return 'class="mt10"';
+        if (owner === "user-password-reset-action") return 'class="ybtn ybtn-fail"';
+        if (owner === "user-password-separator") return "";
         if (
           owner === "user-password-form" ||
           owner === "user-password-input" ||

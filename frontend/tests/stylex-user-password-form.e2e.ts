@@ -101,7 +101,7 @@ test("password form owners trace the legacy skeleton and frozen declarations", (
   );
   for (const owner of Object.values(owners))
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route.match(/className="mt10"/gu)).toHaveLength(2);
+  expect(route).not.toContain('className="mt10"');
   expect(route).not.toContain("globalColors.");
   expect(colors).toContain('inputSurface: "#ffffff"');
   expect(colors).toContain('inputBorder: "#cccccc"');

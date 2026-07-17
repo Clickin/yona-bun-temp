@@ -6,7 +6,11 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { changePasswordRest, readWorkspaceOverviewRest } from "../../../api/workspace";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { passwordSettingsColors } from "./-password.stylex";
+import {
+  passwordActionColors,
+  passwordSeparatorColors,
+  passwordSettingsColors,
+} from "./-password.stylex";
 
 const styles = stylex.create({
   form: {
@@ -58,6 +62,88 @@ const styles = stylex.create({
     verticalAlign: "middle",
     width: "206px",
   },
+  action: {
+    backgroundColor: {
+      default: passwordActionColors.surface,
+      ":active": passwordActionColors.interactiveSurface,
+      ":focus": passwordActionColors.interactiveSurface,
+      ":hover": passwordActionColors.interactiveSurface,
+    },
+    borderColor: {
+      default: passwordActionColors.border,
+      ":active": passwordActionColors.interactiveBorder,
+      ":focus": passwordActionColors.interactiveBorder,
+      ":hover": passwordActionColors.interactiveBorder,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: `0 1px 0 ${passwordActionColors.shadow}`,
+    color: {
+      default: passwordActionColors.text,
+      ":active": passwordActionColors.interactiveText,
+      ":focus": passwordActionColors.interactiveText,
+      ":hover": passwordActionColors.interactiveText,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    margin: "0px",
+    outlineStyle: "none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: {
+      default: "none",
+      ":active": "none",
+      ":focus": "none",
+      ":hover": "none",
+    },
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  submitAction: {
+    backgroundColor: {
+      default: passwordActionColors.primarySurface,
+      ":active": passwordActionColors.primarySurfaceInteractive,
+      ":focus": passwordActionColors.primarySurfaceInteractive,
+      ":hover": passwordActionColors.primarySurfaceInteractive,
+    },
+    borderColor: {
+      default: passwordActionColors.primaryBorder,
+      ":active": passwordActionColors.primaryBorder,
+      ":focus": passwordActionColors.primaryBorder,
+      ":hover": passwordActionColors.primaryBorder,
+    },
+    color: {
+      default: passwordActionColors.primaryText,
+      ":active": passwordActionColors.primaryText,
+      ":focus": passwordActionColors.primaryText,
+      ":hover": passwordActionColors.primaryText,
+    },
+  },
+  separator: {
+    borderBottomColor: passwordSeparatorColors.bottomBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderLeftStyle: "none",
+    borderLeftWidth: "0px",
+    borderRightStyle: "none",
+    borderRightWidth: "0px",
+    borderTopColor: passwordSeparatorColors.topBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    display: "block",
+    height: "0px",
+    margin: "20px 0px",
+    padding: "0px",
+  },
+  resetSection: { marginTop: "10px" },
+  resetDescription: { marginTop: "10px" },
 });
 
 const formStyleProps = stylex.props(styles.form);
@@ -66,6 +152,11 @@ const termStyleProps = stylex.props(styles.term);
 const descriptionStyleProps = stylex.props(styles.description);
 const spacedDescriptionStyleProps = stylex.props(styles.description, styles.spacedDescription);
 const inputStyleProps = stylex.props(styles.input);
+const submitActionStyleProps = stylex.props(styles.action, styles.submitAction);
+const separatorStyleProps = stylex.props(styles.separator);
+const resetSectionStyleProps = stylex.props(styles.resetSection);
+const resetDescriptionStyleProps = stylex.props(styles.resetDescription);
+const resetActionStyleProps = stylex.props(styles.action);
 
 export const Route = createFileRoute("/user/editform/password")({
   component: UserPasswordSettingsRoute,
@@ -187,18 +278,26 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
             <FieldPopover message={fieldErrors.retypedPassword} />
           </dd>
           <dd {...descriptionStyleProps} data-stylex-owner="user-password-description">
-            <button type="submit" className="ybtn ybtn-success">
+            <button
+              {...submitActionStyleProps}
+              type="submit"
+              data-stylex-owner="user-password-submit-action"
+            >
               {t("userinfo.changePassword")}
             </button>
           </dd>
         </dl>
       </form>
-      <hr />
-      <div className="mt10">
+      <hr {...separatorStyleProps} data-stylex-owner="user-password-separator" />
+      <div {...resetSectionStyleProps} data-stylex-owner="user-password-reset-section">
         <dl>
           <dt>{t("site.resetPasswordEmail.desc")}</dt>
-          <dd className="mt10">
-            <Link to="/lostPassword" className="ybtn ybtn-fail">
+          <dd {...resetDescriptionStyleProps} data-stylex-owner="user-password-reset-description">
+            <Link
+              {...resetActionStyleProps}
+              to="/lostPassword"
+              data-stylex-owner="user-password-reset-action"
+            >
               {t("site.resetPasswordEmail.title")}
             </Link>
           </dd>
