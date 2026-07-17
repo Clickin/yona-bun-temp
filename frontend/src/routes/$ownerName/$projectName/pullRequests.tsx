@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -25,6 +26,18 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { DefaultSearchErrorBody } from "../../-search-screen";
 import { SitePagination } from "../../sites/-pagination";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { styles } from "./-pull-requests.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  searchColumn: stylex.props(styles.searchColumn),
+  searchBar: stylex.props(styles.searchBar),
+  searchInput: stylex.props(styles.searchInput),
+  searchButton: stylex.props(styles.searchButton),
+  tabs: stylex.props(styles.tabs),
+  badge: stylex.props(styles.badge),
+  content: stylex.props(styles.content),
+} as const;
 
 const LEGACY_LIST_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -289,11 +302,12 @@ function ProjectPullRequestsBody({
   };
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div {...sx.page} data-stylex-owner="project-pullrequests-page">
+      <div data-stylex-owner="project-pullrequests-shell">
         <div className="row-fluid cb">
           <div
-            className="left-menu span2 search-wrap hide-in-mobile"
+            {...sx.searchColumn}
+            data-stylex-owner="project-pullrequests-search-column"
             style={{ paddingTop: 0, ...(leftMenuHiddenByTwoColumnMode ? { display: "none" } : {}) }}
           >
             <form
@@ -307,16 +321,21 @@ function ProjectPullRequestsBody({
               }}
             >
               <div className="search">
-                <div className="search-bar">
+                <div {...sx.searchBar} data-stylex-owner="project-pullrequests-search-bar">
                   <input
                     key={`filter:${search.filter}`}
                     name="filter"
-                    className="textbox full"
+                    {...sx.searchInput}
+                    data-stylex-owner="project-pullrequests-search-input"
                     type="text"
                     defaultValue={search.filter}
                     onChange={(event) => setFilterValue(event.currentTarget.value)}
                   />
-                  <button type="submit" className="search-btn">
+                  <button
+                    {...sx.searchButton}
+                    data-stylex-owner="project-pullrequests-search-button"
+                    type="submit"
+                  >
                     <i className="yobicon-search"></i>
                   </button>
                 </div>
@@ -383,7 +402,7 @@ function ProjectPullRequestsBody({
                 {t("pullRequest.new")}
               </Link>
             </div>
-            <ul className="nav nav-tabs nm pullrequeset-tab-menu">
+            <ul {...sx.tabs} data-stylex-owner="project-pullrequests-tabs">
               <li className={requestType === "open" ? "active" : ""}>
                 <Link
                   to="/$ownerName/$projectName/pullRequests"
@@ -392,7 +411,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.open")}
-                  <span className="num-badge">{pullRequests.openCount}</span>
+                  <span {...sx.badge}>{pullRequests.openCount}</span>
                 </Link>
               </li>
               <li className={requestType === "closed" ? "active" : ""}>
@@ -403,7 +422,7 @@ function ProjectPullRequestsBody({
                   {...LEGACY_LIST_LINK_PROPS}
                 >
                   {t("pullRequest.state.closed")}
-                  <span className="num-badge">{pullRequests.closedCount}</span>
+                  <span {...sx.badge}>{pullRequests.closedCount}</span>
                 </Link>
               </li>
               {isForked ? (
@@ -415,7 +434,7 @@ function ProjectPullRequestsBody({
                     {...LEGACY_LIST_LINK_PROPS}
                   >
                     {t("pullRequest.sent")}
-                    <span className="num-badge">
+                    <span {...sx.badge}>
                       {pullRequests.acceptedCount} / {pullRequests.sentCount}
                     </span>
                   </Link>
@@ -435,7 +454,7 @@ function ProjectPullRequestsBody({
                 />
               </li>
             </ul>
-            <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+            <div {...sx.content} data-stylex-owner="project-pullrequests-content">
               <div id="list" className="row-fluid tab-pane active">
                 <ProjectPullRequestRows
                   basePath={runtimeConfig.basePath}

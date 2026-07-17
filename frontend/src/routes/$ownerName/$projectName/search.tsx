@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
@@ -22,6 +23,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { styles } from "./-project-search.stylex";
 import {
   DefaultSearchErrorBody,
   emptySearchResult,
@@ -353,8 +355,11 @@ function ProjectSearchSuccessBody({
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="project-search-page">
+        <div
+          className={`${stylex.props(styles.results).className} project-page-wrap`}
+          data-stylex-owner="project-search-results"
+        >
           <div className="project-page-wrap">
             <div className="row-fluid">
               <div className="span2">

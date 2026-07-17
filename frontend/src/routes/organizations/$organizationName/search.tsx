@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
@@ -18,6 +19,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import { styles } from "./-organization-search.stylex";
 import {
   DefaultSearchErrorBody,
   emptySearchResult,
@@ -211,11 +213,17 @@ function OrganizationSearchBody({
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="organization-search-page"
+      >
         <div className="project-page-wrap">
           <div className="project-page-wrap">
             <div className="row-fluid">
-              <div className="span2">
+              <div
+                className={`${stylex.props(styles.category).className} span2`}
+                data-stylex-owner="organization-search-categories"
+              >
                 <ul className="lst-stacked unstyled search-category-wrap">
                   {ORGANIZATION_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
@@ -241,7 +249,10 @@ function OrganizationSearchBody({
                 </ul>
               </div>
               <div className="span10">
-                <div className="search-box-wrap">
+                <div
+                  className={`${stylex.props(styles.searchBox).className} search-box-wrap`}
+                  data-stylex-owner="organization-search-box"
+                >
                   <form
                     id="searchInnerForm"
                     method="get"
@@ -269,7 +280,10 @@ function OrganizationSearchBody({
 
                   <h3 className="search-result-title">{resultTitle}</h3>
                 </div>
-                <div className="search-result-wrap">
+                <div
+                  className={`${stylex.props(styles.result).className} search-result-wrap`}
+                  data-stylex-owner="organization-search-results"
+                >
                   <OrganizationSearchResultList
                     organizationName={organizationName}
                     result={result}
@@ -298,12 +312,20 @@ function OrganizationSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
-    return <div className="empty-result"></div>;
+    return (
+      <div
+        className={`${stylex.props(styles.empty).className} empty-result`}
+        data-stylex-owner="organization-search-empty"
+      ></div>
+    );
   }
 
   if (searchType === "project") {
     return (
-      <ul className="search-list-wrap">
+      <ul
+        className={`${stylex.props(styles.list).className} search-list-wrap`}
+        data-stylex-owner="organization-search-list"
+      >
         {result.items.map((item) => {
           const projectLink = internalLinkTarget(item.href, runtimeConfig);
           const originProjectLink =
@@ -384,7 +406,10 @@ function OrganizationSearchResultList({
   if (searchType === "user") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`${stylex.props(styles.list).className} search-list-wrap`}
+          data-stylex-owner="organization-search-list"
+        >
           {result.items.map((item) => {
             const userLink = internalLinkTarget(item.href, runtimeConfig);
 
@@ -441,7 +466,10 @@ function OrganizationSearchResultList({
 
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`${stylex.props(styles.list).className} search-list-wrap`}
+          data-stylex-owner="organization-search-list"
+        >
           {result.items.map((item) => {
             const itemLink = internalLinkTarget(item.href, runtimeConfig);
             const projectLink = internalLinkTarget(
@@ -527,7 +555,10 @@ function OrganizationSearchResultList({
   if (searchType === "milestone") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`${stylex.props(styles.list).className} search-list-wrap`}
+          data-stylex-owner="organization-search-list"
+        >
           {result.items.map((item) => {
             const itemLink = internalLinkTarget(item.href, runtimeConfig);
             const projectLink = internalLinkTarget(
