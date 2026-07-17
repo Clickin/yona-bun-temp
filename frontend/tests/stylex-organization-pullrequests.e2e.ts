@@ -22,6 +22,18 @@ test("records organization pull request list owners and responsive containment",
   expect(template).toContain('name="filter"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-tabs"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-search-input"');
+  for (const owner of [
+    "organization-pullrequests-list",
+    "organization-pullrequests-empty",
+    "organization-pullrequests-pagination",
+    "organization-pullrequests-row",
+    "organization-pullrequests-row-meta",
+    "organization-pullrequests-row-progress",
+    "organization-pullrequests-row-progress-fill",
+    "organization-pullrequests-row-state",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  }
   expect(theme).toContain("export const organizationPullRequestColors");
   await mockPullRequests(page);
   for (const viewport of [
@@ -31,6 +43,8 @@ test("records organization pull request list owners and responsive containment",
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/organizations/weblabs/pullrequests`);
     await expect(owner(page, "organization-pullrequests-tabs")).toBeVisible();
+    await expect(owner(page, "organization-pullrequests-list")).toBeVisible();
+    await expect(owner(page, "organization-pullrequests-empty")).toBeVisible();
     await expect(owner(page, "organization-pullrequests-search-input")).toHaveAttribute(
       "name",
       "filter",
@@ -64,7 +78,13 @@ async function mockPullRequests(page: Page) {
     await page.route(url, (route: Route) =>
       route.fulfill({ contentType: "application/json", json: session }),
     );
-  await page.route("**/api/v1/organizations/weblabs/pullrequests**", (route: Route) =>
+  await page.route("**/api/v1/organizations/weblabs/container", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { organizationName: "weblabs", viewerCanUpdate: true },
+    }),
+  );
+  await page.route("**/api/v1/organizations/weblabs/pull-requests**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: { items: [], openCount: 0, closedCount: 0, pageNum: 1, pageSize: 20, totalCount: 0 },

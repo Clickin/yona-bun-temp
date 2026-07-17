@@ -256,8 +256,8 @@ function OrganizationDeleteFormBody({
   });
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div className="page-wrap-outer" data-stylex-owner="organization-delete-page">
+      <div className="project-page-wrap" data-stylex-owner="organization-delete-shell">
         <OrganizationSettingMenu organizationName={organizationName} />
         <div
           {...actionBoxStyleProps}
@@ -353,7 +353,7 @@ function OrganizationSettingMenu({ organizationName }: { organizationName: strin
   const { t } = useLegacyMessages();
 
   return (
-    <ul className="nav nav-tabs">
+    <ul className="nav nav-tabs" data-stylex-owner="organization-delete-menu">
       <li className="">
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}

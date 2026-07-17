@@ -22,6 +22,14 @@ const sx = {
   activeTabButton: stylex.props(styles.tabButton, styles.activeTabButton),
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
+  list: stylex.props(styles.list),
+  empty: stylex.props(styles.empty),
+  row: stylex.props(styles.row),
+  meta: stylex.props(styles.meta),
+  state: stylex.props(styles.state),
+  pagination: stylex.props(styles.pagination),
+  progress: stylex.props(styles.progress),
+  progressFill: stylex.props(styles.progressFill),
 } as const;
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -209,7 +217,11 @@ function OrganizationPullRequestList({
   const totalPages = Math.ceil(pullRequests.totalCount / pullRequests.pageSize);
 
   return (
-    <ul className="post-list-wrap">
+    <ul
+      {...sx.list}
+      className={`${sx.list.className} post-list-wrap`}
+      data-stylex-owner="organization-pullrequests-list"
+    >
       {pullRequests.items.length > 0 ? (
         <>
           {pullRequests.items.map((pullRequest) => (
@@ -231,7 +243,11 @@ function OrganizationPullRequestList({
           />
         </>
       ) : (
-        <div className="error-wrap">
+        <div
+          {...sx.empty}
+          className={`${sx.empty.className} error-wrap`}
+          data-stylex-owner="organization-pullrequests-empty"
+        >
           <i className="ico ico-err1"></i>
           <p>{t("pullRequest.is.empty")}</p>
         </div>
@@ -291,7 +307,12 @@ function OrganizationPullRequestPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
+    <div
+      {...sx.pagination}
+      id="pagination"
+      className={`${sx.pagination.className} page-navigation-wrap`}
+      data-stylex-owner="organization-pullrequests-pagination"
+    >
       <ul className="page-nums">
         <li className="page-num ikon">
           {safeCurrentPage > 1 ? (
@@ -402,7 +423,12 @@ function OrganizationPullRequestItem({
   };
 
   return (
-    <li className="post-item title" {...pullRequestRowAttrs}>
+    <li
+      {...sx.row}
+      className={`${sx.row.className} post-item title`}
+      data-stylex-owner="organization-pullrequests-row"
+      {...pullRequestRowAttrs}
+    >
       <div className="span10 span-hard-wrap">
         <Link
           params={{ user: pullRequest.contributorLoginId }}
@@ -432,7 +458,11 @@ function OrganizationPullRequestItem({
             {titleParts.title}
           </Link>
         </div>
-        <div className="infos">
+        <div
+          {...sx.meta}
+          className={`${sx.meta.className} infos`}
+          data-stylex-owner="organization-pullrequests-row-meta"
+        >
           {pullRequest.contributorLabel ? (
             <Link
               params={{ user: pullRequest.contributorLoginId }}
@@ -456,10 +486,20 @@ function OrganizationPullRequestItem({
             {pullRequest.projectName}
           </Link>
           {pullRequest.commentThreadCount > 0 ? (
-            <div className="infos-item" style={{ marginRight: 20 }}>
+            <div
+              {...sx.progress}
+              className={`${sx.progress.className} infos-item`}
+              data-stylex-owner="organization-pullrequests-row-progress"
+              style={{ marginRight: 20 }}
+            >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
-                <div className="bar orange" style={{ width: `${percent}%` }}></div>
+                <div
+                  {...sx.progressFill}
+                  className={`${sx.progressFill.className} bar orange`}
+                  data-stylex-owner="organization-pullrequests-row-progress-fill"
+                  style={{ width: `${percent}%` }}
+                ></div>
               </div>
               <Link
                 params={pullRequestParams}
@@ -494,7 +534,13 @@ function OrganizationPullRequestItem({
             <div className="empty-avatar-wrap">&nbsp;</div>
           )}
         </div>
-        <div className={`state ${stateKey} pull-right`}>{t(`pullRequest.state.${stateKey}`)}</div>
+        <div
+          {...sx.state}
+          className={`${sx.state.className} state ${stateKey} pull-right`}
+          data-stylex-owner="organization-pullrequests-row-state"
+        >
+          {t(`pullRequest.state.${stateKey}`)}
+        </div>
       </div>
     </li>
   );

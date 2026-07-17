@@ -444,3 +444,11 @@ Manual multi-screen exception note: Batch248 intentionally coordinated the indep
 - `/organizations/$organizationName/members`: migrated organization member page/shell/header/add-form/list/metadata owners from `organization/members.scala.html` and member partials; route-local paint, typeahead, role mutation, delete modal, and query behavior remain React-owned. Focused `stylex-organization-members-list.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch249 intentionally coordinated the independent organization-members and project-transfer route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once. The explored lost-password owner was reverted before integration after its existing authenticated-state test contract rejected the new boundary.
+
+## Batch 250 migration rows
+
+- `/migration`: migrated disabled migration page/layout/notice ownership from `migrationPageLayout.scala.html` and migration views; route-local paint, disabled controls, progress geometry, and output behavior remain unchanged. Focused `stylex-migration-disabled-shell.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/deleteForm`: migrated organization delete page/shell/menu owners from `organization/deleteForm.scala.html` and organization shell partials; existing action/modal/header/body/footer/backdrop ownership and delete mutation remain React-owned. Focused `stylex-organization-delete-form.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/pullrequests`: migrated organization pull-request list/empty/pagination/row metadata/progress/state owners from `group_pullrequest_list.scala.html` and partials; existing search/tabs/query/navigation behavior remains React-owned. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch250 intentionally coordinated the independent migration, organization delete, and organization pull-request route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once.

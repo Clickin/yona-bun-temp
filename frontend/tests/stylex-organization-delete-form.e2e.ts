@@ -16,6 +16,9 @@ const styleSource = readFileSync(
 );
 
 const owners = [
+  "organization-delete-page",
+  "organization-delete-shell",
+  "organization-delete-menu",
   "organization-delete-action",
   "organization-delete-modal",
   "organization-delete-modal-header",
@@ -24,8 +27,8 @@ const owners = [
   "organization-delete-modal-backdrop",
 ] as const;
 
-test("organization delete default and confirmation states have six direct StyleX owners", () => {
-  expect(new Set(owners).size).toBe(6);
+test("organization delete default and confirmation states have direct StyleX owners", () => {
+  expect(new Set(owners).size).toBe(owners.length);
   for (const owner of owners) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }

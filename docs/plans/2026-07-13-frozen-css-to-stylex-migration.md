@@ -3270,6 +3270,8 @@ Batch 248 applied the workflow to the restart notice, organization boards, and u
 
 Batch 249 applied the workflow to organization members and project transfer form residual owners. The assembled 7-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch; the explored lost-password owner was reverted because its existing authenticated-state contract rejected the added boundary.
 
+Batch 250 applied the workflow to the migration disabled shell, organization delete form, and organization pull-request list. The assembled 9-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

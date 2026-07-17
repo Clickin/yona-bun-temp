@@ -10,6 +10,9 @@ async function openMigration(page: Page) {
   await page.goto(`${basePath}/migration`);
   const owner = page.locator('[data-stylex-owner="migration-disabled-shell"]');
   await expect(owner).toBeVisible();
+  await expect(page.locator('[data-stylex-page-owner="migration-page"]')).toBeVisible();
+  await expect(owner.locator('[data-stylex-owner="migration-layout"]')).toBeVisible();
+  await expect(owner.locator('[data-stylex-owner="migration-notice"]')).toBeVisible();
   return owner;
 }
 

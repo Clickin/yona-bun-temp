@@ -6,6 +6,11 @@ export const organizationPullRequestColors = stylex.defineVars({
   inputBorder: "#cccccc",
   inputText: "#555555",
   link: "#3592b5",
+  emptySurface: "#f7f7f7",
+  metaText: "#777777",
+  stateText: "#555555",
+  progressSurface: "#f5f5f5",
+  progressFill: "#f0ad4e",
 });
 
 export const styles = stylex.create({
@@ -54,4 +59,12 @@ export const styles = stylex.create({
   activeTabButton: { color: "#555", fontWeight: "700" },
   badge: { color: organizationPullRequestColors.badge, fontWeight: "700", marginLeft: "4px" },
   content: { clear: "both", paddingTop: "15px" },
+  list: { listStyle: "none" },
+  empty: { backgroundColor: organizationPullRequestColors.emptySurface },
+  row: { borderBottomColor: organizationPullRequestColors.border },
+  meta: { color: organizationPullRequestColors.metaText },
+  state: { color: organizationPullRequestColors.stateText },
+  pagination: { color: organizationPullRequestColors.metaText },
+  progress: { backgroundColor: organizationPullRequestColors.progressSurface },
+  progressFill: { backgroundColor: organizationPullRequestColors.progressFill },
 });

@@ -149,8 +149,9 @@ function MigrationScreen() {
     <div
       className={`yobi-migration ${disabledShellClassName}`}
       data-stylex-owner="migration-disabled-shell"
+      data-stylex-page-owner="migration-page"
     >
-      <div className="header-pannel">
+      <div className="header-pannel" data-stylex-owner="migration-layout">
         <div
           className={`comeback-text pull-right ${comebackClassName}`}
           data-stylex-part="migration-disabled-comeback"
@@ -160,7 +161,9 @@ function MigrationScreen() {
         </div>
         <div className={`row title-text-bg ${titleTextBgClassName}`}>
           <div id="system-msg" className={`well board ${boardClassName}`}>
-            <div className="messages">{t("error.forbidden.or.not.allowed")}</div>
+            <div className="messages" data-stylex-owner="migration-notice">
+              {t("error.forbidden.or.not.allowed")}
+            </div>
           </div>
         </div>
         <div className="status">
