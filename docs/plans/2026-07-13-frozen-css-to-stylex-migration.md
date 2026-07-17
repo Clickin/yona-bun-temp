@@ -29,7 +29,7 @@ presentation classes, `app.css` responsibility, active generated-fallback bytes/
 retired fallback modules. A large slice count with unchanged fallback modules must not be reported
 as near completion.
 
-The post-Batch225 execution snapshot is 31/116 route TSX files importing StyleX, 83/116 route TSX
+The post-Batch226 execution snapshot is 34/116 route TSX files importing StyleX, 83/116 route TSX
 files still containing `className` syntax, 7,865 `app.css` lines, and a 25,177-line /
 526,260-byte generated fallback. No major Bootstrap, Yobi, usermenu, or plugin module is fully
 retired. This supports a conservative 20–30% overall completion estimate and is the baseline the
@@ -308,6 +308,13 @@ integration. After correcting downstream parity fixtures (dynamic CSRF, legacy t
 canonicalization, populated geometry baselines, and transition-stable focus sampling), the
 assembled browser gate is GREEN 14/14. Typecheck, Vitest 11/11, lint/format/diff, production
 build, StyleX verifier, and unchanged fallback hash `6417f445…16f` also pass.
+
+Batch 226 applied the same workflow to three independent routes (8 focused tests in one Playwright
+run): empty user-files search, organization delete confirmation, and organization members list.
+The assembled browser gate is GREEN 8/8; typecheck, Vitest 11/11, lint/format/diff, production
+build, StyleX verifier, and unchanged fallback hash also pass. The local user-files shell has a
+documented shared-ancestry offset from the live Java shell; owner-local geometry remains exact and
+no route-specific compensation was added.
 
 ## 6. E2E selector migration policy
 
