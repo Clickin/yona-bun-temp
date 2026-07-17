@@ -188,20 +188,12 @@ export function ProjectCodeHistoryBody({
         <div className="bubble-wrap dark-gray repo-wrap" data-stylex-owner="project-commits-shell">
           <div className="code-browse-wrap">
             <div
-              className={`select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-              style={{ width: 220 }}
+              className={`${stylex.props(styles.branchPicker).className} select2-container pull-right${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-stylex-owner="project-commits-branch-picker"
             >
               <button
                 type="button"
-                className="select2-choice"
-                style={{
-                  fontFamily: "inherit",
-                  fontSize: "inherit",
-                  fontWeight: "inherit",
-                  textAlign: "left",
-                  width: "100%",
-                }}
+                className={`${stylex.props(styles.branchButton).className} select2-choice`}
                 aria-expanded={branchMenuOpen}
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
@@ -221,8 +213,7 @@ export function ProjectCodeHistoryBody({
                 aria-label={t("title.branches")}
               />
               <div
-                className={`select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
-                style={branchMenuOpen ? { display: "block", width: 220 } : undefined}
+                className={`${branchMenuOpen ? (stylex.props(styles.branchDropdown).className ?? "") : ""} select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
               >
                 <div className="select2-search">
                   <input
@@ -239,14 +230,7 @@ export function ProjectCodeHistoryBody({
                     >
                       <button
                         type="button"
-                        className="select2-result-label"
-                        style={{
-                          fontFamily: "inherit",
-                          fontSize: "inherit",
-                          fontWeight: "inherit",
-                          textAlign: "left",
-                          width: "100%",
-                        }}
+                        className={`${stylex.props(styles.branchButton).className} select2-result-label`}
                         onClick={() => {
                           setBranchMenuOpen(false);
                           router.history.push(
@@ -296,8 +280,7 @@ export function ProjectCodeHistoryBody({
             </select>
 
             <ul
-              className="nav nav-tabs"
-              style={{ marginBottom: "20px" }}
+              className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
               data-stylex-owner="project-commits-tabs"
             >
               <li>
