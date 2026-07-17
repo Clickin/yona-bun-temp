@@ -681,10 +681,10 @@ function TwoColumnModeCheckbox() {
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
+      className={`${stylex.props(styles.twoColumnMode).className} two-column-icon mr10 hide-in-mobile`}
+      data-stylex-owner="project-posts-two-column-mode"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      style={{ position: "relative" }}
       onBlur={hideDelayedPopover}
       onFocus={showDelayedPopover}
       onMouseEnter={showDelayedPopover}
@@ -735,7 +735,10 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   };
 
   return (
-    <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
+    <div
+      className={`${stylex.props(styles.keymap).className} pull-left`}
+      data-stylex-owner="project-posts-keymap"
+    >
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"
