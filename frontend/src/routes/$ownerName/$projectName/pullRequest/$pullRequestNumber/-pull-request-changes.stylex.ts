@@ -15,6 +15,9 @@ export const styles = stylex.create({
     color: pullRequestChangesColors.surface,
     overflowX: "auto",
   },
+  reviewTabs: { marginBottom: "10px" },
+  editorTabContent: { position: "relative", overflow: "visible" },
+  originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
   diffMeta: { cursor: "pointer" },
   visibleForm: { display: "block" },
 });

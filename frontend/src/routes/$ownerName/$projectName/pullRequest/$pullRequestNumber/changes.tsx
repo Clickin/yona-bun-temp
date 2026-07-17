@@ -654,7 +654,8 @@ function OriginalMessageMarkdown({
       ) : null}
       <button
         type="button"
-        style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+        {...stylex.props(styles.originalMessageToggle)}
+        data-stylex-owner="pull-request-changes-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -750,7 +751,10 @@ function ReviewWrap({
           <i className="yobicon-maximize"></i>
         </button>
 
-        <ul className="nav nav-tabs" style={{ marginBottom: "10px" }}>
+        <ul
+          className={`${stylex.props(styles.reviewTabs).className} nav nav-tabs`}
+          data-stylex-owner="pull-request-changes-review-tabs"
+        >
           <li className={reviewCardTab === "open" ? "active" : undefined}>
             <button type="button" onClick={() => setReviewCardTab("open")}>
               {t("issue.state.open")} {openThreads.length}
@@ -1755,7 +1759,10 @@ function Editor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
+        data-stylex-owner="pull-request-changes-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${mode === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
