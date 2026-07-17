@@ -416,7 +416,10 @@ function FolderList({
       </div>
 
       {code.entries.length === 0 ? (
-        <div className="alert alert-warning nm" style={{ borderTop: 0, paddingLeft: "23px" }}>
+        <div
+          className={`${stylex.props(styles.noFiles).className} alert alert-warning nm`}
+          data-stylex-owner="project-code-file-no-files"
+        >
           {t("code.nofiles")}
         </div>
       ) : null}

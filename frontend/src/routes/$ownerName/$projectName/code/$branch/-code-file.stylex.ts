@@ -10,6 +10,10 @@ export const codeFileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  noFiles: {
+    borderTop: 0,
+    paddingLeft: "23px",
+  },
   fileWrap: {
     display: "block",
     width: "100%",
