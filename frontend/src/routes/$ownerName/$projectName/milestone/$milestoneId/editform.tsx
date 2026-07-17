@@ -14,7 +14,7 @@ import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectMilestoneNotFoundBody, ProjectMilestoneNotFoundTitle } from "../$milestoneId";
-import { milestoneEditFormTheme } from "./-milestone-editform.stylex";
+import { milestoneEditFormStyles, milestoneEditFormTheme } from "./-milestone-editform.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
   component: ProjectMilestoneEditFormRoute,
@@ -189,7 +189,10 @@ function ProjectMilestoneEditFormBody({
                   data-stylex-owner="milestone-edit-form-editor-pane"
                 >
                   <dl>
-                    <dd style={{ position: "relative" }}>
+                    <dd
+                      {...stylex.props(milestoneEditFormStyles.editorWrapper)}
+                      data-stylex-owner="milestone-edit-form-editor-wrapper"
+                    >
                       <MilestoneMarkdownEditor
                         focusRequest={contentFocusRequest}
                         contents={stringField(milestone.contentsMarkdown, "")}
@@ -361,9 +364,8 @@ function MilestoneMarkdownEditor({
         </li>
       </ul>
       <div
-        className={`${stylex.props(styles.editorContent).className} tab-content`}
+        className={`${stylex.props(milestoneEditFormStyles.editorContent).className} tab-content`}
         data-stylex-owner="milestone-edit-form-editor-content"
-        style={{ position: "relative", overflow: "visible" }}
       >
         <LegacyMarkdownHelp />
         <div
@@ -615,7 +617,6 @@ const styles = stylex.create({
   actions: { textAlign: "right" },
   rightPane: { display: "block" },
   editorTabs: { borderBottomColor: milestoneEditFormTheme.inputBorder },
-  editorContent: { backgroundColor: milestoneEditFormTheme.editorSurface },
   uploadControls: { color: milestoneEditFormTheme.mutedText },
   stateOptions: { color: milestoneEditFormTheme.optionText },
   dueDateOptions: { color: milestoneEditFormTheme.optionText },

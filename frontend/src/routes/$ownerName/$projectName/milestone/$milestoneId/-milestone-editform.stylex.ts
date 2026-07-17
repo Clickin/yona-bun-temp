@@ -10,3 +10,12 @@ export const milestoneEditFormTheme = stylex.defineVars({
   optionText: "#333333",
   uploadSurface: "#fafafa",
 });
+
+export const milestoneEditFormStyles = stylex.create({
+  editorWrapper: { position: "relative" },
+  editorContent: {
+    backgroundColor: milestoneEditFormTheme.editorSurface,
+    overflow: "visible",
+    position: "relative",
+  },
+});
