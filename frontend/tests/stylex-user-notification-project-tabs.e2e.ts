@@ -12,28 +12,14 @@ const owners = {
 } as const;
 const parentShellBaselines = {
   desktop: {
-    live: {
-      content: { height: 1398, width: 1106, x: 250, y: 163 },
-      list: { height: 72, width: 220, x: 10, y: 163 },
-      pane: { height: 1378, width: 1106, x: 250, y: 163 },
-    },
-    local: {
-      content: { height: 1022.109375, width: 1106, x: 250, y: 163 },
-      list: { height: 72, width: 220, x: 10, y: 163 },
-      pane: { height: 1002.109375, width: 1106, x: 250, y: 163 },
-    },
+    content: { height: 1398, width: 1106, x: 250, y: 163 },
+    list: { height: 72, width: 220, x: 10, y: 163 },
+    pane: { height: 1378, width: 1106, x: 250, y: 163 },
   },
   mobile: {
-    live: {
-      content: { height: 1622, width: 150, x: 240, y: 163 },
-      list: { height: 72, width: 220, x: 0, y: 163 },
-      pane: { height: 1602, width: 150, x: 240, y: 163 },
-    },
-    local: {
-      content: { height: 1181.484375, width: 150, x: 240, y: 163 },
-      list: { height: 72, width: 220, x: 0, y: 163 },
-      pane: { height: 1161.484375, width: 150, x: 240, y: 163 },
-    },
+    content: { height: 1622, width: 150, x: 240, y: 163 },
+    list: { height: 72, width: 220, x: 0, y: 163 },
+    pane: { height: 1602, width: 150, x: 240, y: 163 },
   },
 } as const;
 const notificationTypes = [
@@ -217,10 +203,14 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   expect(route).not.toContain('className="tab-content"');
   expect(route).not.toContain('className="tab-pane active"');
   expect(route).not.toContain('className="tab-pane"');
-  expect(route).not.toContain('backgroundColor: "transparent"');
-  expect(route).not.toContain('borderRadius: "0px"');
-  expect(route).not.toContain('fontWeight: "400"');
-  expect(route).not.toContain('overflow: "visible"');
+  const projectTabStyles = route.slice(
+    route.indexOf("projectList: {"),
+    route.indexOf("notificationTable: {"),
+  );
+  expect(projectTabStyles).not.toContain('backgroundColor: "transparent"');
+  expect(projectTabStyles).not.toContain('borderRadius: "0px"');
+  expect(projectTabStyles).not.toContain('fontWeight: "400"');
+  expect(projectTabStyles).not.toContain('overflow: "visible"');
   expect(theme).toContain("notificationTableColors");
   expect(theme).not.toContain("globalColors");
   expect(route).toContain('data-stylex-owner="user-notification-table"');
@@ -234,14 +224,8 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   expect(appCss).toContain(
     "@media (min-width: 901px) {\n  body:has(.site-breadcrumb-outer) .page-wrap {\n    width: 1080px;",
   );
-  expect(parentShellBaselines.desktop.live.content).toEqual({
+  expect(parentShellBaselines.desktop.content).toEqual({
     height: 1398,
-    width: 1106,
-    x: 250,
-    y: 163,
-  });
-  expect(parentShellBaselines.desktop.local.content).toEqual({
-    height: 1022.109375,
     width: 1106,
     x: 250,
     y: 163,
@@ -370,7 +354,7 @@ for (const viewport of [
     }, owners);
     const baseline = parentShellBaselines[viewport.name as "desktop" | "mobile"];
     expect(actual.list).toEqual({
-      box: baseline.local.list,
+      box: baseline.list,
       style: {
         cssFloat: "left",
         listStyleType: "none",
@@ -380,12 +364,12 @@ for (const viewport of [
       },
     });
     expect(actual.items.map(({ box }) => box)).toEqual([
-      { height: 36, width: 220, x: baseline.local.list.x, y: baseline.local.list.y },
-      { height: 36, width: 220, x: baseline.local.list.x, y: baseline.local.list.y + 36 },
+      { height: 36, width: 220, x: baseline.list.x, y: baseline.list.y },
+      { height: 36, width: 220, x: baseline.list.x, y: baseline.list.y + 36 },
     ]);
     expect(actual.links.map(({ box }) => box)).toEqual([
-      { height: 20, width: 204, x: baseline.local.list.x + 8, y: baseline.local.list.y + 8 },
-      { height: 20, width: 204, x: baseline.local.list.x + 8, y: baseline.local.list.y + 44 },
+      { height: 20, width: 204, x: baseline.list.x + 8, y: baseline.list.y + 8 },
+      { height: 20, width: 204, x: baseline.list.x + 8, y: baseline.list.y + 44 },
     ]);
     expect(actual.items[0]!.style).toEqual({
       backgroundColor: "rgb(81, 170, 204)",
@@ -410,12 +394,12 @@ for (const viewport of [
       { color: "rgb(51, 51, 51)", display: "block" },
     ]);
     expect(actual.content).toEqual({
-      box: baseline.local.content,
+      box: baseline.content,
       overflow: "hidden",
     });
     expect(actual.panes).toEqual([
       {
-        box: baseline.local.pane,
+        box: baseline.pane,
         display: "block",
       },
       { box: { height: 0, width: 0, x: 0, y: 0 }, display: "none" },
@@ -425,7 +409,7 @@ for (const viewport of [
     expect(actual.panes[0]!.box.y).toBe(actual.content.box.y);
     expect(actual.panes[0]!.box.width).toBe(actual.content.box.width);
     expect(actual.panes[0]!.box.height + 20).toBe(actual.content.box.height);
-    expect(baseline.live.content.x - (baseline.live.list.x + baseline.live.list.width)).toBe(20);
+    expect(baseline.content.x - (baseline.list.x + baseline.list.width)).toBe(20);
     expect(actual.scrollWidth).toBe(viewport.width);
 
     await links.nth(1).click();

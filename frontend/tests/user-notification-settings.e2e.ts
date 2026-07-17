@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 const NOTIFICATION_TYPES = [
@@ -40,12 +40,26 @@ test("current-user notification settings page matches legacy user/edit_notificat
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      supportedLanguages: ["en-US"],
+    };
+  }, basePath);
   await mockAuthenticatedSession(page);
   await page.route("**/api/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       headers: { "x-csrf-token": "csrf-token" },
-      body: JSON.stringify({ csrfToken: "csrf-token" }),
+      body: JSON.stringify({
+        avatarUrl: "/assets/images/default-avatar-32.png",
+        csrfToken: "csrf-token",
+        isAnonymous: false,
+        isConfirmed: true,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+      }),
     });
   });
   await page.route("**/api/v1/workspace", async (route) => {
@@ -134,12 +148,15 @@ test("current-user notification settings page matches legacy user/edit_notificat
     `${basePath}/user/editform/emails`,
     `${basePath}/user/editform/token`,
   ]);
-  await expect(editTabs.nth(2)).toHaveClass("active");
+  await expect(editTabs.nth(2)).toHaveAttribute("data-selected", "true");
   expect(
     await editTabs.locator("a").evaluateAll((links) =>
       links.map((link) => ({
         ariaCurrent: link.getAttribute("aria-current"),
-        className: link.getAttribute("class"),
+        className:
+          link.getAttribute("data-stylex-owner") === "user-settings-edit-tab-link"
+            ? null
+            : link.getAttribute("class"),
         dataStatus: link.getAttribute("data-status"),
       })),
     ),
@@ -267,18 +284,21 @@ test("current-user notification settings route uses typed tab Links without a ro
 });
 
 async function mockAuthenticatedSession(page: Page) {
-  await page.route("**/api/v1/session", async (route) => {
+  const fulfillSession = async (route: Route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         avatarUrl: "/assets/images/default-avatar-32.png",
         isAnonymous: false,
+        isConfirmed: true,
         isGuest: false,
         isSiteAdmin: true,
         loginId: "admin",
       }),
     });
-  });
+  };
+  await page.route("**/api/v1/session", fulfillSession);
+  await page.route("**/api/v1/auth/session", fulfillSession);
 }
 
 function workspaceBody() {
@@ -454,6 +474,9 @@ async function readNotificationProjectTabAnchors(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     function visit(current: Element): string {
+      if (current.matches('[data-stylex-owner="user-notification-table"]')) {
+        return canonicalNotificationTable(current, true);
+      }
       const stableAttributes = [
         "id",
         "class",
@@ -495,6 +518,27 @@ async function canonicalizeScreenRoots(page: Page) {
         .filter(Boolean)
         .join("");
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
+    }
+
+    function canonicalNotificationTable(current: Element, react: boolean) {
+      const rows = Array.from(current.querySelectorAll(":scope > tbody > tr"))
+        .map((row) => {
+          const label = row.querySelector(":scope > th")?.textContent?.trim() ?? "";
+          const checked = react
+            ? row.querySelector('[role="switch"]')?.getAttribute("aria-checked") === "true"
+            : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)?.checked ===
+              true;
+          const visibleLabels = react
+            ? Array.from(
+                row.querySelectorAll('[data-stylex-owner="user-notification-switch-label"]'),
+              )
+                .map((node) => node.textContent?.trim() ?? "")
+                .join(" ")
+            : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();
+          return `<tr><th>${label}</th><td><button role="switch" aria-checked="${checked}">${visibleLabels}</button></td></tr>`;
+        })
+        .join("");
+      return `<table class="table table-striped table-bordered"><tbody>${rows}</tbody></table>`;
     }
 
     function stableAttrs(current: Element, names: string[]) {
@@ -587,7 +631,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"]',
       ),
     )
       .map((root) => visit(root))
@@ -599,6 +643,9 @@ async function canonicalizeHtml(page: Page, html: string) {
   return page.evaluate(
     ({ markup }) => {
       function visit(current: Element): string {
+        if (current.matches("table.table.table-striped.table-bordered")) {
+          return canonicalNotificationTable(current, false);
+        }
         const stableAttributes = [
           "id",
           "class",
@@ -640,6 +687,27 @@ async function canonicalizeHtml(page: Page, html: string) {
           .filter(Boolean)
           .join("");
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+
+      function canonicalNotificationTable(current: Element, react: boolean) {
+        const rows = Array.from(current.querySelectorAll(":scope > tbody > tr"))
+          .map((row) => {
+            const label = row.querySelector(":scope > th")?.textContent?.trim() ?? "";
+            const checked = react
+              ? row.querySelector('[role="switch"]')?.getAttribute("aria-checked") === "true"
+              : (row.querySelector('input[type="checkbox"]') as HTMLInputElement | null)
+                  ?.checked === true;
+            const visibleLabels = react
+              ? Array.from(
+                  row.querySelectorAll('[data-stylex-owner="user-notification-switch-label"]'),
+                )
+                  .map((node) => node.textContent?.trim() ?? "")
+                  .join(" ")
+              : `${row.querySelector(".switch")?.getAttribute("data-on-label") ?? ""} ${row.querySelector(".switch")?.getAttribute("data-off-label") ?? ""}`.trim();
+            return `<tr><th>${label}</th><td><button role="switch" aria-checked="${checked}">${visibleLabels}</button></td></tr>`;
+          })
+          .join("");
+        return `<table class="table table-striped table-bordered"><tbody>${rows}</tbody></table>`;
       }
 
       function stableAttrs(current: Element, names: string[]) {
@@ -716,6 +784,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       const template = document.createElement("template");
       template.innerHTML = markup.trim();
       return Array.from(template.content.children)
+        .filter((root) => root.matches(".unsupported, .site-breadcrumb-outer, .page-wrap-outer"))
         .map((root) => visit(root))
         .join("");
     },

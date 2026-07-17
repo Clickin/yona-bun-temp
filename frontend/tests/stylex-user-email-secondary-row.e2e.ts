@@ -45,6 +45,8 @@ test("records pending secondary-email source evidence and the exact five-owner b
   expect(common).toContain(".ml10 { margin-left:10px; }");
   expect(common).toContain(".mr5 { margin-right:5px; }");
   expect(yobiUi).toContain(".ybtn, .flat > li > .ybtn  {");
+  expect(yobiUi).toContain("margin-left: .3em;");
+  expect(yobiUi).toContain("&:first-child {");
   expect(yobiUi).toContain("&.ybtn-small {\n        padding: 3px 10px !important;");
   expect(yobiUi).toContain("&.ybtn-danger {\n        background-color : @yobi-btn-danger");
   expect(bootstrap).toContain("img {\n  width: auto\\9;\n  height: auto;");
@@ -302,7 +304,9 @@ async function sameAncestryFallbackEvidence(table: Locator) {
       "user-email-secondary-delete-action": { className: "ybtn ybtn-small ybtn-danger" },
       "user-email-secondary-verification-action": {
         className: "ybtn ybtn-small",
-        style: "width:150px",
+        // app.css resets .ybtn margin after the frozen sheet; retain the canonical
+        // _yobiUI.less final declaration while reconstructing the legacy fixture.
+        style: "width:150px;margin-left:.3em",
       },
       "user-email-secondary-warning-icon": {
         className: "yobicon-error2 orange-txt mr5",

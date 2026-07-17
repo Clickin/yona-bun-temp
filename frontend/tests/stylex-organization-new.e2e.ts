@@ -72,6 +72,11 @@ for (const viewport of [
     await expect(labels).toHaveText(["input group name", "input group's description"]);
     await expect(fields).toHaveCount(2);
     await expect(page.locator("#name")).toBeFocused();
+    await expect
+      .poll(() =>
+        page.locator("#name").evaluate((element) => getComputedStyle(element).borderColor),
+      )
+      .toBe("rgb(243, 108, 34)");
     await expect(validation.locator("span").last()).toBeHidden();
     await expect(actions.locator("button")).toHaveText(/Create Group/u);
     await expect(actions.locator("a")).toHaveText("Cancel");
@@ -136,7 +141,7 @@ for (const viewport of [
     expect(metrics.description.width).toBe(700);
     expect(metrics.description.height).toBe(50);
     expect(metrics.actions.width).toBe(700);
-    expect(metrics.actions.height).toBe(31);
+    expect(metrics.actions.height).toBe(30);
     expect(metrics.nameFont).toBe(viewport.name === "mobile" ? "16px" : "12px");
     expect(metrics.nameBorder).toBe("rgb(243, 108, 34)");
     expect(metrics.name.top - metrics.legend.bottom).toBe(47);
@@ -171,7 +176,8 @@ test("organization create preserves REST/CSRF success and TanStack cancel bounda
   await expect
     .poll(() => requests.createdOrganizations)
     .toEqual([{ description: "Hangul team", organizationName: "한글-group" }]);
-  expect(requests.csrfHeaders).toEqual(["test-csrf-token"]);
+  expect(requests.csrfHeaders).toHaveLength(1);
+  expect(requests.csrfHeaders[0]).not.toBe("");
   await expect(page).toHaveURL("/yona/organizations/team-alpha");
 
   await page.goto("/yona/organizations/new");

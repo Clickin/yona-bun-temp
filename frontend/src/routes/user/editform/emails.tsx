@@ -422,8 +422,8 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     data-stylex-owner={valid ? undefined : "user-email-secondary-avatar"}
                   />{" "}
                   <span
-                    {...(!valid ? secondaryAddressStyleProps : {})}
                     className={valid ? "ml10" : undefined}
+                    {...(!valid ? secondaryAddressStyleProps : {})}
                     data-stylex-owner={valid ? undefined : "user-email-secondary-address"}
                   >
                     {stringValue(row.emailAddress)}
@@ -434,14 +434,14 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   data-stylex-owner="user-email-table-action-cell"
                 >
                   <button
-                    {...(!valid ? secondaryDeleteActionStyleProps : {})}
                     type="button"
                     className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}
+                    {...(!valid ? secondaryDeleteActionStyleProps : {})}
                     data-stylex-owner={valid ? undefined : "user-email-secondary-delete-action"}
                     onClick={() => deleteMutation.mutate(id)}
                   >
                     {t("button.delete")}
-                  </button>
+                  </button>{" "}
                   {valid ? (
                     <button
                       type="button"
