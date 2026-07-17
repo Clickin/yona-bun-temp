@@ -20,6 +20,7 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-editor-tab-content"');
+  expect(route).toContain("data-stylex-owner-instance={wrapId}");
   expect(styles).toContain("originalMessageToggle: {");
   expect(styles).toContain("editorTabContent: {");
 
@@ -38,7 +39,9 @@ test("issue detail owns original-message and editor static declarations", async 
     page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"] + div'),
   ).toBeVisible();
 
-  const editor = page.locator('[data-stylex-owner="project-issue-detail-editor-tab-content"]');
+  const editors = page.locator('[data-stylex-owner="project-issue-detail-editor-tab-content"]');
+  await expect(editors).toHaveCount(2);
+  const editor = editors.first();
   await expect(editor).toHaveCSS("position", "relative");
   await expect(editor).toHaveCSS("overflow", "visible");
   const geometry = await editor.evaluate((element) => {

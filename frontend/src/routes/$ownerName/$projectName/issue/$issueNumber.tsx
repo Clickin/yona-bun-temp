@@ -3756,6 +3756,7 @@ function MarkdownEditor({
       <div
         className={`${stylex.props(styles.editorTabContent).className} tab-content`}
         data-stylex-owner="project-issue-detail-editor-tab-content"
+        data-stylex-owner-instance={wrapId}
       >
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
