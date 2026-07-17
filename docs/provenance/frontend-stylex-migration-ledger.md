@@ -460,3 +460,11 @@ Manual multi-screen exception note: Batch250 intentionally coordinated the indep
 - `/organizations/$organizationName/issues`: migrated organization issue items/empty/pagination/row/meta owners from `group_issue_list.scala.html` and issue partials; existing search/tabs/query/navigation behavior remains React-owned. Focused `stylex-organization-issues.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch251 intentionally coordinated the independent restricted, organization-directory, and organization-issues route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once.
+
+## Batch 252 migration rows
+
+- `/user/files`: migrated page/list/files/header/row/pagination owners from `userFiles.scala.html`; existing search/navigation/download behavior remains React-owned. Focused `stylex-user-files-search.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/settingform`: migrated body/logo/menu owners from `organization/setting.scala.html`; upload/save/mutation/navigation remain React-owned. Focused `stylex-organization-settingform.e2e.ts` passed in the assembled browser gate.
+- `/$ownerName/$projectName/newFork`: migrated residual owner/name/scope/help/radio/label owners from `git/fork.scala.html`; fork state/query/mutation/navigation remain React-owned. Focused `stylex-project-new-fork.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch252 intentionally coordinated three independent route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX ownership, and focused E2E; the assembled browser and shared static/build gates ran once.

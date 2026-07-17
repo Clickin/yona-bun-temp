@@ -178,8 +178,8 @@ function UserFilesScreen({
         precedence="legacy-filetype"
         href={prefixBasePath(basePath, "/assets/stylesheets/filetype.css")}
       />
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="user-files-page">
+        <div className="page-wrap" data-stylex-owner="user-files-list">
           <ul className="nav nav-tabs">
             <li>
               <Link activeProps={legacyRouteLocalActiveProps} to="/notifications">
@@ -241,8 +241,8 @@ function UserFilesScreen({
               </button>
             </div>
           </form>
-          <div className="attachment-files">
-            <div className="attachment-files-header row">
+          <div className="attachment-files" data-stylex-owner="user-files-files">
+            <div className="attachment-files-header row" data-stylex-owner="user-files-header">
               <div className="span1 header-preview">Preview</div>
               <div className="span5 header-file-name">Filename</div>
               <div className="span1 header-size">Size</div>
@@ -283,6 +283,7 @@ function UserFileRow({
   return (
     <div
       className={`attachment-file-detail row${isHovered ? " hover" : ""}`}
+      data-stylex-owner="user-files-row"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -337,7 +338,7 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
+    <div id="pagination" className="page-navigation-wrap" data-stylex-owner="user-files-pagination">
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (

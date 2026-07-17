@@ -150,9 +150,17 @@ function OrganizationSettingsBody({
               className={`bubble-wrap gray ${stylex.props(styles.bubble).className}`}
               data-stylex-owner="organization-setting-bubble"
             >
-              <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
+              <div
+                className="box-wrap top clearfix frm-wrap"
+                style={{ paddingTop: 20 }}
+                data-stylex-owner="organization-setting-body"
+              >
                 <div className="setting-box left">
-                  <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }}></div>
+                  <div
+                    className="logo-wrap"
+                    style={{ backgroundImage: `url('${logoUrl}')` }}
+                    data-stylex-owner="organization-setting-logo"
+                  ></div>
                   <div className="logo-desc">
                     <ul className="unstyled descs">
                       <li>
@@ -264,7 +272,7 @@ function OrganizationSettingMenu({
   const { t } = useLegacyMessages();
 
   return (
-    <ul className="nav nav-tabs">
+    <ul className="nav nav-tabs" data-stylex-owner="organization-setting-menu">
       <li className={active === "setting" ? "active" : ""}>
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}

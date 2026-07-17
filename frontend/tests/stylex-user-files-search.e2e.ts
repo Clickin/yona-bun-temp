@@ -74,6 +74,8 @@ test("pins the empty-state search output and React navigation", async ({ page })
     await page.evaluate(() => document.fonts.ready);
 
     const root = owner(page, "user-files-search");
+    await expect(owner(page, "user-files-page")).toBeVisible();
+    await expect(owner(page, "user-files-files")).toBeVisible();
     const input = owner(page, "user-files-search-input");
     const action = owner(page, "user-files-search-action");
     const icon = action.locator("i.yobicon-search");

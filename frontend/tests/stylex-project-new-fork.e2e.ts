@@ -14,6 +14,21 @@ test("records fork form owners and responsive containment", async ({ page }) => 
   expect(template).toContain('class="help-messages');
   expect(route).toContain('data-stylex-owner="project-fork-form"');
   expect(route).toContain('data-stylex-owner="project-fork-submit"');
+  for (const owner of [
+    "project-fork-help-row",
+    "project-fork-owner-label",
+    "project-fork-name-label",
+    "project-fork-name-help",
+    "project-fork-scope-label",
+    "project-fork-public-radio",
+    "project-fork-public-label",
+    "project-fork-protected-radio",
+    "project-fork-protected-label",
+    "project-fork-private-radio",
+    "project-fork-private-label",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  }
   expect(theme).toContain("export const forkColors");
   await mockFork(page);
   for (const viewport of [
@@ -25,6 +40,8 @@ test("records fork form owners and responsive containment", async ({ page }) => 
     await expect(owner(page, "project-fork-form")).toBeVisible();
     await expect(owner(page, "project-fork-name-input")).toHaveValue("demo-fork");
     await expect(owner(page, "project-fork-submit")).toHaveText("코드 저장소 복사");
+    await expect(owner(page, "project-fork-public-radio")).toBeChecked();
+    await expect(owner(page, "project-fork-public-label")).toBeVisible();
     const geometry = await owner(page, "project-fork-form").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,

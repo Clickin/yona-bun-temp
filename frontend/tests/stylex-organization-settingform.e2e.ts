@@ -15,5 +15,8 @@ test("records organization setting form owner boundary", () => {
   expect(template).toContain('id="project-name"');
   expect(route).toContain('data-stylex-owner="organization-setting-form"');
   expect(route).toContain('data-stylex-owner="organization-setting-name-input"');
+  expect(route).toContain('data-stylex-owner="organization-setting-body"');
+  expect(route).toContain('data-stylex-owner="organization-setting-logo"');
+  expect(route).toContain('data-stylex-owner="organization-setting-menu"');
   expect(theme).toContain("organizationSettingColors");
 });

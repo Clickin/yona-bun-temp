@@ -286,7 +286,7 @@ function ProjectForkBody({
                 </h4>
               </legend>
               <div {...sx.help} data-stylex-owner="project-fork-help" id="helpMessage">
-                <div className="row-fluid">
+                <div className="row-fluid" data-stylex-owner="project-fork-help-row">
                   {options.existingForks.length === 0 ? (
                     <>
                       <div className="pull-left">
@@ -334,10 +334,14 @@ function ProjectForkBody({
                 </div>
               </div>
               <div {...sx.group} data-stylex-owner="project-fork-owner-group">
-                <label {...sx.label} htmlFor="inputOwner">
+                <label
+                  {...sx.label}
+                  data-stylex-owner="project-fork-owner-label"
+                  htmlFor="inputOwner"
+                >
                   {t("project.owner")}
                 </label>
-                <div {...sx.controls}>
+                <div {...sx.controls} data-stylex-owner="project-fork-owner-controls">
                   <select
                     id="project-owner"
                     name="owner"
@@ -356,10 +360,14 @@ function ProjectForkBody({
                 </div>
               </div>
               <div {...sx.group} data-stylex-owner="project-fork-name-group">
-                <label {...sx.label} htmlFor="inputName">
+                <label
+                  {...sx.label}
+                  data-stylex-owner="project-fork-name-label"
+                  htmlFor="inputName"
+                >
                   {t("project.name")}
                 </label>
-                <div {...sx.controls}>
+                <div {...sx.controls} data-stylex-owner="project-fork-name-controls">
                   <input
                     {...sx.input}
                     data-stylex-owner="project-fork-name-input"
@@ -368,21 +376,36 @@ function ProjectForkBody({
                     name="name"
                     defaultValue={selectedName}
                   />
-                  <span className="help-inline">{t("project.name.alert")} </span>
+                  <span
+                    {...stylex.props(styles.helpInline)}
+                    className={`${stylex.props(styles.helpInline).className} help-inline`}
+                    data-stylex-owner="project-fork-name-help"
+                  >
+                    {t("project.name.alert")}{" "}
+                  </span>
                 </div>
               </div>
               <div {...sx.group} data-stylex-owner="project-fork-scope-group">
-                <label {...sx.label}>{t("project.shareOption")}</label>
-                <div {...sx.controls}>
+                <label {...sx.label} data-stylex-owner="project-fork-scope-label">
+                  {t("project.shareOption")}
+                </label>
+                <div {...sx.controls} data-stylex-owner="project-fork-scope-controls">
                   <input
                     name="projectScope"
                     type="radio"
                     id="public"
                     value="PUBLIC"
-                    className="radio-btn"
+                    {...stylex.props(styles.radio)}
+                    className={`${stylex.props(styles.radio).className} radio-btn`}
+                    data-stylex-owner="project-fork-public-radio"
                     defaultChecked
                   />{" "}
-                  <label htmlFor="public" className="bg-radiobtn label-public">
+                  <label
+                    {...stylex.props(styles.radio)}
+                    htmlFor="public"
+                    className={`${stylex.props(styles.radio).className} bg-radiobtn label-public`}
+                    data-stylex-owner="project-fork-public-label"
+                  >
                     {t("project.public")}
                   </label>
                   {options.ownerOptions.some(
@@ -397,9 +420,16 @@ function ProjectForkBody({
                         type="radio"
                         id="protected"
                         value="PROTECTED"
-                        className="radio-btn"
+                        {...stylex.props(styles.radio)}
+                        className={`${stylex.props(styles.radio).className} radio-btn`}
+                        data-stylex-owner="project-fork-protected-radio"
                       />{" "}
-                      <label htmlFor="protected" className="bg-radiobtn label-protected">
+                      <label
+                        {...stylex.props(styles.radio)}
+                        htmlFor="protected"
+                        className={`${stylex.props(styles.radio).className} bg-radiobtn label-protected`}
+                        data-stylex-owner="project-fork-protected-label"
+                      >
                         {t("project.protected")}
                       </label>
                     </>
@@ -409,9 +439,16 @@ function ProjectForkBody({
                     type="radio"
                     id="private"
                     value="PRIVATE"
-                    className="radio-btn"
+                    {...stylex.props(styles.radio)}
+                    className={`${stylex.props(styles.radio).className} radio-btn`}
+                    data-stylex-owner="project-fork-private-radio"
                   />{" "}
-                  <label htmlFor="private" className="bg-radiobtn label-private">
+                  <label
+                    {...stylex.props(styles.radio)}
+                    htmlFor="private"
+                    className={`${stylex.props(styles.radio).className} bg-radiobtn label-private`}
+                    data-stylex-owner="project-fork-private-label"
+                  >
                     {t("project.private")}
                   </label>
                 </div>

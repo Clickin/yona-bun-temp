@@ -7,6 +7,8 @@ export const forkColors = stylex.defineVars({
   inputBorder: "#cccccc",
   inputText: "#555555",
   labelText: "#333333",
+  radioText: "#333333",
+  helpInlineText: "#b94a48",
 });
 
 export const styles = stylex.create({
@@ -52,4 +54,6 @@ export const styles = stylex.create({
     textDecoration: "none",
   },
   cancel: { color: "#333", marginLeft: "5px" },
+  radio: { color: forkColors.radioText },
+  helpInline: { color: forkColors.helpInlineText },
 });
