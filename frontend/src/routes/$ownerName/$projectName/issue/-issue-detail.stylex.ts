@@ -36,4 +36,21 @@ export const styles = stylex.create({
   author: {
     color: issueDetailColors.accentText,
   },
+  timeline: {
+    display: "block",
+    clear: "both",
+    fontFamily: "inherit",
+  },
+  commentForm: {
+    padding: "0 0 15px 54px",
+    fontFamily: "inherit",
+  },
+  sidebarMeta: {
+    padding: "15px 0 0 52px",
+  },
+  indexTimeline: {
+    display: "block",
+    clear: "both",
+    fontFamily: "inherit",
+  },
 });

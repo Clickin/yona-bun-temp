@@ -518,3 +518,9 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/$ownerName/$projectName/milestone/$milestoneId?state=open#issues`: migrated milestone description, issue/filter/list shell, mass-update form, issue rows, and issue metadata owners from `milestone/view.scala.html` and issue partials; title-prefix filtering, state tabs, markdown/attachments, issue links, mass-update mutations, delete modal, and navigation remain React-owned. Focused `stylex-project-milestone-detail-owners.e2e.ts` passed across desktop/mobile and title-prefix filtering; live legacy visual comparison is recorded as unverified because the legacy render was unavailable.
 
 This batch used a single visible route state; no multi-screen exception was required.
+
+## Batch 261 migration rows
+
+- `/$ownerName/$projectName/issue/$issueNumber` open detail: migrated the comment timeline, add-comment form/editor/upload, sidebar metadata, and index timeline owners from the issue detail/comment partials; comment/event rendering, mutations, editor/upload behavior, metadata controls, and navigation remain React-owned. Focused `stylex-project-issue-detail-owners.e2e.ts` passed 2/2 with desktop/mobile containment; live legacy visual comparison is recorded as unverified because the legacy render was unavailable.
+
+This batch used a single visible route state; no multi-screen exception was required.

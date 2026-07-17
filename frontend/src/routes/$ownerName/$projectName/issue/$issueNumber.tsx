@@ -1044,7 +1044,10 @@ function IssueDetailBody({
             className={`${stylex.props(styles.sidebar).className} span3 span-right-pane mb20`}
             data-stylex-owner="project-issue-detail-sidebar"
           >
-            <div className="issue-info">
+            <div
+              className={`${stylex.props(styles.sidebarMeta).className} issue-info`}
+              data-stylex-owner="project-issue-detail-sidebar-meta"
+            >
               <form
                 id="issueUpdateForm"
                 action={prefixBasePath(basePath, `/${ownerName}/${projectName}/issues`)}
@@ -2599,7 +2602,11 @@ function IssueMainTimeline({
   const hasTimelineItems = timeline.length > 0;
 
   return (
-    <div id="comments" className="board-comment-wrap">
+    <div
+      id="comments"
+      className={`${stylex.props(styles.timeline).className} board-comment-wrap`}
+      data-stylex-owner="project-issue-detail-timeline"
+    >
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
@@ -2681,7 +2688,10 @@ function IssueCommentForm({
         method="post"
         encType="multipart/form-data"
       >
-        <div className="write-comment-box">
+        <div
+          className={`${stylex.props(styles.commentForm).className} write-comment-box`}
+          data-stylex-owner="project-issue-detail-comment-form"
+        >
           <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
           <UploadForm resourceType="ISSUE_COMMENT" />
           <div className="write-comment-wrap">
@@ -3862,7 +3872,11 @@ function IssueIndexTimeline({
   const hasTimelineItems = topLevelComments.length > 0 || (issue.timeline?.length ?? 0) > 0;
 
   return (
-    <div id="comments" className="board-comment-wrap">
+    <div
+      id="comments"
+      className={`${stylex.props(styles.indexTimeline).className} board-comment-wrap`}
+      data-stylex-owner="project-issue-detail-index-timeline"
+    >
       <div id="timeline">
         <div className="timeline-list">
           <div className="comment-header">
