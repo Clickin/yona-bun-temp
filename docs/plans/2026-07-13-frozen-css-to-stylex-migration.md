@@ -316,8 +316,6 @@ build, StyleX verifier, and unchanged fallback hash also pass. The local user-fi
 documented shared-ancestry offset from the live Java shell; owner-local geometry remains exact and
 no route-specific compensation was added.
 
-Batch 264 fork route commit: populated `/$ownerName/$projectName/newFork/` notice ownership was migrated and its focused browser gate passed 1/1. The independent code-branch state is being committed separately to preserve the one-screen audit guard.
-
 Batch 227 applied the same workflow to `/orgs`, organization settings, and `/user/issues` in one
 assembled Playwright invocation (5 focused tests, GREEN 5/5). The three workers added 12 route-local
 paint owners, kept geometry/type values inline, and recorded one Scala audit row per route. The
@@ -3299,6 +3297,8 @@ Batch 261 applied the workflow to the authenticated open project issue-detail st
 Batch 262 applies the workflow to the authenticated issue edit form, board post detail, and commit detail states. Their three focused browser gates are assembled after route-local work, followed by one shared typecheck, formatting, Vitest, production build, and StyleX fallback verification.
 
 Batch 263 applies the workflow to the authenticated milestone edit form. The labels-form and board-post edit-form candidates remain deferred from this commit because their focused browser contracts still need fixture/runtime diagnosis.
+
+Batch 264 applies the workflow to the populated project fork notice and populated code branch folder states. The assembled two-route browser wave passed 3/3, followed by one shared typecheck, Vitest, formatting, production build, and StyleX fallback verification. The explored `/info/leave/$ownerName/$projectName` redirect-only endpoint was rejected as a non-visible state and was not recorded as a migration row.
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,

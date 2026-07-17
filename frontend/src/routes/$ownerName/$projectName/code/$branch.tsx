@@ -80,7 +80,10 @@ function ProjectCodeFolderBody({
     <div className="page-wrap-outer" data-stylex-owner="project-code-branch-page">
       <div className="project-page-wrap">
         <div className="code-browse-wrap" data-stylex-owner="project-code-branch-browser">
-          <ul className="nav nav-tabs" data-stylex-owner="project-code-branch-tabs">
+          <ul
+            className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
+            data-stylex-owner="project-code-branch-tabs"
+          >
             <li className="active">
               <Link
                 activeOptions={{
@@ -148,20 +151,12 @@ function ProjectCodeFolderBody({
             data-stylex-owner="project-code-branch-header"
           >
             <div
-              className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-              style={{ width: 220 }}
+              className={`${stylex.props(styles.picker).className} select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               data-stylex-owner="project-code-branch-picker"
             >
               <button
                 type="button"
-                className="select2-choice"
-                style={{
-                  fontFamily: "inherit",
-                  fontSize: "inherit",
-                  fontWeight: "inherit",
-                  textAlign: "left",
-                  width: "100%",
-                }}
+                className={`${stylex.props(styles.pickerChoice).className} select2-choice`}
                 aria-expanded={branchMenuOpen}
                 onClick={() => setBranchMenuOpen((open) => !open)}
               >
@@ -199,14 +194,7 @@ function ProjectCodeFolderBody({
                     >
                       <button
                         type="button"
-                        className="select2-result-label"
-                        style={{
-                          fontFamily: "inherit",
-                          fontSize: "inherit",
-                          fontWeight: "inherit",
-                          textAlign: "left",
-                          width: "100%",
-                        }}
+                        className={`${stylex.props(styles.pickerChoice).className} select2-result-label`}
                         onClick={() => {
                           setBranchMenuOpen(false);
                           router.history.push(
@@ -261,7 +249,11 @@ function ProjectCodeFolderBody({
                 </option>
               ))}
             </select>
-            <div id="breadcrumbs" className="code-breadcrumb-wrap ml10 pull-left">
+            <div
+              id="breadcrumbs"
+              className={`${stylex.props(styles.breadcrumbs).className} code-breadcrumb-wrap ml10 pull-left`}
+              data-stylex-owner="project-code-branch-breadcrumbs"
+            >
               <Link
                 activeOptions={{
                   exact: true,
@@ -348,7 +340,10 @@ function ProjectCodeFolderBody({
             ) : null}
           </div>
 
-          <div className="code-viewer-wrap" data-stylex-owner="project-code-branch-viewer">
+          <div
+            className={`${stylex.props(styles.list).className} code-viewer-wrap`}
+            data-stylex-owner="project-code-branch-viewer"
+          >
             <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
             <FolderList code={code} />
           </div>
@@ -366,15 +361,21 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap" data-stylex-owner="project-code-branch-list">
-      <div className="row-fluid listhead">
-        <div className="span6 filename">
+    <div
+      className={`${stylex.props(styles.list).className} list-wrap`}
+      data-stylex-owner="project-code-branch-list"
+    >
+      <div
+        className={`${stylex.props(styles.listHeader).className} row-fluid listhead`}
+        data-stylex-owner="project-code-branch-list-header"
+      >
+        <div className={`${stylex.props(styles.listHeaderFilename).className} span6 filename`}>
           <strong>{t("code.filename")}</strong>
         </div>
         <div className="span4 commitMsg">
           <strong>{t("code.commitMsg")}</strong>
         </div>
-        <div className="span2 commitDate">
+        <div className={`${stylex.props(styles.listHeaderDate).className} span2 commitDate`}>
           <strong>{t("code.commitDate")}</strong>
         </div>
       </div>
@@ -390,8 +391,13 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
       ) : null}
 
       {[...folders, ...files].map((entry) => (
-        <div id={`cb-${entry.path}`} className="row-fluid listitem" key={entry.path}>
-          <div className="span6 filename">
+        <div
+          id={`cb-${entry.path}`}
+          className={`${stylex.props(styles.listRow).className} row-fluid listitem`}
+          data-stylex-owner="project-code-branch-list-row"
+          key={entry.path}
+        >
+          <div className={`${stylex.props(styles.listFilename).className} span6 filename`}>
             <Link
               activeOptions={{
                 exact: true,
@@ -419,7 +425,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               {entry.name}
             </Link>
           </div>
-          <div className="span5 commitMsg">
+          <div className={`${stylex.props(styles.listMessage).className} span5 commitMsg`}>
             <span className="ml5">
               <Link
                 activeOptions={{
@@ -440,7 +446,9 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
               </Link>
             </span>
           </div>
-          <div className="span1 commitDate">{formatCodeCommitDate(entry.commitDate, t)}</div>
+          <div className={`${stylex.props(styles.listDate).className} span1 commitDate`}>
+            {formatCodeCommitDate(entry.commitDate, t)}
+          </div>
         </div>
       ))}
     </div>
