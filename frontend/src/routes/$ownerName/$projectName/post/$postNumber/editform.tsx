@@ -146,7 +146,10 @@ function ProjectBoardEditFormBody({
 
               <BoardPostFileUploader resourceId={String(post.id)} />
 
-              <div className="right-txt mt10 mb10">
+              <div
+                className={`${stylex.props(styles.options).className} right-txt mt10 mb10`}
+                data-stylex-owner="post-edit-form-options"
+              >
                 {canSetNotice ? (
                   <label className="checkbox">
                     <input type="checkbox" id="notice" name="notice" defaultChecked={post.notice} />
@@ -217,7 +220,10 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
   }, [focusRequest]);
   return (
     <div className="mt10">
-      <ul className="nav nav-tabs nm small">
+      <ul
+        className={`${stylex.props(styles.editorTabs).className} nav nav-tabs nm small`}
+        data-stylex-owner="post-edit-form-editor-tabs"
+      >
         <li className={activeTab === "edit" ? "active" : undefined}>
           <Link
             to="."
@@ -265,7 +271,10 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(styles.editorContent).className} tab-content`}
+        data-stylex-owner="post-edit-form-editor-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
@@ -284,7 +293,10 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
         <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
           <div className="markdown-preview markdown-wrap content-body" data-via-email="false"></div>
         </div>
-        <div className="notification-receiver">
+        <div
+          className={`${stylex.props(styles.notificationReceiver).className} notification-receiver`}
+          data-stylex-owner="post-edit-form-notification"
+        >
           <span className="notification-receiver-title">
             {t("notification.receiver.list.title")}
           </span>
@@ -342,5 +354,9 @@ function stringFormValue(formData: FormData, name: string) {
 const styles = stylex.create({
   form: { position: "relative" },
   actions: { textAlign: "right" },
+  options: { textAlign: "right" },
+  editorTabs: { position: "relative" },
+  editorContent: { overflow: "visible", position: "relative" },
+  notificationReceiver: { color: postEditFormTheme.notificationText },
   upload: { backgroundColor: postEditFormTheme.uploadSurface },
 });
