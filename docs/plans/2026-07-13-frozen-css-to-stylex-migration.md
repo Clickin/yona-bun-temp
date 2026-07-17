@@ -3308,6 +3308,8 @@ Batch 267 applies the workflow to the authenticated populated project code-histo
 
 Batch 268 applies the workflow to the authenticated populated project board-list state. The two-column control position and keyboard-shortcut wrapper spacing moved to route-local StyleX. Focused Playwright and the canonical project-posts keymap test passed; typecheck, Vitest, production build, fallback hash, formatting, and parity hooks passed.
 
+Batch 269 applies the workflow to the authenticated loaded/open new pull-request form. Editor wrapper/tab-content positioning, Select2 picker width, and conflict modal display moved to route-local StyleX while closed Select2 focus behavior remains unchanged. Focused Playwright 1/1, typecheck, Vitest 11/11, production build/fallback verifier, formatting, and parity hooks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

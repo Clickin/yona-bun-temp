@@ -567,3 +567,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 268
 
 - `/$ownerName/$projectName/posts` populated board-list state: moved the two-column control `position:relative` and keyboard-shortcut wrapper `padding:10px 0; margin-left:55px` into route-local StyleX owners. Frozen `.two-column-icon` and `.pull-left` cascade remains fallback. Focused `stylex-project-posts-inline-residual.e2e.ts` and canonical keymap E2E passed.
+
+## Batch 269
+
+- `/$ownerName/$projectName/newPullRequestForm` loaded/open state: moved editor wrapper `position:relative`, Select2 picker width `220px`, editor tab-content `position:relative; overflow:visible`, and conflict modal display state into route-local StyleX. Legacy Select2 closed/focus behavior and frozen plugin cascade remain unchanged. Focused `stylex-project-new-pull-request-form-inline-residual.e2e.ts` passed 1/1.
