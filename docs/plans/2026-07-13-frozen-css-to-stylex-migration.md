@@ -300,6 +300,14 @@ The fallback hash can remain unchanged while individual consumers migrate becaus
 only after their last consumer. Therefore an unchanged hash is neither failure nor progress proof;
 the active-consumer inventory and module-retirement count are the authoritative evidence.
 
+Batch 225 applied this workflow to three independent routes (14 focused tests in one Playwright
+run, with route workers using isolated worktrees): pending secondary email, populated notification
+table/switch, and organization creation form. Worker hooks and source contracts passed before
+integration. The assembled browser run exposed stale downstream parity fixtures (dynamic CSRF,
+legacy table subtree canonicalization, and two scalar baselines); those assertions are being
+updated to the live contract without weakening migrated owner checks. The batch remains open until
+the corrected assembled gate is green.
+
 ## 6. E2E selector migration policy
 
 Selector updates follow this order:
