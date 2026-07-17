@@ -3312,6 +3312,8 @@ Batch 269 applies the workflow to the authenticated loaded/open new pull-request
 
 Batch 270 applies the workflow to the authenticated populated user email-settings state. The valid secondary-email set-as-main button width moved to a route-local StyleX owner while preserving the legacy button classes and mutation. Focused Playwright 2/2 plus the existing secondary-row source/runtime contract passed; typecheck, Vitest, formatting, build, fallback verifier, and parity hooks passed.
 
+Batch 271 applies the workflow to the authenticated loaded organization settings form. Desktop top spacing moved to route-local StyleX while the mobile frozen responsive override and runtime logo background inline fallback remain intact. Focused Playwright 3/3, typecheck, Vitest, production build/fallback verifier, formatting, and parity hooks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

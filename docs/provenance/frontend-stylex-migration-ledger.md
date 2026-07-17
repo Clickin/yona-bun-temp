@@ -575,3 +575,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 270
 
 - `/user/editform/emails` populated state: moved the valid secondary-email set-as-main button `width:150px` into `primaryEmailAction` StyleX while preserving `ybtn ybtn-small`, REST mutation, and responsive table geometry. Focused `stylex-user-editform-emails-inline-residual.e2e.ts` passed 2/2; the existing secondary-row source/runtime contract was updated and passed.
+
+## Batch 271
+
+- `/organizations/$organizationName/settingform` loaded state: moved desktop `padding-top:20px` into `organizationSettingStyles.topBox`; the frozen mobile `10px !important` responsive rule remains authoritative, and the runtime logo URL remains inline because dynamic StyleX custom-property output violates the layered build verifier. Focused `stylex-organization-settingform-inline-residual.e2e.ts` passed 3/3.
