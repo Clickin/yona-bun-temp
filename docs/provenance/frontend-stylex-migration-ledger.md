@@ -552,4 +552,10 @@ This batch used two independent route states because the third candidate (`/info
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes` populated diff/review state: migrated clickable diff metadata cursor and dynamic review-form display declarations; diff selection, inline review state, mutations, and navigation remain React-owned. Focused `stylex-project-pull-request-changes-residual.e2e.ts` passed 2/2.
 - `/sites/issueList` populated route-theme boundary: removed non-theme `badgeShadow` and `inputShadow` from `siteIssueListColors` and kept exact literals in the owning StyleX declarations. Focused `stylex-site-issue-list-residual.e2e.ts` passed runtime desktop/mobile shadow checks.
 
+## Batch 266
+
+- `/$ownerName/$projectName/branches` — `nav nav-tabs` `margin-bottom:20px` moved to `branchTabs`; focused E2E covers computed margin and viewport containment.
+- `/$ownerName/$projectName/members` — typeahead action declarations and enrollment details `width:60px` moved to direct route-local StyleX owners; focused E2E covers stable owner/layout contracts and mobile containment.
+- `/$ownerName/$projectName/reviews` — export action `padding:10px` moved to `reviewsLayout.exportAction`; focused E2E covers computed padding and export interaction.
+
 The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, production build/StyleX verifier, formatting, and unchanged fallback hash passed once for the batch.

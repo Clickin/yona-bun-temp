@@ -3302,6 +3302,8 @@ Batch 264 applies the workflow to the populated project fork notice and populate
 
 Batch 265 applies the workflow to the populated project labels form, pull-request changes residual owners, and site issue-list theme-boundary correction. The assembled six-test browser wave passed 6/6, followed by one shared typecheck, Vitest, formatting, production build, and StyleX fallback verification. The labels fixture was repaired by mocking the parent project `/container` request; the site issue-list change removes non-theme shadow tokens rather than adding a new visible owner.
 
+Batch 266 applies the workflow to populated project branches, members, and reviews states. The routes were committed independently to preserve the one-route/one-audit-row guard; focused browser contracts cover the migrated owners and desktop/mobile containment. The members contract was stabilized against browser serialization of UA-dependent declarations, while source ownership and stable layout declarations remain asserted.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
