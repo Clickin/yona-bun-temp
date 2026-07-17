@@ -2,6 +2,16 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const USER_PROFILE_SETTINGS_ROUTE_SOURCE = readFileSync("src/routes/user/editform.tsx", "utf8");
+const STYLEX_PROFILE_OWNERS = [
+  "user-settings-profile-form",
+  "user-settings-profile-field",
+  "user-settings-profile-action",
+  "user-settings-avatar-form",
+  "user-settings-avatar-progress",
+  "user-settings-avatar-upload",
+  "user-settings-reset-visited",
+  "user-settings-avatar-crop",
+] as const;
 
 const EXPECTED_USER_PROFILE_SETTINGS_SCREEN = `
 <div class="unsupported hidden">
@@ -136,6 +146,13 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
 
   await page.goto(`${basePath}/user/editform`);
   await expect(page.locator("#frmBasic")).toBeAttached();
+  for (const owner of STYLEX_PROFILE_OWNERS) {
+    const ownerLocator = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(ownerLocator).toHaveCount(owner === "user-settings-profile-field" ? 3 : 1);
+  }
+  await expect(page.locator('[data-stylex-owner="user-settings-avatar-crop"]')).toHaveClass(
+    /modal hide/,
+  );
   await expect(page).toHaveTitle("admin");
   expect(await firstHeadTitleText(page)).toBe("admin");
 
@@ -269,6 +286,29 @@ test("current-user profile settings tabs use typed TanStack links without route-
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("LegacyInternalLink");
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("AnchorHTMLAttributes");
   expect(USER_PROFILE_SETTINGS_ROUTE_SOURCE).not.toContain("ComponentType");
+});
+
+test("profile default owns the stable no-modal StyleX boundaries", async ({ page }) => {
+  await mockAuthenticatedSession(page);
+  await page.route("**/api/v1/workspace", (route) =>
+    route.fulfill({ contentType: "application/json", body: JSON.stringify(workspaceBody()) }),
+  );
+  await page.goto("/yona/user/editform");
+  await expect(page.locator('[data-stylex-owner="user-settings-profile-form"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="user-settings-profile-field"]')).toHaveCount(3);
+  for (const owner of [
+    "user-settings-profile-action",
+    "user-settings-avatar-form",
+    "user-settings-avatar-progress",
+    "user-settings-avatar-upload",
+    "user-settings-reset-visited",
+    "user-settings-avatar-crop",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toHaveCount(1);
+  }
+  await expect(page.locator('[data-stylex-owner="user-settings-avatar-crop"]')).toHaveClass(
+    /modal hide/,
+  );
 });
 
 test("user profile avatar crop modal stays route-owned across dismiss and save", async ({
@@ -852,6 +892,7 @@ async function canonicalizeHtml(page: Page, html: string) {
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
       }
       function normalizeAttribute(current: Element, name: string): string {
+        const value = current.getAttribute(name) ?? "";
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

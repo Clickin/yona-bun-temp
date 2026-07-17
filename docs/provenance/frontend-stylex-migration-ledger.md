@@ -500,3 +500,9 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/sites/massmail`: migrated page/content/sidebar-column owners from `site/massMail.scala.html` and site-management partials; recipient/project selection, query/mutation, form controls, CSRF, and send behavior remain React-owned. Focused `stylex-site-massmail-sidebar.e2e.ts` passed in the assembled browser gate.
 
 This batch used a single visible route state; no multi-screen exception was required.
+
+## Batch 258 migration rows
+
+- `/user/editform` profile default/no-modal: migrated profile form/fields/action, avatar form/progress/upload, reset-visited action, and closed crop-modal owners from `user/edit.scala.html`; profile update/avatar/reset/crop behavior remains React-owned. Focused `user-profile-settings.e2e.ts` stable no-modal test passed.
+
+This batch used a single visible route state; no multi-screen exception was required.

@@ -14,3 +14,10 @@ export const userSettingsTabColors = stylex.defineVars({
   linkText: "#3592b5",
   rootText: "#333333",
 });
+
+export const userSettingsProfileColors = stylex.defineVars({
+  divider: "#dddddd",
+  progressSurface: "#f0f0f0",
+  progressBar: "#f28149",
+  rootText: "#333333",
+});

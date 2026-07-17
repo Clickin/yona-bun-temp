@@ -14,7 +14,11 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { userSettingsPageColors, userSettingsTabColors } from "./-editform.stylex";
+import {
+  userSettingsPageColors,
+  userSettingsProfileColors,
+  userSettingsTabColors,
+} from "./-editform.stylex";
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -163,6 +167,33 @@ const styles = stylex.create({
   settingsPage: {
     backgroundColor: userSettingsPageColors.pageSurface,
     margin: "0px auto",
+  },
+  profileForm: {
+    color: userSettingsProfileColors.rootText,
+  },
+  profileField: {
+    color: userSettingsProfileColors.rootText,
+  },
+  profileAction: {
+    color: userSettingsProfileColors.rootText,
+  },
+  avatarForm: {
+    borderLeftColor: userSettingsProfileColors.divider,
+  },
+  avatarProgress: {
+    backgroundColor: userSettingsProfileColors.progressSurface,
+  },
+  avatarProgressBar: {
+    backgroundColor: userSettingsProfileColors.progressBar,
+  },
+  avatarUpload: {
+    color: userSettingsProfileColors.rootText,
+  },
+  resetVisited: {
+    color: userSettingsProfileColors.rootText,
+  },
+  avatarCrop: {
+    borderColor: userSettingsProfileColors.divider,
   },
 });
 
@@ -353,7 +384,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         id="frmBasic"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        className="pull-left"
+        className={stylex.props(styles.profileForm).className + " pull-left"}
+        data-stylex-owner="user-settings-profile-form"
         onSubmit={(event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -368,7 +400,13 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <dl>
           <dt>{t("user.loginId")}</dt>
           <dd className="mt10">
-            <input type="text" className="text" value={loginId} readOnly />
+            <input
+              type="text"
+              className={`text ${stylex.props(styles.profileField).className}`}
+              data-stylex-owner="user-settings-profile-field"
+              value={loginId}
+              readOnly
+            />
           </dd>
           <dt>{t("user.name")}</dt>
           <dd className="mt10">
@@ -376,7 +414,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               key={`name-${displayName}`}
               type="text"
               name="name"
-              className="text"
+              className={`text ${stylex.props(styles.profileField).className}`}
+              data-stylex-owner="user-settings-profile-field"
               defaultValue={displayName}
             />
           </dd>
@@ -386,12 +425,17 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               key={`email-${email}`}
               type="email"
               name="email"
-              className="text"
+              className={`text ${stylex.props(styles.profileField).className}`}
+              data-stylex-owner="user-settings-profile-field"
               defaultValue={email}
             />
           </dd>
           <dd>
-            <button type="submit" className="ybtn ybtn-success">
+            <button
+              type="submit"
+              className={`ybtn ybtn-success ${stylex.props(styles.profileAction).className}`}
+              data-stylex-owner="user-settings-profile-action"
+            >
               {t("userinfo.editProfile")}
             </button>
           </dd>
@@ -402,7 +446,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         id="frmAvatar"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        className="pull-left"
+        className={stylex.props(styles.avatarForm).className + " pull-left"}
+        data-stylex-owner="user-settings-avatar-form"
         style={{ borderLeft: "1px solid #ddd", marginLeft: "50px", paddingLeft: "50px" }}
         onSubmit={(event) => {
           event.preventDefault();
@@ -420,16 +465,20 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             <img src={avatarUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
           </div>
           <div
-            className="upload-progress avatar"
+            className={`upload-progress avatar ${stylex.props(styles.avatarProgress).className}`}
+            data-stylex-owner="user-settings-avatar-progress"
             style={avatarMutation.isPending ? undefined : { display: "none" }}
           >
             <div
-              className="bar orange"
+              className={`bar orange ${stylex.props(styles.avatarProgressBar).className}`}
               style={avatarMutation.isPending ? { width: "100%" } : undefined}
             ></div>
           </div>
           <div className="btn-wrap mt10 center-txt">
-            <div className="ybtn ybtn-small fake-file-wrap btnUploadAvatar">
+            <div
+              className={`ybtn ybtn-small fake-file-wrap btnUploadAvatar ${stylex.props(styles.avatarUpload).className}`}
+              data-stylex-owner="user-settings-avatar-upload"
+            >
               {t("userinfo.changeAvatar")}
               <input
                 key={avatarFileInputKey}
@@ -445,7 +494,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         </div>
       </form>
 
-      <div className="reset-user-visited-list">
+      <div
+        className={`reset-user-visited-list ${stylex.props(styles.resetVisited).className}`}
+        data-stylex-owner="user-settings-reset-visited"
+      >
         <hr />
         <form
           method="post"
@@ -462,7 +514,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <div
         id="avatarCropWrap"
-        className={avatarCropModalOpen ? "modal hide in" : "modal hide"}
+        className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className}`}
+        data-stylex-owner="user-settings-avatar-crop"
         role="dialog"
         data-backdrop="static"
         aria-hidden={
