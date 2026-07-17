@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred eighteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred nineteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -585,6 +585,18 @@ selected-item `active` retire. Live Java desktop pins the root to `1346x38 @10,1
 `8px 30px` links; mobile pins it to `390x38 @0,105`, one row, and `8px 5px` links. Genuine RED
 0/4 becomes focused GREEN 4/4, and the combined settings gate is GREEN 16/16. This is not Wave 1
 completion.
+
+The two-hundred-nineteenth slice migrates the authenticated `/user/editform/emails` table shell.
+Exactly three owner types cover the table, repeated identity cells, and repeated action cells.
+StyleX owns only Bootstrap's generic table root, `.table`, `.table td`, `_common.less .mt20`, and
+the two legacy inline alignment declarations; `emailTableColors` contains only the `#dddddd` row
+border paint. Avatars, email text, primary badge, buttons, widths, and validation icon remain
+independent fallback consumers. The stale runtime avatar string is replaced by the existing
+Vite-owned legacy asset import without adding an avatar style owner. Actual live Yona has only the
+primary row: desktop is `1346x57 @10,338` with `1276.25/69.75` cells, and mobile is `390x57
+@0,378` with `369.78125/20.21875` cells. Secondary rows are verified only against the frozen
+Scala/CSS fixture and are not represented as live evidence. Focused RED 3/3 becomes GREEN 3/3;
+combined table/add-form browser coverage is GREEN 6/6. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

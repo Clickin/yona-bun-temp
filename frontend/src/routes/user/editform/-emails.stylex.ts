@@ -12,3 +12,8 @@ export const emailAddColors = stylex.defineVars({
   inputSurface: "#ffffff",
   inputText: "#555555",
 });
+
+// user/edit_emails.scala.html table paint only. Geometry and type stay in the route.
+export const emailTableColors = stylex.defineVars({
+  rowBorder: "#dddddd",
+});

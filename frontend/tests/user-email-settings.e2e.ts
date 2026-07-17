@@ -183,19 +183,27 @@ test("current-user email settings page matches legacy user/edit_emails.scala.htm
       '[data-stylex-owner="user-settings-edit-tab-item"][data-selected="true"] > [data-stylex-owner="user-settings-edit-tab-link"]',
     ),
   ).toHaveText("Email settings");
-  await expect(page.locator("table.table.mt20 img")).toHaveCount(3);
+  await expect(page.locator('[data-stylex-owner="user-email-table"] img')).toHaveCount(3);
   expect(
     await page
-      .locator("table.table.mt20 img")
+      .locator('[data-stylex-owner="user-email-table"] img')
       .evaluateAll((images) => images.map((image) => image.hasAttribute("alt"))),
   ).toEqual([false, false, false]);
 
-  await expect(page.locator("table.table.mt20 [data-request-method]")).toHaveCount(0);
-  await expect(page.locator("table.table.mt20 [data-request-uri]")).toHaveCount(0);
-  await expect(page.locator("table.table.mt20 button[href]")).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-email-table"] [data-request-method]'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('[data-stylex-owner="user-email-table"] [data-request-uri]'),
+  ).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="user-email-table"] button[href]')).toHaveCount(0);
 
-  const validEmailRow = page.locator("table.table.mt20 tr", { hasText: "valid@example.com" });
-  const pendingEmailRow = page.locator("table.table.mt20 tr", { hasText: "pending@example.com" });
+  const validEmailRow = page.locator('[data-stylex-owner="user-email-table"] tr', {
+    hasText: "valid@example.com",
+  });
+  const pendingEmailRow = page.locator('[data-stylex-owner="user-email-table"] tr', {
+    hasText: "pending@example.com",
+  });
   const validDeleteButton = validEmailRow.locator("button.ybtn-danger", { hasText: "Delete" });
   const setMainButton = validEmailRow.locator("button.ybtn-small", {
     hasText: "Set as primary email address.",
@@ -294,15 +302,45 @@ test("current-user email settings table keeps legacy avatar src shape when API r
 
   await page.goto(`${basePath}/user/editform/emails`);
 
-  const tableImages = page.locator("table.table.mt20 img");
+  const tableImages = page.locator('[data-stylex-owner="user-email-table"] img');
   await expect(tableImages).toHaveCount(3);
-  const imageSources = await tableImages.evaluateAll((images) =>
-    images.map((image) => image.getAttribute("src")),
+  const imageSources = await tableImages.evaluateAll(
+    (images, runtimeBasePath) =>
+      images.map((image) => {
+        const actual = image as HTMLImageElement;
+        const url = new URL(actual.currentSrc || actual.src);
+        return {
+          complete: actual.complete,
+          insideContextPath: url.pathname.startsWith(`${runtimeBasePath}/`),
+          naturalHeight: actual.naturalHeight,
+          naturalWidth: actual.naturalWidth,
+          usesImportedFilename: url.pathname.endsWith("/default-avatar-128.png"),
+        };
+      }),
+    basePath,
   );
   expect(imageSources).toEqual([
-    "/assets/images/default-avatar-128.png",
-    "/assets/images/default-avatar-128.png",
-    "/assets/images/default-avatar-128.png",
+    {
+      complete: true,
+      insideContextPath: true,
+      naturalHeight: 128,
+      naturalWidth: 128,
+      usesImportedFilename: true,
+    },
+    {
+      complete: true,
+      insideContextPath: true,
+      naturalHeight: 128,
+      naturalWidth: 128,
+      usesImportedFilename: true,
+    },
+    {
+      complete: true,
+      insideContextPath: true,
+      naturalHeight: 128,
+      naturalWidth: 128,
+      usesImportedFilename: true,
+    },
   ]);
 });
 
@@ -383,8 +421,8 @@ async function readEmailSettingsMetrics(page: Page) {
     const addForm = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-email-add-form"]',
     );
-    const table = document.querySelector<HTMLElement>("table.table.mt20");
-    const firstAvatar = document.querySelector<HTMLElement>("table.table.mt20 img");
+    const table = document.querySelector<HTMLElement>('[data-stylex-owner="user-email-table"]');
+    const firstAvatar = table?.querySelector<HTMLElement>("img");
     if (!breadcrumb || !pageWrapOuter || !nav || !addForm || !table || !firstAvatar) {
       throw new Error("Expected user email settings metric targets are missing.");
     }
@@ -461,6 +499,9 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-email-add-form") return 'class="form-inline inner-bubble"';
         if (owner === "user-email-add-input") return 'class="text uname"';
         if (owner === "user-email-add-action") return 'class="ybtn ybtn-success"';
+        if (owner === "user-email-table") return 'class="table mt20"';
+        if (owner === "user-email-table-identity-cell" || owner === "user-email-table-action-cell")
+          return "";
       }
       if (
         name === "class" &&

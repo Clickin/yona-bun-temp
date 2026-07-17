@@ -9,9 +9,10 @@ import {
   sendWorkspaceEmailValidationRest,
   setMainWorkspaceEmailRest,
 } from "../../../api/workspace";
+import defaultEmailAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { emailAddColors } from "./-emails.stylex";
+import { emailAddColors, emailTableColors } from "./-emails.stylex";
 
 const styles = stylex.create({
   addForm: {
@@ -85,11 +86,46 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
     zIndex: "2",
   },
+  emailTable: {
+    backgroundColor: "transparent",
+    borderCollapse: "collapse",
+    borderSpacing: "0px",
+    marginBottom: "20px",
+    marginTop: "20px",
+    maxWidth: "100%",
+    width: "100%",
+  },
+  emailTableCell: {
+    borderTopColor: emailTableColors.rowBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    lineHeight: "20px",
+    padding: "8px",
+    textAlign: "left",
+    verticalAlign: "top",
+  },
+  emailTableActionCell: {
+    textAlign: "right",
+  },
+  emailTableSecondaryActionCell: {
+    verticalAlign: "middle",
+  },
 });
 
 const addFormStyleProps = stylex.props(styles.addForm);
 const addInputStyleProps = stylex.props(styles.addInput);
 const addActionStyleProps = stylex.props(styles.addAction);
+const emailTableStyleProps = stylex.props(styles.emailTable);
+const emailTableIdentityCellStyleProps = stylex.props(styles.emailTableCell);
+const emailTablePrimaryActionCellStyleProps = stylex.props(
+  styles.emailTableCell,
+  styles.emailTableActionCell,
+);
+const emailTableSecondaryActionCellStyleProps = stylex.props(
+  styles.emailTableCell,
+  styles.emailTableActionCell,
+  styles.emailTableSecondaryActionCell,
+);
 
 export const Route = createFileRoute("/user/editform/emails")({
   component: UserEmailSettingsRoute,
@@ -102,7 +138,7 @@ type WorkspaceEmailRow = {
   valid?: unknown;
 };
 
-const DEFAULT_EMAIL_AVATAR_SRC = "/assets/images/default-avatar-128.png";
+const DEFAULT_EMAIL_AVATAR_SRC = defaultEmailAvatarUrl;
 function UserEmailSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
   return <UserEmailSettingsScreen runtimeConfig={runtimeConfig} />;
@@ -188,16 +224,22 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
         {t("emails.sub.email.descr")}
       </p>
 
-      <table className="table mt20">
+      <table {...emailTableStyleProps} data-stylex-owner="user-email-table">
         <tbody>
           <tr>
-            <td>
+            <td
+              {...emailTableIdentityCellStyleProps}
+              data-stylex-owner="user-email-table-identity-cell"
+            >
               {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-              <img src={avatarSrc(profile?.avatarUrl)} width="40" height="40" />
-              <strong className="ml10">{profile?.primaryEmailAddress ?? ""}</strong>
+              <img src={avatarSrc(profile?.avatarUrl)} width="40" height="40" />{" "}
+              <strong className="ml10">{profile?.primaryEmailAddress ?? ""}</strong>{" "}
               <span className="label-head vmiddle ml10">{t("emails.main.email")}</span>
             </td>
-            <td style={{ textAlign: "right" }}></td>
+            <td
+              {...emailTablePrimaryActionCellStyleProps}
+              data-stylex-owner="user-email-table-action-cell"
+            ></td>
           </tr>
 
           {rows.map((row) => {
@@ -205,12 +247,18 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
             const valid = row.valid === true;
             return (
               <tr key={id || stringValue(row.emailAddress)}>
-                <td>
+                <td
+                  {...emailTableIdentityCellStyleProps}
+                  data-stylex-owner="user-email-table-identity-cell"
+                >
                   {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-                  <img src={avatarSrc(row.avatarUrl)} width="40" height="40" />
+                  <img src={avatarSrc(row.avatarUrl)} width="40" height="40" />{" "}
                   <span className="ml10">{stringValue(row.emailAddress)}</span>
                 </td>
-                <td style={{ textAlign: "right", verticalAlign: "middle" }}>
+                <td
+                  {...emailTableSecondaryActionCellStyleProps}
+                  data-stylex-owner="user-email-table-action-cell"
+                >
                   <button
                     type="button"
                     className="ybtn ybtn-small ybtn-danger"
