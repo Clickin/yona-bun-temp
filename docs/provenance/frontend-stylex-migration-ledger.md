@@ -579,3 +579,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 271
 
 - `/organizations/$organizationName/settingform` loaded state: moved desktop `padding-top:20px` into `organizationSettingStyles.topBox`; the frozen mobile `10px !important` responsive rule remains authoritative, and the runtime logo URL remains inline because dynamic StyleX custom-property output violates the layered build verifier. Focused `stylex-organization-settingform-inline-residual.e2e.ts` passed 3/3.
+
+## Batch 272
+
+- `/projectform` loaded project-create state: moved owner and VCS select `min-width:220px` declarations into `projectFormLayout.select`, preserving `mb10`/`mt5`, Select2 metadata, owner/VCS interactions, and the legacy mobile form shell. Focused `stylex-projectform-inline-residual.e2e.ts` passed 1/1.

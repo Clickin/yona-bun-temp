@@ -3314,6 +3314,8 @@ Batch 270 applies the workflow to the authenticated populated user email-setting
 
 Batch 271 applies the workflow to the authenticated loaded organization settings form. Desktop top spacing moved to route-local StyleX while the mobile frozen responsive override and runtime logo background inline fallback remain intact. Focused Playwright 3/3, typecheck, Vitest, production build/fallback verifier, formatting, and parity hooks passed.
 
+Batch 272 applies the workflow to the authenticated project-create form. Owner and VCS select `min-width:220px` declarations moved to route-local StyleX while the legacy 700px mobile form shell remains unchanged. Focused Playwright 1/1, typecheck, Vitest, production build/fallback verifier, formatting, and parity hooks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
