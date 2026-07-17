@@ -53,4 +53,12 @@ export const styles = stylex.create({
     clear: "both",
     fontFamily: "inherit",
   },
+  originalMessageToggle: {
+    paddingLeft: "5px",
+    paddingRight: "5px",
+  },
+  editorTabContent: {
+    position: "relative",
+    overflow: "visible",
+  },
 });

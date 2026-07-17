@@ -3337,7 +3337,9 @@ function OriginalMessageMarkdown({
       ) : null}
       <button
         type="button"
-        style={{ border: 0, paddingLeft: "5px", paddingRight: "5px" }}
+        className={stylex.props(styles.originalMessageToggle).className}
+        data-stylex-owner="project-issue-detail-original-message-toggle"
+        style={{ border: 0 }}
         onClick={() => setShowOriginalMessage((current) => !current)}
       >
         ...
@@ -3751,7 +3753,10 @@ function MarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(styles.editorTabContent).className} tab-content`}
+        data-stylex-owner="project-issue-detail-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
