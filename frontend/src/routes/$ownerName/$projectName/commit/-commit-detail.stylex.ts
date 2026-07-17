@@ -13,6 +13,11 @@ export const styles = stylex.create({
   browseTabs: { marginBottom: "20px" },
   reviewTabs: { marginBottom: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
+  threadReviewForm: { display: "block" },
+  originalMessageToggle: {
+    paddingLeft: "5px",
+    paddingRight: "5px",
+  },
   codediffLayout: { position: "relative" },
   diffsLayout: { display: "block", marginRight: "282px", position: "relative" },
   reviewPanel: {

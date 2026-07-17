@@ -42,6 +42,8 @@ const sx = {
   browseTabs: stylex.props(styles.browseTabs),
   reviewTabs: stylex.props(styles.reviewTabs),
   editorTabContent: stylex.props(styles.editorTabContent),
+  threadReviewForm: stylex.props(styles.threadReviewForm),
+  originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -1254,7 +1256,8 @@ function CodeCommentThreadView({
           method="post"
           encType="multipart/form-data"
           className="review-form"
-          style={{ display: "block" }}
+          {...sx.threadReviewForm}
+          data-stylex-owner="commit-detail-thread-review-form"
           onSubmit={(event) => {
             event.preventDefault();
             submitReply(thread.id, formContents(event.currentTarget));
@@ -1321,7 +1324,9 @@ function OriginalMessageMarkdown({
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
       <button
         type="button"
-        style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+        {...sx.originalMessageToggle}
+        data-stylex-owner="commit-detail-original-message-toggle"
+        style={{ border: 0 }}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
