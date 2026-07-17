@@ -16,6 +16,7 @@ import {
   emailAddColors,
   emailDescriptionSeparatorColors,
   emailPrimaryBadgeColors,
+  emailSecondaryRowColors,
   emailTableColors,
 } from "./-emails.stylex";
 
@@ -130,6 +131,94 @@ const styles = stylex.create({
     padding: "3px 5px",
     verticalAlign: "middle",
   },
+  secondaryAvatar: {
+    border: "0px",
+    height: "auto",
+    maxWidth: "100%",
+    verticalAlign: "middle",
+  },
+  secondaryAddress: {
+    marginLeft: "10px",
+  },
+  secondaryAction: {
+    backgroundColor: {
+      default: emailSecondaryRowColors.actionSurface,
+      ":hover": emailSecondaryRowColors.actionInteractiveSurface,
+      ":focus": emailSecondaryRowColors.actionInteractiveSurface,
+      ":active": emailSecondaryRowColors.actionInteractiveSurface,
+    },
+    borderColor: {
+      default: emailSecondaryRowColors.actionBorder,
+      ":hover": emailSecondaryRowColors.actionInteractiveBorder,
+      ":focus": emailSecondaryRowColors.actionInteractiveBorder,
+      ":active": emailSecondaryRowColors.actionInteractiveBorder,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: `0 1px 0 ${emailSecondaryRowColors.actionShadow}`,
+    color: {
+      default: emailSecondaryRowColors.actionText,
+      ":hover": emailSecondaryRowColors.actionInteractiveText,
+      ":focus": emailSecondaryRowColors.actionInteractiveText,
+      ":active": emailSecondaryRowColors.actionInteractiveText,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "13px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    margin: "0px 0px 0px 0.3em",
+    outline: "0 none",
+    padding: "3px 10px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: {
+      default: "none",
+      ":hover": "none",
+      ":focus": "none",
+      ":active": "none",
+    },
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  secondaryDeleteAction: {
+    backgroundColor: {
+      default: emailSecondaryRowColors.dangerSurface,
+      ":hover": emailSecondaryRowColors.dangerInteractiveSurface,
+      ":focus": emailSecondaryRowColors.dangerInteractiveSurface,
+      ":active": emailSecondaryRowColors.dangerSurface,
+    },
+    borderColor: emailSecondaryRowColors.dangerBorder,
+    color: emailSecondaryRowColors.dangerText,
+    margin: "0px",
+  },
+  secondaryVerificationAction: {
+    width: "150px",
+  },
+  secondaryWarningIcon: {
+    backgroundImage: "none",
+    color: emailSecondaryRowColors.warningText,
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "normal",
+    lineHeight: "20px",
+    marginRight: "5px",
+    textDecoration: "none",
+    verticalAlign: "bottom",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": {
+      content: '"\\e1bb"',
+    },
+  },
   emailTable: {
     backgroundColor: "transparent",
     borderCollapse: "collapse",
@@ -164,6 +253,17 @@ const descriptionStyleProps = stylex.props(styles.description);
 const primaryAvatarStyleProps = stylex.props(styles.primaryAvatar);
 const primaryAddressStyleProps = stylex.props(styles.primaryAddress);
 const primaryBadgeStyleProps = stylex.props(styles.primaryBadge);
+const secondaryAvatarStyleProps = stylex.props(styles.secondaryAvatar);
+const secondaryAddressStyleProps = stylex.props(styles.secondaryAddress);
+const secondaryDeleteActionStyleProps = stylex.props(
+  styles.secondaryAction,
+  styles.secondaryDeleteAction,
+);
+const secondaryVerificationActionStyleProps = stylex.props(
+  styles.secondaryAction,
+  styles.secondaryVerificationAction,
+);
+const secondaryWarningIconStyleProps = stylex.props(styles.secondaryWarningIcon);
 const emailTableStyleProps = stylex.props(styles.emailTable);
 const emailTableIdentityCellStyleProps = stylex.props(styles.emailTableCell);
 const emailTablePrimaryActionCellStyleProps = stylex.props(
@@ -314,16 +414,30 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   data-stylex-owner="user-email-table-identity-cell"
                 >
                   {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-                  <img src={avatarSrc(row.avatarUrl)} width="40" height="40" />{" "}
-                  <span className="ml10">{stringValue(row.emailAddress)}</span>
+                  <img
+                    {...(!valid ? secondaryAvatarStyleProps : {})}
+                    src={avatarSrc(row.avatarUrl)}
+                    width="40"
+                    height="40"
+                    data-stylex-owner={valid ? undefined : "user-email-secondary-avatar"}
+                  />{" "}
+                  <span
+                    {...(!valid ? secondaryAddressStyleProps : {})}
+                    className={valid ? "ml10" : undefined}
+                    data-stylex-owner={valid ? undefined : "user-email-secondary-address"}
+                  >
+                    {stringValue(row.emailAddress)}
+                  </span>
                 </td>
                 <td
                   {...emailTableSecondaryActionCellStyleProps}
                   data-stylex-owner="user-email-table-action-cell"
                 >
                   <button
+                    {...(!valid ? secondaryDeleteActionStyleProps : {})}
                     type="button"
-                    className="ybtn ybtn-small ybtn-danger"
+                    className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}
+                    data-stylex-owner={valid ? undefined : "user-email-secondary-delete-action"}
                     onClick={() => deleteMutation.mutate(id)}
                   >
                     {t("button.delete")}
@@ -339,14 +453,14 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     </button>
                   ) : (
                     <button
+                      {...secondaryVerificationActionStyleProps}
                       type="button"
-                      className="ybtn ybtn-small"
-                      style={{ width: "150px" }}
+                      data-stylex-owner="user-email-secondary-verification-action"
                       onClick={() => sendValidationMutation.mutate(id)}
                     >
                       <i
-                        className="yobicon-error2 orange-txt mr5"
-                        style={{ verticalAlign: "bottom" }}
+                        {...secondaryWarningIconStyleProps}
+                        data-stylex-owner="user-email-secondary-warning-icon"
                       ></i>
                       {t("emails.send.validatino.mail")}
                     </button>
