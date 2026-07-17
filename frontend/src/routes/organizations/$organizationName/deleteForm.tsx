@@ -1,12 +1,188 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, type MouseEvent } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { organizationDetailQueryOptions } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationDetail } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { organizationDeleteColors } from "./-deleteForm.stylex";
+
+const styles = stylex.create({
+  actionBox: {
+    padding: {
+      default: "20px 0 12px",
+      "@media (max-width: 720px)": "10px 0",
+    },
+    textAlign: "center",
+  },
+  action: {
+    backgroundColor: {
+      default: organizationDeleteColors.actionSurface,
+      ":hover": organizationDeleteColors.actionHoverSurface,
+      ":focus": organizationDeleteColors.actionHoverSurface,
+      ":active": organizationDeleteColors.actionHoverSurface,
+    },
+    borderColor: {
+      default: organizationDeleteColors.actionBorder,
+      ":hover": organizationDeleteColors.actionHoverBorder,
+      ":focus": organizationDeleteColors.actionHoverBorder,
+      ":active": organizationDeleteColors.actionHoverBorder,
+    },
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: organizationDeleteColors.actionShadow,
+    color: {
+      default: organizationDeleteColors.actionText,
+      ":hover": organizationDeleteColors.actionHoverText,
+      ":focus": organizationDeleteColors.actionHoverText,
+      ":active": organizationDeleteColors.actionHoverText,
+    },
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    margin: "0 0 0 .3em",
+    outline: "0 none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textDecoration: {
+      default: "none",
+      ":hover": "none",
+      ":focus": "none",
+      ":active": "none",
+    },
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+  },
+  firstAction: {
+    marginLeft: "0",
+  },
+  dangerAction: {
+    backgroundColor: {
+      default: organizationDeleteColors.dangerSurface,
+      ":hover": organizationDeleteColors.dangerBorder,
+      ":focus": organizationDeleteColors.dangerBorder,
+      ":active": organizationDeleteColors.dangerBorder,
+    },
+    borderColor: {
+      default: organizationDeleteColors.dangerBorder,
+      ":hover": organizationDeleteColors.dangerBorder,
+      ":focus": organizationDeleteColors.dangerBorder,
+      ":active": organizationDeleteColors.dangerBorder,
+    },
+    color: {
+      default: organizationDeleteColors.primaryText,
+      ":hover": organizationDeleteColors.primaryText,
+      ":focus": organizationDeleteColors.primaryText,
+      ":active": organizationDeleteColors.primaryText,
+    },
+  },
+  modal: {
+    backgroundColor: organizationDeleteColors.modalSurface,
+    borderColor: organizationDeleteColors.modalBorder,
+    borderRadius: "6px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: organizationDeleteColors.modalShadow,
+    color: organizationDeleteColors.modalText,
+    left: {
+      default: "50%",
+      "@media (max-width: 720px)": "0",
+    },
+    marginLeft: {
+      default: "-280px",
+      "@media (max-width: 720px)": "0",
+    },
+    outline: "none",
+    position: "fixed",
+    top: "10%",
+    width: {
+      default: "560px",
+      "@media (max-width: 720px)": "100%",
+    },
+    zIndex: "1050",
+  },
+  modalClosed: {
+    display: "none",
+  },
+  modalOpen: {
+    display: "block",
+  },
+  header: {
+    borderBottomColor: organizationDeleteColors.footerBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    padding: "9px 15px",
+  },
+  close: {
+    background: "transparent",
+    border: "0",
+    color: organizationDeleteColors.backdrop,
+    cursor: "pointer",
+    float: "right",
+    fontSize: "20px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    marginTop: "2px",
+    opacity: {
+      default: "0.2",
+      ":hover": "0.4",
+      ":focus": "0.4",
+    },
+    padding: "0",
+    textShadow: organizationDeleteColors.closeTextShadow,
+  },
+  heading: {
+    fontSize: "24.5px",
+    fontWeight: "700",
+    lineHeight: "30px",
+    margin: "0",
+  },
+  body: {
+    maxHeight: "400px",
+    overflowY: "auto",
+    padding: "15px",
+    position: "relative",
+  },
+  footer: {
+    backgroundColor: organizationDeleteColors.footerSurface,
+    borderRadius: "0 0 6px 6px",
+    borderTopColor: organizationDeleteColors.footerBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    boxShadow: organizationDeleteColors.footerShadow,
+    padding: "14px 15px 15px",
+    textAlign: "right",
+  },
+  backdrop: {
+    backgroundColor: organizationDeleteColors.backdrop,
+    bottom: "0",
+    left: "0",
+    opacity: "0.5",
+    position: "fixed",
+    right: "0",
+    top: "0",
+    zIndex: "1040",
+  },
+});
+
+const actionBoxStyleProps = stylex.props(styles.actionBox);
+const dangerActionStyleProps = stylex.props(styles.action, styles.firstAction, styles.dangerAction);
+const defaultActionStyleProps = stylex.props(styles.action);
+const headerStyleProps = stylex.props(styles.header);
+const closeStyleProps = stylex.props(styles.close);
+const headingStyleProps = stylex.props(styles.heading);
+const bodyStyleProps = stylex.props(styles.body);
+const footerStyleProps = stylex.props(styles.footer);
+const backdropStyleProps = stylex.props(styles.backdrop);
 
 export const Route = createFileRoute("/organizations/$organizationName/deleteForm")({
   component: OrganizationDeleteFormRoute,
@@ -83,11 +259,17 @@ function OrganizationDeleteFormBody({
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <OrganizationSettingMenu organizationName={organizationName} />
-        <div className="box-wrap bottom">
+        <div
+          {...actionBoxStyleProps}
+          className={actionBoxStyleProps.className}
+          data-stylex-owner="organization-delete-action"
+        >
           <button
+            {...dangerActionStyleProps}
             id="btnDelete"
             type="button"
-            className="ybtn ybtn-danger"
+            className={dangerActionStyleProps.className}
+            data-stylex-owner="organization-delete-action"
             onClick={openDeletionModal}
           >
             {t("organization.delete.this")}
@@ -95,37 +277,73 @@ function OrganizationDeleteFormBody({
         </div>
 
         <div
+          {...stylex.props(styles.modal, deletionModalOpen ? styles.modalOpen : styles.modalClosed)}
           id="alertDeletion"
-          className={`modal hide${deletionModalOpen ? " in" : ""}`}
-          style={
-            deletionModalWasOpened ? { display: deletionModalOpen ? "block" : "none" } : undefined
-          }
+          data-stylex-owner="organization-delete-modal"
           aria-hidden={deletionModalWasOpened ? !deletionModalOpen : undefined}
         >
-          <div className="modal-header">
-            <button type="button" className="close" onClick={dismissDeletionModal}>
+          <div
+            {...headerStyleProps}
+            className={headerStyleProps.className}
+            data-stylex-owner="organization-delete-modal-header"
+          >
+            <button
+              {...closeStyleProps}
+              type="button"
+              className={closeStyleProps.className}
+              data-stylex-owner="organization-delete-modal-header"
+              onClick={dismissDeletionModal}
+            >
               ×
             </button>
-            <h3>{t("organization.delete.requestion")}</h3>
+            <h3
+              {...headingStyleProps}
+              className={headingStyleProps.className}
+              data-stylex-owner="organization-delete-modal-header"
+            >
+              {t("organization.delete.requestion")}
+            </h3>
           </div>
-          <div className="modal-body">
+          <div
+            {...bodyStyleProps}
+            className={bodyStyleProps.className}
+            data-stylex-owner="organization-delete-modal-body"
+          >
             <p> {t("organization.delete.reaccept")} </p>
           </div>
-          <div className="modal-footer">
+          <div
+            {...footerStyleProps}
+            className={footerStyleProps.className}
+            data-stylex-owner="organization-delete-modal-footer"
+          >
             <button
+              {...dangerActionStyleProps}
               id="btnDeleteExec"
               type="button"
-              className="ybtn ybtn-danger"
+              className={dangerActionStyleProps.className}
+              data-stylex-owner="organization-delete-modal-footer"
               onClick={() => deleteMutation.mutate()}
             >
               {t("button.yes")}
             </button>
-            <button type="button" className="ybtn" onClick={dismissDeletionModal}>
+            <button
+              {...defaultActionStyleProps}
+              type="button"
+              className={defaultActionStyleProps.className}
+              data-stylex-owner="organization-delete-modal-footer"
+              onClick={dismissDeletionModal}
+            >
               {t("button.no")}
             </button>
           </div>
         </div>
-        {deletionModalOpen ? <div className="modal-backdrop fade in"></div> : null}
+        {deletionModalOpen ? (
+          <div
+            {...backdropStyleProps}
+            className={backdropStyleProps.className}
+            data-stylex-owner="organization-delete-modal-backdrop"
+          />
+        ) : null}
       </div>
     </div>
   );
