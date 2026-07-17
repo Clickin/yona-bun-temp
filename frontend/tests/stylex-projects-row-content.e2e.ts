@@ -139,10 +139,8 @@ test("row content records exactly four owners and the fallback boundaries", () =
   expect(pageLess).toContain(".yobicon-lock { color:#7F8C8D;}");
   for (const owner of [avatarOwner, headerOwner, descriptionOwner, nameTagOwner])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route).toContain(
-    "className={`owner-avatar-wrap ${directoryOwnerAvatarStyleProps.className",
-  );
-  expect(route).toContain("className={`header ${directoryHeaderStyleProps.className");
+  expect(route).not.toContain("owner-avatar-wrap");
+  expect(route).not.toContain("className={`header ");
   expect(route).not.toContain('<div className="desc">');
   expect(route).not.toContain('<p className="name-tag">');
   expect(theme).toContain('descriptionText: "#bababa"');
@@ -153,7 +151,7 @@ test("row content records exactly four owners and the fallback boundaries", () =
       route.indexOf("directoryOwnerAvatar:"),
       route.indexOf("directoryHeader:", route.indexOf("directoryOwnerAvatar:")),
     ),
-  ).not.toContain("borderRadius:");
+  ).toContain('borderRadius: "3px"');
   expect(route).not.toContain("globalColors.");
 });
 
@@ -171,8 +169,8 @@ for (const viewport of [
     const header = row.locator(`[data-stylex-owner="${headerOwner}"]`);
     const description = row.locator(`[data-stylex-owner="${descriptionOwner}"]`);
     const nameTag = row.locator(`[data-stylex-owner="${nameTagOwner}"]`);
-    await expect(avatar).toHaveClass(/(?:^|\s)owner-avatar-wrap(?:\s|$)/u);
-    await expect(header).toHaveClass(/(?:^|\s)header(?:\s|$)/u);
+    await expect(avatar).not.toHaveClass(/(?:^|\s)owner-avatar-wrap(?:\s|$)/u);
+    await expect(header).not.toHaveClass(/(?:^|\s)header(?:\s|$)/u);
     await expect(description).not.toHaveClass(/(?:^|\s)desc(?:\s|$)/u);
     await expect(nameTag).not.toHaveClass(/(?:^|\s)name-tag(?:\s|$)/u);
     await expect(avatar.locator(":scope > a")).toHaveCount(1);

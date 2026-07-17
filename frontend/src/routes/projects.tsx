@@ -225,6 +225,7 @@ const styles = stylex.create({
     padding: "15px 0px 10px",
   },
   directoryOwnerAvatar: {
+    borderRadius: "3px",
     display: "inline",
     float: "left",
     height: "50px",
@@ -232,6 +233,11 @@ const styles = stylex.create({
     overflow: "hidden",
     position: "relative",
     width: "50px",
+  },
+  directoryOwnerAvatarImage: {
+    height: "100%",
+    verticalAlign: "top",
+    width: "100%",
   },
   directoryHeader: {
     fontSize: "20px",
@@ -260,6 +266,29 @@ const styles = stylex.create({
     },
     outlineStyle: "none",
     textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
+  },
+  directoryPrivateLock: {
+    color: projectsDirectoryColors.privateLockText,
+    fontSize: "14px",
+  },
+  directoryProjectLabel: {
+    backgroundColor: projectsDirectoryColors.projectLabelSurface,
+    borderRadius: "2px",
+    borderStyle: "none",
+    color: {
+      default: projectsDirectoryColors.projectLabelText,
+      ":hover": projectsDirectoryColors.linkInteractive,
+      ":focus": projectsDirectoryColors.linkInteractive,
+    },
+    display: "inline-block",
+    fontSize: "11px",
+    fontWeight: "700",
+    lineHeight: "20px",
+    outlineStyle: "none",
+    padding: "1px 5px",
+    textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
   },
   directoryOwnerLink: {
     color: {
@@ -430,10 +459,13 @@ const directorySearchButtonStyleProps = stylex.props(styles.directorySearchButto
 const directoryListStyleProps = stylex.props(styles.directoryList);
 const directoryRowStyleProps = stylex.props(styles.directoryRow);
 const directoryOwnerAvatarStyleProps = stylex.props(styles.directoryOwnerAvatar);
+const directoryOwnerAvatarImageStyleProps = stylex.props(styles.directoryOwnerAvatarImage);
 const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
 const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
 const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
 const directoryTitleLinkStyleProps = stylex.props(styles.directoryTitleLink);
+const directoryPrivateLockStyleProps = stylex.props(styles.directoryPrivateLock);
+const directoryProjectLabelStyleProps = stylex.props(styles.directoryProjectLabel);
 const directoryOwnerLinkStyleProps = stylex.props(styles.directoryOwnerLink);
 const directoryCodeUpdateStyleProps = stylex.props(styles.directoryCodeUpdate);
 const directoryStatsStyleProps = stylex.props(styles.directoryStats);
@@ -867,12 +899,14 @@ function ProjectListItem({
         <div className="info-wrap" style={{ opacity: 0.3 }}>
           <div
             {...directoryOwnerAvatarStyleProps}
-            className={`owner-avatar-wrap ${directoryOwnerAvatarStyleProps.className ?? ""}`}
+            className={directoryOwnerAvatarStyleProps.className}
             data-stylex-owner="projects-directory-owner-avatar"
           >
             <img
+              {...directoryOwnerAvatarImageStyleProps}
               src={prefixBasePath(basePath, "/assets/images/project_default_logo.png")}
               alt={projectName}
+              data-stylex-owner="projects-directory-owner-avatar-image"
             />
           </div>
           <div style={{ float: "left", color: "gray" }}>
@@ -901,7 +935,7 @@ function ProjectListItem({
       <div className="info-wrap">
         <div
           {...directoryOwnerAvatarStyleProps}
-          className={`owner-avatar-wrap ${directoryOwnerAvatarStyleProps.className ?? ""}`}
+          className={directoryOwnerAvatarStyleProps.className}
           data-stylex-owner="projects-directory-owner-avatar"
         >
           <Link
@@ -913,13 +947,20 @@ function ProjectListItem({
               "data-status": undefined,
             }}
           >
-            {logoUrl ? <img src={logoUrl} alt={projectName} /> : null}
+            {logoUrl ? (
+              <img
+                {...directoryOwnerAvatarImageStyleProps}
+                src={logoUrl}
+                alt={projectName}
+                data-stylex-owner="projects-directory-owner-avatar-image"
+              />
+            ) : null}
           </Link>
         </div>
         <div style={{ float: "left" }}>
           <div
             {...directoryHeaderStyleProps}
-            className={`header ${directoryHeaderStyleProps.className ?? ""}`}
+            className={directoryHeaderStyleProps.className}
             data-stylex-owner="projects-directory-header"
           >
             <Link
@@ -935,13 +976,21 @@ function ProjectListItem({
               }}
             >
               {projectName}
-            </Link>
+            </Link>{" "}
+            {stringField(project, "projectScope", "public") === "private" ? (
+              <i
+                {...directoryPrivateLockStyleProps}
+                className={`yobicon-lock ${directoryPrivateLockStyleProps.className ?? ""}`}
+                data-stylex-owner="projects-directory-private-lock"
+              ></i>
+            ) : null}{" "}
             {labels.map((label) => {
               const className = label.category
-                ? `project-label ${label.category.toLowerCase()}`
-                : "project-label";
+                ? `${label.category.toLowerCase()} ${directoryProjectLabelStyleProps.className ?? ""}`
+                : directoryProjectLabelStyleProps.className;
               return (
                 <Link
+                  {...directoryProjectLabelStyleProps}
                   activeOptions={{ exact: true, includeSearch: true }}
                   activeProps={{
                     "aria-current": undefined,
@@ -949,6 +998,7 @@ function ProjectListItem({
                     "data-status": undefined,
                   }}
                   className={className}
+                  data-stylex-owner="projects-directory-project-label"
                   key={label.id}
                   onClick={(event) => {
                     event.preventDefault();
@@ -966,9 +1016,6 @@ function ProjectListItem({
                 </Link>
               );
             })}
-            {stringField(project, "projectScope", "public") === "private" ? (
-              <i className="yobicon-lock yobicon-small"></i>
-            ) : null}
           </div>
           <div
             {...directoryDescriptionStyleProps}

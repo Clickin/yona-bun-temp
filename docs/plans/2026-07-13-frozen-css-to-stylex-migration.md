@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred eight slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred nine slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -448,6 +448,20 @@ y215/306/397; mobile pins them to x322.656/358.828 at y279/430/581 and x343.656/
 y280/431/582, with exact glyph, 16px icon boxes, count type, and no overflow. RED 0/3 becomes
 focused GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 56/56. Target live/local
 captures were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-ninth slice completes four populated-default `/projects` identity residual owners:
+the existing project-logo wrapper gains its frozen 3px radius, the repeated logo image owns its
+100% box and top alignment, the private lock owns final `#7f8c8d`/14px output, and the project
+label owns its frozen base and hover/focus presentation. Route-local variables contain only the
+three dark-mode-eligible lock/label paints; all geometry and typography remain literal. The
+route retires `owner-avatar-wrap`, `header`, `project-label`, and `yobicon-small`, restores the
+Scala title-lock-label order, and retains only `yobicon-lock` for its generic icon-font/display
+and `\e21e` glyph contract plus the semantic label-category class. Live Java desktop pins the
+logo, lock, and label to `50x50 @10,216`, `14x14 @205.344,220`, and
+`43.703x22 @223.781,216.656`; mobile pins them to `@0,246`, `@195.344,250`, and
+`@213.781,246.656`, with exact paint/type/interaction and no overflow. RED 0/3 becomes focused
+GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 59/59. Target live/local captures
+were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

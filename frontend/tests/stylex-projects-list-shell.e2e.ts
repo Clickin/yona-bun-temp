@@ -153,7 +153,9 @@ for (const viewport of [
     const rows = list.locator(`:scope > li.project[data-stylex-owner="${rowOwner}"]`);
     await expect(rows).toHaveCount(4);
     for (const row of await rows.all()) {
-      const logoLink = row.locator(":scope > .info-wrap > .owner-avatar-wrap > a");
+      const logoLink = row.locator(
+        ':scope > .info-wrap > [data-stylex-owner="projects-directory-owner-avatar"] > a',
+      );
       await expect(logoLink).toHaveCount(1);
       await expect(logoLink.locator(":scope > img")).toHaveCount(0);
     }

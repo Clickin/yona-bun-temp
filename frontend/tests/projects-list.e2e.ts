@@ -238,7 +238,9 @@ test("unreadable project rows match legacy private fallback", async ({ page }) =
 
   const unreadableRow = page.locator(".all-projects > .project").nth(1);
   const unreadableInfo = unreadableRow.locator(".info-wrap");
-  const unreadableLogo = unreadableRow.locator(".owner-avatar-wrap img");
+  const unreadableLogo = unreadableRow.locator(
+    '[data-stylex-owner="projects-directory-owner-avatar-image"]',
+  );
   const unreadableText = unreadableRow.locator(".info-wrap > div").nth(1);
 
   await expect(unreadableRow).toHaveCSS("background-color", "rgb(252, 252, 252)");
@@ -301,7 +303,9 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await page.goto(`${basePath}/projects?filter=sample`);
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
 
-  const projectLogoLink = page.locator(".all-projects .owner-avatar-wrap a");
+  const projectLogoLink = page.locator(
+    '.all-projects [data-stylex-owner="projects-directory-owner-avatar"] a',
+  );
   const projectNameLink = page.locator('[data-stylex-owner="projects-directory-title-link"]');
   const ownerNameLink = page.locator('[data-stylex-owner="projects-directory-owner-link"]');
 
@@ -380,9 +384,12 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect(page.locator(".all-projects .project").first()).toBeVisible();
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: null });
 
-  const projectLabel = page.locator(".all-projects .header a.project-label");
+  const projectLabel = page.locator(
+    '.all-projects [data-stylex-owner="projects-directory-project-label"]',
+  );
   await expect(projectLabel).toHaveCount(1);
-  await expect(projectLabel).toHaveClass("project-label bug");
+  await expect(projectLabel).toHaveClass(/(?:^|\s)bug(?:\s|$)/u);
+  await expect(projectLabel).not.toHaveClass(/(?:^|\s)project-label(?:\s|$)/u);
   await expect(projectLabel).toHaveText("bug");
   await expect(projectLabel).toHaveAttribute("href", `${basePath}/projects?labelIds=8`);
   await expectNoActiveMarker(projectLabel);
@@ -479,7 +486,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   await expect(page.locator('[data-stylex-owner="projects-directory-description"]')).toHaveText(
     "Legacy query page two",
   );
-  await expect(page.locator(".all-projects .header a.project-label")).toHaveText("bug");
+  await expect(
+    page.locator('.all-projects [data-stylex-owner="projects-directory-project-label"]'),
+  ).toHaveText("bug");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "2" });
 
@@ -964,9 +973,15 @@ async function readProjectsListMetrics(page: Page) {
   return page.evaluate(() => {
     const list = document.querySelector<HTMLElement>(".all-projects");
     const row = document.querySelector<HTMLElement>(".all-projects > .project");
-    const avatar = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap");
-    const avatarImage = document.querySelector<HTMLElement>(".all-projects .owner-avatar-wrap img");
-    const header = document.querySelector<HTMLElement>(".all-projects .header");
+    const avatar = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-owner-avatar"]',
+    );
+    const avatarImage = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-owner-avatar-image"]',
+    );
+    const header = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-header"]',
+    );
     const description = document.querySelector<HTMLElement>(
       '[data-stylex-owner="projects-directory-description"]',
     );
@@ -1078,6 +1093,9 @@ async function canonicalizeScreenRoots(page: Page) {
                 attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-member-avatar-image"]',
                 ) ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-owner-avatar-image"]',
+                ) ||
                 (attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-pagination-label"]',
                 ) &&
@@ -1172,6 +1190,12 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-owner-link")
         return "owner-name-small";
       if (attr.name === "class" && owner === "projects-directory-code-update") return "small-font";
+      if (attr.name === "class" && owner === "projects-directory-private-lock")
+        return "yobicon-lock yobicon-small";
+      if (attr.name === "class" && owner === "projects-directory-project-label") {
+        const category = attr.value.split(/\s+/u).find((token) => token && !token.startsWith("x"));
+        return `project-label${category ? ` ${category}` : ""}`;
+      }
       if (attr.name === "class" && owner === "projects-directory-stats")
         return "stats-wrap pull-right";
       if (attr.name === "class" && owner === "projects-directory-members") return "members";
