@@ -563,3 +563,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 267
 
 - `/$ownerName/$projectName/commits` populated code-history state: moved the 220px branch picker container, inherited selector/result button declarations, stateful dropdown display, and tabs `margin-bottom:20px` into route-local StyleX owners. The frozen `.select2-drop.branches { width:auto !important; }` remains the intentional fallback for dropdown width. Focused `stylex-project-commits-inline-residual.e2e.ts` passed 1/1 with desktop/mobile geometry and branch interaction.
+
+## Batch 268
+
+- `/$ownerName/$projectName/posts` populated board-list state: moved the two-column control `position:relative` and keyboard-shortcut wrapper `padding:10px 0; margin-left:55px` into route-local StyleX owners. Frozen `.two-column-icon` and `.pull-left` cascade remains fallback. Focused `stylex-project-posts-inline-residual.e2e.ts` and canonical keymap E2E passed.

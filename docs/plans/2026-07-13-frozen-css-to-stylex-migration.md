@@ -3306,6 +3306,8 @@ Batch 266 applies the workflow to populated project branches, members, and revie
 
 Batch 267 applies the workflow to the authenticated populated project code-history state. The branch picker container/button declarations and tabs margin moved to route-local StyleX; the frozen Select2 `width:auto !important` rule remains the explicit dropdown fallback. Focused Playwright passed 1/1, frontend check passed, Vitest passed 11/11, production build and fallback hash verifier passed, and formatting/diff checks passed.
 
+Batch 268 applies the workflow to the authenticated populated project board-list state. The two-column control position and keyboard-shortcut wrapper spacing moved to route-local StyleX. Focused Playwright and the canonical project-posts keymap test passed; typecheck, Vitest, production build, fallback hash, formatting, and parity hooks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
