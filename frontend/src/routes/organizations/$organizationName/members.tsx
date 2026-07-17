@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -21,6 +22,8 @@ import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { globalBreakpoints } from "../../../theme.stylex";
+import { organizationMemberColors } from "./-members.stylex";
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRoute,
@@ -305,7 +308,11 @@ function OrganizationMembersBody({
             ) : null}
           </div>
 
-          <ul className="members project row-fluid">
+          <ul
+            {...stylex.props(styles.memberList)}
+            className={`${stylex.props(styles.memberList).className} members project row-fluid`}
+            data-stylex-owner="organization-members-list"
+          >
             {organization.members.map((member) => (
               <OrganizationMember
                 key={stringField(member.loginId, "")}
@@ -405,26 +412,38 @@ function OrganizationMember({
   const role = stringField(member.role, "");
 
   return (
-    <li className="member span6 span-hard-wrap">
+    <li
+      {...stylex.props(styles.memberRow)}
+      className={`${stylex.props(styles.memberRow).className} member span6 span-hard-wrap`}
+      data-stylex-owner="organization-member-row"
+    >
       <Link
+        {...stylex.props(styles.memberAvatar)}
         activeProps={{
           "aria-current": undefined,
-          className: undefined,
+          className: stylex.props(styles.memberAvatar).className,
           "data-status": undefined,
         }}
-        className="avatar-wrap mlarge pull-left mr10"
+        className={stylex.props(styles.memberAvatar).className}
+        data-stylex-owner="organization-member-avatar"
         params={{ user: loginId }}
         to="/$user"
       >
         <img
+          {...stylex.props(styles.memberAvatarImage)}
+          data-stylex-owner="organization-member-avatar-image"
           src={stringField(member.avatarUrl, "/assets/images/default-avatar-64.png")}
           width="64"
           height="64"
           alt=""
         />
       </Link>
-      <div className="member-name">{stringField(member.userLabel, loginId)}</div>
-      <div className="member-id">@{loginId}</div>
+      <div {...stylex.props(styles.memberName)} data-stylex-owner="organization-member-name">
+        {stringField(member.userLabel, loginId)}
+      </div>
+      <div {...stylex.props(styles.memberId)} data-stylex-owner="organization-member-id">
+        @{loginId}
+      </div>
       <div className="member-setting">
         <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button
@@ -478,6 +497,57 @@ function OrganizationMember({
     </li>
   );
 }
+
+const styles = stylex.create({
+  memberList: {
+    listStyle: "none",
+    margin: "0px",
+    width: "100%",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  memberRow: {
+    borderBottomColor: organizationMemberColors.rowBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "5px",
+    minHeight: "30px",
+    minWidth: {
+      default: null,
+      [globalBreakpoints.mobile]: "95%",
+    },
+    padding: "10px 5px",
+    position: "relative",
+    width: "48.93617021276595%",
+  },
+  memberAvatar: {
+    backgroundColor: organizationMemberColors.avatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
+    float: "left",
+    height: "40px",
+    marginRight: "10px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "40px",
+  },
+  memberAvatarImage: {
+    verticalAlign: "top",
+    width: "100%",
+  },
+  memberName: {
+    fontWeight: "bold",
+    lineHeight: "20px",
+    marginTop: "2px",
+  },
+  memberId: {
+    color: organizationMemberColors.idText,
+    lineHeight: "20px",
+  },
+});
 
 function EnrollmentRequest({
   onAccept,
