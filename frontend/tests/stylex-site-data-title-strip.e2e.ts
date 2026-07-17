@@ -18,6 +18,8 @@ async function openData(page: Page) {
   await page.goto(`${basePath}/sites/data`);
   const owner = page.locator('[data-stylex-owner="site-data-title-strip"]');
   await expect(owner).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-data-page"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-data-content"]')).toBeVisible();
   return owner;
 }
 
@@ -34,6 +36,12 @@ test.describe("StyleX site data title strip", () => {
     expect(theme).toContain("titleText");
     expect(route).not.toContain("globalColors.");
     expect([...route.matchAll(/data-stylex-owner="([^"]+)"/g)].map((match) => match[1])).toEqual([
+      "site-data-breadcrumb-outer",
+      "site-data-breadcrumb-inner",
+      "site-data-breadcrumb-heading",
+      "site-data-page",
+      "site-data-content",
+      "site-data-sidebar-column",
       "site-data-title-strip",
       "site-data-title-heading",
       "site-data-warning-surface",

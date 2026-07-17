@@ -482,3 +482,9 @@ Manual multi-screen exception note: Batch253 intentionally coordinated two indep
 - `/organizations/$organizationName/closedPullrequests`: verified the closed category reuses the organization pull-request screen with existing list/empty/pagination owners; query, tab navigation, and REST state remain React-owned. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch254 intentionally coordinated project pull-request state variants and the organization closed state into one supervised batch commit. Each route/state retains its Scala evidence and focused assertions; the assembled browser and shared static/build gates ran once.
+
+## Batch 255 migration rows
+
+- `/sites/data`: migrated page/content/sidebar-column owners from `site/data.scala.html` and site-management partials; read-only data queries, warning/export/import controls, and navigation remain React-owned. Focused `stylex-site-data-title-strip.e2e.ts` passed in the assembled browser gate.
+
+This batch used a single read-only route state; no multi-screen exception was required.
