@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twenty-four slices; theme-boundary correction complete
+Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -22,6 +22,18 @@ The end state is:
 - E2E selectors do not depend on StyleX hashes or presentation-only legacy classes;
 - desktop and 390 px parity gates remain green throughout;
 - the original legacy sources remain byte-identical reference evidence under `yona-original/`.
+
+Slice count is an audit sequence, not a completion percentage. Progress reporting uses the
+following outcome measures together: StyleX-owned route files, route files with reachable legacy
+presentation classes, `app.css` responsibility, active generated-fallback bytes/lines, and fully
+retired fallback modules. A large slice count with unchanged fallback modules must not be reported
+as near completion.
+
+The post-slice-224 execution baseline is 30/116 route TSX files importing StyleX, 82/116 route TSX
+files still containing `className` syntax, 7,865 `app.css` lines, and a 25,177-line /
+526,260-byte generated fallback. No major Bootstrap, Yobi, usermenu, or plugin module is fully
+retired. This supports a conservative 20–30% overall completion estimate and is the baseline the
+batch protocol must improve.
 
 ## 2. Scope and fixed boundaries
 
@@ -199,10 +211,12 @@ The final gate fails if a declaration could be expressed on a React-owned elemen
 was left in the bridge. If a future StyleX release gains a supported global/font API, removing the
 bridge becomes the final cleanup slice.
 
-## 5. Atomic migration unit
+## 5. Atomic migration unit and batch execution
 
-Every slice is one user-visible component or screen state and lands as a single commit. The same
-commit must contain all of the following:
+Every route slice remains one user-visible route/state and lands as one route-scoped commit. A
+slice should normally contain 4–6 independent owner types from that state; using 2–3 owners is
+reserved for plugin DOM, shared-selector ambiguity, or an interaction whose failure cannot be
+isolated from a larger group. The same route commit must contain all of the following:
 
 1. legacy evidence: Scala template/partial, LESS/CSS selector, responsive rule, and relevant JS;
 2. StyleX declarations with exact legacy values and all visible states;
@@ -211,11 +225,80 @@ commit must contain all of the following:
 5. E2E selector migration for that surface;
 6. desktop and 390 px computed-style/geometry assertions;
 7. interaction coverage for hover/focus/active/disabled/open/closed states as applicable;
-8. an updated migration ledger and provenance row;
-9. frontend typecheck, build, focused E2E, and fallback-precedence checks.
+8. exactly one Scala HTML audit row for that route/state;
+9. focused E2E and fallback-precedence coverage that can participate in the batch gate.
 
 Do not land “StyleX code now, selector/test cleanup later.” Do not update selectors without moving
 the owning styles in the same slice.
+
+### 5.1 Default operating mode: three-route worktree batch
+
+The default execution unit is now a batch of three independent route/state slices, totaling
+12–18 owner types. Two routes are acceptable when one state is unusually heavy; a single-route
+batch requires a concrete reason such as shared-file ownership, plugin-generated DOM, or a
+non-isolatable backend dependency. Do not grow a batch beyond the available worker slots merely to
+reduce command count.
+
+1. The main agent selects all batch targets before implementation and proves that their route
+   TSX, focused E2E, route-local StyleX module, API contract, and legacy selector ownership do not
+   overlap.
+2. Create one branch-backed git worktree per route from the same clean base commit. Each worker is
+   limited to its route TSX, route-local StyleX module, one focused E2E file, and exactly one Scala
+   HTML audit row. Workers must not edit the shared plan or migration ledger.
+3. Each worker reads its Scala HTML/partials/transitive LESS/JS/messages and captures one
+   route-state desktop/mobile legacy baseline shared by all 4–6 owners. It writes the focused test
+   before implementation and records a deterministic RED. The RED may be a fast source/ownership
+   contract without starting the managed browser; browser RED is required only when the defect or
+   interaction itself must be demonstrated. Browser GREEN remains mandatory.
+4. Workers implement in parallel and run only cheap route-scoped checks: source ownership, focused
+   static contract, TypeScript diagnostics for touched code when available, oxlint, oxfmt check,
+   and `git diff --check`. They do not independently run the production build, full Vitest, or the
+   full focused browser matrix by default.
+5. The main agent runs the mandatory turn-commit hook in each worktree so each branch has a
+   self-contained route commit. Subagents do not request approval and then exit; approval-bearing
+   commit commands remain owned by the main agent.
+6. Recreate a disposable integration worktree from the batch base and cherry-pick the three route
+   commits. Resolve only mechanical append conflicts in the audit file; any implementation,
+   selector, or ownership conflict disqualifies the affected route from that batch.
+7. Start the managed runtime once and pass all focused E2E files to one Playwright invocation.
+   Use the runner's route-level parallelism up to the three available worker slots unless a shared
+   mutable fixture requires serialization. That invocation owns the batch's desktop/mobile
+   geometry, interaction, fallback-equivalence, and screenshot gate. Run frontend typecheck,
+   Vitest, production build, StyleX verifier, frozen hash check, and `git diff --check` once for the
+   assembled batch.
+8. If a route fails, rerun only its focused spec to diagnose it, amend that worker's route commit,
+   recreate the disposable integration worktree, and rerun the assembled batch gate. Never weaken
+   an assertion to keep the other routes green. Routes proven independent may land without a
+   failed route rather than waiting for unrelated repair.
+9. After the assembled gate passes, integrate the route commits in deterministic target order.
+   Then add all corresponding migration-ledger rows and one batch status paragraph to the shared
+   documentation in a single docs-only turn commit. The ledger rows still remain one per surface;
+   only their write/verification timing is batched to prevent worktree conflicts.
+
+The batch shares expensive work, not ownership. Each route keeps its own legacy evidence, stable
+selectors, audit row, route commit, rollback boundary, and focused test. A batch must not combine
+two states of the same route, shared component edits, backend contract edits, or consumers whose
+legacy selector dependency is unresolved.
+
+### 5.2 Batch acceptance and progress accounting
+
+A batch is accepted only when every included route passes its focused assertions in the combined
+Playwright invocation and the single assembled static/build gate is green. Report both route/state
+results and the aggregate command result; a green route must not conceal a failed sibling.
+
+After each batch, record these progress counters instead of deriving completion from the slice
+ordinal:
+
+- StyleX-owned route files / total route files;
+- route files with reachable legacy presentation `className` consumers;
+- `frontend/src/app.css` lines and identified remaining owner groups;
+- generated legacy fallback bytes/lines and hash;
+- fully retired Bootstrap/Yobi/usermenu/plugin modules;
+- batch routes, owner types, elapsed browser/build invocations, and excluded failures.
+
+The fallback hash can remain unchanged while individual consumers migrate because modules retire
+only after their last consumer. Therefore an unchanged hash is neither failure nor progress proof;
+the active-consumer inventory and module-retirement count are the authoritative evidence.
 
 ## 6. E2E selector migration policy
 
@@ -3064,7 +3147,7 @@ supported viewport/state matrix.
 
 | 2026-07-17 | Authenticated populated `/admin/sample/statistics` Under Construction body-shell StyleX wave | `yona-original/app/views/project/statistics.scala.html` supplies the exact `page-wrap-outer > project-page-wrap > h1` skeleton; included project shell templates, frozen `_page.less`, max-720 and final `@media all` `_responsive.less`, Bootstrap h1 rules, and fresh live Java Edge measurements supply the final output. Legacy Scala HTML/JS remains output DOM/UX evidence while React/TanStack own project loading, nested shell reuse, metadata, and search scope. | `frontend/src/routes/$ownerName/$projectName/statistics.tsx` adds exactly two stable StyleX owners for the outer and project-page wrappers, plus direct child h1 type declarations needed to preserve live Bootstrap output against the stale app bridge. Desktop/mobile final cascade is 10px outer top, desktop 10px inset/mobile zero inset, desktop min-width 0/mobile 10px, and project-page 5px/100% at both sizes. Geometry/type values stay inline; no paint/theme vars/file are added. Only this route’s wrapper classes retire. | `frontend/tests/project-statistics.e2e.ts` keeps live-derived 1366×900/390×844 owner-local sizes/x/type, containment, mobile no-overflow, and fallback equivalence. Live absolute y130 remains provenance; local shared header ancestry yields y173 desktop/y196 mobile, so the executable gate uses the exact 10px outer-to-header-bottom gap and equal project-page/H1/outer tops without weakening this route’s contract. The complete route suite is GREEN 14/14; static/format/lint/diff, typecheck, and production build/StyleX verification are green. |
 
-## 8. Verification matrix per slice
+## 8. Verification matrix per route slice and assembled batch
 
 | Gate       | Required check                                                                      |
 | ---------- | ----------------------------------------------------------------------------------- |

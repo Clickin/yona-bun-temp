@@ -1,6 +1,6 @@
 # Frontend StyleX Migration Ledger
 
-Status: Wave 1 active after two hundred twenty-four slices; theme-boundary correction complete
+Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
 Frozen files under `yona-original/app/assets/stylesheets/**` and
@@ -13,6 +13,22 @@ sets may contain only genuinely shared semantic paint; route-only paint belongs 
 `stylex.defineVars`, while geometry, spacing, typography metrics, and behavior values are written
 directly in the owning `stylex.create`. The active correction inventory and resume gate live in
 `docs/provenance/frontend-stylex-theme-boundary-correction.md`.
+
+## Progress accounting snapshot
+
+Slice ordinals identify reviewable migrations; they are not a completion percentage. The
+post-slice-224 baseline is 30 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
+25,177-line / 526,260-byte generated legacy fallback with SHA-256
+`6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
+Yobi, usermenu, or plugin fallback module is fully retired yet. These counters, active-consumer
+inventory, and module retirement—not the 224-slice ordinal—are the conservative progress evidence.
+
+New work defaults to independent three-route worktree batches defined in the canonical plan.
+Workers keep route TSX/E2E/audit ownership isolated; the main agent runs one assembled browser,
+typecheck, Vitest, build, verifier, and hash gate per batch. The ledger still receives one row per
+surface, but all batch rows and the batch status paragraph are written together after the assembled
+gate passes so parallel workers do not conflict in this shared file.
 
 ## Runtime fallback inventory
 
