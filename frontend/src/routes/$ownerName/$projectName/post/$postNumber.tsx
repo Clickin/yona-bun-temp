@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   Fragment,
   type FormEvent,
@@ -32,6 +33,16 @@ import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
+import { styles } from "./-post-detail.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  header: stylex.props(styles.header),
+  body: stylex.props(styles.body),
+  content: stylex.props(styles.content),
+  actions: stylex.props(styles.actions),
+  watch: stylex.props(styles.watch),
+} as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
 
@@ -145,7 +156,7 @@ function ProjectPostNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
+    <div {...sx.page} data-stylex-owner="post-detail-page">
       <div className="project-page-wrap">
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
@@ -331,8 +342,8 @@ function ProjectPostDetailBody({
           "/legacy-assets/javascripts/lib/elevator/jquery.elevator.css",
         )}
       />
-      <div className="project-page-wrap board-view">
-        <div className="board-header issue">
+      <div data-stylex-owner="post-detail-shell">
+        <div {...sx.header} data-stylex-owner="post-detail-header">
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={post.createdLabel}>
               {legacyRelativeDateLabel(post.createdLabel, language)}
@@ -348,7 +359,7 @@ function ProjectPostDetailBody({
           </div>
         </div>
 
-        <div className="board-body row-fluid">
+        <div {...sx.body} data-stylex-owner="post-detail-body">
           <div className="span9 span-left-pane">
             <div className="author-info">
               <Link
@@ -403,7 +414,11 @@ function ProjectPostDetailBody({
                 </div>
                 <div id={`post-body-${postNumber}`}>
                   <TasklistBar />
-                  <div className="content markdown-wrap" data-allowed-update={String(canUpdate)}>
+                  <div
+                    {...sx.content}
+                    data-stylex-owner="post-detail-content"
+                    data-allowed-update={String(canUpdate)}
+                  >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.bodyMarkdown}</ReactMarkdown>
                   </div>
                 </div>
@@ -418,14 +433,15 @@ function ProjectPostDetailBody({
             >
               <AttachedFiles attachments={post.attachments} />
             </div>
-            <div className="board-actrow right-txt">
+            <div {...sx.actions} data-stylex-owner="post-detail-actions">
               <div className="pull-left">
                 <div>
                   {canWatch ? (
                     <button
                       id="watch-button"
                       type="button"
-                      className={`ybtn ${post.isWatching ? "ybtn-watching" : ""}`}
+                      {...sx.watch}
+                      data-stylex-owner="post-detail-watch"
                       data-placement="top"
                       title={t("issue.watch.description")}
                       data-watching={String(post.isWatching)}

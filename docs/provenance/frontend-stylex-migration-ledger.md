@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch235 snapshot is 61 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch236 snapshot is 64 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -347,6 +347,12 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/commits`: migrated code history page/shell/table owners from `code/history.scala.html` and code/project partials; route-local theme owns paint only and React branch/query navigation remains unchanged. Focused `stylex-project-commits.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/code`: migrated no-head code page/column/alert/heading owners from `code/view.scala.html` and code partials; route-local theme owns paint only and React VCS instructions/navigation remain unchanged. Focused `stylex-project-code.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/compare/$revisionRange`: migrated compare browse/metadata/diff/empty owners from `code/compare.scala.html` and diff partials; route-local theme owns paint only and React diff links/rendering remain unchanged. Focused `stylex-project-compare.e2e.ts` passed in the assembled batch gate.
+
+## Batch 236 migration rows
+
+- `/$ownerName/$projectName/code/$branch`: migrated code branch page/browser/header owners from `code/branches.scala.html` and code/project partials; route-local theme owns paint only and React branch/query navigation remains unchanged. Focused `stylex-project-code-branch.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/code/$branch/$filePath`: migrated code file shell/header/metadata/actions/content owners from `code/partial_view_file.scala.html` and code partials; route-local theme owns paint only and React file rendering/navigation remains unchanged. Focused `stylex-project-code-file.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/post/$postNumber`: migrated post detail header/body/actions/watch owners from `board/view.scala.html` and board partials; route-local theme owns paint only and React markdown/comments/watch behavior remains unchanged. Focused `stylex-project-post-detail.e2e.ts` passed in the assembled batch gate.
 
 ## Batch 233 migration rows
 

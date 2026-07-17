@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import "./legacy-dynatree.css";
@@ -8,6 +9,7 @@ import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { styles } from "../-code-branch.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch")({
   component: ProjectCodeBranchRoute,
@@ -75,9 +77,9 @@ function ProjectCodeFolderBody({
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="project-code-branch-page">
       <div className="project-page-wrap">
-        <div className="code-browse-wrap">
+        <div className="code-browse-wrap" data-stylex-owner="project-code-branch-browser">
           <ul className="nav nav-tabs">
             <li className="active">
               <Link
@@ -141,7 +143,10 @@ function ProjectCodeFolderBody({
             ) : null}
           </ul>
 
-          <div className="code-browse-header">
+          <div
+            className={`${stylex.props(styles.header).className} code-browse-header`}
+            data-stylex-owner="project-code-branch-header"
+          >
             <div
               className={`select2-container pull-left${branchMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
               style={{ width: 220 }}

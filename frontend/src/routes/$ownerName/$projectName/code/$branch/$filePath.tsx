@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
@@ -13,6 +14,7 @@ import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { styles } from "./-code-file.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
   component: ProjectCodeFileRoute,
@@ -550,9 +552,19 @@ function FileView({
   );
 
   return (
-    <div className="file-wrap">
-      <div className="file-header nm">
-        <div id="fileInfo" className="file-info">
+    <div
+      className={`${stylex.props(styles.fileWrap).className} file-wrap`}
+      data-stylex-owner="project-code-file-wrap"
+    >
+      <div
+        className={`${stylex.props(styles.fileHeader).className} file-header nm`}
+        data-stylex-owner="project-code-file-header"
+      >
+        <div
+          id="fileInfo"
+          className={`${stylex.props(styles.fileInfo).className} file-info`}
+          data-stylex-owner="project-code-file-info"
+        >
           <span id="commiter" className="commiter">
             <Link
               to="/$user"
@@ -626,7 +638,10 @@ function FileView({
           </span>
           <span>{stringField(file.lineEnding, "")}</span>
         </div>
-        <div className="pull-right">
+        <div
+          className={`${stylex.props(styles.fileActions).className} pull-right`}
+          data-stylex-owner="project-code-file-actions"
+        >
           {!isBinary ? (
             <>
               <Link to={rawPath} reloadDocument className="ybtn" target="_blank">
@@ -709,15 +724,28 @@ function FileView({
       </div>
       {isBinary ? (
         mimeType.startsWith("image/") ? (
-          <div id="showImage" className="image-wrap">
-            <img src={rawHref} alt="" />
+          <div
+            id="showImage"
+            className={`${stylex.props(styles.imageWrap).className} image-wrap`}
+            data-stylex-owner="project-code-file-image"
+          >
+            <img {...stylex.props(styles.image)} src={rawHref} alt="" />
           </div>
         ) : (
-          <div id="showFile" className="file-wrap">
+          <div
+            id="showFile"
+            className={`${stylex.props(styles.binaryFile).className} file-wrap`}
+            data-stylex-owner="project-code-file-binary"
+          >
             <p>
               <strong className="filename">{filePath.split("/").pop() ?? filePath}</strong>
               <br />
-              <span className="filesize">{stringField(file.size, "")}</span>
+              <span
+                className={`${stylex.props(styles.binarySize).className} filesize`}
+                data-stylex-owner="project-code-file-size"
+              >
+                {stringField(file.size, "")}
+              </span>
               <br />
               <Link to={rawPath} reloadDocument className="filehref ybtn">
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i>{" "}
@@ -741,7 +769,11 @@ function FileView({
           </Link>
         </p>
       ) : isMarkdownPath(filePath) ? (
-        <div id="codeVal" className="markdown-wrap codebrowser-markdown">
+        <div
+          id="codeVal"
+          className={`${stylex.props(styles.markdown).className} markdown-wrap codebrowser-markdown`}
+          data-stylex-owner="project-code-file-markdown"
+        >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{fileText}</ReactMarkdown>
         </div>
       ) : (
@@ -749,7 +781,12 @@ function FileView({
           <div id="codeVal" className="hidden">
             {fileText}
           </div>
-          <pre id="showCode" className="code-wrap" data-mimetype={mimeType}></pre>
+          <pre
+            id="showCode"
+            className={`${stylex.props(styles.code).className} code-wrap`}
+            data-stylex-owner="project-code-file-source"
+            data-mimetype={mimeType}
+          ></pre>
         </>
       )}
     </div>

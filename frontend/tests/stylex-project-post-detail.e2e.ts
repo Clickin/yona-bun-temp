@@ -1,0 +1,80 @@
+import { readFileSync } from "node:fs";
+import { expect, test, type Page, type Route } from "@playwright/test";
+
+const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${name}"]`).first();
+
+test.use({ locale: "ko-KR" });
+
+test("records board post detail owners and responsive containment", async ({ page }) => {
+  const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
+  const theme = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const template = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  expect(template).toContain('class="board-header issue"');
+  expect(template).toContain('class="board-body row-fluid"');
+  expect(route).toContain('data-stylex-owner="post-detail-content"');
+  expect(theme).toContain("export const postDetailColors");
+  await mockPost(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/weblabs/demo/post/1`);
+    await expect(owner(page, "post-detail-header")).toBeVisible();
+    await expect(owner(page, "post-detail-content")).toContainText("Body");
+    const geometry = await owner(page, "post-detail-body").evaluate((element) => ({
+      width: element.getBoundingClientRect().width,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(geometry.width).toBeGreaterThan(0);
+    expect(geometry.scrollWidth).toBe(viewport.width);
+  }
+});
+
+async function mockPost(page: Page) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  const session = {
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "admin",
+    preferredLanguage: "ko-KR",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
+    await page.route(url, (route: Route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
+  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { ownerName: "weblabs", projectName: "demo" },
+    }),
+  );
+  await page.route("**/api/v1/owners/**/projects/**/posts/1", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        postNumber: 1,
+        title: "Post",
+        bodyMarkdown: "Body",
+        authorLabel: "admin",
+        authorLoginId: "admin",
+        authorAvatarUrl: "",
+        attachments: [],
+        comments: [],
+        isWatching: false,
+      },
+    }),
+  );
+}
