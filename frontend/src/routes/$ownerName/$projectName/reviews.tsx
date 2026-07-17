@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { type CSSProperties, type FormEvent } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -12,6 +13,32 @@ import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SitePagination } from "../../sites/-pagination";
+import { reviewsColors } from "./-reviews.stylex";
+
+const styles = stylex.create({
+  sidebar: { borderColor: reviewsColors.border, borderStyle: "solid", borderWidth: "1px" },
+  searchInput: {
+    borderColor: reviewsColors.border,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: reviewsColors.mutedText,
+    padding: "4px 6px",
+  },
+  sort: { color: reviewsColors.mutedText, textDecoration: "none" },
+  tabs: {
+    borderBottomColor: reviewsColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+  },
+  tabButton: { color: reviewsColors.tabText, textDecoration: "none" },
+  list: { listStyle: "none", margin: "0px", padding: "0px" },
+  row: {
+    borderBottomColor: reviewsColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+  },
+  title: { color: reviewsColors.titleText, textDecoration: "none" },
+});
 
 type ProjectReviewsRouteSearch = {
   authorId?: number;
@@ -168,7 +195,11 @@ function ProjectReviewsBody({
   return (
     <div className="project-page-wrap">
       <div className="row-fluid issue-list-wrap">
-        <div className="span2 search-wrap span-hard-wrap">
+        <div
+          {...stylex.props(styles.sidebar)}
+          className="span2 search-wrap span-hard-wrap"
+          data-stylex-owner="project-reviews-sidebar"
+        >
           <div className="inner advanced">
             <ul className="lst-stacked unstyled">
               <li className={search.participantId === 0 && search.authorId === 0 ? "active" : ""}>
@@ -200,7 +231,9 @@ function ProjectReviewsBody({
               <div className="search-bar span-hard-wrap">
                 <input
                   name="filter"
+                  {...stylex.props(styles.searchInput)}
                   className="textbox full"
+                  data-stylex-owner="project-reviews-search-input"
                   type="text"
                   defaultValue={search.filter}
                 />
@@ -215,7 +248,9 @@ function ProjectReviewsBody({
           <div className="pull-right filters">
             <button
               type="button"
+              {...stylex.props(styles.sort)}
               className="filter"
+              data-stylex-owner="project-reviews-sort"
               onClick={() => {
                 pushReviews({
                   orderBy: "createdDate",
@@ -233,7 +268,11 @@ function ProjectReviewsBody({
               {t("common.order.date")}
             </button>
           </div>
-          <ul className="nav nav-tabs nm">
+          <ul
+            {...stylex.props(styles.tabs)}
+            className="nav nav-tabs nm"
+            data-stylex-owner="project-reviews-tabs"
+          >
             <li className={activeState === "open" ? "active" : ""}>
               <button
                 type="button"
@@ -257,7 +296,7 @@ function ProjectReviewsBody({
               </button>
             </li>
           </ul>
-          <div className="review-list-wrap">
+          <div className="review-list-wrap" data-stylex-owner="project-reviews-list-wrap">
             <ProjectReviewRows ownerName={ownerName} projectName={projectName} reviews={reviews} />
           </div>
           <div className="pull-left" style={{ padding: 10 }}>
@@ -310,7 +349,11 @@ function ProjectReviewRows({
   }
 
   return (
-    <ul className="post-list-wrap">
+    <ul
+      {...stylex.props(styles.list)}
+      className="post-list-wrap"
+      data-stylex-owner="project-reviews-list"
+    >
       {reviews.items.map((thread) => (
         <ProjectReviewRow
           key={thread.id}
@@ -342,7 +385,7 @@ function ProjectReviewRow({
   const threadRoute = reviewThreadRoute(ownerName, projectName, thread);
 
   return (
-    <li className="post-item">
+    <li {...stylex.props(styles.row)} className="post-item" data-stylex-owner="project-reviews-row">
       <Link to={authorRoute} className="avatar-wrap mlarge hide-in-mobile" title={authorLoginId}>
         <img
           src={firstComment?.authorAvatarUrl || thread.authorAvatarUrl || defaultAvatarUrl}
@@ -353,7 +396,13 @@ function ProjectReviewRow({
       </Link>
       <div className="title-wrap">
         <span className="post-id">{thread.id}</span>
-        <Link to={threadRoute.to} hash={threadRoute.hash} className="title">
+        <Link
+          {...stylex.props(styles.title)}
+          to={threadRoute.to}
+          hash={threadRoute.hash}
+          className="title"
+          data-stylex-owner="project-reviews-title"
+        >
           {contents}
         </Link>
       </div>

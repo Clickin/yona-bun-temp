@@ -1,5 +1,6 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/edit.scala.html sets positive tabindex values on the edit form controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
@@ -11,6 +12,7 @@ import {
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import { postEditFormTheme } from "./-post-editform.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber/editform")({
   component: ProjectBoardEditFormRoute,
@@ -87,9 +89,11 @@ function ProjectBoardEditFormBody({
   return (
     <>
       <title>{`${t("post.modify")} - ${ownerName}/${projectName}`}</title>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-stylex-owner="post-edit-form-page">
         <div className="project-page-wrap">
           <form
+            {...stylex.props(styles.form)}
+            data-stylex-owner="post-edit-form"
             action={prefixBasePath(
               runtimeConfig.basePath,
               `/${ownerName}/${projectName}/post/${postNumber}`,
@@ -113,7 +117,7 @@ function ProjectBoardEditFormBody({
                 <dt>
                   <label htmlFor="title">{t("title")}</label>
                 </dt>
-                <dd>
+                <dd data-stylex-owner="post-edit-form-title">
                   <input
                     ref={titleRef}
                     tabIndex={1}
@@ -132,7 +136,7 @@ function ProjectBoardEditFormBody({
                     }}
                   />
                 </dd>
-                <dd style={{ position: "relative" }}>
+                <dd style={{ position: "relative" }} data-stylex-owner="post-edit-form-editor">
                   <BoardPostMarkdownEditor
                     focusRequest={bodyFocusRequest}
                     value={post.bodyMarkdown}
@@ -157,7 +161,10 @@ function ProjectBoardEditFormBody({
                 ) : null}
               </div>
 
-              <div className="actions">
+              <div
+                className={`${stylex.props(styles.actions).className} actions`}
+                data-stylex-owner="post-edit-form-actions"
+              >
                 {canSendNotification ? (
                   <span className="send-notification-check">
                     <label className="checkbox inline">
@@ -298,7 +305,8 @@ function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
   return (
     <div
       id="upload"
-      className="upload-wrap content-footer"
+      className={`${stylex.props(styles.upload).className} upload-wrap content-footer`}
+      data-stylex-owner="post-edit-form-uploader"
       data-resource-type="BOARD_POST"
       data-resource-id={resourceId}
     >
@@ -330,3 +338,9 @@ function stringFormValue(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
 }
+
+const styles = stylex.create({
+  form: { position: "relative" },
+  actions: { textAlign: "right" },
+  upload: { backgroundColor: postEditFormTheme.uploadSurface },
+});

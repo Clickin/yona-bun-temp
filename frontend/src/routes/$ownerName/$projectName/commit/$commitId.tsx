@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,6 +26,16 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import { styles } from "./-commit-detail.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  browse: stylex.props(styles.browse),
+  commitInfo: stylex.props(styles.commitInfo),
+  commitMessage: stylex.props(styles.commitMessage),
+  commitDescription: stylex.props(styles.commitDescription),
+  diffBody: stylex.props(styles.diffBody),
+} as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
 
@@ -265,9 +276,9 @@ function ProjectCommitDetailBody({
 
   return (
     <>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
-          <div id="code-browse-wrap" className="code-browse-wrap">
+      <div {...sx.page} data-stylex-owner="commit-detail-page">
+        <div data-stylex-owner="commit-detail-shell">
+          <div {...sx.browse} data-stylex-owner="commit-detail-browse" id="code-browse-wrap">
             <ul className="nav nav-tabs" style={{ marginBottom: "20px" }}>
               <li>
                 <Link to={projectTo(ownerName, projectName, "code")}>{t("code.files")}</Link>
@@ -293,14 +304,14 @@ function ProjectCommitDetailBody({
                 <i className="yobicon-restore"></i>
               </button>
               <div className="diffs-wrap">
-                <div className="commitInfo">
+                <div {...sx.commitInfo} data-stylex-owner="commit-detail-info">
                   <div className="commitAuthor">
                     <CommitAuthor detail={detail} />
                     <span className="ago" title={commit?.authorDate ?? ""}>
                       {commit?.authorDate ?? ""}
                     </span>
                   </div>
-                  <div className="commitMsg-wrap">
+                  <div data-stylex-owner="commit-detail-message">
                     <CommitMessage
                       message={commit?.message ?? ""}
                       shortMessage={commit?.shortMessage ?? ""}
@@ -313,7 +324,8 @@ function ProjectCommitDetailBody({
 
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
-                  className="diff-body"
+                  {...sx.diffBody}
+                  data-stylex-owner="commit-detail-diff-body"
                   onMouseUp={() => {
                     const selection = globalThis.getSelection?.();
                     const selectedText = selection?.toString() ?? "";
@@ -1474,8 +1486,14 @@ function CommitMessage({ message, shortMessage }: { message: string; shortMessag
   const detail = lines.slice(1).join("\n");
   return (
     <>
-      <span className="commitMsg short">{shortMessage || t("code.commitMsg.empty")}</span>
-      {detail ? <pre className="commitMsg desc">{detail}</pre> : null}
+      <span {...sx.commitMessage} data-stylex-owner="commit-detail-short-message">
+        {shortMessage || t("code.commitMsg.empty")}
+      </span>
+      {detail ? (
+        <pre {...sx.commitDescription} data-stylex-owner="commit-detail-description">
+          {detail}
+        </pre>
+      ) : null}
     </>
   );
 }
