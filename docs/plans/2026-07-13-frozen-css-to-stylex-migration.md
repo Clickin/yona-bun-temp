@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred fifteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred sixteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -554,6 +554,16 @@ and exact 1366/390 widths. Retiring the two breadcrumb classes also makes the la
 ancestor bridge inapplicable without overriding it. Genuine RED 0/4 becomes focused GREEN 4/4;
 five-route node persistence, token copy, exact computed output, fallback equivalence, screenshots,
 typecheck, and scoped format/lint/diff pass. This is not Wave 1 completion.
+
+The two-hundred-sixteenth slice migrates exactly five password-form owners on authenticated
+`/user/editform/password`: form, dl, repeated dt, repeated dd with the evidenced 10px field
+spacing, and repeated password inputs. Only input surface/text/border/focus paint enters the
+route-owned theme; every size, spacing, and font declaration stays literal. Field `mt10` retires,
+while submit/reset buttons, the reset section, and validation popovers remain independent
+consumers. Authenticated live Java desktop/mobile evidence pins the 206px content-width inputs,
+30px boxes, dt/dd rhythm, focus output, and max-720 16px input type. Genuine RED becomes focused
+GREEN 4/4 with validation, CSRF mutation, redirect, screenshots, typecheck, and scoped
+format/lint/diff green. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

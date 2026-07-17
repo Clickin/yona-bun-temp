@@ -1,10 +1,71 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { changePasswordRest, readWorkspaceOverviewRest } from "../../../api/workspace";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { passwordSettingsColors } from "./-password.stylex";
+
+const styles = stylex.create({
+  form: {
+    display: "block",
+    margin: "0px 0px 2px",
+    padding: "0px",
+  },
+  list: {
+    display: "block",
+    margin: "0px",
+    padding: "0px",
+  },
+  term: {
+    display: "block",
+    fontWeight: "700",
+    lineHeight: "20px",
+    margin: "0px",
+    padding: "0px",
+  },
+  description: {
+    display: "block",
+    lineHeight: "20px",
+    margin: "0px",
+    padding: "0px",
+  },
+  spacedDescription: { marginTop: "10px" },
+  input: {
+    backgroundColor: passwordSettingsColors.inputSurface,
+    borderColor: {
+      default: passwordSettingsColors.inputBorder,
+      ":focus": passwordSettingsColors.inputFocusBorder,
+    },
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: passwordSettingsColors.inputText,
+    display: "inline-block",
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: { default: "12px", "@media (max-width: 720px)": "16px" },
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "20px",
+    margin: "0px 0px 10px",
+    outlineStyle: "none",
+    padding: "4px 6px",
+    transition: "border 0.2s linear, box-shadow 0.2s linear",
+    verticalAlign: "middle",
+    width: "206px",
+  },
+});
+
+const formStyleProps = stylex.props(styles.form);
+const listStyleProps = stylex.props(styles.list);
+const termStyleProps = stylex.props(styles.term);
+const descriptionStyleProps = stylex.props(styles.description);
+const spacedDescriptionStyleProps = stylex.props(styles.description, styles.spacedDescription);
+const inputStyleProps = stylex.props(styles.input);
 
 export const Route = createFileRoute("/user/editform/password")({
   component: UserPasswordSettingsRoute,
@@ -55,9 +116,11 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
   return (
     <>
       <form
+        {...formStyleProps}
         id="frmPassword"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/resetPassword")}
+        data-stylex-owner="user-password-form"
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
@@ -74,44 +137,56 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
         }}
       >
         <input type="hidden" name="loginId" value={loginId} />
-        <dl>
-          <dt>{t("user.currentPassword")}</dt>
-          <dd className="mt10">
+        <dl {...listStyleProps} data-stylex-owner="user-password-list">
+          <dt {...termStyleProps} data-stylex-owner="user-password-term">
+            {t("user.currentPassword")}
+          </dt>
+          <dd {...spacedDescriptionStyleProps} data-stylex-owner="user-password-description">
             <input
+              {...inputStyleProps}
               type="password"
               id="oldPassword"
               name="oldPassword"
               defaultValue=""
               autoComplete="off"
+              data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
             <FieldPopover message={fieldErrors.oldPassword} />
           </dd>
-          <dt>{t("user.newPassword")}</dt>
-          <dd className="mt10">
+          <dt {...termStyleProps} data-stylex-owner="user-password-term">
+            {t("user.newPassword")}
+          </dt>
+          <dd {...spacedDescriptionStyleProps} data-stylex-owner="user-password-description">
             <input
+              {...inputStyleProps}
               type="password"
               id="password"
               name="password"
               defaultValue=""
               autoComplete="off"
+              data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
             <FieldPopover message={fieldErrors.password} />
           </dd>
-          <dt>{t("validation.retypePassword")}</dt>
-          <dd className="mt10">
+          <dt {...termStyleProps} data-stylex-owner="user-password-term">
+            {t("validation.retypePassword")}
+          </dt>
+          <dd {...spacedDescriptionStyleProps} data-stylex-owner="user-password-description">
             <input
+              {...inputStyleProps}
               type="password"
               id="retypedPassword"
               name="retypedPassword"
               defaultValue=""
               autoComplete="off"
+              data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
             <FieldPopover message={fieldErrors.retypedPassword} />
           </dd>
-          <dd>
+          <dd {...descriptionStyleProps} data-stylex-owner="user-password-description">
             <button type="submit" className="ybtn ybtn-success">
               {t("userinfo.changePassword")}
             </button>
