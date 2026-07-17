@@ -117,7 +117,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
         <div {...sx.breadcrumbOuter} data-stylex-owner="organization-directory-breadcrumb-outer">
           <div {...sx.breadcrumbInner} data-stylex-owner="organization-directory-breadcrumb-inner">
-            <div className="title_area">
+            <div className="title_area" data-stylex-owner="organization-directory-title-area">
               <ul {...sx.tabsList} data-stylex-owner="organization-directory-tabs-list">
                 <li {...sx.tabsItem} data-stylex-owner="organization-directory-tabs-item">
                   <Link
@@ -154,7 +154,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </div>
         </div>
         <div {...sx.pageWrap} data-stylex-owner="organization-directory-page-wrap">
-          <div {...sx.page} data-stylex-owner="organization-directory-page">
+          <div
+            {...sx.page}
+            data-stylex-owner="organization-directory-page"
+            data-stylex-page-shell="organization-directory-page-shell"
+          >
             <div {...sx.searchWrap} data-stylex-owner="organization-directory-search-wrap">
               <div
                 id="search"

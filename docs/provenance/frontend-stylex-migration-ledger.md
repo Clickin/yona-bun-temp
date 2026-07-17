@@ -452,3 +452,11 @@ Manual multi-screen exception note: Batch249 intentionally coordinated the indep
 - `/organizations/$organizationName/pullrequests`: migrated organization pull-request list/empty/pagination/row metadata/progress/state owners from `group_pullrequest_list.scala.html` and partials; existing search/tabs/query/navigation behavior remains React-owned. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch250 intentionally coordinated the independent migration, organization delete, and organization pull-request route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once.
+
+## Batch 251 migration rows
+
+- `/restricted`: migrated restricted header/page/content/copy/footer owners from `restricted.scala.html` and site shell partials; session-derived copy, sidebar-pin paint, and navigation behavior remain React-owned. Focused `stylex-restricted-sidebar-pin.e2e.ts` passed in the assembled browser gate.
+- `/orgs`: migrated the residual organization-directory title-area owner from `organization/list.scala.html` and directory partials; existing search/list/row/empty/pagination ownership and query/navigation behavior remain intact. Focused `stylex-organization-list.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/issues`: migrated organization issue items/empty/pagination/row/meta owners from `group_issue_list.scala.html` and issue partials; existing search/tabs/query/navigation behavior remains React-owned. Focused `stylex-organization-issues.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch251 intentionally coordinated the independent restricted, organization-directory, and organization-issues route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once.

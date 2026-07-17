@@ -5,6 +5,10 @@ export const organizationIssuesTheme = stylex.defineVars({
   inputBorder: "#cccccc",
   inputText: "#555555",
   searchSurface: "#ffffff",
+  emptySurface: "#f7f7f7",
+  rowBorder: "#eeeeee",
+  metaText: "#777777",
+  paginationText: "#777777",
 });
 
 export const styles = stylex.create({
@@ -41,4 +45,9 @@ export const styles = stylex.create({
     margin: "0px",
     padding: "0px",
   },
+  list: { listStyle: "none" },
+  empty: { backgroundColor: organizationIssuesTheme.emptySurface },
+  row: { borderBottomColor: organizationIssuesTheme.rowBorder },
+  meta: { color: organizationIssuesTheme.metaText },
+  pagination: { color: organizationIssuesTheme.paginationText },
 });

@@ -42,6 +42,11 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const pin = page.locator(OWNER);
+    await expect(page.locator('[data-stylex-owner="restricted-header"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="restricted-page"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="restricted-content"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="restricted-copy"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="restricted-footer"]')).toBeVisible();
     const leftIcon = pin.locator(":scope > .yobicon-arrow-left");
     const rightIcon = pin.locator(":scope > .yobicon-arrow-right");
     await expect(pin).toHaveCount(1);

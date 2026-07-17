@@ -325,7 +325,11 @@ function OrganizationIssuesBody({
                       orderDir={search.orderDir}
                     />
                   ) : null}
-                  <ul className="post-list-wrap">
+                  <ul
+                    {...stylex.props(styles.list)}
+                    className={`${stylex.props(styles.list).className} post-list-wrap`}
+                    data-stylex-owner="organization-issues-items"
+                  >
                     {issues.items.map((issue) => (
                       <OrganizationIssueItem
                         basePath={runtimeConfig.basePath}
@@ -345,7 +349,11 @@ function OrganizationIssuesBody({
                   />
                 </>
               ) : (
-                <div className="error-wrap">
+                <div
+                  {...stylex.props(styles.empty)}
+                  className={`${stylex.props(styles.empty).className} error-wrap`}
+                  data-stylex-owner="organization-issues-empty"
+                >
                   <i className="ico ico-err1"></i>
                   <p>{t("issue.is.empty")}</p>
                 </div>
@@ -559,7 +567,13 @@ function OrganizationIssuePagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap" data-total={totalPages}>
+    <div
+      {...stylex.props(styles.pagination)}
+      id="pagination"
+      className={`${stylex.props(styles.pagination).className} page-navigation-wrap`}
+      data-stylex-owner="organization-issues-pagination"
+      data-total={totalPages}
+    >
       <ul className="page-nums">
         <li className="page-num ikon">
           {hasPrev ? (
@@ -650,7 +664,13 @@ function OrganizationIssueItem({
   const legacyIssueRowAttrs = { href: issueHref } satisfies LegacyIssueRowAttributes;
 
   return (
-    <li className="post-item title" id={`issue-item-${issue.id}`} {...legacyIssueRowAttrs}>
+    <li
+      {...stylex.props(styles.row)}
+      className={`${stylex.props(styles.row).className} post-item title`}
+      data-stylex-owner="organization-issues-row"
+      id={`issue-item-${issue.id}`}
+      {...legacyIssueRowAttrs}
+    >
       <div className="span10 span-hard-wrap">
         <Link
           to={authorRoutePath}
@@ -664,7 +684,11 @@ function OrganizationIssueItem({
             {issue.title}
           </Link>
         </div>
-        <div className="infos">
+        <div
+          {...stylex.props(styles.meta)}
+          className={`${stylex.props(styles.meta).className} infos`}
+          data-stylex-owner="organization-issues-row-meta"
+        >
           {issue.authorLabel ? (
             <Link
               to={authorRoutePath}

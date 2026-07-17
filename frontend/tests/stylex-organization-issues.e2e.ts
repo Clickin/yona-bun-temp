@@ -19,6 +19,15 @@ test("records organization issue search and tabs owners", async ({ page }) => {
   expect(template).toContain("group_issue_search_partial");
   expect(route).toContain('data-stylex-owner="organization-issues-search-input"');
   expect(route).toContain('data-stylex-owner="organization-issues-tabs"');
+  for (const owner of [
+    "organization-issues-items",
+    "organization-issues-empty",
+    "organization-issues-pagination",
+    "organization-issues-row",
+    "organization-issues-row-meta",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  }
   expect(theme).toContain("organizationIssuesTheme");
   await mockIssues(page);
   for (const viewport of [
@@ -28,6 +37,7 @@ test("records organization issue search and tabs owners", async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/organizations/weblabs/issues`);
     await expect(owner(page, "organization-issues-tabs")).toBeVisible();
+    await expect(owner(page, "organization-issues-empty")).toBeVisible();
     await expect(owner(page, "organization-issues-search-input")).toHaveAttribute("name", "filter");
     const geometry = await owner(page, "organization-issues-wrap").evaluate((element) => ({
       width: element.getBoundingClientRect().width,

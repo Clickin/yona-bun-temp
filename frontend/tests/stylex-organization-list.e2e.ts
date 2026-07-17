@@ -17,6 +17,7 @@ test("records organization directory StyleX ownership and responsive geometry", 
   expect(template).toContain('placeholder="@Messages("site.organization.filter")"');
   expect(pageLess).toContain(".all-projects {");
   expect(route).toContain('data-stylex-owner="organization-directory-search-input"');
+  expect(route).toContain('data-stylex-owner="organization-directory-title-area"');
   expect(route).toContain('data-stylex-owner="organization-directory-list"');
   expect(theme).toContain("export const organizationDirectoryColors");
   expect(theme).toContain("descriptionText");

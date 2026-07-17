@@ -55,7 +55,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <p id="unsupported-content" />
         </div>
       </div>
-      <header className="gnb-outer">
+      <header className="gnb-outer" data-stylex-owner="restricted-header">
         <div className="gnb-inner">
           <div
             {...stylex.props(restrictedSidebarPinStyles.root)}
@@ -99,9 +99,9 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </ul>
         </div>
       </header>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
-          <h1>{"Sshhh" + "...don't tell anyone!"}</h1>
+      <div className="page-wrap-outer" data-stylex-owner="restricted-page">
+        <div className="page-wrap" data-stylex-owner="restricted-content">
+          <h1 data-stylex-owner="restricted-copy">{"Sshhh" + "...don't tell anyone!"}</h1>
           <p>
             <iframe
               title="Gangnam Style"
@@ -122,7 +122,7 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </p>
         </div>
       </div>
-      <footer className="page-footer-outer">
+      <footer className="page-footer-outer" data-stylex-owner="restricted-footer">
         <div className="page-footer">
           <span className="provider">Yoram authors</span>
         </div>
