@@ -154,7 +154,10 @@ const PARITY_SLICES = [
     id: "workspace-user-files",
     label: "Workspace user files",
     status: "parity",
-    implementationPatterns: [/^frontend\/src\/routes\/user\/files\.tsx$/i],
+    implementationPatterns: [
+      /^frontend\/src\/routes\/user\/-files\.stylex\.ts$/i,
+      /^frontend\/src\/routes\/user\/files\.tsx$/i,
+    ],
     testKeywords: ["user-files", "workspace/files", "attachment-files"],
     provenanceDocs: [
       "docs/provenance/ui-parity-reports/ui-parity-user-workspace-profile.md",

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useState } from "react";
 import {
   listWorkspaceFilesRest,
@@ -10,6 +11,72 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { userFilesSearchColors } from "./-files.stylex";
+
+const styles = stylex.create({
+  search: {
+    backgroundColor: userFilesSearchColors.rootSurface,
+    borderColor: userFilesSearchColors.rootBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    height: "20px",
+    lineHeight: "20px",
+    margin: {
+      default: "0px 0px 10px",
+      "@media (max-width: 720px)": "5px 0px",
+    },
+    padding: "4px 25px 4px 5px",
+    position: "relative",
+  },
+  searchInput: {
+    backgroundColor: userFilesSearchColors.inputSurface,
+    border: "0 none",
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: userFilesSearchColors.inputText,
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: {
+      default: "12px",
+      "@media (max-width: 720px)": "16px",
+    },
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "20px",
+    margin: "0px -5px",
+    outline: { ":focus": "0 none" },
+    padding: "0px 5px",
+    transition: "width 0.15s",
+    verticalAlign: "middle",
+    width: {
+      default: "100%",
+      "@media (max-width: 720px)": "inherit",
+    },
+  },
+  searchAction: {
+    backgroundColor: userFilesSearchColors.actionSurface,
+    border: "0px",
+    color: userFilesSearchColors.actionText,
+    cursor: "pointer",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "12px",
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "normal",
+    margin: "0px",
+    outline: "0 none",
+    padding: "0px",
+    position: "absolute",
+    right: "5px",
+    textAlign: "center",
+    top: "5px",
+  },
+});
+
+const searchStyleProps = stylex.props(styles.search);
+const searchInputStyleProps = stylex.props(styles.searchInput);
+const searchActionStyleProps = stylex.props(styles.searchAction);
 
 type UserFilesSearch = {
   filter?: string;
@@ -151,16 +218,21 @@ function UserFilesScreen({
               searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
             }}
           >
-            <div className="user-file-search search search-bar">
+            <div {...searchStyleProps} data-stylex-owner="user-files-search">
               <input
+                {...searchInputStyleProps}
                 key={`${filter}:${pageNum}`}
                 name="filter"
-                className="textbox"
                 type="text"
                 placeholder={t("search.title")}
                 defaultValue=""
+                data-stylex-owner="user-files-search-input"
               />
-              <button type="submit" className="search-btn">
+              <button
+                {...searchActionStyleProps}
+                type="submit"
+                data-stylex-owner="user-files-search-action"
+              >
                 <i className="yobicon-search"></i>
               </button>
             </div>
