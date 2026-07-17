@@ -11,3 +11,8 @@ export const newMilestoneColors = stylex.defineVars({
   mutedText: "#666666",
   notice: "#db3a67",
 });
+
+export const newMilestoneFormStyles = stylex.create({
+  editorPositioned: { position: "relative" },
+  editorTabContent: { overflow: "visible", position: "relative" },
+});

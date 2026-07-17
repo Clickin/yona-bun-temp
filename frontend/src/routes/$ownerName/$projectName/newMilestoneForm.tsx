@@ -12,7 +12,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { newMilestoneColors } from "./-newMilestoneForm.stylex";
+import { newMilestoneColors, newMilestoneFormStyles } from "./-newMilestoneForm.stylex";
 
 const styles = stylex.create({
   title: {
@@ -258,7 +258,10 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
               <div className="row-fluid">
                 <div className="span9 span-left-pane">
                   <dl>
-                    <dd style={{ position: "relative" }}>
+                    <dd
+                      className={stylex.props(newMilestoneFormStyles.editorPositioned).className}
+                      data-stylex-owner="project-milestone-editor-wrapper"
+                    >
                       <MilestoneMarkdownEditor contentsRef={contentsRef} />
                     </dd>
                   </dl>
@@ -394,7 +397,10 @@ function MilestoneMarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`tab-content ${stylex.props(newMilestoneFormStyles.editorTabContent).className}`}
+        data-stylex-owner="project-milestone-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div
           id="edit-content-body"
