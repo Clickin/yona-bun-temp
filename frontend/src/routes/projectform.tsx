@@ -13,7 +13,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { projectFormTheme } from "./-projectform.stylex";
+import { projectFormLayout, projectFormTheme } from "./-projectform.stylex";
 
 type ProjectCreateSearch = {
   owner?: string;
@@ -228,8 +228,7 @@ function ProjectCreateScreen({
                     id="project-owner"
                     name="owner"
                     data-format="user"
-                    className="mb10"
-                    style={{ minWidth: "220px" }}
+                    className={`${stylex.props(projectFormLayout.select).className} mb10`}
                     data-stylex-owner="project-form-owner"
                     value={ownerName}
                     onChange={(event) => {
@@ -392,8 +391,8 @@ function ProjectCreateScreen({
                       id="vcs"
                       name="vcs"
                       data-dropdown-css-class="select2-without-searchbox"
-                      className="mb10 mt5"
-                      style={{ minWidth: "220px" }}
+                      className={`${stylex.props(projectFormLayout.select).className} mb10 mt5`}
+                      data-stylex-owner="project-form-vcs"
                       value={vcs}
                       onChange={(event) => {
                         const nextVcs = event.currentTarget.value;

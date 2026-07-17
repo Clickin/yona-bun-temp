@@ -9,3 +9,9 @@ export const projectFormTheme = stylex.defineVars({
   errorSurface: "#ffffff",
   errorBorder: "#cccccc",
 });
+
+export const projectFormLayout = stylex.create({
+  select: {
+    minWidth: "220px",
+  },
+});
