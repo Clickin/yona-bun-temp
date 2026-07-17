@@ -146,6 +146,8 @@ test.describe("StyleX site mass mail sidebar", () => {
 
   test("keeps eight links, sixth active Send mass emails, and update badge", async ({ page }) => {
     await openMassMail(page);
+    await expect(owner(page, "site-massmail-page")).toBeVisible();
+    await expect(owner(page, "site-massmail-content")).toBeVisible();
     const sidebar = owner(page, owners.sidebar);
     const items = owner(sidebar, owners.item);
     const links = owner(sidebar, owners.link);
