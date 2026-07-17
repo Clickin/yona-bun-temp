@@ -223,7 +223,7 @@ function OrganizationIssuesBody({
     <>
       <title>{organizationName}</title>
       <div className="page-wrap-outer" data-stylex-owner="organization-issues-page">
-        <div className="page-wrap">
+        <div {...stylex.props(styles.page)} data-stylex-owner="organization-issues-wrap">
           <div className="row-fluid issue-list-wrap" data-stylex-owner="organization-issues-list">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
@@ -269,14 +269,22 @@ function OrganizationIssuesBody({
                   <input type="hidden" name="assigneeId" value={search.assigneeId} />
                   <input type="hidden" name="mentionId" value={search.mentionId} />
                   <div className="search">
-                    <div className="search-bar">
+                    <div
+                      {...stylex.props(styles.searchBar)}
+                      data-stylex-owner="organization-issues-search-bar"
+                    >
                       <input
                         name="filter"
-                        className="textbox full"
+                        {...stylex.props(styles.searchInput)}
+                        data-stylex-owner="organization-issues-search-input"
                         type="text"
                         defaultValue={search.filter}
                       />
-                      <button type="submit" className="search-btn">
+                      <button
+                        {...stylex.props(styles.searchButton)}
+                        data-stylex-owner="organization-issues-search-button"
+                        type="submit"
+                      >
                         <i className="yobicon-search"></i>
                       </button>
                     </div>
@@ -289,7 +297,7 @@ function OrganizationIssuesBody({
               id="span10"
               data-stylex-owner="organization-issues-results"
             >
-              <ul className="nav nav-tabs nm">
+              <ul {...stylex.props(styles.tabs)} data-stylex-owner="organization-issues-tabs">
                 <StateTab
                   active={search.state === "open"}
                   count={issues.openIssueCount}

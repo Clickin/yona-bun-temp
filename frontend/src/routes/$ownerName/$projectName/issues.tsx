@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Fragment,
@@ -18,6 +19,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
+import { styles } from "./-issues.stylex";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
@@ -479,8 +481,8 @@ function ProjectIssuesBody({
   const showLabelEdit = projectManagerControlsEnabled(project);
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div className="page-wrap-outer" data-stylex-owner="project-issues-page">
+      <div className="project-page-wrap" data-stylex-owner="project-issues-list">
         <div className="row-fluid issue-list-wrap" onKeyDownCapture={handleIssueListKeyDownCapture}>
           <div className="left-menu span2 span-hard-wrap">
             <QuickSearch
@@ -520,7 +522,11 @@ function ProjectIssuesBody({
               }}
             />
           </div>
-          <div className="span10 span-hard-wrap" id="span10">
+          <div
+            className={`${stylex.props(styles.results).className} span10 span-hard-wrap`}
+            id="span10"
+            data-stylex-owner="project-issues-results"
+          >
             <div className="pull-right">
               <Link
                 activeProps={legacyRouteLocalActiveProps}

@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch239 snapshot is 73 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch240 snapshot is 75 of 116 route TSX files importing StyleX, 83 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -383,3 +383,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/organizations/$organizationName/issues`: migrated organization issue list/search/results owners from `organization/group_issue_list.scala.html` and quicksearch/org shell partials; route-local theme owns paint only and React query/navigation behavior remains unchanged. Focused `stylex-organization-issues.e2e.ts` passed in the assembled batch gate.
 - `/organizations/$organizationName/boards`: migrated organization board search/filters/list/row/title owners from `organization/group_board_list.scala.html` and board partials; route-local theme owns paint only and React filtering/pagination behavior remains unchanged. Focused `stylex-organization-boards.e2e.ts` passed in the assembled batch gate.
 - `/organizations/$organizationName/pullrequests`: migrated organization pull-request page/search/tabs/counts/content owners from `organization/group_pullrequest_list.scala.html` and partials; route-local theme owns paint only and React query/category navigation remains unchanged. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled batch gate.
+
+## Batch 240 migration rows
+
+- `/$ownerName/$projectName/issues`: migrated project issue-list page/results owners from `issue/list.scala.html`, issue search/list partials, and project shell partials; route-local paint remains in `-issues.stylex.ts` while filters, query state, navigation, and issue rendering remain React-owned. Focused `stylex-project-issues.e2e.ts` passed in the assembled browser gate.
+- `/$ownerName/$projectName/settingform`: migrated project settings page/shell owners from `project/setting.scala.html`, `partial_settingmenu.scala.html`, and project shell partials; route-local paint remains in `-settingform.stylex.ts` while settings query, mutations, and navigation remain React-owned. Focused `stylex-project-settingform.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/issues`: extended organization issue-list page/search/tab owners from `organization/group_issue_list.scala.html`, search partials, and organization shell partials; route-local paint remains in `-organization-issues.stylex.ts` while filters, query state, pagination, and issue rendering remain React-owned. Focused `stylex-organization-issues.e2e.ts` passed in the assembled browser gate.

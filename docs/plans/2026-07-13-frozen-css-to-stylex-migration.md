@@ -3250,6 +3250,8 @@ Batch 238 applied the workflow to project search, organization search, and proje
 
 Batch 239 applied the workflow to new pull-request creation, pull-request detail, and commit-file history. The integrated 6-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed.
 
+Batch 240 applied the workflow to project issues, project settings, and organization issues. The integrated 4-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
