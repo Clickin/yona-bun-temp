@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { importProjectRest, projectCreateFormOptionsQueryOptions } from "../api/org-project";
@@ -8,6 +9,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { styles } from "./-project-import.stylex";
 
 type ProjectImportSearch = {
   owner?: string;
@@ -187,9 +189,15 @@ function ProjectImportScreen({
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t("title.newProject")}</title>
-      <div className="page-wrap-outer">
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="project-import-page"
+      >
         <div className="project-page-wrap">
-          <div className="form-wrap new-project">
+          <div
+            className={`${stylex.props(styles.form).className} form-wrap new-project`}
+            data-stylex-owner="project-import-form-wrap"
+          >
             <form
               id="importGit"
               action={prefixBasePath(runtimeConfig.basePath, "/_import")}
@@ -197,7 +205,7 @@ function ProjectImportScreen({
               className="frm-wrap"
               onSubmit={handleSubmit}
             >
-              <legend>
+              <legend data-stylex-owner="project-import-heading">
                 {t("project.import.from.git")}
                 <span>
                   <small>{t("project.import.or")} &nbsp; </small>
@@ -213,7 +221,7 @@ function ProjectImportScreen({
                 </span>
               </legend>
 
-              <dl>
+              <dl data-stylex-owner="project-import-fields">
                 <dt>
                   <label htmlFor="url">
                     {t("project.git.repository.url")}
@@ -488,7 +496,10 @@ function ProjectImportScreen({
                 </dd>
               </dl>
 
-              <div className="advanced-options">
+              <div
+                className={`${stylex.props(styles.advanced).className} advanced-options`}
+                data-stylex-owner="project-import-advanced"
+              >
                 <div className="row-fluid">
                   <div className="span2 right-txt mt10">{t("project.shareOption")}</div>
                   <div className="span10">

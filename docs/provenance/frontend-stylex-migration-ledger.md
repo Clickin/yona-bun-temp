@@ -422,3 +422,9 @@ Manual multi-screen exception note: Batch244 intentionally coordinated the indep
 - `/$ownerName/$projectName`: migrated project home shell owner from `project/home.scala.html` and project shell partials; route-local paint remains StyleX-owned while project container queries, nested Outlet, shell navigation, and child route behavior remain React-owned. Focused `stylex-project-home.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch246 intentionally coordinated the independent project-home and organization-home route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX module, and focused E2E; the assembled browser gate and shared static/build gates were run once. Follow-up: preserve the one-route/one-row default unless another supervised batch records equivalent evidence.
+
+## Batch 247 migration rows
+
+- `/_import`: migrated project import page/form-wrap/heading/fields/advanced owners from `project/importing.scala.html` and project form partials; route-local paint remains StyleX-owned while options query, owner/auth/scope state, validation, import mutation, and navigation remain React-owned. Focused `stylex-project-import.e2e.ts` passed in the assembled browser gate.
+
+Manual single-route note: Batch247 kept the project import row as the only integrated target after the independent pull-request edit-form attempt was reverted because its runtime fixture could not establish a valid success state.
