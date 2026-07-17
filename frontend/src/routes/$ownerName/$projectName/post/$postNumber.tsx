@@ -46,6 +46,8 @@ const sx = {
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
   watch: stylex.props(styles.watch),
+  editorTabContent: stylex.props(styles.editorTabContent),
+  originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
@@ -1410,7 +1412,8 @@ function OriginalMessageMarkdown({
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
       <button
         type="button"
-        style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+        {...sx.originalMessageToggle}
+        data-stylex-owner="post-detail-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -1761,7 +1764,11 @@ function MarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className="tab-content"
+        {...sx.editorTabContent}
+        data-stylex-owner="post-detail-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id={`edit-${wrapId}`} className={`tab-pane${activeMode === "edit" ? " active" : ""}`}>
           <div className="textarea-box">

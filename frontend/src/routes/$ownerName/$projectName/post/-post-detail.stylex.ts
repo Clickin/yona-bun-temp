@@ -31,4 +31,6 @@ export const styles = stylex.create({
     color: "#fff",
     padding: "4px 12px",
   },
+  editorTabContent: { overflow: "visible", position: "relative" },
+  originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
 });
