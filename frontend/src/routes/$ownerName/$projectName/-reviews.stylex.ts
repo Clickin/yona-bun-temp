@@ -8,3 +8,9 @@ export const reviewsColors = stylex.defineVars({
   titleText: "#333333",
   white: "#ffffff",
 });
+
+export const reviewsLayout = stylex.create({
+  exportAction: {
+    padding: "10px",
+  },
+});

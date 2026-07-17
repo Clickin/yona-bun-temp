@@ -13,7 +13,7 @@ import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SitePagination } from "../../sites/-pagination";
-import { reviewsColors } from "./-reviews.stylex";
+import { reviewsColors, reviewsLayout } from "./-reviews.stylex";
 
 const styles = stylex.create({
   sidebar: { borderColor: reviewsColors.border, borderStyle: "solid", borderWidth: "1px" },
@@ -299,7 +299,10 @@ function ProjectReviewsBody({
           <div className="review-list-wrap" data-stylex-owner="project-reviews-list-wrap">
             <ProjectReviewRows ownerName={ownerName} projectName={projectName} reviews={reviews} />
           </div>
-          <div className="pull-left" style={{ padding: 10 }}>
+          <div
+            className={`${stylex.props(reviewsLayout.exportAction).className} pull-left`}
+            data-stylex-owner="project-reviews-export-action"
+          >
             <Link
               href={`${action}${exportQuery}`}
               to={`${baseRoute}${exportQuery}`}
