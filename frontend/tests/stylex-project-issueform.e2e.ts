@@ -18,10 +18,7 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page.locator('[data-stylex-owner="project-issue-form-editor"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issue-form-actions"]')).toBeVisible();
   await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
-  await expect(page.locator('textarea[data-editor-mode="content-body"]')).toHaveAttribute(
-    "tabindex",
-    "2",
-  );
+  await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator("#button-save")).toBeVisible();
   await expect(page.locator("#draft-save-btn")).toBeVisible();
   await expect(page.locator("[data-toggle], [data-request-method], [data-dismiss]")).toHaveCount(0);
