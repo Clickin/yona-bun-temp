@@ -157,7 +157,7 @@ const styles = stylex.create({
     borderRadius: "10px",
     borderStyle: "solid",
     borderWidth: "2px",
-    boxShadow: siteIssueListColors.badgeShadow,
+    boxShadow: "0px 1px 1px rgba(0,0,0,0.2), inset 0px 1px 1px rgba(0,0,0,0.1)",
     color: siteIssueListColors.badgeText,
     fontSize: "12px",
     lineHeight: "20px",
@@ -405,8 +405,8 @@ const styles = stylex.create({
       ":focus": siteIssueListColors.accent,
     },
     boxShadow: {
-      ":hover": siteIssueListColors.inputShadow,
-      ":focus": siteIssueListColors.inputShadow,
+      ":hover": "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
+      ":focus": "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
     },
   },
   issueListPaginationLabel: {

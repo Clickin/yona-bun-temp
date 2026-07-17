@@ -15,6 +15,4 @@ export const siteIssueListColors = stylex.defineVars({
   evenRowSurface: "#f9f9f9",
   badgeSurface: "#ff7332",
   whiteSurface: "#ffffff",
-  badgeShadow: "0px 1px 1px rgba(0,0,0,0.2), inset 0px 1px 1px rgba(0,0,0,0.1)",
-  inputShadow: "inset -1px -1px 2px rgba(0, 0, 0, 0.1)",
 });
