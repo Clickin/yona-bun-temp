@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
@@ -26,6 +27,7 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
+import { styles } from "./-pull-request-detail.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/pullRequest/$pullRequestNumber")({
   component: ProjectPullRequestOverviewRoute,
@@ -220,15 +222,25 @@ function PullRequestOverviewBody({
 
   return (
     <>
-      <div className="page-wrap-outer">
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="pull-request-detail-page"
+      >
         <div className="project-page-wrap">
           <PullRequestHeader
             project={project}
             pullRequest={pullRequest}
             runtimeConfig={runtimeConfig}
           />
-          <div className="board-body">
-            <div className="author-info left-txt" style={{ marginTop: "20px" }}>
+          <div
+            className={`${stylex.props(styles.body).className} board-body`}
+            data-stylex-owner="pull-request-detail-body"
+          >
+            <div
+              className={`${stylex.props(styles.author).className} author-info left-txt`}
+              style={{ marginTop: "20px" }}
+              data-stylex-owner="pull-request-detail-author"
+            >
               <Link
                 to="/$user"
                 params={{ user: pullRequest.contributor.loginId }}
@@ -247,7 +259,10 @@ function PullRequestOverviewBody({
               </Link>
               <PullRequestBranchInfo pullRequest={pullRequest} />
             </div>
-            <div className="content markdown-wrap">
+            <div
+              className={`${stylex.props(styles.content).className} content markdown-wrap`}
+              data-stylex-owner="pull-request-detail-content"
+            >
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{pullRequest.bodyMarkdown}</ReactMarkdown>
             </div>
             <div
@@ -256,7 +271,11 @@ function PullRequestOverviewBody({
             ></div>
           </div>
 
-          <div id="state" className="pullRequest-stateInfo">
+          <div
+            id="state"
+            className={`${stylex.props(styles.state).className} pullRequest-stateInfo`}
+            data-stylex-owner="pull-request-detail-state"
+          >
             <PullRequestStateInfo
               currentUserLoginId={currentUserLoginId}
               pullRequest={pullRequest}
@@ -264,7 +283,10 @@ function PullRequestOverviewBody({
             />
           </div>
 
-          <div className="board-footer board-actrow">
+          <div
+            className={`${stylex.props(styles.actions).className} board-footer board-actrow`}
+            data-stylex-owner="pull-request-detail-actions"
+          >
             <div className="pull-left">
               {pullRequest.permissions.canWatch ? (
                 <button
@@ -314,7 +336,10 @@ function PullRequestOverviewBody({
 
           <hr className="nm" />
 
-          <div className="board-comment-wrap">
+          <div
+            className={`${stylex.props(styles.comments).className} board-comment-wrap`}
+            data-stylex-owner="pull-request-detail-comments"
+          >
             <PullRequestEvents pullRequest={pullRequest} />
           </div>
 

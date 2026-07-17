@@ -1,0 +1,76 @@
+import { readFileSync } from "node:fs";
+import { expect, test, type Page, type Route } from "@playwright/test";
+
+const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${name}"]`).first();
+
+test.use({ locale: "ko-KR" });
+
+test("records commit file history owners and responsive containment", async ({ page }) => {
+  const route = readFileSync(
+    "src/routes/$ownerName/$projectName/commits/$branch/$filePath.tsx",
+    "utf8",
+  );
+  const theme = readFileSync(
+    "src/routes/$ownerName/$projectName/commits/-commit-file.stylex.ts",
+    "utf8",
+  );
+  const template = readFileSync(
+    "../yona-original/app/views/code/partial_view_file.scala.html",
+    "utf8",
+  );
+  expect(template).toContain('class="file-wrap"');
+  expect(template).toContain('class="file-header nm"');
+  expect(route).toContain('data-stylex-owner="commit-file-breadcrumbs"');
+  expect(theme).toContain("export const commitFileColors");
+  await mockHistory(page);
+  await page.goto(`${basePath}/weblabs/demo/commits/main/src/app.ts`);
+  await expect(owner(page, "commit-file-breadcrumbs")).toBeVisible();
+  await expect(owner(page, "commit-file-history")).toBeVisible();
+  const geometry = await owner(page, "commit-file-history").evaluate((element) => ({
+    width: element.getBoundingClientRect().width,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(geometry.width).toBeGreaterThan(0);
+  expect(geometry.scrollWidth).toBe(1366);
+});
+
+async function mockHistory(page: Page) {
+  await page.addInitScript((runtimeBasePath) => {
+    (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
+      basePath: runtimeBasePath,
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  const session = {
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "admin",
+    preferredLanguage: "ko-KR",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
+    await page.route(url, (route: Route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
+  await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
+    }),
+  );
+  await page.route("**/api/v1/owners/**/projects/**/history**", (route: Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        selectedBranch: "main",
+        breadcrumbs: [{ name: "src", path: "src" }],
+        commits: [],
+        pageNum: 1,
+        totalPages: 1,
+      },
+    }),
+  );
+}

@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch238 snapshot is 70 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch239 snapshot is 73 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -365,6 +365,12 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/search`: migrated project search page/results owners from `search/result.scala.html` and search partials; route-local theme owns paint only and React query/navigation behavior remains unchanged. Focused `stylex-project-search.e2e.ts` passed in the assembled batch gate.
 - `/organizations/$organizationName/search`: migrated organization search page/category/results/empty owners from `organization/group_issue_search_partial.scala.html` and organization search partials; route-local theme owns paint only and React category/pagination behavior remains unchanged. Focused `stylex-organization-search.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/pullRequests`: migrated pull-request page/search/tabs/counts/content owners from `git/partial_list.scala.html` and pull-request partials; route-local theme owns paint only and React filters/mutations remain unchanged. Focused `stylex-project-pull-requests.e2e.ts` passed in the assembled batch gate.
+
+## Batch 239 migration rows
+
+- `/$ownerName/$projectName/newPullRequestForm`: migrated pull-request create page/form owners from `common/reviewForm.scala.html` and PR shell partials; route-local theme owns paint only and React branch/validation/mutation behavior remains unchanged. Focused `stylex-project-new-pull-request.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/pullRequest/$pullRequestNumber`: migrated pull-request detail page/body/state/actions/comments owners from review partials and `common/reviewForm.scala.html`; route-local theme owns paint only and React markdown/watch/review behavior remains unchanged. Focused `stylex-project-pull-request-detail.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/commits/$branch/$filePath`: migrated commit-file history/repository/breadcrumb/history owners from `code/partial_view_file.scala.html` and code partials; route-local theme owns paint only and React links/pagination behavior remains unchanged. Focused `stylex-project-commit-file.e2e.ts` passed in the assembled batch gate.
 
 ## Batch 233 migration rows
 

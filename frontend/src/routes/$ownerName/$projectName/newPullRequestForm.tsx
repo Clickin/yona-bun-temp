@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
@@ -17,6 +18,7 @@ import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
+import { styles } from "./-new-pull-request.stylex";
 
 type PullRequestFormSearch = {
   fromBranch?: string;
@@ -252,16 +254,16 @@ function ProjectNewPullRequestBody({
 
   return (
     <>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-stylex-owner="new-pull-request-page">
         <div className="project-page-wrap">
-          <div className="content-wrap frm-wrap">
+          <div className="content-wrap frm-wrap" data-stylex-owner="new-pull-request-form">
             <form
               action={prefixBasePath(
                 runtimeConfig.basePath,
                 `/${ownerName}/${projectName}/pullRequests`,
               )}
               encType="multipart/form-data"
-              className="nm"
+              className={`${stylex.props(styles.form).className} nm`}
               onSubmit={(event) => {
                 event.preventDefault();
                 submitPullRequestForm(event.currentTarget);
