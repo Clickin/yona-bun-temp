@@ -9,6 +9,8 @@ export const postFormColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  editorWrapper: { position: "relative" },
+  editorTabContent: { overflow: "visible", position: "relative" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },
   title: {

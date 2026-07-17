@@ -17,6 +17,8 @@ import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { styles } from "./-postform.stylex";
 
 const sx = {
+  editorWrapper: stylex.props(styles.editorWrapper),
+  editorTabContent: stylex.props(styles.editorTabContent),
   page: stylex.props(styles.page),
   form: stylex.props(styles.form),
   title: stylex.props(styles.title),
@@ -238,7 +240,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   </div>
                 ) : null}
               </dd>
-              <dd style={{ position: "relative" }}>
+              <dd {...sx.editorWrapper} data-stylex-owner="project-postform-editor-wrapper">
                 <BoardPostMarkdownEditor
                   focusRequest={bodyFocusRequest}
                   search={search}
@@ -388,7 +390,10 @@ function BoardPostMarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${sx.editorTabContent.className} tab-content`}
+        data-stylex-owner="project-postform-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
