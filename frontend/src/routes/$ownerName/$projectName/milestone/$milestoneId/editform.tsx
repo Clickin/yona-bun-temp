@@ -224,7 +224,10 @@ function ProjectMilestoneEditFormBody({
                   className={`${stylex.props(styles.rightPane).className} span3 span-hard-wrap`}
                   data-stylex-owner="milestone-edit-form-options"
                 >
-                  <dl className="issue-option">
+                  <dl
+                    className={`${stylex.props(styles.stateOptions).className} issue-option`}
+                    data-stylex-owner="milestone-edit-form-state-options"
+                  >
                     <dt>{t("milestone.form.state")}</dt>
                     <dd>
                       <div>
@@ -254,7 +257,10 @@ function ProjectMilestoneEditFormBody({
                       </div>
                     </dd>
                   </dl>
-                  <dl className="issue-option">
+                  <dl
+                    className={`${stylex.props(styles.dueDateOptions).className} issue-option`}
+                    data-stylex-owner="milestone-edit-form-due-date-options"
+                  >
                     <dt>{t("milestone.form.dueDate")}</dt>
                     <dd>
                       <div>
@@ -313,7 +319,10 @@ function MilestoneMarkdownEditor({
   }, [focusRequest]);
   return (
     <div className="mt10">
-      <ul className="nav nav-tabs nm small">
+      <ul
+        className={`${stylex.props(styles.editorTabs).className} nav nav-tabs nm small`}
+        data-stylex-owner="milestone-edit-form-editor-tabs"
+      >
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>
             {t("common.editor.edit")}
@@ -351,7 +360,11 @@ function MilestoneMarkdownEditor({
           <div className="editor-notice-label"></div>
         </li>
       </ul>
-      <div className="tab-content" style={{ position: "relative", overflow: "visible" }}>
+      <div
+        className={`${stylex.props(styles.editorContent).className} tab-content`}
+        data-stylex-owner="milestone-edit-form-editor-content"
+        style={{ position: "relative", overflow: "visible" }}
+      >
         <LegacyMarkdownHelp />
         <div
           id="edit-content-body"
@@ -402,7 +415,10 @@ function MilestoneFileUploader({ resourceId }: { resourceId: string }) {
       data-resource-type="MILESTONE"
       data-resource-id={resourceId}
     >
-      <div className="attach-wrap">
+      <div
+        className={`${stylex.props(styles.uploadControls).className} attach-wrap`}
+        data-stylex-owner="milestone-edit-form-upload-controls"
+      >
         <span className="help help-droppable">{t("common.attach.drophere")}</span>
         <div className="btn-wrap">
           <div className="nbtn medium white fake-file-wrap">
@@ -490,7 +506,11 @@ function MilestoneDatePicker({
   }
 
   return (
-    <div id="datepicker" className="date-picker">
+    <div
+      id="datepicker"
+      className={`${stylex.props(styles.datePicker).className} date-picker`}
+      data-stylex-owner="milestone-edit-form-datepicker"
+    >
       <div className="pika-single">
         <div className="pika-lendar">
           <div className="pika-title">
@@ -594,6 +614,12 @@ const styles = stylex.create({
   leftPane: { display: "block" },
   actions: { textAlign: "right" },
   rightPane: { display: "block" },
+  editorTabs: { borderBottomColor: milestoneEditFormTheme.inputBorder },
+  editorContent: { backgroundColor: milestoneEditFormTheme.editorSurface },
+  uploadControls: { color: milestoneEditFormTheme.mutedText },
+  stateOptions: { color: milestoneEditFormTheme.optionText },
+  dueDateOptions: { color: milestoneEditFormTheme.optionText },
+  datePicker: { borderColor: milestoneEditFormTheme.inputBorder },
   upload: { backgroundColor: milestoneEditFormTheme.uploadSurface },
 });
 

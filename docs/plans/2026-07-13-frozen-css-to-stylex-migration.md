@@ -3296,6 +3296,8 @@ Batch 261 applied the workflow to the authenticated open project issue-detail st
 
 Batch 262 applies the workflow to the authenticated issue edit form, board post detail, and commit detail states. Their three focused browser gates are assembled after route-local work, followed by one shared typecheck, formatting, Vitest, production build, and StyleX fallback verification.
 
+Batch 263 applies the workflow to the authenticated milestone edit form. The labels-form and board-post edit-form candidates remain deferred from this commit because their focused browser contracts still need fixture/runtime diagnosis.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

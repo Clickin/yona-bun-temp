@@ -532,3 +532,9 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/$ownerName/$projectName/commit/$commitId` populated commit diff: migrated diff layout, file metadata/code, commit message/description, and review panel owners from code diff partials; review, watch, comment, and navigation behavior remain React-owned. Focused `stylex-project-commit-detail-owners.e2e.ts` passed 1/1 with desktop containment and mobile no-overflow.
 
 This batch used three independent route states in one supervised integration; each route retains its own legacy evidence and focused browser contract.
+
+## Batch 263 migration rows
+
+- `/$ownerName/$projectName/milestone/$milestoneId/editform` loaded/open: migrated editor tabs/content, upload controls, state and due-date options, and datepicker owners from the milestone edit form; existing editor/date/mutation/navigation behavior remains React-owned. Focused `stylex-project-milestone-editform-owners.e2e.ts` passed with owner presence, Preview interaction, and editor/options containment.
+
+The labels-management and board-post edit-form candidates remain deferred to a follow-up wave because their source contracts are implemented but the labels populated fixture still reaches the generic shell and the post edit focused rerun was not completed in this supervised batch.
