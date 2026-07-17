@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect } from "react";
 import { codeBrowserQueryOptions, type CodeBrowserResponse } from "../../../api/code-browser";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -7,6 +8,21 @@ import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { LastOutletTransition } from "../../-last-outlet-transition";
+import { codeColors } from "./-code.stylex";
+
+const styles = stylex.create({
+  noHeadPage: { margin: "20px auto 0px" },
+  noHeadColumn: { padding: "0px 10px" },
+  noHeadAlert: {
+    backgroundColor: codeColors.alertSurface,
+    borderColor: codeColors.alertBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: codeColors.alertText,
+    padding: "8px 35px 8px 14px",
+  },
+  noHeadHeading: { color: codeColors.headingText, fontSize: "14px", lineHeight: "20px" },
+});
 
 export const Route = createFileRoute("/$ownerName/$projectName/code")({
   beforeLoad: ({ location, params }) => {
@@ -121,10 +137,18 @@ function ProjectCodeNoHead({
   return (
     <>
       <title>{browserTitle}</title>
-      <div className="page-wrap-outer">
+      <div
+        {...stylex.props(styles.noHeadPage)}
+        className="page-wrap-outer"
+        data-stylex-owner="project-code-nohead-page"
+      >
         <div className="project-page-wrap">
           <div className="row-fluid">
-            <div className="span12">
+            <div
+              {...stylex.props(styles.noHeadColumn)}
+              className="span12"
+              data-stylex-owner="project-code-nohead-column"
+            >
               <NoHeadAlert message={t("code.nohead")} />
               {booleanField(project.viewerCanUpdate) ? (
                 isSvn ? (
@@ -207,8 +231,18 @@ function NoHeadAlert({ message }: { message: string }) {
   const heading = /<h4>([\s\S]*)<\/h4>/u.exec(message)?.[1] ?? message;
 
   return (
-    <div className="alert alert-block">
-      <h4>{heading}</h4>
+    <div
+      {...stylex.props(styles.noHeadAlert)}
+      className="alert alert-block"
+      data-stylex-owner="project-code-nohead-alert"
+    >
+      <h4
+        {...stylex.props(styles.noHeadHeading)}
+        className=""
+        data-stylex-owner="project-code-nohead-heading"
+      >
+        {heading}
+      </h4>
     </div>
   );
 }

@@ -1,10 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { codeCompareQueryOptions, type CodeCompareResponse } from "../../../../api/code-compare";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import type { ProjectContainer } from "../../../../api/types";
 import { useLegacyMessages } from "../../../../i18n";
 import { type RuntimeConfig } from "../../../../runtime-config";
+import { styles } from "./-compare.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  browse: stylex.props(styles.browse),
+  commitInfo: stylex.props(styles.commitInfo),
+  diffBody: stylex.props(styles.diffBody),
+  empty: stylex.props(styles.empty),
+} as const;
 
 type ParsedDiffLine =
   | { kind: "range"; text: string }
@@ -119,23 +129,25 @@ function ProjectCodeCompareBody({
   const isSvn = vcs === "SVN" || vcs === "SUBVERSION";
 
   return (
-    <div className="project-page-wrap">
-      <div className="code-browse-wrap">
-        <p className="commitInfo">
+    <div {...sx.page} data-stylex-owner="project-compare-page">
+      <div {...sx.browse} data-stylex-owner="project-compare-browse">
+        <p {...sx.commitInfo} data-stylex-owner="project-compare-commit-info">
           <strong className="commitId">
             @{commitA}..{commitB}
           </strong>
         </p>
         {isSvn && compare.patch ? (
-          <div className="diff-wrap">
+          <div data-stylex-owner="project-compare-diff-wrap">
             <div className="diff-body hide" data-commit-origin="true" id="commit">
               {compare.patch}
             </div>
           </div>
         ) : compare.files.length === 0 ? (
-          <div className="alert">{t("code.noChanges")}</div>
+          <div {...sx.empty} data-stylex-owner="project-compare-empty">
+            {t("code.noChanges")}
+          </div>
         ) : (
-          <div className="diff-body discommentable">
+          <div {...sx.diffBody} data-stylex-owner="project-compare-diff-body">
             {compare.files.length >= LEGACY_DIFF_FILE_LIMIT ? (
               <p className="alert">
                 {t("code.fileDiffLimitExceeded", { args: [String(LEGACY_DIFF_FILE_LIMIT)] })}
