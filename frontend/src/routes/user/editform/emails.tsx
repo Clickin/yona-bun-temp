@@ -201,6 +201,9 @@ const styles = stylex.create({
   secondaryVerificationAction: {
     width: "150px",
   },
+  primaryEmailAction: {
+    width: "150px",
+  },
   secondaryWarningIcon: {
     backgroundImage: "none",
     color: emailSecondaryRowColors.warningText,
@@ -263,6 +266,7 @@ const secondaryVerificationActionStyleProps = stylex.props(
   styles.secondaryAction,
   styles.secondaryVerificationAction,
 );
+const primaryEmailActionStyleProps = stylex.props(styles.primaryEmailAction);
 const secondaryWarningIconStyleProps = stylex.props(styles.secondaryWarningIcon);
 const emailTableStyleProps = stylex.props(styles.emailTable);
 const emailTableIdentityCellStyleProps = stylex.props(styles.emailTableCell);
@@ -445,8 +449,9 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   {valid ? (
                     <button
                       type="button"
-                      className="ybtn ybtn-small"
-                      style={{ width: "150px" }}
+                      {...primaryEmailActionStyleProps}
+                      className={`${primaryEmailActionStyleProps.className ?? ""} ybtn ybtn-small`.trim()}
+                      data-stylex-owner="user-email-primary-action"
                       onClick={() => setMainMutation.mutate(id)}
                     >
                       {t("emails.set.as.main")}

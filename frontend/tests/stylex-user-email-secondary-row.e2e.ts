@@ -68,8 +68,8 @@ test("records pending secondary-email source evidence and the exact five-owner b
   expect(route).toContain('data-stylex-owner="user-email-secondary-warning-icon"');
   expect(route).toContain('className={valid ? "ml10" : undefined}');
   expect(route).toContain('className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}');
-  expect(route).toContain('className="ybtn ybtn-small"');
-  expect(route).toContain('style={{ width: "150px" }}');
+  expect(route).toContain("ybtn ybtn-small");
+  expect(route).toContain('data-stylex-owner="user-email-primary-action"');
   expect(route).not.toContain('className="yobicon-error2 orange-txt mr5"');
 
   const styles = route.slice(route.indexOf("secondaryAvatar: {"), route.indexOf("emailTable: {"));
