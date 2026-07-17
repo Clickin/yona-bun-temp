@@ -40,6 +40,9 @@ export const styles = stylex.create({
     margin: "0px",
     padding: "0px",
   },
+  recentlyPushedBranch: { fontWeight: "700", marginLeft: "5px" },
+  reviewProgressItem: { marginRight: "10px" },
+  reviewerCount: { marginTop: "-1px" },
   badge: { color: pullRequestColors.badge, fontWeight: "700", marginLeft: "4px" },
   content: { clear: "both", paddingTop: "15px" },
 });

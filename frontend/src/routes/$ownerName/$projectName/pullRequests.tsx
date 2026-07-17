@@ -35,6 +35,9 @@ const sx = {
   searchInput: stylex.props(styles.searchInput),
   searchButton: stylex.props(styles.searchButton),
   tabs: stylex.props(styles.tabs),
+  recentlyPushedBranch: stylex.props(styles.recentlyPushedBranch),
+  reviewProgressItem: stylex.props(styles.reviewProgressItem),
+  reviewerCount: stylex.props(styles.reviewerCount),
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
 } as const;
@@ -308,7 +311,7 @@ function ProjectPullRequestsBody({
           <div
             {...sx.searchColumn}
             data-stylex-owner="project-pullrequests-search-column"
-            style={{ paddingTop: 0, ...(leftMenuHiddenByTwoColumnMode ? { display: "none" } : {}) }}
+            style={leftMenuHiddenByTwoColumnMode ? { display: "none" } : undefined}
           >
             <form
               id="search"
@@ -545,7 +548,10 @@ function ProjectRecentlyPushedBranches({
           return (
             <div key={branch.id || branch.branchName}>
               <i className="yobicon-split"></i>
-              <span style={{ marginLeft: 5, fontWeight: "bold" }}>
+              <span
+                {...sx.recentlyPushedBranch}
+                data-stylex-owner="project-pullrequests-pushed-branch"
+              >
                 {`${branch.ownerName}/${branch.projectName}:${branch.shortName} ( ${branch.pushedLabel} )`}
               </span>
               &nbsp;-&nbsp;
@@ -802,7 +808,11 @@ function ProjectPullRequestRow({
             {pullRequest.createdLabel}
           </span>
           {pullRequest.commentThreadCount > 0 ? (
-            <div className="infos-item" style={{ marginRight: 10 }}>
+            <div
+              className="infos-item"
+              {...sx.reviewProgressItem}
+              data-stylex-owner="project-pullrequests-review-progress"
+            >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
                 <div className="bar orange" style={{ width: `${percent}%` }}></div>
@@ -820,7 +830,11 @@ function ProjectPullRequestRow({
             </div>
           ) : null}
           {showReviewerCount ? (
-            <div className={reviewerClass} style={{ marginTop: -1 }}>
+            <div
+              className={reviewerClass}
+              {...sx.reviewerCount}
+              data-stylex-owner="project-pullrequests-reviewer-count"
+            >
               <i className="infos-icon yobicon-preview vmiddle"></i>
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
