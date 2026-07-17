@@ -161,7 +161,7 @@ test("current-user profile settings page matches legacy user/edit.scala.html scr
   expect(await readProfileSettingsMetrics(page)).toEqual({
     avatarFormFloat: "left",
     avatarWrapWidth: "128px",
-    breadcrumbHeight: "46px",
+    breadcrumbHeight: "45px",
     formFloat: "left",
     navMarginTop: "0px",
     pageWrapMarginTop: "10px",
@@ -539,7 +539,9 @@ function workspaceBody(input: { avatarUrl?: string; email?: string; name?: strin
 
 async function readProfileSettingsMetrics(page: Page) {
   return page.evaluate(() => {
-    const breadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
+    const breadcrumb = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+    );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
     const form = document.querySelector<HTMLElement>("#frmBasic");
@@ -737,6 +739,12 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class") {
+        const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
+        if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
+        if (owner === "user-settings-breadcrumb-heading") return "";
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -776,7 +784,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer, [data-stylex-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

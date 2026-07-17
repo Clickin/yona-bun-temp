@@ -18,9 +18,9 @@ const parentShellBaselines = {
       pane: { height: 1378, width: 1106, x: 250, y: 163 },
     },
     local: {
-      content: { height: 1022.109375, width: 1106, x: 250, y: 164 },
-      list: { height: 72, width: 220, x: 10, y: 164 },
-      pane: { height: 1002.109375, width: 1106, x: 250, y: 164 },
+      content: { height: 1022.109375, width: 1106, x: 250, y: 163 },
+      list: { height: 72, width: 220, x: 10, y: 163 },
+      pane: { height: 1002.109375, width: 1106, x: 250, y: 163 },
     },
   },
   mobile: {
@@ -30,9 +30,9 @@ const parentShellBaselines = {
       pane: { height: 1602, width: 150, x: 240, y: 163 },
     },
     local: {
-      content: { height: 1181.484375, width: 150, x: 240, y: 164 },
-      list: { height: 72, width: 220, x: 0, y: 164 },
-      pane: { height: 1161.484375, width: 150, x: 240, y: 164 },
+      content: { height: 1181.484375, width: 150, x: 240, y: 163 },
+      list: { height: 72, width: 220, x: 0, y: 163 },
+      pane: { height: 1161.484375, width: 150, x: 240, y: 163 },
     },
   },
 } as const;
@@ -242,7 +242,7 @@ test("notification project tabs record the frozen five-owner boundary", () => {
     height: 1022.109375,
     width: 1106,
     x: 250,
-    y: 164,
+    y: 163,
   });
 });
 

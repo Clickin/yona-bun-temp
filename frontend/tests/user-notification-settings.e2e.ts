@@ -107,7 +107,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
 
   expect(await readNotificationSettingsMetrics(page)).toEqual({
     activePaneDisplay: "block",
-    breadcrumbHeight: "46px",
+    breadcrumbHeight: "45px",
     navMarginTop: "20px",
     pageWrapMarginTop: "10px",
     projectListDisplay: "block",
@@ -406,7 +406,9 @@ function expectedNotificationRow(projectId: string, eventType: string, label: st
 
 async function readNotificationSettingsMetrics(page: Page) {
   return page.evaluate(() => {
-    const breadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
+    const breadcrumb = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+    );
     const pageWrapOuter = document.querySelector<HTMLElement>(
       '[data-stylex-owner="user-settings-page-wrap-outer"]',
     );
@@ -507,6 +509,15 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
         const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-settings-breadcrumb-outer") {
+          return 'class="site-breadcrumb-outer"';
+        }
+        if (owner === "user-settings-breadcrumb-inner") {
+          return 'class="site-breadcrumb-inner"';
+        }
+        if (owner === "user-settings-breadcrumb-heading") {
+          return "";
+        }
         if (owner === "user-settings-page-wrap-outer") {
           return 'class="page-wrap-outer"';
         }
@@ -565,7 +576,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="user-settings-page-wrap-outer"], [data-stylex-owner=site-footer]',
+        '.unsupported, [data-stylex-owner=global-gnb-outer], [data-stylex-owner="user-settings-breadcrumb-outer"], [data-stylex-owner="user-settings-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

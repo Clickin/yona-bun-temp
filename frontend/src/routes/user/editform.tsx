@@ -33,6 +33,25 @@ const legacyEditTabLinkActiveOptions = {
 } as const;
 const legacyEditTabLinkInactiveSearch = { __legacyEditTabActiveMarker: undefined };
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: {
+    margin: "0px auto",
+  },
+  breadcrumbHeading: {
+    color: "inherit",
+    fontFamily: "inherit",
+    fontSize: "24.5px",
+    fontWeight: "700",
+    lineHeight: "30px",
+    margin: "0px",
+    padding: "10px 10px 5px",
+    textRendering: "auto",
+  },
   settingsPageOuter: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -95,9 +114,20 @@ function UserSettingsNestedLayout({
   return (
     <>
       <UserProfileSettingsTitle loginId={loginId} />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>{t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}</h3>
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        data-stylex-owner="user-settings-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="user-settings-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="user-settings-breadcrumb-heading"
+          >
+            {t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}
+          </h3>
         </div>
       </div>
       <div

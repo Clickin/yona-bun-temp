@@ -338,9 +338,7 @@ for (const viewport of [
       viewport.name === "desktop" ? ["0px", "1100px"] : ["10px", "10px"],
     );
     expect(fallback.wrap[0]).toEqual(fallback.wrap[1]);
-    expect(fallback.wrapMargin).toEqual(
-      viewport.name === "desktop" ? ["0px", "0px 133px"] : ["0px", "0px"],
-    );
+    expect(fallback.wrapMargin).toEqual(["0px", "0px"]);
     mkdirSync(screenshotDirectory, { recursive: true });
     await page.screenshot({
       fullPage: true,

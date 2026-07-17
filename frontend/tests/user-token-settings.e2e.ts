@@ -111,7 +111,7 @@ test("current-user token route body matches legacy user/edit_token.scala.html DO
   expect(actual).toEqual(expected);
 
   expect(await readTokenMetrics(page)).toEqual({
-    breadcrumbHeight: "46px",
+    breadcrumbHeight: "45px",
     formFloat: "left",
     navMarginTop: "20px",
     pageWrapMarginTop: "10px",
@@ -300,7 +300,9 @@ function workspaceBody(apiToken: string) {
 
 async function readTokenMetrics(page: Page) {
   return page.evaluate(() => {
-    const breadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
+    const breadcrumb = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-breadcrumb-outer"]',
+    );
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
     const form = document.querySelector<HTMLElement>("#frmBasic");
@@ -455,6 +457,12 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${open}${children}</${current.tagName.toLowerCase()}>`;
     }
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class") {
+        const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-settings-breadcrumb-outer") return 'class="site-breadcrumb-outer"';
+        if (owner === "user-settings-breadcrumb-inner") return 'class="site-breadcrumb-inner"';
+        if (owner === "user-settings-breadcrumb-heading") return "";
+      }
       if (
         name === "class" &&
         (current.getAttribute("data-stylex-owner") ?? "").startsWith("user-token-settings-")
@@ -496,7 +504,11 @@ async function canonicalizeScreenRoots(page: Page) {
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
 
-    return Array.from(document.querySelectorAll(".site-breadcrumb-outer, .page-wrap-outer"))
+    return Array.from(
+      document.querySelectorAll(
+        '[data-stylex-owner="user-settings-breadcrumb-outer"], .page-wrap-outer',
+      ),
+    )
       .map((root) => visit(root))
       .join("");
   });

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred fourteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred fifteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -544,6 +544,16 @@ GREEN 4/4, and the combined shell/project-tabs/nested-transition matrix is GREEN
 unweakened broad notification fixture remains 1/2 solely at its older global GNB/sidenav/footer
 expected DOM. Typecheck, Vitest 11/11, theme guard, format/lint/diff, production build, StyleX
 verification, and unchanged fallback hash `6417f445…16f` pass. This is not Wave 1 completion.
+
+The two-hundred-fifteenth slice migrates the three shared breadcrumb owners used by all five
+authenticated `/user/editform` states. The outer owner owns the full border-box width, 10px inset,
+and max-720 10px minimum; the centered inner owner and direct h3 owner preserve the exact
+24.5px/700/30px type and `10px 10px 5px` rhythm. No theme variable is added because no independent
+paint moves. Live Java desktop and mobile both pin a 45px boundary at y40, with x10 inner content
+and exact 1366/390 widths. Retiring the two breadcrumb classes also makes the later React-only
+ancestor bridge inapplicable without overriding it. Genuine RED 0/4 becomes focused GREEN 4/4;
+five-route node persistence, token copy, exact computed output, fallback equivalence, screenshots,
+typecheck, and scoped format/lint/diff pass. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720
