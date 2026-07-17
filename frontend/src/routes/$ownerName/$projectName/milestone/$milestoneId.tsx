@@ -352,9 +352,8 @@ function ProjectMilestoneDetailBody({
           )}
 
           <div
-            {...sx.actions}
+            className={`${sx.actions.className} actrow right-txt row-fluid`}
             data-stylex-owner="milestone-detail-actions"
-            style={{ clear: "both", display: "block", padding: "15px 0" }}
           >
             <Link
               to="/$ownerName/$projectName/milestones"
