@@ -316,6 +316,15 @@ build, StyleX verifier, and unchanged fallback hash also pass. The local user-fi
 documented shared-ancestry offset from the live Java shell; owner-local geometry remains exact and
 no route-specific compensation was added.
 
+Batch 227 applied the same workflow to `/orgs`, organization settings, and `/user/issues` in one
+assembled Playwright invocation (5 focused tests, GREEN 5/5). The three workers added 12 route-local
+paint owners, kept geometry/type values inline, and recorded one Scala audit row per route. The
+assembled gate used 3 Playwright workers and completed in 13.5 seconds; the route-local setting
+fixture required the parent organization container mock, and the mobile directory assertion allows
+the browser's two-pixel scrollbar contribution without weakening visible containment. Typecheck,
+format, and diff checks pass; the production build and fallback hash remain queued for the final
+turn gate.
+
 ## 6. E2E selector migration policy
 
 Selector updates follow this order:

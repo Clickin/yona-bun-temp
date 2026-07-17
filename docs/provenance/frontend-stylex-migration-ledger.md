@@ -17,12 +17,12 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch226 snapshot is 34 of 116 route TSX files importing StyleX, 83 of 116 route TSX files
+post-Batch227 snapshot is 37 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
 Yobi, usermenu, or plugin fallback module is fully retired yet. These counters, active-consumer
-inventory, and module retirement—not the 224-slice ordinal—are the conservative progress evidence.
+inventory, and module retirement—not the 227-slice ordinal—are the conservative progress evidence.
 
 New work defaults to independent three-route worktree batches defined in the canonical plan.
 Workers keep route TSX/E2E/audit ownership isolated; the main agent runs one assembled browser,

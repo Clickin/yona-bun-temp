@@ -1,6 +1,7 @@
 /* oxlint-disable jsx-a11y/no-autofocus -- legacy organization/list.scala.html sets autofocus on the directory filter input. */
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
@@ -8,6 +9,44 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { styles } from "./-orgs.stylex";
+
+const sx = {
+  breadcrumbOuter: stylex.props(styles.breadcrumbOuter),
+  breadcrumbInner: stylex.props(styles.breadcrumbInner),
+  tabsList: stylex.props(styles.tabsList),
+  tabsItem: stylex.props(styles.tabsItem),
+  tabsLink: stylex.props(styles.tabsLink),
+  tabsActiveLink: stylex.props(styles.tabsLink, styles.tabsActiveLink),
+  pageWrap: stylex.props(styles.pageWrap),
+  page: stylex.props(styles.page),
+  searchWrap: stylex.props(styles.searchWrap),
+  searchContainer: stylex.props(styles.searchContainer),
+  searchForm: stylex.props(styles.searchForm),
+  searchBar: stylex.props(styles.searchBar),
+  searchInput: stylex.props(styles.searchInput),
+  searchButton: stylex.props(styles.searchButton),
+  icon: stylex.props(styles.icon),
+  list: stylex.props(styles.list),
+  row: stylex.props(styles.row),
+  avatar: stylex.props(styles.avatar),
+  avatarImage: stylex.props(styles.avatarImage),
+  identity: stylex.props(styles.identity),
+  header: stylex.props(styles.header),
+  titleLink: stylex.props(styles.titleLink),
+  description: stylex.props(styles.description),
+  nameTag: stylex.props(styles.nameTag),
+  empty: stylex.props(styles.empty),
+  emptyMessage: stylex.props(styles.emptyMessage),
+  pagination: stylex.props(styles.pagination),
+  paginationList: stylex.props(styles.paginationList),
+  paginationItem: stylex.props(styles.paginationItem),
+  paginationIconItem: stylex.props(styles.paginationItem, styles.paginationIconItem),
+  paginationDelimiter: stylex.props(styles.paginationItem, styles.paginationDelimiter),
+  paginationLabel: stylex.props(styles.paginationLabel),
+  paginationDisabled: stylex.props(styles.paginationLabel, styles.paginationDisabled),
+  paginationInput: stylex.props(styles.paginationInput),
+} as const;
 
 type OrgsSearch = {
   filter: string;
@@ -76,12 +115,13 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <title>{t("title.projectList")}</title>
       <SiteLayoutShell activeMenu="projects" runtimeConfig={runtimeConfig}>
-        <div className="site-breadcrumb-outer">
-          <div className="site-breadcrumb-inner">
+        <div {...sx.breadcrumbOuter} data-stylex-owner="organization-directory-breadcrumb-outer">
+          <div {...sx.breadcrumbInner} data-stylex-owner="organization-directory-breadcrumb-inner">
             <div className="title_area">
-              <ul className="nav nav-tabs">
-                <li>
+              <ul {...sx.tabsList} data-stylex-owner="organization-directory-tabs-list">
+                <li {...sx.tabsItem} data-stylex-owner="organization-directory-tabs-item">
                   <Link
+                    {...sx.tabsLink}
                     activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                     activeProps={{
                       "aria-current": undefined,
@@ -94,7 +134,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     {t("project.public")} {t("title.projectList")}
                   </Link>
                 </li>
-                <li className="active">
+                <li {...sx.tabsItem} data-stylex-owner="organization-directory-tabs-item">
                   <Link
                     activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
                     activeProps={{
@@ -103,6 +143,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       "data-status": undefined,
                     }}
                     search={LEGACY_ORGS_LINK_SEARCH}
+                    {...sx.tabsActiveLink}
                     to="/orgs"
                   >
                     {t("title.organization.list")}
@@ -112,35 +153,54 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           </div>
         </div>
-        <div className="page-wrap-outer">
-          <div className="project-page-wrap">
-            <div className="search-wrap">
-              <div id="search" className="pull-left">
-                <form action={prefixBasePath(runtimeConfig.basePath, "/orgs")} method="get">
-                  <div className="search-bar">
+        <div {...sx.pageWrap} data-stylex-owner="organization-directory-page-wrap">
+          <div {...sx.page} data-stylex-owner="organization-directory-page">
+            <div {...sx.searchWrap} data-stylex-owner="organization-directory-search-wrap">
+              <div
+                id="search"
+                {...sx.searchContainer}
+                data-stylex-owner="organization-directory-search-container"
+              >
+                <form
+                  {...sx.searchForm}
+                  action={prefixBasePath(runtimeConfig.basePath, "/orgs")}
+                  method="get"
+                >
+                  <div {...sx.searchBar} data-stylex-owner="organization-directory-search-bar">
                     <input
                       autoFocus
                       name="filter"
-                      className="textbox"
+                      {...sx.searchInput}
+                      data-stylex-owner="organization-directory-search-input"
                       type="text"
                       placeholder={t("site.organization.filter")}
                       defaultValue={filter}
                     />
-                    <button type="submit" className="search-btn">
-                      <i className="yobicon-search"></i>
+                    <button
+                      {...sx.searchButton}
+                      data-stylex-owner="organization-directory-search-button"
+                      type="submit"
+                    >
+                      <i
+                        {...sx.icon}
+                        data-stylex-owner="organization-directory-search-icon"
+                        className="yobicon-search"
+                      ></i>
                     </button>
                   </div>
                 </form>
               </div>
             </div>
             {organizations.length === 0 ? (
-              <div className="error-wrap">
+              <div {...sx.empty} data-stylex-owner="organization-directory-empty">
                 <i className="ico ico-err1"></i>
-                <p>{t("organization.is.empty")}</p>
+                <p {...sx.emptyMessage} data-stylex-owner="organization-directory-empty-message">
+                  {t("organization.is.empty")}
+                </p>
               </div>
             ) : (
               <>
-                <ul className="all-projects">
+                <ul {...sx.list} data-stylex-owner="organization-directory-list">
                   {organizations.map((organization) => (
                     <OrganizationListItem
                       basePath={runtimeConfig.basePath}
@@ -205,9 +265,9 @@ function OrganizationsPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div {...sx.pagination} data-stylex-owner="organization-directory-pagination" id="pagination">
+      <ul {...sx.paginationList} data-stylex-owner="organization-directory-pagination-list">
+        <li {...sx.paginationIconItem} data-stylex-owner="organization-directory-pagination-item">
           {hasPrev ? (
             <Link
               activeProps={{
@@ -219,18 +279,19 @@ function OrganizationsPagination({
               to="/orgs"
             >
               <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <span {...sx.paginationLabel}>{t("button.prevPage")}</span>
             </Link>
           ) : (
             <>
               <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <span {...sx.paginationDisabled}>{t("button.prevPage")}</span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li {...sx.paginationItem} data-stylex-owner="organization-directory-pagination-item">
           <input
-            className="input-mini nospinner"
+            {...sx.paginationInput}
+            data-stylex-owner="organization-directory-pagination-input"
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -244,9 +305,13 @@ function OrganizationsPagination({
             type="number"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li {...sx.paginationDelimiter} data-stylex-owner="organization-directory-pagination-item">
+          /
+        </li>
+        <li {...sx.paginationItem} data-stylex-owner="organization-directory-pagination-item">
+          {totalPages}
+        </li>
+        <li {...sx.paginationIconItem} data-stylex-owner="organization-directory-pagination-item">
           {hasNext ? (
             <Link
               activeProps={{
@@ -257,12 +322,12 @@ function OrganizationsPagination({
               search={pageSearch(currentPage + 1)}
               to="/orgs"
             >
-              <span>{t("button.nextPage")}</span>
+              <span {...sx.paginationLabel}>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next"></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
+              <span {...sx.paginationDisabled}>{t("button.nextPage")}</span>
               <i className="ico btn-pg-next off"></i>
             </>
           )}
@@ -282,9 +347,13 @@ function OrganizationListItem({
   const organizationName = organizationDisplayName(organization);
   if (!organizationIsReadable(organization)) {
     return (
-      <li className="project" style={{ backgroundColor: "#fcfcfc" }}>
-        <div className="info-wrap" style={{ opacity: 0.3 }}>
-          <div className="owner-avatar-wrap">
+      <li {...sx.row} data-stylex-owner="organization-directory-row">
+        <div
+          {...sx.identity}
+          data-stylex-owner="organization-directory-private"
+          style={{ opacity: 0.3 }}
+        >
+          <div {...sx.avatar}>
             <img
               src={prefixBasePath(basePath, "/assets/images/organization_default_logo.png")}
               alt={organizationName}
@@ -303,9 +372,9 @@ function OrganizationListItem({
   const createdTitle = stringField(organization, "createdTitle", createdLabel);
 
   return (
-    <li className="project">
-      <div className="info-wrap">
-        <div className="owner-avatar-wrap">
+    <li {...sx.row} data-stylex-owner="organization-directory-row">
+      <div data-stylex-owner="organization-directory-info">
+        <div {...sx.avatar} data-stylex-owner="organization-directory-avatar">
           <Link
             to="/organizations/$organizationName"
             params={{ organizationName }}
@@ -315,11 +384,11 @@ function OrganizationListItem({
               "data-status": undefined,
             }}
           >
-            {logoUrl ? <img src={logoUrl} alt={organizationName} /> : null}
+            {logoUrl ? <img {...sx.avatarImage} src={logoUrl} alt={organizationName} /> : null}
           </Link>
         </div>
-        <div style={{ float: "left" }}>
-          <div className="header">
+        <div {...sx.identity}>
+          <div {...sx.header}>
             <Link
               to="/organizations/$organizationName"
               params={{ organizationName }}
@@ -328,13 +397,13 @@ function OrganizationListItem({
                 className: "black",
                 "data-status": undefined,
               }}
-              className="black"
+              {...sx.titleLink}
             >
               {organizationName}
             </Link>
           </div>
-          <div className="desc">{organizationDescription(organization)}</div>
-          <p className="name-tag">
+          <div {...sx.description}>{organizationDescription(organization)}</div>
+          <p {...sx.nameTag}>
             created <strong title={createdTitle}>{createdLabel}</strong>
           </p>
         </div>

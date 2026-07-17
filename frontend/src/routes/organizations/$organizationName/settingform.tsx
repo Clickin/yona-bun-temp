@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { uploadTemporaryAttachment } from "../../../api/attachments";
 import { readOrganizationSettingsRest, updateOrganizationRest } from "../../../api/org-project";
@@ -9,6 +10,9 @@ import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { organizationSettingColors } from "./-settingform.stylex";
+
+// Legacy output source: yona-original/app/views/organization/setting.scala.html.
 
 export const Route = createFileRoute("/organizations/$organizationName/settingform")({
   component: OrganizationSettingsRoute,
@@ -49,6 +53,26 @@ function OrganizationSettingsBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const styles = stylex.create({
+    bubble: { backgroundColor: organizationSettingColors.bubbleSurface },
+    field: {
+      borderColor: organizationSettingColors.fieldBorder,
+      borderStyle: "solid",
+      borderWidth: "1px",
+    },
+    logoPoint: { color: organizationSettingColors.logoPoint },
+    save: {
+      backgroundColor: {
+        default: organizationSettingColors.saveSurface,
+        ":hover": organizationSettingColors.saveSurface,
+        ":focus": organizationSettingColors.saveSurface,
+        ":active": organizationSettingColors.saveSurface,
+      },
+      borderColor: organizationSettingColors.saveBorder,
+      color: organizationSettingColors.saveText,
+    },
+    warning: { color: organizationSettingColors.warningText },
+  });
 
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -121,7 +145,10 @@ function OrganizationSettingsBody({
             onSubmit={onSubmit}
           >
             <input type="hidden" name="id" value={organizationId} />
-            <div className="bubble-wrap gray">
+            <div
+              className={`bubble-wrap gray ${stylex.props(styles.bubble).className}`}
+              data-stylex-owner="organization-setting-bubble"
+            >
               <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
                 <div className="setting-box left">
                   <div className="logo-wrap" style={{ backgroundImage: `url('${logoUrl}')` }}></div>
@@ -132,7 +159,12 @@ function OrganizationSettingsBody({
                       </li>
                       <li>
                         {t("organization.logo.type")}{" "}
-                        <span className="point">bmp, jpg, gif, png</span>
+                        <span
+                          className={`point ${stylex.props(styles.logoPoint).className}`}
+                          data-stylex-owner="organization-setting-logo-point"
+                        >
+                          bmp, jpg, gif, png
+                        </span>
                       </li>
                       <li>
                         {t("organization.logo.maxFileSize")} <span className="point">5MB</span>
@@ -162,6 +194,8 @@ function OrganizationSettingsBody({
                   </dt>
                   <dd>
                     <input
+                      className={stylex.props(styles.field).className}
+                      data-stylex-owner="organization-setting-name-field"
                       id="project-name"
                       type="text"
                       name="name"
@@ -169,7 +203,14 @@ function OrganizationSettingsBody({
                       defaultValue={organizationName}
                     />
                     <div className="orange-txt">
-                      {serverNameError ? <span className="warning">{serverNameError}</span> : null}
+                      {serverNameError ? (
+                        <span
+                          className={`warning ${stylex.props(styles.warning).className}`}
+                          data-stylex-owner="organization-setting-warning"
+                        >
+                          {serverNameError}
+                        </span>
+                      ) : null}
                       <span
                         className="msg wrongName"
                         style={wrongNameMessage ? undefined : { display: "none" }}
@@ -188,7 +229,7 @@ function OrganizationSettingsBody({
                       id="project-desc"
                       name="descr"
                       maxLength={250}
-                      className="textarea"
+                      className={`textarea ${stylex.props(styles.field).className}`}
                       defaultValue={stringField(organization.description, "")}
                     ></textarea>
                   </dd>
@@ -196,7 +237,11 @@ function OrganizationSettingsBody({
               </div>
             </div>
             <div className="box-wrap bottom">
-              <button id="save" className="ybtn ybtn-success">
+              <button
+                id="save"
+                className={`ybtn ybtn-success ${stylex.props(styles.save).className}`}
+                data-stylex-owner="organization-setting-save"
+              >
                 {t("button.save")}
               </button>
             </div>

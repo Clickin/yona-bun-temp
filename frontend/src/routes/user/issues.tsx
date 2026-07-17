@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -13,6 +14,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { styles as issueStyles } from "./-issues.stylex";
 
 type UserIssuesSearch = {
   filter: "assigned" | "authored" | "commented" | "favorite" | "mentioned" | "shared";
@@ -894,7 +896,8 @@ function UserIssueItem({
             ) : null}
             <Link
               to={issueRoutePath}
-              className="title"
+              {...stylex.props(issueStyles.issueTitle)}
+              data-stylex-owner="user-issues-issue-title"
               onClick={(event) => {
                 event.stopPropagation();
               }}
