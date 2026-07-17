@@ -10,5 +10,6 @@ export const styles = stylex.create({
   home: { color: organizationHomeColors.mutedText },
   overview: { color: organizationHomeColors.accentText },
   projects: { minWidth: 0 },
+  projectInfo: { float: "left" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
 });

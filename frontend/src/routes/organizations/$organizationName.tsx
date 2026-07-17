@@ -366,7 +366,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             {projectLogoUrl ? <img src={projectLogoUrl} alt={`${projectName}.name`} /> : null}
           </Link>
         </div>
-        <div style={{ float: "left" }}>
+        <div
+          className={stylex.props(styles.projectInfo).className}
+          data-stylex-owner="organization-home-project-info"
+        >
           <div className="header">
             <Link
               activeOptions={{
