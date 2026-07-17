@@ -5,3 +5,10 @@ import * as stylex from "@stylexjs/stylex";
 export const projectIssueFormTheme = stylex.defineVars({
   errorText: "#db3a67",
 });
+
+export const issueFormStyles = stylex.create({
+  editorTabContent: { position: "relative", overflow: "visible" },
+  assigneePicker: { width: "100%" },
+  milestonePicker: { width: "100%" },
+  labelPicker: { display: "inline-block" },
+});

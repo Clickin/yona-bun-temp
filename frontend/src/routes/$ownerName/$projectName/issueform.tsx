@@ -70,7 +70,7 @@ import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { useRootToast } from "../../__root";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { projectIssueFormTheme } from "./-issueform.stylex";
+import { issueFormStyles, projectIssueFormTheme } from "./-issueform.stylex";
 
 const CHECKLIST_TEMPLATE = "\n- [ ] Todo A\n- [ ] Todo B\n- [ ] Todo C";
 const DRAFT_SAVE_DELAY_MS = 5_000;
@@ -1962,7 +1962,10 @@ function IssueMarkdownEditor({
           </div>
         </li>
       </ul>
-      <div className="tab-content issue-editor-tab-content">
+      <div
+        className={`${stylex.props(issueFormStyles.editorTabContent).className} tab-content issue-editor-tab-content`}
+        data-stylex-owner="project-issue-form-editor-tab-content"
+      >
         <LegacyMarkdownHelp />
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div
@@ -2294,8 +2297,8 @@ function IssueAssigneeSelect({
       <dt>{t("issue.assignee")}</dt>
       <dd>
         <div
-          className={`select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
-          style={{ width: "100%" }}
+          className={`${stylex.props(issueFormStyles.assigneePicker).className} select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
+          data-stylex-owner="project-issue-form-assignee-picker"
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
@@ -2440,8 +2443,8 @@ function IssueMilestoneSelect({
         ) : (
           <>
             <div
-              className={`select2-container fullsize${isOpen ? " select2-dropdown-open" : ""}`}
-              style={{ width: "100%" }}
+              className={`${stylex.props(issueFormStyles.milestonePicker).className} select2-container fullsize${isOpen ? " select2-dropdown-open" : ""}`}
+              data-stylex-owner="project-issue-form-milestone-picker"
             >
               <div
                 className="select2-choice"
@@ -2653,8 +2656,8 @@ function IssueLabelSelect({
       </dt>
       <dd>
         <div
-          className={`select2-container select2-container-multi hide issue-labels bordered fullsize issue-combobox issue-label-combobox issue-label-control${isOpen ? " select2-dropdown-open" : ""}`}
-          style={{ display: "inline-block" }}
+          className={`${stylex.props(issueFormStyles.labelPicker).className} select2-container select2-container-multi hide issue-labels bordered fullsize issue-combobox issue-label-combobox issue-label-control${isOpen ? " select2-dropdown-open" : ""}`}
+          data-stylex-owner="project-issue-form-label-picker"
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
               setIsOpen(false);
