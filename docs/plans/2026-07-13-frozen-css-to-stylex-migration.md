@@ -3310,6 +3310,8 @@ Batch 268 applies the workflow to the authenticated populated project board-list
 
 Batch 269 applies the workflow to the authenticated loaded/open new pull-request form. Editor wrapper/tab-content positioning, Select2 picker width, and conflict modal display moved to route-local StyleX while closed Select2 focus behavior remains unchanged. Focused Playwright 1/1, typecheck, Vitest 11/11, production build/fallback verifier, formatting, and parity hooks passed.
 
+Batch 270 applies the workflow to the authenticated populated user email-settings state. The valid secondary-email set-as-main button width moved to a route-local StyleX owner while preserving the legacy button classes and mutation. Focused Playwright 2/2 plus the existing secondary-row source/runtime contract passed; typecheck, Vitest, formatting, build, fallback verifier, and parity hooks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

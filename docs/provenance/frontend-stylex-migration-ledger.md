@@ -571,3 +571,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 269
 
 - `/$ownerName/$projectName/newPullRequestForm` loaded/open state: moved editor wrapper `position:relative`, Select2 picker width `220px`, editor tab-content `position:relative; overflow:visible`, and conflict modal display state into route-local StyleX. Legacy Select2 closed/focus behavior and frozen plugin cascade remain unchanged. Focused `stylex-project-new-pull-request-form-inline-residual.e2e.ts` passed 1/1.
+
+## Batch 270
+
+- `/user/editform/emails` populated state: moved the valid secondary-email set-as-main button `width:150px` into `primaryEmailAction` StyleX while preserving `ybtn ybtn-small`, REST mutation, and responsive table geometry. Focused `stylex-user-editform-emails-inline-residual.e2e.ts` passed 2/2; the existing secondary-row source/runtime contract was updated and passed.
