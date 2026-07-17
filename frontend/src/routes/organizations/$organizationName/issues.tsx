@@ -249,11 +249,12 @@ function OrganizationIssuesBody({
                     id="projects"
                     name="projectNames[]"
                     multiple
+                    {...stylex.props(styles.projectSelect)}
+                    data-stylex-owner="organization-issues-project-select"
                     data-placeholder={t("organization.choose.projects")}
                     data-container-css-class="fullsize"
                     defaultValue={search.projectNames}
                     onChange={handleProjectsChange}
-                    style={{ width: "100%" }}
                   >
                     {issues.visibleProjects.map((project) => (
                       <option value={project.projectName} key={project.projectName}>

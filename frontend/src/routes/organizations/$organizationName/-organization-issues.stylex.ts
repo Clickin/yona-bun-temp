@@ -13,6 +13,7 @@ export const organizationIssuesTheme = stylex.defineVars({
 
 export const styles = stylex.create({
   search: { backgroundColor: organizationIssuesTheme.searchSurface },
+  projectSelect: { width: "100%" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   searchBar: {
     backgroundColor: organizationIssuesTheme.searchSurface,
