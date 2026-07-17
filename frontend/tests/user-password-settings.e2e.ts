@@ -154,7 +154,7 @@ test("current-user password settings page matches legacy user/edit_password.scal
   await page.locator("#retypedPassword").fill("different");
   await page.locator("#retypedPassword").blur();
   await expectPasswordValidationPopovers(page, ["Retyped password doesn't match"]);
-  await expect(page.locator("#frmPassword .popover.right.in")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="user-password-validation"]')).toHaveCount(1);
   expect(passwordPostCount).toBe(0);
 
   await page.locator("#frmPassword button[type=submit]").click();
@@ -212,7 +212,7 @@ test("current-user password settings title is rendered metadata, not route-local
 });
 
 async function expectPasswordValidationPopovers(page: Page, messages: string[]) {
-  const popovers = page.locator("#frmPassword .popover.right.in .popover-content");
+  const popovers = page.locator('[data-stylex-owner="user-password-validation-content"]');
   await expect(popovers).toHaveText(messages);
 }
 

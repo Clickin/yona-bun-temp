@@ -264,7 +264,7 @@ test("password validation and TanStack mutation stay intact", async ({ page }) =
   });
   await page.goto(`${basePath}/user/editform/password`);
   await page.locator("#frmPassword button[type=submit]").click();
-  await expect(page.locator("#frmPassword .popover-content")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="user-password-validation-content"]')).toHaveText([
     "필수 항목 입니다.",
     "필수 항목 입니다.",
     "필수 항목 입니다.",

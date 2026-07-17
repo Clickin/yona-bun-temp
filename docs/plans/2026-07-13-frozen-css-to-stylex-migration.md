@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twenty-three slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twenty-four slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -644,6 +644,20 @@ margin/padding output. Shared generic DL/DT/DD fallback remains for other consum
 on the absent reset-list owner becomes focused GREEN 4/4; Slice 222 actions and the existing form
 remain GREEN 8/8. Authenticated live/local desktop and mobile copy, order, wrapping, exact
 geometry, screenshots, and reset SPA navigation pass. This is not Wave 1 completion.
+
+The two-hundred-twenty-fourth slice migrates the three repeated validation-bubble owner types in
+the authenticated `/user/editform/password` empty-submit state: root, right arrow including its
+generated inner arrow, and content. Live Bootstrap plugin output proves that the previous React
+class-only bubbles remained `display:none` with zero boxes; React state plus StyleX now translates
+the plugin's right-placement algorithm and exact `display:block` output without DOM mutation.
+`passwordValidationColors` contains only surface, border, arrow-border, and shadow paint; all
+position, geometry, type, transition, and border structure stay literal. This state retires
+`popover fade right in`, `arrow`, and `popover-content`; other placements, title-bearing popovers,
+and unrelated plugin consumers remain fallback. Genuine RED on absent ownership and invisible
+zero-size output becomes focused GREEN 4/4; actions/form/reset-list remain GREEN 12/12. Live/local
+desktop and mobile root/arrow/content geometry, pseudo paint, screenshots, blur updates/clear,
+empty-submit mutation blocking, and successful password behavior pass. This is not Wave 1
+completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

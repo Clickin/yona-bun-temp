@@ -29,3 +29,11 @@ export const passwordSeparatorColors = stylex.defineVars({
   bottomBorder: "#ffffff",
   topBorder: "#eeeeee",
 });
+
+// Bootstrap popover and _yobiUI.less paint for password validation errors.
+export const passwordValidationColors = stylex.defineVars({
+  arrowBorder: "rgba(0, 0, 0, 0.25)",
+  border: "rgba(0, 0, 0, 0.2)",
+  shadow: "rgba(0, 0, 0, 0.1)",
+  surface: "#ffffff",
+});

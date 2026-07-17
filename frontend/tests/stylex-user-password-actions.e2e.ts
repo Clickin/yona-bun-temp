@@ -217,7 +217,7 @@ test("submit validation and reset TanStack navigation remain React-owned", async
   });
 
   await owner(page, owners.submitAction).click();
-  await expect(page.locator("#frmPassword .popover-content")).toHaveText([
+  await expect(page.locator('[data-stylex-owner="user-password-validation-content"]')).toHaveText([
     "필수 항목 입니다.",
     "필수 항목 입니다.",
     "필수 항목 입니다.",

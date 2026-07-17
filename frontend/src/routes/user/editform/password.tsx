@@ -10,6 +10,7 @@ import {
   passwordActionColors,
   passwordSeparatorColors,
   passwordSettingsColors,
+  passwordValidationColors,
 } from "./-password.stylex";
 
 const styles = stylex.create({
@@ -143,6 +144,66 @@ const styles = stylex.create({
     padding: "0px",
   },
   resetSection: { marginTop: "10px" },
+  validation: {
+    backgroundClip: "padding-box",
+    backgroundColor: passwordValidationColors.surface,
+    borderColor: passwordValidationColors.border,
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: `-2px 2px 1px ${passwordValidationColors.shadow}`,
+    display: "block",
+    fontSize: "13px",
+    fontWeight: "400",
+    left: { default: "230px", "@media (max-width: 720px)": "220px" },
+    lineHeight: "1",
+    marginLeft: "10px",
+    maxWidth: "276px",
+    opacity: "1",
+    padding: "1px",
+    position: "absolute",
+    textAlign: "left",
+    transition: "opacity 0.15s linear",
+    whiteSpace: "normal",
+    zIndex: "1010",
+  },
+  // Bootstrap tooltip.show: top = inputTop + inputHeight / 2 - popoverHeight / 2.
+  // jQuery offset rounds the live required-message results to 232, 302, and 372px.
+  validationOldPassword: { top: "232px" },
+  validationPassword: { top: "302px" },
+  validationRetypedPassword: { top: "372px" },
+  validationArrow: {
+    borderColor: "transparent",
+    borderLeftWidth: "0px",
+    borderRightColor: passwordValidationColors.arrowBorder,
+    borderStyle: "solid",
+    borderWidth: "11px",
+    display: "block",
+    height: "0px",
+    left: "-11px",
+    marginTop: "-11px",
+    position: "absolute",
+    top: "50%",
+    width: "0px",
+    "::after": {
+      borderColor: "transparent",
+      borderLeftWidth: "0px",
+      borderRightColor: passwordValidationColors.surface,
+      borderStyle: "solid",
+      borderWidth: "10px",
+      bottom: "-10px",
+      content: '""',
+      display: "block",
+      height: "0px",
+      left: "1px",
+      position: "absolute",
+      width: "0px",
+    },
+  },
+  validationContent: {
+    lineHeight: "120%",
+    padding: "9px 10px",
+  },
 });
 
 const formStyleProps = stylex.props(styles.form);
@@ -155,6 +216,8 @@ const submitActionStyleProps = stylex.props(styles.action, styles.submitAction);
 const separatorStyleProps = stylex.props(styles.separator);
 const resetSectionStyleProps = stylex.props(styles.resetSection);
 const resetActionStyleProps = stylex.props(styles.action);
+const validationArrowStyleProps = stylex.props(styles.validationArrow);
+const validationContentStyleProps = stylex.props(styles.validationContent);
 
 export const Route = createFileRoute("/user/editform/password")({
   component: UserPasswordSettingsRoute,
@@ -241,7 +304,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
               data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
-            <FieldPopover message={fieldErrors.oldPassword} />
+            <FieldPopover message={fieldErrors.oldPassword} field="oldPassword" />
           </dd>
           <dt {...termStyleProps} data-stylex-owner="user-password-term">
             {t("user.newPassword")}
@@ -257,7 +320,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
               data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
-            <FieldPopover message={fieldErrors.password} />
+            <FieldPopover message={fieldErrors.password} field="password" />
           </dd>
           <dt {...termStyleProps} data-stylex-owner="user-password-term">
             {t("validation.retypePassword")}
@@ -273,7 +336,7 @@ function UserPasswordSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeC
               data-stylex-owner="user-password-input"
               onBlur={(event) => validateWholePasswordForm(event.currentTarget.form)}
             />
-            <FieldPopover message={fieldErrors.retypedPassword} />
+            <FieldPopover message={fieldErrors.retypedPassword} field="retypedPassword" />
           </dd>
           <dd {...descriptionStyleProps} data-stylex-owner="user-password-description">
             <button
@@ -332,12 +395,29 @@ function validatePasswordForm(
   return nextErrors;
 }
 
-function FieldPopover({ message }: { message?: string }) {
+function FieldPopover({
+  field,
+  message,
+}: {
+  field: "oldPassword" | "password" | "retypedPassword";
+  message?: string;
+}) {
   if (!message) return null;
+  const placement =
+    field === "oldPassword"
+      ? styles.validationOldPassword
+      : field === "password"
+        ? styles.validationPassword
+        : styles.validationRetypedPassword;
   return (
-    <div className="popover right in">
-      <div className="arrow"></div>
-      <div className="popover-content">{message}</div>
+    <div
+      {...stylex.props(styles.validation, placement)}
+      data-stylex-owner="user-password-validation"
+    >
+      <div {...validationArrowStyleProps} data-stylex-owner="user-password-validation-arrow" />
+      <div {...validationContentStyleProps} data-stylex-owner="user-password-validation-content">
+        {message}
+      </div>
     </div>
   );
 }
