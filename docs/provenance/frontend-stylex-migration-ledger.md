@@ -559,3 +559,7 @@ This batch used two independent route states because the third candidate (`/info
 - `/$ownerName/$projectName/reviews` — export action `padding:10px` moved to `reviewsLayout.exportAction`; focused E2E covers computed padding and export interaction.
 
 The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, production build/StyleX verifier, formatting, and unchanged fallback hash passed once for the batch.
+
+## Batch 267
+
+- `/$ownerName/$projectName/commits` populated code-history state: moved the 220px branch picker container, inherited selector/result button declarations, stateful dropdown display, and tabs `margin-bottom:20px` into route-local StyleX owners. The frozen `.select2-drop.branches { width:auto !important; }` remains the intentional fallback for dropdown width. Focused `stylex-project-commits-inline-residual.e2e.ts` passed 1/1 with desktop/mobile geometry and branch interaction.

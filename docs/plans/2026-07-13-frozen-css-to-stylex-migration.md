@@ -3304,6 +3304,8 @@ Batch 265 applies the workflow to the populated project labels form, pull-reques
 
 Batch 266 applies the workflow to populated project branches, members, and reviews states. The routes were committed independently to preserve the one-route/one-audit-row guard; focused browser contracts cover the migrated owners and desktop/mobile containment. The members contract was stabilized against browser serialization of UA-dependent declarations, while source ownership and stable layout declarations remain asserted.
 
+Batch 267 applies the workflow to the authenticated populated project code-history state. The branch picker container/button declarations and tabs margin moved to route-local StyleX; the frozen Select2 `width:auto !important` rule remains the explicit dropdown fallback. Focused Playwright passed 1/1, frontend check passed, Vitest passed 11/11, production build and fallback hash verifier passed, and formatting/diff checks passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
