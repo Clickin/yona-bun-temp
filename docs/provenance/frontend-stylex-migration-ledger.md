@@ -506,3 +506,9 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/user/editform` profile default/no-modal: migrated profile form/fields/action, avatar form/progress/upload, reset-visited action, and closed crop-modal owners from `user/edit.scala.html`; profile update/avatar/reset/crop behavior remains React-owned. Focused `user-profile-settings.e2e.ts` stable no-modal test passed.
 
 This batch used a single visible route state; no multi-screen exception was required.
+
+## Batch 259 migration rows
+
+- `/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform`: migrated the edit form, disabled branch selectors, editor/title/actions, uploader, merge-result, and conflict-modal owners from `git/edit.scala.html`; React query/mutation, editor tabs, merge validation, conflict confirmation, and navigation remain React-owned. Focused `stylex-project-pull-request-edit-form.e2e.ts` passed with loaded/open, editor-tab, conflict-modal, desktop, and mobile checks.
+
+This batch used a single visible route state; no multi-screen exception was required.

@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -13,6 +14,7 @@ import { readSessionBootstrap } from "../../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
+import { styles as sx } from "./-editform.stylex";
 
 export const Route = createFileRoute(
   "/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform",
@@ -166,7 +168,8 @@ function ProjectPullRequestEditBody({
               `/${ownerName}/${projectName}/pullRequest/${prNumber}/edit`,
             )}
             encType="multipart/form-data"
-            className="nm"
+            className={`${stylex.props(sx.form).className} nm`}
+            data-stylex-owner="pull-request-edit-form"
             onSubmit={(event) => {
               event.preventDefault();
               submitForm(event.currentTarget);
@@ -182,21 +185,21 @@ function ProjectPullRequestEditBody({
                 {status.message}
               </div>
             ) : null}
-            <div>
+            <div data-stylex-owner="pull-request-edit-editor">
               <input
                 type="text"
                 id="title"
                 name="title"
                 maxLength={255}
-                className="text"
+                className={`${stylex.props(sx.title).className} text`}
                 defaultValue={pullRequest.title}
                 placeholder={t("title")}
               />
-              <div style={{ position: "relative" }}>
+              <div {...stylex.props(sx.editorWrap)}>
                 <PullRequestMarkdownEditor value={pullRequest.bodyMarkdown} />
               </div>
               <PullRequestFileUploader resourceId={pullRequest.id} />
-              <div className="actions">
+              <div className={`${stylex.props(sx.actions).className} actions`}>
                 <button type="submit" className="ybtn ybtn-success">
                   {t("button.save")}
                 </button>
@@ -216,7 +219,11 @@ function ProjectPullRequestEditBody({
               </li>
             </ul>
             <div className="tab-content">
-              <div id="__commits" className="code-browse-wrap tab-pane active">
+              <div
+                id="__commits"
+                className={`${stylex.props(sx.mergeResult).className} code-browse-wrap tab-pane active`}
+                data-stylex-owner="pull-request-edit-merge-result"
+              >
                 {mergeResult ? (
                   <MergeResult
                     authorLabel={t("code.author")}
@@ -269,22 +276,26 @@ function PullRequestConflictConfirmModal({
     <>
       <div
         id="pullRequestConflictConfirm"
-        className="modal in yobiDialog"
+        className={`${stylex.props(sx.conflictModal).className} modal in yobiDialog`}
+        data-stylex-owner="pull-request-edit-conflict-modal"
         tabIndex={-1}
         role="dialog"
         aria-hidden={false}
         aria-modal="true"
-        style={{ display: "block" }}
       >
         <div className="btn-dismiss">
-          <button type="button" className="btn-transparent" onClick={onClose}>
+          <button
+            type="button"
+            className={`${stylex.props(sx.conflictDismiss).className} btn-transparent`}
+            onClick={onClose}
+          >
             &times;
           </button>
         </div>
         <div className="message">
           <div className="center-text">
             <p className="msg">{t("pullRequest.ignore.conflict")}</p>
-            <p className="desc"></p>
+            <p className={`${stylex.props(sx.conflictDescription).className} desc`}></p>
           </div>
           <div className="center-txt buttons">
             <button type="button" className="ybtn ybtn-default" onClick={onClose}>
@@ -310,9 +321,15 @@ function PullRequestDisabledBranchSelectors({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="pull-request-wrap">
+    <div
+      className={`${stylex.props(sx.selectors).className} pull-request-wrap`}
+      data-stylex-owner="pull-request-edit-selectors"
+    >
       <div className="pull-left">
-        <label htmlFor="fromProjectId" className="field-title">
+        <label
+          htmlFor="fromProjectId"
+          className={`${stylex.props(sx.fieldTitle).className} field-title`}
+        >
           {t("pullRequest.from")}
         </label>
         <select
@@ -347,11 +364,14 @@ function PullRequestDisabledBranchSelectors({
         <input type="hidden" name="fromProjectId" value={selected.fromProjectId} />
         <input type="hidden" name="fromBranch" value={selected.fromBranch} />
       </div>
-      <div className="arrow">
+      <div className={`${stylex.props(sx.arrow).className} arrow`}>
         <i className="yobicon-right-2"></i>
       </div>
       <div className="pull-right">
-        <label htmlFor="toProjectId" className="field-title">
+        <label
+          htmlFor="toProjectId"
+          className={`${stylex.props(sx.fieldTitle).className} field-title`}
+        >
           {t("pullRequest.to")}
         </label>
         <select
@@ -439,7 +459,7 @@ function PullRequestMarkdownEditor({ value }: { value: string }) {
           <div className="textarea-box">
             <textarea
               name="body"
-              className="editorSeries content comment nm"
+              className={`${stylex.props(sx.editor).className} editorSeries content comment nm`}
               data-editor-mode="content-body"
               id="editor-body-body"
               defaultValue={value}
@@ -466,7 +486,8 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
   return (
     <div
       id="upload"
-      className="upload-wrap content-footer"
+      className={`${stylex.props(sx.uploader).className} upload-wrap content-footer`}
+      data-stylex-owner="pull-request-edit-uploader"
       data-resource-type="PULL_REQUEST"
       data-resource-id={resourceId === undefined ? undefined : String(resourceId)}
     >
@@ -481,7 +502,9 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
         <span className="plain">{t("common.attach.clickbutton")}</span>
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
-      <ul className="attached-files unstyled"></ul>
+      <ul
+        className={`${stylex.props(sx.attachmentDivider).className} attached-files unstyled`}
+      ></ul>
       <p className="right-txt help">
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
