@@ -62,7 +62,10 @@ test("records the primary-only live authority and exact three-owner table bounda
   );
   expect(authoredCell).not.toContain("display:");
 
-  const tableTheme = theme.slice(theme.indexOf("export const emailTableColors"));
+  const tableTheme = theme.slice(
+    theme.indexOf("export const emailTableColors"),
+    theme.indexOf("export const emailPrimaryBadgeColors"),
+  );
   expect(tableTheme).toContain('rowBorder: "#dddddd"');
   expect(tableTheme.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#dddddd"]);
   expect(tableTheme).not.toMatch(/(?:margin|padding|width|height|font|lineHeight)/u);

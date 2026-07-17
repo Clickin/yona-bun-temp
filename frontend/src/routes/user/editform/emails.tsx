@@ -12,7 +12,7 @@ import {
 import defaultEmailAvatarUrl from "../../../assets/legacy/default-avatar-128.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
-import { emailAddColors, emailTableColors } from "./-emails.stylex";
+import { emailAddColors, emailPrimaryBadgeColors, emailTableColors } from "./-emails.stylex";
 
 const styles = stylex.create({
   addForm: {
@@ -86,6 +86,28 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
     zIndex: "2",
   },
+  primaryAvatar: {
+    border: "0px",
+    height: "auto",
+    maxWidth: "100%",
+    verticalAlign: "middle",
+  },
+  primaryAddress: {
+    fontWeight: "bold",
+    marginLeft: "10px",
+  },
+  primaryBadge: {
+    backgroundColor: emailPrimaryBadgeColors.surface,
+    borderColor: emailPrimaryBadgeColors.border,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: emailPrimaryBadgeColors.text,
+    display: "inline-block",
+    marginLeft: "10px",
+    padding: "3px 5px",
+    verticalAlign: "middle",
+  },
   emailTable: {
     backgroundColor: "transparent",
     borderCollapse: "collapse",
@@ -115,6 +137,9 @@ const styles = stylex.create({
 const addFormStyleProps = stylex.props(styles.addForm);
 const addInputStyleProps = stylex.props(styles.addInput);
 const addActionStyleProps = stylex.props(styles.addAction);
+const primaryAvatarStyleProps = stylex.props(styles.primaryAvatar);
+const primaryAddressStyleProps = stylex.props(styles.primaryAddress);
+const primaryBadgeStyleProps = stylex.props(styles.primaryBadge);
 const emailTableStyleProps = stylex.props(styles.emailTable);
 const emailTableIdentityCellStyleProps = stylex.props(styles.emailTableCell);
 const emailTablePrimaryActionCellStyleProps = stylex.props(
@@ -232,9 +257,19 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
               data-stylex-owner="user-email-table-identity-cell"
             >
               {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
-              <img src={avatarSrc(profile?.avatarUrl)} width="40" height="40" />{" "}
-              <strong className="ml10">{profile?.primaryEmailAddress ?? ""}</strong>{" "}
-              <span className="label-head vmiddle ml10">{t("emails.main.email")}</span>
+              <img
+                {...primaryAvatarStyleProps}
+                src={avatarSrc(profile?.avatarUrl)}
+                width="40"
+                height="40"
+                data-stylex-owner="user-email-primary-avatar"
+              />{" "}
+              <strong {...primaryAddressStyleProps} data-stylex-owner="user-email-primary-address">
+                {profile?.primaryEmailAddress ?? ""}
+              </strong>{" "}
+              <span {...primaryBadgeStyleProps} data-stylex-owner="user-email-primary-badge">
+                {t("emails.main.email")}
+              </span>
             </td>
             <td
               {...emailTablePrimaryActionCellStyleProps}

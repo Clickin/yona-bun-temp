@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred nineteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twenty slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -597,6 +597,17 @@ primary row: desktop is `1346x57 @10,338` with `1276.25/69.75` cells, and mobile
 @0,378` with `369.78125/20.21875` cells. Secondary rows are verified only against the frozen
 Scala/CSS fixture and are not represented as live evidence. Focused RED 3/3 becomes GREEN 3/3;
 combined table/add-form browser coverage is GREEN 6/6. This is not Wave 1 completion.
+
+The two-hundred-twentieth slice migrates exactly the three visible identity owners in the actual
+primary-only `/user/editform/emails` row: avatar, primary address, and primary badge. Bootstrap's
+modern-browser `img` output, `strong` weight, `_common.less` `.ml10`/`.vmiddle`, and the complete
+`_page.less .label-head` output move to their direct owners. Only badge text/surface/border paint
+enters route-local `emailPrimaryBadgeColors`; geometry, spacing, type, and border structure stay
+literal. The primary `ml10` and `label-head vmiddle ml10` classes retire, while secondary rows,
+their identity content, all row actions, and mutations remain unchanged. IE-only `width:auto\9`
+and `-ms-interpolation-mode` remain frozen fallback evidence because they have no modern StyleX
+runtime effect. Genuine RED 2/2 becomes GREEN 2/2; exact desktop/mobile live geometry, fallback
+equivalence, screenshots, and adjacent table/add-form coverage pass. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

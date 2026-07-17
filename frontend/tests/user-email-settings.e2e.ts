@@ -502,6 +502,9 @@ async function canonicalizeScreenRoots(page: Page) {
         if (owner === "user-email-table") return 'class="table mt20"';
         if (owner === "user-email-table-identity-cell" || owner === "user-email-table-action-cell")
           return "";
+        if (owner === "user-email-primary-avatar") return "";
+        if (owner === "user-email-primary-address") return 'class="ml10"';
+        if (owner === "user-email-primary-badge") return 'class="label-head vmiddle ml10"';
       }
       if (
         name === "class" &&

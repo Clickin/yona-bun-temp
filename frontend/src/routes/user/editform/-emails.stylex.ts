@@ -17,3 +17,10 @@ export const emailAddColors = stylex.defineVars({
 export const emailTableColors = stylex.defineVars({
   rowBorder: "#dddddd",
 });
+
+// user/edit_emails.scala.html primary-email badge paint only.
+export const emailPrimaryBadgeColors = stylex.defineVars({
+  border: "rgba(0, 0, 0, 0.1)",
+  surface: "#ffffff",
+  text: "#0088cc",
+});
