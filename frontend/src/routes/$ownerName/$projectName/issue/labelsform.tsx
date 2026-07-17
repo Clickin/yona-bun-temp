@@ -73,6 +73,55 @@ const styles = stylex.create({
     borderTopStyle: "solid",
     borderTopWidth: "2px",
   },
+  listCategory: { verticalAlign: "top" },
+  listCategoryColumn: {
+    paddingRight: "18px",
+    lineHeight: "30px",
+    textAlign: "right",
+  },
+  listNameColumn: { paddingLeft: "8px", lineHeight: "30px" },
+  categoryName: { marginRight: "2px" },
+  exclusiveIcon: {
+    color: labelsFormColors.notice,
+    cursor: "help",
+    marginRight: "5px",
+    verticalAlign: "middle",
+  },
+  listTableCell: { borderTopStyle: "none" },
+  listTableLabel: { display: "block", fontSize: "12px", maxWidth: "90%" },
+  listTableRow: { borderBottomColor: labelsFormColors.border, borderBottomStyle: "solid" },
+  listActions: {
+    borderTopStyle: "none",
+    paddingRight: "1px",
+    textAlign: "right",
+    width: "150px",
+  },
+  editCategoryForm: { marginTop: "20px" },
+  editCategoryName: {
+    display: "block",
+    fontSize: "15px",
+    margin: "20px auto",
+    textAlign: "center",
+    width: "68%",
+  },
+  editLabelForm: { marginTop: "20px" },
+  editLabelName: { marginBottom: "0", marginLeft: "20px" },
+  editPresetColors: { display: "block", marginTop: "10px" },
+  presetColorButton: {
+    border: "0",
+    borderRadius: "2px",
+    boxShadow: "inset 0px -1px 1px rgba(0, 0, 0, 0.3)",
+    display: "inline-block",
+    height: "24px",
+    lineHeight: "1",
+    marginRight: "1px",
+    marginTop: "0",
+    outline: "none",
+    padding: "1px 12px",
+  },
+  presetColorButtonActive: {
+    boxShadow: "inset 1px 1px 4px rgba(0, 0, 0, 0.25)",
+  },
 });
 
 const NEW_LABEL_COLORS = [
@@ -811,29 +860,43 @@ function ProjectLabelsList({
     <>
       <div
         {...stylex.props(styles.listHead)}
-        className="row-fluid list-head"
+        className={`${stylex.props(styles.listHead).className} row-fluid list-head`}
         data-stylex-owner="project-labels-list-head"
       >
-        <div className="span3 category">
+        <div
+          {...stylex.props(styles.listCategoryColumn)}
+          className={`${stylex.props(styles.listCategoryColumn).className} span3 category`}
+        >
           <strong>{t("label.category")}</strong>
         </div>
-        <div className="span9 name">
+        <div
+          {...stylex.props(styles.listNameColumn)}
+          className={`${stylex.props(styles.listNameColumn).className} span9 name`}
+        >
           <strong>{t("label.name")}</strong>
         </div>
       </div>
       {categories.map((category) => (
         <div
-          className="row-fluid list-item category-wrap"
+          {...stylex.props(styles.listCategory)}
+          className={`${stylex.props(styles.listCategory).className} row-fluid list-item category-wrap`}
+          data-stylex-owner="project-labels-category-list"
           data-category={category.id}
           data-category-name={category.name}
           key={category.id || category.name}
         >
           <div className="span3">
             <h5 className="right-txt mr20">
-              <span className="category-name">{category.name}</span>
+              <span
+                {...stylex.props(styles.categoryName)}
+                className={`${stylex.props(styles.categoryName).className} category-name`}
+              >
+                {category.name}
+              </span>
               <p className="mt5">
                 <i
-                  className={`category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
+                  {...stylex.props(styles.exclusiveIcon)}
+                  className={`${stylex.props(styles.exclusiveIcon).className} category-exclusive ${category.isExclusive ? "yobicon-tag single" : "yobicon-tags multiple"}`}
                   data-html="true"
                   title={`${t("label.category.option")}<br>${t(
                     category.isExclusive
@@ -865,16 +928,20 @@ function ProjectLabelsList({
                   const labelName = stringField(label.name, "");
                   return (
                     <tr data-label-id={labelId} key={labelId || labelName}>
-                      <td>
+                      <td {...stylex.props(styles.listTableCell)}>
                         <span
-                          className="issue-label active"
+                          {...stylex.props(styles.listTableLabel)}
+                          className={`${stylex.props(styles.listTableLabel).className} issue-label active`}
                           data-label-id={labelId}
                           data-label-name={labelName}
                         >
                           {labelName}
                         </span>
                       </td>
-                      <td className="actions">
+                      <td
+                        {...stylex.props(styles.listActions)}
+                        className={`${stylex.props(styles.listActions).className} actions`}
+                      >
                         {canManageIssueLabels ? (
                           <>
                             <button
@@ -1197,13 +1264,18 @@ function EditCategoryModal({
             ×
           </button>
         </div>
-        <div className="message edit-label-category-form">
+        <div
+          {...stylex.props(styles.editCategoryForm)}
+          className={`${stylex.props(styles.editCategoryForm).className} message edit-label-category-form`}
+          data-stylex-owner="project-labels-edit-category-modal"
+        >
           <div className="center-txt">
             <input
               key={category ? `category-name-${category.id}` : "category-name-empty"}
               type="text"
               name="name"
-              className="text category-name"
+              {...stylex.props(styles.editCategoryName)}
+              className={`${stylex.props(styles.editCategoryName).className} text category-name`}
               placeholder={t("label.category")}
               value={category?.name || undefined}
               onChange={(event) =>
@@ -1382,7 +1454,11 @@ function EditLabelModal({
             ×
           </button>
         </div>
-        <div className="message edit-label-form">
+        <div
+          {...stylex.props(styles.editLabelForm)}
+          className={`${stylex.props(styles.editLabelForm).className} message edit-label-form`}
+          data-stylex-owner="project-labels-edit-label-modal"
+        >
           <div className="center-txt">
             <select
               key={label ? `label-category-${label.id}` : "label-category-empty"}
@@ -1474,7 +1550,8 @@ function EditLabelModal({
               key={label ? `label-name-${label.id}` : "label-name-empty"}
               type="text"
               name="name"
-              className="text input-label-name"
+              {...stylex.props(styles.editLabelName)}
+              className={`${stylex.props(styles.editLabelName).className} text input-label-name`}
               maxLength={250}
               placeholder={t("label.name")}
               value={label?.name || undefined}
@@ -1482,7 +1559,10 @@ function EditLabelModal({
               style={label?.color ? { backgroundColor: label.color } : undefined}
             />
 
-            <div className="label-preset-colors edit">
+            <div
+              {...stylex.props(styles.editPresetColors)}
+              className={`${stylex.props(styles.editPresetColors).className} label-preset-colors edit`}
+            >
               {EDIT_LABEL_COLORS.map((color) => (
                 <ColorButton
                   color={color}
@@ -1536,7 +1616,9 @@ function ColorButton({
   return (
     <button
       type="button"
-      className={`issue-label btn-preset-color${isActive ? " active" : ""}`}
+      {...stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive)}
+      className={`${stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive).className} issue-label btn-preset-color${isActive ? " active" : ""}`}
+      data-stylex-owner="project-labels-preset-color"
       style={{ backgroundColor: color }}
       onClick={onSelect}
     ></button>
