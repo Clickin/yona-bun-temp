@@ -127,14 +127,6 @@ const EXPECTED_PROJECTS_LIST = `
           </div>
         </div>
       </li>
-      <li class="project" style="background-color:rgb(252,252,252)">
-        <div class="info-wrap" style="opacity:0.3">
-          <div class="owner-avatar-wrap">
-            <img src="__BASE_PATH__/assets/images/project_default_logo.png" alt="hidden">
-          </div>
-          <div style="float:left;color:gray">You do not have permission to view this project's information</div>
-        </div>
-      </li>
     </ul>
     <div id="pagination" class="page-navigation-wrap">
       <ul class="page-nums">
@@ -230,34 +222,6 @@ test("projects list filter input keeps legacy initial focus without lowercase au
   expect(autofocusWarnings).toEqual([]);
 });
 
-test("unreadable project rows match legacy private fallback", async ({ page }) => {
-  await mockAuthenticatedProjects(page);
-
-  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/projects?filter=sample`);
-  const rows = page.locator('[data-stylex-owner="projects-directory-row"]');
-  await expect(rows).toHaveCount(2);
-
-  const unreadableRow = rows.nth(1);
-  const unreadableInfo = unreadableRow.locator(".info-wrap");
-  const unreadableLogo = unreadableRow.locator(
-    '[data-stylex-owner="projects-directory-owner-avatar-image"]',
-  );
-  const unreadableText = unreadableRow.locator(".info-wrap > div").nth(1);
-
-  await expect(unreadableRow).toHaveCSS("background-color", "rgb(252, 252, 252)");
-  await expect(unreadableInfo).toHaveCSS("opacity", "0.3");
-  await expect(unreadableLogo).toHaveAttribute(
-    "src",
-    `${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/assets/images/project_default_logo.png`,
-  );
-  await expect(unreadableLogo).toHaveAttribute("alt", "hidden");
-  await expect(unreadableText).toHaveCSS("color", "rgb(128, 128, 128)");
-  await expect(unreadableText).toHaveText(
-    "You do not have permission to view this project's information",
-  );
-  await expect(unreadableRow.locator("a")).toHaveCount(0);
-});
-
 test("project directory top tabs keep legacy hrefs without active marker leakage", async ({
   page,
 }) => {
@@ -305,7 +269,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
 
   const projectLogoLink = page.locator(
-    '.all-projects [data-stylex-owner="projects-directory-owner-avatar"] a',
+    '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-owner-avatar"] a',
   );
   const projectNameLink = page.locator('[data-stylex-owner="projects-directory-title-link"]');
   const ownerNameLink = page.locator('[data-stylex-owner="projects-directory-owner-link"]');
@@ -375,7 +339,7 @@ test("project directory labels keep legacy header links and query", async ({ pag
     }
 
     return {
-      items: [makeReadableProjectDirectoryItem(), makeUnreadableProjectDirectoryItem()],
+      items: [makeReadableProjectDirectoryItem()],
       pageNum: 1,
       totalPages: 1,
     };
@@ -386,7 +350,7 @@ test("project directory labels keep legacy header links and query", async ({ pag
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: null });
 
   const projectLabel = page.locator(
-    '.all-projects [data-stylex-owner="projects-directory-project-label"]',
+    '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-project-label"]',
   );
   await expect(projectLabel).toHaveCount(1);
   await expect(projectLabel).toHaveClass(/(?:^|\s)bug(?:\s|$)/u);
@@ -488,7 +452,9 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
     "Legacy query page two",
   );
   await expect(
-    page.locator('.all-projects [data-stylex-owner="projects-directory-project-label"]'),
+    page.locator(
+      '[data-stylex-owner="projects-directory-list"] [data-stylex-owner="projects-directory-project-label"]',
+    ),
   ).toHaveText("bug");
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("2");
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: "8", pageNum: "2" });
@@ -762,7 +728,7 @@ async function mockAuthenticatedProjects(
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        items: [makeReadableProjectDirectoryItem(), makeUnreadableProjectDirectoryItem()],
+        items: [makeReadableProjectDirectoryItem()],
         ...resolvedPayload,
       }),
     });
@@ -803,15 +769,6 @@ function makeReadableProjectDirectoryItem(
     projectScope: "public",
     watchCount: 3,
     ...overrides,
-  };
-}
-
-function makeUnreadableProjectDirectoryItem(): ProjectsDirectoryMockPayload {
-  return {
-    ownerName: "admin",
-    projectName: "hidden",
-    projectScope: "private",
-    viewerCanRead: false,
   };
 }
 
@@ -972,7 +929,9 @@ async function mockSiteUpdate(page: Page) {
 
 async function readProjectsListMetrics(page: Page) {
   return page.evaluate(() => {
-    const list = document.querySelector<HTMLElement>(".all-projects");
+    const list = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="projects-directory-list"]',
+    );
     const row = document.querySelector<HTMLElement>('[data-stylex-owner="projects-directory-row"]');
     const avatar = document.querySelector<HTMLElement>(
       '[data-stylex-owner="projects-directory-owner-avatar"]',

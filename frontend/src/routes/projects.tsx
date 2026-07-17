@@ -305,6 +305,7 @@ const styles = stylex.create({
     color: projectsDirectoryColors.privateLockText,
     fontSize: "14px",
   },
+  directoryPrivateLockIcon: { "::before": { content: '"\\e21e"' } },
   directoryProjectLabel: {
     backgroundColor: projectsDirectoryColors.projectLabelSurface,
     borderRadius: "2px",
@@ -508,7 +509,11 @@ const directoryForkSplitIconStyleProps = stylex.props(
   styles.yobicon,
   styles.directoryForkSplitIcon,
 );
-const directoryPrivateLockStyleProps = stylex.props(styles.directoryPrivateLock);
+const directoryPrivateLockStyleProps = stylex.props(
+  styles.yobicon,
+  styles.directoryPrivateLock,
+  styles.directoryPrivateLockIcon,
+);
 const directoryProjectLabelStyleProps = stylex.props(styles.directoryProjectLabel);
 const directoryOwnerLinkStyleProps = stylex.props(styles.directoryOwnerLink);
 const directoryCodeUpdateStyleProps = stylex.props(styles.directoryCodeUpdate);
@@ -718,11 +723,7 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
           ) : (
             <>
-              <ul
-                {...directoryListStyleProps}
-                className={`all-projects ${directoryListStyleProps.className ?? ""}`}
-                data-stylex-owner="projects-directory-list"
-              >
+              <ul {...directoryListStyleProps} data-stylex-owner="projects-directory-list">
                 {projects.map((project) => (
                   <ProjectListItem
                     key={`${project.ownerName ?? ""}/${project.projectName ?? ""}`}
@@ -944,35 +945,6 @@ function ProjectListItem({
   const router = useRouter();
   const ownerName = stringField(project, "ownerName", "");
   const projectName = stringField(project, "projectName", "");
-  if (!projectIsReadable(project)) {
-    return (
-      <li
-        {...directoryRowStyleProps}
-        className={`project ${directoryRowStyleProps.className ?? ""}`}
-        data-stylex-owner="projects-directory-row"
-        style={{ backgroundColor: "#fcfcfc" }}
-      >
-        <div className="info-wrap" style={{ opacity: 0.3 }}>
-          <div
-            {...directoryOwnerAvatarStyleProps}
-            className={directoryOwnerAvatarStyleProps.className}
-            data-stylex-owner="projects-directory-owner-avatar"
-          >
-            <img
-              {...directoryOwnerAvatarImageStyleProps}
-              src={prefixBasePath(basePath, "/assets/images/project_default_logo.png")}
-              alt={projectName}
-              data-stylex-owner="projects-directory-owner-avatar-image"
-            />
-          </div>
-          <div style={{ float: "left", color: "gray" }}>
-            You do not have permission to view this project's information
-          </div>
-        </div>
-      </li>
-    );
-  }
-
   const logoUrl = stringField(project, "logoUrl", "");
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
@@ -1063,7 +1035,6 @@ function ProjectListItem({
             {stringField(project, "projectScope", "public") === "private" ? (
               <i
                 {...directoryPrivateLockStyleProps}
-                className={`yobicon-lock ${directoryPrivateLockStyleProps.className ?? ""}`}
                 data-stylex-owner="projects-directory-private-lock"
               ></i>
             ) : null}{" "}
@@ -1306,15 +1277,6 @@ function positiveIntegerField(payload: unknown, key: string, fallback: number): 
 
 function clampPageNum(pageNum: number, totalPages: number) {
   return Math.min(Math.max(pageNum, 1), Math.max(totalPages, 1));
-}
-
-function projectIsReadable(record: YoramRecord): boolean {
-  for (const key of ["viewerCanRead", "canRead", "isReadable", "readable"]) {
-    if (record[key] === false) {
-      return false;
-    }
-  }
-  return true;
 }
 
 type ProjectsDirectoryQueryInput = {

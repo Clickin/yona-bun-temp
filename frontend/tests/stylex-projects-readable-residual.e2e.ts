@@ -160,11 +160,12 @@ test("readable residual wave records five direct owner groups and branch-scoped 
   for (const glyph of ["\\\\e225", "\\\\e27b", "\\\\e450", "\\\\e52e"])
     expect(route).toContain(`content: '"${glyph}"'`);
 
-  expect(route.split("className={`project ").length - 1).toBe(1);
-  expect(route.match(/className="info-wrap"/gu)).toHaveLength(1);
-  expect(route).toContain('style={{ backgroundColor: "#fcfcfc" }}');
-  expect(route).toContain('className="info-wrap" style={{ opacity: 0.3 }}');
-  expect(route).toContain('style={{ float: "left", color: "gray" }}');
+  expect(route).not.toMatch(/className=.*all-projects/u);
+  expect(route).not.toMatch(/className=.*project[^-]/u);
+  expect(route).not.toContain('className="info-wrap"');
+  expect(route).not.toContain('style={{ backgroundColor: "#fcfcfc" }}');
+  expect(route).not.toContain("style={{ opacity: 0.3 }}");
+  expect(route).not.toContain('style={{ float: "left", color: "gray" }}');
   for (const retired of ["yobicon-search", "yobicon-split", "yobicon-friends", "yobicon-eye"])
     expect(route).not.toMatch(new RegExp(`className=.*${retired}`, "u"));
 });

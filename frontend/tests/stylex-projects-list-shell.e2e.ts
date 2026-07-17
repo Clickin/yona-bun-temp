@@ -120,7 +120,7 @@ async function open(page: Page) {
   await expect(page.locator(`[data-stylex-owner="${listOwner}"]`)).toBeVisible();
 }
 
-test("list shell records the two owners while retaining only unreadable ancestry fallback", () => {
+test("list shell records the two direct StyleX owners", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
@@ -136,10 +136,9 @@ test("list shell records the two owners while retaining only unreadable ancestry
   expect(bootstrap).toContain("ul,\nol {");
   expect(route).toContain(`data-stylex-owner="${listOwner}"`);
   expect(route).toContain(`data-stylex-owner="${rowOwner}"`);
-  expect(route).toContain("className={`all-projects ${directoryListStyleProps.className");
-  expect(route).toContain("className={`project ${directoryRowStyleProps.className");
-  expect(route.split("className={`project ").length - 1).toBe(1);
-  expect(route.match(/className="info-wrap"/gu)).toHaveLength(1);
+  expect(route).not.toMatch(/className=.*all-projects/u);
+  expect(route).not.toMatch(/className=.*project[^-]/u);
+  expect(route).not.toContain('className="info-wrap"');
   expect(route).toContain("projectsDirectoryColors.rowDivider");
   expect(route).not.toContain("globalColors.");
 });

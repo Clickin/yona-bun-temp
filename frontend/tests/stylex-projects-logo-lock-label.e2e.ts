@@ -150,12 +150,14 @@ test("avatar, logo, private lock, and label record the four owners and exact fal
   expect(yobicon).toContain('.yobicon-lock:before {\n    content: "\\e21e";');
   for (const owner of [owners.avatar, owners.image, owners.lock, owners.label])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
-  expect(route.match(new RegExp(`data-stylex-owner="${owners.image}"`, "gu"))).toHaveLength(2);
+  expect(route.match(new RegExp(`data-stylex-owner="${owners.image}"`, "gu"))).toHaveLength(1);
   expect(route).not.toContain("owner-avatar-wrap");
   expect(route).not.toContain("className={`header ");
   expect(route).not.toContain("project-label ");
   expect(route).not.toContain("yobicon-small");
-  expect(route).toContain("className={`yobicon-lock ${directoryPrivateLockStyleProps.className");
+  expect(route).not.toMatch(/className=.*yobicon-lock/u);
+  expect(route).toContain('directoryPrivateLockIcon: { "::before": { content: \'"\\\\e21e"\' } }');
+  expect(route).toContain("styles.yobicon,\n  styles.directoryPrivateLock,");
   expect(route).toContain("label.category.toLowerCase()");
   expect(theme).toContain('privateLockText: "#7f8c8d"');
   expect(theme).toContain('projectLabelText: "#ffffff"');
@@ -180,7 +182,7 @@ for (const viewport of [
     await expect(avatar).not.toHaveClass(/(?:^|\s)owner-avatar-wrap(?:\s|$)/u);
     await expect(logo).toHaveAttribute("src", logoDataUrl);
     await expect(logo).toHaveAttribute("alt", "privateparity");
-    await expect(lock).toHaveClass(/(?:^|\s)yobicon-lock(?:\s|$)/u);
+    await expect(lock).not.toHaveClass(/(?:^|\s)yobicon-lock(?:\s|$)/u);
     await expect(lock).not.toHaveClass(/(?:^|\s)yobicon-small(?:\s|$)/u);
     await expect(label).toHaveClass(/(?:^|\s)area(?:\s|$)/u);
     await expect(label).not.toHaveClass(/(?:^|\s)project-label(?:\s|$)/u);

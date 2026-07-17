@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred eleven slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred twelve slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -492,6 +492,21 @@ to x1286.406/1322.578 at y214. Mobile pins the row to `390x154 @0,188`, identity
 search to `@187,162`, split to `@169.047,211`, and stats to x320.406/356.578 at y312 with
 390px scroll width. Genuine RED 0/3 becomes focused GREEN 3/3; the complete `/projects` matrix is
 GREEN 65/65. Target live/local captures were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-twelfth slice completes every reachable `/projects` presentation consumer. Legacy
+controller and template control flow proves that the unreadable `else` cannot render under a
+coherent setting: when private display is off, non-manager queries return only PUBLIC projects;
+when it is on, the template's first condition always selects the readable branch; site managers
+can read the private rows returned to them. The noncanonical React unreadable branch and its three
+inline styles are therefore deleted instead of preserved as fixture-only behavior. The final list
+retires `all-projects`, and the existing private-lock owner directly absorbs generic Yobicon output
+plus `\e21e`, retiring `yobicon-lock`. No theme variable is added; the label category class remains
+semantic filter data from the legacy model rather than presentation fallback. A live anonymous
+private-display capture pins desktop list/first private row to `1346x642.656 @10,158` /
+`1346x91`, with the 14px lock at `299.547,177`; mobile pins them to `390x882.656 @0,158` /
+`390x91`, with the lock at `289.547,177` and no overflow. Focused GREEN is 3/3 and the complete
+`/projects` matrix is GREEN 67/67. Target live/local captures were directly inspected. This is not
+Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

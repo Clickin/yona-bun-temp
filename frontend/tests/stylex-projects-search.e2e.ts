@@ -214,7 +214,9 @@ for (const viewport of [
           right: style(button).right,
           top: style(button).top,
         },
-        listY: document.querySelector<HTMLElement>(".all-projects")!.getBoundingClientRect().y,
+        listY: document
+          .querySelector<HTMLElement>('[data-stylex-owner="projects-directory-list"]')!
+          .getBoundingClientRect().y,
         scrollWidth: document.documentElement.scrollWidth,
       };
     }, owners);
