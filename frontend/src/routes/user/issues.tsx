@@ -615,7 +615,10 @@ function MySeriesMenuTabs({
           {t("user.files")}
         </Link>
       </li>
-      <li style={{ position: "relative" }}>
+      <li
+        {...stylex.props(issueStyles.relativeAnchor)}
+        data-stylex-owner="user-issues-default-login-anchor"
+      >
         <button
           type="button"
           className="ybtn hide-in-mobile"
@@ -1351,7 +1354,8 @@ function TwoColumnModeCheckbox({
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      {...stylex.props(issueStyles.relativeAnchor)}
+      data-stylex-owner="user-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -1420,7 +1424,8 @@ function ShowSubtasksCheckbox({
       className="show-subtasks mr10"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      {...stylex.props(issueStyles.relativeAnchor)}
+      data-stylex-owner="user-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}

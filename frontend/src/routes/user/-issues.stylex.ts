@@ -9,6 +9,7 @@ export const userIssuesColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  relativeAnchor: { position: "relative" },
   issueTitle: {
     color: userIssuesColors.issueTitle,
     fontSize: "15px",
