@@ -24,6 +24,14 @@ test("code file route declares StyleX owners and paint-only theme vars", () => {
     "project-code-file-header",
     "project-code-file-actions",
     "project-code-file-source",
+    "project-code-file-author",
+    "project-code-file-date",
+    "project-code-file-revision",
+    "project-code-file-message",
+    "project-code-file-raw-action",
+    "project-code-file-open-action",
+    "project-code-file-open-popover",
+    "project-code-file-history-action",
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -89,5 +97,8 @@ test("code file renders legacy metadata, markdown, and actions", async ({ page }
   );
   await expect(page.locator('[data-stylex-owner="project-code-file-actions"]')).toContainText(
     "Raw",
+  );
+  await expect(page.locator('[data-stylex-owner="project-code-file-author"]')).toContainText(
+    "Admin",
   );
 });

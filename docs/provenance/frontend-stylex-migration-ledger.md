@@ -468,3 +468,10 @@ Manual multi-screen exception note: Batch251 intentionally coordinated the indep
 - `/$ownerName/$projectName/newFork`: migrated residual owner/name/scope/help/radio/label owners from `git/fork.scala.html`; fork state/query/mutation/navigation remain React-owned. Focused `stylex-project-new-fork.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch252 intentionally coordinated three independent route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX ownership, and focused E2E; the assembled browser and shared static/build gates ran once.
+
+## Batch 253 migration rows
+
+- `/sites/diagnostic`: migrated page/content/sidebar-column owners from `site/diagnostic.scala.html`; diagnostic queries, update badge, error/no-error state, and sidebar behavior remain React-owned. Focused `stylex-site-diagnostic-error-title.e2e.ts` passed in the assembled browser gate.
+- `/$ownerName/$projectName/code/$branch/$filePath`: migrated file author/date/revision/message metadata and raw/edit/open/history action/popover owners from `code/view.scala.html` and file-view partials; source/markdown rendering, file queries, and navigation remain React-owned. Focused `stylex-project-code-file.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch253 intentionally coordinated two independent route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX ownership, and focused E2E; the assembled browser and shared static/build gates ran once.

@@ -18,6 +18,8 @@ async function openErrorDiagnostic(page: Page) {
   await page.goto(`${basePath}/sites/diagnostic`);
   const owner = page.locator(ownerSelector);
   await expect(owner).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-diagnostic-page"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-diagnostic-content"]')).toBeVisible();
   return owner;
 }
 

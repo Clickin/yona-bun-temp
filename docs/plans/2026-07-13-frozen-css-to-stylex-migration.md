@@ -3276,6 +3276,8 @@ Batch 251 applied the workflow to the restricted page, organization directory, a
 
 Batch 252 applied the workflow to user files, organization settings, and the project new-fork form. The assembled 4-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
 
+Batch 253 applied the workflow to the site diagnostic error state and project code-file view. The assembled 7-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

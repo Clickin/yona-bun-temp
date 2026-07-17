@@ -565,7 +565,7 @@ function FileView({
           className={`${stylex.props(styles.fileInfo).className} file-info`}
           data-stylex-owner="project-code-file-info"
         >
-          <span id="commiter" className="commiter">
+          <span id="commiter" className="commiter" data-stylex-owner="project-code-file-author">
             <Link
               to="/$user"
               params={{ user: authorLoginId }}
@@ -604,10 +604,10 @@ function FileView({
               {stringField(file.author, "")}
             </Link>
           </span>
-          <span id="commitDate" className="commitDate">
+          <span id="commitDate" className="commitDate" data-stylex-owner="project-code-file-date">
             {stringField(file.createdDate, "")}
           </span>
-          <span id="revisionNo" className="revision">
+          <span id="revisionNo" className="revision" data-stylex-owner="project-code-file-revision">
             <Link
               to="/$ownerName/$projectName/commit/$commitId"
               params={{ commitId, ownerName, projectName }}
@@ -633,7 +633,11 @@ function FileView({
               ) : null}
             </Link>
           </span>
-          <span id="commitMessage" className="commitMsg">
+          <span
+            id="commitMessage"
+            className="commitMsg"
+            data-stylex-owner="project-code-file-message"
+          >
             {stringField(file.commitMessage, "")}
           </span>
           <span>{stringField(file.lineEnding, "")}</span>
@@ -644,7 +648,14 @@ function FileView({
         >
           {!isBinary ? (
             <>
-              <Link to={rawPath} reloadDocument className="ybtn" target="_blank">
+              <Link
+                {...stylex.props(styles.action)}
+                to={rawPath}
+                reloadDocument
+                className={`${stylex.props(styles.action).className} ybtn`}
+                data-stylex-owner="project-code-file-raw-action"
+                target="_blank"
+              >
                 <i className="yobicon-download-alt yobicon-white vmiddle"></i> Raw
               </Link>
               {!currentUserIsAnonymous ? (
@@ -661,7 +672,9 @@ function FileView({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  className="ybtn"
+                  {...stylex.props(styles.action)}
+                  className={`${stylex.props(styles.action).className} ybtn`}
+                  data-stylex-owner="project-code-file-edit-action"
                 >
                   Edit
                 </Link>
@@ -670,6 +683,7 @@ function FileView({
           ) : null}
           <span
             className="open-in-browser-popover"
+            data-stylex-owner="project-code-file-open-wrap"
             style={{ display: "inline-block", position: "relative" }}
             onBlur={() => setIsOpenInBrowserPopoverVisible(false)}
             onFocus={() => setIsOpenInBrowserPopoverVisible(true)}
@@ -680,14 +694,18 @@ function FileView({
               id="open-in-browser"
               to={openPath}
               reloadDocument
-              className="ybtn"
+              {...stylex.props(styles.action)}
+              className={`${stylex.props(styles.action).className} ybtn`}
+              data-stylex-owner="project-code-file-open-action"
               target="_blank"
             >
               <i className="yobicon-download-alt yobicon-white vmiddle"></i> {t("code.open")}
             </Link>
             {isOpenInBrowserPopoverVisible ? (
               <div
-                className="popover top in"
+                {...stylex.props(styles.popover)}
+                className={`${stylex.props(styles.popover).className} popover top in`}
+                data-stylex-owner="project-code-file-open-popover"
                 role="tooltip"
                 style={{
                   bottom: "100%",
@@ -716,7 +734,9 @@ function FileView({
               className: undefined,
               "data-status": undefined,
             }}
-            className="ybtn"
+            {...stylex.props(styles.action)}
+            className={`${stylex.props(styles.action).className} ybtn`}
+            data-stylex-owner="project-code-file-history-action"
           >
             {t("code.history")}
           </Link>

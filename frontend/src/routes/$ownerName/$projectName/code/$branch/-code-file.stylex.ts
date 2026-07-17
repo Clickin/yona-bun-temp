@@ -5,6 +5,8 @@ export const codeFileColors = stylex.defineVars({
   metadataText: "#555555",
   markdownBorder: "#cccccc",
   binaryMutedText: "#999999",
+  actionText: "#333333",
+  popoverText: "#333333",
 });
 
 export const styles = stylex.create({
@@ -56,4 +58,6 @@ export const styles = stylex.create({
     padding: "0",
     lineHeight: "16px",
   },
+  action: { color: codeFileColors.actionText },
+  popover: { color: codeFileColors.popoverText },
 });
