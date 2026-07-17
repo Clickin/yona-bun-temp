@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Link as RouterLink, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   Fragment,
@@ -27,6 +28,7 @@ import {
   isRequestTextTooLargeError,
   RequestTextTooLargeErrorBody,
 } from "./-search-screen";
+import { styles } from "./-search.stylex";
 
 type SearchCategory = {
   countKey: keyof SearchCounts;
@@ -204,16 +206,19 @@ function GlobalSearchSuccessBody({
 
   return (
     <>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
+      <div className="site-breadcrumb-outer" data-stylex-owner="global-search-breadcrumb-outer">
+        <div
+          {...stylex.props(styles.breadcrumb)}
+          data-stylex-owner="global-search-breadcrumb-inner"
+        >
           <h3>{t("title.search")}</h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div {...stylex.props(styles.page)} data-stylex-owner="global-search-page">
+        <div data-stylex-owner="global-search-shell">
           <div className="project-page-wrap">
             <div className="row-fluid">
-              <div className="span2">
+              <div {...stylex.props(styles.category)} data-stylex-owner="global-search-category">
                 <ul className="lst-stacked unstyled search-category-wrap">
                   {GLOBAL_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
@@ -242,8 +247,8 @@ function GlobalSearchSuccessBody({
                   })}
                 </ul>
               </div>
-              <div className="span10">
-                <div className="search-box-wrap">
+              <div className="span10" data-stylex-owner="global-search-results-column">
+                <div {...stylex.props(styles.searchBox)} data-stylex-owner="global-search-box-wrap">
                   <form
                     id="searchInnerForm"
                     method="get"
@@ -261,7 +266,8 @@ function GlobalSearchSuccessBody({
                       type="text"
                       id="searchKeyword"
                       name="keyword"
-                      className="span11"
+                      {...stylex.props(styles.searchInput)}
+                      data-stylex-owner="global-search-input"
                       value={keywordValue}
                       onChange={(event) => {
                         setKeywordValue(event.currentTarget.value);
@@ -274,7 +280,7 @@ function GlobalSearchSuccessBody({
 
                   <h3 className="search-result-title">{resultTitle}</h3>
                 </div>
-                <div className="search-result-wrap">
+                <div {...stylex.props(styles.result)} data-stylex-owner="global-search-result-wrap">
                   <GlobalSearchResultList result={result} runtimeConfig={runtimeConfig} />
                 </div>
               </div>

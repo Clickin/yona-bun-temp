@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { type CSSProperties, type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
@@ -17,6 +18,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { styles } from "./-user-profile.stylex";
 
 type PublicProfileSearch = {
   daysAgo?: number;
@@ -285,8 +287,14 @@ function PublicProfileBody({
       </div>
       <div className="page-wrap-outer">
         <div className="page-wrap">
-          <section className="user-box">
-            <div className="user-info-box">
+          <section
+            className={`${stylex.props(styles.profile).className} user-box`}
+            data-stylex-owner="user-profile-box"
+          >
+            <div
+              className={`${stylex.props(styles.info).className} user-info-box`}
+              data-stylex-owner="user-profile-info"
+            >
               <div
                 className="whoami-wrap"
                 style={{ backgroundImage: `url('${profile.avatarUrl}')` }}
@@ -345,7 +353,10 @@ function PublicProfileBody({
             </div>
 
             {!viewerIsGuest ? (
-              <div className="user-stream-box">
+              <div
+                className={`${stylex.props(styles.stream).className} user-stream-box`}
+                data-stylex-owner="user-profile-stream"
+              >
                 <div className="pull-right">
                   {t("userinfo.daysAgo.prefix")}
                   <input
@@ -361,7 +372,10 @@ function PublicProfileBody({
                   {t("userinfo.daysAgo.suffix")}
                 </div>
 
-                <ul className="nav nav-tabs">
+                <ul
+                  className={`${stylex.props(styles.tabs).className} nav nav-tabs`}
+                  data-stylex-owner="user-profile-tabs"
+                >
                   <ProfileTab
                     active={activeTab === "issues"}
                     badge={issues.length}
@@ -385,7 +399,7 @@ function PublicProfileBody({
                   </li>
                 </ul>
 
-                <div className="tab-content">
+                <div className="tab-content" data-stylex-owner="user-profile-tab-content">
                   <div id="issues" className={`tab-pane ${activeTab === "issues" ? "active" : ""}`}>
                     <ul className="nav nav-tabs nm">
                       <li className={activeIssueTab === "openIssues" ? "active" : ""}>
