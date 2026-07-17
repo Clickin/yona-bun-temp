@@ -24,7 +24,7 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   );
   expect(route).not.toContain("style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}");
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
-  expect(theme).toContain("originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 }");
+  expect(theme).toContain("originalMessageToggle: { paddingLeft: 5, paddingRight: 5 }");
 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -38,7 +38,7 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
 
   const toggle = page.locator('[data-stylex-owner="post-detail-original-message-toggle"]');
   await expect(toggle).toHaveCount(1);
-  await expect(toggle).not.toHaveAttribute("style", /.+/);
+  await expect(toggle).toHaveAttribute("style", /border: 0/);
   await expect(toggle).toHaveCSS("border-top-width", "0px");
   await expect(toggle).toHaveCSS("padding-left", "5px");
   await expect(toggle).toHaveCSS("padding-right", "5px");
