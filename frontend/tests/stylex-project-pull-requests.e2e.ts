@@ -22,6 +22,7 @@ test("records project pull request list owners and responsive containment", asyn
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/weblabs/demo/pullRequests`);
     await expect(owner(page, "project-pullrequests-tabs")).toBeVisible();
+    await expect(owner(page, "project-pullrequests-list")).toBeVisible();
     await expect(owner(page, "project-pullrequests-search-input")).toHaveAttribute(
       "name",
       "filter",
@@ -61,7 +62,7 @@ async function mockPullRequests(page: Page) {
       json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/pullrequests**", (route: Route) =>
+  await page.route("**/api/v1/owners/**/projects/**/pull-requests**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {

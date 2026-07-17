@@ -475,3 +475,10 @@ Manual multi-screen exception note: Batch252 intentionally coordinated three ind
 - `/$ownerName/$projectName/code/$branch/$filePath`: migrated file author/date/revision/message metadata and raw/edit/open/history action/popover owners from `code/view.scala.html` and file-view partials; source/markdown rendering, file queries, and navigation remain React-owned. Focused `stylex-project-code-file.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch253 intentionally coordinated two independent route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX ownership, and focused E2E; the assembled browser and shared static/build gates ran once.
+
+## Batch 254 migration rows
+
+- `/$ownerName/$projectName/pullRequests`, `closedPullRequests`, and `sentPullRequests`: extended the shared pull-request list screen with list/empty/rows owners for open, closed, and sent states from `git/partial_list.scala.html`; query, filtering, tabs, pagination, and navigation remain React-owned. Focused `stylex-project-pull-requests.e2e.ts` passed in the assembled browser gate.
+- `/organizations/$organizationName/closedPullrequests`: verified the closed category reuses the organization pull-request screen with existing list/empty/pagination owners; query, tab navigation, and REST state remain React-owned. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch254 intentionally coordinated project pull-request state variants and the organization closed state into one supervised batch commit. Each route/state retains its Scala evidence and focused assertions; the assembled browser and shared static/build gates ran once.

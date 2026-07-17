@@ -3,6 +3,10 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${name}"]`).first();
+const closedRoute = readFileSync(
+  "src/routes/organizations/$organizationName/closedPullrequests.tsx",
+  "utf8",
+);
 
 test.use({ locale: "ko-KR" });
 
@@ -22,6 +26,7 @@ test("records organization pull request list owners and responsive containment",
   expect(template).toContain('name="filter"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-tabs"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-search-input"');
+  expect(closedRoute).toContain('category="closed"');
   for (const owner of [
     "organization-pullrequests-list",
     "organization-pullrequests-empty",
@@ -55,6 +60,11 @@ test("records organization pull request list owners and responsive containment",
     }));
     expect(geometry.width).toBeGreaterThan(0);
     expect(geometry.scrollWidth).toBe(viewport.width);
+
+    await page.goto(`${basePath}/organizations/weblabs/closedPullrequests`);
+    await expect(owner(page, "organization-pullrequests-tabs")).toBeVisible();
+    await expect(owner(page, "organization-pullrequests-empty")).toBeVisible();
+    await expect(page).toHaveURL(/\/organizations\/weblabs\/closedPullrequests(?:\?.*)?$/);
   }
 });
 

@@ -455,7 +455,11 @@ function ProjectPullRequestsBody({
               </li>
             </ul>
             <div {...sx.content} data-stylex-owner="project-pullrequests-content">
-              <div id="list" className="row-fluid tab-pane active">
+              <div
+                id="list"
+                className="row-fluid tab-pane active"
+                data-stylex-owner="project-pullrequests-list"
+              >
                 <ProjectPullRequestRows
                   basePath={runtimeConfig.basePath}
                   currentUserLabel={currentUserLabel(pullRequests)}
@@ -608,7 +612,7 @@ function ProjectPullRequestRows({
 
   if (pullRequests.items.length === 0) {
     return (
-      <ul className="post-list-wrap">
+      <ul className="post-list-wrap" data-stylex-owner="project-pullrequests-empty">
         <div className="error-wrap">
           <i className="ico ico-err1"></i>
           <p>{t("pullRequest.is.empty")}</p>
@@ -618,7 +622,7 @@ function ProjectPullRequestRows({
   }
 
   return (
-    <ul className="post-list-wrap">
+    <ul className="post-list-wrap" data-stylex-owner="project-pullrequests-rows">
       {pullRequests.items.map((pullRequest) => (
         <ProjectPullRequestRow
           basePath={basePath}
