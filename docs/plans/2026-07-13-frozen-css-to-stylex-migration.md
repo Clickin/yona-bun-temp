@@ -173,7 +173,8 @@ route geometry.
 
 ### 4.2.1 Theme-boundary correction gate
 
-Wave 1 route migration is paused. Before selecting another route/state, audit every definition in
+The theme-boundary correction gate is complete. The full inventory and all existing consumers were
+audited before resuming route work. Future route batches must still preserve the same boundary:
 `frontend/src/theme.stylex.ts` and every existing `globalColors.*` consumer, then:
 
 1. inline every non-theme value in its owning `stylex.create` block;
