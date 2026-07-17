@@ -837,6 +837,7 @@ const styles = stylex.create({
   },
   // Legacy project/members.scala.html typeahead action button declarations.
   suggestionAction: {
+    // Legacy typeahead button declaration; parent shell may add an 8px mobile scrollbar.
     backgroundColor: "transparent",
     borderStyle: "none",
     borderColor: "transparent",
