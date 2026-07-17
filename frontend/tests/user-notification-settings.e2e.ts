@@ -204,15 +204,16 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator('input.notiUpdate[data-toggle="switch"]')).toHaveCount(0);
   await expect(
     page.locator(
-      '[data-stylex-owner="user-notification-project-pane"][id="2"] .switch[data-on-label="On"][data-off-label="Off"]',
+      '[data-stylex-owner="user-notification-project-pane"][id="2"] [data-stylex-owner="user-notification-switch"]',
     ),
   ).toHaveCount(NOTIFICATION_TYPES.length);
   const newCommentSwitch = page
     .locator('[data-stylex-owner="user-notification-project-pane"][id="2"] tr', {
       hasText: "New comment on post or issue added",
     })
-    .locator("input.notiUpdate");
-  await expect(newCommentSwitch).toBeChecked();
+    .locator('[data-stylex-owner="user-notification-switch"]');
+  await expect(newCommentSwitch).toHaveAttribute("role", "switch");
+  await expect(newCommentSwitch).toHaveAttribute("aria-checked", "true");
   const toggleResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith("/api/v1/workspace/notifications") &&
@@ -220,7 +221,7 @@ test("current-user notification settings page matches legacy user/edit_notificat
   );
   await newCommentSwitch.click();
   await toggleResponse;
-  await expect(newCommentSwitch).not.toBeChecked();
+  await expect(newCommentSwitch).toHaveAttribute("aria-checked", "false");
 });
 
 test("current-user notification settings route uses typed tab Links without a route-local generic adapter", async () => {

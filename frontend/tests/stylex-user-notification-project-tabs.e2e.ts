@@ -221,11 +221,13 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   expect(route).not.toContain('borderRadius: "0px"');
   expect(route).not.toContain('fontWeight: "400"');
   expect(route).not.toContain('overflow: "visible"');
-  expect(theme.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#51aacc", "#fff"]);
+  expect(theme).toContain("notificationTableColors");
   expect(theme).not.toContain("globalColors");
-  expect(route).toContain('className="table table-striped table-bordered"');
-  expect(route).toContain('className="switch"');
-  expect(route).toContain('className="notiUpdate"');
+  expect(route).toContain('data-stylex-owner="user-notification-table"');
+  expect(route).toContain('role="switch"');
+  expect(route).not.toContain('className="table table-striped table-bordered"');
+  expect(route).not.toContain('className="switch"');
+  expect(route).not.toContain('className="notiUpdate"');
   expect(appCss).toContain("a {\n  color: inherit;");
   expect(parentRoute).toContain('data-stylex-owner="user-settings-page-wrap"');
   expect(parentRoute).not.toContain('<div className="page-wrap">');
@@ -274,8 +276,12 @@ for (const viewport of [
     await expect(items.nth(1)).toHaveAttribute("data-selected", "false");
     await expect(panes.nth(0)).toHaveAttribute("data-selected", "true");
     await expect(panes.nth(1)).toHaveAttribute("data-selected", "false");
-    await expect(panes.nth(0).locator("table.table.table-striped.table-bordered")).toHaveCount(1);
-    await expect(panes.nth(0).locator(".switch .notiUpdate")).toHaveCount(27);
+    await expect(panes.nth(0).locator('[data-stylex-owner="user-notification-table"]')).toHaveCount(
+      1,
+    );
+    await expect(
+      panes.nth(0).locator('[data-stylex-owner="user-notification-switch"]'),
+    ).toHaveCount(27);
     const legacyClasses = [
       "unstyled",
       "lst-stacked",

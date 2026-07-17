@@ -6,7 +6,7 @@ import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readWorkspaceOverviewRest, toggleWorkspaceNotificationRest } from "../../../api/workspace";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
-import { notificationProjectTabsColors } from "./-notifications.stylex";
+import { notificationProjectTabsColors, notificationTableColors } from "./-notifications.stylex";
 
 export const Route = createFileRoute("/user/editform/notifications")({
   component: UserNotificationSettingsRoute,
@@ -80,6 +80,137 @@ const styles = stylex.create({
   tabContent: { overflow: "hidden" },
   projectPane: { display: "none" },
   projectPaneSelected: { display: "block" },
+  notificationTable: {
+    backgroundColor: "transparent",
+    borderBottomColor: notificationTableColors.tableBorder,
+    borderBottomLeftRadius: "4px",
+    borderBottomRightRadius: "4px",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderCollapse: "separate",
+    borderLeftWidth: "0px",
+    borderRightColor: notificationTableColors.tableBorder,
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
+    borderSpacing: "0px",
+    borderTopColor: notificationTableColors.tableBorder,
+    borderTopLeftRadius: "4px",
+    borderTopRightRadius: "4px",
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    marginBottom: "20px",
+    maxWidth: "100%",
+    width: "100%",
+  },
+  notificationRow: { verticalAlign: "middle" },
+  notificationCell: {
+    borderLeftColor: notificationTableColors.tableBorder,
+    borderLeftStyle: "solid",
+    borderLeftWidth: "1px",
+    borderTopColor: notificationTableColors.tableBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    lineHeight: "20px",
+    padding: "8px",
+    textAlign: "left",
+    verticalAlign: "top",
+  },
+  notificationLabelCell: { fontWeight: "700" },
+  notificationActionCell: { fontWeight: "400" },
+  stripedCell: { backgroundColor: notificationTableColors.stripedSurface },
+  firstCell: { borderTopWidth: "0px" },
+  firstLabelCell: { borderTopLeftRadius: "4px" },
+  firstActionCell: { borderTopRightRadius: "4px" },
+  lastLabelCell: { borderBottomLeftRadius: "4px" },
+  lastActionCell: { borderBottomRightRadius: "4px" },
+  notificationSwitch: {
+    appearance: "none",
+    backgroundColor: "transparent",
+    borderWidth: "0px",
+    borderRadius: "30px",
+    boxSizing: "content-box",
+    cursor: "pointer",
+    display: "inline-block",
+    fontFamily: "inherit",
+    fontSize: "13px",
+    height: "29px",
+    lineHeight: "1.231",
+    margin: "0px",
+    overflow: "hidden",
+    padding: "0px",
+    position: "relative",
+    textAlign: "left",
+    verticalAlign: "baseline",
+    width: "80px",
+    userSelect: "none",
+  },
+  switchTrack: {
+    height: "0px",
+    left: "0%",
+    position: "relative",
+    top: "0px",
+    transition: "left 0.25s ease-out",
+    width: "162%",
+  },
+  switchTrackOff: { left: "-63%" },
+  switchLabel: {
+    boxSizing: "border-box",
+    color: notificationTableColors.switchText,
+    cursor: "pointer",
+    display: "block",
+    float: "left",
+    fontSize: "13px",
+    fontWeight: "700",
+    height: "29px",
+    lineHeight: "19px",
+    margin: "0px",
+    paddingBottom: "5px",
+    paddingTop: "5px",
+    position: "relative",
+    textAlign: "center",
+    transition: "all 0.25s ease-out",
+    width: "50%",
+    zIndex: 1,
+  },
+  switchOnLabel: {
+    backgroundColor: {
+      default: notificationTableColors.switchOn,
+      ":hover": notificationTableColors.switchOnHover,
+    },
+    borderRadius: "30px 0px 0px 30px",
+    borderLeftColor: "transparent",
+  },
+  switchOffLabel: {
+    backgroundColor: {
+      default: notificationTableColors.switchOff,
+      ":hover": notificationTableColors.switchOffHover,
+    },
+    borderRadius: "0px 30px 30px 0px",
+    textIndent: "5px",
+  },
+  switchKnob: {
+    backgroundColor: notificationTableColors.knobSurface,
+    borderRadius: "50%",
+    borderStyle: "solid",
+    borderWidth: "4px",
+    boxSizing: "content-box",
+    cursor: "pointer",
+    display: "block",
+    float: "left",
+    height: "21px",
+    margin: "0px -15px 0px -14px",
+    padding: "0px",
+    position: "relative",
+    transition: "all 0.25s ease-out",
+    verticalAlign: "middle",
+    width: "21px",
+    zIndex: 100,
+  },
+  switchKnobOn: { borderColor: notificationTableColors.switchOn },
+  switchKnobOff: {
+    borderColor: notificationTableColors.switchOff,
+    boxShadow: "-1px 0px 0px rgba(255, 255, 255, 0.5)",
+  },
 });
 
 const projectListStyleProps = stylex.props(styles.projectList);
@@ -198,29 +329,93 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
               id={projectId}
               key={projectId}
             >
-              <table className="table table-striped table-bordered">
+              <table
+                {...stylex.props(styles.notificationTable)}
+                data-stylex-owner="user-notification-table"
+              >
                 <tbody>
-                  {NOTIFICATION_TYPES.map(([eventType, messageKey]) => (
-                    <tr key={eventType}>
-                      <th>{t(messageKey)}</th>
-                      <td>
-                        <div className="switch" data-on-label="On" data-off-label="Off">
-                          <input
-                            className="notiUpdate"
-                            type="checkbox"
-                            checked={isNotificationEnabled(notifications, eventType)}
-                            onChange={(event) =>
+                  {NOTIFICATION_TYPES.map(([eventType, messageKey], rowIndex) => {
+                    const enabled = isNotificationEnabled(notifications, eventType);
+                    const firstRow = rowIndex === 0;
+                    const lastRow = rowIndex === NOTIFICATION_TYPES.length - 1;
+                    const striped = rowIndex % 2 === 0;
+                    return (
+                      <tr
+                        {...stylex.props(styles.notificationRow)}
+                        data-stylex-owner="user-notification-row"
+                        key={eventType}
+                      >
+                        <th
+                          {...stylex.props(
+                            styles.notificationCell,
+                            styles.notificationLabelCell,
+                            striped && styles.stripedCell,
+                            firstRow && styles.firstCell,
+                            firstRow && styles.firstLabelCell,
+                            lastRow && styles.lastLabelCell,
+                          )}
+                          data-stylex-owner="user-notification-label-cell"
+                        >
+                          {t(messageKey)}
+                        </th>
+                        <td
+                          {...stylex.props(
+                            styles.notificationCell,
+                            styles.notificationActionCell,
+                            striped && styles.stripedCell,
+                            firstRow && styles.firstCell,
+                            firstRow && styles.firstActionCell,
+                            lastRow && styles.lastActionCell,
+                          )}
+                          data-stylex-owner="user-notification-action-cell"
+                        >
+                          <button
+                            {...stylex.props(styles.notificationSwitch)}
+                            aria-checked={enabled}
+                            aria-label={`${t(messageKey)}: ${enabled ? "On" : "Off"}`}
+                            data-stylex-owner="user-notification-switch"
+                            onClick={() =>
                               toggleMutation.mutate({
-                                checked: event.currentTarget.checked,
+                                checked: !enabled,
                                 eventType,
                                 projectId,
                               })
                             }
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            role="switch"
+                            type="button"
+                          >
+                            <span
+                              {...stylex.props(
+                                styles.switchTrack,
+                                !enabled && styles.switchTrackOff,
+                              )}
+                            >
+                              <span
+                                {...stylex.props(styles.switchLabel, styles.switchOnLabel)}
+                                data-stylex-owner="user-notification-switch-label"
+                              >
+                                On
+                              </span>
+                              <span
+                                {...stylex.props(
+                                  styles.switchKnob,
+                                  enabled ? styles.switchKnobOn : styles.switchKnobOff,
+                                )}
+                              >
+                                &nbsp;
+                              </span>
+                              <span
+                                {...stylex.props(styles.switchLabel, styles.switchOffLabel)}
+                                data-stylex-owner="user-notification-switch-label"
+                              >
+                                Off
+                              </span>
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
