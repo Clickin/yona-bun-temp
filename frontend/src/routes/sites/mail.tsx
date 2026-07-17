@@ -230,10 +230,10 @@ function SiteMailScreen({
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="site-mail-page">
+        <div className="site-setting-wrap" data-stylex-owner="site-mail-content">
           <div className="row-fluid">
-            <div className="span2">
+            <div className="span2" data-stylex-owner="site-mail-sidebar-column">
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
             <div className="span10">

@@ -3282,6 +3282,8 @@ Batch 254 applied the workflow to project pull-request open/closed/sent list sta
 
 Batch 255 applied the workflow to the read-only site data/export page. Its assembled 6-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
 
+Batch 256 applied the workflow to the site mail not-configured state. Its assembled 5-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

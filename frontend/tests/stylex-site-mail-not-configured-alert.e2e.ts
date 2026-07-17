@@ -42,6 +42,8 @@ async function open(page: Page, response: MailOptions = defaultMailOptions) {
   await page.goto(`${basePath}/sites/mail`);
   const owner = page.locator(ownerSelector);
   await expect(owner).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-mail-page"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-mail-content"]')).toBeVisible();
   return owner;
 }
 

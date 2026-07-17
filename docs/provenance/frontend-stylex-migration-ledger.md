@@ -488,3 +488,9 @@ Manual multi-screen exception note: Batch254 intentionally coordinated project p
 - `/sites/data`: migrated page/content/sidebar-column owners from `site/data.scala.html` and site-management partials; read-only data queries, warning/export/import controls, and navigation remain React-owned. Focused `stylex-site-data-title-strip.e2e.ts` passed in the assembled browser gate.
 
 This batch used a single read-only route state; no multi-screen exception was required.
+
+## Batch 256 migration rows
+
+- `/sites/mail`: migrated page/content/sidebar-column owners from `site/mail.scala.html` and site-management partials; mail options query, not-configured alert, form, CSRF/send behavior, and navigation remain React-owned. Focused `stylex-site-mail-not-configured-alert.e2e.ts` passed in the assembled browser gate.
+
+This batch used a single visible route state; no multi-screen exception was required.
