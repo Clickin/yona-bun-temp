@@ -215,6 +215,20 @@ const styles = stylex.create({
     right: "5px",
     top: "5px",
   },
+  yobicon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "400",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+  },
+  directorySearchIcon: { "::before": { content: '"\\e225"' } },
   directoryList: {
     clear: "both",
     listStyle: "none",
@@ -242,6 +256,7 @@ const styles = stylex.create({
     verticalAlign: "top",
     width: "100%",
   },
+  directoryReadableIdentity: { float: "left" },
   directoryHeader: {
     fontSize: "20px",
     fontWeight: "700",
@@ -285,6 +300,7 @@ const styles = stylex.create({
     outlineStyle: "none",
     textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
   },
+  directoryForkSplitIcon: { "::before": { content: '"\\e450"' } },
   directoryPrivateLock: {
     color: projectsDirectoryColors.privateLockText,
     fontSize: "14px",
@@ -357,6 +373,8 @@ const styles = stylex.create({
     marginRight: "5px",
     verticalAlign: "bottom",
   },
+  directoryStatsFriendsIcon: { "::before": { content: '"\\e27b"' } },
+  directoryStatsEyeIcon: { "::before": { content: '"\\e52e"' } },
   directoryMemberAvatarImage: {
     verticalAlign: "top",
     width: "100%",
@@ -474,16 +492,22 @@ const directorySearchFormStyleProps = stylex.props(styles.directorySearchForm);
 const directorySearchBarStyleProps = stylex.props(styles.directorySearchBar);
 const directorySearchInputStyleProps = stylex.props(styles.directorySearchInput);
 const directorySearchButtonStyleProps = stylex.props(styles.directorySearchButton);
+const directorySearchIconStyleProps = stylex.props(styles.yobicon, styles.directorySearchIcon);
 const directoryListStyleProps = stylex.props(styles.directoryList);
 const directoryRowStyleProps = stylex.props(styles.directoryRow);
 const directoryOwnerAvatarStyleProps = stylex.props(styles.directoryOwnerAvatar);
 const directoryOwnerAvatarImageStyleProps = stylex.props(styles.directoryOwnerAvatarImage);
+const directoryReadableIdentityStyleProps = stylex.props(styles.directoryReadableIdentity);
 const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
 const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
 const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
 const directoryTitleLinkStyleProps = stylex.props(styles.directoryTitleLink);
 const directoryForkOriginStyleProps = stylex.props(styles.directoryForkOrigin);
 const directoryForkOriginLinkStyleProps = stylex.props(styles.directoryForkOriginLink);
+const directoryForkSplitIconStyleProps = stylex.props(
+  styles.yobicon,
+  styles.directoryForkSplitIcon,
+);
 const directoryPrivateLockStyleProps = stylex.props(styles.directoryPrivateLock);
 const directoryProjectLabelStyleProps = stylex.props(styles.directoryProjectLabel);
 const directoryOwnerLinkStyleProps = stylex.props(styles.directoryOwnerLink);
@@ -493,7 +517,16 @@ const directoryMembersStyleProps = stylex.props(styles.directoryMembers);
 const directoryMembersListStyleProps = stylex.props(styles.directoryMembersList);
 const directoryMemberItemStyleProps = stylex.props(styles.directoryMemberItem);
 const directoryMemberAvatarStyleProps = stylex.props(styles.directoryMemberAvatar);
-const directoryStatsIconStyleProps = stylex.props(styles.directoryStatsIcon);
+const directoryStatsFriendsIconStyleProps = stylex.props(
+  styles.yobicon,
+  styles.directoryStatsIcon,
+  styles.directoryStatsFriendsIcon,
+);
+const directoryStatsEyeIconStyleProps = stylex.props(
+  styles.yobicon,
+  styles.directoryStatsIcon,
+  styles.directoryStatsEyeIcon,
+);
 const directoryMemberAvatarImageStyleProps = stylex.props(styles.directoryMemberAvatarImage);
 const directoryMemberCountStyleProps = stylex.props(styles.directoryMemberCount);
 const directoryEmptyStateStyleProps = stylex.props(styles.directoryEmptyState);
@@ -657,7 +690,10 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                     data-stylex-owner="projects-directory-search-button"
                     type="submit"
                   >
-                    <i className="yobicon-search"></i>
+                    <i
+                      {...directorySearchIconStyleProps}
+                      data-stylex-owner="projects-directory-search-icon"
+                    ></i>
                   </button>
                 </div>
               </form>
@@ -950,12 +986,8 @@ function ProjectListItem({
   const watchCount = numberField(project, "watchCount", 0);
 
   return (
-    <li
-      {...directoryRowStyleProps}
-      className={`project ${directoryRowStyleProps.className ?? ""}`}
-      data-stylex-owner="projects-directory-row"
-    >
-      <div className="info-wrap">
+    <li {...directoryRowStyleProps} data-stylex-owner="projects-directory-row">
+      <div data-stylex-owner="projects-directory-readable-info">
         <div
           {...directoryOwnerAvatarStyleProps}
           className={directoryOwnerAvatarStyleProps.className}
@@ -980,7 +1012,10 @@ function ProjectListItem({
             ) : null}
           </Link>
         </div>
-        <div style={{ float: "left" }}>
+        <div
+          {...directoryReadableIdentityStyleProps}
+          data-stylex-owner="projects-directory-readable-identity"
+        >
           <div
             {...directoryHeaderStyleProps}
             className={directoryHeaderStyleProps.className}
@@ -1017,7 +1052,11 @@ function ProjectListItem({
                   params={{ ownerName: originOwnerName, projectName: originProjectName }}
                   to="/$ownerName/$projectName"
                 >
-                  <i className="yobicon-split"></i> {originOwnerName} / {originProjectName}
+                  <i
+                    {...directoryForkSplitIconStyleProps}
+                    data-stylex-owner="projects-directory-fork-split-icon"
+                  ></i>{" "}
+                  {originOwnerName} / {originProjectName}
                 </Link>
               </span>
             ) : null}{" "}
@@ -1140,8 +1179,7 @@ function ProjectListItem({
             </ul>
             <p>
               <i
-                {...directoryStatsIconStyleProps}
-                className={`yobicon-friends ${directoryStatsIconStyleProps.className ?? ""}`}
+                {...directoryStatsFriendsIconStyleProps}
                 data-stylex-owner="projects-directory-stats-icon"
               ></i>
               <strong
@@ -1151,8 +1189,7 @@ function ProjectListItem({
                 {memberCount}
               </strong>{" "}
               <i
-                {...directoryStatsIconStyleProps}
-                className={`yobicon-eye ${directoryStatsIconStyleProps.className ?? ""}`}
+                {...directoryStatsEyeIconStyleProps}
                 data-stylex-owner="projects-directory-stats-icon"
               ></i>{" "}
               <strong

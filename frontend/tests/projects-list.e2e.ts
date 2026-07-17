@@ -162,7 +162,7 @@ test("projects list matches legacy project/list.scala.html DOM", async ({ page }
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
   await expect(page).toHaveTitle("Project list");
   await expect
     .poll(() =>
@@ -234,9 +234,10 @@ test("unreadable project rows match legacy private fallback", async ({ page }) =
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project")).toHaveCount(2);
+  const rows = page.locator('[data-stylex-owner="projects-directory-row"]');
+  await expect(rows).toHaveCount(2);
 
-  const unreadableRow = page.locator(".all-projects > .project").nth(1);
+  const unreadableRow = rows.nth(1);
   const unreadableInfo = unreadableRow.locator(".info-wrap");
   const unreadableLogo = unreadableRow.locator(
     '[data-stylex-owner="projects-directory-owner-avatar-image"]',
@@ -264,7 +265,7 @@ test("project directory top tabs keep legacy hrefs without active marker leakage
   await mockAuthenticatedProjects(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
 
   const tabItems = page.locator('[data-stylex-owner="projects-directory-tabs-item"]');
   const projectTabItem = tabItems.nth(0);
@@ -301,7 +302,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
   await mockProjectCardDestinations(page);
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
 
   const projectLogoLink = page.locator(
     '.all-projects [data-stylex-owner="projects-directory-owner-avatar"] a',
@@ -335,7 +336,7 @@ test("project directory card links keep legacy hrefs while using SPA navigation"
     .toBe("project");
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
   await page.evaluate(() => {
     (window as Window & { __projectsListSpaMarker?: string }).__projectsListSpaMarker = "owner";
   });
@@ -381,7 +382,7 @@ test("project directory labels keep legacy header links and query", async ({ pag
   });
 
   await page.goto(`${basePath}/projects?filter=sample`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
   expect(projectRequests).toContainEqual({ filter: "sample", labelIds: null });
 
   const projectLabel = page.locator(
@@ -401,7 +402,7 @@ test("project directory labels keep legacy header links and query", async ({ pag
   await expect.poll(() => new URL(page.url()).pathname).toBe(`${basePath}/projects`);
   await expect.poll(() => new URL(page.url()).searchParams.get("labelIds")).toBe("8");
   await expect.poll(() => new URL(page.url()).searchParams.has("filter")).toBe(false);
-  await expect(page.locator(".all-projects .project")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
     "sample-bug",
   );
@@ -479,7 +480,7 @@ test("projects list applies filter, labelIds, and pageNum query state to API req
   });
 
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=2`);
-  await expect(page.locator(".all-projects .project")).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="projects-directory-title-link"]')).toHaveText(
     "sample-page-two",
   );
@@ -511,7 +512,7 @@ test("projects list renders legacy pagination controls for multi-page project li
   await mockAuthenticatedProjects(page, { pageNum: 1, totalPages: 3 });
 
   await page.goto(`${basePath}/projects?filter=sample&labelIds=8&pageNum=1`);
-  await expect(page.locator(".all-projects .project").first()).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="projects-directory-row"]').first()).toBeVisible();
 
   const pagination = page.locator('[data-stylex-owner="projects-directory-pagination"]');
   await expect(pagination).not.toHaveClass(/(?:^|\s)page-navigation-wrap(?:\s|$)/u);
@@ -972,7 +973,7 @@ async function mockSiteUpdate(page: Page) {
 async function readProjectsListMetrics(page: Page) {
   return page.evaluate(() => {
     const list = document.querySelector<HTMLElement>(".all-projects");
-    const row = document.querySelector<HTMLElement>(".all-projects > .project");
+    const row = document.querySelector<HTMLElement>('[data-stylex-owner="projects-directory-row"]');
     const avatar = document.querySelector<HTMLElement>(
       '[data-stylex-owner="projects-directory-owner-avatar"]',
     );
@@ -1096,6 +1097,9 @@ async function canonicalizeScreenRoots(page: Page) {
                 attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-owner-avatar-image"]',
                 ) ||
+                attr.ownerElement?.matches(
+                  '[data-stylex-owner="projects-directory-readable-identity"]',
+                ) ||
                 (attr.ownerElement?.matches(
                   '[data-stylex-owner="projects-directory-pagination-label"]',
                 ) &&
@@ -1114,9 +1118,16 @@ async function canonicalizeScreenRoots(page: Page) {
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}="${normalizeAttr(attr)}"`)
         .join(" ");
+      const owner = node.getAttribute("data-stylex-owner");
+      const syntheticAttrs =
+        owner === "projects-directory-readable-info"
+          ? 'class="info-wrap"'
+          : owner === "projects-directory-readable-identity"
+            ? 'style="float:left"'
+            : "";
       const canonicalAttrs = node.matches("[data-projects-directory-tabs-scope]")
         ? 'class="title_area"'
-        : attrs;
+        : [attrs, syntheticAttrs].filter(Boolean).join(" ");
       const open = canonicalAttrs
         ? `<${node.tagName.toLowerCase()} ${canonicalAttrs}>`
         : `<${node.tagName.toLowerCase()}>`;
@@ -1179,6 +1190,8 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-search-input") return "textbox";
       if (attr.name === "class" && owner === "projects-directory-search-button")
         return "search-btn";
+      if (attr.name === "class" && owner === "projects-directory-search-icon")
+        return "yobicon-search";
       if (attr.name === "class" && owner === "projects-directory-list") return "all-projects";
       if (attr.name === "class" && owner === "projects-directory-row") return "project";
       if (attr.name === "class" && owner === "projects-directory-owner-avatar")
@@ -1202,10 +1215,10 @@ async function canonicalizeScreenRoots(page: Page) {
       if (attr.name === "class" && owner === "projects-directory-members-list") return "unstyled";
       if (attr.name === "class" && owner === "projects-directory-member-avatar")
         return "avatar-wrap";
-      if (attr.name === "class" && owner === "projects-directory-stats-icon")
-        return attr.value.includes("yobicon-friends")
-          ? "yobicon-friends yobicon-middle"
-          : "yobicon-eye yobicon-middle";
+      if (attr.name === "class" && owner === "projects-directory-stats-icon") {
+        const glyph = getComputedStyle(attr.ownerElement!, "::before").content;
+        return glyph === '""' ? "yobicon-friends yobicon-middle" : "yobicon-eye yobicon-middle";
+      }
       if (attr.name === "class" && owner === "projects-directory-pagination-input")
         return "input-mini nospinner";
       if (attr.name === "class" && owner === "projects-directory-pagination")

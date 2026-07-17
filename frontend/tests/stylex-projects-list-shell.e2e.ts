@@ -120,7 +120,7 @@ async function open(page: Page) {
   await expect(page.locator(`[data-stylex-owner="${listOwner}"]`)).toBeVisible();
 }
 
-test("list shell records the two owners while retaining descendant fallback classes", () => {
+test("list shell records the two owners while retaining only unreadable ancestry fallback", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
@@ -138,6 +138,8 @@ test("list shell records the two owners while retaining descendant fallback clas
   expect(route).toContain(`data-stylex-owner="${rowOwner}"`);
   expect(route).toContain("className={`all-projects ${directoryListStyleProps.className");
   expect(route).toContain("className={`project ${directoryRowStyleProps.className");
+  expect(route.split("className={`project ").length - 1).toBe(1);
+  expect(route.match(/className="info-wrap"/gu)).toHaveLength(1);
   expect(route).toContain("projectsDirectoryColors.rowDivider");
   expect(route).not.toContain("globalColors.");
 });
@@ -150,11 +152,11 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await open(page);
     const list = page.locator(`[data-stylex-owner="${listOwner}"]`);
-    const rows = list.locator(`:scope > li.project[data-stylex-owner="${rowOwner}"]`);
+    const rows = list.locator(`:scope > li[data-stylex-owner="${rowOwner}"]`);
     await expect(rows).toHaveCount(4);
     for (const row of await rows.all()) {
       const logoLink = row.locator(
-        ':scope > .info-wrap > [data-stylex-owner="projects-directory-owner-avatar"] > a',
+        ':scope > div > [data-stylex-owner="projects-directory-owner-avatar"] > a',
       );
       await expect(logoLink).toHaveCount(1);
       await expect(logoLink.locator(":scope > img")).toHaveCount(0);

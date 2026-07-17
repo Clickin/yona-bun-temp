@@ -95,7 +95,7 @@ async function open(page: Page) {
   });
 }
 
-test("stats alignment/weight wave records the final cascade and retained glyph fallback", () => {
+test("stats alignment/weight wave records the final directly owned glyph cascade", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
@@ -149,8 +149,9 @@ test("stats alignment/weight wave records the final cascade and retained glyph f
 
   expect(route.match(/data-stylex-owner="projects-directory-stats-icon"/gu)).toHaveLength(2);
   expect(route.match(/data-stylex-owner="projects-directory-member-count"/gu)).toHaveLength(2);
-  expect(route).toContain("className={`yobicon-friends ${");
-  expect(route).toContain("className={`yobicon-eye ${");
+  expect(route).toContain("directoryStatsFriendsIconStyleProps");
+  expect(route).toContain("directoryStatsEyeIconStyleProps");
+  expect(route).not.toMatch(/className=.*yobicon-(?:friends|eye)/u);
   expect(route).not.toContain("yobicon-friends yobicon-middle");
   expect(route).not.toContain("yobicon-eye yobicon-middle");
   const iconStyle = route.slice(
@@ -179,17 +180,14 @@ for (const viewport of [
     const counts = page.locator(`[data-stylex-owner="${owners.count}"]`);
     await expect(icons).toHaveCount(6);
     await expect(counts).toHaveCount(6);
-    await expect(icons).toHaveClass([
-      /(?:^|\s)yobicon-friends(?:\s|$)/u,
-      /(?:^|\s)yobicon-eye(?:\s|$)/u,
-      /(?:^|\s)yobicon-friends(?:\s|$)/u,
-      /(?:^|\s)yobicon-eye(?:\s|$)/u,
-      /(?:^|\s)yobicon-friends(?:\s|$)/u,
-      /(?:^|\s)yobicon-eye(?:\s|$)/u,
-    ]);
     expect(
       await icons.evaluateAll((nodes) =>
-        nodes.every((node) => !node.classList.contains("yobicon-middle")),
+        nodes.every(
+          (node) =>
+            !node.classList.contains("yobicon-middle") &&
+            !node.classList.contains("yobicon-friends") &&
+            !node.classList.contains("yobicon-eye"),
+        ),
       ),
     ).toBe(true);
     await expect(counts).toHaveText(["1", "1", "1", "1", "1", "1"]);

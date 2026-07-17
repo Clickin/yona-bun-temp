@@ -113,7 +113,7 @@ async function open(page: Page) {
   await expect(page.locator('[data-stylex-owner="projects-directory-list"]')).toBeVisible();
 }
 
-test("icon/avatar-image wave owns exactly two repeated targets and retires only stats-wrap", () => {
+test("icon/avatar-image wave keeps direct repeated owners after glyph fallback retirement", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
@@ -181,8 +181,9 @@ test("icon/avatar-image wave owns exactly two repeated targets and retires only 
   expect(route).not.toContain(
     'className={`avatar-wrap ${directoryMemberAvatarStyleProps.className ?? ""}`}',
   );
-  expect(route).toContain("className={`yobicon-friends ${");
-  expect(route).toContain("className={`yobicon-eye ${");
+  expect(route).toContain("directoryStatsFriendsIconStyleProps");
+  expect(route).toContain("directoryStatsEyeIconStyleProps");
+  expect(route).not.toMatch(/className=.*yobicon-(?:friends|eye)/u);
   expect(route).not.toContain("yobicon-friends yobicon-middle");
   expect(route).not.toContain("yobicon-eye yobicon-middle");
   expect(route).not.toContain("globalColors.");
@@ -229,8 +230,8 @@ for (const viewport of [
     await expect(avatarImage).toHaveAttribute("alt", "Alice Kim");
     await expect(avatarImage).toHaveAttribute("src", memberAvatarDataUrl);
     await expect(icons).toHaveCount(2);
-    await expect(icons.nth(0)).toHaveClass(/(?:^|\s)yobicon-friends(?:\s|$)/u);
-    await expect(icons.nth(1)).toHaveClass(/(?:^|\s)yobicon-eye(?:\s|$)/u);
+    await expect(icons.nth(0)).not.toHaveClass(/(?:^|\s)yobicon-friends(?:\s|$)/u);
+    await expect(icons.nth(1)).not.toHaveClass(/(?:^|\s)yobicon-eye(?:\s|$)/u);
     await expect(icons.nth(0)).not.toHaveClass(/(?:^|\s)yobicon-middle(?:\s|$)/u);
     await expect(icons.nth(1)).not.toHaveClass(/(?:^|\s)yobicon-middle(?:\s|$)/u);
     await expect(members.locator("p > *")).toHaveCount(4);
@@ -333,11 +334,14 @@ for (const viewport of [
         y: desktop ? 348 : 443,
       },
     ]);
-    expect(actual.icons.map(({ className }) => className)).toEqual([
-      expect.stringContaining("yobicon-friends"),
-      expect.stringContaining("yobicon-eye"),
-    ]);
-    expect(actual.icons.every(({ className }) => !className.includes("yobicon-middle"))).toBe(true);
+    expect(
+      actual.icons.every(
+        ({ className }) =>
+          !className.includes("yobicon-middle") &&
+          !className.includes("yobicon-friends") &&
+          !className.includes("yobicon-eye"),
+      ),
+    ).toBe(true);
     expect(actual.icons.map(({ glyph }) => glyph)).toEqual(['""', '""']);
     for (const icon of actual.icons) {
       expect(icon).toMatchObject({

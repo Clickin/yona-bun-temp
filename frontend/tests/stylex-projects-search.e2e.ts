@@ -142,7 +142,9 @@ for (const viewport of [
     await expect(input).toHaveAttribute("placeholder", "키워드로 프로젝트 찾기");
     await expect(input).toBeFocused();
     await expect(button).toHaveAttribute("type", "submit");
-    await expect(button.locator(":scope > i.yobicon-search")).toHaveCount(1);
+    const icon = button.locator(':scope > i[data-stylex-owner="projects-directory-search-icon"]');
+    await expect(icon).toHaveCount(1);
+    await expect(icon).not.toHaveClass(/(?:^|\s)yobicon-search(?:\s|$)/u);
     const metrics = await page.evaluate((o) => {
       const get = (name: string) =>
         document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;

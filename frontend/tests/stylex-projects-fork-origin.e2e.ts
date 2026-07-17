@@ -112,7 +112,7 @@ async function open(page: Page) {
   await expect(page.locator(`[data-stylex-owner="${owners.forkWrapper}"]`)).toBeVisible();
 }
 
-test("fork origin records exactly two owners and the generic Yobicon fallback", () => {
+test("fork origin records its owners and directly owns the split Yobicon", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
   const theme = readFileSync("src/routes/-projects.stylex.ts", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
@@ -143,7 +143,8 @@ test("fork origin records exactly two owners and the generic Yobicon fallback", 
   expect(route).toContain("project.isForked === true");
   expect(route).toContain('stringField(project, "originOwnerName", "")');
   expect(route).toContain('stringField(project, "originProjectName", "")');
-  expect(route).toContain('className="yobicon-split"');
+  expect(route).toContain('data-stylex-owner="projects-directory-fork-split-icon"');
+  expect(route).not.toMatch(/className=.*yobicon-split/u);
   expect(route).not.toContain("small-font");
   expect(route).not.toContain("blue-txt");
   expect(route).not.toContain("origin-title");
@@ -166,7 +167,7 @@ for (const viewport of [
     const title = header.locator(`[data-stylex-owner="${owners.title}"]`);
     const wrapper = header.locator(`[data-stylex-owner="${owners.forkWrapper}"]`);
     const link = wrapper.locator(`[data-stylex-owner="${owners.forkLink}"]`);
-    const icon = link.locator(":scope > i.yobicon-split");
+    const icon = link.locator(':scope > i[data-stylex-owner="projects-directory-fork-split-icon"]');
 
     await expect(rows).toHaveCount(4);
     await expect(title).toHaveText("stylexfork");
@@ -185,7 +186,9 @@ for (const viewport of [
       const title = first(owners.title);
       const wrapper = first(owners.forkWrapper);
       const link = first(owners.forkLink);
-      const icon = link.querySelector<HTMLElement>(":scope > i.yobicon-split")!;
+      const icon = link.querySelector<HTMLElement>(
+        ':scope > i[data-stylex-owner="projects-directory-fork-split-icon"]',
+      )!;
       const box = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
         return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };

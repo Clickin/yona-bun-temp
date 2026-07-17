@@ -9,6 +9,7 @@ const memberAvatarDataUrl = `data:image/png;base64,${readFileSync(
 const owners = {
   avatar: "projects-directory-member-avatar",
   count: "projects-directory-member-count",
+  icon: "projects-directory-stats-icon",
   item: "projects-directory-member-item",
   list: "projects-directory-members-list",
   members: "projects-directory-members",
@@ -195,13 +196,13 @@ test("stats/member wave owns exactly six targets and preserves the intentional a
 
   for (const owner of Object.values(owners)) {
     expect(route.match(new RegExp(`data-stylex-owner=["']${owner}["']`, "gu"))?.length).toBe(
-      owner === owners.count ? 2 : 1,
+      owner === owners.count || owner === owners.icon ? 2 : 1,
     );
   }
   expect(route).not.toContain("stats-wrap");
-  expect(route.match(/data-stylex-owner="projects-directory-stats-icon"/gu)?.length).toBe(2);
-  expect(route).toContain("className={`yobicon-friends ${");
-  expect(route).toContain("className={`yobicon-eye ${");
+  expect(route).toContain("directoryStatsFriendsIconStyleProps");
+  expect(route).toContain("directoryStatsEyeIconStyleProps");
+  expect(route).not.toMatch(/className=.*yobicon-(?:friends|eye)/u);
   expect(route).not.toContain("yobicon-friends yobicon-middle");
   expect(route).not.toContain("yobicon-eye yobicon-middle");
   expect(route).not.toContain(
@@ -252,6 +253,7 @@ for (const viewport of [
     const list = members.locator(`:scope > [data-stylex-owner="${owners.list}"]`);
     const item = list.locator(`:scope > [data-stylex-owner="${owners.item}"]`);
     const avatar = item.locator(`:scope > [data-stylex-owner="${owners.avatar}"]`);
+    const icons = members.locator(`p > [data-stylex-owner="${owners.icon}"]`);
     const counts = members.locator(`p > [data-stylex-owner="${owners.count}"]`);
     await expect(stats).not.toHaveClass(/(?:^|\s)stats-wrap(?:\s|$)/u);
     expect((await members.getAttribute("class"))?.split(/\s+/u)).not.toContain("members");
@@ -261,13 +263,17 @@ for (const viewport of [
     await expect(avatar.locator(":scope > img")).toHaveAttribute("src", memberAvatarDataUrl);
     await expect(counts).toHaveCount(2);
     await expect(counts).toHaveText(["1", "1"]);
+    await expect(icons).toHaveCount(2);
+    for (const icon of await icons.all()) {
+      await expect(icon).not.toHaveClass(/(?:^|\s)yobicon-(?:friends|eye|middle)(?:\s|$)/u);
+    }
     await expect(members.locator("p > *")).toHaveCount(4);
-    await expect(members.locator("p > *").nth(0)).toHaveClass(/yobicon-friends/u);
+    await expect(members.locator("p > *").nth(0)).toHaveAttribute("data-stylex-owner", owners.icon);
     await expect(members.locator("p > *").nth(1)).toHaveAttribute(
       "data-stylex-owner",
       owners.count,
     );
-    await expect(members.locator("p > *").nth(2)).toHaveClass(/yobicon-eye/u);
+    await expect(members.locator("p > *").nth(2)).toHaveAttribute("data-stylex-owner", owners.icon);
     await expect(members.locator("p > *").nth(3)).toHaveAttribute(
       "data-stylex-owner",
       owners.count,
@@ -303,9 +309,19 @@ for (const viewport of [
       const iconStyles = Array.from(members.querySelectorAll<HTMLElement>("p > i")).map((icon) => {
         const style = getComputedStyle(icon);
         return {
+          backgroundImage: style.backgroundImage,
+          display: style.display,
+          fontFamily: style.fontFamily,
           fontSize: style.fontSize,
+          fontStyle: style.fontStyle,
+          fontVariant: style.fontVariant,
+          fontWeight: style.fontWeight,
+          glyph: getComputedStyle(icon, "::before").content,
+          lineHeight: style.lineHeight,
           marginLeft: style.marginLeft,
           marginRight: style.marginRight,
+          textDecorationLine: style.textDecorationLine,
+          verticalAlign: style.verticalAlign,
         };
       });
       return {
@@ -405,8 +421,36 @@ for (const viewport of [
     });
     expect(actual.itemStyle).toEqual({ float: "right", lineHeight: "20px" });
     expect(actual.iconStyles).toEqual([
-      { fontSize: "16px", marginLeft: "5px", marginRight: "5px" },
-      { fontSize: "16px", marginLeft: "5px", marginRight: "5px" },
+      {
+        backgroundImage: "none",
+        display: "inline-block",
+        fontFamily: "yobicon",
+        fontSize: "16px",
+        fontStyle: "normal",
+        fontVariant: "normal",
+        fontWeight: "400",
+        glyph: '""',
+        lineHeight: "16px",
+        marginLeft: "5px",
+        marginRight: "5px",
+        textDecorationLine: "none",
+        verticalAlign: "bottom",
+      },
+      {
+        backgroundImage: "none",
+        display: "inline-block",
+        fontFamily: "yobicon",
+        fontSize: "16px",
+        fontStyle: "normal",
+        fontVariant: "normal",
+        fontWeight: "400",
+        glyph: '""',
+        lineHeight: "16px",
+        marginLeft: "5px",
+        marginRight: "5px",
+        textDecorationLine: "none",
+        verticalAlign: "bottom",
+      },
     ]);
     expect(actual.avatarStyle).toEqual({
       backgroundColor: "rgb(221, 221, 221)",

@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred ten slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred eleven slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -478,6 +478,20 @@ Live Java desktop pins the first row to `1346x94 @10,158`, header to
 RED 0/3 becomes focused GREEN 3/3; the complete adjacent `/projects` matrix is GREEN 62/62 and
 the real fork REST contract passes. Target live/local captures were directly inspected. This is
 not Wave 1 completion.
+
+The two-hundred-eleventh slice completes the authenticated populated `/projects` readable-row
+residuals. Readable rows retire their `project` and `info-wrap` ancestry, the identity column moves
+its literal left float from a React style attribute to a direct StyleX owner, and the search,
+fork-origin split, friends, and eye icons directly own the frozen generic Yobicon declarations and
+their exact glyphs. No theme variable is added because this slice contains only structure,
+typography, and glyph content. The unreadable-row branch deliberately retains `project` and
+`info-wrap`; `all-projects`, private-lock, and category consumers remain separate follow-up owners.
+Live Java desktop pins the first readable row to `1346x94 @10,158`, identity to
+`276.547x68 @70,173`, search to `12x12 @374,127`, split to `10x10 @179.047,181`, and stats icons
+to x1286.406/1322.578 at y214. Mobile pins the row to `390x154 @0,188`, identity to `@60,203`,
+search to `@187,162`, split to `@169.047,211`, and stats to x320.406/356.578 at y312 with
+390px scroll width. Genuine RED 0/3 becomes focused GREEN 3/3; the complete `/projects` matrix is
+GREEN 65/65. Target live/local captures were directly inspected. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720
