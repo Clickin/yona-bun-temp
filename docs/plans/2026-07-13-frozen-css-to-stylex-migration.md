@@ -3234,6 +3234,8 @@ Batch 230 applied the batched workflow to project creation, milestone creation, 
 
 Batch 231 applied the same workflow to issue creation, issue-label management, and project settings. The integrated wave passed one assembled 6-test Playwright run plus shared typecheck, formatting, Vitest, production build, and StyleX fallback verification.
 
+Batch 232 applied the workflow to milestone editing, webhook management, and issue editing. The integrated wave passed the assembled browser checks after correcting a legacy Scala source assertion, with shared typecheck, formatting, Vitest, production build, and StyleX fallback verification queued for the same commit gate.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

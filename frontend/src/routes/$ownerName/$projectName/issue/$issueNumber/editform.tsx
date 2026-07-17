@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
@@ -22,6 +23,16 @@ import {
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
+import { styles } from "./-issue-editform.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  form: stylex.props(styles.form),
+  title: stylex.props(styles.title),
+  editor: stylex.props(styles.editor),
+  actions: stylex.props(styles.actions),
+  save: stylex.props(styles.save),
+} as const;
 
 const legacyRouteLocalActiveProps = {
   "aria-current": undefined,
@@ -247,14 +258,16 @@ function ProjectIssueEditFormBody({
   }
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
+    <div {...sx.page} data-stylex-owner="issue-editform-page">
+      <div data-stylex-owner="issue-editform-shell">
+        <div data-stylex-owner="issue-editform-content">
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
               `/${ownerName}/${projectName}/issue/${issueNumber}`,
             )}
+            {...sx.form}
+            data-stylex-owner="issue-editform-form"
             id="issue-form"
             encType="multipart/form-data"
             onSubmit={(event) => {
@@ -306,7 +319,8 @@ function ProjectIssueEditFormBody({
                           id="title"
                           name="title"
                           defaultValue={stringField(issue.title, "")}
-                          className="text title "
+                          {...sx.title}
+                          data-stylex-owner="issue-editform-title"
                           maxLength={250}
                           placeholder={t("title")}
                           tabIndex={Number("1")}
@@ -349,7 +363,7 @@ function ProjectIssueEditFormBody({
 
                   <IssuePostFileUploader resourceId={stringField(issue.issueId, "")} />
 
-                  <div className=" actrow right-txt">
+                  <div {...sx.actions} data-stylex-owner="issue-editform-actions">
                     {showNotification ? (
                       <span className="send-notification-check">
                         <label className="checkbox inline">
@@ -369,7 +383,8 @@ function ProjectIssueEditFormBody({
                         <button
                           type="submit"
                           id="button-draft-publish"
-                          className="ybtn ybtn-info"
+                          {...sx.save}
+                          data-stylex-owner="issue-editform-draft-publish"
                           title={draftPublishDescription}
                           onClick={handleDraftPublishClick}
                         >
@@ -378,7 +393,8 @@ function ProjectIssueEditFormBody({
                         <button
                           type="button"
                           id="draft-save-btn"
-                          className="ybtn ybtn-watching draft-save-btn"
+                          {...sx.save}
+                          data-stylex-owner="issue-editform-draft-save"
                           title={draftSaveDescription}
                           onClick={(event) => {
                             submitIntentRef.current = "draft";
@@ -392,7 +408,8 @@ function ProjectIssueEditFormBody({
                       <button
                         type="submit"
                         id="button-save"
-                        className="ybtn ybtn-info"
+                        {...sx.save}
+                        data-stylex-owner="issue-editform-save"
                         onClick={() => {
                           submitIntentRef.current = "save";
                         }}
@@ -400,7 +417,7 @@ function ProjectIssueEditFormBody({
                         {t("button.save")}
                       </button>
                     )}
-                    <button type="button" className="ybtn" onClick={() => router.history.back()}>
+                    <button type="button" onClick={() => router.history.back()}>
                       {t("button.cancel")}
                     </button>
                   </div>
@@ -1024,6 +1041,8 @@ function IssueEditMarkdownEditor({ focusRequest, value }: { focusRequest: number
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
+              {...sx.editor}
+              data-stylex-owner="issue-editform-editor"
               ref={bodyRef}
               name="body"
               className="editorSeries content comment nm"

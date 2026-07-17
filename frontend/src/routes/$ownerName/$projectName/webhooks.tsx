@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { Fragment, useState, type FormEvent, type KeyboardEvent, type MouseEvent } from "react";
 import {
   createProjectWebhookRest,
@@ -20,6 +21,52 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
+import { webhooksColors } from "./-webhooks.stylex";
+
+const styles = stylex.create({
+  form: { margin: "30px auto" },
+  legend: { display: "block", marginBottom: "10px" },
+  formWrap: { display: "inline-block", position: "relative", verticalAlign: "top" },
+  payload: {
+    borderColor: webhooksColors.fieldBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: webhooksColors.mutedText,
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 6px",
+    width: "355px",
+  },
+  secret: {
+    borderColor: webhooksColors.fieldBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: webhooksColors.mutedText,
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 6px",
+    width: "214px",
+  },
+  submit: {
+    backgroundColor: webhooksColors.actionPrimary,
+    borderColor: webhooksColors.actionBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: webhooksColors.white,
+    cursor: "pointer",
+    minWidth: "100px",
+    padding: "4px 12px",
+    textAlign: "center",
+    verticalAlign: "top",
+  },
+  list: { margin: "0 auto" },
+  listHead: {
+    backgroundColor: webhooksColors.listSurface,
+    borderBottomColor: webhooksColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "2px",
+  },
+});
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -215,16 +262,30 @@ function ProjectWebhooksBody({
             id="formNewWebhook"
             action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/webhooks`)}
             method="post"
-            className="new-webhook-wrap"
+            {...stylex.props(styles.form)}
+            className={stylex.props(styles.form).className}
+            data-stylex-owner="project-webhooks-new-form"
             onSubmit={onSubmit}
           >
-            <strong className="form-legend">{t("project.webhook.new")}</strong>
-            <div className="form-wrap form-actions">
+            <strong
+              {...stylex.props(styles.legend)}
+              className={stylex.props(styles.legend).className}
+              data-stylex-owner="project-webhooks-form-legend"
+            >
+              {t("project.webhook.new")}
+            </strong>
+            <div
+              {...stylex.props(styles.formWrap)}
+              className={`${stylex.props(styles.formWrap).className} form-actions`}
+              data-stylex-owner="project-webhooks-form-fields"
+            >
               <div>
                 <input
                   type="text"
                   name="payloadUrl"
-                  className="input-webhook-payload"
+                  {...stylex.props(styles.payload)}
+                  className={stylex.props(styles.payload).className}
+                  data-stylex-owner="project-webhooks-payload"
                   maxLength={2000}
                   autoComplete="off"
                   placeholder={t("project.webhook.payloadUrl")}
@@ -232,12 +293,19 @@ function ProjectWebhooksBody({
                 <input
                   type="text"
                   name="secret"
-                  className="input-webhook-secret"
+                  {...stylex.props(styles.secret)}
+                  className={stylex.props(styles.secret).className}
+                  data-stylex-owner="project-webhooks-secret"
                   maxLength={250}
                   autoComplete="off"
                   placeholder={t("project.webhook.secret")}
                 />{" "}
-                <button type="submit" className="ybtn ybtn-primary btn-submit">
+                <button
+                  {...stylex.props(styles.submit)}
+                  type="submit"
+                  className={stylex.props(styles.submit).className}
+                  data-stylex-owner="project-webhooks-submit"
+                >
                   {t("project.webhook.add")}
                 </button>
               </div>
@@ -311,7 +379,12 @@ function ProjectWebhooksBody({
             <LegacyWebhookHelp help={t("project.webhook.help")} />
           </form>
         ) : null}
-        <div id="webhooksList" className="webhook-list-wrap">
+        <div
+          {...stylex.props(styles.list)}
+          id="webhooksList"
+          className={stylex.props(styles.list).className}
+          data-stylex-owner="project-webhooks-list"
+        >
           <ProjectWebhooksList
             ownerName={ownerName}
             projectName={projectName}
@@ -384,7 +457,11 @@ function ProjectWebhooksList({
 
   return (
     <>
-      <div className="row-fluid list-head">
+      <div
+        {...stylex.props(styles.listHead)}
+        className="row-fluid list-head"
+        data-stylex-owner="project-webhooks-list-head"
+      >
         <div className="span5 payload-url">
           <strong>{t("project.webhook.payloadUrl")}</strong>
         </div>

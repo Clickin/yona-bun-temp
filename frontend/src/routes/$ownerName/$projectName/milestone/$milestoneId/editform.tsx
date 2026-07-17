@@ -1,5 +1,6 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy milestone/edit.scala.html requires positive tab order on title/content controls. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
@@ -13,6 +14,7 @@ import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
 import { ProjectMilestoneNotFoundBody, ProjectMilestoneNotFoundTitle } from "../$milestoneId";
+import { milestoneEditFormTheme } from "./-milestone-editform.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/milestone/$milestoneId/editform")({
   component: ProjectMilestoneEditFormRoute,
@@ -120,9 +122,12 @@ function ProjectMilestoneEditFormBody({
   });
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="milestone-edit-form-page">
       <div className="project-page-wrap">
-        <div className="content-wrap frm-wrap">
+        <div
+          className={`${stylex.props(styles.form).className} content-wrap frm-wrap`}
+          data-stylex-owner="milestone-edit-form"
+        >
           <form
             action={prefixBasePath(
               runtimeConfig.basePath,
@@ -155,7 +160,7 @@ function ProjectMilestoneEditFormBody({
             <div className="row-fluid">
               <div className="span12">
                 <dl>
-                  <dd>
+                  <dd data-stylex-owner="milestone-edit-form-title-row">
                     <LegacyTabIndexInput
                       focusRequest={titleFocusRequest}
                       type="text"
@@ -178,7 +183,10 @@ function ProjectMilestoneEditFormBody({
               </div>
 
               <div className="row-fluid">
-                <div className="span9 span-left-pane">
+                <div
+                  className={`${stylex.props(styles.leftPane).className} span9 span-left-pane`}
+                  data-stylex-owner="milestone-edit-form-editor-pane"
+                >
                   <dl>
                     <dd style={{ position: "relative" }}>
                       <MilestoneMarkdownEditor
@@ -190,7 +198,10 @@ function ProjectMilestoneEditFormBody({
 
                   <MilestoneFileUploader resourceId={stringField(milestone.id, "")} />
 
-                  <div className=" actrow right-txt">
+                  <div
+                    className={`${stylex.props(styles.actions).className} actrow right-txt`}
+                    data-stylex-owner="milestone-edit-form-actions"
+                  >
                     <button type="submit" className="ybtn ybtn-info">
                       {t("button.save")}
                     </button>
@@ -208,7 +219,10 @@ function ProjectMilestoneEditFormBody({
                     </Link>
                   </div>
                 </div>
-                <div className="span3 span-hard-wrap">
+                <div
+                  className={`${stylex.props(styles.rightPane).className} span3 span-hard-wrap`}
+                  data-stylex-owner="milestone-edit-form-options"
+                >
                   <dl className="issue-option">
                     <dt>{t("milestone.form.state")}</dt>
                     <dd>
@@ -382,7 +396,8 @@ function MilestoneFileUploader({ resourceId }: { resourceId: string }) {
   return (
     <div
       id="upload"
-      className="upload-wrap content-footer"
+      className={`${stylex.props(styles.upload).className} upload-wrap content-footer`}
+      data-stylex-owner="milestone-edit-form-uploader"
       data-resource-type="MILESTONE"
       data-resource-id={resourceId}
     >
@@ -572,6 +587,14 @@ function MilestoneDatePicker({
     </div>
   );
 }
+
+const styles = stylex.create({
+  form: { position: "relative" },
+  leftPane: { display: "block" },
+  actions: { textAlign: "right" },
+  rightPane: { display: "block" },
+  upload: { backgroundColor: milestoneEditFormTheme.uploadSurface },
+});
 
 function parseLegacyDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);

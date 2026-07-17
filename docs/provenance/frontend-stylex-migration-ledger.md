@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch231 snapshot is 49 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch232 snapshot is 52 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -335,3 +335,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/issueform`: migrated issue-create form/title/editor/action owners from `issue/create.scala.html` and editor/uploader partials; route-local theme owns paint only and React validation/mutation behavior remains unchanged. Focused `stylex-project-issueform.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/issue/labelsform`: migrated label/category form and list owners from `project/issuelabels.scala.html` and project setting partials; route-local theme owns paint only and React label mutations remain unchanged. Focused `stylex-project-labelsform.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/setting`: migrated project settings form/frame/field/action owners from `project/setting.scala.html` and setting-menu partials; route-local theme owns paint only and existing settings behavior remains unchanged. Focused `stylex-project-setting.e2e.ts` passed in the assembled batch gate.
+
+## Batch 232 migration rows
+
+- `/$ownerName/$projectName/milestone/$milestoneId/editform`: migrated milestone edit form/title/editor/options/actions/uploader owners from `milestone/edit.scala.html` and editor/uploader partials; route-local theme owns paint only and React date/editor/mutation behavior remains unchanged. Focused `stylex-project-milestone-edit.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/webhooks`: migrated webhook form/fields/payload/secret/actions/list owners from `project/webhooks.scala.html` and setting-menu partials; route-local theme owns paint only and React JSON git-push guard/mutations remain unchanged. Focused `stylex-project-webhooks.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/issue/$issueNumber/editform`: migrated issue edit title/editor/actions/sidebar owners from `issue/edit.scala.html` and issue editor/uploader partials; route-local theme owns paint only and React validation/draft/save behavior remains unchanged. Focused `stylex-project-issue-edit.e2e.ts` passed in the assembled batch gate.
