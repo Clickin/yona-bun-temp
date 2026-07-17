@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred twelve slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred thirteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -507,6 +507,26 @@ private-display capture pins desktop list/first private row to `1346x642.656 @10
 `390x91`, with the lock at `289.547,177` and no overflow. Focused GREEN is 3/3 and the complete
 `/projects` matrix is GREEN 67/67. Target live/local captures were directly inspected. This is not
 Wave 1 completion.
+
+The two-hundred-thirteenth slice migrates the authenticated populated
+`/user/editform/notifications` watched-project selector and pane visibility. Exactly five direct
+owners cover the 220px floated/reset list, repeated 13px/8px items and selected state, repeated
+block Links and selected hover, the overflow-hidden content, and repeated hidden/active panes.
+Only selected `#51aacc` surface and white text are route theme variables; geometry and typography
+remain literal. The route retires `unstyled lst-stacked span3 mr20`, item `active`, `tab-content`,
+and pane `tab-pane active` from these owners while preserving the table, switch, and `notiUpdate`
+fallback consumers. TanStack Links keep the exact hash href and suppress generated active markers
+through the established URL-neutral explicit-undefined search pattern. Live Java desktop pins the
+list to `220x72 @10,163`, content to `1106x1398 @250,163`, and active pane to
+`1106x1378 @250,163`; mobile pins them to `220x72 @0,163`, `150x1622 @240,163`, and
+`150x1602 @240,163`. The focused RED 0/3 becomes GREEN 3/3 and the nested-settings matrix is GREEN
+4/4. The preserved whole-screen notification test remains 1/2 because its pre-existing global
+GNB/sidenav/footer fixture predates their React-owned DOM/StyleX migrations; the new notification
+subtree canonicalizes exactly. The parent `.page-wrap` 1080px bridge causes the recorded local
+desktop x/width and available-height difference and is deliberately the next independent owner,
+not compensated here. Typecheck, Vitest 11/11, theme guard, format/lint/diff, production build,
+StyleX verification, and unchanged fallback hash `6417f445…16f` pass. This is not Wave 1
+completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

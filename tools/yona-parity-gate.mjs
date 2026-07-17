@@ -556,6 +556,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/user\/editform\/(?:emails|notifications|password|token)?\/?route\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/emails\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/notifications\.tsx$/i,
+      /^frontend\/src\/routes\/user\/editform\/-notifications\.stylex\.ts$/i,
       /^frontend\/src\/routes\/user\/editform\/password\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/token\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/-token\.stylex\.ts$/i,

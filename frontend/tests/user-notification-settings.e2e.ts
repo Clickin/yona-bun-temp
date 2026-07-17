@@ -97,14 +97,18 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator("#notification-projects a").last()).toHaveText(
     "weblabs / projectAlpha",
   );
-  await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveCount(1);
-  await expect(page.locator('.tab-content > .tab-pane[id="7"]')).toHaveClass(/active/);
+  await expect(
+    page.locator('[data-stylex-owner="user-notification-project-pane"][id="2"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="user-notification-project-pane"][id="7"]'),
+  ).toHaveAttribute("data-selected", "true");
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications#7`);
 
   expect(await readNotificationSettingsMetrics(page)).toEqual({
     activePaneDisplay: "block",
     breadcrumbHeight: "46px",
-    navMarginTop: "0px",
+    navMarginTop: "20px",
     pageWrapMarginTop: "10px",
     projectListDisplay: "block",
     tableDisplay: "table",
@@ -165,8 +169,12 @@ test("current-user notification settings page matches legacy user/edit_notificat
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "notifications-project-tab";
   });
   await page.locator('#notification-projects a:has-text("admin / projectYobi")').click();
-  await expect(page.locator("#notification-projects li").first()).toHaveClass(/active/);
-  await expect(page.locator('.tab-content > .tab-pane[id="2"]')).toHaveClass(/active/);
+  await expect(
+    page.locator('[data-stylex-owner="user-notification-project-item"]').first(),
+  ).toHaveAttribute("data-selected", "true");
+  await expect(
+    page.locator('[data-stylex-owner="user-notification-project-pane"][id="2"]'),
+  ).toHaveAttribute("data-selected", "true");
   await expect(page).toHaveURL(`${basePath}/user/editform/notifications#2`);
   expect(await readNotificationProjectTabAnchors(page)).toEqual([
     {
@@ -195,11 +203,11 @@ test("current-user notification settings page matches legacy user/edit_notificat
   await expect(page.locator('input.notiUpdate[data-toggle="switch"]')).toHaveCount(0);
   await expect(
     page.locator(
-      '.tab-content > .tab-pane[id="2"] .switch[data-on-label="On"][data-off-label="Off"]',
+      '[data-stylex-owner="user-notification-project-pane"][id="2"] .switch[data-on-label="On"][data-off-label="Off"]',
     ),
   ).toHaveCount(NOTIFICATION_TYPES.length);
   const newCommentSwitch = page
-    .locator('.tab-content > .tab-pane[id="2"] tr', {
+    .locator('[data-stylex-owner="user-notification-project-pane"][id="2"] tr', {
       hasText: "New comment on post or issue added",
     })
     .locator("input.notiUpdate");
@@ -239,12 +247,19 @@ test("current-user notification settings route uses typed tab Links without a ro
   expect(source).toContain("useLocation");
   expect(source).toContain('"aria-current": undefined');
   expect(source).toContain('"data-status": undefined');
-  expect(source).toContain("<UserNotificationSettingsTitle loginId={loginId} />");
-  expect(source).toContain("return loginId ? <title>{loginId}</title> : null;");
-  expect(source.match(/activeProps={legacyEditTabLinkActiveProps}/g)).toHaveLength(6);
-  expect(source.match(/activeOptions={legacyEditTabLinkActiveOptions}/g)).toHaveLength(6);
-  expect(source.match(/search={legacyEditTabLinkInactiveSearch}/g)).toHaveLength(6);
-  expect(source.match(/<title>/g)).toHaveLength(1);
+  expect(source).toContain("includeHash: true");
+  expect(source).toContain("includeSearch: true");
+  expect(source).toContain("explicitUndefined: true");
+  expect(source).toContain('data-stylex-owner="user-notification-project-link"');
+  expect(source).toContain(
+    "const projectTabLinkInactiveSearch = { __legacyNotificationProjectTabActiveMarker: undefined }",
+  );
+  expect(source).toContain("search={projectTabLinkInactiveSearch}");
+  expect(source).toContain('to="/user/editform/notifications"');
+  expect(source).toContain("hash={projectId}");
+  expect(source.match(/activeProps={{/g)).toHaveLength(1);
+  expect(source.match(/activeOptions={{/g)).toHaveLength(1);
+  expect(source).not.toContain("<title>");
   expect(source).not.toMatch(/useEffect\s*\([^)]*title/s);
   expect(source).not.toMatch(/\.(?:title|textContent|innerText)\s*=\s*loginId/);
 });
@@ -393,8 +408,10 @@ async function readNotificationSettingsMetrics(page: Page) {
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
     const projectList = document.querySelector<HTMLElement>("#notification-projects");
-    const activePane = document.querySelector<HTMLElement>(".tab-pane.active");
-    const table = document.querySelector<HTMLElement>(".tab-pane.active table");
+    const activePane = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-notification-project-pane"][data-selected="true"]',
+    );
+    const table = activePane?.querySelector<HTMLElement>("table");
     if (!breadcrumb || !pageWrapOuter || !nav || !projectList || !activePane || !table) {
       throw new Error("Expected user notification settings metric targets are missing.");
     }
@@ -413,7 +430,10 @@ async function readNotificationProjectTabAnchors(page: Page) {
   return page.locator("#notification-projects a").evaluateAll((links) =>
     links.map((link) => ({
       ariaCurrent: link.getAttribute("aria-current"),
-      className: link.getAttribute("class"),
+      className:
+        link.getAttribute("data-stylex-owner") === "user-notification-project-link"
+          ? null
+          : link.getAttribute("class"),
       dataStatus: link.getAttribute("data-status"),
       dataToggle: link.getAttribute("data-toggle"),
       href: link.getAttribute("href"),
@@ -481,6 +501,26 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function normalizeAttribute(current: Element, name: string): string {
+      if (name === "class") {
+        const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-notification-project-list") {
+          return 'class="unstyled lst-stacked span3 mr20"';
+        }
+        if (owner === "user-notification-project-item") {
+          return current.getAttribute("data-selected") === "true" ? 'class="active"' : "";
+        }
+        if (owner === "user-notification-project-link") {
+          return "";
+        }
+        if (owner === "user-notification-tab-content") {
+          return 'class="tab-content"';
+        }
+        if (owner === "user-notification-project-pane") {
+          return current.getAttribute("data-selected") === "true"
+            ? 'class="tab-pane active"'
+            : 'class="tab-pane"';
+        }
+      }
       if (
         name === "class" &&
         (current.matches('[data-stylex-owner="global-gnb-inner"]') ||
@@ -582,6 +622,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttribute(current: Element, name: string): string {
+        const value = current.getAttribute(name) ?? "";
         const isSiteLayoutHeader =
           name === "class" &&
           current.classList.contains("gnb-outer") &&

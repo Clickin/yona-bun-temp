@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useState } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readWorkspaceOverviewRest, toggleWorkspaceNotificationRest } from "../../../api/workspace";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { notificationProjectTabsColors } from "./-notifications.stylex";
 
 export const Route = createFileRoute("/user/editform/notifications")({
   component: UserNotificationSettingsRoute,
@@ -52,6 +54,38 @@ const NOTIFICATION_TYPES = [
   ["ORGANIZATION_MEMBER_ENROLL_ACCEPT", "notification.member.enroll.accept"],
 ] as const;
 
+const styles = stylex.create({
+  projectList: {
+    float: "left",
+    listStyle: "none",
+    margin: "0px 20px 0px 0px",
+    padding: "0px",
+    width: "220px",
+  },
+  projectItem: {
+    fontSize: "13px",
+    padding: "8px",
+  },
+  projectItemSelected: {
+    backgroundColor: notificationProjectTabsColors.selectedSurface,
+    borderRadius: "6px",
+    color: notificationProjectTabsColors.selectedText,
+    fontWeight: "700",
+    overflow: "auto",
+  },
+  projectLink: { display: "block" },
+  projectLinkSelected: {
+    color: { ":hover": notificationProjectTabsColors.selectedText },
+  },
+  tabContent: { overflow: "hidden" },
+  projectPane: { display: "none" },
+  projectPaneSelected: { display: "block" },
+});
+
+const projectListStyleProps = stylex.props(styles.projectList);
+const tabContentStyleProps = stylex.props(styles.tabContent);
+const projectTabLinkInactiveSearch = { __legacyNotificationProjectTabActiveMarker: undefined };
+
 function UserNotificationSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
 
@@ -94,17 +128,50 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
 
   return (
     <div>
-      <ul id="notification-projects" className="unstyled lst-stacked span3 mr20">
+      <ul
+        {...projectListStyleProps}
+        data-stylex-owner="user-notification-project-list"
+        id="notification-projects"
+      >
         {watchedProjects.map((project) => {
           const projectId = stringValue(project.projectId);
+          const selected = projectId === activeProjectId;
+          const itemStyleProps = stylex.props(
+            styles.projectItem,
+            selected && styles.projectItemSelected,
+          );
+          const linkStyleProps = stylex.props(
+            styles.projectLink,
+            selected && styles.projectLinkSelected,
+          );
           return (
-            <li key={projectId} className={projectId === activeProjectId ? "active" : undefined}>
+            <li
+              {...itemStyleProps}
+              data-selected={selected ? "true" : "false"}
+              data-stylex-owner="user-notification-project-item"
+              key={projectId}
+            >
               <Link
-                to="/user/editform/notifications"
+                {...linkStyleProps}
+                activeOptions={{
+                  exact: true,
+                  explicitUndefined: true,
+                  includeHash: true,
+                  includeSearch: true,
+                }}
+                activeProps={{
+                  "aria-current": undefined,
+                  className: linkStyleProps.className,
+                  "data-status": undefined,
+                }}
+                className={linkStyleProps.className}
+                data-stylex-owner="user-notification-project-link"
                 hash={projectId}
                 onClick={() => {
                   setSelectedProjectId(projectId);
                 }}
+                search={projectTabLinkInactiveSearch}
+                to="/user/editform/notifications"
               >
                 {`${stringValue(project.ownerName)} / ${stringValue(project.projectName)}`}
               </Link>
@@ -112,17 +179,24 @@ function UserNotificationSettingsScreen({ runtimeConfig }: { runtimeConfig: Runt
           );
         })}
       </ul>
-      <div className="tab-content">
+      <div {...tabContentStyleProps} data-stylex-owner="user-notification-tab-content">
         {watchedProjects.map((project) => {
           const projectId = stringValue(project.projectId);
+          const selected = projectId === activeProjectId;
           const notifications = Array.isArray(project.notifications)
             ? (project.notifications as NotificationRow[])
             : [];
+          const paneStyleProps = stylex.props(
+            styles.projectPane,
+            selected && styles.projectPaneSelected,
+          );
           return (
             <div
-              key={projectId}
+              {...paneStyleProps}
+              data-selected={selected ? "true" : "false"}
+              data-stylex-owner="user-notification-project-pane"
               id={projectId}
-              className={projectId === activeProjectId ? "tab-pane active" : "tab-pane"}
+              key={projectId}
             >
               <table className="table table-striped table-bordered">
                 <tbody>
