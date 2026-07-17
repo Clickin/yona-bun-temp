@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type MouseEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { uploadTemporaryAttachment } from "../../api/attachments";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import {
@@ -11,7 +12,9 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
+import { userSettingsPageColors } from "./-editform.stylex";
 
 export const Route = createFileRoute("/user/editform")({
   component: UserProfileSettingsRoute,
@@ -29,6 +32,20 @@ const legacyEditTabLinkActiveOptions = {
   includeSearch: true,
 } as const;
 const legacyEditTabLinkInactiveSearch = { __legacyEditTabActiveMarker: undefined };
+const styles = stylex.create({
+  settingsPageOuter: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: { [globalBreakpoints.mobile]: "10px" },
+    padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" },
+    width: "100%",
+  },
+  settingsPage: {
+    backgroundColor: userSettingsPageColors.pageSurface,
+    margin: "0px auto",
+  },
+});
 
 function UserProfileSettingsRoute() {
   const { runtimeConfig } = Route.useRouteContext();
@@ -83,8 +100,11 @@ function UserSettingsNestedLayout({
           <h3>{t(activeTab === "token" ? "userinfo.token" : "userinfo.accountSetting")}</h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="page-wrap">
+      <div
+        {...stylex.props(styles.settingsPageOuter)}
+        data-stylex-owner="user-settings-page-wrap-outer"
+      >
+        <div {...stylex.props(styles.settingsPage)} data-stylex-owner="user-settings-page-wrap">
           <EditTabMenu active={activeTab} />
           {activeTab === "profile" ? (
             <UserProfileSettingsScreen runtimeConfig={runtimeConfig} />

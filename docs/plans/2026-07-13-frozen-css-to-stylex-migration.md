@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred thirteen slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred fourteen slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -527,6 +527,23 @@ desktop x/width and available-height difference and is deliberately the next ind
 not compensated here. Typecheck, Vitest 11/11, theme guard, format/lint/diff, production build,
 StyleX verification, and unchanged fallback hash `6417f445…16f` pass. This is not Wave 1
 completion.
+
+The two-hundred-fourteenth slice migrates the two shared page-wrapper owners used by all five
+authenticated `/user/editform` states. The outer owner directly owns the frozen 450px minimum,
+10px top margin, full width, border-box sizing, desktop 10px inline padding, and max-720 zero
+padding/10px minimum; the inner owner owns auto margin and the white route surface. Every geometry
+value remains literal and only the surface is a route theme variable. Retiring `page-wrap-outer`
+and the direct `page-wrap` prevents the noncanonical React bridge from forcing this settings shell
+to 1080px without overriding or deleting that fallback for other consumers. Live Java desktop
+outer/inner are `1366x1456 @0,105` and `1346x1456 @10,105`, with tabs/body at x10 and body width
+1346; mobile outer/inner are both `390x1680 @0,105`, with zero padding and 390px scroll width.
+Local desktop now matches legacy x/width, restoring the Slice 213 project list/content to x10/x250
+and widths 220/1106. The excluded breadcrumb keeps the pre-existing local y +1, and the native
+checkbox table keeps its shorter height; neither is compensated. Genuine RED 0/4 becomes focused
+GREEN 4/4, and the combined shell/project-tabs/nested-transition matrix is GREEN 11/11. The
+unweakened broad notification fixture remains 1/2 solely at its older global GNB/sidenav/footer
+expected DOM. Typecheck, Vitest 11/11, theme guard, format/lint/diff, production build, StyleX
+verification, and unchanged fallback hash `6417f445…16f` pass. This is not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

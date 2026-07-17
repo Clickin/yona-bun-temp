@@ -114,7 +114,9 @@ test("current-user notification settings page matches legacy user/edit_notificat
     tableDisplay: "table",
   });
 
-  const editTabs = page.locator(".page-wrap .nav.nav-tabs.mt20 > li");
+  const editTabs = page.locator(
+    '[data-stylex-owner="user-settings-page-wrap"] > .nav.nav-tabs.mt20 > li',
+  );
   await expect(editTabs).toHaveCount(5);
   await expect(editTabs).toHaveText([
     "Edit profile",
@@ -405,7 +407,9 @@ function expectedNotificationRow(projectId: string, eventType: string, label: st
 async function readNotificationSettingsMetrics(page: Page) {
   return page.evaluate(() => {
     const breadcrumb = document.querySelector<HTMLElement>(".site-breadcrumb-outer");
-    const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
+    const pageWrapOuter = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="user-settings-page-wrap-outer"]',
+    );
     const nav = document.querySelector<HTMLElement>(".nav-tabs.mt20");
     const projectList = document.querySelector<HTMLElement>("#notification-projects");
     const activePane = document.querySelector<HTMLElement>(
@@ -503,6 +507,12 @@ async function canonicalizeScreenRoots(page: Page) {
     function normalizeAttribute(current: Element, name: string): string {
       if (name === "class") {
         const owner = current.getAttribute("data-stylex-owner");
+        if (owner === "user-settings-page-wrap-outer") {
+          return 'class="page-wrap-outer"';
+        }
+        if (owner === "user-settings-page-wrap") {
+          return 'class="page-wrap"';
+        }
         if (owner === "user-notification-project-list") {
           return 'class="unstyled lst-stacked span3 mr20"';
         }
@@ -555,7 +565,7 @@ async function canonicalizeScreenRoots(page: Page) {
 
     return Array.from(
       document.querySelectorAll(
-        ".unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, .page-wrap-outer, [data-stylex-owner=site-footer]",
+        '.unsupported, [data-stylex-owner=global-gnb-outer], .site-breadcrumb-outer, [data-stylex-owner="user-settings-page-wrap-outer"], [data-stylex-owner=site-footer]',
       ),
     )
       .map((root) => visit(root))

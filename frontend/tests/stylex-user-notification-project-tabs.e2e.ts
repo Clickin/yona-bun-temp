@@ -18,9 +18,9 @@ const parentShellBaselines = {
       pane: { height: 1378, width: 1106, x: 250, y: 163 },
     },
     local: {
-      content: { height: 1022.109375, width: 840, x: 383, y: 164 },
-      list: { height: 72, width: 220, x: 143, y: 164 },
-      pane: { height: 1002.109375, width: 840, x: 383, y: 164 },
+      content: { height: 1022.109375, width: 1106, x: 250, y: 164 },
+      list: { height: 72, width: 220, x: 10, y: 164 },
+      pane: { height: 1002.109375, width: 1106, x: 250, y: 164 },
     },
   },
   mobile: {
@@ -227,7 +227,8 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   expect(route).toContain('className="switch"');
   expect(route).toContain('className="notiUpdate"');
   expect(appCss).toContain("a {\n  color: inherit;");
-  expect(parentRoute).toContain('<div className="page-wrap">');
+  expect(parentRoute).toContain('data-stylex-owner="user-settings-page-wrap"');
+  expect(parentRoute).not.toContain('<div className="page-wrap">');
   expect(appCss).toContain(
     "@media (min-width: 901px) {\n  body:has(.site-breadcrumb-outer) .page-wrap {\n    width: 1080px;",
   );
@@ -239,8 +240,8 @@ test("notification project tabs record the frozen five-owner boundary", () => {
   });
   expect(parentShellBaselines.desktop.local.content).toEqual({
     height: 1022.109375,
-    width: 840,
-    x: 383,
+    width: 1106,
+    x: 250,
     y: 164,
   });
 });

@@ -553,6 +553,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/app\.css$/i,
       /^frontend\/src\/routes\/-workspace-settings-view\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\.tsx$/i,
+      /^frontend\/src\/routes\/user\/-editform\.stylex\.ts$/i,
       /^frontend\/src\/routes\/user\/editform\/(?:emails|notifications|password|token)?\/?route\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/emails\.tsx$/i,
       /^frontend\/src\/routes\/user\/editform\/notifications\.tsx$/i,
