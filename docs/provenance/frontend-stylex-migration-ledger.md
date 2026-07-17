@@ -512,3 +512,9 @@ This batch used a single visible route state; no multi-screen exception was requ
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform`: migrated the edit form, disabled branch selectors, editor/title/actions, uploader, merge-result, and conflict-modal owners from `git/edit.scala.html`; React query/mutation, editor tabs, merge validation, conflict confirmation, and navigation remain React-owned. Focused `stylex-project-pull-request-edit-form.e2e.ts` passed with loaded/open, editor-tab, conflict-modal, desktop, and mobile checks.
 
 This batch used a single visible route state; no multi-screen exception was required.
+
+## Batch 260 migration rows
+
+- `/$ownerName/$projectName/milestone/$milestoneId?state=open#issues`: migrated milestone description, issue/filter/list shell, mass-update form, issue rows, and issue metadata owners from `milestone/view.scala.html` and issue partials; title-prefix filtering, state tabs, markdown/attachments, issue links, mass-update mutations, delete modal, and navigation remain React-owned. Focused `stylex-project-milestone-detail-owners.e2e.ts` passed across desktop/mobile and title-prefix filtering; live legacy visual comparison is recorded as unverified because the legacy render was unavailable.
+
+This batch used a single visible route state; no multi-screen exception was required.

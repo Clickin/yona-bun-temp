@@ -32,9 +32,14 @@ const sx = {
   wrap: stylex.props(styles.wrap),
   progress: stylex.props(styles.progress),
   progressBar: stylex.props(styles.progressBar),
+  description: stylex.props(styles.description),
   actions: stylex.props(styles.actions),
   tabs: stylex.props(styles.tabs),
   tabBadge: stylex.props(styles.tabBadge),
+  issueList: stylex.props(styles.issueList),
+  issueRow: stylex.props(styles.issueRow),
+  issueMeta: stylex.props(styles.issueMeta),
+  massUpdate: stylex.props(styles.massUpdate),
   search: stylex.props(styles.search),
 } as const;
 
@@ -331,7 +336,10 @@ function ProjectMilestoneDetailBody({
           </div>
 
           {stringField(milestone.contentsMarkdown) ? (
-            <div className="milestone-desc" data-stylex-owner="milestone-detail-description">
+            <div
+              className={`${sx.description.className} milestone-desc`}
+              data-stylex-owner="milestone-detail-description"
+            >
               <div className="markdown-wrap">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {stringField(milestone.contentsMarkdown)}
@@ -423,8 +431,8 @@ function ProjectMilestoneDetailBody({
               ))}
             </ul>
 
-            <div className="issues">
-              <div className="filter-wrap">
+            <div className="issues" data-stylex-owner="milestone-detail-issues">
+              <div className="filter-wrap" data-stylex-owner="milestone-detail-filter">
                 <MassUpdateShell
                   allIssues={visibleIssues}
                   checkedIssueIds={checkedIssueIds}
@@ -452,7 +460,10 @@ function ProjectMilestoneDetailBody({
                   </button>
                 </div>
               </div>
-              <ul className="post-list-wrap row-fluid">
+              <ul
+                className={`${sx.issueList.className} post-list-wrap row-fluid`}
+                data-stylex-owner="milestone-detail-issue-list"
+              >
                 {visibleIssues.map((issue) => (
                   <MilestoneIssueRow
                     key={stringField(issue.id, stringField(issue.issueNumber))}
@@ -654,7 +665,10 @@ function MassUpdateShell({
     });
   };
   return (
-    <div className="mass-update-wrap hide-in-mobile">
+    <div
+      className={`${sx.massUpdate.className} mass-update-wrap hide-in-mobile`}
+      data-stylex-owner="milestone-detail-mass-update"
+    >
       <form
         id="mass-update-form"
         className="mass-update-form pull-left"
@@ -1034,7 +1048,8 @@ function MilestoneIssueRow({
 
   return (
     <li
-      className="post-item title"
+      className={`${sx.issueRow.className} post-item title`}
+      data-stylex-owner="milestone-detail-issue-row"
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
@@ -1061,7 +1076,11 @@ function MilestoneIssueRow({
             />
           </label>
         ) : null}
-        <div {...issueItemRowAttrs} className="issue-item-row">
+        <div
+          {...issueItemRowAttrs}
+          className={`${sx.issueMeta.className} issue-item-row`}
+          data-stylex-owner="milestone-detail-issue-meta"
+        >
           <div className="title-wrap">
             <Link
               to="/$ownerName/$projectName/issue/$issueNumber"
