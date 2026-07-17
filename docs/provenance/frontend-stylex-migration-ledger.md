@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch229 snapshot is 43 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch230 snapshot is 46 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -323,3 +323,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/changeVCS`: migrated the VCS-change agreement/action and confirmation modal owners from `project/change_vcs.scala.html`; route-local theme owns paint only. Focused `stylex-project-change-vcs.e2e.ts` passed in the assembled 6/6 gate.
 - `/$ownerName/$projectName/transfer`: migrated the owner/agreement/action and confirmation modal owners from `project/transfer.scala.html`; React transfer mutation and modal state remain unchanged. Focused `stylex-project-transfer.e2e.ts` passed in the assembled 6/6 gate.
 - `/$ownerName/$projectName/newFork`: migrated the populated fork form/help/field/action owners from `git/fork.scala.html`; route-local theme owns paint only and fork navigation remains unchanged. Focused `stylex-project-new-fork.e2e.ts` passed in the assembled 6/6 gate.
+
+## Batch 230 migration rows
+
+- `/projectform`: migrated project-create form/shell/field/action owners from `project/create.scala.html`; route-local theme owns paint only. Focused `stylex-project-projectform.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/newMilestoneForm`: migrated milestone-create form/title/editor/options/action owners from `milestone/create.scala.html`; route-local theme owns paint only and React editor/date behavior remains unchanged. Focused `stylex-project-new-milestone.e2e.ts` passed in the assembled batch gate.
+- `/$ownerName/$projectName/postform`: migrated board post form/title/editor/action owners from `board/create.scala.html`; route-local theme owns paint only and React editor/upload/mutation behavior remains unchanged. Focused `stylex-project-postform.e2e.ts` passed in the assembled batch gate.

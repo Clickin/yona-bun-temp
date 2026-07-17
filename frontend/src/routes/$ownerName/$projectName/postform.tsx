@@ -1,6 +1,7 @@
 /* oxlint-disable jsx-a11y/tabindex-no-positive -- legacy board/create.scala.html requires positive tab order on title/body/save/cancel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import {
   createProjectPostRest,
@@ -13,6 +14,17 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
+import { styles } from "./-postform.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  form: stylex.props(styles.form),
+  title: stylex.props(styles.title),
+  editor: stylex.props(styles.editor),
+  actions: stylex.props(styles.actions),
+  save: stylex.props(styles.save),
+  cancel: stylex.props(styles.cancel),
+} as const;
 
 type BoardPostFormSearch = {
   branch?: string;
@@ -158,13 +170,14 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
   });
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
+    <div {...sx.page} data-stylex-owner="project-postform-page">
+      <div data-stylex-owner="project-postform-shell">
         <form
           action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/posts`)}
           method="post"
           encType="multipart/form-data"
-          className="nm"
+          {...sx.form}
+          data-stylex-owner="project-postform-form"
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
@@ -176,7 +189,7 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
             mutation.mutate(event.currentTarget);
           }}
         >
-          <div className="content-wrap frm-wrap">
+          <div data-stylex-owner="project-postform-content">
             <dl>
               <dd>
                 <LegacyTabIndexInput
@@ -186,7 +199,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
                   id="title"
                   autoComplete="off"
                   name="title"
-                  className="zen-mode text title "
+                  {...sx.title}
+                  data-stylex-owner="project-postform-title"
                   maxLength={250}
                   defaultValue={title}
                   onKeyDown={(event) => {
@@ -259,8 +273,8 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               ) : null}
             </div>
 
-            <div className="actions">
-              <button className="ybtn ybtn-success" tabIndex={3}>
+            <div {...sx.actions} data-stylex-owner="project-postform-actions">
+              <button {...sx.save} data-stylex-owner="project-postform-save" tabIndex={3}>
                 {t("button.save")}
               </button>
               <HistoryBackLink onCancel={() => router.history.back()}>
@@ -289,7 +303,13 @@ function LegacyTabIndexInput({
 
 function HistoryBackLink({ children, onCancel }: { children: string; onCancel: () => void }) {
   return (
-    <button type="button" className="ybtn" tabIndex={4} onClick={onCancel}>
+    <button
+      {...sx.cancel}
+      data-stylex-owner="project-postform-cancel"
+      type="button"
+      tabIndex={4}
+      onClick={onCancel}
+    >
       {children}
     </button>
   );
@@ -369,6 +389,8 @@ function BoardPostMarkdownEditor({
         <div id="edit-body" className={`tab-pane${activeTab === "edit" ? " active" : ""}`}>
           <div className="textarea-box">
             <textarea
+              {...sx.editor}
+              data-stylex-owner="project-postform-editor"
               ref={bodyRef}
               name="body"
               className="editorSeries content comment nm"

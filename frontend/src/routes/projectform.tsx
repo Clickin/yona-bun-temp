@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
@@ -12,6 +13,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
+import { projectFormTheme } from "./-projectform.stylex";
 
 type ProjectCreateSearch = {
   owner?: string;
@@ -189,7 +191,10 @@ function ProjectCreateScreen({
       <title>{t("title.newProject")}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="form-wrap new-project">
+          <div
+            className={`${stylex.props(styles.form).className} form-wrap new-project`}
+            data-stylex-owner="project-form"
+          >
             <form
               id="newProjectForm"
               action={prefixBasePath(runtimeConfig.basePath, "/projects")}
@@ -197,7 +202,7 @@ function ProjectCreateScreen({
               className="frm-wrap"
               onSubmit={handleSubmit}
             >
-              <legend>
+              <legend data-stylex-owner="project-form-legend">
                 {t("title.newProject")}
                 <span>
                   <small>{t("project.import.or")} &nbsp; </small>
@@ -225,6 +230,7 @@ function ProjectCreateScreen({
                     data-format="user"
                     className="mb10"
                     style={{ minWidth: "220px" }}
+                    data-stylex-owner="project-form-owner"
                     value={ownerName}
                     onChange={(event) => {
                       const nextOwner = event.currentTarget.value;
@@ -265,9 +271,14 @@ function ProjectCreateScreen({
                       setNameError(undefined);
                     }}
                     placeholder={t("project.name.placeholder")}
+                    data-stylex-owner="project-form-name"
                   />
                   {nameError ? (
-                    <div className="popover fade left in" role="tooltip">
+                    <div
+                      className={`${stylex.props(styles.errorPopover).className} popover fade left in`}
+                      role="tooltip"
+                      data-stylex-owner="project-form-name-error"
+                    >
                       <div className="arrow" />
                       <div className="popover-content">{nameError}</div>
                     </div>
@@ -284,15 +295,22 @@ function ProjectCreateScreen({
                     className="text textarea.span4"
                     value={overview}
                     onChange={(event) => setOverview(event.currentTarget.value)}
+                    data-stylex-owner="project-form-description"
                   />
                 </dd>
               </dl>
 
-              <div className="advanced-options">
+              <div
+                className={`${stylex.props(styles.advanced).className} advanced-options`}
+                data-stylex-owner="project-form-advanced"
+              >
                 <div className="row-fluid">
                   <div className="span2 right-txt mt10">{t("project.shareOption")}</div>
                   <div className="span10">
-                    <ul className="unstyled project-scopes mt10">
+                    <ul
+                      className={`${stylex.props(styles.scopes).className} unstyled project-scopes mt10`}
+                      data-stylex-owner="project-form-scopes"
+                    >
                       <li>
                         <input
                           type="radio"
@@ -305,7 +323,12 @@ function ProjectCreateScreen({
                         />
                         <label htmlFor="public">
                           <strong className="ml5">{t("project.public")}</strong>
-                          <p className="note">{t("project.public.notice")}</p>
+                          <p
+                            className={`${stylex.props(styles.scopeNote).className} note`}
+                            data-stylex-owner="project-form-scope-note"
+                          >
+                            {t("project.public.notice")}
+                          </p>
                         </label>
                       </li>
 
@@ -325,7 +348,12 @@ function ProjectCreateScreen({
                         />
                         <label htmlFor="protected">
                           <strong className="ml5">{t("project.protected")}</strong>
-                          <p className="note">{t("project.protected.notice")}</p>
+                          <p
+                            className={`${stylex.props(styles.scopeNote).className} note`}
+                            data-stylex-owner="project-form-scope-note"
+                          >
+                            {t("project.protected.notice")}
+                          </p>
                         </label>
                       </li>
 
@@ -341,7 +369,12 @@ function ProjectCreateScreen({
                         />
                         <label htmlFor="private">
                           <strong className="ml5">{t("project.private")}</strong>
-                          <p className="note">{t("project.private.notice")}</p>
+                          <p
+                            className={`${stylex.props(styles.scopeNote).className} note`}
+                            data-stylex-owner="project-form-scope-note"
+                          >
+                            {t("project.private.notice")}
+                          </p>
                         </label>
                       </li>
                     </ul>
@@ -447,7 +480,10 @@ function ProjectCreateScreen({
                 </div>
               </div>
 
-              <div className="actions mt20">
+              <div
+                className={`${stylex.props(styles.actions).className} actions mt20`}
+                data-stylex-owner="project-form-actions"
+              >
                 <button className="ybtn ybtn-success" disabled={createMutation.isPending}>
                   {t("project.create")}
                 </button>
@@ -471,6 +507,38 @@ function ProjectCreateScreen({
 function OwnerOption({ option }: { option: ProjectCreateOwnerOption }) {
   return <option value={option.ownerName}>{option.ownerName}</option>;
 }
+
+const styles = stylex.create({
+  form: {
+    position: "relative",
+    width: "700px",
+    margin: "30px auto",
+  },
+  errorPopover: {
+    backgroundColor: projectFormTheme.errorSurface,
+    borderColor: projectFormTheme.errorBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    maxWidth: "144px",
+  },
+  advanced: {
+    backgroundColor: projectFormTheme.advancedBackground,
+    borderRadius: "10px",
+    padding: "10px 0px",
+  },
+  scopes: {
+    marginTop: "10px",
+  },
+  scopeNote: {
+    color: projectFormTheme.scopeNoteText,
+    fontSize: "11px",
+    marginLeft: "22px",
+  },
+  actions: {
+    position: "relative",
+    textAlign: "center",
+  },
+});
 
 function MenuCheckbox({
   checked,
