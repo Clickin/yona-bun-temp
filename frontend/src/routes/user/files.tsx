@@ -14,7 +14,7 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { userFilesSearchColors } from "./-files.stylex";
 
 const styles = stylex.create({
-  search: {
+  searchRoot: {
     backgroundColor: userFilesSearchColors.rootSurface,
     borderColor: userFilesSearchColors.rootBorder,
     borderRadius: "3px",
@@ -31,7 +31,9 @@ const styles = stylex.create({
   },
   searchInput: {
     backgroundColor: userFilesSearchColors.inputSurface,
-    border: "0 none",
+    borderColor: userFilesSearchColors.inputText,
+    borderStyle: "none",
+    borderWidth: "0px",
     boxShadow: "none",
     boxSizing: "content-box",
     color: userFilesSearchColors.inputText,
@@ -55,7 +57,9 @@ const styles = stylex.create({
   },
   searchAction: {
     backgroundColor: userFilesSearchColors.actionSurface,
-    border: "0px",
+    borderColor: userFilesSearchColors.actionText,
+    borderStyle: "none",
+    borderWidth: "0px",
     color: userFilesSearchColors.actionText,
     cursor: "pointer",
     fontFamily:
@@ -74,7 +78,7 @@ const styles = stylex.create({
   },
 });
 
-const searchStyleProps = stylex.props(styles.search);
+const searchStyleProps = stylex.props(styles.searchRoot);
 const searchInputStyleProps = stylex.props(styles.searchInput);
 const searchActionStyleProps = stylex.props(styles.searchAction);
 

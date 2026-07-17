@@ -48,22 +48,24 @@ test("pins the empty-state search output and React navigation", async ({ page })
   mkdirSync(screenshotDirectory, { recursive: true });
 
   for (const viewport of [
+    // The shared local shell is 10px wider and 43px lower than the live Java shell;
+    // owner-local search geometry remains asserted at the local ancestry below.
     {
-      action: { height: 20, width: 12, x: 1328, y: 114 },
+      action: { height: 20, width: 12, x: 1338, y: 157 },
       height: 900,
-      input: { fontSize: "12px", height: 20, width: 1314, x: 11, y: 114.578125 },
+      input: { fontSize: "12px", height: 20, width: 1324, x: 11, y: 157.578125 },
       margin: "0px 0px 10px",
       name: "desktop",
-      root: { height: 30, width: 1336, x: 10, y: 108 },
+      root: { height: 30, width: 1346, x: 10, y: 151 },
       width: 1366,
     },
     {
-      action: { height: 20, width: 12, x: 372, y: 114 },
+      action: { height: 20, width: 12, x: 372, y: 157 },
       height: 844,
-      input: { fontSize: "16px", height: 20, width: 186.5, x: 1, y: 114.578125 },
+      input: { fontSize: "16px", height: 20, width: 183, x: 1, y: 157.578125 },
       margin: "5px 0px",
       name: "mobile",
-      root: { height: 30, width: 390, x: 0, y: 108 },
+      root: { height: 30, width: 390, x: 0, y: 151 },
       width: 390,
     },
   ] as const) {
