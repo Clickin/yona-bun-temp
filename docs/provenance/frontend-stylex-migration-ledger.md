@@ -436,3 +436,11 @@ Manual single-route note: Batch247 kept the project import row as the only integ
 - `/user/issues`: migrated page/list shell, search controls, state tabs, and repeated-item owners from `user/partial_issues.scala.html` and user issue partials; route-local paint, query/filter/sort/pagination behavior, and issue title ownership remain React-owned. Focused `stylex-user-issues-list.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch248 intentionally coordinated the independent restart, organization boards, and user issues route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once. Follow-up: preserve the one-route/one-row default unless another supervised batch records equivalent evidence.
+
+## Batch 249 migration row
+
+- `/$ownerName/$projectName/transfer`: extended project-transfer bubble, owner/agreement rows, labels/descriptions, owner input, notices, and acceptance controls from `project/transfer.scala.html`; route-local paint remains StyleX-owned while destination state, confirmation modal, transfer mutation, and navigation remain React-owned. Focused `stylex-project-transfer.e2e.ts` passed in the assembled browser gate.
+
+- `/organizations/$organizationName/members`: migrated organization member page/shell/header/add-form/list/metadata owners from `organization/members.scala.html` and member partials; route-local paint, typeahead, role mutation, delete modal, and query behavior remain React-owned. Focused `stylex-organization-members-list.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch249 intentionally coordinated the independent organization-members and project-transfer route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX declarations, and focused E2E; the assembled browser and shared static/build gates ran once. The explored lost-password owner was reverted before integration after its existing authenticated-state test contract rejected the new boundary.

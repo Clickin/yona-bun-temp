@@ -225,15 +225,18 @@ function OrganizationMembersBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div className="page-wrap-outer" data-stylex-owner="organization-members-page">
+        <div className="project-page-wrap" data-stylex-owner="organization-members-shell">
           <OrganizationSettingMenu
             active="members"
             basePath={runtimeConfig.basePath}
             organizationName={organizationName}
           />
 
-          <div className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}>
+          <div
+            className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
+            data-stylex-owner="organization-members-header"
+          >
             <form
               className="nm"
               action={prefixBasePath(
@@ -242,6 +245,7 @@ function OrganizationMembersBody({
               )}
               method="post"
               id="addNewMember"
+              data-stylex-owner="organization-members-add-form"
               onSubmit={onAdd}
             >
               <input
@@ -444,7 +448,7 @@ function OrganizationMember({
       <div {...stylex.props(styles.memberId)} data-stylex-owner="organization-member-id">
         @{loginId}
       </div>
-      <div className="member-setting">
+      <div className="member-setting" data-stylex-owner="organization-member-meta">
         <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button
             className="btn dropdown-toggle large"

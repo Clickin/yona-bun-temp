@@ -21,4 +21,13 @@ export const projectTransferColors = stylex.defineVars({
   modalSurface: "#ffffff",
   modalText: "#333333",
   primaryText: "#ffffff",
+  bubbleSurface: "#f7f7f7",
+  labelText: "#333333",
+  descriptionText: "#333333",
+  noticeText: "#db3a67",
+  inputSurface: "#ffffff",
+  inputBorder: "#cccccc",
+  inputText: "#333333",
+  checkboxAccent: "#333333",
+  agreementText: "#333333",
 });

@@ -18,6 +18,35 @@ import { ProjectHeader, ProjectMenu } from "../$projectName";
 import { projectTransferColors } from "./-transfer.stylex";
 
 const styles = stylex.create({
+  bubble: {
+    backgroundColor: projectTransferColors.bubbleSurface,
+  },
+  row: {
+    color: projectTransferColors.descriptionText,
+  },
+  label: {
+    color: projectTransferColors.labelText,
+  },
+  description: {
+    color: projectTransferColors.descriptionText,
+  },
+  input: {
+    backgroundColor: projectTransferColors.inputSurface,
+    borderColor: projectTransferColors.inputBorder,
+    color: projectTransferColors.inputText,
+  },
+  notices: {
+    color: projectTransferColors.noticeText,
+  },
+  notice: {
+    color: projectTransferColors.noticeText,
+  },
+  checkbox: {
+    accentColor: projectTransferColors.checkboxAccent,
+  },
+  agreementLabel: {
+    color: projectTransferColors.agreementText,
+  },
   actionBox: {
     padding: { default: "20px 0 12px", "@media (max-width: 720px)": "10px 0" },
     textAlign: "center",
@@ -350,15 +379,36 @@ function ProjectTransferBody({
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
-          <div className="bubble-wrap gray wp">
-            <div className="row-fluid">
-              <div className="cu-label">{t("project.transfer.new.owner")}</div>{" "}
-              <div className="cu-desc">
+          <div
+            {...stylex.props(styles.bubble)}
+            className={`${stylex.props(styles.bubble).className} bubble-wrap gray wp`}
+            data-stylex-owner="project-transfer-bubble"
+          >
+            <div
+              {...stylex.props(styles.row)}
+              className={`${stylex.props(styles.row).className} row-fluid`}
+              data-stylex-owner="project-transfer-owner-row"
+            >
+              <div
+                {...stylex.props(styles.label)}
+                className={`${stylex.props(styles.label).className} cu-label`}
+                data-stylex-owner="project-transfer-owner-label"
+              >
+                {t("project.transfer.new.owner")}
+              </div>{" "}
+              <div
+                {...stylex.props(styles.description)}
+                className={`${stylex.props(styles.description).className} cu-desc`}
+                data-stylex-owner="project-transfer-owner-description"
+              >
                 <p>
                   <input
+                    {...stylex.props(styles.input)}
                     type="text"
                     id="owner"
                     name="owner"
+                    className={stylex.props(styles.input).className}
+                    data-stylex-owner="project-transfer-owner-input"
                     value={destination}
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       setDestination(event.target.value);
@@ -367,30 +417,70 @@ function ProjectTransferBody({
                 </p>
               </div>
             </div>
-            <div className="row-fluid">
-              <div className="cu-label">{t("project.transfer")}</div>{" "}
-              <div className="cu-desc">
-                <ul>
-                  <li className="notice">
+            <div
+              {...stylex.props(styles.row)}
+              className={`${stylex.props(styles.row).className} row-fluid`}
+              data-stylex-owner="project-transfer-agreement-row"
+            >
+              <div
+                {...stylex.props(styles.label)}
+                className={`${stylex.props(styles.label).className} cu-label`}
+                data-stylex-owner="project-transfer-agreement-label"
+              >
+                {t("project.transfer")}
+              </div>{" "}
+              <div
+                {...stylex.props(styles.description)}
+                className={`${stylex.props(styles.description).className} cu-desc`}
+                data-stylex-owner="project-transfer-agreement-description"
+              >
+                <ul
+                  {...stylex.props(styles.notices)}
+                  className={stylex.props(styles.notices).className}
+                  data-stylex-owner="project-transfer-notices"
+                >
+                  <li
+                    {...stylex.props(styles.notice)}
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-transfer-notice"
+                  >
                     <strong>{t("project.transfer.description1")}</strong>
                   </li>
-                  <li className="notice">
+                  <li
+                    {...stylex.props(styles.notice)}
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-transfer-notice"
+                  >
                     <strong>{t("project.transfer.description2")}</strong>
                   </li>
-                  <li className="notice">
+                  <li
+                    {...stylex.props(styles.notice)}
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-transfer-notice"
+                  >
                     <strong>{t("project.transfer.description3")}</strong>
                   </li>
-                  <li className="notice">
+                  <li
+                    {...stylex.props(styles.notice)}
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-transfer-notice"
+                  >
                     <strong>{t("project.transfer.description4")}</strong>
                   </li>
-                  <li className="notice">
+                  <li
+                    {...stylex.props(styles.notice)}
+                    className={`${stylex.props(styles.notice).className} notice`}
+                    data-stylex-owner="project-transfer-notice"
+                  >
                     <strong>{t("project.transfer.description5")}</strong>
                   </li>
                 </ul>
                 <p>
                   <input
                     type="checkbox"
-                    className="checkbox"
+                    {...stylex.props(styles.checkbox)}
+                    className={`${stylex.props(styles.checkbox).className} checkbox`}
+                    data-stylex-owner="project-transfer-checkbox"
                     autoComplete="off"
                     id="accept"
                     checked={isTransferAccepted}
@@ -398,7 +488,12 @@ function ProjectTransferBody({
                       setIsTransferAccepted(event.target.checked);
                     }}
                   />
-                  <label htmlFor="accept" className="bg-checkbox label-agreement">
+                  <label
+                    {...stylex.props(styles.agreementLabel)}
+                    htmlFor="accept"
+                    className={`${stylex.props(styles.agreementLabel).className} bg-checkbox label-agreement`}
+                    data-stylex-owner="project-transfer-agreement"
+                  >
                     {t("project.transfer.accept")}
                   </label>
                 </p>

@@ -5,9 +5,14 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const screenshotDirectory = resolve("../output/playwright/visual-sweep");
 const owners = {
+  page: "organization-members-page",
+  shell: "organization-members-shell",
+  header: "organization-members-header",
+  addForm: "organization-members-add-form",
   avatar: "organization-member-avatar",
   avatarImage: "organization-member-avatar-image",
   id: "organization-member-id",
+  meta: "organization-member-meta",
   list: "organization-members-list",
   name: "organization-member-name",
   row: "organization-member-row",

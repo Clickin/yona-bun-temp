@@ -13,6 +13,18 @@ const styleSource = readFileSync(
   "utf8",
 );
 const owners = [
+  "project-transfer-bubble",
+  "project-transfer-owner-row",
+  "project-transfer-owner-label",
+  "project-transfer-owner-description",
+  "project-transfer-owner-input",
+  "project-transfer-agreement-row",
+  "project-transfer-agreement-label",
+  "project-transfer-agreement-description",
+  "project-transfer-notices",
+  "project-transfer-notice",
+  "project-transfer-checkbox",
+  "project-transfer-agreement",
   "project-transfer-action",
   "project-transfer-modal",
   "project-transfer-modal-header",
@@ -21,8 +33,8 @@ const owners = [
   "project-transfer-modal-backdrop",
 ] as const;
 
-test("project transfer default and confirmation states have six direct StyleX owners", () => {
-  expect(new Set(owners).size).toBe(6);
+test("project transfer default and confirmation states have eighteen direct StyleX owners", () => {
+  expect(new Set(owners).size).toBe(18);
   for (const owner of owners) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -142,6 +154,10 @@ test("project transfer browser state preserves modal geometry and React dismissa
   const action = page.locator('[data-stylex-owner="project-transfer-action"]').last();
   const modal = page.locator('[data-stylex-owner="project-transfer-modal"]');
   await expect(action).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-transfer-bubble"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-transfer-owner-input"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-transfer-notice"]')).toHaveCount(5);
+  await expect(page.locator('[data-stylex-owner="project-transfer-checkbox"]')).not.toBeChecked();
   await expect(modal).toHaveCSS("display", "none");
   await page.locator("#accept").check();
   await page.locator("#btnTransfer").click();
