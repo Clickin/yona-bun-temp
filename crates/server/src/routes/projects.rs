@@ -13,7 +13,9 @@ use std::collections::HashMap;
 
 use crate::api_types::*;
 use crate::assets::serve_frontend_page;
-use crate::routes::utils::{gravatar_url, project_member_summary_from_record};
+use crate::routes::utils::{
+    gravatar_url, project_member_summary_from_record, resolve_project_origin,
+};
 use crate::{
     absolute_app_url, accepts_legacy_json, attach_session_headers, base_path_href,
     build_organization_admin_response, build_organization_container_response,
@@ -1061,10 +1063,13 @@ async fn direct_render_markdown(
 #[serde(rename_all = "camelCase")]
 struct RestProjectDirectoryItem {
     created_label: String,
+    is_forked: bool,
     last_pushed_label: String,
     logo_url: String,
     member_count: u32,
     members: Vec<ProjectMemberSummary>,
+    origin_owner_name: String,
+    origin_project_name: String,
     overview: String,
     owner_name: String,
     project_name: String,
@@ -1394,6 +1399,11 @@ pub(crate) async fn rest_list_projects(
             .map_err(RestRouteError::from_connect_error)?;
         let mut items = Vec::with_capacity(records.len());
         for project in records {
+            let is_forked = project.original_project_id.is_some();
+            let (origin_owner_name, origin_project_name) =
+                resolve_project_origin(repository, &project)
+                    .await
+                    .map_err(RestRouteError::from_connect_error)?;
             let members = repository
                 .read_project_members(&project.owner_name, &project.project_name)
                 .await
@@ -1405,12 +1415,15 @@ pub(crate) async fn rest_list_projects(
                 .collect::<Vec<_>>();
             items.push(RestProjectDirectoryItem {
                 created_label: format_project_date_label(project.created_date),
+                is_forked,
                 last_pushed_label: format_project_date_label(project.last_pushed_date),
                 logo_url: project_logo_url(repository, &service.base_path, project.id)
                     .await
                     .map_err(RestRouteError::from_connect_error)?,
                 member_count: members.len() as u32,
                 members,
+                origin_owner_name,
+                origin_project_name,
                 overview: project.overview.unwrap_or_default(),
                 owner_name: project.owner_name,
                 project_name: project.project_name,

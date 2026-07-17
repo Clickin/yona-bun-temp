@@ -38,11 +38,14 @@ const emptyStateSpriteStyle = {
 type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
   createdTitle?: string;
+  isForked?: boolean;
   lastPushedLabel?: string;
   logoUrl?: string;
   memberCount?: number;
   members?: YoramRecord[];
   overview?: string;
+  originOwnerName?: string;
+  originProjectName?: string;
   ownerName?: string;
   projectName?: string;
   projectScope?: string;
@@ -267,6 +270,21 @@ const styles = stylex.create({
     outlineStyle: "none",
     textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
   },
+  directoryForkOrigin: {
+    color: projectsDirectoryColors.forkOriginText,
+    fontSize: "10px",
+    fontWeight: "400",
+    lineHeight: "20px",
+  },
+  directoryForkOriginLink: {
+    color: {
+      default: projectsDirectoryColors.forkOriginText,
+      ":hover": projectsDirectoryColors.linkInteractive,
+      ":focus": projectsDirectoryColors.linkInteractive,
+    },
+    outlineStyle: "none",
+    textDecoration: { default: "none", ":hover": "underline", ":focus": "underline" },
+  },
   directoryPrivateLock: {
     color: projectsDirectoryColors.privateLockText,
     fontSize: "14px",
@@ -464,6 +482,8 @@ const directoryHeaderStyleProps = stylex.props(styles.directoryHeader);
 const directoryDescriptionStyleProps = stylex.props(styles.directoryDescription);
 const directoryNameTagStyleProps = stylex.props(styles.directoryNameTag);
 const directoryTitleLinkStyleProps = stylex.props(styles.directoryTitleLink);
+const directoryForkOriginStyleProps = stylex.props(styles.directoryForkOrigin);
+const directoryForkOriginLinkStyleProps = stylex.props(styles.directoryForkOriginLink);
 const directoryPrivateLockStyleProps = stylex.props(styles.directoryPrivateLock);
 const directoryProjectLabelStyleProps = stylex.props(styles.directoryProjectLabel);
 const directoryOwnerLinkStyleProps = stylex.props(styles.directoryOwnerLink);
@@ -921,6 +941,9 @@ function ProjectListItem({
   const createdLabel = stringField(project, "createdLabel", "");
   const createdTitle = stringField(project, "createdTitle", createdLabel);
   const lastPushedLabel = stringField(project, "lastPushedLabel", "");
+  const isForked = project.isForked === true;
+  const originOwnerName = stringField(project, "originOwnerName", "");
+  const originProjectName = stringField(project, "originProjectName", "");
   const labels = projectLabels(project);
   const memberCount = numberField(project, "memberCount", 0);
   const members = projectMembers(project);
@@ -977,6 +1000,27 @@ function ProjectListItem({
             >
               {projectName}
             </Link>{" "}
+            {isForked && originOwnerName && originProjectName ? (
+              <span
+                {...directoryForkOriginStyleProps}
+                data-stylex-owner="projects-directory-fork-origin"
+              >
+                <Link
+                  {...directoryForkOriginLinkStyleProps}
+                  activeProps={{
+                    "aria-current": undefined,
+                    className: directoryForkOriginLinkStyleProps.className,
+                    "data-status": undefined,
+                  }}
+                  className={directoryForkOriginLinkStyleProps.className}
+                  data-stylex-owner="projects-directory-fork-origin-link"
+                  params={{ ownerName: originOwnerName, projectName: originProjectName }}
+                  to="/$ownerName/$projectName"
+                >
+                  <i className="yobicon-split"></i> {originOwnerName} / {originProjectName}
+                </Link>
+              </span>
+            ) : null}{" "}
             {stringField(project, "projectScope", "public") === "private" ? (
               <i
                 {...directoryPrivateLockStyleProps}

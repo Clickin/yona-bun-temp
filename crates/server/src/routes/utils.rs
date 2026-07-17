@@ -1339,7 +1339,7 @@ pub(crate) fn project_milestone_summary_from_record(
     }
 }
 
-async fn resolve_project_origin(
+pub(crate) async fn resolve_project_origin(
     repository: &PilotRepository,
     project: &persistence::ProjectRecord,
 ) -> Result<(String, String), ConnectError> {

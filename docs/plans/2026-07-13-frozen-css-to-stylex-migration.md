@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active after two hundred nine slices; theme-boundary correction complete
+Status: Wave 1 active after two hundred ten slices; theme-boundary correction complete
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -462,6 +462,22 @@ logo, lock, and label to `50x50 @10,216`, `14x14 @205.344,220`, and
 `@213.781,246.656`, with exact paint/type/interaction and no overflow. RED 0/3 becomes focused
 GREEN 3/3 and complete adjacent `/projects` coverage is GREEN 59/59. Target live/local captures
 were directly inspected. This is not Wave 1 completion.
+
+The two-hundred-tenth slice restores the authenticated populated `/projects` fork-origin branch
+from Scala HTML and completes exactly two StyleX owners: the origin wrapper owns the frozen
+10px/400/20px type and route-local `#5DBBE0` paint, while its project Link owns base and
+hover/focus paint, decoration, and outline. The REST directory response now exposes `isForked`,
+`originOwnerName`, and `originProjectName` by reusing the existing project-origin resolver, so the
+React state is backed by a real fork rather than a display-only fixture. The route restores the
+title-origin-lock-label order and retires `small-font`, `blue-txt`, and `origin-title`; only
+`yobicon-split` remains for the generic icon-font/display/line-height and `\e450` glyph contract.
+Live Java desktop pins the first row to `1346x94 @10,158`, header to
+`266.547x23 @80,173`, origin wrapper/Link to `85.719x12 @179.047,180`, and icon to
+`10x10 @179.047,181`. Mobile pins them to `390x154 @0,188`, `@70,203`,
+`@169.047,210`, and `@169.047,211`, with exact base/interactive output and no overflow. Genuine
+RED 0/3 becomes focused GREEN 3/3; the complete adjacent `/projects` matrix is GREEN 62/62 and
+the real fork REST contract passes. Target live/local captures were directly inspected. This is
+not Wave 1 completion.
 
 The fifth verified slice migrates only the authenticated sidenav inner content frame. StyleX owns
 the exact `_page.less` 10px top/left margins and 350px desktop width plus the existing max-720

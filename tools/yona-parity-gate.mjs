@@ -108,6 +108,7 @@ const PARITY_SLICES = [
     testKeywords: ["project-import", "project-directory-route", "projects", "directory-parity"],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/frontend-stylex-migration-ledger.md",
       "docs/provenance/ui-parity-reports/template-first-p2-project-shell.md",
       "docs/provenance/ui-parity-reports/2026-06-28-rendered-evidence-execution-manifest.md",
     ],
@@ -881,6 +882,18 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
     }
   }
 
+  const publicProjectDirectoryBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
+    (bucket) => bucket.id === "public-project-directory",
+  );
+  if (
+    publicProjectDirectoryBucket &&
+    isPublicProjectDirectoryBackendSurface(filePath, changedFiles) &&
+    capabilityHasTestEvidence(publicProjectDirectoryBucket, changedFiles, repoRoot) &&
+    capabilityHasProvenanceEvidence(publicProjectDirectoryBucket, changedFiles)
+  ) {
+    return publicProjectDirectoryBucket;
+  }
+
   const publicUserProfileBucket = [...PARITY_SLICES, ...DOMAIN_BUCKETS].find(
     (bucket) => bucket.id === "public-user-profile",
   );
@@ -956,6 +969,16 @@ function classifyCapability(filePath, changedFiles = [], repoRoot = DEFAULT_REPO
   }
 
   return null;
+}
+
+function isPublicProjectDirectoryBackendSurface(filePath, changedFiles) {
+  if (filePath === "crates/server/src/routes/projects.rs") {
+    return true;
+  }
+  return (
+    filePath === "crates/server/src/routes/utils.rs" &&
+    changedFiles.includes("crates/server/src/routes/projects.rs")
+  );
 }
 
 function isPublicUserProfileBackendSurface(filePath) {

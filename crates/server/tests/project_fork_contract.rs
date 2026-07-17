@@ -432,6 +432,37 @@ async fn project_fork_clones_bare_repository_and_records_origin() {
     assert!(fork_repo_path.is_dir());
     assert_eq!(head_commit(&fork_repo_path), source_head);
 
+    let directory = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let source_item = directory["items"]
+        .as_array()
+        .expect("project directory items")
+        .iter()
+        .find(|item| item["ownerName"] == "owner" && item["projectName"] == "projectYobi")
+        .expect("source directory item");
+    assert_eq!(source_item["isForked"], false);
+    assert_eq!(source_item["originOwnerName"], "");
+    assert_eq!(source_item["originProjectName"], "");
+    let fork_item = directory["items"]
+        .as_array()
+        .expect("project directory items")
+        .iter()
+        .find(|item| item["ownerName"] == "guest" && item["projectName"] == "projectYobi")
+        .expect("fork directory item");
+    assert_eq!(fork_item["isForked"], true);
+    assert_eq!(fork_item["originOwnerName"], "owner");
+    assert_eq!(fork_item["originProjectName"], "projectYobi");
+
     let duplicate = rest(
         app.clone(),
         Method::POST,

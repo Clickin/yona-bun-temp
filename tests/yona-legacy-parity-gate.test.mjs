@@ -309,6 +309,23 @@ test("passes parity-complete canonical route changes when a parity test changes 
   assert.equal(shouldBlockForStrictGate(result), false);
 });
 
+test("maps project directory backend contract changes to the project directory parity slice", () => {
+  const result = runGate([
+    "crates/server/src/routes/projects.rs",
+    "crates/server/src/routes/utils.rs",
+    "crates/server/tests/project_fork_contract.rs",
+    "frontend/tests/stylex-projects-fork-origin.e2e.ts",
+    "docs/provenance/frontend-stylex-migration-ledger.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => [entry.id, entry.status]),
+    [["public-project-directory", "parity"]],
+  );
+});
+
 test("maps anonymous help route changes to the help parity slice", () => {
   const result = runGate([
     "frontend/src/routes/[_]help.tsx",
