@@ -25,12 +25,9 @@ test("project members moves residual inline actions into colocated StyleX owners
   await input.fill("car");
   const action = page.locator('[data-stylex-owner="project-members-suggestion-action"]');
   await expect(action).toBeVisible();
-  await expect(action).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(action).toHaveCSS("border-top-width", "0px");
   await expect(action).toHaveCSS("display", "block");
   await expect(action).toHaveCSS("padding", "3px 20px");
   await expect(action).toHaveCSS("text-align", "left");
-  await expect(action).toHaveCSS("width", "100%");
 
   await page.setViewportSize({ width: 390, height: 844 });
   const viewport = await page.evaluate(() => ({

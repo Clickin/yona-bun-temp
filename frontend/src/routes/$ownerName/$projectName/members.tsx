@@ -839,6 +839,7 @@ const styles = stylex.create({
   suggestionAction: {
     backgroundColor: "transparent",
     borderStyle: "none",
+    borderColor: "transparent",
     borderWidth: 0,
     display: "block",
     padding: "3px 20px",
