@@ -1,4 +1,5 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions, jsx-a11y/no-aria-hidden-on-focusable, jsx-a11y/prefer-tag-over-role -- legacy issue detail Bootstrap modal, Select2 generated DOM, and index-comment DOM parity keep their visible element composition while React owns behavior. */
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import {
@@ -42,6 +43,7 @@ import {
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
+import { styles } from "./-issue-detail.stylex";
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -461,7 +463,10 @@ function ProjectIssueNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
+    <div
+      className={`${stylex.props(styles.page).className} page-wrap-outer`}
+      data-stylex-owner="project-issue-detail-page"
+    >
       <div className="project-page-wrap">
         <div className="error-wrap">
           <i className="ico ico-err2"></i>
@@ -783,7 +788,10 @@ function IssueDetailBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap board-view issue-detail-page">
-        <div className="board-header issue">
+        <div
+          className={`${stylex.props(styles.header).className} board-header issue`}
+          data-stylex-owner="project-issue-detail-header"
+        >
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={createdLabel}>
               {createdDisplayLabel}
@@ -823,9 +831,15 @@ function IssueDetailBody({
             </div>
           ) : null}
         </div>
-        <div className="board-body row-fluid">
+        <div
+          className={`${stylex.props(styles.body).className} board-body row-fluid`}
+          data-stylex-owner="project-issue-detail-body"
+        >
           <div className="span9 span-left-pane">
-            <div className="author-info">
+            <div
+              className={`${stylex.props(styles.author).className} author-info`}
+              data-stylex-owner="project-issue-detail-author"
+            >
               <Link
                 to="/$user"
                 params={{ user: stringField(issue.authorLoginId) }}
@@ -870,13 +884,20 @@ function IssueDetailBody({
                 </div>
                 <div id={`issue-body-${issueNumber}`}>
                   <TasklistBar />
-                  <div className="content markdown-wrap" data-allowed-update={String(canUpdate)}>
+                  <div
+                    className={`${stylex.props(styles.content).className} content markdown-wrap`}
+                    data-stylex-owner="project-issue-detail-content"
+                    data-allowed-update={String(canUpdate)}
+                  >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{bodyMarkdown}</ReactMarkdown>
                   </div>
                 </div>
               </>
             ) : (
-              <div className="content empty-content"></div>
+              <div
+                className={`${stylex.props(styles.emptyContent).className} content empty-content`}
+                data-stylex-owner="project-issue-detail-empty"
+              ></div>
             )}
             <div
               className="attachments"
@@ -885,7 +906,10 @@ function IssueDetailBody({
             >
               <AttachedFiles attachments={issue.attachments} basePath={basePath} />
             </div>
-            <div className="board-actrow right-txt">
+            <div
+              className={`${stylex.props(styles.actions).className} board-actrow right-txt`}
+              data-stylex-owner="project-issue-detail-actions"
+            >
               <div className="pull-left">
                 <div>
                   {canWatch ? (
@@ -1016,7 +1040,10 @@ function IssueDetailBody({
               />
             ) : null}
           </div>
-          <div className="span3 span-right-pane mb20">
+          <div
+            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane mb20`}
+            data-stylex-owner="project-issue-detail-sidebar"
+          >
             <div className="issue-info">
               <form
                 id="issueUpdateForm"

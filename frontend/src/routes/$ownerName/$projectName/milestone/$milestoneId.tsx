@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { HTMLAttributes } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -24,6 +25,18 @@ import {
 } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
+import { styles } from "./-milestone-detail.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  wrap: stylex.props(styles.wrap),
+  progress: stylex.props(styles.progress),
+  progressBar: stylex.props(styles.progressBar),
+  actions: stylex.props(styles.actions),
+  tabs: stylex.props(styles.tabs),
+  tabBadge: stylex.props(styles.tabBadge),
+  search: stylex.props(styles.search),
+} as const;
 
 type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 type LegacyIssueItemRowAttrs = {
@@ -281,9 +294,9 @@ function ProjectMilestoneDetailBody({
   });
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="milesion-wrap">
+    <div {...sx.page} data-stylex-owner="milestone-detail-page">
+      <div data-stylex-owner="milestone-detail-shell">
+        <div {...sx.wrap} data-stylex-owner="milestone-detail-wrap">
           <h4>
             <Link
               to="/$ownerName/$projectName/milestone/$milestoneId"
@@ -313,8 +326,8 @@ function ProjectMilestoneDetailBody({
             </small>
           </h4>
 
-          <div className="progress progress-success">
-            <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+          <div {...sx.progress} data-stylex-owner="milestone-detail-progress">
+            <div {...sx.progressBar} style={{ width: `${completionPercent}%` }}></div>
           </div>
 
           {stringField(milestone.contentsMarkdown) ? (
@@ -331,7 +344,8 @@ function ProjectMilestoneDetailBody({
           )}
 
           <div
-            className="actrow right-txt row-fluid"
+            {...sx.actions}
+            data-stylex-owner="milestone-detail-actions"
             style={{ clear: "both", display: "block", padding: "15px 0" }}
           >
             <Link
@@ -386,7 +400,7 @@ function ProjectMilestoneDetailBody({
           </div>
 
           <div id="issues">
-            <ul className="nav nav-tabs">
+            <ul {...sx.tabs} data-stylex-owner="milestone-detail-tabs">
               {(["open", "closed", "all"] as const).map((tabState) => (
                 <li key={tabState} className={selectedState === tabState ? "active" : undefined}>
                   <Link
@@ -397,7 +411,7 @@ function ProjectMilestoneDetailBody({
                     {...LEGACY_MILESTONE_LINK_PROPS}
                   >
                     {t(`issue.state.${tabState}`)}
-                    <span className="num-badge">
+                    <span {...sx.tabBadge}>
                       {tabState === "open"
                         ? openIssueCount
                         : tabState === "closed"
@@ -421,7 +435,7 @@ function ProjectMilestoneDetailBody({
                   runtimeConfig={runtimeConfig}
                   viewerIsProjectMember={viewerIsProjectMember}
                 />
-                <div className="pull-right search search-bar">
+                <div {...sx.search} data-stylex-owner="milestone-detail-search">
                   <input
                     ref={searchInputRef}
                     name="filter"

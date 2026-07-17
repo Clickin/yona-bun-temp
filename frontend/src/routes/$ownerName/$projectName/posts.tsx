@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   Fragment,
@@ -22,6 +23,7 @@ import type { ProjectContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { styles } from "./-posts.stylex";
 
 type ProjectPostsRouteSearch = {
   filter?: string;
@@ -147,10 +149,16 @@ function ProjectPostsBody({
   };
 
   return (
-    <div className="page-wrap-outer">
-      <div className="post-list project-page-wrap">
+    <div className="page-wrap-outer" data-stylex-owner="project-posts-page">
+      <div className="post-list project-page-wrap" data-stylex-owner="project-posts-list">
         <div className="search-wrap underline">
-          <form id="option_form" action={action} method="get" className="pull-left">
+          <form
+            id="option_form"
+            action={action}
+            method="get"
+            className={`${stylex.props(styles.search).className} pull-left`}
+            data-stylex-owner="project-posts-search"
+          >
             <input type="hidden" name="orderBy" value={search.orderBy} />
             <input type="hidden" name="orderDir" value={search.orderDir} />
             <div className="search-bar">

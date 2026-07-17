@@ -1,0 +1,39 @@
+import * as stylex from "@stylexjs/stylex";
+
+// issue/view.scala.html paint tokens only; legacy geometry remains in frozen CSS.
+export const issueDetailColors = stylex.defineVars({
+  mutedText: "#777777",
+  emptySurface: "#f7f7f7",
+  accentText: "#337581",
+});
+
+export const styles = stylex.create({
+  page: {
+    minHeight: "100%",
+  },
+  header: {
+    borderBottomColor: issueDetailColors.mutedText,
+  },
+  body: {
+    minWidth: 0,
+  },
+  content: {
+    minWidth: 0,
+  },
+  actions: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+  },
+  sidebar: {
+    minWidth: 0,
+  },
+  emptyContent: {
+    backgroundColor: issueDetailColors.emptySurface,
+  },
+  author: {
+    color: issueDetailColors.accentText,
+  },
+});

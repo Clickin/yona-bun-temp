@@ -3244,6 +3244,8 @@ Batch 235 applied the workflow to code history, no-head code browser, and revisi
 
 Batch 236 applied the workflow to code branch browsing, code file viewing, and board post detail. The integrated 6-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed.
 
+Batch 237 applied the workflow to board post listing, issue detail, and milestone detail. The integrated 6-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
