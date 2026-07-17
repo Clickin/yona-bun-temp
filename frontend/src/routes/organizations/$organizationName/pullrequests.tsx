@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { HTMLAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   organizationPullRequestListQueryOptions,
@@ -8,6 +9,20 @@ import {
 } from "../../../api/pull-requests";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { styles } from "./-organization-pullrequests.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  searchColumn: stylex.props(styles.searchColumn),
+  searchBar: stylex.props(styles.searchBar),
+  searchInput: stylex.props(styles.searchInput),
+  searchButton: stylex.props(styles.searchButton),
+  tabs: stylex.props(styles.tabs),
+  tabButton: stylex.props(styles.tabButton),
+  activeTabButton: stylex.props(styles.tabButton, styles.activeTabButton),
+  badge: stylex.props(styles.badge),
+  content: stylex.props(styles.content),
+} as const;
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
@@ -108,20 +123,25 @@ function OrganizationPullRequestsBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
-        <div className="project-page-wrap">
+      <div {...sx.page} data-stylex-owner="organization-pullrequests-page">
+        <div data-stylex-owner="organization-pullrequests-shell">
           <div className="row-fluid cb">
-            <div className="left-menu span2 search-wrap hide-in-mobile" style={{ paddingTop: 0 }}>
+            <div {...sx.searchColumn} data-stylex-owner="organization-pullrequests-search-column">
               <form id="search" name="search" action={searchAction} method="get">
                 <div className="search">
-                  <div className="search-bar">
+                  <div {...sx.searchBar} data-stylex-owner="organization-pullrequests-search-bar">
                     <input
                       name="filter"
-                      className="textbox full"
+                      {...sx.searchInput}
+                      data-stylex-owner="organization-pullrequests-search-input"
                       type="text"
                       defaultValue={search.filter}
                     />
-                    <button type="submit" className="search-btn">
+                    <button
+                      {...sx.searchButton}
+                      data-stylex-owner="organization-pullrequests-search-button"
+                      type="submit"
+                    >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>
@@ -129,21 +149,31 @@ function OrganizationPullRequestsBody({
               </form>
             </div>
             <div className="span10 span-hard-wrap" id="span10">
-              <ul className="nav nav-tabs nm pullrequeset-tab-menu">
+              <ul {...sx.tabs} data-stylex-owner="organization-pullrequests-tabs">
                 <li className={selectedCategory === "open" ? "active" : ""}>
-                  <button type="button" onClick={() => navigateTab(openAction)}>
+                  <button
+                    {...(selectedCategory === "open" ? sx.activeTabButton : sx.tabButton)}
+                    data-stylex-owner="organization-pullrequests-tab"
+                    type="button"
+                    onClick={() => navigateTab(openAction)}
+                  >
                     {t("pullRequest.state.open")}
-                    <span className="num-badge">{pullRequests.openCount}</span>
+                    <span {...sx.badge}>{pullRequests.openCount}</span>
                   </button>
                 </li>
                 <li className={selectedCategory === "closed" ? "active" : ""}>
-                  <button type="button" onClick={() => navigateTab(closedAction)}>
+                  <button
+                    {...(selectedCategory === "closed" ? sx.activeTabButton : sx.tabButton)}
+                    data-stylex-owner="organization-pullrequests-tab"
+                    type="button"
+                    onClick={() => navigateTab(closedAction)}
+                  >
                     {t("pullRequest.state.closed")}
-                    <span className="num-badge">{pullRequests.closedCount}</span>
+                    <span {...sx.badge}>{pullRequests.closedCount}</span>
                   </button>
                 </li>
               </ul>
-              <div className="tab-content" style={{ clear: "both", paddingTop: 15 }}>
+              <div {...sx.content} data-stylex-owner="organization-pullrequests-content">
                 <div id="list" className="row-fluid tab-pane active">
                   <OrganizationPullRequestList
                     basePath={runtimeConfig.basePath}

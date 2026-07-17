@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   useEffect,
   useRef,
   useState,
   type CSSProperties,
-  type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
@@ -17,7 +17,25 @@ import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
-import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { type RuntimeConfig } from "../../../runtime-config";
+import { organizationBoardsColors } from "./-organization-boards.stylex";
+
+const styles = stylex.create({
+  search: {
+    borderBottomColor: organizationBoardsColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+  },
+  filterInput: { color: organizationBoardsColors.mutedText, padding: "4px 6px" },
+  filters: { color: organizationBoardsColors.mutedText },
+  list: { listStyle: "none", margin: "0px", padding: "0px" },
+  row: {
+    borderBottomColor: organizationBoardsColors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+  },
+  title: { color: organizationBoardsColors.titleText, textDecoration: "none" },
+});
 
 type OrganizationBoardsSearch = {
   filter: string;
@@ -26,8 +44,6 @@ type OrganizationBoardsSearch = {
   pageNum: number;
   projectNames: string[];
 };
-
-type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
 const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
   bottom: "100%",
@@ -102,7 +118,11 @@ function OrganizationBoardsBody({
       <title>{organizationName}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="search-wrap underline">
+          <div
+            {...stylex.props(styles.search)}
+            className="search-wrap underline"
+            data-stylex-owner="organization-boards-search"
+          >
             <form id="option_form" method="get" className="pull-left">
               <input type="hidden" name="orderBy" value={search.orderBy} />
               <input type="hidden" name="orderDir" value={search.orderDir} />
@@ -132,7 +152,9 @@ function OrganizationBoardsBody({
               <div className="search-bar span4">
                 <input
                   name="filter"
+                  {...stylex.props(styles.filterInput)}
                   className="textbox group-board"
+                  data-stylex-owner="organization-boards-search-input"
                   type="text"
                   placeholder={t("title.searchByKeyword")}
                   defaultValue={search.filter}
@@ -156,7 +178,11 @@ function OrganizationBoardsBody({
                 <BoardFilters organizationName={organizationName} search={search} />
               ) : null}
               {hasNotices ? (
-                <ul className="post-list-wrap notice-wrap">
+                <ul
+                  {...stylex.props(styles.list)}
+                  className="post-list-wrap notice-wrap"
+                  data-stylex-owner="organization-boards-notice-list"
+                >
                   {boards.notices.map((post) => (
                     <OrganizationBoardPost
                       basePath={runtimeConfig.basePath}
@@ -166,7 +192,11 @@ function OrganizationBoardsBody({
                   ))}
                 </ul>
               ) : null}
-              <ul className="post-list-wrap">
+              <ul
+                {...stylex.props(styles.list)}
+                className="post-list-wrap"
+                data-stylex-owner="organization-boards-list"
+              >
                 {boards.items.map((post) => (
                   <OrganizationBoardPost
                     basePath={runtimeConfig.basePath}
@@ -202,7 +232,11 @@ function BoardFilters({
 
   return (
     <div className="filter-wrap board">
-      <div className="filters">
+      <div
+        {...stylex.props(styles.filters)}
+        className="filters"
+        data-stylex-owner="organization-boards-filters"
+      >
         {filters.map((filter) => {
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
@@ -359,17 +393,12 @@ function BoardPagination({
 
 function OrganizationBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
-  const postHref = prefixBasePath(
-    basePath,
-    `/${post.ownerName}/${post.projectName}/post/${post.postNumber}`,
-  );
-  const legacyPostItemAttrs = {
-    className: "post-item title",
-    href: postHref,
-  } satisfies LegacyPostItemAttrs;
-
   return (
-    <li {...legacyPostItemAttrs}>
+    <li
+      {...stylex.props(styles.row)}
+      className="post-item title"
+      data-stylex-owner="organization-boards-row"
+    >
       <Link
         to="/$user"
         params={{ user: post.authorLoginId }}
@@ -386,7 +415,9 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
             projectName: post.projectName,
             postNumber: String(post.postNumber),
           }}
+          {...stylex.props(styles.title)}
           className="title"
+          data-stylex-owner="organization-boards-title"
         >
           {post.title}
         </Link>

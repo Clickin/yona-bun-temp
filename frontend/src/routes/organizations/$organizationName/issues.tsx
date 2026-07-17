@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   type ChangeEvent,
@@ -19,6 +20,7 @@ import {
 import { apiQueryKeys } from "../../../api/query-keys";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { styles } from "./-organization-issues.stylex";
 
 type OrganizationIssuesSearch = {
   assigneeId: string;
@@ -220,9 +222,9 @@ function OrganizationIssuesBody({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-stylex-owner="organization-issues-page">
         <div className="page-wrap">
-          <div className="row-fluid issue-list-wrap">
+          <div className="row-fluid issue-list-wrap" data-stylex-owner="organization-issues-list">
             <div className="left-menu span2 span-hard-wrap">
               <div className="inner advanced">
                 <QuickSearch
@@ -232,6 +234,8 @@ function OrganizationIssuesBody({
                   search={search}
                 />
                 <form
+                  className={stylex.props(styles.search).className}
+                  data-stylex-owner="organization-issues-search"
                   id="search"
                   name="search"
                   action={prefixBasePath(
@@ -280,7 +284,11 @@ function OrganizationIssuesBody({
                 </form>
               </div>
             </div>
-            <div className="span10 span-hard-wrap" id="span10">
+            <div
+              className="span10 span-hard-wrap"
+              id="span10"
+              data-stylex-owner="organization-issues-results"
+            >
               <ul className="nav nav-tabs nm">
                 <StateTab
                   active={search.state === "open"}

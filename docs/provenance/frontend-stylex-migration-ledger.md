@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch233 snapshot is 55 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch234 snapshot is 58 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -347,3 +347,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/post/$postNumber/editform`: migrated board-post edit form/title/editor/actions/uploader owners from `board/edit.scala.html` and editor/uploader partials; route-local theme owns paint only and React editor/mutation behavior remains unchanged. Focused `stylex-project-post-edit.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/reviews`: migrated review sidebar/filter/sort/tabs/list/row/title owners from `reviewthread/list.scala.html` and review partials; route-local theme owns paint only and React query-state navigation remains unchanged. Focused `stylex-project-reviews.e2e.ts` passed in the assembled batch gate.
 - `/$ownerName/$projectName/commit/$commitId`: migrated commit browse/metadata/message/diff owners from `common/commitMsg.scala.html` and commit partials; route-local theme owns paint only and React discussion/navigation behavior remains unchanged. Focused `stylex-project-commit-detail.e2e.ts` passed in the assembled batch gate.
+
+## Batch 234 migration rows
+
+- `/organizations/$organizationName/issues`: migrated organization issue list/search/results owners from `organization/group_issue_list.scala.html` and quicksearch/org shell partials; route-local theme owns paint only and React query/navigation behavior remains unchanged. Focused `stylex-organization-issues.e2e.ts` passed in the assembled batch gate.
+- `/organizations/$organizationName/boards`: migrated organization board search/filters/list/row/title owners from `organization/group_board_list.scala.html` and board partials; route-local theme owns paint only and React filtering/pagination behavior remains unchanged. Focused `stylex-organization-boards.e2e.ts` passed in the assembled batch gate.
+- `/organizations/$organizationName/pullrequests`: migrated organization pull-request page/search/tabs/counts/content owners from `organization/group_pullrequest_list.scala.html` and partials; route-local theme owns paint only and React query/category navigation remains unchanged. Focused `stylex-organization-pullrequests.e2e.ts` passed in the assembled batch gate.
