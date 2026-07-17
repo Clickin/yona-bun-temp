@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import type { MouseEvent, ReactNode, SyntheticEvent } from "react";
 import { createContext, useEffect, useRef, useState } from "react";
@@ -37,6 +38,7 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { styles } from "./$projectName/-project-home.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
 import { DefaultSearchErrorBody, isDefaultForbiddenError } from "../-search-screen";
@@ -643,7 +645,10 @@ function ProjectMembersErrorRouteShell({
         basePath={runtimeConfig.basePath}
         project={project}
       />
-      <div className="page-wrap-outer">
+      <div
+        className={`${stylex.props(styles.page).className} page-wrap-outer`}
+        data-stylex-owner="project-home-page"
+      >
         <div className="project-page-wrap">
           <div className="error-wrap">
             <i className="ico ico-err2"></i>
@@ -879,7 +884,13 @@ function ProjectLayoutScreen({
       ) : null}
       <ProjectNestedShellContext value>
         <ProjectLayoutContext value={project}>
-          <LastOutletTransition routeId={Route.id} />
+          {active === "home" ? (
+            <div data-stylex-owner="project-home-page">
+              <LastOutletTransition routeId={Route.id} />
+            </div>
+          ) : (
+            <LastOutletTransition routeId={Route.id} />
+          )}
         </ProjectLayoutContext>
       </ProjectNestedShellContext>
     </>

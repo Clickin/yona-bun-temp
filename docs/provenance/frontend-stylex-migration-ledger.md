@@ -415,3 +415,10 @@ module is retired only after every owned selector row has desktop and 390 px evi
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes`: migrated pull-request changes page/shell/body/author/diff owners from review/diff partials; route-local paint remains StyleX-owned while review state, comments, controls, and navigation remain React-owned. Focused `stylex-project-pull-request-changes.e2e.ts` passed in the assembled browser gate.
 
 Manual multi-screen exception note: Batch244 intentionally coordinated the independent site issue-list, standalone signup, and pull-request changes route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX module, and focused E2E; the assembled browser gate and shared static/build gates were run once. Follow-up: preserve the one-route/one-row default unless another supervised batch records equivalent evidence.
+
+## Batch 246 migration rows
+
+- `/organizations/$organizationName`: migrated organization home/header/overview/search/projects/member owners from `organization/view.scala.html` and organization shell/member partials; route-local paint remains StyleX-owned while filtering, leave mutation/modal, Outlet transitions, and navigation remain React-owned. Focused `stylex-organization-home.e2e.ts` passed in the assembled browser gate.
+- `/$ownerName/$projectName`: migrated project home shell owner from `project/home.scala.html` and project shell partials; route-local paint remains StyleX-owned while project container queries, nested Outlet, shell navigation, and child route behavior remain React-owned. Focused `stylex-project-home.e2e.ts` passed in the assembled browser gate.
+
+Manual multi-screen exception note: Batch246 intentionally coordinated the independent project-home and organization-home route states into one supervised batch commit. Each route retains its own Scala audit row, route-local StyleX module, and focused E2E; the assembled browser gate and shared static/build gates were run once. Follow-up: preserve the one-route/one-row default unless another supervised batch records equivalent evidence.

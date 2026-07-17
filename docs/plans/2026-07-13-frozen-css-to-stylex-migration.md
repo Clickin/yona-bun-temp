@@ -3262,6 +3262,8 @@ Batch 244 applied the workflow to site-admin issue listing, standalone signup, a
 
 Batch 245 applied the workflow to the public user profile and global search result screens. The integrated 2-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification are run once for the supervised batch; the initially explored pull-request edit-form target was reverted before integration because its focused runtime fixture could not establish a valid screen state.
 
+Batch 246 applied the workflow to the project home and organization home shells. The integrated 2-test browser wave and shared typecheck, formatting, Vitest, production build, and StyleX fallback verification passed once for the supervised batch.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

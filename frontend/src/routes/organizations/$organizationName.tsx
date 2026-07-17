@@ -1,4 +1,5 @@
 import { type MouseEvent, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
@@ -21,6 +22,7 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
+import { styles } from "./-organization-home.stylex";
 
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
@@ -183,16 +185,28 @@ function OrganizationHomeScreen({
   return (
     <>
       <title>{organizationName}</title>
-      <div className="page-wrap-outer">
+      <div
+        className={`${stylex.props(styles.home).className} page-wrap-outer`}
+        data-stylex-owner="organization-home-page"
+      >
         <div className="project-page-wrap">
-          <div className="project-home-header row-fluid">
+          <div
+            className="project-home-header row-fluid"
+            data-stylex-owner="organization-home-header"
+          >
             <div className="span9 span-hard-wrap">
-              <div className="project-overview">
+              <div
+                className={`${stylex.props(styles.overview).className} project-overview`}
+                data-stylex-owner="organization-home-overview"
+              >
                 <h3>
                   <span id="project-description">{stringField(organization.description, "")}</span>
                 </h3>
               </div>
-              <div className="project-search-wrap row-fluid mt10">
+              <div
+                className="project-search-wrap row-fluid mt10"
+                data-stylex-owner="organization-home-search"
+              >
                 <div className="span7">
                   <div className="search-bar">
                     <input
@@ -232,7 +246,10 @@ function OrganizationHomeScreen({
                   </div>
                 ) : null}
               </div>
-              <ul className="all-projects">
+              <ul
+                className={`${stylex.props(styles.projects).className} all-projects`}
+                data-stylex-owner="organization-home-projects"
+              >
                 {organization.visibleProjects.map((project) => (
                   <OrganizationProject
                     filter={projectFilter}
@@ -242,7 +259,7 @@ function OrganizationHomeScreen({
                 ))}
               </ul>
             </div>
-            <div className="span3 span-hard-wrap">
+            <div className="span3 span-hard-wrap" data-stylex-owner="organization-home-members">
               {shouldShowMemberPanels ? (
                 <>
                   <MemberPanel
