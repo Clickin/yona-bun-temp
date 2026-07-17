@@ -29,6 +29,10 @@ import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { styles } from "./-commit-detail.stylex";
 
 const sx = {
+  codediffLayout: stylex.props(styles.codediffLayout),
+  diffsLayout: stylex.props(styles.diffsLayout),
+  reviewPanel: stylex.props(styles.reviewPanel),
+  reviewContainer: stylex.props(styles.reviewContainer),
   page: stylex.props(styles.page),
   browse: stylex.props(styles.browse),
   commitInfo: stylex.props(styles.commitInfo),
@@ -295,7 +299,11 @@ function ProjectCommitDetailBody({
               ) : null}
             </ul>
 
-            <div className={`codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}>
+            <div
+              {...sx.codediffLayout}
+              className={`${sx.codediffLayout.className} codediff-wrap${reviewCardsCollapsed ? " diffs-only" : ""}`}
+              data-stylex-owner="commit-detail-diff-layout"
+            >
               <button
                 type="button"
                 className="ybtn ybtn-default btn-show-reviewcards"
@@ -303,7 +311,11 @@ function ProjectCommitDetailBody({
               >
                 <i className="yobicon-restore"></i>
               </button>
-              <div className="diffs-wrap">
+              <div
+                {...sx.diffsLayout}
+                className={`${sx.diffsLayout.className} diffs-wrap`}
+                data-stylex-owner="commit-detail-diffs"
+              >
                 <div {...sx.commitInfo} data-stylex-owner="commit-detail-info">
                   <div className="commitAuthor">
                     <CommitAuthor detail={detail} />
@@ -430,8 +442,15 @@ function ProjectCommitDetailBody({
                 ) : null}
               </div>
 
-              <div className="review-wrap span-hard-wrap">
-                <div className="review-container">
+              <div
+                {...sx.reviewPanel}
+                className={`${sx.reviewPanel.className} review-wrap span-hard-wrap`}
+                data-stylex-owner="commit-detail-review-panel"
+              >
+                <div
+                  {...sx.reviewContainer}
+                  className={`${sx.reviewContainer.className} review-container`}
+                >
                   <button
                     type="button"
                     className="ybtn ybtn-default btn-hide-reviewcards"
@@ -684,9 +703,17 @@ function FileDiffView({
   const shouldRenderNoChanges = parsed.lines.length === 0 && !fileModeChange;
 
   return (
-    <div id={fileId} className="diff-partial-outer">
+    <div
+      id={fileId}
+      className={`${stylex.props(styles.file).className} diff-partial-outer`}
+      data-stylex-owner="commit-detail-file"
+    >
       <div className="diff-partial-inner">
-        <div className="diff-partial-meta">
+        <div
+          {...stylex.props(styles.fileMeta)}
+          className={`${stylex.props(styles.fileMeta).className} diff-partial-meta`}
+          data-stylex-owner="commit-detail-file-meta"
+        >
           <div className="diff-partial-commit">
             <div className="diff-partial-commit-id">
               {commitA && parsed.pathA ? (
@@ -719,7 +746,12 @@ function FileDiffView({
             <span className="filename">{fileHeader}</span>
           </div>
         </div>
-        <div className="diff-partial-code" data-hashcode={filePath}>
+        <div
+          {...stylex.props(styles.fileCode)}
+          className={`${stylex.props(styles.fileCode).className} diff-partial-code`}
+          data-hashcode={filePath}
+          data-stylex-owner="commit-detail-file-code"
+        >
           <div className="patch-header">
             {parsed.pathA ? <div className="path">{`--- ${parsed.pathA}`}</div> : null}
             {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
