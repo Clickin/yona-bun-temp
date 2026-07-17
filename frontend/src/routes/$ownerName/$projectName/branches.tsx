@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import {
   codeBranchesQueryOptions,
   deleteCodeBranchRest,
@@ -11,6 +12,7 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { projectBranchesTheme } from "./-branches.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/branches")({
   component: ProjectBranchesRoute,
@@ -128,8 +130,14 @@ function ProjectBranchesBody({
               </li>
             </ul>
 
-            <table className="table branch-list-wrap">
-              <thead className="thead">
+            <table
+              className={`${stylex.props(styles.branchTable).className} table branch-list-wrap`}
+              data-stylex-owner="project-branches-table"
+            >
+              <thead
+                className={`${stylex.props(styles.tableHead).className} thead`}
+                data-stylex-owner="project-branches-table-head"
+              >
                 <tr>
                   <th>{t("title.branches")}</th>
                   <th>{t("code.branches.commit")}</th>
@@ -199,8 +207,14 @@ function BranchRow({
   });
 
   return (
-    <tr className={isHead ? "head" : undefined}>
-      <td className="branchName">
+    <tr
+      className={`${stylex.props(styles.branchRow, isHead ? styles.headRow : null).className}${isHead ? " head" : ""}`}
+      data-stylex-owner="project-branches-row"
+    >
+      <td
+        className={`${stylex.props(styles.branchNameCell).className} branchName`}
+        data-stylex-owner="project-branches-branch-cell"
+      >
         <Link
           to="/$ownerName/$projectName/code/$branch"
           params={{ branch: branch.name, ownerName, projectName }}
@@ -215,14 +229,24 @@ function BranchRow({
             className: undefined,
             "data-status": undefined,
           }}
+          className={`${stylex.props(styles.branchLink).className}`}
+          data-stylex-owner="project-branches-branch-link"
         >
           {legacyBranchShortName(branch)}
         </Link>
         {isHead ? (
-          <span className="headBranch ml10">{t("code.branches.defaultBranch")}</span>
+          <span
+            className={`${stylex.props(styles.defaultBadge).className} headBranch ml10`}
+            data-stylex-owner="project-branches-default-badge"
+          >
+            {t("code.branches.defaultBranch")}
+          </span>
         ) : null}
       </td>
-      <td className="commit">
+      <td
+        className={`${stylex.props(styles.commitCell).className} commit`}
+        data-stylex-owner="project-branches-commit-cell"
+      >
         <Link
           to="/$ownerName/$projectName/commits/$branch"
           params={{ branch: branch.name, ownerName, projectName }}
@@ -238,16 +262,24 @@ function BranchRow({
             className: undefined,
             "data-status": undefined,
           }}
-          className="commitId"
+          className={`${stylex.props(styles.commitId).className} commitId`}
+          data-stylex-owner="project-branches-commit-link"
           title={branch.commitId}
         >
           {branch.commitShortId}
         </Link>
-        <span className="date" title={branch.commitDate}>
+        <span
+          className={`${stylex.props(styles.commitDate).className} date`}
+          data-stylex-owner="project-branches-commit-date"
+          title={branch.commitDate}
+        >
           {branch.commitDate}
         </span>
       </td>
-      <td className="pullRequest">
+      <td
+        className={`${stylex.props(styles.pullRequestCell).className} pullRequest`}
+        data-stylex-owner="project-branches-pull-request-cell"
+      >
         {branch.pullRequest ? (
           <Link
             to="/$ownerName/$projectName/pullRequest/$pullRequestNumber"
@@ -268,16 +300,30 @@ function BranchRow({
               "data-status": undefined,
             }}
             className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            data-stylex-owner="project-branches-pull-request-link"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
+            <span
+              aria-hidden="true"
+              data-stylex-owner="project-branches-pull-request-dot"
+              {...stylex.props(
+                styles.pullRequestDot,
+                pullRequestDotStyle(branch.pullRequest.state),
+              )}
+            />
             pullRequest-{branch.pullRequest.pullRequestNumber}
           </Link>
         ) : (
-          <span className="disabled">{t("code.branches.noPullRequest")}</span>
+          <span
+            className={`${stylex.props(styles.disabledPullRequest).className} disabled`}
+            data-stylex-owner="project-branches-no-pull-request"
+          >
+            {t("code.branches.noPullRequest")}
+          </span>
         )}
       </td>
       {branches.permissions.canDelete || branches.permissions.canUpdate ? (
-        <td className="actions">
+        <td className="actions" data-stylex-owner="project-branches-actions">
           {branches.permissions.canUpdate && !isHead ? (
             <button
               type="button"
@@ -325,4 +371,81 @@ function isDefaultBranch(branch: CodeBranchListItem, defaultBranch: string) {
     branch.name === defaultBranchName ||
     branch.shortName === defaultBranchName
   );
+}
+
+const styles = stylex.create({
+  branchTable: {
+    width: "100%",
+  },
+  tableHead: {
+    backgroundColor: projectBranchesTheme.headerBackground,
+    borderBottomColor: projectBranchesTheme.headerBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    fontSize: "12px",
+    lineHeight: "34px",
+  },
+  branchRow: {
+    borderBottomColor: projectBranchesTheme.rowBorder,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+  },
+  headRow: { backgroundColor: projectBranchesTheme.headRowBackground },
+  branchNameCell: {
+    minWidth: "180px",
+    paddingTop: "13px",
+    verticalAlign: "top",
+  },
+  branchLink: {
+    color: projectBranchesTheme.branchLink,
+    fontFamily: "monospace",
+  },
+  defaultBadge: {
+    backgroundColor: projectBranchesTheme.defaultBadgeBackground,
+    borderColor: projectBranchesTheme.defaultBadgeBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: projectBranchesTheme.defaultBadgeText,
+    display: "inline-block",
+    padding: "3px 5px",
+  },
+  commitCell: {
+    paddingTop: "13px",
+    verticalAlign: "top",
+    width: "155px",
+  },
+  commitId: {
+    fontFamily: "monospace",
+  },
+  commitDate: {
+    color: projectBranchesTheme.commitDateText,
+    fontSize: "11px",
+    marginLeft: "10px",
+  },
+  pullRequestCell: {
+    paddingTop: "13px",
+    verticalAlign: "top",
+    width: "170px",
+  },
+  pullRequestDot: {
+    borderRadius: "10px",
+    display: "inline-block",
+    height: "10px",
+    marginRight: "5px",
+    verticalAlign: "middle",
+    width: "10px",
+  },
+  openDot: { backgroundColor: projectBranchesTheme.openDot },
+  closedDot: { backgroundColor: projectBranchesTheme.closedDot },
+  mergedDot: { backgroundColor: projectBranchesTheme.mergedDot },
+  disabledPullRequest: {
+    color: projectBranchesTheme.disabledPullRequestText,
+  },
+});
+
+function pullRequestDotStyle(state: string) {
+  if (state === "closed") return styles.closedDot;
+  if (state === "merged") return styles.mergedDot;
+  return styles.openDot;
 }

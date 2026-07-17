@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
@@ -11,6 +12,42 @@ import type {
 import { listProjectMilestones } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
+import { styles } from "./-milestones.stylex";
+
+const sx = {
+  page: stylex.props(styles.page),
+  tabWrap: stylex.props(styles.tabWrap),
+  tabs: stylex.props(styles.tabs),
+  tab: stylex.props(styles.tab),
+  tabLink: stylex.props(styles.tabLink),
+  activeTabLink: stylex.props(styles.tabLink, styles.activeTabLink),
+  newButton: stylex.props(styles.newButton),
+  filterWrap: stylex.props(styles.filterWrap),
+  filters: stylex.props(styles.filters),
+  filterLink: stylex.props(styles.filterLink),
+  filterActive: stylex.props(styles.filterActive),
+  search: stylex.props(styles.search),
+  searchInput: stylex.props(styles.searchInput),
+  searchButton: stylex.props(styles.searchButton),
+  icon: stylex.props(styles.icon),
+  list: stylex.props(styles.list),
+  row: stylex.props(styles.row),
+  meta: stylex.props(styles.meta),
+  name: stylex.props(styles.name),
+  separator: stylex.props(styles.separator),
+  issue: stylex.props(styles.issue),
+  due: stylex.props(styles.due),
+  dueOver: stylex.props(styles.due, styles.dueOver),
+  completion: stylex.props(styles.completion),
+  progressWrap: stylex.props(styles.progressWrap),
+  progress: stylex.props(styles.progress),
+  progressBar: stylex.props(styles.progressBar),
+  issueLink: stylex.props(styles.issueLink),
+  issueItem: stylex.props(styles.issueItem),
+  issueStateOpen: stylex.props(styles.issueStateOpen),
+  issueStateClosed: stylex.props(styles.issueStateClosed),
+  label: stylex.props(styles.label),
+} as const;
 
 type MilestoneListSearch = {
   orderBy?: string;
@@ -86,29 +123,32 @@ function ProjectMilestonesBody({
   const currentState = search.state ?? "open";
 
   return (
-    <div className="page-wrap-outer">
-      <div className="project-page-wrap">
-        <div className="tab-wrap">
+    <div {...sx.page} data-stylex-owner="project-milestones-page">
+      <div data-stylex-owner="project-milestones-shell">
+        <div {...sx.tabWrap} data-stylex-owner="project-milestones-tab-wrap">
           {booleanField(project.viewerCanUpdate) ? (
-            <div className="pull-right btns">
+            <div data-stylex-owner="project-milestones-new-wrap">
               <Link
                 {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                 to="/$ownerName/$projectName/newMilestoneForm"
                 params={{ ownerName, projectName }}
-                className="ybtn ybtn-success"
+                {...sx.newButton}
+                data-stylex-owner="project-milestones-new"
               >
                 {t("milestone.menu.new")}
               </Link>
             </div>
           ) : null}
 
-          <ul className="nav nav-tabs">
+          <ul {...sx.tabs} data-stylex-owner="project-milestones-tabs">
             {["open", "closed", "all"].map((state) => (
-              <li key={state} className={currentState === state ? "active" : ""}>
+              <li {...sx.tab} data-stylex-owner="project-milestones-tab" key={state}>
                 <Link
                   {...LEGACY_MILESTONE_LIST_LINK_PROPS}
                   to="/$ownerName/$projectName/milestones"
                   params={{ ownerName, projectName }}
+                  {...(currentState === state ? sx.activeTabLink : sx.tabLink)}
+                  data-stylex-owner="project-milestones-tab-link"
                   search={{ state }}
                 >
                   {t(`milestone.state.${state}`)}
@@ -119,16 +159,16 @@ function ProjectMilestonesBody({
         </div>
 
         {milestones.length === 0 ? (
-          <div className="error-wrap">
+          <div data-stylex-owner="project-milestones-empty">
             <i className="ico ico-err1"></i>
             <p>{t("milestone.is.empty")}</p>
           </div>
         ) : (
           <>
-            <div className="filter-wrap milestone">
+            <div {...sx.filterWrap} data-stylex-owner="project-milestones-filter-wrap">
               {milestones.length > 1 ? (
                 <>
-                  <div className="filters">
+                  <div {...sx.filters} data-stylex-owner="project-milestones-filters">
                     <SortLink
                       fieldName="dueDate"
                       fieldText={t("common.order.dueDate")}
@@ -144,10 +184,11 @@ function ProjectMilestonesBody({
                       search={{ ...search, state: currentState }}
                     />
                   </div>
-                  <div className="pull-left search search-bar">
+                  <div {...sx.search} data-stylex-owner="project-milestones-search">
                     <input
                       name="filter"
-                      className="textbox"
+                      {...sx.searchInput}
+                      data-stylex-owner="project-milestones-search-input"
                       type="text"
                       placeholder={t("search.title")}
                       value={filter}
@@ -155,17 +196,21 @@ function ProjectMilestonesBody({
                         setFilter(event.currentTarget.value);
                       }}
                     />
-                    <button type="submit" className="search-btn">
-                      <i className="yobicon-search"></i>
+                    <button
+                      {...sx.searchButton}
+                      data-stylex-owner="project-milestones-search-button"
+                      type="submit"
+                    >
+                      <i {...sx.icon} className="yobicon-search"></i>
                     </button>
                   </div>
                 </>
               ) : null}
             </div>
 
-            <div className="row-fluid">
+            <div data-stylex-owner="project-milestones-row-fluid">
               <div>
-                <ul className="milestones">
+                <ul {...sx.list} data-stylex-owner="project-milestones-list">
                   {milestones.map((milestone) => (
                     <MilestoneRow
                       key={stringField(milestone.id)}
@@ -210,17 +255,10 @@ function SortLink({
       to="/$ownerName/$projectName/milestones"
       params={{ ownerName, projectName }}
       search={{ orderBy: fieldName, orderDir, state: search.state }}
-      className={isActive ? "filter active" : "filter"}
+      {...(isActive ? { ...sx.filterLink, ...sx.filterActive } : sx.filterLink)}
+      data-stylex-owner="project-milestones-sort-link"
     >
-      <i
-        className={
-          isActive
-            ? searchOrderDir === "desc"
-              ? "ico btn-gray-arrow  down "
-              : "ico btn-gray-arrow "
-            : "ico btn-gray-arrow"
-        }
-      ></i>
+      <i className="ico btn-gray-arrow"></i>
       {fieldText}
     </Link>
   );
@@ -248,25 +286,26 @@ function MilestoneRow({
   const dueDateLabel = stringField(milestone.dueDateLabel);
 
   return (
-    <li className="milestone">
-      <div className="infos">
-        <div className="meta-info">
+    <li {...sx.row} data-stylex-owner="project-milestones-item">
+      <div data-stylex-owner="project-milestones-infos">
+        <div {...sx.meta} data-stylex-owner="project-milestones-meta">
           <strong className="version"></strong>
           <Link
             {...LEGACY_MILESTONE_LIST_LINK_PROPS}
             to="/$ownerName/$projectName/milestone/$milestoneId"
             params={{ ownerName, projectName, milestoneId: stringField(milestone.id) }}
             search={{}}
-            className="milestone-name"
+            {...sx.name}
+            data-stylex-owner="project-milestones-name"
           >
             {stringField(milestone.title)}
           </Link>
-          <span className="sp">|</span>
-          <span className="issue-item">{`${closedCount} / ${totalCount}`}</span>
+          <span {...sx.separator}>|</span>
+          <span {...sx.issue}>{`${closedCount} / ${totalCount}`}</span>
           {search.state === "all" ? (
             <>
               <span className="sp">|</span>
-              <span className={isClosed ? "state nm closed" : "state nm open"}>
+              <span style={{ color: isClosed ? "#51aacc" : "#5dbbe0" }}>
                 {t(`milestone.state.${isClosed ? "closed" : "open"}`)}
               </span>
             </>
@@ -274,15 +313,7 @@ function MilestoneRow({
           {dueDateLabel ? (
             <>
               <span className="sp">|</span>
-              <span
-                className={
-                  isClosed
-                    ? "due-date ml5"
-                    : booleanField(milestone.dueDateOverdue)
-                      ? "due-date over"
-                      : "due-date "
-                }
-              >
+              <span {...(booleanField(milestone.dueDateOverdue) ? sx.dueOver : sx.due)}>
                 {t("label.dueDate")}
                 <strong>{dueDateLabel}</strong>
                 {isClosed ? null : (
@@ -291,16 +322,16 @@ function MilestoneRow({
               </span>
             </>
           ) : null}
-          <div className="pull-right">
-            <span className="number completion-rate">
+          <div {...sx.completion}>
+            <span data-stylex-owner="project-milestones-completion">
               {totalCount > 0 ? `${completionPercent} %` : ""}
             </span>
           </div>
         </div>
 
-        <div className="progress-wrap">
-          <div className="progress progress-success">
-            <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+        <div {...sx.progressWrap}>
+          <div {...sx.progress}>
+            <div {...sx.progressBar} style={{ width: `${completionPercent}%` }}></div>
           </div>
         </div>
       </div>
@@ -360,15 +391,16 @@ function MilestoneIssueLink({
   return (
     <Link
       {...LEGACY_MILESTONE_LIST_LINK_PROPS}
-      className="issue-link"
+      {...sx.issueLink}
+      data-stylex-owner="project-milestones-issue-link"
       to="/$ownerName/$projectName/issue/$issueNumber"
       params={{ ownerName, projectName, issueNumber }}
       target="_blank"
       style={style}
     >
-      <div className="issue-item">
-        <span className={`state-label ${state}`}>
-          {state === "closed" ? <i className=" yobicon-checkmark"></i> : null}
+      <div {...sx.issueItem}>
+        <span {...(state === "closed" ? sx.issueStateClosed : sx.issueStateOpen)}>
+          {state === "closed" ? <i className="yobicon-checkmark"></i> : null}
         </span>
         <span className="item-name">
           <span className="number">#{issueNumber}</span>
@@ -376,7 +408,7 @@ function MilestoneIssueLink({
           {sortLabels(issue.labels).map((label) => (
             <span
               key={stringField(label.id)}
-              className="label issue-label list-label active"
+              {...sx.label}
               data-category-id={stringField(label.categoryId)}
               data-label-id={stringField(label.id)}
               style={{ background: cssBackgroundColor(stringField(label.color)) }}
@@ -411,19 +443,6 @@ function sortLabels(labels: YoramLabel[]) {
 
 function booleanField(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";
-}
-
-function projectSearchScopeOrganizationName(project: ProjectContainer, ownerName: string) {
-  const organizationName = stringField(project.organizationName, "");
-  if (organizationName) {
-    return organizationName;
-  }
-  return projectIsProtected(project) ? ownerName : undefined;
-}
-
-function projectIsProtected(project: ProjectContainer) {
-  const record = recordField(project);
-  return booleanField(record.isProtected) || stringField(record.projectScope, "") === "protected";
 }
 
 function numberField(value: unknown) {

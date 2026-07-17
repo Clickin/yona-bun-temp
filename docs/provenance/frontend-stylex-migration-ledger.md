@@ -17,7 +17,7 @@ directly in the owning `stylex.create`. The active correction inventory and resu
 ## Progress accounting snapshot
 
 Slice ordinals identify reviewable migrations; they are not a completion percentage. The
-post-Batch227 snapshot is 37 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
+post-Batch228 snapshot is 40 of 116 route TSX files importing StyleX, 82 of 116 route TSX files
 still containing `className` syntax, 7,865 lines in `frontend/src/app.css`, and a
 25,177-line / 526,260-byte generated legacy fallback with SHA-256
 `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`. No major Bootstrap,
@@ -311,3 +311,9 @@ module is retired only after every owned selector row has desktop and 390 px evi
 5. Wave 4: complete route families and all empty/loading/error/populated/permission states.
 6. Wave 5: Markdown/content and plugin-visible surfaces; remove a plugin only with its last owner.
 7. Wave 6: fallback retirement only after the complete ledger and deletion smoke are green.
+
+## Batch 228 migration rows
+
+- `/$ownerName/$projectName/branches`: migrated branch table/head/row/identity/commit/pull-request/action owners from `code/branches.scala.html` and `partial_branchrow.scala.html`; route-local theme contains paint only. Focused `stylex-project-branches.e2e.ts` passed in the assembled 6/6 gate.
+- `/$ownerName/$projectName/deleteform`: migrated delete action/modal/header/body/footer/backdrop owners from `project/delete.scala.html` and setting-menu/project shell partials; React modal and mutation behavior remain unchanged. Focused `stylex-project-delete-form.e2e.ts` passed in the assembled 6/6 gate.
+- `/$ownerName/$projectName/milestones`: migrated populated milestone tabs/filter/list/progress/issue owners from `milestone/list.scala.html` and project shell partials; route-local theme contains paint only. Focused `stylex-project-milestones.e2e.ts` passed in the assembled 6/6 gate.

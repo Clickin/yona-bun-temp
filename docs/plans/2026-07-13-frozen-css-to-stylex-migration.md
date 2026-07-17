@@ -325,6 +325,13 @@ the browser's two-pixel scrollbar contribution without weakening visible contain
 format, and diff checks pass; the production build and fallback hash remain queued for the final
 turn gate.
 
+Batch 228 applied the batched workflow to project branches, project deletion confirmation, and the
+populated milestone list. The assembled Playwright invocation used three workers and finished GREEN
+6/6 in 13.8 seconds. The branch wave replaced unsupported pseudo selectors with a React-owned state
+dot; delete and milestone fixtures were aligned to the `/api/v1/owners/**/projects/**` REST contract.
+Typecheck, Vitest 11/11, format/diff checks, production build, StyleX verifier, and unchanged
+fallback hash `6417f445…16f` all pass.
+
 ## 6. E2E selector migration policy
 
 Selector updates follow this order:

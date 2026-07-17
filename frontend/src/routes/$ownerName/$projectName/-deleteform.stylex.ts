@@ -1,0 +1,24 @@
+import * as stylex from "@stylexjs/stylex";
+
+// project/delete.scala.html and frozen Bootstrap/Yobi modal/button paint.
+export const projectDeleteColors = stylex.defineVars({
+  actionBorder: "rgba(0, 0, 0, 0.15)",
+  actionHoverBorder: "rgba(0, 0, 0, 0.25)",
+  actionHoverSurface: "#f1f1f1",
+  actionHoverText: "#292929",
+  actionShadow: "0 1px 0 rgba(0, 0, 0, 0.05)",
+  actionSurface: "#ffffff",
+  actionText: "#333333",
+  backdrop: "#000000",
+  closeTextShadow: "0 1px 0 #ffffff",
+  dangerBorder: "#b13427",
+  dangerSurface: "#c93426",
+  footerBorder: "#dddddd",
+  footerShadow: "inset 0 1px 0 #ffffff",
+  footerSurface: "#f5f5f5",
+  modalBorder: "rgba(0, 0, 0, 0.3)",
+  modalShadow: "0 3px 7px rgba(0, 0, 0, 0.3)",
+  modalSurface: "#ffffff",
+  modalText: "#333333",
+  primaryText: "#ffffff",
+});
