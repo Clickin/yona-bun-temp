@@ -6364,20 +6364,6 @@ div.markdown-preview {
   position: relative;
 }
 
-.issue-form-page-wrap .subtask-message {
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  min-height: 30px;
-  font-family: inherit;
-  background: #fff;
-  border-radius: 0;
-}
-
-.issue-form-page-wrap .subtask-parent-control[hidden] {
-  display: none;
-}
-
 .issue-form-page-wrap .subtask-wrap select,
 .issue-form-page-wrap .right-menu select,
 .issue-form-page-wrap .issue-combobox > input,

@@ -1095,7 +1095,9 @@ function ProjectIssueFormBody({
                       </div>
                       <button
                         type="button"
-                        className={`span1 subtask-message${isSubtaskOptionHighlighted ? " option-on" : ""}`}
+                        {...stylex.props(issueFormStyles.subtaskMessage)}
+                        className={`span1 subtask-message${isSubtaskOptionHighlighted ? " option-on" : ""} ${stylex.props(issueFormStyles.subtaskMessage).className ?? ""}`.trim()}
+                        data-stylex-owner="project-issue-form-subtask-message"
                         aria-expanded={isSubtaskOptionVisible}
                         onClick={() =>
                           setIsSubtaskOptionVisible((current) => {
@@ -1580,7 +1582,12 @@ function SubtaskSelects({
           ))}
         </select>
       </div>
-      <div className="span6 subtask-parent-control" hidden={isCrossProject}>
+      <div
+        {...stylex.props(isCrossProject && issueFormStyles.subtaskParentControlHidden)}
+        className={`span6 subtask-parent-control ${stylex.props(isCrossProject && issueFormStyles.subtaskParentControlHidden).className ?? ""}`.trim()}
+        data-stylex-owner="project-issue-form-subtask-parent-control"
+        hidden={isCrossProject}
+      >
         <div
           id="s2id_parentId"
           className={`select2-container fullsize${parentOpen ? " select2-dropdown-open select2-container-active" : ""}`}

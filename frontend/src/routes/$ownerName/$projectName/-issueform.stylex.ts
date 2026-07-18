@@ -10,6 +10,16 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  subtaskMessage: {
+    position: "relative",
+    zIndex: 1,
+    boxSizing: "border-box",
+    minHeight: "30px",
+    fontFamily: "inherit",
+    backgroundColor: "#fff",
+    borderRadius: "0",
+  },
+  subtaskParentControlHidden: { display: "none" },
   dueDateSearchBar: { position: "relative" },
   dueDateInput: {
     boxSizing: "border-box",
