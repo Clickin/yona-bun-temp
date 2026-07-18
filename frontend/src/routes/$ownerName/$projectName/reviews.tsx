@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { type CSSProperties, type FormEvent } from "react";
+import { type FormEvent } from "react";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
   projectReviewsQueryOptions,
@@ -16,6 +16,18 @@ import { SitePagination } from "../../sites/-pagination";
 import { reviewsColors, reviewsLayout } from "./-reviews.stylex";
 
 const styles = stylex.create({
+  sideEffectButton: {
+    background: "none",
+    border: 0,
+    color: "inherit",
+    cursor: "pointer",
+    display: "inline",
+    font: "inherit",
+    margin: 0,
+    padding: 0,
+    textAlign: "inherit",
+    width: "auto",
+  },
   sidebar: { borderColor: reviewsColors.border, borderStyle: "solid", borderWidth: "1px" },
   searchInput: {
     borderColor: reviewsColors.border,
@@ -58,19 +70,6 @@ type ProjectReviewsSearch = {
   pageNum: number;
   participantId: number;
   state: string;
-};
-
-const legacyInlineSideEffectButtonStyle: CSSProperties = {
-  background: "none",
-  border: 0,
-  color: "inherit",
-  cursor: "pointer",
-  display: "inline",
-  font: "inherit",
-  margin: 0,
-  padding: 0,
-  textAlign: "inherit",
-  width: "auto",
 };
 
 export const Route = createFileRoute("/$ownerName/$projectName/reviews")({
@@ -248,8 +247,7 @@ function ProjectReviewsBody({
           <div className="pull-right filters">
             <button
               type="button"
-              {...stylex.props(styles.sort)}
-              className="filter"
+              className={`${stylex.props(styles.sort).className} ${stylex.props(styles.sideEffectButton).className} filter`}
               data-stylex-owner="project-reviews-sort"
               onClick={() => {
                 pushReviews({
@@ -258,7 +256,6 @@ function ProjectReviewsBody({
                   pageNum: 1,
                 });
               }}
-              style={legacyInlineSideEffectButtonStyle}
             >
               <i
                 className={`ico btn-gray-arrow ${

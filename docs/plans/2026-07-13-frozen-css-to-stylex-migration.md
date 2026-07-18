@@ -3568,3 +3568,5 @@ Batch 398 applies the workflow to the authenticated user-files attachment list. 
 Batch 399 applies the workflow to the authenticated project pull-request list row state. The conditional two-column `cursor:pointer` declaration moves to route-local conditional StyleX while preserving row click behavior, legacy classes, copy, and responsive geometry; the focused row-pointer test covers the owner and former inline removal.
 
 Batch 400 applies the workflow to the authenticated commit review textarea state. The fixed review textarea height moves to a route-local StyleX owner while preserving editor DOM, review interaction, copy, and responsive geometry; the focused textarea test covers the legacy source contract and owner.
+
+Batch 401 applies the workflow to the authenticated project review sort action. Fixed side-effect button reset declarations move to a route-local StyleX owner while preserving sort behavior, legacy classes, copy, and responsive geometry; the focused side-effect test covers the owner and former inline removal.
