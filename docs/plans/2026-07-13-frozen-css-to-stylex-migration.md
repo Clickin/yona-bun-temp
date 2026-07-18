@@ -3331,6 +3331,8 @@ Batch 288 applies the workflow to the authenticated project code-file `#spin` re
 
 Batch 289 applies the workflow to the authenticated project setting default-branch Select2 residual. The fixed 220px container/dropdown/select geometry moved to route-local StyleX while conditional display remains state-owned; the focused setting test covers interaction and desktop/mobile containment.
 
+Batch 290 applies the workflow to authenticated project commit-detail conditional review states. Boolean display declarations for review/edit/delete surfaces moved to conditional StyleX variants; the focused review residual test covers visible/hidden interaction and no inline styles.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

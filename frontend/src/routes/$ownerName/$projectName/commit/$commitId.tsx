@@ -381,7 +381,8 @@ function ProjectCommitDetailBody({
                   ))}
                   <div
                     className="btnPop"
-                    style={blockReviewButtonVisible ? { display: "block" } : undefined}
+                    {...stylex.props(blockReviewButtonVisible && styles.blockReviewButtonVisible)}
+                    data-stylex-owner="commit-detail-block-review-button"
                   >
                     <button
                       type="button"
@@ -1223,7 +1224,8 @@ function CodeCommentThreadView({
                 />
                 <div
                   id={`comment-body-${comment.id}`}
-                  style={isEditing ? { display: "none" } : undefined}
+                  {...stylex.props(isEditing && styles.commentBodyHidden)}
+                  data-stylex-owner="commit-detail-comment-body"
                 >
                   <div
                     className="comment-body markdown-wrap"
@@ -1378,7 +1380,8 @@ function CodeCommentUpdateForm({
     <div
       id={`comment-editform-${commentId}`}
       className="comment-update-form"
-      style={isEditing ? { display: "block" } : undefined}
+      {...stylex.props(isEditing && styles.commentUpdateFormVisible)}
+      data-stylex-owner="commit-detail-comment-update-form"
     >
       <form
         action={action}
@@ -1604,7 +1607,12 @@ function ReviewForm({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div id="review-form" className="review-form" style={isOpen ? { display: "block" } : undefined}>
+    <div
+      id="review-form"
+      className="review-form"
+      {...stylex.props(isOpen && styles.reviewFormVisible)}
+      data-stylex-owner="commit-detail-review-form"
+    >
       <form action={action} method="post" encType="multipart/form-data">
         <div className="author-info-wrap pull-left hide-in-mobile">
           <div className="author-info">
@@ -1842,7 +1850,8 @@ function CommentDeleteModal({
       <div
         id="comment-delete-modal"
         className={isOpen ? "modal hide fade in" : "modal hide fade"}
-        style={isOpen ? { display: "block" } : undefined}
+        {...stylex.props(isOpen && styles.commentDeleteModalVisible)}
+        data-stylex-owner="commit-detail-comment-delete-modal"
       >
         <div className="modal-header">
           <button type="button" className="close" onClick={onClose}>

@@ -21,8 +21,19 @@ test("commit detail owns static review form and original-message styles", async 
   expect(route).toContain('data-stylex-owner="commit-detail-thread-review-form"');
   expect(route).toContain('data-stylex-owner="commit-detail-original-message-toggle"');
   expect(route).not.toContain('style={{ display: "block" }}');
+  expect(route).not.toContain(
+    'style={blockReviewButtonVisible ? { display: "block" } : undefined}',
+  );
+  expect(route).not.toContain('style={isEditing ? { display: "none" } : undefined}');
+  expect(route).not.toContain('style={isEditing ? { display: "block" } : undefined}');
+  expect(route).not.toContain('style={isOpen ? { display: "block" } : undefined}');
   expect(route).toContain("style={{ border: 0 }}");
   expect(stylex).toContain('threadReviewForm: { display: "block" }');
+  expect(stylex).toContain('blockReviewButtonVisible: { display: "block" }');
+  expect(stylex).toContain('commentBodyHidden: { display: "none" }');
+  expect(stylex).toContain('commentUpdateFormVisible: { display: "block" }');
+  expect(stylex).toContain('reviewFormVisible: { display: "block" }');
+  expect(stylex).toContain('commentDeleteModalVisible: { display: "block" }');
   expect(stylex).toContain("originalMessageToggle: {");
 
   await mockCommit(page);
@@ -47,6 +58,57 @@ test("commit detail owns static review form and original-message styles", async 
     viewport: window.innerWidth,
   }));
   expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
+});
+
+test("commit detail maps conditional review visibility to StyleX without inline styles", async ({
+  page,
+}) => {
+  await mockCommit(page);
+  await page.goto(`${basePath}/weblabs/demo/commit/abc123`, { waitUntil: "commit" });
+
+  const blockReviewButton = page.locator('[data-stylex-owner="commit-detail-block-review-button"]');
+  await expect(blockReviewButton).toBeHidden();
+  await expect(blockReviewButton).not.toHaveAttribute("style");
+
+  await page
+    .locator(".diff-partial-codeline")
+    .first()
+    .evaluate((element) => {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+  await page.locator('[data-stylex-owner="commit-detail-diff-body"]').dispatchEvent("mouseup");
+  await expect(blockReviewButton).toBeVisible();
+  await expect(blockReviewButton).toHaveCSS("display", "block");
+  await expect(blockReviewButton).not.toHaveAttribute("style");
+
+  const commentBody = page.locator('[data-stylex-owner="commit-detail-comment-body"]');
+  const commentUpdateForm = page.locator('[data-stylex-owner="commit-detail-comment-update-form"]');
+  await expect(commentBody).toBeVisible();
+  await expect(commentBody).not.toHaveAttribute("style");
+  await expect(commentUpdateForm).toBeHidden();
+  await expect(commentUpdateForm).not.toHaveAttribute("style");
+
+  await page.locator('button[data-comment-id="501"]').first().click();
+  await expect(commentBody).toBeHidden();
+  await expect(commentBody).not.toHaveAttribute("style");
+  await expect(commentUpdateForm).toBeVisible();
+  await expect(commentUpdateForm).toHaveCSS("display", "block");
+  await expect(commentUpdateForm).not.toHaveAttribute("style");
+  await commentUpdateForm.locator(".ybtn-cancel").click();
+  await expect(commentBody).toBeVisible();
+  await expect(commentUpdateForm).toBeHidden();
+
+  const reviewForm = page.locator('[data-stylex-owner="commit-detail-review-form"]');
+  await expect(reviewForm).toBeHidden();
+  await expect(reviewForm).not.toHaveAttribute("style");
+
+  const deleteModal = page.locator('[data-stylex-owner="commit-detail-comment-delete-modal"]');
+  await expect(deleteModal).toBeHidden();
+  await expect(deleteModal).not.toHaveAttribute("style");
 });
 
 async function mockCommit(page: Page) {
@@ -88,7 +150,12 @@ async function mockCommit(page: Page) {
           authorName: "admin",
           authorDate: "today",
         },
-        files: [],
+        files: [
+          {
+            path: "src/main.rs",
+            patch: "@@ -1 +1 @@\n-old line\n+new line",
+          },
+        ],
         threads: [
           {
             id: 77,
@@ -109,7 +176,7 @@ async function mockCommit(page: Page) {
                 authorLoginId: "admin",
                 authorAvatarUrl: "/assets/images/default-avatar-32.png",
                 canDelete: false,
-                canUpdate: false,
+                canUpdate: true,
                 contentsHtml: "",
                 contentsMarkdown: "Visible note\n--- original ---\nOriginal note",
                 createdLabel: "today",

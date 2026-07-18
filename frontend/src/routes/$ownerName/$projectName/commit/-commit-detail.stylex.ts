@@ -10,9 +10,14 @@ export const commitDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  blockReviewButtonVisible: { display: "block" },
+  commentBodyHidden: { display: "none" },
+  commentUpdateFormVisible: { display: "block" },
   browseTabs: { marginBottom: "20px" },
   reviewTabs: { marginBottom: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
+  reviewFormVisible: { display: "block" },
+  commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
   originalMessageToggle: {
     paddingLeft: "5px",
