@@ -455,7 +455,8 @@ function MilestoneFileUploader() {
         <span className="plain">{t("common.attach.clickbutton")}</span>
         <span
           className="help help-pastable"
-          style={pasteSupported ? { display: "block" } : undefined}
+          {...(pasteSupported ? stylex.props(newMilestoneFormStyles.pasteHelpVisible) : {})}
+          data-stylex-owner="project-milestone-paste-help"
         >
           {t("common.attach.pastehere")}
         </span>

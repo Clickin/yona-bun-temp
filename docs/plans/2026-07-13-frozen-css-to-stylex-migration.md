@@ -3436,6 +3436,8 @@ Batch 336 applies the workflow to the authenticated organization setting name-va
 
 Batch 337 applies the workflow to the authenticated new pull-request form upload state. The conditional paste-help `display:block` declaration moves to route-local conditional StyleX while preserving the legacy upload partial, copy, capability detection, and responsive upload geometry; the focused new-pull-request-form test covers legacy source evidence and absence of the former inline display.
 
+Batch 338 applies the workflow to the authenticated new milestone form upload state. The conditional paste-help `display:block` declaration moves to route-local conditional StyleX while preserving the legacy upload partial, copy, capability detection, and responsive upload geometry; the focused new-milestone-form test covers legacy source evidence and absence of the former inline display.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

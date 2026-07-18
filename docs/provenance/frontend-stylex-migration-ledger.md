@@ -837,3 +837,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 337
 
 - Authenticated new pull-request form upload state: moved conditional paste-help `display:block` into `pasteHelpVisible`, preserving the legacy upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-new-pull-request-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 338
+
+- Authenticated new milestone form upload state: moved conditional paste-help `display:block` into `newMilestoneFormStyles.pasteHelpVisible`, preserving the legacy upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-new-milestone-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
