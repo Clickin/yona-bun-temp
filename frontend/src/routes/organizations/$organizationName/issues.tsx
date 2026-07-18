@@ -765,9 +765,9 @@ function OrganizationIssueItem({
                 pageNum: 1,
                 state: state === "closed" ? "closed" : "open",
               }}
-              className="label issue-label list-label"
+              {...stylex.props(styles.issueLabelBackground(label.color))}
+              className={`${stylex.props(styles.issueLabelBackground(label.color)).className} label issue-label list-label`}
               data-label-id={label.id}
-              style={{ background: label.color }}
               key={String(label.id)}
             >
               {label.name}

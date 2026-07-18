@@ -5,6 +5,13 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
+server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
+owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused
+milestone-detail label test covers the legacy partial, computed parent/child colors, no literal
+inline background declarations, and mobile containment; live legacy visual parity remains
+unverified.
+
 Batch 302 applies the workflow to the authenticated project pull-request two-column state. The
 conditional left search-column `display:none` declaration now uses a route-local StyleX variant
 backed by the legacy `yona.twoColumnMode.js` hide behavior; dynamic row cursor and generated
@@ -3372,6 +3379,8 @@ Batch 305 applies the workflow to the authenticated `/user/issues` populated iss
 Batch 306 applies the workflow to the populated public `/$user` profile avatar and issue-label dynamic paint owners. Its focused browser gate verifies the legacy source declarations, Dynamic StyleX custom-property carriers, computed output, and responsive containment before the shared gates are run for the supervised batch.
 
 Batch 307 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber` loaded issue-detail label state. Arbitrary server-provided label background colors moved to route-local Dynamic StyleX across the selected-label control, issue labels, child-issue labels, and timeline label boxes while preserving legacy classes, links, contrast, order, and geometry; the focused issue-detail residual test covers runtime colors, custom-property carriers, and the absence of literal background declarations.
+
+Batch 309 applies the workflow to the authenticated `/organizations/$organizationName/issues` populated issue-label state. The server-provided label background color moves to the route-local Dynamic StyleX owner while preserving the legacy label link, classes, copy, filtering target, and responsive issue-row geometry; the focused organization-issue label test covers the runtime custom-property carrier, computed color, and absence of a literal background declaration.
 
 
 
