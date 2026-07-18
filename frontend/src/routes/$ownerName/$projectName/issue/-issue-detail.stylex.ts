@@ -9,6 +9,7 @@ export const issueDetailColors = stylex.defineVars({
 
 export const styles = stylex.create({
   labelControl: { display: "inline-block" },
+  labelSearchInput: { width: "10px" },
   labelColor: (backgroundColor: string) => ({
     backgroundColor,
   }),

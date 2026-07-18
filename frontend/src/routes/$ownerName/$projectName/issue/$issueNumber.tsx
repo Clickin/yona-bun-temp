@@ -2080,7 +2080,8 @@ function LegacyLabelControl({
             className="select2-input"
             aria-label={t("label.select")}
             autoComplete="off"
-            style={{ width: "10px" }}
+            {...stylex.props(styles.labelSearchInput)}
+            data-stylex-owner="project-issue-detail-label-search-input"
             onFocus={() => setOpen(true)}
             onClick={() => setOpen(true)}
           />

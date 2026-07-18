@@ -973,3 +973,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 373
 
 - Authenticated project-setting description state: moved the runtime overview textarea height from the literal inline declaration into the route-local Dynamic StyleX `styles.textareaHeight(...)`, preserving the legacy overflow, wrapping, resize behavior, copy, and responsive geometry. Focused `stylex-project-setting-overview-height-dynamic.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline height; live legacy visual parity remains unverified.
+
+## Batch 374
+
+- Authenticated issue-detail label search state: moved the fixed Select2 search-input width from the literal inline declaration into the route-local `styles.labelSearchInput`, preserving the legacy label-picker DOM, focus interaction, and responsive geometry. Focused `stylex-project-issue-detail-label-search.e2e.ts` verifies the legacy Select2 source contract, stable owner, StyleX source, and absence of the former inline width; live legacy visual parity remains unverified.
