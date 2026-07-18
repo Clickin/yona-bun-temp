@@ -56,6 +56,7 @@ export const styles = stylex.create({
   originalMessageToggle: {
     paddingLeft: "5px",
     paddingRight: "5px",
+    borderWidth: "0px",
   },
   editorTabContent: {
     position: "relative",

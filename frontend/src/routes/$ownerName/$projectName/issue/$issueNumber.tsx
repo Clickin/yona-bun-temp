@@ -3342,7 +3342,6 @@ function OriginalMessageMarkdown({
         type="button"
         className={stylex.props(styles.originalMessageToggle).className}
         data-stylex-owner="project-issue-detail-original-message-toggle"
-        style={{ border: 0 }}
         onClick={() => setShowOriginalMessage((current) => !current)}
       >
         ...

@@ -27,9 +27,15 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(legacyView).toContain("@common.tasklistBar()");
   expect(legacyTasklist).toContain('class="bar red" style="width: 0;"');
   expect(legacySubtasks).toContain('style="width: @percentage%;" title="Subtask"');
-  expect(route).toContain("style={{ border: 0 }}");
+  const legacyOriginalMessage = readFileSync(
+    "../yona-original/public/javascripts/common/yobi.OriginalMessage.js",
+    "utf8",
+  );
+  expect(legacyOriginalMessage).toContain(".css('border', 0)");
+  expect(route).not.toContain("style={{ border: 0 }}");
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
+  expect(styles).toContain('borderWidth: "0px"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-editor-tab-content"');
   expect(route).toContain("data-stylex-owner-instance={wrapId}");
   expect(styles).toContain("originalMessageToggle: {");
@@ -65,6 +71,11 @@ test("issue detail owns original-message and editor static declarations", async 
   const toggle = page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"]');
   await expect(toggle).toHaveCSS("padding-left", "5px");
   await expect(toggle).toHaveCSS("padding-right", "5px");
+  await expect(toggle).toHaveCSS("border-top-width", "0px");
+  await expect(toggle).toHaveCSS("border-right-width", "0px");
+  await expect(toggle).toHaveCSS("border-bottom-width", "0px");
+  await expect(toggle).toHaveCSS("border-left-width", "0px");
+  await expect(toggle).not.toHaveAttribute("style", /border/);
   await expect(
     page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"] + div'),
   ).toBeHidden();
@@ -86,6 +97,10 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  const toggleBox = await toggle.boundingBox();
+  expect(toggleBox).not.toBeNull();
+  expect(toggleBox!.x).toBeGreaterThanOrEqual(0);
+  expect(toggleBox!.x + toggleBox!.width).toBeLessThanOrEqual(390);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);
