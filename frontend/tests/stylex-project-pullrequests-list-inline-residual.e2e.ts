@@ -6,7 +6,7 @@ const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${
 
 test.use({ locale: "en-US" });
 
-test("moves static project pull-request list spacing into StyleX", async ({ page }) => {
+test("moves static spacing and dynamic review progress into StyleX", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
   const stylex = readFileSync(
     "src/routes/$ownerName/$projectName/-pull-requests.stylex.ts",
@@ -22,7 +22,8 @@ test("moves static project pull-request list spacing into StyleX", async ({ page
   expect(route).toContain('data-stylex-owner="project-pullrequests-review-progress"');
   expect(route).toContain('data-stylex-owner="project-pullrequests-reviewer-count"');
   expect(route).toContain('data-stylex-owner="project-pullrequests-pushed-branch"');
-  expect(route).toContain("style={{ width: `${percent}%` }}");
+  expect(route).toContain("sx.reviewProgressBar(`${percent}%`)");
+  expect(route).not.toContain("style={{ width: `${percent}%` }}");
   expect(route).not.toContain("style={{ paddingTop: 0");
   expect(route).not.toContain("style={{ marginRight: 10 }}");
   expect(route).not.toContain("style={{ marginTop: -1 }}");
@@ -39,10 +40,15 @@ test("moves static project pull-request list spacing into StyleX", async ({ page
     await page.goto(`${basePath}/admin/sample/pullRequests?filter=row`);
     await expect(owner(page, "project-pullrequests-search-column")).toHaveCSS("padding-top", "0px");
     const progress = owner(page, "project-pullrequests-review-progress");
+    const progressFill = owner(page, "project-pullrequests-review-progress-fill");
     const reviewer = owner(page, "project-pullrequests-reviewer-count");
     const pushed = owner(page, "project-pullrequests-pushed-branch");
     await expect(progress).toBeVisible();
     await expect(progress).toHaveCSS("margin-right", "10px");
+    await expect(progressFill).toHaveCSS("width", "15px");
+    const inlineStyle = await progressFill.getAttribute("style");
+    expect(inlineStyle).toContain("--x-width: 50%");
+    expect(inlineStyle).not.toMatch(/(?:^|;)\s*width\s*:/u);
     await expect(reviewer).toHaveCSS("margin-top", "-1px");
     await expect(pushed).toHaveCount(0);
     await expect(owner(page, "project-pullrequests-rows")).toBeVisible();

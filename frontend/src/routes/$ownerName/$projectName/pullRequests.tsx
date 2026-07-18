@@ -37,6 +37,7 @@ const sx = {
   tabs: stylex.props(styles.tabs),
   recentlyPushedBranch: stylex.props(styles.recentlyPushedBranch),
   reviewProgressItem: stylex.props(styles.reviewProgressItem),
+  reviewProgressBar: (width: string) => stylex.props(styles.reviewProgressBar(width)),
   reviewerCount: stylex.props(styles.reviewerCount),
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
@@ -723,6 +724,7 @@ function ProjectPullRequestRow({
     pullRequestNumber: String(pullRequest.pullRequestNumber),
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
+  const reviewProgressBar = sx.reviewProgressBar(`${percent}%`);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const toBranchClass = pullRequest.toBranch === defaultBranch ? "to-default-branch" : "to-branch";
   const titleParts = splitHeaderWordsInBrackets(pullRequest.title);
@@ -815,7 +817,11 @@ function ProjectPullRequestRow({
             >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
-                <div className="bar orange" style={{ width: `${percent}%` }}></div>
+                <div
+                  {...reviewProgressBar}
+                  className={`${reviewProgressBar.className} bar orange`}
+                  data-stylex-owner="project-pullrequests-review-progress-fill"
+                ></div>
               </div>
               <Link
                 to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes"

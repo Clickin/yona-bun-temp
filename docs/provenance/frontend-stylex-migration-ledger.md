@@ -595,6 +595,18 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - `/$ownerName/$projectName/code/$branch` populated/empty folder state: moved the legacy fixed spinner position and empty-folder warning border/padding declarations into `-code-branch.stylex.ts` owners, preserving branch picker/list rendering, legacy classes, and React/TanStack navigation/query behavior. Dynamic branch/list fallback remains unchanged. Focused `stylex-project-code-branch-inline-residual.e2e.ts` passed desktop/mobile empty-folder fixtures.
 
+## Batch 275
+
+- `/$ownerName/$projectName/pullRequests` populated review-progress state: moved the API-derived comment-thread percentage width into the route-local Dynamic StyleX function while preserving the legacy `upload-progress`, `bar orange`, reviewer, branch, and row behavior. Conditional/stateful row and plugin-sensitive declarations remain unchanged. Focused `stylex-project-pullrequests-list-inline-residual.e2e.ts` passed desktop/mobile populated fixtures.
+
 ## Batch 276
 
 - `/$ownerName/$projectName` project-home populated milestone/dashboard states: moved server-derived completion percentage widths into `-project-home.stylex.ts` Dynamic StyleX `progressBar` owners while preserving legacy progress/bar classes, conditional state classes, and dashboard behavior. Focused `stylex-project-home-progress.e2e.ts` passed with a 50% milestone fixture and no inline `width`; live legacy visual parity remains unverified.
+
+## Batch 277
+
+- `/$ownerName/$projectName/issues` populated issue-list state: moved API-derived subtask and selected-milestone completion percentage widths into `-issues.stylex.ts` Dynamic StyleX `progressBar` owners while preserving `bar`/`done`/`red` classes and issue/milestone behavior. Focused `stylex-project-issues-progress-inline-residual.e2e.ts` covers both 50% widths and mobile containment; live legacy visual parity remains unverified.
+
+## Batch 278
+
+- `/$ownerName/$projectName/milestone/$milestoneId` loaded milestone detail: moved server-derived milestone completion and child subtask percentage widths into `-milestone-detail.stylex.ts` Dynamic StyleX `progressBar` owners, preserving legacy progress/bar and conditional `red`/`done` classes. Existing focused `stylex-project-milestone-detail-inline-residual.e2e.ts` covers the 50% runtime carrier and absence of inline width; live legacy visual parity remains unverified.

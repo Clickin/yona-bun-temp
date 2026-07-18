@@ -42,6 +42,7 @@ export const styles = stylex.create({
   },
   recentlyPushedBranch: { fontWeight: "700", marginLeft: "5px" },
   reviewProgressItem: { marginRight: "10px" },
+  reviewProgressBar: (width) => ({ width }),
   reviewerCount: { marginTop: "-1px" },
   badge: { color: pullRequestColors.badge, fontWeight: "700", marginLeft: "4px" },
   content: { clear: "both", paddingTop: "15px" },
