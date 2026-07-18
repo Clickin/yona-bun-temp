@@ -2094,9 +2094,9 @@ function IssueSubtaskSummary({
             }`}
           >
             <div
-              className={`bar ${percentage === 100 ? "done" : "red"}`}
-              style={{ width: `${percentage}%` }}
+              className={`${stylex.props(styles.progressBar(`${percentage}%`)).className} bar ${percentage === 100 ? "done" : "red"}`}
               title="Subtask"
+              data-stylex-owner="project-issues-subtask-progress-bar"
             ></div>
           </div>
           <span
@@ -2744,7 +2744,10 @@ function SearchMilestoneStatus({
 
       <div className="progress-wrap">
         <div className="progress progress-success nm">
-          <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+          <div
+            className={`${stylex.props(styles.progressBar(`${completionPercent}%`)).className} bar`}
+            data-stylex-owner="project-issues-milestone-progress-bar"
+          ></div>
         </div>
         <div className="progress-info">
           <span className="pull-right">

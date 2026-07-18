@@ -6,6 +6,7 @@ export const styles = stylex.create({
   downloadWrap: { padding: "10px" },
   keymapWrap: { marginLeft: "55px", padding: "10px 0" },
   manageLabel: { marginLeft: "2px" },
+  progressBar: (width: string) => ({ width }),
   relativeAnchor: { position: "relative" },
   results: { backgroundColor: issuesTheme.resultsSurface },
 });
