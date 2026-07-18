@@ -124,6 +124,9 @@ const styles = stylex.create({
     whiteSpace: "nowrap",
     zIndex: "2",
   },
+  sendActionWrap: {
+    textAlign: "center",
+  },
   successAlert: {
     padding: "8px 35px 8px 14px",
     marginBottom: "20px",
@@ -510,7 +513,11 @@ function MailBody({
             </div>
           </div>
 
-          <div className="span12 mail-btn-wrap">
+          <div
+            {...stylex.props(styles.sendActionWrap)}
+            className={`span12 mail-btn-wrap ${stylex.props(styles.sendActionWrap).className ?? ""}`.trim()}
+            data-stylex-owner="site-mail-send-action-wrap"
+          >
             <button
               {...stylex.props(styles.sendAction)}
               data-stylex-owner="site-mail-send-action"
