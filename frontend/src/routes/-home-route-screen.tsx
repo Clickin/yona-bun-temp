@@ -827,7 +827,12 @@ function NotificationStreamItem({ notification }: { notification: NotificationIt
             data-stylex-owner="authenticated-home-notification-message-wrap"
             id={`message-${notification.id}`}
             ref={messageWrapRef}
-            style={expandedMinHeight ? { minHeight: expandedMinHeight } : undefined}
+            {...(expandedMinHeight
+              ? stylex.props(
+                  authenticatedHomeNotificationRowStyles.expandedMinHeight(expandedMinHeight),
+                )
+              : {})}
+            data-stylex-part="authenticated-home-notification-expanded-height"
           >
             <div
               {...stylex.props(authenticatedHomeNotificationRowStyles.message)}
@@ -2656,6 +2661,7 @@ const authenticatedHomeNotificationPaginationStyles = stylex.create({
 });
 
 const authenticatedHomeNotificationRowStyles = stylex.create({
+  expandedMinHeight: (height: string) => ({ minHeight: height }),
   row: {
     borderBottomColor: homeColors.authenticatedHomeNotificationRowText,
     borderBottomStyle: "solid",

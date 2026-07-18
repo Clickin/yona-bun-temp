@@ -3607,3 +3607,5 @@ Batch 418 applies the workflow to the issue-detail conditional visibility state.
 Batch 419 applies the workflow to the public projects pagination sprite state. Four runtime sprite custom-property consumers move to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused pagination-sprite test covers all consumers.
 
 Batch 420 applies the workflow to the signup validation popover state. Runtime left/top coordinates move from inline CSS custom-property carriers into a route-local Dynamic StyleX owner while preserving validation popover DOM, copy, interaction, and placement; the focused validation-popover test covers the dynamic owner.
+
+Batch 421 applies the workflow to the authenticated home notification state. The runtime expanded notification `minHeight` measurement moves into a route-local Dynamic StyleX owner while preserving notification DOM, expansion behavior, copy, and geometry; the focused notification-height test covers the dynamic owner.
