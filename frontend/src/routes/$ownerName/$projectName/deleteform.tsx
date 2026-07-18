@@ -117,6 +117,7 @@ const styles = stylex.create({
   },
   modalClosed: { display: "none" },
   modalOpen: { display: "block" },
+  codeMenuHidden: { display: "none" },
   header: {
     borderBottomColor: projectDeleteColors.footerBorder,
     borderBottomStyle: "solid",
@@ -569,7 +570,8 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={showCode ? undefined : { display: "none" }}
+        {...(showCode ? {} : stylex.props(styles.codeMenuHidden))}
+        data-stylex-owner="project-delete-code-menu"
       >
         <Link
           activeOptions={legacyProjectDeleteLinkActiveOptions}
