@@ -1160,7 +1160,12 @@ function PostCommentForm({
       >
         <div className="write-comment-wrap">
           <div className="textarea-box">
-            <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
+            <textarea
+              className="comment disabled"
+              disabled
+              {...stylex.props(styles.disabledComment)}
+              data-stylex-owner="post-detail-disabled-comment"
+            ></textarea>
           </div>
           <div className="right-txt mt10">
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>

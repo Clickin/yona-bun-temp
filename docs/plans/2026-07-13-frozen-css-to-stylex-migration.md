@@ -3486,6 +3486,8 @@ Batch 361 applies the workflow to the authenticated board-post modal states. The
 
 Batch 362 applies the workflow to the authenticated organization-home project-filter state. The filtered project item conditional `display:none` declaration moves to the route-local conditional StyleX owner while preserving the legacy project-list DOM, filter behavior, copy, and responsive geometry; the focused project-filter test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 364 applies the workflow to the authenticated board-post disabled-comment state. The fixed legacy `cursor:text` declaration moves to the route-local StyleX owner while preserving the legacy disabled textarea DOM, copy, interaction restrictions, and responsive geometry; the focused disabled-comment test covers legacy source evidence and absence of the former inline cursor declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
