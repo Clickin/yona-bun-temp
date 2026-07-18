@@ -25,7 +25,7 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { labelsFormColors } from "./-labelsform.stylex";
+import { labelsFormColors, labelsFormDynamicStyles } from "./-labelsform.stylex";
 
 const styles = stylex.create({
   copyForm: { margin: "30px auto" },
@@ -1435,6 +1435,9 @@ function EditLabelModal({
     }
   }
   const categories = Array.from(categoriesById.values());
+  const labelNameBackground = label?.color
+    ? stylex.props(labelsFormDynamicStyles.labelNameBackground(label.color))
+    : undefined;
 
   return (
     <>
@@ -1551,12 +1554,12 @@ function EditLabelModal({
               type="text"
               name="name"
               {...stylex.props(styles.editLabelName)}
-              className={`${stylex.props(styles.editLabelName).className} text input-label-name`}
               maxLength={250}
               placeholder={t("label.name")}
               value={label?.name || undefined}
               onChange={(event) => label && onChange({ ...label, name: event.currentTarget.value })}
-              style={label?.color ? { backgroundColor: label.color } : undefined}
+              {...(labelNameBackground ?? {})}
+              className={`${stylex.props(styles.editLabelName).className} text input-label-name ${labelNameBackground?.className ?? ""}`}
             />
 
             <div

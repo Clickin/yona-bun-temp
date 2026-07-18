@@ -211,3 +211,28 @@ test("populated labels form keeps category and edit modal owners within the view
   );
   expect(overflow).toBe(true);
 });
+
+test("label edit preview color uses Dynamic StyleX", async ({ page }) => {
+  expect(routeSource).toContain("labelsFormDynamicStyles.labelNameBackground(label.color)");
+  expect(routeSource).not.toContain("backgroundColor: label.color");
+
+  await mockLabelsPage(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/admin/sample/issue/labelsform`);
+
+  const category = page.locator('[data-stylex-owner="project-labels-category-list"]').first();
+  await category.locator("button.ybtn-small").last().click();
+  const editLabel = page.locator('[data-stylex-owner="project-labels-edit-label-modal"]');
+  const nameInput = editLabel.locator('input[name="name"]');
+  await expect(nameInput).toHaveCSS("background-color", "rgb(63, 81, 181)");
+  expect(await nameInput.getAttribute("style")).not.toContain("background");
+
+  const box = await editLabel.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box?.right ?? 0).toBeLessThanOrEqual(1366);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});

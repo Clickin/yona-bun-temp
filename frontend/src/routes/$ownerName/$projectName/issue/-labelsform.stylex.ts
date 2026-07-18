@@ -12,3 +12,7 @@ export const labelsFormColors = stylex.defineVars({
   notice: "#db3a67",
   white: "#ffffff",
 });
+
+export const labelsFormDynamicStyles = stylex.create({
+  labelNameBackground: (backgroundColor: string) => ({ backgroundColor }),
+});
