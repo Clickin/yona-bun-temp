@@ -3605,3 +3605,5 @@ Batch 417 applies the workflow to the project-home leave modal state. Conditiona
 Batch 418 applies the workflow to the issue-detail conditional visibility state. Six conditional `display`/`visibility` declarations move to route-local conditional StyleX owners for voter/keymap modals, comment body, reply action, child-comment form, and notification receivers while preserving issue-detail DOM, interaction, copy, and responsive geometry; the focused conditional-visibility wave test covers all owners.
 
 Batch 419 applies the workflow to the public projects pagination sprite state. Four runtime sprite custom-property consumers move to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused pagination-sprite test covers all consumers.
+
+Batch 420 applies the workflow to the signup validation popover state. Runtime left/top coordinates move from inline CSS custom-property carriers into a route-local Dynamic StyleX owner while preserving validation popover DOM, copy, interaction, and placement; the focused validation-popover test covers the dynamic owner.

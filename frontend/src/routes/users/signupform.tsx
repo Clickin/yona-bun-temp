@@ -11,7 +11,7 @@ import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../.
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { signupFormColors } from "./-signupform.stylex";
+import { signupFormColors, signupFormDynamicStyles } from "./-signupform.stylex";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   defaultAdminContact?: string;
@@ -755,17 +755,14 @@ function FieldPopover({
 
   return (
     <div
-      {...stylex.props(styles.validationPopover)}
+      {...stylex.props(
+        styles.validationPopover,
+        signupFormDynamicStyles.validationPopoverPosition(position.left, position.top),
+      )}
       ref={popoverRef}
       data-stylex-owner="standalone-signup-validation-popover"
       data-stylex-part="validation-popover-surface"
       data-stylex-validation-for={validationFor}
-      style={
-        {
-          "--yoram-stylex-validation-popover-left": position.left,
-          "--yoram-stylex-validation-popover-top": position.top,
-        } as React.CSSProperties
-      }
     >
       <div
         {...stylex.props(styles.validationPopoverArrow)}

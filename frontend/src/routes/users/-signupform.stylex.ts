@@ -11,3 +11,7 @@ export const signupFormColors = stylex.defineVars({
   popoverBorder: "rgba(0, 0, 0, 0.2)",
   popoverArrowShadow: "rgba(0, 0, 0, 0.25)",
 });
+
+export const signupFormDynamicStyles = stylex.create({
+  validationPopoverPosition: (left: string, top: string) => ({ left, top }),
+});
