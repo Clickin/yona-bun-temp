@@ -3635,3 +3635,5 @@ Batch 432 applies the workflow to the project-home empty-message state. Empty-st
 Batch 433 applies the workflow to the project-home overview number state. Static right-alignment and padding declarations move into a route-local StyleX owner while preserving dashboard counts, DOM, copy, and geometry; the focused overview-static test covers the owner.
 
 Batch 434 applies the workflow to the project-home milestone status state. Static progress-wrap overflow/paint typography, progress dimensions, and progress-bar height move into route-local StyleX while the server-provided completion width remains Dynamic StyleX; the focused milestone-progress test covers the legacy partial, static owners, and dynamic width contract.
+
+Batch 435 applies the workflow to the project-home DashboardLabels overview-label state. Static label-list padding/border, first/last variants, and dt/dd geometry move into route-local StyleX while preserving legacy dashboard DOM and copy; the focused overview-label test covers the legacy partial and route owners.

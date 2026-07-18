@@ -2178,10 +2178,19 @@ function DashboardLabels({
         href={prefixBasePath(basePath, `/${ownerName}/${projectName}/issue/labels.css`)}
         type="text/css"
       />
-      {Array.from(groups.entries()).map(([categoryName, categoryLabels]) => (
-        <dl className="dl-horizontal overview-label" key={categoryName}>
-          <dt>{categoryName}</dt>
-          <dd>
+      {Array.from(groups.entries()).map(([categoryName, categoryLabels], index, entries) => (
+        <dl
+          {...stylex.props(
+            projectHomeStyles.overviewLabel,
+            index === 0 && projectHomeStyles.overviewLabelFirst,
+            index === entries.length - 1 && projectHomeStyles.overviewLabelLast,
+          )}
+          className="dl-horizontal overview-label"
+          data-stylex-owner="project-home-overview-label"
+          key={categoryName}
+        >
+          <dt {...stylex.props(projectHomeStyles.overviewLabelDt)}>{categoryName}</dt>
+          <dd {...stylex.props(projectHomeStyles.overviewLabelDd)}>
             {categoryLabels.map((label) => {
               const labelId = numberField(label.id);
               return (

@@ -6,6 +6,11 @@ export const styles = stylex.create({
   sectionHeading: { borderLeft: "3px solid #ff7332", marginBottom: "20px", paddingLeft: "10px" },
   empty: { textAlign: "center" },
   emptyMessage: { color: "#999", fontSize: "13px", marginBottom: "15px" },
+  overviewLabel: { borderBottom: "1px solid #eee", padding: "5px 0" },
+  overviewLabelDt: { lineHeight: "30px", width: "120px" },
+  overviewLabelDd: { lineHeight: "30px", marginLeft: "140px" },
+  overviewLabelFirst: { paddingTop: "0" },
+  overviewLabelLast: { borderBottom: "none" },
   overviewNumber: { paddingRight: "15px", textAlign: "right" },
   milestoneProgressWrap: {
     color: "#999",
