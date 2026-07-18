@@ -43,6 +43,10 @@ const sx = {
   save: stylex.props(styles.save),
 } as const;
 
+const textareaStaticStyles = stylex.create({
+  overflow: { overflow: "hidden", overflowWrap: "break-word", resize: "none" },
+});
+
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
 const legacyProjectSettingsLinkActiveOptions = {
@@ -276,6 +280,14 @@ function ProjectSettingBody({
       setOverviewHeight(legacyAutosizeContentHeight(textarea));
     }
   }, [overview]);
+  const textareaClassName = [
+    "textarea",
+    sx.textarea.className,
+    stylex.props(styles.textareaHeight(`${overviewHeight}px`)).className,
+    stylex.props(textareaStaticStyles.overflow).className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -479,15 +491,8 @@ function ProjectSettingBody({
                     id="project-desc"
                     name="overview"
                     maxLength={250}
-                    {...sx.textarea}
-                    {...stylex.props(styles.textareaHeight(`${overviewHeight}px`))}
                     data-stylex-owner="project-setting-description"
-                    className="textarea"
-                    style={{
-                      overflow: "hidden",
-                      overflowWrap: "break-word",
-                      resize: "none",
-                    }}
+                    className={textareaClassName}
                     value={overview}
                     onChange={(event) => setOverview(event.currentTarget.value)}
                   ></textarea>

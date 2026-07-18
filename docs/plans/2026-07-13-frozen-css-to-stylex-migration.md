@@ -3543,3 +3543,5 @@ Batch 385 applies the workflow to the authenticated project-label category typea
 Batch 386 applies the workflow to the authenticated issue-detail secondary comment share-link state. The fixed hidden display reuses the existing route-local StyleX owner while preserving the legacy comment DOM, copy, visibility behavior, and responsive geometry; the focused secondary-share-link test covers the legacy source contract and absence of the former inline display.
 
 Batch 387 applies the workflow to the authenticated project-history pull-request metadata state. The fixed date color and link right margin move to route-local StyleX owners while preserving the legacy history DOM and responsive geometry; the focused metadata test covers the legacy source contract and absence of the former inline declarations.
+
+Batch 388 applies the workflow to the authenticated project-setting description state. The fixed textarea overflow, wrapping, and resize declarations move to a route-local StyleX owner while preserving the existing Dynamic StyleX height and legacy form behavior; the focused textarea test covers the legacy source contract and absence of the former inline object.

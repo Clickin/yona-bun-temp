@@ -1029,3 +1029,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 387
 
 - Authenticated project-history pull-request metadata state: moved fixed date `color:#999` and link `margin-right:17px` into `projectHistoryStyles.pullRequestDate` and `projectHistoryStyles.pullRequestLink`, preserving the legacy history DOM and responsive geometry. Focused `stylex-project-history-pull-request-owners.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 388
+
+- Authenticated project-setting description state: moved fixed textarea overflow, wrapping, and resize declarations into route-local `textareaStaticStyles.overflow`, preserving the existing Dynamic StyleX height and legacy form behavior. Focused `stylex-project-setting-textarea-static.e2e.ts` verifies the legacy source contract, stable owner, and absence of the former inline object; live legacy visual parity remains unverified.
