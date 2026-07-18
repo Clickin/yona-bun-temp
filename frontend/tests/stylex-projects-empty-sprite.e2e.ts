@@ -10,5 +10,5 @@ test("projects empty-state sprite uses route-local StyleX", async () => {
   expect(route).toContain('data-stylex-owner="projects-directory-empty-icon"');
   expect(route).toContain("projectsDirectoryDynamicStyles.emptyIconSprite");
   expect(route).not.toContain("style={emptyStateSpriteStyle}");
-  expect(route).toContain("backgroundImage: `url(${legacySpriteUrl})`");
+  expect(route).toContain("emptyIconSprite: (backgroundImage: string) => ({ backgroundImage })");
 });

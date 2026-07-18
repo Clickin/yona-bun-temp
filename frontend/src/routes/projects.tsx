@@ -31,10 +31,6 @@ const paginationSpriteStyle = {
   "--projects-directory-pagination-sprite": `url(${legacySpriteUrl})`,
 } as CSSProperties;
 
-const emptyStateSpriteStyle = {
-  "--projects-directory-empty-state-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
-
 type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
   createdTitle?: string;
@@ -477,7 +473,7 @@ const styles = stylex.create({
 });
 
 const projectsDirectoryDynamicStyles = stylex.create({
-  emptyIconSprite: { backgroundImage: `url(${legacySpriteUrl})` },
+  emptyIconSprite: (backgroundImage: string) => ({ backgroundImage }),
 });
 
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
@@ -715,9 +711,11 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             >
               <i
                 {...directoryEmptyIconStyleProps}
-                {...stylex.props(projectsDirectoryDynamicStyles.emptyIconSprite)}
+                {...stylex.props(
+                  projectsDirectoryDynamicStyles.emptyIconSprite(`url(${legacySpriteUrl})`),
+                )}
                 data-stylex-owner="projects-directory-empty-icon"
-                className={`${directoryEmptyIconStyleProps.className} ${stylex.props(projectsDirectoryDynamicStyles.emptyIconSprite).className ?? ""}`.trim()}
+                className={`${directoryEmptyIconStyleProps.className} ${stylex.props(projectsDirectoryDynamicStyles.emptyIconSprite(`url(${legacySpriteUrl})`)).className ?? ""}`.trim()}
               ></i>
               <p
                 {...directoryEmptyMessageStyleProps}
