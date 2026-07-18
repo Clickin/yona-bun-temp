@@ -10,7 +10,13 @@ import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 
 const projectHistoryStyles = stylex.create({
-  stream: { width: "100%" },
+  stream: { marginBottom: "15px", width: "100%" },
+  activityStreams: { margin: "0" },
+  activityItem: {
+    borderBottom: "1px solid #f1f1f1",
+    marginBottom: "6px",
+    padding: "1px 0 6px",
+  },
   header: { marginBottom: "5px" },
   others: { paddingLeft: "0" },
   date: { marginLeft: "0" },
@@ -1674,7 +1680,10 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
         className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}
         data-stylex-owner="project-history-stream"
       >
-        <ul className="activity-streams unstyled">
+        <ul
+          className={`activity-streams unstyled ${stylex.props(projectHistoryStyles.activityStreams).className}`}
+          data-stylex-owner="project-history-activity-streams"
+        >
           {items.map((item) => {
             const itemRecord = recordField(item);
             const actorUrl = normalizeHistoryHref(basePath, stringField(itemRecord.actorUrl, "#"));
@@ -1684,7 +1693,11 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
             const title = stringField(itemRecord.title, "");
             const createdLabel = stringField(itemRecord.createdLabel, "");
             return (
-              <li className="activity-stream" key={`${itemUrl}-${shortTitle}-${createdLabel}`}>
+              <li
+                className={`activity-stream ${stylex.props(projectHistoryStyles.activityItem).className}`}
+                data-stylex-owner="project-history-activity-item"
+                key={`${itemUrl}-${shortTitle}-${createdLabel}`}
+              >
                 <HistoryLink
                   basePath={basePath}
                   href={actorUrl}

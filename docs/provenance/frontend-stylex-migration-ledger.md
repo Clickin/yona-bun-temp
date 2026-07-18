@@ -1037,3 +1037,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 389
 
 - Authenticated issue-detail fixed inline-owner state: moved two assignee `width:100%` declarations and disabled-comment `cursor:text` into direct `issueInlineOwners`, preserving Select2/comment DOM, copy, interaction, and responsive geometry. Focused `stylex-project-issue-detail-fixed-inline-owners.e2e.ts` verifies the legacy source contracts, stable owners, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 390
+
+- Authenticated project-history activity geometry state: moved fixed stream/list/item spacing and border declarations into route-local `projectHistoryStyles`, preserving legacy history DOM and responsive geometry. Focused `stylex-project-history-activity-geometry.e2e.ts` verifies the legacy source contract, stable owners, and owner consumers; live legacy visual parity remains unverified.

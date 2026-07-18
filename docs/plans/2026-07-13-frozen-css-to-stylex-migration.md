@@ -3547,3 +3547,5 @@ Batch 387 applies the workflow to the authenticated project-history pull-request
 Batch 388 applies the workflow to the authenticated project-setting description state. The fixed textarea overflow, wrapping, and resize declarations move to a route-local StyleX owner while preserving the existing Dynamic StyleX height and legacy form behavior; the focused textarea test covers the legacy source contract and absence of the former inline object.
 
 Batch 389 applies the workflow to the authenticated issue-detail fixed inline-owner state. The two assignee widths and disabled-comment cursor move to direct route-local StyleX owners while preserving Select2/comment DOM, copy, interaction, and responsive geometry; the focused fixed-owner test covers the legacy source contracts and absence of the former inline declarations.
+
+Batch 390 applies the workflow to the authenticated project-history activity geometry state. The fixed stream/list/item spacing and border declarations move to route-local StyleX owners while preserving legacy history DOM and responsive geometry; the focused activity-geometry test covers the legacy source contract and owner consumers.
