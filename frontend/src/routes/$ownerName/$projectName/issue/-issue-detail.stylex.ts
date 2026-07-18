@@ -42,6 +42,9 @@ export const styles = stylex.create({
   author: {
     color: issueDetailColors.accentText,
   },
+  disabledVote: {
+    color: issueDetailColors.mutedText,
+  },
   timeline: {
     display: "block",
     clear: "both",

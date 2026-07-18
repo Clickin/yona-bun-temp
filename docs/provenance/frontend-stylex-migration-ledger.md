@@ -777,3 +777,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 322
 
 - Anonymous `/resetPassword` no-token validation popover: moved fallback display/max-width/position and runtime left/top values into conditional/Dynamic StyleX owners in `-resetPassword.stylex.ts`, preserving `.popover.left.in` DOM, validation copy, placement, and responsive containment. Focused `stylex-reset-password-form.e2e.ts` verifies source ownership, computed fallback geometry, and absence of literal inline left/top; live legacy visual parity remains unverified.
+
+## Batch 323
+
+- Authenticated issue-detail unauthorized vote state: moved the disabled-vote `color:#777` declaration into route-local `styles.disabledVote`, preserving `ybtn-disabled`, login-required title, heart control, and responsive geometry. Focused `stylex-project-issue-detail-disabled-vote.e2e.ts` verifies the legacy source, stable owner, palette ownership, and absence of the former inline color; live legacy visual parity remains unverified.

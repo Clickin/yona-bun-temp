@@ -3406,6 +3406,8 @@ Batch 321 applies the workflow to the populated public `/$user` profile filter p
 
 Batch 322 applies the workflow to the anonymous `/resetPassword` no-token validation popover. The fallback display, max-width, position, and runtime left/top values move from inline declarations to conditional/Dynamic StyleX owners, preserving the `.popover.left.in` DOM, validation copy, placement, and responsive containment; the focused reset-password test covers fallback geometry and absence of literal inline position.
 
+Batch 323 applies the workflow to the authenticated issue-detail anonymous/unauthorized vote state. The legacy disabled-vote color moves from inline styling to a route-local StyleX owner while preserving the `ybtn-disabled` class, login-required title, heart control, and issue-detail geometry; the focused disabled-vote test covers source evidence and the absence of the former inline color.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

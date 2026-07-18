@@ -45,6 +45,8 @@ import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
 import { styles } from "./-issue-detail.stylex";
 
+const disabledVoteStyleProps = stylex.props(styles.disabledVote);
+
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
@@ -1408,8 +1410,9 @@ function IssueVote({
           </button>
         ) : (
           <span
-            className="ybtn-disabled"
-            style={{ color: "#777" }}
+            {...disabledVoteStyleProps}
+            className={`ybtn-disabled ${disabledVoteStyleProps.className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-detail-disabled-vote"
             title={t("user.login.alert")}
             data-login="required"
           >
