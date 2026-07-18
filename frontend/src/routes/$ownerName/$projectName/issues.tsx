@@ -1792,7 +1792,8 @@ function ProjectIssueItem({
             ))}
             <div
               className="child-issue-list hide"
-              style={childIssueListVisible ? { display: "block" } : undefined}
+              {...(childIssueListVisible ? stylex.props(styles.childIssueListVisible) : {})}
+              data-stylex-owner="project-issues-child-list"
             >
               <IssueChildRows
                 basePath={basePath}

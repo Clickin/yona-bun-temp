@@ -885,3 +885,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 349
 
 - Authenticated issue-detail label-control state: moved fixed legacy `display:inline-block` into `issueDetailStyles.labelControl`, preserving Select2-compatible DOM/classes, label interaction, and responsive geometry. Focused `stylex-project-issue-detail-label-control.e2e.ts` verifies the legacy source, stable owner, route-local StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 350
+
+- Authenticated project issues child-list state: moved conditional child-list `display:block` into `styles.childIssueListVisible`, preserving the legacy child-issue DOM, reveal behavior, copy, and responsive geometry. Focused `stylex-project-issues-child-list.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
