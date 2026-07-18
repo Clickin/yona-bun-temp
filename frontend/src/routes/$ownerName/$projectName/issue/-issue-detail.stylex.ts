@@ -12,6 +12,7 @@ export const styles = stylex.create({
   labelSearchInput: { width: "10px" },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   shareLinkHidden: { display: "none" },
+  voterSummary: { marginRight: "2px" },
   labelColor: (backgroundColor: string) => ({
     backgroundColor,
   }),

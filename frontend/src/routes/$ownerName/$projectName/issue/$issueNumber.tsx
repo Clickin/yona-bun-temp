@@ -3854,7 +3854,8 @@ function CommentVoters({ commentId, voters }: { commentId: string; voters: Voter
     return (
       <>
         <span
-          style={{ marginRight: "2px" }}
+          {...stylex.props(styles.voterSummary)}
+          data-stylex-owner="issue-detail-voter-summary"
           data-html="true"
           title={`${voters
             .slice(0, 5)

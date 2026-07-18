@@ -1009,3 +1009,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 382
 
 - Authenticated project-setting loaded state: moved the runtime project logo background URL into `styles.logoBackground(...)` Dynamic StyleX and the default-branch Select2 result button's inherited font/text/width declarations into `styles.defaultBranchResult`, preserving legacy settings DOM, branch interaction, copy, and responsive geometry. Focused `stylex-project-setting-logo-branch-result.e2e.ts` verifies both stable owners, Dynamic/static StyleX sources, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 383
+
+- Authenticated issue-detail voter summary state: moved the fixed voter-summary `margin-right:2px` into `styles.voterSummary`, preserving legacy comment/voter DOM, tooltip copy, and responsive geometry. Focused `stylex-project-issue-detail-voter-summary.e2e.ts` verifies the legacy source contract, stable owner, StyleX spacing, and absence of the former inline margin; live legacy visual parity remains unverified.

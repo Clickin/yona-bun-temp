@@ -3522,6 +3522,8 @@ Batch 381 applies the workflow to the authenticated root user-menu dropdown colo
 
 Batch 382 applies the workflow to the authenticated project-setting loaded state. The runtime project logo background URL moves to Dynamic StyleX and the default-branch Select2 result button's static inherited declarations move to direct StyleX; the focused setting test covers both owners and removal of the former inline declarations.
 
+Batch 383 applies the workflow to the authenticated issue-detail voter summary state. The fixed voter-summary right margin moves to a route-local StyleX owner while preserving the legacy comment/voter DOM, tooltip copy, and responsive geometry; the focused voter-summary test covers the legacy source contract and absence of the former inline margin.
+
 
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
