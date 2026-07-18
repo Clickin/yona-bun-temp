@@ -3426,6 +3426,8 @@ Batch 331 applies the workflow to the authenticated `/sites/massmail` project-su
 
 Batch 332 applies the workflow to the authenticated `/_import` owner/VCS Select2 state. The fixed 220px container/dropdown geometry and inherited button-label declarations move to route-local StyleX while preserving Select2 DOM/classes, owner switching, VCS disabled behavior, and responsive form geometry; the focused project-import test covers source evidence, stable owners, StyleX geometry ownership, and absence of former inline widths.
 
+Batch 333 applies the workflow to the authenticated pull-request detail help-modal state. Conditional modal visibility moves to route-local StyleX while preserving the legacy modal DOM, copy, open/close state, and responsive containment; the focused help-modal test covers source evidence and both visibility owners.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -1104,14 +1104,18 @@ function PullRequestHelpModal({ onClose, state }: { onClose: () => void; state: 
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const isOpen = state === "open";
-  const modalStyle = state === "initial" ? undefined : { display: isOpen ? "block" : "none" };
+  const modalStyleProps =
+    state === "initial"
+      ? undefined
+      : stylex.props(isOpen ? styles.helpModalVisible : styles.helpModalHidden);
   const ariaHidden = state === "initial" ? undefined : isOpen ? "false" : "true";
   return (
     <>
       <div
         id="helpMessage"
-        className={isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"}
-        style={modalStyle}
+        {...modalStyleProps}
+        className={`${isOpen ? "modal hide fade pullreq-info in" : "modal hide fade pullreq-info"} ${modalStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="pull-request-detail-help-modal"
         aria-hidden={ariaHidden}
       >
         <div className="modal-header">

@@ -17,4 +17,6 @@ export const styles = stylex.create({
   comments: { minWidth: 0 },
   reviewers: { display: "inline-block", marginRight: "5px" },
   reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" },
+  helpModalVisible: { display: "block" },
+  helpModalHidden: { display: "none" },
 });
