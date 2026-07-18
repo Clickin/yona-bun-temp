@@ -949,3 +949,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 367
 
 - Authenticated board-post share-link state: moved fixed legacy `display:none` into `styles.shareLinkHidden`, preserving the legacy share-link DOM, copy, visibility behavior, and responsive geometry. Focused `stylex-project-post-detail-share-link.e2e.ts` verifies the legacy source, stable owner, StyleX display, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 368
+
+- Authenticated user-issues default-login popover state: moved static popover positioning into `issueStyles.defaultLoginPagePopover`, preserving the legacy action/popover DOM, hover interaction, copy, and responsive geometry. Focused `stylex-user-issues-default-login-popover.e2e.ts` verifies the legacy source, stable owner, StyleX positioning, and absence of the former inline style constant; live legacy visual parity remains unverified.

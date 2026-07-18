@@ -56,17 +56,6 @@ const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
   transform: "translateX(-50%)",
 };
 
-const SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE: CSSProperties = {
-  display: "block",
-  left: "50%",
-  marginTop: "10px",
-  minWidth: "190px",
-  pointerEvents: "none",
-  position: "absolute",
-  top: "100%",
-  transform: "translateX(-50%)",
-};
-
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
   validateSearch(search: Record<string, unknown>): UserIssuesSearch {
@@ -644,7 +633,8 @@ function MySeriesMenuTabs({
           <div
             className="popover bottom"
             role="tooltip"
-            style={SET_DEFAULT_LOGIN_PAGE_POPOVER_STYLE}
+            {...stylex.props(issueStyles.defaultLoginPagePopover)}
+            data-stylex-owner="user-issues-default-login-popover"
           >
             <div className="arrow" />
             <h3 className="popover-title">{defaultLoginPageTitle}</h3>

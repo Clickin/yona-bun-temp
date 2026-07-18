@@ -10,6 +10,16 @@ export const userIssuesColors = stylex.defineVars({
 
 export const styles = stylex.create({
   relativeAnchor: { position: "relative" },
+  defaultLoginPagePopover: {
+    display: "block",
+    left: "50%",
+    marginTop: "10px",
+    minWidth: "190px",
+    pointerEvents: "none",
+    position: "absolute",
+    top: "100%",
+    transform: "translateX(-50%)",
+  },
   childIssueListVisible: { display: "block" },
   defaultLoginPageHidden: { display: "none" },
   issueRowTwoColumn: { cursor: "pointer" },
