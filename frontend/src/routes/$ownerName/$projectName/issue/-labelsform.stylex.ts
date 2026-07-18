@@ -17,6 +17,7 @@ export const labelsFormDynamicStyles = stylex.create({
   labelNameBackground: (backgroundColor: string) => ({ backgroundColor }),
   presetColorBackground: (backgroundColor: string) => ({ backgroundColor }),
   newLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
+  colorInputBoxShadow: (color: string) => ({ boxShadow: `inset 25px 0 0 ${color}` }),
   typeaheadPosition: (minWidth: string | undefined, top: string | undefined) => ({
     display: "block",
     left: 0,

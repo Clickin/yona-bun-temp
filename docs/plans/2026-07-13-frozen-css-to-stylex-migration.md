@@ -3613,3 +3613,5 @@ Batch 421 applies the workflow to the authenticated home notification state. The
 Batch 422 applies the workflow to the project issues static-owner state. Mass-update button reset geometry, selected-label search width, and two popover geometry owners move into route-local StyleX while preserving issue-list DOM, controls, labels, interaction, and responsive geometry; the focused static-owner wave test covers all owners.
 
 Batch 423 applies the workflow to the project labels form inline-owner state. Typeahead anchor/menu, new-label background color, and preset-color visibility move into conditional/Dynamic route-local StyleX owners while preserving label-form DOM, copy, interaction, and geometry; the focused inline-owner test covers all owners.
+
+Batch 424 applies the workflow to the project labels form color-input state. Two runtime color-preview box-shadow consumers move into a route-local Dynamic StyleX owner while preserving label-form DOM, copy, interaction, and geometry; the focused color-input test covers both consumers.

@@ -723,7 +723,13 @@ function ProjectLabelsBody({
                           setNewLabelNameColor(refinedColor);
                         }
                       }}
-                      style={colorInputStyle(newLabelNameColor)}
+                      {...(colorInputStyle(newLabelNameColor)
+                        ? stylex.props(
+                            labelsFormDynamicStyles.colorInputBoxShadow(
+                              colorInputStyle(newLabelNameColor)!,
+                            ),
+                          )
+                        : {})}
                     />
                   </div>
                 </div>
@@ -1606,7 +1612,13 @@ function EditLabelModal({
                 onChange={(event) =>
                   label && onChange({ ...label, color: event.currentTarget.value })
                 }
-                style={colorInputStyle(label?.color ?? "")}
+                {...(colorInputStyle(label?.color ?? "")
+                  ? stylex.props(
+                      labelsFormDynamicStyles.colorInputBoxShadow(
+                        colorInputStyle(label?.color ?? "")!,
+                      ),
+                    )
+                  : {})}
               />
             </div>
           </div>
@@ -1849,9 +1861,9 @@ function refineHexColor(color: string) {
   return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function colorInputStyle(color: string) {
+function colorInputStyle(color: string): string | undefined {
   const refinedColor = refineHexColor(color);
-  return refinedColor ? { boxShadow: `inset 25px 0 0 ${refinedColor}` } : undefined;
+  return refinedColor;
 }
 
 function contrastClass(color: string) {
