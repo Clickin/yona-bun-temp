@@ -19,6 +19,7 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
 import { ProjectPullRequestsBadRequestRouteShell } from "./pullRequests";
 import { styles } from "./-new-pull-request.stylex";
+import { styles as uploadStyles } from "./-new-pull-request-form.stylex";
 
 type PullRequestFormSearch = {
   fromBranch?: string;
@@ -689,7 +690,8 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
         <span className="plain">{t("common.attach.clickbutton")}</span>
         <span
           className="help help-pastable"
-          style={pasteSupported ? { display: "block" } : undefined}
+          {...(pasteSupported ? stylex.props(uploadStyles.pasteHelpVisible) : {})}
+          data-stylex-owner="project-new-pull-request-form-paste-help"
         >
           {t("common.attach.pastehere")}
         </span>
