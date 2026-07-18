@@ -10,6 +10,8 @@ export const codeFileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  // view.scala.html #spin inline rule; the loading marker remains React-owned.
+  spinner: { left: "50%", position: "fixed", top: "50%" },
   noFiles: {
     borderTop: 0,
     paddingLeft: "23px",

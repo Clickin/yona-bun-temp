@@ -641,3 +641,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 287
 
 - `/migration` disabled migration screen progress state: moved the fixed zero-progress width from the legacy progress-bar inline declaration into the route-local `styles.progressBar` StyleX owner, retaining `bar span10 bar-danger`, `0/0`, and the disabled screen geometry. Focused `stylex-migration-disabled-shell.e2e.ts` and `migration-parity.e2e.ts` verify the legacy source, stable owner, computed `0px`, no literal inline width, and desktop/mobile containment; live legacy visual parity remains unverified.
+
+## Batch 288
+
+- `/$ownerName/$projectName/code/$branch/$filePath` code-view spinner state: moved the static `#spin` fixed-center positioning into route-local `styles.spinner`, preserving the code-viewer DOM and loading marker. Focused `stylex-project-code-file-inline-residual.e2e.ts` verifies fixed center geometry at desktop/mobile viewports and no literal inline style; live legacy visual parity remains unverified.

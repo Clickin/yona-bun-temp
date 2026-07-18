@@ -355,7 +355,11 @@ function ProjectCodeFileBody({
           </div>
 
           <div className="code-viewer-wrap">
-            <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
+            <div
+              id="spin"
+              {...stylex.props(styles.spinner)}
+              data-stylex-owner="project-code-file-spinner"
+            ></div>
             {isFolder ? (
               <FolderList
                 code={code}

@@ -3327,6 +3327,8 @@ Batch 272 applies the workflow to the authenticated project-create form. Owner a
 
 Batch 287 applies the workflow to the disabled `/migration` screen progress-bar residual. The fixed zero-progress width moved to direct route-local StyleX; the focused migration shell and parity tests cover the stable owner, computed geometry, no inline width, and desktop/mobile containment.
 
+Batch 288 applies the workflow to the authenticated project code-file `#spin` residual. The fixed-center spinner positioning moved to route-local StyleX; the focused code-file test covers stable ownership, computed desktop/mobile geometry, and no literal inline style.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
