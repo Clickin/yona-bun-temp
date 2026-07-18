@@ -3772,3 +3772,5 @@ Batch 490 applies the workflow to the issueform attachment visible state. Six de
 Batch 491 applies the workflow to the issueform cancel action. The exact scoped `margin-left:0` declaration moves into one route-local StyleX owner while preserving legacy button classes and React cancel behavior; the focused contract verifies exact fallback retirement.
 
 Batch 494 applies the workflow to the populated project branches table residual. Table-cell vertical-align/border reset and action-cell width/min-width/text alignment move into route-local StyleX, while the explicit React pull-request dot replaces redundant legacy pseudo-dot rules. The complete route-scoped `.branch-list-wrap` fallback retires; shared table and Yobi button fallbacks remain.
+
+Batch 496 applies the workflow to the project reviews title residual. The exact `.review-list-wrap .post-item .title-wrap` overflow/truncation and child title wrapping declarations are already owned by `reviewsLayout.reviewTitleWrap`/`reviewTitle`; this wave retires only those route-scoped app.css fallbacks while retaining generic `.post-list-wrap` title rules used by other consumers.
