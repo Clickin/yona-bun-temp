@@ -37,6 +37,7 @@ const sx = {
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
   defaultBranchDropVisible: stylex.props(styles.defaultBranchDropVisible),
+  defaultBranchChoice: stylex.props(styles.defaultBranchChoice),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   save: stylex.props(styles.save),
 } as const;
@@ -802,15 +803,7 @@ function DefaultBranchSelect2({
         <button
           type="button"
           className="select2-choice"
-          style={{
-            boxSizing: "border-box",
-            fontFamily: "inherit",
-            fontSize: "inherit",
-            fontWeight: "inherit",
-            height: "auto",
-            textAlign: "left",
-            width: "100%",
-          }}
+          {...sx.defaultBranchChoice}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
