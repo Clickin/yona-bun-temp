@@ -3611,3 +3611,5 @@ Batch 420 applies the workflow to the signup validation popover state. Runtime l
 Batch 421 applies the workflow to the authenticated home notification state. The runtime expanded notification `minHeight` measurement moves into a route-local Dynamic StyleX owner while preserving notification DOM, expansion behavior, copy, and geometry; the focused notification-height test covers the dynamic owner.
 
 Batch 422 applies the workflow to the project issues static-owner state. Mass-update button reset geometry, selected-label search width, and two popover geometry owners move into route-local StyleX while preserving issue-list DOM, controls, labels, interaction, and responsive geometry; the focused static-owner wave test covers all owners.
+
+Batch 423 applies the workflow to the project labels form inline-owner state. Typeahead anchor/menu, new-label background color, and preset-color visibility move into conditional/Dynamic route-local StyleX owners while preserving label-form DOM, copy, interaction, and geometry; the focused inline-owner test covers all owners.

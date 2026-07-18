@@ -16,9 +16,19 @@ export const labelsFormColors = stylex.defineVars({
 export const labelsFormDynamicStyles = stylex.create({
   labelNameBackground: (backgroundColor: string) => ({ backgroundColor }),
   presetColorBackground: (backgroundColor: string) => ({ backgroundColor }),
+  newLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
+  typeaheadPosition: (minWidth: string | undefined, top: string | undefined) => ({
+    display: "block",
+    left: 0,
+    minWidth,
+    position: "absolute",
+    top,
+  }),
 });
 
 export const labelsFormStyles = stylex.create({
+  typeaheadAnchor: { position: "relative" },
+  presetColorsVisible: { display: "inline-block" },
   changeVcsMenuHidden: { display: "none" },
   categorySuggestionButton: {
     backgroundColor: "transparent",

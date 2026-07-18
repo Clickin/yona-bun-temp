@@ -594,7 +594,17 @@ function ProjectLabelsBody({
                   {...stylex.props(styles.formWrap)}
                   className={stylex.props(styles.formWrap).className}
                 >
-                  <div style={showCategoryTypeahead ? { position: "relative" } : undefined}>
+                  <div
+                    {...(showCategoryTypeahead
+                      ? stylex.props(labelsFormStyles.typeaheadAnchor)
+                      : undefined)}
+                    className={
+                      showCategoryTypeahead
+                        ? stylex.props(labelsFormStyles.typeaheadAnchor).className
+                        : undefined
+                    }
+                    data-stylex-owner="project-labels-typeahead-anchor"
+                  >
                     <input
                       type="text"
                       name="category"
@@ -629,14 +639,28 @@ function ProjectLabelsBody({
                       autoComplete="off"
                       placeholder={t("label.name")}
                       onFocus={onNameFocus}
-                      style={newLabelNameColor ? { backgroundColor: newLabelNameColor } : undefined}
+                      {...(newLabelNameColor
+                        ? stylex.props(
+                            labelsFormDynamicStyles.newLabelBackground(newLabelNameColor),
+                          )
+                        : undefined)}
                       {...stylex.props(styles.input)}
-                      className={`${stylex.props(styles.input).className}${contrastClass(newLabelNameColor)}`}
+                      className={`${stylex.props(styles.input).className} ${newLabelNameColor ? (stylex.props(labelsFormDynamicStyles.newLabelBackground(newLabelNameColor)).className ?? "") : ""}${contrastClass(newLabelNameColor)}`.trim()}
                     />
                     {showCategoryTypeahead ? (
                       <ul
                         className="typeahead dropdown-menu"
-                        style={typeaheadMenuStyle(newLabelCategoryInputRef.current)}
+                        {...stylex.props(
+                          labelsFormDynamicStyles.typeaheadPosition(
+                            newLabelCategoryInputRef.current
+                              ? `${newLabelCategoryInputRef.current.offsetWidth}px`
+                              : undefined,
+                            newLabelCategoryInputRef.current
+                              ? `${newLabelCategoryInputRef.current.offsetHeight}px`
+                              : undefined,
+                          ),
+                        )}
+                        data-stylex-owner="project-labels-typeahead-menu"
                       >
                         {categoryTypeaheadSuggestions.map((suggestion, index) => (
                           <li
@@ -672,7 +696,10 @@ function ProjectLabelsBody({
                   </div>
                   <div
                     className="label-preset-colors"
-                    style={isNewLabelColorsVisible ? { display: "inline-block" } : undefined}
+                    {...(isNewLabelColorsVisible
+                      ? stylex.props(labelsFormStyles.presetColorsVisible)
+                      : undefined)}
+                    data-stylex-owner="project-labels-preset-colors"
                   >
                     {NEW_LABEL_COLORS.map((color) => (
                       <ColorButton
