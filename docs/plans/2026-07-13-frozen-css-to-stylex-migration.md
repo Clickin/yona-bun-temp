@@ -3669,4 +3669,6 @@ Batch 451 applies the shared project/organization visibility-badge state. Static
 
 Batch 452 applies the project-header fork-origin state. Origin wrapper/title/link geometry moves into route-local StyleX while preserving legacy DOM, classes, copy, and project navigation; project-util and organization shell selectors remain untouched. The focused origin contract covers the legacy header and frozen LESS sources.
 
+Batch 453 applies the project-route utility shell state. Project header utility wrapper/list/item/icon geometry moves into route-local StyleX while preserving utility DOM, classes, dropdown behavior, and copy. The organization route remains an explicit fallback consumer of the shared selectors; watcher state selectors remain untouched.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.

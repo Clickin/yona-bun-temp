@@ -2615,10 +2615,19 @@ function ProjectHeaderContent({
               </div>
             ) : null}
           </div>
-          <div className="project-util-wrap">
-            <ul className="project-util">
+          <div
+            className={`${stylex.props(projectHomeStyles.projectUtilWrap).className} project-util-wrap`}
+            data-stylex-owner="project-header-util-wrap"
+          >
+            <ul
+              className={`${stylex.props(projectHomeStyles.projectUtil).className} project-util`}
+              data-stylex-owner="project-header-util"
+            >
               {canEnrollProject ? (
-                <li className={projectUtilDropdown === "enrollment" ? "open" : undefined}>
+                <li
+                  className={`${stylex.props(projectHomeStyles.projectUtilItem).className}${projectUtilDropdown === "enrollment" ? " open" : ""}`}
+                  data-stylex-owner="project-header-util-item"
+                >
                   {enrollmentRequested ? (
                     <>
                       <button
@@ -2721,7 +2730,10 @@ function ProjectHeaderContent({
                       </div>
                       <div className="pop-content">
                         <p>{t("notification.help")}</p>
-                        <ul className="icons-ul">
+                        <ul
+                          className={`${stylex.props(projectHomeStyles.projectUtilIcons).className} icons-ul`}
+                          data-stylex-owner="project-header-util-icons"
+                        >
                           <li>
                             <i className="yobicon-li yobicon-ok"></i>
                             {t("notification.help.new")}
