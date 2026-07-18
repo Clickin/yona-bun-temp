@@ -19,6 +19,8 @@ test("records milestone list ownership and populated issue filtering", async ({ 
   expect(route).toContain('data-stylex-owner="project-milestones-issue-count"');
   expect(route).toContain('data-stylex-owner="project-milestones-issue-number"');
   expect(theme).toContain("export const milestoneColors");
+  expect(theme).toContain('itemName: { verticalAlign: "middle" }');
+  expect(theme).toContain("issueNumber:");
 
   await mockMilestones(page);
   for (const viewport of [
@@ -30,6 +32,14 @@ test("records milestone list ownership and populated issue filtering", async ({ 
     await expect(owner(page, "project-milestones-list")).toBeVisible();
     await expect(owner(page, "project-milestones-item")).toHaveCount(2);
     await expect(owner(page, "project-milestones-issue-link")).toHaveCount(1);
+    await expect(owner(page, "project-milestones-issue-number")).toHaveCSS(
+      "font-family",
+      /menlo|Consolas/i,
+    );
+    await expect(owner(page, "project-milestones-issue-name")).toHaveCSS(
+      "vertical-align",
+      "middle",
+    );
     const geometry = await owner(page, "project-milestones-list").evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return { width: rect.width, scrollWidth: document.documentElement.scrollWidth };

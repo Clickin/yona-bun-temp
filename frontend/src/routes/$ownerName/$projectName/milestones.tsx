@@ -44,6 +44,8 @@ const sx = {
   progressBar: stylex.props(styles.progressBar),
   issueLink: stylex.props(styles.issueLink),
   issueItem: stylex.props(styles.issueItem),
+  itemName: stylex.props(styles.itemName),
+  issueNumber: stylex.props(styles.issueNumber),
   issueStateOpen: stylex.props(styles.issueStateOpen),
   issueStateClosed: stylex.props(styles.issueStateClosed),
   label: stylex.props(styles.label),
@@ -413,8 +415,10 @@ function MilestoneIssueLink({
         <span {...(state === "closed" ? sx.issueStateClosed : sx.issueStateOpen)}>
           {state === "closed" ? <i className="yobicon-checkmark"></i> : null}
         </span>
-        <span className="item-name">
-          <span data-stylex-owner="project-milestones-issue-number">#{issueNumber}</span>
+        <span {...sx.itemName} data-stylex-owner="project-milestones-issue-name">
+          <span {...sx.issueNumber} data-stylex-owner="project-milestones-issue-number">
+            #{issueNumber}
+          </span>
           {titleText}
           {sortLabels(issue.labels).map((label) => (
             <span
