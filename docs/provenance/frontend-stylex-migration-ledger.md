@@ -1146,4 +1146,8 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Organization-route utility shell state: moved organization header utility wrapper/list/item geometry into `-organization-home.stylex.ts`, completing project and organization consumers and retiring the shared `.project-util*` app.css selectors. Watcher-state selectors remain unchanged. Focused `stylex-organization-util-shell.e2e.ts` verifies the legacy source and owners.
 
+## Batch 455
+
+- Project header watcher state: moved `.watcher-count`, conditional `.watch-on`, and `.watch-btn > button` geometry into route-local StyleX owners, preserving dynamic watch state, classes, links, and dropdown behavior. `.down-arrow::after` and unrelated watcher/Bootstrap selectors remain fallback. Focused `stylex-project-watcher-state.e2e.ts` verifies legacy sources and owners.
+
 | 2026-07-19 | Pull-request create/edit selector geometry StyleX ownership wave | `yona-original/app/views/git/create.scala.html`, `git/edit.scala.html`, and frozen `_page.less` pull-request-wrap rules establish wrapper, field-title, and arrow geometry. Legacy Scala HTML/JS is output DOM/UX evidence; React pull-request state owns form behavior. | `frontend/src/routes/$ownerName/$projectName/newPullRequestForm.tsx` and `pullRequest/$pullRequestNumber/editform.tsx` use colocated StyleX owners for wrapper/title/arrow consumers while preserving classes and select2 residual. | `frontend/tests/stylex-pull-request-create-edit-geometry.e2e.ts` verifies both sources, fallback removal, and retained select2 selector; live legacy visual parity remains unverified. |

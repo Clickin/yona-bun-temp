@@ -3673,4 +3673,6 @@ Batch 453 applies the project-route utility shell state. Project header utility 
 
 Batch 454 applies the organization-route utility shell state. Organization header utility wrapper/list/item geometry moves into route-local StyleX, completing both project and organization consumers so the shared utility fallback selectors can be retired; watcher state selectors remain untouched.
 
+Batch 455 applies the project-header watcher state. Watcher count paint, conditional watching background, and watch-button padding move into route-local conditional/static StyleX while preserving dynamic watch state, legacy classes, links, and dropdown behavior; the down-arrow pseudo and unrelated watcher fallbacks remain frozen.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.

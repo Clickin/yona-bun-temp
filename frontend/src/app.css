@@ -2687,23 +2687,8 @@ h1 {
   color: #e91e63;
 }
 
-.watcher-count {
-  opacity: 0.9 !important;
-  border: 0 !important;
-  text-shadow: none;
-}
-
-.watch-on {
-  background-color: #b6da54 !important;
-  background-image: none !important;
-}
-
 .nofocus {
   outline: 0 !important;
-}
-
-.watch-btn > button {
-  padding: 4px 10px;
 }
 
 .down-arrow::after {

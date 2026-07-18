@@ -2710,7 +2710,8 @@ function ProjectHeaderContent({
                     className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
                   >
                     <Link
-                      className={`btn watcher-count no-border ${watchState.isWatching ? "watch-on" : ""}`}
+                      className={`${stylex.props(projectHomeStyles.watcherCount, watchState.isWatching ? projectHomeStyles.watcherOn : undefined).className} btn watcher-count no-border${watchState.isWatching ? " watch-on" : ""}`}
+                      data-stylex-owner="project-header-watcher-count"
                       title={t("project.watcher.number")}
                       to={toRoutePath(
                         basePath,
@@ -2783,7 +2784,8 @@ function ProjectHeaderContent({
                       </div>
                     </div>
                     <button
-                      className="btn nofocus no-border down-arrow"
+                      className={`${stylex.props(projectHomeStyles.watchButton).className} btn nofocus no-border down-arrow`}
+                      data-stylex-owner="project-header-watch-button"
                       type="button"
                       onClick={(event) => {
                         event.preventDefault();
