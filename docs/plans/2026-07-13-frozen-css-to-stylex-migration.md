@@ -3339,6 +3339,9 @@ Batch 292 applies the workflow to the authenticated pull-request detail action w
 
 Batch 293 corrects the pull-request action-wrapper focused geometry assertion to use Playwright bounding-box `x`/`width` fields; the StyleX implementation and visible contract remain unchanged.
 
+Batch 294 applies the workflow to the authenticated board post keymap-help wrapper. Its fixed legacy padding and left margin moved to route-local StyleX while the conditional modal display remains React state-owned; the focused residual test covers source evidence, computed spacing, modal interaction, and desktop/mobile containment.
+
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

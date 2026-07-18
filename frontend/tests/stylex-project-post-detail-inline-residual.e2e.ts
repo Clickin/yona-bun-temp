@@ -18,6 +18,7 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
     "../yona-original/public/javascripts/common/yobi.OriginalMessage.js",
     "utf8",
   );
+  const keymapTemplate = readFileSync("../yona-original/app/views/help/keymap.scala.html", "utf8");
   expect(template).toContain(
     '<div class="tab-content" style="position:relative;overflow: visible;">',
   );
@@ -26,14 +27,21 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(tasklistTemplate).toContain(
     '<div class="bar red" style="width: 0;" title="Tasklist"></div>',
   );
+  expect(keymapTemplate).toContain(
+    '<div class="pull-left" style="padding:10px 0; margin-left: 55px;">',
+  );
   expect(route).not.toContain(
     'className="tab-content" style={{ position: "relative", overflow: "visible" }}',
   );
   expect(route).not.toContain("style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}");
   expect(route).not.toContain('<div className="bar red" style={{ width: 0 }}');
+  expect(route).not.toContain(
+    'className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}',
+  );
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
   expect(theme).toContain("originalMessageToggle: { paddingLeft: 5, paddingRight: 5 }");
   expect(theme).toContain("tasklistProgress: { width: 0 }");
+  expect(theme).toContain('keymapWrapper: { marginLeft: 55, padding: "10px 0px" }');
 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -60,6 +68,29 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
     await expect(progress).toHaveAttribute("class", /red/);
     await expect(progress).not.toHaveAttribute("style", /.+/);
     await expect(progress).toHaveCSS("width", "0px");
+  }
+
+  const keymap = page.locator('[data-stylex-owner="post-detail-keymap-wrapper"]');
+  await expect(keymap).toHaveCount(1);
+  await expect(keymap).not.toHaveAttribute("style", /.+/);
+  await expect(keymap).toHaveCSS("padding-top", "10px");
+  await expect(keymap).toHaveCSS("padding-bottom", "10px");
+  await expect(keymap).toHaveCSS("margin-left", "55px");
+  const keymapButton = keymap.locator("button.ybtn").first();
+  await expect(keymapButton).toHaveCount(1);
+  await keymapButton.click();
+  const keymapModal = page.locator("#helpKeys");
+  await expect(keymapModal).toBeVisible();
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const wrapperBox = await keymap.boundingBox();
+    expect(wrapperBox).not.toBeNull();
+    expect(wrapperBox!.x).toBeGreaterThanOrEqual(0);
+    expect(wrapperBox!.x + wrapperBox!.width).toBeLessThanOrEqual(viewport.width);
   }
 });
 

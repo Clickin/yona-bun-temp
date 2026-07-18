@@ -665,3 +665,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 293
 
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber` action-wrapper geometry assertion correction: fixed the focused Playwright containment check to use bounding-box `x`/`width` fields while retaining the same StyleX owner and legacy geometry contract.
+
+## Batch 294
+
+- `/$ownerName/$projectName/post/$postNumber` keymap-help wrapper state: moved the fixed legacy `padding:10px 0; margin-left:55px` spacing into the route-local `keymapWrapper` StyleX owner, preserving the `pull-left` wrapper, keymap button/modal interaction, and responsive containment. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies the legacy help template, computed spacing, no literal inline style, visible modal state, and desktop/mobile containment; live legacy visual parity remains unverified.

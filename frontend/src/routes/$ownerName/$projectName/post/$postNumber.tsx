@@ -49,6 +49,7 @@ const sx = {
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
   tasklistProgress: stylex.props(styles.tasklistProgress),
+  keymapWrapper: stylex.props(styles.keymapWrapper),
 } as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
@@ -1897,7 +1898,11 @@ function BoardDetailKeymap({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}>
+    <div
+      {...sx.keymapWrapper}
+      className={`${sx.keymapWrapper.className} pull-left`}
+      data-stylex-owner="post-detail-keymap-wrapper"
+    >
       <button
         type="button"
         className="ybtn ybtn-inverse ybtn-mini"
