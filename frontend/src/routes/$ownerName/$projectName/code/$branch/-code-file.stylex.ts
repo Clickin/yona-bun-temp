@@ -10,6 +10,17 @@ export const codeFileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  folderRow: { borderBottom: "1px solid #efefef" },
+  folderText: { overflow: "hidden", textOverflow: "ellipsis" },
+  folderFilename: { fontSize: "10pt", whiteSpace: "nowrap" },
+  folderCommitMessage: { color: "#7e7e7e", fontSize: "10pt" },
+  folderCommitDate: {
+    paddingRight: "5px",
+    color: "#7e7e7e",
+    fontSize: "8pt",
+    textAlign: "right",
+    whiteSpace: "nowrap",
+  },
   // view.scala.html #spin inline rule; the loading marker remains React-owned.
   spinner: { left: "50%", position: "fixed", top: "50%" },
   noFiles: {

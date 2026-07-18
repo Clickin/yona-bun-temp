@@ -5709,34 +5709,6 @@ div.markdown-preview {
   text-align: right;
 }
 
-.code-viewer-wrap .listitem {
-  border-bottom: 1px solid #efefef;
-}
-
-.code-viewer-wrap .listitem .filename,
-.code-viewer-wrap .listitem .commitMsg {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.code-viewer-wrap .listitem .filename {
-  font-size: 10pt;
-  white-space: nowrap;
-}
-
-.code-viewer-wrap .listitem .commitMsg {
-  color: #7e7e7e;
-  font-size: 10pt;
-}
-
-.code-viewer-wrap .listitem .commitDate {
-  padding-right: 5px;
-  color: #7e7e7e;
-  font-size: 8pt;
-  text-align: right;
-  white-space: nowrap;
-}
-
 .code-viewer-wrap span.dynatree-icon {
   margin: 0 3px 1px 5px;
 }

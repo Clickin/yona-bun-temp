@@ -459,8 +459,17 @@ function FolderListEntry({
   const encodedBranch = encodeURIComponent(selectedBranch);
 
   return (
-    <div id={rowId} className="row-fluid listitem">
-      <div className="span6 filename">
+    <div
+      {...stylex.props(styles.folderRow)}
+      id={rowId}
+      className={`${stylex.props(styles.folderRow).className} row-fluid listitem`}
+      data-stylex-owner="project-code-folder-row"
+    >
+      <div
+        {...stylex.props(styles.folderText, styles.folderFilename)}
+        className={`${stylex.props(styles.folderText, styles.folderFilename).className} span6 filename`}
+        data-stylex-owner="project-code-folder-filename"
+      >
         <Link
           activeOptions={{
             exact: true,
@@ -482,7 +491,11 @@ function FolderListEntry({
           {entry.name}
         </Link>
       </div>
-      <div className="span5 commitMsg">
+      <div
+        {...stylex.props(styles.folderText, styles.folderCommitMessage)}
+        className={`${stylex.props(styles.folderText, styles.folderCommitMessage).className} span5 commitMsg`}
+        data-stylex-owner="project-code-folder-commit-message"
+      >
         <span className="ml5">
           <Link
             activeOptions={{
@@ -503,7 +516,13 @@ function FolderListEntry({
           </Link>
         </span>
       </div>
-      <div className="span1 commitDate">{entry.commitDate}</div>
+      <div
+        {...stylex.props(styles.folderCommitDate)}
+        className={`${stylex.props(styles.folderCommitDate).className} span1 commitDate`}
+        data-stylex-owner="project-code-folder-commit-date"
+      >
+        {entry.commitDate}
+      </div>
     </div>
   );
 }

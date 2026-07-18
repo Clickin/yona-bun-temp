@@ -4,6 +4,10 @@
 
 - Existing `labelsform.tsx` owners cover list-head surface/border and category/name alignment; exact scoped selectors are retired with generic fallback retained.
 
+## Code browser folder rows
+
+- `/$ownerName/$projectName/code/$branch/$filePath` folder rows use four colocated owners for border, overflow/ellipsis, filename/commit typography, and commit date metadata. Focused `stylex-project-code-folder-row.e2e.ts` verifies legacy code partials and exact scoped fallback retirement; generic code-viewer/dynatree fallback remains.
+
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
