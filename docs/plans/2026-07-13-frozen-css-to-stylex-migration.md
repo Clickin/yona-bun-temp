@@ -3734,3 +3734,5 @@ Batch 478 applies the workflow to the issue-detail timeline state base geometry.
 Batch 479 applies a finite conditional StyleX lookup for issue-detail timeline state variants, preserving event-index and neutral fallback selectors.
 
 Batch 481 applies the workflow to issueform markdown Edit/Preview tabs. The two route-only tab button base and conditional active declarations move into StyleX while preserving legacy DOM, tab state, and generic nav/editor fallback; legacy Scala HTML/JS is output DOM/UX evidence and behavior remains React-owned. The focused contract verifies the common editor source, two owners, and exact scoped fallback removal.
+
+Batch 482 applies the workflow to project webhook list header/item geometry. Header surface/border, payload/secret cell padding/line-height, and item bottom border move into three route-local StyleX owners while preserving legacy DOM/classes and plugin behavior; truncate/table/secret details and generic fallback remain deferred. Legacy Scala HTML/JS is output DOM/UX evidence and behavior remains React-owned.

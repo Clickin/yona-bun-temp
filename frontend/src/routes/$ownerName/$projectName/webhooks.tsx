@@ -66,6 +66,8 @@ const styles = stylex.create({
     borderBottomStyle: "solid",
     borderBottomWidth: "2px",
   },
+  listHeadCell: { paddingLeft: "8px", lineHeight: "30px" },
+  listItem: { borderBottom: "1px solid #ddd" },
 });
 
 const LEGACY_LINK_PROPS = {
@@ -462,22 +464,23 @@ function ProjectWebhooksList({
         className="row-fluid list-head"
         data-stylex-owner="project-webhooks-list-head"
       >
-        <div className="span5 payload-url">
+        <div {...stylex.props(styles.listHeadCell)} className="span5 payload-url">
           <strong>{t("project.webhook.payloadUrl")}</strong>
         </div>
-        <div className="span2 secret text-center">
+        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
           <strong>{t("project.webhook.secret")}</strong>
         </div>
-        <div className="span2 secret text-center">
+        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
           <strong>Type of message</strong>
         </div>
-        <div className="span2 secret text-center">
+        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
           <strong>Include git push events</strong>
         </div>
-        <div className="span1 secret text-center"></div>
+        <div {...stylex.props(styles.listHeadCell)} className="span1 secret text-center"></div>
       </div>
       {webhooks.map((webhook) => (
         <div
+          {...stylex.props(styles.listItem)}
           className="row-fluid list-item vertical-align"
           data-webhook-id={webhook.id}
           key={webhook.id}

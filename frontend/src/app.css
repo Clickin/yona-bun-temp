@@ -1459,22 +1459,6 @@ span.issue-label {
   margin: 0 auto;
 }
 
-.webhook-editor-wrap .webhook-list-wrap .list-head {
-  background: #fafafa;
-  border: 1px solid #ddd;
-  border-width: 0 0 2px;
-}
-
-.webhook-editor-wrap .webhook-list-wrap .list-head .payload-url,
-.webhook-editor-wrap .webhook-list-wrap .list-head .secret {
-  padding-left: 8px;
-  line-height: 30px;
-}
-
-.webhook-editor-wrap .webhook-list-wrap .list-item {
-  border-bottom: 1px solid #ddd;
-}
-
 .webhook-editor-wrap .webhook-list-wrap .list-item h6 {
   padding-left: 8px;
 }
