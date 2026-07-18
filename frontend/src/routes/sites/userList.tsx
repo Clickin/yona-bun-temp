@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
+import { useState, type MouseEvent, type SyntheticEvent } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   deleteSiteUserRest,
@@ -51,10 +51,10 @@ const LEGACY_LINK_ACTIVE_MARKER_SUPPRESSION_PROPS = {
 const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
   __legacySiteUserListSidebarActiveMarker: undefined,
 };
-const paginationSpriteStyle = {
-  "--site-user-list-pagination-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
 const styles = stylex.create({
+  paginationSprite: (spriteUrl: string) => ({
+    "--site-user-list-pagination-sprite": `url(${spriteUrl})`,
+  }),
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: {
@@ -1273,7 +1273,7 @@ function UserListPagination({
                 {...paginationPrevIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="site-user-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -1288,7 +1288,7 @@ function UserListPagination({
                 {...paginationPrevDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="site-user-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationDisabledLabelStyleProps}
@@ -1360,7 +1360,7 @@ function UserListPagination({
                 {...paginationNextIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="site-user-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -1376,7 +1376,7 @@ function UserListPagination({
                 {...paginationNextDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="site-user-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}
