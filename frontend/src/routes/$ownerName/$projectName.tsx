@@ -22,6 +22,18 @@ const projectHistoryStyles = stylex.create({
   date: { marginLeft: "0" },
   pullRequestDate: { color: "#999" },
   pullRequestLink: { marginRight: "17px" },
+  whereis: { color: "#333", fontSize: "11px" },
+  where: {
+    backgroundColor: "#f7f7f7",
+    borderRadius: "2px",
+    boxShadow: "inset 0 0 5px #fff",
+    color: "#51aacc",
+    display: "inline-block",
+    fontWeight: "bold",
+    padding: "3px 5px",
+  },
+  title: { fontWeight: "bold" },
+  historyDate: { color: "#bbb", marginLeft: "5px" },
 });
 
 const projectHeaderStyles = stylex.create({
@@ -1722,11 +1734,24 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                       {stringField(itemRecord.actorName, "")}
                     </HistoryLink>{" "}
                     {t(`project.history.type.${itemType}`)}{" "}
-                    <span className="whereis">
-                      <HistoryLink basePath={basePath} href={itemUrl} className="where">
+                    <span
+                      className={`whereis ${stylex.props(projectHistoryStyles.whereis).className}`}
+                      data-stylex-owner="project-history-whereis"
+                    >
+                      <HistoryLink
+                        basePath={basePath}
+                        href={itemUrl}
+                        className={`where ${stylex.props(projectHistoryStyles.where).className}`}
+                        data-stylex-owner="project-history-where"
+                      >
                         {shortTitle}
                       </HistoryLink>{" "}
-                      <HistoryLink basePath={basePath} href={itemUrl} className="title">
+                      <HistoryLink
+                        basePath={basePath}
+                        href={itemUrl}
+                        className={`title ${stylex.props(projectHistoryStyles.title).className}`}
+                        data-stylex-owner="project-history-title"
+                      >
                         {title}
                       </HistoryLink>
                     </span>
@@ -1736,7 +1761,7 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                     data-stylex-owner="project-history-others"
                   >
                     <span
-                      className={`${stylex.props(projectHistoryStyles.date).className} date`}
+                      className={`${stylex.props(projectHistoryStyles.date, projectHistoryStyles.historyDate).className} date`}
                       data-stylex-owner="project-history-date"
                       title={stringField(
                         itemRecord.createdTitle,

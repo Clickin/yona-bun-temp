@@ -3551,3 +3551,5 @@ Batch 389 applies the workflow to the authenticated issue-detail fixed inline-ow
 Batch 390 applies the workflow to the authenticated project-history activity geometry state. The fixed stream/list/item spacing and border declarations move to route-local StyleX owners while preserving legacy history DOM and responsive geometry; the focused activity-geometry test covers the legacy source contract and owner consumers.
 
 Batch 391 applies the workflow to the public user-profile static popover state. The shared two-column/show-subtasks popover geometry moves to a route-local StyleX owner while preserving legacy popover DOM, copy, hover/focus behavior, and responsive geometry; the focused profile-popover test covers the legacy source contract and owners.
+
+Batch 392 applies the workflow to the authenticated project-history whereis state. The fixed whereis, where, title, and date paint declarations move to route-local StyleX owners while preserving legacy history links, copy, and responsive geometry; the focused whereis-owner test covers the legacy source contract and owners.
