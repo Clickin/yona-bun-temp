@@ -226,7 +226,7 @@ test("label edit preview color uses Dynamic StyleX", async ({ page }) => {
   const editLabel = page.locator('[data-stylex-owner="project-labels-edit-label-modal"]');
   const nameInput = editLabel.locator('input[name="name"]');
   await expect(nameInput).toHaveCSS("background-color", "rgb(63, 81, 181)");
-  expect(await nameInput.getAttribute("style")).not.toContain("background");
+  expect(await nameInput.getAttribute("style")).not.toMatch(/(?:^|;)\s*background(?:-color)?\s*:/i);
 
   const box = await editLabel.boundingBox();
   expect(box).not.toBeNull();

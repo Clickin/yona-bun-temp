@@ -1435,6 +1435,7 @@ function EditLabelModal({
     }
   }
   const categories = Array.from(categoriesById.values());
+  // API-provided preview color is a Dynamic StyleX carrier; literal background declarations stay retired.
   const labelNameBackground = label?.color
     ? stylex.props(labelsFormDynamicStyles.labelNameBackground(label.color))
     : undefined;
