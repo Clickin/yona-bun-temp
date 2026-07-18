@@ -103,6 +103,8 @@ function OrganizationMembersBody({
   const memberSuggestions = (memberSearchQuery.data?.items ?? []).map(parseLegacyMemberSearchItem);
   const showTypeaheadSuggestions =
     isTypeaheadOpen && normalizedLoginQuery.length > 0 && memberSuggestions.length > 0;
+  const deleteModalStyleProps =
+    deleteUserId === null ? undefined : stylex.props(styles.deleteModalVisible);
   const closeDeleteMemberModal = () => setDeleteUserId(null);
   const openDeleteMemberModal = (event: MouseEvent<HTMLButtonElement>, userId: number) => {
     insulateOrganizationMembersDeleteModalButtonClick(event);
@@ -332,7 +334,7 @@ function OrganizationMembersBody({
           <div
             id="alertDeletion"
             className={deleteUserId === null ? "modal hide" : "modal hide in"}
-            {...(deleteUserId === null ? {} : stylex.props(styles.deleteModalVisible))}
+            {...deleteModalStyleProps}
             data-stylex-owner="organization-members-delete-modal"
           >
             <div className="modal-header">
