@@ -345,7 +345,8 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
       className="project"
       data-item="project-item"
       data-value={dataValue}
-      style={hidden ? { display: "none" } : undefined}
+      {...(hidden ? stylex.props(styles.projectHidden) : {})}
+      data-stylex-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">
         <div className="owner-avatar-wrap hide-in-mobile">

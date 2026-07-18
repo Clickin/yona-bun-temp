@@ -14,4 +14,5 @@ export const styles = stylex.create({
   projectInfo: { float: "left" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
   leaveModalVisible: { display: "block" },
+  projectHidden: { display: "none" },
 });
