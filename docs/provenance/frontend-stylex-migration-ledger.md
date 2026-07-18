@@ -1315,3 +1315,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 498
 
 - Authenticated `/$ownerName/$projectName` project-history activity typography: moved legacy `.header-text` overflow, ellipsis, typography, and `.actor` emphasis into `projectHistoryStyles` while preserving the history partial DOM, links, copy, and React behavior. Existing route-local whereis, where, title, and date owners cover the remaining declarations, so the exact history header/actor/whereis/title/date hierarchy is retired; generic activity-stream/list geometry remains fallback. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. Focused `stylex-project-history-typography.e2e.ts` verifies legacy/LESS evidence, stable owners, and exact fallback removal; live legacy visual parity remains unverified.
+## Batch 499
+
+- `/$ownerName/$projectName/issue/labelsform` label-list rows: applied `listTableRow` and conditional `listTableRowLast` StyleX owners to rendered label rows, retiring only the dead `.label-editor-wrap .new-label-wrap` and `.issue-label-list-wrap` app.css blocks. Shared `.issue-label` and `.category-exclusive` fallback remains active for cross-route consumers. Focused `stylex-project-labelsform.e2e.ts` verifies legacy evidence, first/last border behavior, and exact dead fallback absence.

@@ -1313,67 +1313,6 @@ span.issue-label {
   line-height: 20px;
 }
 
-.label-editor-wrap .new-label-wrap {
-  margin: 30px auto;
-}
-
-.label-editor-wrap .new-label-wrap .form-legend {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.label-editor-wrap .new-label-wrap .form-wrap {
-  position: relative;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.label-editor-wrap .new-label-wrap .input-label {
-  width: 214px;
-}
-
-.label-editor-wrap .new-label-wrap .btn-submit {
-  min-width: 100px;
-  vertical-align: top;
-}
-
-.label-editor-wrap .issue-label-list-wrap {
-  margin: 0 auto;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .category-name {
-  margin-right: 2px;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table .issue-label {
-  display: block;
-  max-width: 90%;
-  font-size: 12px;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table tr {
-  border-bottom: 1px solid #ddd;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table tr:last-of-type {
-  border-bottom: none;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table td {
-  border-top: none;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table td.info {
-  width: 150px;
-  text-align: right;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-item .table td.actions {
-  width: 150px;
-  padding-right: 1px;
-  text-align: right;
-}
-
 .category-exclusive {
   margin-right: 5px;
   vertical-align: middle;

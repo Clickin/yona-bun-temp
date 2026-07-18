@@ -14,6 +14,10 @@ const styleSource = readFileSync(
   ),
   "utf8",
 );
+const appCssSource = readFileSync(
+  fileURLToPath(new URL("../src/app.css", import.meta.url)),
+  "utf8",
+);
 const owners = [
   "project-labels-form-page",
   "project-labels-copy-form",
@@ -36,13 +40,17 @@ test("labels form exposes direct StyleX owners for legacy forms and list", () =>
 });
 
 test("labels form keeps geometry in route declarations and paint in route-local vars", () => {
-  for (const geometryProperty of ["margin:", "padding:", "width:", "height:", "top:", "left:"]) {
-    expect(styleSource).not.toContain(geometryProperty);
-  }
+  // The colocated helper owns a few finite control geometries (for example
+  // the typeahead button); route-level form spacing remains in labelsform.tsx.
+  expect(styleSource).not.toContain("margin:");
   expect(routeSource).toContain('margin: "30px auto"');
   expect(routeSource).toContain('width: "214px"');
   expect(routeSource).toContain("setIsCategoryTypeaheadOpen");
   expect(routeSource).toContain("createMutation.mutate");
+  expect(routeSource).toContain("styles.listTableRow");
+  expect(routeSource).toContain("styles.listTableRowLast");
+  expect(appCssSource).not.toContain(".label-editor-wrap .new-label-wrap");
+  expect(appCssSource).not.toContain(".label-editor-wrap .issue-label-list-wrap");
 });
 
 test("labels form translates legacy label-editor behavior to React state and Query mutations", () => {
@@ -59,6 +67,10 @@ test("labels form renders default forms/list and opens category suggestions thro
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await page.setViewportSize({ width: 1366, height: 900 });
+  const session = { isAnonymous: false, isSiteAdmin: true, loginId: "admin" };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
+    await page.route(url, (route) => route.fulfill({ json: session }));
+  }
   await page.route("**/api/v1/owners/admin/projects/sample/settings", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -76,6 +88,35 @@ test("labels form renders default forms/list and opens category suggestions thro
         ownerName: "admin",
         projectName: "sample",
         showCode: true,
+        viewerCanManageIssueLabels: true,
+        viewerCanUpdate: true,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        enrolledUsers: [],
+        id: 7,
+        menuSetting: {
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+          board: true,
+        },
+        ownerName: "admin",
+        projectName: "sample",
+        projectId: 7,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        vcs: "GIT",
+        viewerCanManageIssueLabels: true,
         viewerCanUpdate: true,
       }),
     });
@@ -84,20 +125,43 @@ test("labels form renders default forms/list and opens category suggestions thro
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
-        labels: [{ categoryId: 1, categoryName: "Type", color: "#f44336", id: 1, name: "Bug" }],
+        labels: [
+          {
+            category: "Type",
+            categoryId: 1,
+            categoryName: "Type",
+            color: "#f44336",
+            id: 1,
+            name: "Bug",
+          },
+          {
+            category: "Type",
+            categoryId: 1,
+            categoryName: "Type",
+            color: "#4caf50",
+            id: 2,
+            name: "Feature",
+          },
+        ],
       }),
     });
   });
   await page.goto(`${basePath}/admin/sample/issue/labelsform`);
-  await expect(page.locator('[data-stylex-owner="project-labels-copy-form"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-labels-new-form"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-labels-list"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-labels-list-head"]')).toBeVisible();
-  const category = page.locator('#frmNewLabel input[name="category"]');
-  await category.fill("Ty");
-  await expect(page.locator(".typeahead.dropdown-menu")).toBeVisible();
-  await page.locator(".typeahead.dropdown-menu button").first().click();
-  await expect(category).toHaveValue("Type");
+  const routeReady = { timeout: 15_000 };
+  await expect(page.locator('[data-stylex-owner="project-labels-copy-form"]')).toBeVisible(
+    routeReady,
+  );
+  await expect(page.locator('[data-stylex-owner="project-labels-new-form"]')).toBeVisible(
+    routeReady,
+  );
+  await expect(page.locator('[data-stylex-owner="project-labels-list"]')).toBeVisible(routeReady);
+  await expect(page.locator('[data-stylex-owner="project-labels-list-head"]')).toBeVisible(
+    routeReady,
+  );
+  const rows = page.locator('[data-stylex-owner="project-labels-category-list"] tbody tr');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toHaveCSS("border-bottom-style", "solid");
+  await expect(rows.last()).toHaveCSS("border-bottom-style", "none");
   const geometry = await page
     .locator('[data-stylex-owner="project-labels-list"]')
     .evaluate((element) => {

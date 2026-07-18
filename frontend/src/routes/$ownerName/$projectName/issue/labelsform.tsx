@@ -90,6 +90,7 @@ const styles = stylex.create({
   listTableCell: { borderTopStyle: "none" },
   listTableLabel: { display: "block", fontSize: "12px", maxWidth: "90%" },
   listTableRow: { borderBottomColor: labelsFormColors.border, borderBottomStyle: "solid" },
+  listTableRowLast: { borderBottomStyle: "none" },
   listActions: {
     borderTopStyle: "none",
     paddingRight: "1px",
@@ -952,11 +953,18 @@ function ProjectLabelsList({
           <div className="span9">
             <table className="table nm">
               <tbody>
-                {category.labels.map((label) => {
+                {category.labels.map((label, labelIndex) => {
                   const labelId = stringField(label.id, "");
                   const labelName = stringField(label.name, "");
                   return (
-                    <tr data-label-id={labelId} key={labelId || labelName}>
+                    <tr
+                      {...stylex.props(
+                        styles.listTableRow,
+                        labelIndex === category.labels.length - 1 && styles.listTableRowLast,
+                      )}
+                      data-label-id={labelId}
+                      key={labelId || labelName}
+                    >
                       <td {...stylex.props(styles.listTableCell)}>
                         <span
                           {...stylex.props(styles.listTableLabel)}
