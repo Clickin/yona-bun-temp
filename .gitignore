@@ -44,3 +44,4 @@ output/playwright/
 
 # OMX runtime state and logs
 .omx/
+.pnpm-store/
