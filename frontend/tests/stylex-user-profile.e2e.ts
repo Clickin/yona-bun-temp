@@ -3,6 +3,14 @@ import { readFile } from "node:fs/promises";
 
 test("public user profile renders legacy info and stream owners", async ({ page }) => {
   const source = await readFile(new URL("../src/routes/$user.tsx", import.meta.url), "utf8");
+  const legacy = await readFile(
+    new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
+    "utf8",
+  );
+  expect(legacy).toContain('<div class="pull-left" style="margin-left: 10px;">');
+  expect(source).toContain('data-stylex-owner="user-profile-project-info"');
+  expect(source).toContain("projectInfo");
+  expect(source).not.toContain('style={{ marginLeft: "10px" }}');
   expect(source).toContain('data-stylex-owner="user-profile-days-ago-input"');
   expect(source).toContain("daysAgoInput");
   expect(source).not.toContain('style={{ margin: "0px 5px", verticalAlign: "bottom" }}');
@@ -47,7 +55,23 @@ test("public user profile renders legacy info and stream owners", async ({ page 
             labels: [],
           },
         ],
-        memberProjects: [],
+        memberProjects: [
+          {
+            projectId: 7,
+            ownerName: "other",
+            projectName: "sample",
+            projectScope: "public",
+            logoUrl: "",
+            overview: "A sample project",
+            memberCount: 3,
+            createdLabel: "today",
+            viewerCanWatch: true,
+            isWatching: false,
+            watchCount: 2,
+            viewerCanLeave: true,
+            notifications: [],
+          },
+        ],
         pullRequestItems: [],
       },
     }),
@@ -57,6 +81,30 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   await expect(page.locator('[data-stylex-owner="user-profile-info"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="user-profile-stream"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="user-profile-tabs"]')).toBeVisible();
+  await page.getByRole("button", { name: /Projects/i }).click();
+  const projectInfo = page.locator('[data-stylex-owner="user-profile-project-info"]');
+  await expect(projectInfo).toBeVisible();
+  await expect(projectInfo.getByRole("link", { name: "sample", exact: true })).toBeVisible();
+  const projectRow = projectInfo.locator("xpath=ancestor::li[contains(@class, 'project')]");
+  await expect(projectRow.locator("a.watchBtn")).toBeVisible();
+  await expect(projectRow.locator("a.leaveProject")).toBeVisible();
+  const projectGeometry = await projectInfo.evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    const stream = node.closest(".user-streams")?.getBoundingClientRect();
+    const computed = getComputedStyle(node);
+    return {
+      hasInlineStyle: node.hasAttribute("style"),
+      marginLeft: computed.marginLeft,
+      left: rect.left,
+      right: rect.right,
+      stream: stream ? { left: stream.left, right: stream.right } : null,
+    };
+  });
+  expect(projectGeometry.hasInlineStyle).toBe(false);
+  expect(projectGeometry.marginLeft).toBe("10px");
+  expect(projectGeometry.stream).not.toBeNull();
+  expect(projectGeometry.left).toBeGreaterThanOrEqual(projectGeometry.stream!.left);
+  expect(projectGeometry.right).toBeLessThanOrEqual(projectGeometry.stream!.right);
   const desktopDaysAgo = await page
     .locator('[data-stylex-owner="user-profile-days-ago-input"]')
     .evaluate((node) => {
@@ -109,4 +157,22 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   expect(mobileDaysAgo.stream).not.toBeNull();
   expect(mobileDaysAgo.input.left).toBeGreaterThanOrEqual(mobileDaysAgo.stream!.left);
   expect(mobileDaysAgo.input.right).toBeLessThanOrEqual(mobileDaysAgo.stream!.right);
+  const mobileProjectGeometry = await page
+    .locator('[data-stylex-owner="user-profile-project-info"]')
+    .evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const stream = node.closest(".user-streams")?.getBoundingClientRect();
+      return {
+        hasInlineStyle: node.hasAttribute("style"),
+        marginLeft: getComputedStyle(node).marginLeft,
+        left: rect.left,
+        right: rect.right,
+        stream: stream ? { left: stream.left, right: stream.right } : null,
+      };
+    });
+  expect(mobileProjectGeometry.hasInlineStyle).toBe(false);
+  expect(mobileProjectGeometry.marginLeft).toBe("10px");
+  expect(mobileProjectGeometry.stream).not.toBeNull();
+  expect(mobileProjectGeometry.left).toBeGreaterThanOrEqual(mobileProjectGeometry.stream!.left);
+  expect(mobileProjectGeometry.right).toBeLessThanOrEqual(mobileProjectGeometry.stream!.right);
 });

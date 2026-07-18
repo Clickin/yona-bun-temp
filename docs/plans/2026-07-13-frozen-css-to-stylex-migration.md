@@ -5,6 +5,8 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 297 applies the workflow to the public user profile project-list wrapper. Its fixed legacy `margin-left:10px` spacing moved to a route-local StyleX owner while project links, watch/leave actions, and responsive geometry remain unchanged; the focused profile E2E covers source evidence, computed spacing, interactions, and desktop/mobile containment.
+
 Batch 295 applies the workflow to the authenticated pull-request changes ranged and non-ranged review-thread forms. Their fixed legacy `display:block` declarations moved to one route-local StyleX owner with separate stable markers; the `.review-form` hidden cascade, pending-block coordinates, and conditional review visibility remain documented fallback/state ownership. Focused Playwright passed 2/2 with desktop/mobile containment; live legacy visual parity remains unverified.
 
 Batch 296 applies the workflow to the authenticated issue detail original-message toggle. The fixed legacy `border:0` declaration from `yobi.OriginalMessage.js` moved to the route-local StyleX owner while padding and React visibility interaction remain unchanged. Focused Playwright covers legacy Scala/JS evidence, computed borders, no inline border, toggle interaction, and desktop/mobile containment; live legacy visual parity remains unverified.

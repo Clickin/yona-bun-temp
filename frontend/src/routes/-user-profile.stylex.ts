@@ -16,6 +16,10 @@ export const styles = stylex.create({
     margin: "0px 5px",
     verticalAlign: "bottom",
   },
+  // Legacy user/partial_projectlist.scala.html project info wrapper spacing.
+  projectInfo: {
+    marginLeft: "10px",
+  },
   // Legacy user/view.scala.html partial_issues subtask progress width.
   progressBar: (width: string) => ({ width }),
 });

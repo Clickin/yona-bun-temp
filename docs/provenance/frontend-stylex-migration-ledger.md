@@ -3,6 +3,10 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 297
+
+- `/$user` project-list state: moved the fixed `margin-left:10px` project-info wrapper spacing from `user/partial_projectlist.scala.html` into the route-local `projectInfo` StyleX owner, preserving project copy, watch/leave actions, legacy classes, and responsive containment. Focused `stylex-user-profile.e2e.ts` verifies the legacy partial, computed margin, no literal inline style, project interactions, and desktop/mobile containment; live legacy visual parity remains unverified.
+
 ## Batch 295
 
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes` ranged and non-ranged review-thread state: moved the two static `review-form` `display:block` declarations from `partial_comment_form_on_thread.scala.html` into the route-local `threadReviewForm` StyleX owner, with stable ranged/non-ranged ownership markers. The frozen `.review-form { display:none; }` rule remains the fallback for other conditional review forms; pending-block coordinates and state-driven visibility remain runtime fallback. Focused `stylex-project-pullrequest-changes-inline-residual.e2e.ts` verifies legacy source evidence, both computed displays, visible controls, no literal inline style, and desktop/mobile containment; focused Playwright passed 2/2 and live legacy visual parity remains unverified.

@@ -1031,7 +1031,10 @@ function ProfileProjectRow({
             <img src={project.logoUrl || "/assets/images/project_default_logo.png"} alt="" />
           </Link>
         </div>
-        <div className="pull-left" style={{ marginLeft: "10px" }}>
+        <div
+          className={`${stylex.props(styles.projectInfo).className} pull-left`}
+          data-stylex-owner="user-profile-project-info"
+        >
           <div className="header">
             <Link {...LEGACY_LINK_PROPS} to={projectPath} className="project-name">
               {project.projectName}
