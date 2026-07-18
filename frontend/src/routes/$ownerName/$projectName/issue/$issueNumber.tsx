@@ -2337,7 +2337,10 @@ function IssueChildIssue({
           </span>
         </span>
       </Link>
-      <span className="font12 no-border-at-child">
+      <span
+        className={`${stylex.props(styles.childCommentVoteText).className} font12 no-border-at-child`}
+        data-stylex-owner="project-issue-detail-child-comment-vote-text"
+      >
         <IssueChildCommentAndVotePair
           child={child}
           ownerName={ownerName}

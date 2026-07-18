@@ -43,6 +43,9 @@ export const styles = stylex.create({
   body: {
     minWidth: 0,
   },
+  childCommentVoteText: {
+    fontSize: "12px",
+  },
   content: {
     minWidth: 0,
   },
