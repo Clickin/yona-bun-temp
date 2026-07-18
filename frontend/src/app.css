@@ -4335,13 +4335,6 @@ div.markdown-preview {
   color: #646464;
 }
 
-.issue-detail-page .issue-label {
-  display: inline-block;
-  margin: 0 4px 4px 0;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
 .issue-detail-page .ybtn-danger {
   color: #b13427;
   border-color: #d98c82;

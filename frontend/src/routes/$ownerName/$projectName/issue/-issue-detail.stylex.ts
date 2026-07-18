@@ -46,6 +46,12 @@ export const styles = stylex.create({
   childCommentVoteText: {
     fontSize: "12px",
   },
+  labelGeometry: {
+    display: "inline-block",
+    margin: "0 4px 4px 0",
+    padding: "2px 6px",
+    borderRadius: "3px",
+  },
   modal: {
     position: "fixed",
     top: "18%",
