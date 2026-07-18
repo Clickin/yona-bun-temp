@@ -45,6 +45,11 @@ import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
 import { styles } from "./-issue-detail.stylex";
 
+const issueInlineOwners = stylex.create({
+  fullWidth: { width: "100%" },
+  disabledComment: { cursor: "text" },
+});
+
 const disabledVoteStyleProps = stylex.props(styles.disabledVote);
 
 const LEGACY_LINK_PROPS = {
@@ -1073,13 +1078,13 @@ function IssueDetailBody({
                       <>
                         <input
                           type="hidden"
-                          className="bigdrop"
+                          className={`${stylex.props(issueInlineOwners.fullWidth).className} bigdrop`}
                           id="assignee"
                           name="assigneeLoginId"
                           placeholder={t("issue.noAssignee")}
                           value={selectedAssigneeLoginId}
                           readOnly
-                          style={{ width: "100%" }}
+                          data-stylex-owner="issue-detail-assignee-input"
                         />
                         <LegacyAssigneeControl
                           issue={issue}
@@ -1942,12 +1947,12 @@ function LegacyAssigneeControl({
   const loginId = stringField(issue.assigneeLoginId);
   return (
     <div
-      className={`select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
+      className={`${stylex.props(issueInlineOwners.fullWidth).className} select2-container bigdrop${open ? " select2-dropdown-open" : ""}`}
       role="combobox"
       aria-label={t("issue.assignee")}
       aria-expanded={open}
       aria-controls="issue-assignee-results"
-      style={{ width: "100%" }}
+      data-stylex-owner="issue-detail-assignee-control"
     >
       <div
         className="select2-choice"
@@ -2689,7 +2694,11 @@ function IssueCommentForm({
       <div className="write-comment-box mt20" title={t("user.login.alert")} data-login="required">
         <div className="write-comment-wrap">
           <div className="textarea-box">
-            <textarea className="comment disabled" disabled style={{ cursor: "text" }}></textarea>
+            <textarea
+              className={`${stylex.props(issueInlineOwners.disabledComment).className} comment disabled`}
+              disabled
+              data-stylex-owner="issue-detail-disabled-comment-secondary"
+            ></textarea>
           </div>
           <div className="right-txt mt10">
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>

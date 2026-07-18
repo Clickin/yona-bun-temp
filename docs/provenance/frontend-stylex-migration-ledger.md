@@ -1033,3 +1033,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 388
 
 - Authenticated project-setting description state: moved fixed textarea overflow, wrapping, and resize declarations into route-local `textareaStaticStyles.overflow`, preserving the existing Dynamic StyleX height and legacy form behavior. Focused `stylex-project-setting-textarea-static.e2e.ts` verifies the legacy source contract, stable owner, and absence of the former inline object; live legacy visual parity remains unverified.
+
+## Batch 389
+
+- Authenticated issue-detail fixed inline-owner state: moved two assignee `width:100%` declarations and disabled-comment `cursor:text` into direct `issueInlineOwners`, preserving Select2/comment DOM, copy, interaction, and responsive geometry. Focused `stylex-project-issue-detail-fixed-inline-owners.e2e.ts` verifies the legacy source contracts, stable owners, and absence of the former inline declarations; live legacy visual parity remains unverified.
