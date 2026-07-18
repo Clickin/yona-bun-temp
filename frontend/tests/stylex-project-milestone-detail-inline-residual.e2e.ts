@@ -20,6 +20,9 @@ test("milestone detail action row owns static inline layout declarations", async
   expect(template).toContain('style="padding: 15px 0; clear:both;"');
   expect(route).toContain('data-stylex-owner="milestone-detail-actions"');
   expect(route).toContain("actrow right-txt row-fluid");
+  expect(route).toContain("sx.progressBar(`${completionPercent}%`)");
+  expect(route).toContain('data-stylex-owner="milestone-detail-progress-bar"');
+  expect(styles).toContain("progressBar: (width: string) => ({");
   expect(route).not.toContain('style={{ clear: "both", display: "block", padding: "15px 0" }}');
   expect(styles).toContain('display: "block"');
   expect(styles).toContain('padding: "15px 0px"');
@@ -42,6 +45,9 @@ test("milestone detail action row owns static inline layout declarations", async
     await expect(actions).toHaveCSS("padding", "15px 0px");
     await expect(actions).toHaveCSS("text-align", "right");
     expect(await actions.getAttribute("style")).toBeNull();
+    const progressBar = page.locator('[data-stylex-owner="milestone-detail-progress-bar"]');
+    await expect(progressBar).toHaveAttribute("style", /--x-width:\s*50%/u);
+    await expect(progressBar).not.toHaveAttribute("style", /(?:^|;)\s*width\s*:/u);
 
     const geometry = await actions.evaluate((element) => ({
       right: element.getBoundingClientRect().right,

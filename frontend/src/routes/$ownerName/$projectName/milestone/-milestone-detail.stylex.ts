@@ -15,7 +15,11 @@ export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   wrap: { color: milestoneDetailColors.bodyText },
   progress: { backgroundColor: "#f5f5f5", borderRadius: "4px", height: "8px", overflow: "hidden" },
-  progressBar: { backgroundColor: milestoneDetailColors.progress, height: "100%" },
+  progressBar: (width: string) => ({
+    backgroundColor: milestoneDetailColors.progress,
+    height: "100%",
+    width,
+  }),
   description: {
     backgroundColor: milestoneDetailColors.descriptionSurface,
     borderBottomColor: milestoneDetailColors.descriptionBorder,

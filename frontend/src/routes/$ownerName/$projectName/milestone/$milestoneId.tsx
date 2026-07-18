@@ -31,7 +31,7 @@ const sx = {
   page: stylex.props(styles.page),
   wrap: stylex.props(styles.wrap),
   progress: stylex.props(styles.progress),
-  progressBar: stylex.props(styles.progressBar),
+  progressBar: (width: string) => stylex.props(styles.progressBar(width)),
   description: stylex.props(styles.description),
   actions: stylex.props(styles.actions),
   tabs: stylex.props(styles.tabs),
@@ -332,7 +332,10 @@ function ProjectMilestoneDetailBody({
           </h4>
 
           <div {...sx.progress} data-stylex-owner="milestone-detail-progress">
-            <div {...sx.progressBar} style={{ width: `${completionPercent}%` }}></div>
+            <div
+              {...sx.progressBar(`${completionPercent}%`)}
+              data-stylex-owner="milestone-detail-progress-bar"
+            ></div>
           </div>
 
           {stringField(milestone.contentsMarkdown) ? (
@@ -1302,6 +1305,7 @@ function IssueSubtaskSummary({
   const childOpenCount = numberField(issue.childOpenCount);
   const childTotalCount = childClosedCount + childOpenCount;
   const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const progressStyle = stylex.props(styles.progressBar(`${percentage}%`));
   const parentIssueNumber = stringField(issue.parentIssueNumber);
   const parentIssueTitle = stringField(issue.parentIssueTitle);
 
@@ -1315,8 +1319,9 @@ function IssueSubtaskSummary({
             }`}
           >
             <div
-              className={`bar ${percentage === 100 ? "done" : "red"}`}
-              style={{ width: `${percentage}%` }}
+              {...progressStyle}
+              className={`${progressStyle.className} bar ${percentage === 100 ? "done" : "red"}`}
+              data-stylex-owner="milestone-detail-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>
