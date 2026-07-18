@@ -901,3 +901,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 353
 
 - Authenticated issue-form title suggestion category state: moved server-provided suggestion label color into the existing `issueFormStyles.labelBackground` Dynamic StyleX owner, preserving suggestion DOM, copy, selection behavior, and responsive geometry. Focused `stylex-project-issueform-title-suggestion-color.e2e.ts` verifies the legacy source, stable owner, dynamic StyleX function, and absence of the former literal inline color; live legacy visual parity remains unverified.
+
+## Batch 354
+
+- Authenticated milestone-detail delete-confirm modal state: moved conditional modal `display:block`/`display:none` into `styles.deleteModalVisible` and `styles.deleteModalHidden`, preserving the legacy modal DOM, aria state, copy, deletion interaction, and responsive geometry. Focused `stylex-project-milestone-detail-delete-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.

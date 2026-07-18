@@ -61,4 +61,6 @@ export const styles = stylex.create({
     borderWidth: "1px",
     padding: "4px 25px 4px 5px",
   },
+  deleteModalVisible: { display: "block" },
+  deleteModalHidden: { display: "none" },
 });

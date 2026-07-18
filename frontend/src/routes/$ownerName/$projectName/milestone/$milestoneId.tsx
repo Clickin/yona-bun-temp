@@ -41,6 +41,8 @@ const sx = {
   issueMeta: stylex.props(styles.issueMeta),
   massUpdate: stylex.props(styles.massUpdate),
   search: stylex.props(styles.search),
+  deleteModalVisible: stylex.props(styles.deleteModalVisible),
+  deleteModalHidden: stylex.props(styles.deleteModalHidden),
 } as const;
 
 type LegacyIssueListItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -297,6 +299,11 @@ function ProjectMilestoneDetailBody({
       router.navigate({ to: `/${ownerName}/${projectName}/milestones` });
     },
   });
+  const deleteModalStyleProps = deleteConfirmOpen
+    ? sx.deleteModalVisible
+    : deleteConfirmWasShown
+      ? sx.deleteModalHidden
+      : undefined;
 
   return (
     <div {...sx.page} data-stylex-owner="milestone-detail-page">
@@ -499,14 +506,9 @@ function ProjectMilestoneDetailBody({
 
       <div
         id="deleteConfirm"
-        className={deleteConfirmOpen ? "modal hide fade in" : "modal hide fade"}
-        style={
-          deleteConfirmOpen
-            ? { display: "block" }
-            : deleteConfirmWasShown
-              ? { display: "none" }
-              : undefined
-        }
+        {...deleteModalStyleProps}
+        className={`${deleteConfirmOpen ? "modal hide fade in" : "modal hide fade"} ${deleteModalStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="milestone-detail-delete-modal"
         aria-hidden={deleteConfirmOpen ? false : deleteConfirmWasShown ? true : undefined}
       >
         <div className="modal-header">
