@@ -1690,7 +1690,10 @@ function ProjectIssueItem({
             </span>
             <IssueSubtaskSummary issue={issue} ownerName={ownerName} projectName={projectName} />
             {showMilestone && issue.milestoneId ? (
-              <span className="mileston-tag">
+              <span
+                className={`${stylex.props(styles.milestoneTag).className} mileston-tag`}
+                data-stylex-owner="project-issues-milestone-tag"
+              >
                 <Link
                   activeProps={legacyRouteLocalActiveProps}
                   to="/$ownerName/$projectName/milestone/$milestoneId"
@@ -1794,7 +1797,12 @@ function ProjectIssueItem({
               />
             </Link>
           ) : (
-            <div className="empty-avatar-wrap">&nbsp;</div>
+            <div
+              className={`${stylex.props(styles.emptyAvatar).className} empty-avatar-wrap`}
+              data-stylex-owner="project-issues-empty-avatar"
+            >
+              &nbsp;
+            </div>
           )}
         </div>
         {issue.dueDateLabel ? (

@@ -4313,20 +4313,6 @@ h1 {
   display: inline-block;
 }
 
-.issue-list-page .empty-avatar-wrap {
-  width: 32px;
-  height: 32px;
-}
-
-.issue-list-page .mileston-tag {
-  max-width: 135px;
-  overflow: hidden;
-  color: #2196f3;
-  font-size: 11px;
-  text-overflow: ellipsis;
-  border-radius: 6px;
-}
-
 .post-title {
   min-width: 0;
   color: #333;

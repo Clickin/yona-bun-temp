@@ -1,6 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 
-export const issuesTheme = stylex.defineVars({ resultsSurface: "#ffffff" });
+export const issuesTheme = stylex.defineVars({
+  resultsSurface: "#ffffff",
+  milestoneTag: "#2196f3",
+});
 
 export const styles = stylex.create({
   downloadWrap: { padding: "10px" },
@@ -47,4 +50,13 @@ export const styles = stylex.create({
   },
   issueRowHoverBackground: (backgroundColor: string) => ({ backgroundColor }),
   childLabelBackground: (backgroundColor: string) => ({ background: backgroundColor }),
+  emptyAvatar: { height: "32px", width: "32px" },
+  milestoneTag: {
+    borderRadius: "6px",
+    color: issuesTheme.milestoneTag,
+    fontSize: "11px",
+    maxWidth: "135px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
 });

@@ -3639,3 +3639,5 @@ Batch 434 applies the workflow to the project-home milestone status state. Stati
 Batch 435 applies the workflow to the project-home DashboardLabels overview-label state. Static label-list padding/border, first/last variants, and dt/dd geometry move into route-local StyleX while preserving legacy dashboard DOM and copy; the focused overview-label test covers the legacy partial and route owners.
 
 Batch 436 applies the workflow to the project-home DashboardAssignee `usf-group` state. Static truncation/link geometry moves into a shared route-local StyleX owner for all assignee consumers while preserving dashboard DOM and copy; the focused assignee-link test covers legacy evidence and the owner.
+
+Batch 437 applies the workflow to the project issues milestone-tag and empty-avatar state. Static milestone truncation/color and unassigned-avatar geometry move into route-local StyleX owners while preserving the legacy classes, issue-list DOM, copy, and responsive geometry; the focused milestone-avatar owner test covers the legacy source paths and app.css fallback removal.
