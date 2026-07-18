@@ -1049,15 +1049,16 @@ function MilestoneIssueRow({
           title: stringField(issue.dueDateLabel),
         }
       : {};
+  const issueRowHiddenProps = hidden ? stylex.props(styles.issueRowHidden) : undefined;
 
   return (
     <li
-      className={`${sx.issueRow.className} post-item title`}
+      {...issueRowHiddenProps}
+      className={`${sx.issueRow.className} post-item title ${issueRowHiddenProps?.className ?? ""}`.trim()}
       data-stylex-owner="milestone-detail-issue-row"
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${stringField(issue.authorLoginId)} ${issueNumber} ${title}`}
-      style={hidden ? { display: "none" } : undefined}
       {...issueListItemAttrs}
     >
       <div className="span9 span-hard-wrap">

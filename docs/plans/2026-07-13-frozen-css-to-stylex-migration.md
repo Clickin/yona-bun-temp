@@ -3494,6 +3494,8 @@ Batch 367 applies the workflow to the authenticated board-post share-link state.
 
 Batch 368 applies the workflow to the authenticated user-issues default-login popover state. The static popover positioning declarations move to the route-local StyleX owner while preserving the legacy action/popover DOM, hover interaction, copy, and responsive geometry; the focused popover test covers legacy source evidence and absence of the former inline style constant.
 
+Batch 369 applies the workflow to the authenticated milestone-detail issue-filter state. The conditional filtered-row `display:none` declaration moves to the route-local conditional StyleX owner while preserving the legacy search markers, issue-row DOM, filter behavior, copy, and responsive geometry; the focused filter test covers legacy source evidence and absence of the former inline display declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

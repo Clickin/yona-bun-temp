@@ -63,4 +63,5 @@ export const styles = stylex.create({
   },
   deleteModalVisible: { display: "block" },
   deleteModalHidden: { display: "none" },
+  issueRowHidden: { display: "none" },
 });

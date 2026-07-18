@@ -953,3 +953,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 368
 
 - Authenticated user-issues default-login popover state: moved static popover positioning into `issueStyles.defaultLoginPagePopover`, preserving the legacy action/popover DOM, hover interaction, copy, and responsive geometry. Focused `stylex-user-issues-default-login-popover.e2e.ts` verifies the legacy source, stable owner, StyleX positioning, and absence of the former inline style constant; live legacy visual parity remains unverified.
+
+## Batch 369
+
+- Authenticated milestone-detail issue-filter state: moved conditional filtered-row `display:none` into `styles.issueRowHidden`, preserving legacy search markers, issue-row DOM, filter behavior, copy, and responsive geometry. Focused `stylex-project-milestone-detail-filter-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display; live legacy visual parity remains unverified.
