@@ -117,7 +117,11 @@ export const styles = stylex.create({
   completion: { float: "right", textAlign: "center" },
   progressWrap: { color: "#999", fontSize: "11px", marginTop: "15px", overflow: "hidden" },
   progress: { backgroundColor: "#f5f5f5", borderRadius: "4px", height: "8px", overflow: "hidden" },
-  progressBar: { backgroundColor: milestoneColors.progress, height: "100%" },
+  progressBar: (width) => ({
+    backgroundColor: milestoneColors.progress,
+    height: "100%",
+    width,
+  }),
   issueLink: { color: "#333", display: "block", textDecoration: "none" },
   issueItem: { color: "#333", fontSize: "14px", padding: "3px 0px" },
   itemName: { verticalAlign: "middle" },

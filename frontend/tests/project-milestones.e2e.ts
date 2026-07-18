@@ -30,6 +30,12 @@ test("project milestones list matches legacy milestone/list.scala.html populated
     page.locator('.issue-label[data-category-id="3"][data-label-id="8"]').first(),
   ).toHaveJSProperty("tagName", "SPAN");
   await expect(page.locator('.issue-link[href$="/issue/11"]')).toHaveAttribute("target", "_blank");
+  const progressBars = page.locator('[data-stylex-owner="project-milestones-progress-bar"]');
+  await expect(progressBars).toHaveCount(2);
+  await expect(progressBars.first()).toHaveAttribute("style", /--x-width:\s*50%/u);
+  await expect(progressBars.first()).toHaveCSS("width", "630px");
+  await expect(progressBars.nth(1)).toHaveAttribute("style", /--x-width:\s*0%/u);
+  await expect(progressBars.nth(1)).toHaveCSS("width", "0px");
   await expect(page.locator(".tab-wrap .ybtn-success")).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/newMilestoneForm`,
@@ -159,6 +165,8 @@ test("project milestones route uses direct typed Link targets", () => {
   expect(routeSource).not.toContain("useProjectMilestonesDocumentTitle");
   expect(routeSource).not.toContain("document.title");
   expect(routeSource).not.toContain('globalThis["document"]');
+  expect(routeSource).toContain("styles.progressBar(width)");
+  expect(routeSource).toContain("sx.progressBar(`${completionPercent}%`)");
   expect(routeSource).toContain('to="/$ownerName/$projectName/newMilestoneForm"');
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
   expect(routeSource).toContain("const LEGACY_MILESTONE_LIST_LINK_PROPS = {");
@@ -501,7 +509,13 @@ async function canonicalize(page: Page, selector: string) {
       ) {
         return "";
       }
-      return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+      if (attr.name !== "style") {
+        return attr.value;
+      }
+      return attr.value
+        .replace(/--x-width:\s*([^;]+)/u, "width:$1")
+        .replace(/\s+/g, "")
+        .replace(/;$/u, "");
     }
 
     function isNormalizedRuntimeAttr(attr: Attr) {

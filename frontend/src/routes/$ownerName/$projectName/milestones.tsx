@@ -41,7 +41,7 @@ const sx = {
   completion: stylex.props(styles.completion),
   progressWrap: stylex.props(styles.progressWrap),
   progress: stylex.props(styles.progress),
-  progressBar: stylex.props(styles.progressBar),
+  progressBar: (width: string) => stylex.props(styles.progressBar(width)),
   issueLink: stylex.props(styles.issueLink),
   issueItem: stylex.props(styles.issueItem),
   itemName: stylex.props(styles.itemName),
@@ -344,7 +344,10 @@ function MilestoneRow({
 
         <div {...sx.progressWrap}>
           <div {...sx.progress}>
-            <div {...sx.progressBar} style={{ width: `${completionPercent}%` }}></div>
+            <div
+              {...sx.progressBar(`${completionPercent}%`)}
+              data-stylex-owner="project-milestones-progress-bar"
+            ></div>
           </div>
         </div>
       </div>
