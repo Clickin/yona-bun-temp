@@ -3520,6 +3520,8 @@ Batch 380 applies the workflow to the authenticated issue-detail comment share-l
 
 Batch 381 applies the workflow to the authenticated root user-menu dropdown color state. The theme navigation colors move into existing route-local StyleX owners while the separate fixed create-menu margin remains an inline-independent owner; the focused dropdown-color test covers the legacy source contract, owners, and absence of the former inline colors.
 
+Batch 382 applies the workflow to the authenticated project-setting loaded state. The runtime project logo background URL moves to Dynamic StyleX and the default-branch Select2 result button's static inherited declarations move to direct StyleX; the focused setting test covers both owners and removal of the former inline declarations.
+
 
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 

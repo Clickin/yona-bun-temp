@@ -1005,3 +1005,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 381
 
 - Authenticated root user-menu dropdown color state: moved the theme navigation colors into existing route-local dropdown StyleX owners and isolated the fixed create-menu margin into `createMenuMargin`, preserving legacy user-menu DOM, copy, navigation, and responsive geometry. Focused `stylex-root-usermenu-dropdown-colors.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline colors; live legacy visual parity remains unverified.
+
+## Batch 382
+
+- Authenticated project-setting loaded state: moved the runtime project logo background URL into `styles.logoBackground(...)` Dynamic StyleX and the default-branch Select2 result button's inherited font/text/width declarations into `styles.defaultBranchResult`, preserving legacy settings DOM, branch interaction, copy, and responsive geometry. Focused `stylex-project-setting-logo-branch-result.e2e.ts` verifies both stable owners, Dynamic/static StyleX sources, and absence of the former inline declarations; live legacy visual parity remains unverified.

@@ -38,6 +38,7 @@ const sx = {
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
   defaultBranchDropVisible: stylex.props(styles.defaultBranchDropVisible),
   defaultBranchChoice: stylex.props(styles.defaultBranchChoice),
+  defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   save: stylex.props(styles.save),
 } as const;
@@ -392,10 +393,13 @@ function ProjectSettingBody({
               <div className="setting-box left">
                 <div
                   {...sx.logo}
+                  {...stylex.props(
+                    styles.logoBackground(
+                      `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
+                    ),
+                  )}
+                  className={`${sx.logo.className} ${stylex.props(styles.logoBackground(`url('${projectLogoUrl(project, runtimeConfig.basePath)}')`)).className ?? ""}`.trim()}
                   data-stylex-owner="project-setting-logo"
-                  style={{
-                    backgroundImage: `url('${projectLogoUrl(project, runtimeConfig.basePath)}')`,
-                  }}
                 ></div>
                 <div className="logo-desc">
                   <ul className="unstyled descs">
@@ -831,14 +835,9 @@ function DefaultBranchSelect2({
               >
                 <button
                   type="button"
-                  className="select2-result-label"
-                  style={{
-                    fontFamily: "inherit",
-                    fontSize: "inherit",
-                    fontWeight: "inherit",
-                    textAlign: "left",
-                    width: "100%",
-                  }}
+                  {...sx.defaultBranchResult}
+                  className={`select2-result-label ${sx.defaultBranchResult.className ?? ""}`.trim()}
+                  data-stylex-owner="project-setting-default-branch-result"
                   onClick={() => {
                     setSelectedBranch(branchName);
                     setOpen(false);

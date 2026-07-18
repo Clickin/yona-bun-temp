@@ -9,6 +9,7 @@ export const projectSettingColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  logoBackground: (backgroundImage: string) => ({ backgroundImage }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },
   frame: { overflow: "visible" },
@@ -53,6 +54,13 @@ export const styles = stylex.create({
     fontSize: "inherit",
     fontWeight: "inherit",
     height: "auto",
+    textAlign: "left",
+    width: "100%",
+  },
+  defaultBranchResult: {
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "inherit",
     textAlign: "left",
     width: "100%",
   },
