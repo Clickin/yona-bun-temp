@@ -3490,6 +3490,8 @@ Batch 364 applies the workflow to the authenticated board-post disabled-comment 
 
 Batch 366 applies the workflow to the authenticated user-issues default-login action state. The conditional action `display:none` declaration moves to the route-local conditional StyleX owner while preserving the legacy action DOM, mutation behavior, copy, and responsive geometry; the focused default-login test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 367 applies the workflow to the authenticated board-post share-link state. The fixed legacy `display:none` declaration moves to the route-local StyleX owner while preserving the legacy share-link DOM, copy, visibility behavior, and responsive geometry; the focused share-link test covers legacy source evidence and absence of the former inline display declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

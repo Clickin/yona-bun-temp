@@ -41,6 +41,7 @@ export const styles = stylex.create({
   commentEditorVisible: { display: "block" },
   keymapModalVisible: { display: "block" },
   disabledComment: { cursor: "text" },
+  shareLinkHidden: { display: "none" },
   tasklistProgress: { width: 0 },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   mobileMetadata: { fontSize: "0.7em" },

@@ -1332,7 +1332,8 @@ function PostCommentRow({
               activeOptions={{ includeHash: true }}
               activeProps={legacyRouteLocalActiveProps}
               className="share-link"
-              style={{ display: "none" }}
+              {...stylex.props(styles.shareLinkHidden)}
+              data-stylex-owner="post-detail-share-link"
             >
               [Link]
             </Link>
