@@ -361,11 +361,22 @@ function BoardFilters({
   ];
 
   return (
-    <div className="filter-wrap board">
-      <div className="filters">
-        {filters.map((filter) => {
+    <div
+      className={`${stylex.props(styles.filterWrap).className ?? ""} filter-wrap board`.trim()}
+      data-stylex-owner="project-posts-filter-wrap"
+    >
+      <div
+        className={`${stylex.props(styles.filters).className ?? ""} filters`.trim()}
+        data-stylex-owner="project-posts-filters"
+      >
+        {filters.map((filter, index) => {
           const active = search.orderBy === filter.field;
           const nextDir = active && search.orderDir === "desc" ? "asc" : "desc";
+          const filterStyleProps = stylex.props(
+            styles.filter,
+            index === filters.length - 1 && styles.filterLast,
+            active && styles.filterActive,
+          );
           return (
             <Link
               to={boardListHref("", ownerName, projectName, {
@@ -374,13 +385,15 @@ function BoardFilters({
                 orderDir: active ? nextDir : "desc",
               })}
               activeProps={legacyRouteLocalActiveProps}
-              className={active ? "filter active" : "filter"}
+              className={`${filterStyleProps.className ?? ""} filter${active ? " active" : ""}`.trim()}
+              data-stylex-owner="project-posts-filter"
               key={filter.field}
             >
               <i
-                className={`ico btn-gray-arrow ${
+                className={`${stylex.props(styles.filterIcon).className ?? ""} ico btn-gray-arrow ${
                   !active || search.orderDir === "desc" ? " down " : ""
-                }`}
+                }`.trim()}
+                data-stylex-owner="project-posts-filter-icon"
               ></i>
               {filter.label}
             </Link>
