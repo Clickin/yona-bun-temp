@@ -1322,3 +1322,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 500
 
 - `/organizations/$organizationName/boards` aggregate rows: applied route-local StyleX owners for the legacy avatar float/margin, title-wrap truncation, and post-id typography from `group_board_list_partial.scala.html` and frozen `_page.less`. Legacy classes/DOM and router/query behavior remain unchanged; shared `.post-list-wrap` fallback remains because project, organization, and user list routes still consume it. Focused `stylex-organization-boards.e2e.ts` verifies legacy evidence, stable owners, computed declarations, and filter submission.
+
+## Batch 501
+
+- `/$ownerName/$projectName/webhooks` dead-wrapper residual: existing route-local StyleX owners cover active form/list output, so the obsolete `.webhook-editor-wrap .new-webhook-wrap` and `.webhook-editor-wrap .webhook-list-wrap` app.css blocks (including table-only descendants with no active React consumers) are removed. The outer wrapper and existing route-owned list-head/list-item owners remain unchanged. Legacy Scala HTML/JS is output DOM/UX evidence; behavior remains React-owned. Focused `stylex-project-webhooks-residual.e2e.ts` verifies legacy source evidence, exact dead selector absence, and active ownership.

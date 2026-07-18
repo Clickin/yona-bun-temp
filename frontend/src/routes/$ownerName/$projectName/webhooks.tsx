@@ -257,7 +257,10 @@ function ProjectWebhooksBody({
 
   return (
     <div className="page-wrap-outer">
-      <div className="project-page-wrap webhook-editor-wrap">
+      <div
+        className="project-page-wrap webhook-editor-wrap"
+        data-stylex-owner="project-webhooks-page"
+      >
         <ProjectSettingMenu ownerName={ownerName} project={project} projectName={projectName} />
         {webhookCreationAllowed(webhooks) ? (
           <form
