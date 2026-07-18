@@ -28,6 +28,14 @@ export const labelsFormDynamicStyles = stylex.create({
 });
 
 export const labelsFormStyles = stylex.create({
+  listHeader: {
+    backgroundColor: labelsFormColors.listSurface,
+    borderTopColor: labelsFormColors.border,
+    borderTopStyle: "solid",
+    borderTopWidth: "2px",
+  },
+  listHeaderCategory: { paddingRight: "18px", lineHeight: "30px", textAlign: "right" },
+  listHeaderName: { paddingLeft: "8px", lineHeight: "30px" },
   typeaheadAnchor: { position: "relative" },
   presetColorsVisible: { display: "inline-block" },
   changeVcsMenuHidden: { display: "none" },

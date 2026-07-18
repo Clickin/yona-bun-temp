@@ -1380,23 +1380,6 @@ span.issue-label {
   margin: 0 auto;
 }
 
-.label-editor-wrap .issue-label-list-wrap .list-head {
-  background: #fafafa;
-  border: 1px solid #ddd;
-  border-width: 2px 0 0;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-head .category {
-  padding-right: 18px;
-  line-height: 30px;
-  text-align: right;
-}
-
-.label-editor-wrap .issue-label-list-wrap .list-head .name {
-  padding-left: 8px;
-  line-height: 30px;
-}
-
 .label-editor-wrap .issue-label-list-wrap .list-item .category-name {
   margin-right: 2px;
 }

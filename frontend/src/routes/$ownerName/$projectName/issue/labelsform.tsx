@@ -886,19 +886,21 @@ function ProjectLabelsList({
   return (
     <>
       <div
-        {...stylex.props(styles.listHead)}
-        className={`${stylex.props(styles.listHead).className} row-fluid list-head`}
+        {...stylex.props(labelsFormStyles.listHeader)}
+        className={`${stylex.props(labelsFormStyles.listHeader).className} row-fluid list-head`}
         data-stylex-owner="project-labels-list-head"
       >
         <div
-          {...stylex.props(styles.listCategoryColumn)}
-          className={`${stylex.props(styles.listCategoryColumn).className} span3 category`}
+          {...stylex.props(labelsFormStyles.listHeaderCategory)}
+          className={`${stylex.props(labelsFormStyles.listHeaderCategory).className} span3 category`}
+          data-stylex-owner="project-labels-list-category"
         >
           <strong>{t("label.category")}</strong>
         </div>
         <div
-          {...stylex.props(styles.listNameColumn)}
-          className={`${stylex.props(styles.listNameColumn).className} span9 name`}
+          {...stylex.props(labelsFormStyles.listHeaderName)}
+          className={`${stylex.props(labelsFormStyles.listHeaderName).className} span9 name`}
+          data-stylex-owner="project-labels-list-name"
         >
           <strong>{t("label.name")}</strong>
         </div>

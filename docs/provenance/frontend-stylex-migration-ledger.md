@@ -1,5 +1,9 @@
 # Frontend StyleX Migration Ledger
 
+## Labels-form list-header follow-up
+
+- Existing `labelsform.tsx` owners cover list-head surface/border and category/name alignment; exact scoped selectors are retired with generic fallback retained.
+
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
