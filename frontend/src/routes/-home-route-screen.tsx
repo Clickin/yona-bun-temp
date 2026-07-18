@@ -88,16 +88,19 @@ const LEGACY_HOME_STREAM_LINK_SUPPRESSION_PROPS = {
     "data-status": undefined,
   },
 };
-const HOME_SIDEBAR_POPOVER_STYLE: React.CSSProperties = {
-  display: "block",
-  left: "100%",
-  marginLeft: "10px",
-  minWidth: "200px",
-  position: "absolute",
-  top: "50%",
-  transform: "translateY(-50%)",
-  zIndex: 1060,
-};
+const homeSidebarPopoverStyles = stylex.create({
+  legacyAnchorVisible: { position: "relative" },
+  legacyPopover: {
+    display: "block",
+    left: "100%",
+    marginLeft: "10px",
+    minWidth: "200px",
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    zIndex: 1060,
+  },
+});
 
 function DefaultLandingRedirect({ href }: { href: string }) {
   const router = useRouter();
@@ -7499,7 +7502,9 @@ function SidebarHoverPopover({
       }
       onMouseEnter={showPopover}
       onMouseLeave={hidePopover}
-      style={isVisible && !ownsPopoverPresentation ? { position: "relative" } : undefined}
+      {...(isVisible && !ownsPopoverPresentation
+        ? stylex.props(homeSidebarPopoverStyles.legacyAnchorVisible)
+        : {})}
     >
       {children}
       {isVisible ? (
@@ -7526,7 +7531,8 @@ function SidebarHoverPopover({
                     : undefined
           }
           role="tooltip"
-          style={ownsPopoverPresentation ? undefined : HOME_SIDEBAR_POPOVER_STYLE}
+          {...(ownsPopoverPresentation ? {} : stylex.props(homeSidebarPopoverStyles.legacyPopover))}
+          data-stylex-part={ownsPopoverPresentation ? undefined : "home-sidebar-legacy-popover"}
         >
           <div
             className={`${ownsPopoverPresentation ? "" : "arrow"} ${

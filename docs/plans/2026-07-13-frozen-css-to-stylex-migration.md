@@ -3621,3 +3621,5 @@ Batch 425 applies the workflow to the anonymous home intro background state. The
 Batch 426 applies the workflow to the issue-detail legacy popover state. Runtime left/top coordinates and fixed/display/transform presentation move into a route-local Dynamic StyleX owner while preserving the popover DOM, copy, trigger interaction, and geometry; the focused legacy-popover test covers the dynamic owner.
 
 Batch 427 applies the workflow to the project issues row/label state. Runtime issue-row hover background and child-label background color move into route-local Dynamic StyleX owners while preserving issue-list DOM, copy, interaction, and geometry; the focused row-label test covers both dynamic owners.
+
+Batch 428 applies the workflow to the home sidebar legacy popover state. Static popover geometry and the conditional legacy anchor position move into route-local StyleX owners while preserving sidebar hover interaction, DOM, copy, and geometry; the focused sidebar-popover test covers both owners.
