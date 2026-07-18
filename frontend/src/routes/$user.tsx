@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as stylex from "@stylexjs/stylex";
-import { type CSSProperties, type HTMLAttributes, useState } from "react";
+import { type HTMLAttributes, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-router";
 import { currentSessionQueryOptions } from "../api/session";
@@ -34,16 +34,18 @@ const LEGACY_LINK_PROPS = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
-const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "150px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-};
+const userProfileStaticStyles = stylex.create({
+  faqPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "150px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
+});
 
 export const Route = createFileRoute("/$user")({
   component: PublicProfileRoute,
@@ -1179,7 +1181,11 @@ function TwoColumnModeCheckbox() {
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+        <div
+          className={`${stylex.props(userProfileStaticStyles.faqPopover).className} popover top`}
+          role="tooltip"
+          data-stylex-owner="user-profile-two-column-popover"
+        >
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">{popoverContent}</div>
@@ -1241,7 +1247,11 @@ function ShowSubtasksCheckbox() {
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+        <div
+          className={`${stylex.props(userProfileStaticStyles.faqPopover).className} popover top`}
+          role="tooltip"
+          data-stylex-owner="user-profile-show-subtasks-popover"
+        >
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">{popoverContent}</div>

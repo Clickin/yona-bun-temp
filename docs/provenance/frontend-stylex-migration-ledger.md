@@ -1041,3 +1041,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 390
 
 - Authenticated project-history activity geometry state: moved fixed stream/list/item spacing and border declarations into route-local `projectHistoryStyles`, preserving legacy history DOM and responsive geometry. Focused `stylex-project-history-activity-geometry.e2e.ts` verifies the legacy source contract, stable owners, and owner consumers; live legacy visual parity remains unverified.
+
+## Batch 391
+
+- Public user-profile static popover state: moved shared two-column/show-subtasks popover geometry into `userProfileStaticStyles.faqPopover`, preserving legacy popover DOM, copy, hover/focus behavior, and responsive geometry. Focused `stylex-user-profile-static-popovers.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline style object; live legacy visual parity remains unverified.
