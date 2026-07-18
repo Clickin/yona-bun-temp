@@ -19,6 +19,7 @@ export const labelsFormDynamicStyles = stylex.create({
 });
 
 export const labelsFormStyles = stylex.create({
+  changeVcsMenuHidden: { display: "none" },
   categorySuggestionButton: {
     backgroundColor: "transparent",
     border: 0,

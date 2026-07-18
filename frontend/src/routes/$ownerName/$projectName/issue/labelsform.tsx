@@ -1705,7 +1705,9 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        {...(booleanField(menuSetting.code)
+          ? {}
+          : stylex.props(labelsFormStyles.changeVcsMenuHidden))}
       >
         <Link
           {...LEGACY_LINK_PROPS}
