@@ -8,6 +8,7 @@ test("post detail modal states use conditional StyleX visibility", async () => {
     readFile("src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts", "utf8"),
   ]);
   expect(legacy).toContain('href="#-yona-posting-history"');
+  expect(legacy).toContain("commentDeleteModal");
   expect(route).toContain('data-stylex-owner="post-detail-history-modal"');
   expect(route).toContain('data-stylex-owner="post-detail-comment-delete-modal"');
   expect(route).toContain("styles.historyModalVisible");

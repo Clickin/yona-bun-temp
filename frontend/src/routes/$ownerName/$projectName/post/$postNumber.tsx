@@ -163,7 +163,6 @@ function ProjectPostNotFoundBody({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
-  const historyModalStyleProps = open ? stylex.props(styles.historyModalVisible) : undefined;
 
   return (
     <div {...sx.page} data-stylex-owner="post-detail-page">
@@ -679,6 +678,7 @@ function PostingHistory({
   open: boolean;
 }) {
   const { t } = useLegacyMessages();
+  const historyModalStyleProps = open ? stylex.props(styles.historyModalVisible) : undefined;
 
   if (!historyMarkdown) {
     return null;
