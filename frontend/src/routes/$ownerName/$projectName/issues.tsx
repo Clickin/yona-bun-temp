@@ -20,6 +20,8 @@ import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
+
+const projectIssuesStyles = stylex.create({ clickableRow: { cursor: "pointer" } });
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   listProjectIssues,
@@ -1633,7 +1635,13 @@ function ProjectIssueItem({
       onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
-      style={issueRowStyle}
+      style={
+        currentIssueRowHoverStyle
+          ? { backgroundColor: currentIssueRowHoverStyle.backgroundColor }
+          : undefined
+      }
+      {...(useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow) : {})}
+      data-stylex-owner={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
       {...issueListItemLegacyAttrs}
     >
       <div className="span9 span-hard-wrap">
