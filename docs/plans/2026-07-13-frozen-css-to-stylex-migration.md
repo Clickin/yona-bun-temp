@@ -3404,6 +3404,8 @@ Batch 320 applies the workflow to the authenticated project pull-request changes
 
 Batch 321 applies the workflow to the populated public `/$user` profile filter popover anchors. The static `position:relative` declarations move from React inline styles to a shared route-local StyleX owner, preserving the legacy common partial DOM, hover/focus popover behavior, and responsive containment; the focused user-profile test covers source evidence, computed position, and absence of literal inline declarations.
 
+Batch 322 applies the workflow to the anonymous `/resetPassword` no-token validation popover. The fallback display, max-width, position, and runtime left/top values move from inline declarations to conditional/Dynamic StyleX owners, preserving the `.popover.left.in` DOM, validation copy, placement, and responsive containment; the focused reset-password test covers fallback geometry and absence of literal inline position.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

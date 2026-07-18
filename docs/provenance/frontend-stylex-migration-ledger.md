@@ -773,3 +773,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 321
 
 - Populated public `/$user` profile filter popover anchors: moved two static `position:relative` declarations into `-user-profile.stylex.ts` `styles.popoverAnchor`, preserving the legacy common partial DOM and hover/focus behavior. Focused `stylex-user-profile.e2e.ts` verifies the legacy source, stable owners, computed position, and absence of literal inline declarations; live legacy visual parity remains unverified.
+
+## Batch 322
+
+- Anonymous `/resetPassword` no-token validation popover: moved fallback display/max-width/position and runtime left/top values into conditional/Dynamic StyleX owners in `-resetPassword.stylex.ts`, preserving `.popover.left.in` DOM, validation copy, placement, and responsive containment. Focused `stylex-reset-password-form.e2e.ts` verifies source ownership, computed fallback geometry, and absence of literal inline left/top; live legacy visual parity remains unverified.

@@ -6,7 +6,7 @@ import { completePasswordReset, readSessionBootstrap } from "../auth-workspace-c
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { resetPasswordTheme } from "./-resetPassword.stylex";
+import { resetPasswordStyles, resetPasswordTheme } from "./-resetPassword.stylex";
 import { SiteLayoutShell } from "./-home-route-screen";
 
 type ResetPasswordSearch = {
@@ -421,14 +421,21 @@ function FieldPopover({
     left: placement ? `${placement.left}px` : "-154px",
     top: placement ? `${placement.top}px` : "0",
   };
+  const positionStyle = stylex.props(
+    resetPasswordStyles.validationPopoverPosition(position.left, position.top),
+  );
+  const fallbackStyle = stylex.props(
+    resetPasswordStyles.validationPopoverFallback,
+    resetPasswordStyles.validationPopoverPosition(position.left, position.top),
+  );
   if (stylexOwned) {
     return (
       <div
         ref={popoverRef}
+        {...positionStyle}
         className={validationPopoverClassName}
         data-stylex-owner="reset-password-validation-popover"
         data-stylex-part="reset-password-validation-popover-surface"
-        style={position}
       >
         <div
           className={validationPopoverArrowClassName}
@@ -446,14 +453,8 @@ function FieldPopover({
   return (
     <div
       ref={popoverRef}
-      className="popover left in"
-      style={{
-        display: "block",
-        left: placement ? `${placement.left}px` : "-154px",
-        maxWidth: "144px",
-        position: "absolute",
-        top: placement ? `${placement.top}px` : "0",
-      }}
+      {...fallbackStyle}
+      className={`popover left in ${fallbackStyle.className}`}
     >
       <div className="arrow"></div>
       <div className="popover-content">{message}</div>

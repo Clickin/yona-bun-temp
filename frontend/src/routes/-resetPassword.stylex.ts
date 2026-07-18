@@ -12,3 +12,12 @@ export const resetPasswordTheme = stylex.defineVars({
   validationArrowSurface: "#ffffff",
   badRequestText: "#898989",
 });
+
+export const resetPasswordStyles = stylex.create({
+  validationPopoverFallback: {
+    display: "block",
+    maxWidth: "144px",
+    position: "absolute",
+  },
+  validationPopoverPosition: (left: string, top: string) => ({ left, top }),
+});

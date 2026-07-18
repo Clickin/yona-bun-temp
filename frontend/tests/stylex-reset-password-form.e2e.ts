@@ -51,7 +51,9 @@ test.describe("StyleX valid-token reset password form", () => {
     expect(route).toContain('"reset-password-password"');
     expect(route).toContain('"reset-password-submit"');
     expect(route).toContain("stylex.props(styles.textInput, styles.passwordInput)");
-    expect(route).toContain('className="popover left in"');
+    expect(route).toContain("popover left in");
+    expect(route).toContain("resetPasswordStyles.validationPopoverFallback");
+    expect(route).toContain("validationPopoverPosition");
     expect(route).toContain('default: "400px"');
     expect(route).toContain("borderBottomColor: resetPasswordTheme.inputFocusBorder");
     expect(routeTheme).toContain('inputFocusBorder: "#f36c22"');
@@ -123,6 +125,28 @@ test.describe("StyleX valid-token reset password form", () => {
         },
       ]);
     await expect(page).toHaveURL(`${basePath}/users/loginform?password=reset`);
+  });
+
+  test("keeps the no-token fallback popover geometry without literal position styles", async ({
+    page,
+  }) => {
+    await mockAnonymousSession(page);
+    await page.goto(`${basePath}/resetPassword`);
+    const form = page.locator('form[name="passwordReset"]');
+    await form.locator("#password").focus();
+    await form.locator("#password").blur();
+
+    const popover = form.locator(".popover.left.in").first();
+    await expect(popover).toBeVisible();
+    await expect(popover).toHaveCSS("display", "block");
+    await expect(popover).toHaveCSS("max-width", "144px");
+    await expect(popover).toHaveCSS("position", "absolute");
+    expect(await popover.getAttribute("style")).not.toMatch(/(?:^|;)\s*(?:left|top)\s*:/i);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
   });
 
   test("matches legacy desktop geometry and paint", async ({ page }) => {
