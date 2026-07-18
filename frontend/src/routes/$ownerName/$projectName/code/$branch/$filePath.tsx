@@ -406,8 +406,16 @@ function FolderList({
   const files = code.entries.filter((entry) => entry.kind !== "folder");
 
   return (
-    <div className="list-wrap">
-      <div className="row-fluid listhead">
+    <div
+      {...stylex.props(styles.folderListWrap)}
+      className={`${stylex.props(styles.folderListWrap).className} list-wrap`}
+      data-stylex-owner="project-code-folder-list-wrap"
+    >
+      <div
+        {...stylex.props(styles.folderRowFluid, styles.folderListHead)}
+        className={`${stylex.props(styles.folderRowFluid, styles.folderListHead).className} row-fluid listhead`}
+        data-stylex-owner="project-code-folder-list-head"
+      >
         <div className="span6 filename">
           <strong>{t("code.filename")}</strong>
         </div>
@@ -460,9 +468,9 @@ function FolderListEntry({
 
   return (
     <div
-      {...stylex.props(styles.folderRow)}
+      {...stylex.props(styles.folderRow, styles.folderRowFluid)}
       id={rowId}
-      className={`${stylex.props(styles.folderRow).className} row-fluid listitem`}
+      className={`${stylex.props(styles.folderRow, styles.folderRowFluid).className} row-fluid listitem`}
       data-stylex-owner="project-code-folder-row"
     >
       <div

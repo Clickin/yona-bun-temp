@@ -3735,6 +3735,8 @@ Project overview dashboard visible-state cleanup retires the exact empty-state a
 
 Project overview visible-state wave retires exact empty-state and overview-label scoped fallbacks after verifying existing StyleX owners for wrapper/message, label rows, dt/dd, and first/last variants.
 
+Code browser folder shell wave moves list-wrap, row-fluid, and listhead geometry into colocated StyleX while retaining currentPath fallback.
+
 Batch 476 applies the workflow to the issue-detail subtasks state. Four route-scoped owners move the subtasks wrapper margins, issue-item padding, parent-issue typography, and parent delimiter geometry into colocated StyleX while preserving child/parent DOM, legacy classes, progress/state owners, and responsive behavior. Generic/shared fallbacks remain untouched; the focused subtasks contract verifies legacy sources, owner coverage, desktop/mobile-safe declarations, and exact fallback removal.
 
 Batch 478 applies the workflow to the issue-detail timeline state base geometry. Active state spans receive one route-local StyleX owner for shared geometry/neutral paint; event-index overrides and all state-variant colors remain frozen fallback. The focused event-base test covers state consumer coverage and exact scoped fallback retirement.

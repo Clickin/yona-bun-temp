@@ -23,6 +23,10 @@
 
 - Existing `empty`, `emptyMessage`, `overviewLabel`, `overviewLabelDt`, `overviewLabelDd`, `overviewLabelFirst`, and `overviewLabelLast` owners cover all active dashboard consumers; exact project-overview empty/label fallbacks are retired. Focused `stylex-project-overview-dashboard-visible-state.e2e.ts` verifies legacy evidence and generic fallback retention.
 
+## Code browser folder shell
+
+- Folder list, row line-height, and listhead geometry use colocated StyleX owners; currentPath and generic code-viewer fallbacks remain. Focused `stylex-project-code-folder-shell.e2e.ts` verifies legacy evidence and exact fallback removal.
+
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 

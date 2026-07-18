@@ -10,6 +10,15 @@ export const codeFileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  folderListWrap: { display: "block" },
+  folderRowFluid: { lineHeight: "40px" },
+  folderListHead: {
+    height: "40px",
+    marginBottom: "5px",
+    lineHeight: "40px",
+    backgroundColor: "#f7f7f7",
+    borderBottom: "2px solid #efefef",
+  },
   folderRow: { borderBottom: "1px solid #efefef" },
   folderText: { overflow: "hidden", textOverflow: "ellipsis" },
   folderFilename: { fontSize: "10pt", whiteSpace: "nowrap" },
