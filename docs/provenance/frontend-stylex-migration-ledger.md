@@ -1134,4 +1134,8 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Project and organization header visibility badges: moved shared `.project-private`/`.project-protected` margin, color, and font-size into identical route-local `projectVisibilityBadge` StyleX owners across project and organization headers. Legacy classes, copy, and header DOM remain unchanged. Focused `stylex-project-visibility-badges.e2e.ts` verifies all legacy sources and route owners; live legacy visual parity remains unverified.
 
+## Batch 452
+
+- Project header fork-origin state: moved `.project-origin`, `.project-origin-title`, and `.project-origin-name` geometry into route-local StyleX owners, preserving legacy classes, copy, links, and DOM. Project-util and organization shell selectors remain fallback. Focused `stylex-project-origin.e2e.ts` verifies legacy sources and owners.
+
 | 2026-07-19 | Pull-request create/edit selector geometry StyleX ownership wave | `yona-original/app/views/git/create.scala.html`, `git/edit.scala.html`, and frozen `_page.less` pull-request-wrap rules establish wrapper, field-title, and arrow geometry. Legacy Scala HTML/JS is output DOM/UX evidence; React pull-request state owns form behavior. | `frontend/src/routes/$ownerName/$projectName/newPullRequestForm.tsx` and `pullRequest/$pullRequestNumber/editform.tsx` use colocated StyleX owners for wrapper/title/arrow consumers while preserving classes and select2 residual. | `frontend/tests/stylex-pull-request-create-edit-geometry.e2e.ts` verifies both sources, fallback removal, and retained select2 selector; live legacy visual parity remains unverified. |

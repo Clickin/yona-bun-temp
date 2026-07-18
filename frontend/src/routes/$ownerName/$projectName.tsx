@@ -2590,8 +2590,16 @@ function ProjectHeaderContent({
               ) : null}
             </div>
             {isForked ? (
-              <div className="project-origin">
-                <span className="project-origin-title">{t("fork.original")}</span>
+              <div
+                className={`${stylex.props(projectHomeStyles.projectOrigin).className} project-origin`}
+                data-stylex-owner="project-header-origin"
+              >
+                <span
+                  className={`${stylex.props(projectHomeStyles.projectOriginTitle).className} project-origin-title`}
+                  data-stylex-owner="project-header-origin-title"
+                >
+                  {t("fork.original")}
+                </span>
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
@@ -2599,7 +2607,8 @@ function ProjectHeaderContent({
                     basePath,
                     projectHref(basePath, originalOwnerName, originalProjectName),
                   )}
-                  className="project-origin-name"
+                  className={`${stylex.props(projectHomeStyles.projectOriginName).className} project-origin-name`}
+                  data-stylex-owner="project-header-origin-name"
                 >
                   {originalOwnerName} / {originalProjectName}
                 </Link>

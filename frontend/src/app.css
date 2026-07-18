@@ -2687,21 +2687,6 @@ h1 {
   color: #e91e63;
 }
 
-.project-origin {
-  margin-top: -7px;
-  font-size: 12px;
-  line-height: 20px;
-}
-
-.project-origin-title {
-  color: #788ba7;
-}
-
-.project-origin-name {
-  margin-left: 5px;
-  color: #5dbbe0;
-}
-
 .project-util-wrap {
   position: absolute;
   right: 0;

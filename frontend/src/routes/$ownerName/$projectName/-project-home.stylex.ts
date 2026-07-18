@@ -3,6 +3,9 @@ import * as stylex from "@stylexjs/stylex";
 export const projectHomeTheme = stylex.defineVars({ pageSurface: "#ffffff" });
 export const styles = stylex.create({
   projectVisibilityBadge: { color: "#788ba7", fontSize: "14px", marginLeft: "5px" },
+  projectOrigin: { fontSize: "12px", lineHeight: "20px", marginTop: "-7px" },
+  projectOriginTitle: { color: "#788ba7" },
+  projectOriginName: { color: "#5dbbe0", marginLeft: "5px" },
   page: { backgroundColor: projectHomeTheme.pageSurface },
   header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
   overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },
