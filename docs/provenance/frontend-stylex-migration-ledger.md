@@ -594,3 +594,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 274
 
 - `/$ownerName/$projectName/code/$branch` populated/empty folder state: moved the legacy fixed spinner position and empty-folder warning border/padding declarations into `-code-branch.stylex.ts` owners, preserving branch picker/list rendering, legacy classes, and React/TanStack navigation/query behavior. Dynamic branch/list fallback remains unchanged. Focused `stylex-project-code-branch-inline-residual.e2e.ts` passed desktop/mobile empty-folder fixtures.
+
+## Batch 276
+
+- `/$ownerName/$projectName` project-home populated milestone/dashboard states: moved server-derived completion percentage widths into `-project-home.stylex.ts` Dynamic StyleX `progressBar` owners while preserving legacy progress/bar classes, conditional state classes, and dashboard behavior. Focused `stylex-project-home-progress.e2e.ts` passed with a 50% milestone fixture and no inline `width`; live legacy visual parity remains unverified.

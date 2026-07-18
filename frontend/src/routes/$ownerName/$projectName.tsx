@@ -1520,6 +1520,7 @@ function ProjectHomeMilestoneStatus({
   const closedCount = milestoneIssueCount(milestoneRecord, "closed");
   const completionPercent =
     numberField(milestoneRecord.completionPercent) || numberField(milestoneRecord.completionRate);
+  const progressStyle = stylex.props(styles.progressBar(`${completionPercent}%`));
 
   return (
     <div className="milestone-info">
@@ -1553,7 +1554,11 @@ function ProjectHomeMilestoneStatus({
 
       <div className="progress-wrap">
         <div className="progress progress-success nm">
-          <div className="bar" style={{ width: `${completionPercent}%` }}></div>
+          <div
+            {...progressStyle}
+            className={`${progressStyle.className} bar`}
+            data-stylex-owner="project-home-milestone-progress-bar"
+          ></div>
         </div>
         <div className="progress-info">
           <span className="pull-right">
@@ -2150,9 +2155,14 @@ function ProgressBar({
   percent: number;
   success?: boolean;
 }) {
+  const progressStyle = stylex.props(styles.progressBar(`${percent}%`));
   return (
     <div className={`progress ${className} ${percent === 0 ? "empty" : ""}`} title={`${percent}%`}>
-      <div className={`bar${success ? " bar-success" : ""}`} style={{ width: `${percent}%` }}></div>
+      <div
+        {...progressStyle}
+        className={`${progressStyle.className} bar${success ? " bar-success" : ""}`}
+        data-stylex-owner="project-home-progress-bar"
+      ></div>
     </div>
   );
 }
