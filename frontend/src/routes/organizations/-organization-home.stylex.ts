@@ -13,6 +13,7 @@ export const styles = stylex.create({
   projectUtilItem: { float: "left", marginLeft: "15px", position: "relative" },
   projectUtilIcons: { margin: "10px 0px 10px 25px" },
   projectMenuGroup: { float: "left", marginLeft: "110px" },
+  projectSetting: { float: "right" },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
   overview: { color: organizationHomeColors.accentText },

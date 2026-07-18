@@ -838,7 +838,10 @@ export function OrganizationMenu({
             </Link>
           </li>
         </ul>
-        <div className="project-setting">
+        <div
+          className={`${stylex.props(styles.projectSetting).className} project-setting`}
+          data-stylex-owner="organization-menu-setting"
+        >
           <ul className="project-menu-nav">
             {viewerCanUpdate ? (
               <li className="">

@@ -2761,10 +2761,6 @@ h1 {
   border-bottom-color: #fff;
 }
 
-.project-setting {
-  float: right;
-}
-
 .project-menu-outer > .pull-left {
   position: absolute;
   top: 4px;
