@@ -196,6 +196,9 @@ const styles = stylex.create({
   projectWrapperVisible: {
     display: "block",
   },
+  projectSuggestionMenuVisible: {
+    display: "block",
+  },
   recipientRadio: {
     minHeight: "20px",
     paddingLeft: "20px",
@@ -561,7 +564,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             <strong>{t("button.add")}</strong>
           </button>
           {isProjectSuggestionMenuVisible && projectSuggestions.length > 0 ? (
-            <ul className="typeahead dropdown-menu" style={{ display: "block" }}>
+            <ul
+              {...stylex.props(styles.projectSuggestionMenuVisible)}
+              className={`typeahead dropdown-menu ${stylex.props(styles.projectSuggestionMenuVisible).className ?? ""}`.trim()}
+              data-stylex-owner="site-massmail-project-suggestion-menu"
+            >
               {projectSuggestions.map((projectName, index) => (
                 <li
                   className={index === activeSuggestionIndex ? "active" : undefined}

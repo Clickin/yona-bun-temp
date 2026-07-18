@@ -54,6 +54,7 @@ test.describe("StyleX site massmail project input", () => {
     expect(route).toContain('data-stylex-owner="site-massmail-project-input"');
     expect(route).toContain("styles.projectInput");
     expect(route).toContain("projectWrapperVisible: {");
+    expect(route).toContain("projectSuggestionMenuVisible: {");
     expect(route).not.toContain(
       'style={mailingType === "projects" ? { display: "block" } : undefined}',
     );
@@ -86,7 +87,11 @@ test.describe("StyleX site massmail project input", () => {
   test("preserves projects typeahead selection and add behavior", async ({ page }) => {
     const input = await openProjects(page);
     await input.fill("project");
-    await expect(page.locator(".typeahead.dropdown-menu li")).toHaveText(["admin/projectYobi"]);
+    const suggestions = page.locator('[data-stylex-owner="site-massmail-project-suggestion-menu"]');
+    await expect(suggestions).toBeVisible();
+    await expect(suggestions).toHaveCSS("display", "block");
+    await expect(suggestions).not.toHaveAttribute("style", /display/u);
+    await expect(suggestions.locator("li")).toHaveText(["admin/projectYobi"]);
     await page.locator(".typeahead.dropdown-menu button").click();
     await expect(input).toHaveValue("admin/projectYobi");
     await expect(page.locator(selectedProjectTagSelector)).toHaveCount(0);

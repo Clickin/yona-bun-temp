@@ -3422,6 +3422,8 @@ Batch 329 applies the workflow to the authenticated `/user/issues` child-issue v
 
 Batch 330 applies the workflow to the authenticated organization issue-list two-column hover-popover state. The conditional popover display and fixed offsets move from a React inline declaration to route-local conditional StyleX while preserving the legacy common checkbox DOM, popover copy, hover/focus timing, and responsive containment; the focused organization-issues residual test covers source evidence, computed offsets, and absence of the former inline style.
 
+Batch 331 applies the workflow to the authenticated `/sites/massmail` project-suggestion dropdown state. The conditional typeahead menu `display:block` declaration moves from a React inline style to a route-local conditional StyleX owner while preserving the legacy typeahead classes, project suggestion copy, selection/add interaction, and responsive containment; the focused massmail project-input test covers the visible computed display, absence of literal inline display, and selection behavior.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
