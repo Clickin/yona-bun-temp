@@ -486,7 +486,11 @@ export function ProjectIssueFormProjectScreen({
       return (
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
-            <div className="issue-form-load-error" role="alert">
+            <div
+              className={`${stylex.props(styles.error).className} issue-form-load-error`}
+              data-stylex-owner="project-issue-form-load-error"
+              role="alert"
+            >
               {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
             </div>
           </div>
@@ -522,7 +526,11 @@ export function ProjectIssueFormProjectScreen({
         {projectShell}
         <div className="page-wrap-outer">
           <div className="project-page-wrap">
-            <div className="issue-form-load-error" role="alert">
+            <div
+              className={`${stylex.props(styles.error).className} issue-form-load-error`}
+              data-stylex-owner="project-issue-form-load-error"
+              role="alert"
+            >
               {firstError instanceof Error ? firstError.message : t("error.internalServerError")}
             </div>
           </div>
@@ -3628,7 +3636,12 @@ function projectIdNumber(project: ProjectContainer) {
 const styles = stylex.create({
   form: { position: "relative" },
   titleRow: { display: "block" },
-  error: { color: projectIssueFormTheme.errorText },
+  error: {
+    clear: "both",
+    color: projectIssueFormTheme.errorText,
+    fontWeight: "700",
+    marginTop: "10px",
+  },
   columns: { display: "block" },
   editorCell: { position: "relative" },
   actions: { textAlign: "right" },

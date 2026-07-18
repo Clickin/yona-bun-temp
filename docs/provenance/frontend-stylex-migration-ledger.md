@@ -1186,6 +1186,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Project milestones progress residual: moved static `.milestones .progress-wrap` and `.milestones .progress` geometry into existing `-milestones.stylex.ts` owners, adding stable wrap/progress owners while preserving dynamic bar width. The `.milestones .bar` `background:#fd6956 !important` fallback remains because frozen cascade priority can outrank generated StyleX paint. Focused `stylex-project-milestones-progress-residual.e2e.ts` verifies sources, owners, and retained fallback.
 
+## Batch 469
+
+- Issueform error state: moved shared `.issue-form-page-wrap .issue-form-error`/`.issue-form-load-error` clear, margin, color, and weight into the route-local `styles.error` owner across two loading and one mutation error consumers. Classes, role, copy, and React error state remain unchanged. Focused `stylex-project-issueform-error.e2e.ts` verifies legacy source and selector retirement.
+
 ## Batch 466
 
 - `/$ownerName/$projectName/issueform` attachment upload-progress shell: moved the route-scoped wrapper `display`, width, height, margin, overflow, vertical alignment, background, and inset shadow plus bar display, height, and orange paint into colocated StyleX. The server-provided progress width remains Dynamic StyleX, and uploader DOM/classes, upload state, and React events remain unchanged. Focused `stylex-project-issueform-upload-progress-shell.e2e.ts` verifies the full legacy sources, static owners, and Dynamic width contract; live legacy visual parity remains unverified.

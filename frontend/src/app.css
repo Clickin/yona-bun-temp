@@ -7268,14 +7268,6 @@ div.markdown-preview {
   border: 0;
 }
 
-.issue-form-page-wrap .issue-form-error,
-.issue-form-load-error {
-  clear: both;
-  margin-top: 10px;
-  color: #b94a48;
-  font-weight: bold;
-}
-
 .issue-project-utility-menu {
   display: block;
 }
