@@ -48,6 +48,7 @@ const sx = {
   watch: stylex.props(styles.watch),
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
+  tasklistProgress: stylex.props(styles.tasklistProgress),
 } as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
@@ -1875,7 +1876,11 @@ function TasklistBar() {
         Tasks<span className="done-counter"></span>
       </div>
       <div className="task-progress">
-        <div className="bar red" style={{ width: 0 }} title="Tasklist"></div>
+        <div
+          className={`${sx.tasklistProgress.className} bar red`}
+          data-stylex-owner="post-detail-tasklist-progress"
+          title="Tasklist"
+        ></div>
       </div>
     </div>
   );

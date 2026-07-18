@@ -33,4 +33,5 @@ export const styles = stylex.create({
   },
   editorTabContent: { overflow: "visible", position: "relative" },
   originalMessageToggle: { paddingLeft: 5, paddingRight: 5 },
+  tasklistProgress: { width: 0 },
 });

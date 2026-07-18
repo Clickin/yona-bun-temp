@@ -10,6 +10,10 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
     "utf8",
   );
   const template = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
+  const tasklistTemplate = readFileSync(
+    "../yona-original/app/views/common/tasklistBar.scala.html",
+    "utf8",
+  );
   const originalMessage = readFileSync(
     "../yona-original/public/javascripts/common/yobi.OriginalMessage.js",
     "utf8",
@@ -19,12 +23,17 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   );
   expect(originalMessage).toContain(".css('border', 0)");
   expect(originalMessage).toContain(".css('padding-left', '5px')");
+  expect(tasklistTemplate).toContain(
+    '<div class="bar red" style="width: 0;" title="Tasklist"></div>',
+  );
   expect(route).not.toContain(
     'className="tab-content" style={{ position: "relative", overflow: "visible" }}',
   );
   expect(route).not.toContain("style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}");
+  expect(route).not.toContain('<div className="bar red" style={{ width: 0 }}');
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
   expect(theme).toContain("originalMessageToggle: { paddingLeft: 5, paddingRight: 5 }");
+  expect(theme).toContain("tasklistProgress: { width: 0 }");
 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -42,6 +51,16 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   await expect(toggle).toHaveCSS("border-top-width", "0px");
   await expect(toggle).toHaveCSS("padding-left", "5px");
   await expect(toggle).toHaveCSS("padding-right", "5px");
+
+  const tasklistProgress = page.locator('[data-stylex-owner="post-detail-tasklist-progress"]');
+  expect(await tasklistProgress.count()).toBeGreaterThan(0);
+  for (let index = 0; index < (await tasklistProgress.count()); index += 1) {
+    const progress = tasklistProgress.nth(index);
+    await expect(progress).toHaveAttribute("class", /bar/);
+    await expect(progress).toHaveAttribute("class", /red/);
+    await expect(progress).not.toHaveAttribute("style", /.+/);
+    await expect(progress).toHaveCSS("width", "0px");
+  }
 });
 
 async function mockPost(page: Page) {

@@ -629,3 +629,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 284
 
 - `/$ownerName/$projectName/issue/$issueNumber` loaded issue detail subtask state: moved the server-derived closed/open percentage width into `-issue-detail.stylex.ts` Dynamic StyleX, preserving the legacy `upload-progress`, `bar`, conditional `red`/`done`, and `Subtask` title output. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` now covers the 50% populated subtask carrier alongside both tasklist bars; live legacy visual parity remains unverified.
+
+## Batch 285
+
+- `/$ownerName/$projectName/post/$postNumber` loaded board-post detail tasklist state: moved the fixed zero-width tasklist progress bar into `-post-detail.stylex.ts`, preserving both legacy tasklist mounts, `task-progress`, `bar red`, and the `Tasklist` title. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies each owner, computed `0px` width, class contract, and absence of inline width; live legacy visual parity remains unverified.
