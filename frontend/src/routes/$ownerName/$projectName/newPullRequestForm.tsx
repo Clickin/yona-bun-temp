@@ -414,9 +414,16 @@ function PullRequestBranchSelectors({
     );
   };
   return (
-    <div className="pull-request-wrap">
+    <div
+      className={`${stylex.props(styles.selectors).className} pull-request-wrap`}
+      data-stylex-owner="new-pull-request-selectors"
+    >
       <div className="pull-left">
-        <label htmlFor="fromProjectId" className="field-title">
+        <label
+          htmlFor="fromProjectId"
+          className={`${stylex.props(styles.fieldTitle).className} field-title`}
+          data-stylex-owner="new-pull-request-field-title"
+        >
           {t("pullRequest.from")}
         </label>
         <PullRequestSelect2Closed
@@ -471,11 +478,18 @@ function PullRequestBranchSelectors({
           ))}
         </select>
       </div>
-      <div className="arrow">
+      <div
+        className={`${stylex.props(styles.arrow).className} arrow`}
+        data-stylex-owner="new-pull-request-arrow"
+      >
         <i className="yobicon-right-2"></i>
       </div>
       <div className="pull-right">
-        <label htmlFor="toProjectId" className="field-title">
+        <label
+          htmlFor="toProjectId"
+          className={`${stylex.props(styles.fieldTitle).className} field-title`}
+          data-stylex-owner="new-pull-request-field-title"
+        >
           {t("pullRequest.to")}
         </label>
         <PullRequestSelect2Closed
