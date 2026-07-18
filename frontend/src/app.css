@@ -1246,7 +1246,6 @@ pre code {
   margin-top: 5px;
 }
 
-.milestone-detail .mass-update-list > li > button,
 .milesion-wrap .mass-update-list > li > button {
   display: block;
   width: 100%;
@@ -1261,8 +1260,6 @@ pre code {
   border: 0;
 }
 
-.milestone-detail .mass-update-list > li > button:hover,
-.milestone-detail .mass-update-list > li > button:focus,
 .milesion-wrap .mass-update-list > li > button:hover,
 .milesion-wrap .mass-update-list > li > button:focus {
   color: #fff;

@@ -882,6 +882,8 @@ function MassUpdateDropdown({
             <li data-value={option.value} key={option.value}>
               <button
                 type="button"
+                {...stylex.props(styles.massUpdateButton)}
+                data-stylex-owner="milestone-detail-mass-update-item"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -975,6 +977,8 @@ function LabelMassUpdateGroup({
         <li data-value={label.id} data-category={group.categoryId} key={label.id}>
           <button
             type="button"
+            {...stylex.props(styles.massUpdateButton)}
+            data-stylex-owner="milestone-detail-mass-update-item"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
