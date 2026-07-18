@@ -789,3 +789,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 325
 
 - Authenticated project code-file open-in-browser popover anchor: moved `display:inline-block` and `position:relative` from the React inline wrapper into `-code-file.stylex.ts` `styles.openBrowserWrap`, preserving legacy action/popover DOM and hover/focus behavior. Focused `stylex-project-code-file-inline-residual.e2e.ts` verifies legacy view/partial/plugin sources, computed anchor behavior, and absence of literal inline declarations; live legacy visual parity remains unverified.
+
+## Batch 326
+
+- `/$ownerName/$projectName/commit/$commitId` original-message toggle state: moved the generated toggle's static `border:0` declaration from the legacy `yobi.OriginalMessage` behavior into route-local `styles.originalMessageToggle`, preserving the `...` button, padding, React show/hide interaction, and commit-detail geometry. Focused `stylex-project-commit-detail-original-message.e2e.ts` verifies the legacy script/template source, stable owner, StyleX border ownership, and absence of the former inline declaration; live legacy visual parity remains unverified.

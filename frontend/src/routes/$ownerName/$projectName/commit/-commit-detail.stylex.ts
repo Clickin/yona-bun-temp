@@ -20,6 +20,7 @@ export const styles = stylex.create({
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
   originalMessageToggle: {
+    borderWidth: "0px",
     paddingLeft: "5px",
     paddingRight: "5px",
   },

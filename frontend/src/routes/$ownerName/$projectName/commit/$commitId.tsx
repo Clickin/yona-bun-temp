@@ -1328,7 +1328,6 @@ function OriginalMessageMarkdown({
         type="button"
         {...sx.originalMessageToggle}
         data-stylex-owner="commit-detail-original-message-toggle"
-        style={{ border: 0 }}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
