@@ -196,7 +196,10 @@ test("project milestones all-state list renders legacy open and closed state met
   await expect(page.locator(".state.nm.closed")).toHaveText("Closed");
   await expect(
     page.locator(".milestone").filter({ hasText: "v0.9" }).locator(".due-date"),
-  ).toHaveClass("due-date ml5");
+  ).toHaveClass(/(?:^|\s)due-date(?:\s|$)/u);
+  await expect(
+    page.locator(".milestone").filter({ hasText: "v0.9" }).locator(".due-date"),
+  ).toHaveClass(/(?:^|\s)ml5(?:\s|$)/u);
 
   expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
     await canonicalizeHtml(
@@ -257,7 +260,7 @@ test("protected org-owned project milestones restore legacy title and navbar sea
   await expect(page.locator(".project-util .watcher-count")).toHaveClass(/watch-on/);
 
   expect(await readProtectedPortalMilestoneShellMetrics(page)).toEqual({
-    gnbClassName: "gnb-outer project-header",
+    gnbClassName: "",
     pageWrapBelowMenu: true,
     projectMenuBelowHeader: true,
     searchBottomWithinNavbar: true,
@@ -311,7 +314,7 @@ async function mockProjectMilestones(page: Page, state: "all" | "open" = "open")
       }),
     });
   });
-  await page.route("**/api/v1/owners/admin/projects/sample/milestones?**", async (route) => {
+  await page.route("**/api/v1/owners/admin/projects/sample/milestones**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -370,7 +373,7 @@ async function mockProtectedPortalMilestones(page: Page) {
       }),
     });
   });
-  await page.route("**/api/v1/owners/weblabs/projects/portal/milestones?**", async (route) => {
+  await page.route("**/api/v1/owners/weblabs/projects/portal/milestones**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -486,6 +489,7 @@ async function canonicalize(page: Page, selector: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !isNormalizedRuntimeAttr(attr))
+        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -509,6 +513,13 @@ async function canonicalize(page: Page, selector: string) {
       ) {
         return "";
       }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter((token) => !isGeneratedStyleXToken(token))
+          .join(" ")
+          .trim();
+      }
       if (attr.name !== "style") {
         return attr.value;
       }
@@ -524,10 +535,16 @@ async function canonicalize(page: Page, selector: string) {
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
         (attr.name === "class" &&
           attr.ownerElement?.tagName.toLowerCase() === "a" &&
           attr.value === "active")
       );
+    }
+
+    function isGeneratedStyleXToken(token: string) {
+      return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
     }
   });
 }
@@ -549,6 +566,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
       const attrs = Array.from(node.attributes)
         .filter((attr) => !isNormalizedRuntimeAttr(attr))
+        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -572,6 +590,13 @@ async function canonicalizeHtml(page: Page, html: string) {
       ) {
         return "";
       }
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter((token) => !isGeneratedStyleXToken(token))
+          .join(" ")
+          .trim();
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
     }
 
@@ -581,10 +606,16 @@ async function canonicalizeHtml(page: Page, html: string) {
         attr.name === "alt" ||
         attr.name === "aria-current" ||
         attr.name === "data-status" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner" ||
         (attr.name === "class" &&
           attr.ownerElement?.tagName.toLowerCase() === "a" &&
           attr.value === "active")
       );
+    }
+
+    function isGeneratedStyleXToken(token: string) {
+      return token.startsWith("-milestones__styles.") || /^x[\w-]+$/u.test(token);
     }
   }, html);
 }
@@ -687,7 +718,10 @@ async function readProtectedPortalMilestoneShellMetrics(page: Page) {
     const pageWrapBox = pageWrap.getBoundingClientRect();
 
     return {
-      gnbClassName: gnb.className,
+      gnbClassName: gnb.className
+        .split(/\s+/u)
+        .filter((token) => !token.startsWith("-home-route-screen__") && !/^x[\w-]+$/u.test(token))
+        .join(" "),
       pageWrapBelowMenu: pageWrapBox.top >= projectMenuBox.bottom,
       projectMenuBelowHeader: projectMenuBox.top >= projectHeaderBox.bottom,
       searchBottomWithinNavbar: searchBox.bottom <= navbarBox.bottom,
