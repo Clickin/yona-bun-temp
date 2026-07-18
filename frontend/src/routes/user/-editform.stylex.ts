@@ -21,3 +21,14 @@ export const userSettingsProfileColors = stylex.defineVars({
   progressBar: "#f28149",
   rootText: "#333333",
 });
+
+export const userSettingsAvatarStyles = stylex.create({
+  image: {
+    maxWidth: "none",
+    minWidth: "128px",
+    width: "128px !important",
+  },
+  cropPreview: {
+    maxWidth: "500px !important",
+  },
+});

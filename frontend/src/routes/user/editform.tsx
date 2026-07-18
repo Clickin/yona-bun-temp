@@ -18,6 +18,7 @@ import {
   userSettingsPageColors,
   userSettingsProfileColors,
   userSettingsTabColors,
+  userSettingsAvatarStyles,
 } from "./-editform.stylex";
 
 export const Route = createFileRoute("/user/editform")({
@@ -465,7 +466,11 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <div className="avatar-frm">
           <div className="avatar-wrap xlarge">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
-            <img src={avatarUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
+            <img
+              src={avatarUrl || undefined}
+              className={stylex.props(userSettingsAvatarStyles.image).className}
+              data-stylex-owner="user-settings-avatar-image"
+            />
           </div>
           <div
             className={`upload-progress avatar ${stylex.props(styles.avatarProgress).className}`}
@@ -529,12 +534,20 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <div className="modal-header center-txt">
           <div className="avatar-wrap xlarge">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
-            <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "none", width: "128px" }} />
+            <img
+              src={avatarPreviewUrl || undefined}
+              className={stylex.props(userSettingsAvatarStyles.image).className}
+              data-stylex-owner="user-settings-avatar-crop-image"
+            />
           </div>
         </div>
         <div className="modal-body">
           {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop preview image without an alt attribute. */}
-          <img src={avatarPreviewUrl || undefined} style={{ maxWidth: "500px" }} />
+          <img
+            src={avatarPreviewUrl || undefined}
+            className={stylex.props(userSettingsAvatarStyles.cropPreview).className}
+            data-stylex-owner="user-settings-avatar-crop-preview"
+          />
           <canvas width="128" height="128" className="hide"></canvas>
         </div>
         <div className="modal-footer">

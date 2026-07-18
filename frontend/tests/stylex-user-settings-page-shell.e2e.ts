@@ -136,6 +136,7 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
     "utf8",
   );
   const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
+  const avatarTemplate = readFileSync("../yona-original/app/views/user/edit.scala.html", "utf8");
 
   for (const template of templates) {
     expect(template).toContain('<div class="page-wrap-outer">');
@@ -188,6 +189,18 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
   expect(route).toContain('minHeight: "450px"');
   expect(route).toContain('padding: { default: "0px 10px", [globalBreakpoints.mobile]: "0px" }');
   expect(route).not.toContain("globalColors.");
+  expect(avatarTemplate).toContain(
+    '<img src="@user.avatarUrl(256)" style="width:128px; max-width:none;" />',
+  );
+  expect(avatarTemplate).toContain('<img style="width:128px; max-width:none;"/>');
+  expect(avatarTemplate).toContain('<img style="max-width:500px;">');
+  expect(route).toContain('data-stylex-owner="user-settings-avatar-image"');
+  expect(route).toContain('data-stylex-owner="user-settings-avatar-crop-image"');
+  expect(route).toContain('data-stylex-owner="user-settings-avatar-crop-preview"');
+  expect(route).not.toContain('style={{ maxWidth: "none", width: "128px" }}');
+  expect(route).not.toContain('style={{ maxWidth: "500px" }}');
+  expect(theme).toContain('width: "128px"');
+  expect(theme).toContain('maxWidth: "500px"');
   expect(route).not.toContain("!important");
   const pageTheme = theme.match(
     /export const userSettingsPageColors = stylex\.defineVars\(\{[\s\S]*?\n\}\);/u,
@@ -195,6 +208,61 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
   expect(pageTheme?.match(/#[0-9a-f]{3,8}/giu)).toEqual(["#ffffff"]);
   expect(appCss).toContain("body:has(.site-breadcrumb-outer) .page-wrap {\n    width: 1080px;");
 });
+
+for (const viewport of [
+  { height: 900, name: "desktop", width: 1366 },
+  { height: 844, name: "mobile", width: 390 },
+] as const)
+  test(`keeps avatar image dimensions and crop containment on ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await mockSettings(page);
+    await page.goto(`${basePath}/user/editform`);
+    await expect(owner(page, owners.outer)).toBeVisible({ timeout: 2_000 });
+
+    const avatar = owner(page, "user-settings-avatar-image");
+    const cropImage = owner(page, "user-settings-avatar-crop-image");
+    const cropPreview = owner(page, "user-settings-avatar-crop-preview");
+    await expect(avatar).toHaveCSS("width", "128px");
+    await expect(avatar).toHaveCSS("max-width", "none");
+    await expect(cropImage).toHaveCSS("width", "128px");
+    await expect(cropImage).toHaveCSS("max-width", "none");
+    await expect(cropPreview).toHaveCSS("max-width", "500px");
+
+    const initial = await page.evaluate(() => {
+      const image = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-settings-avatar-image"]',
+      )!;
+      const rect = image.getBoundingClientRect();
+      return { right: rect.right, viewport: window.innerWidth };
+    });
+    expect(initial.right).toBeLessThanOrEqual(initial.viewport + 1);
+
+    await page.locator("#avatarFile").setInputFiles({
+      name: "avatar.png",
+      mimeType: "image/png",
+      buffer: Buffer.from("fake-png"),
+    });
+    await expect(owner(page, "user-settings-avatar-crop")).toHaveCSS("display", "block");
+    const cropGeometry = await page.evaluate(() => {
+      const modal = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-settings-avatar-crop"]',
+      )!;
+      const preview = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="user-settings-avatar-crop-preview"]',
+      )!;
+      const modalRect = modal.getBoundingClientRect();
+      const previewRect = preview.getBoundingClientRect();
+      return {
+        modalRight: modalRect.right,
+        previewRight: previewRect.right,
+        viewport: window.innerWidth,
+      };
+    });
+    expect(cropGeometry.modalRight).toBeLessThanOrEqual(cropGeometry.viewport + 1);
+    expect(cropGeometry.previewRight).toBeLessThanOrEqual(cropGeometry.viewport + 1);
+  });
 
 test("keeps the two wrappers mounted while all five settings routes transition", async ({
   page,
