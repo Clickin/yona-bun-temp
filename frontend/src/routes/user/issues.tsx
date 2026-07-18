@@ -1091,6 +1091,7 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
   const childOpenCount = issue.childOpenCount ?? 0;
   const childTotalCount = childClosedCount + childOpenCount;
   const percentage = childTotalCount ? Math.trunc((childClosedCount / childTotalCount) * 100) : 0;
+  const progressBarStyleProps = stylex.props(issueStyles.progressBar(`${percentage}%`));
   const parentIssueNumber = stringField(issue.parentIssueNumber, "");
   const parentIssueTitle = issue.parentIssueTitle ?? "";
 
@@ -1104,8 +1105,8 @@ function IssueSubtaskSummary({ issue }: { issue: RestIssueListItem }) {
             }`}
           >
             <div
-              className={`bar ${percentage === 100 ? "done" : "red"}`}
-              style={{ width: `${percentage}%` }}
+              {...progressBarStyleProps}
+              className={`bar ${percentage === 100 ? "done" : "red"} ${progressBarStyleProps.className ?? ""}`.trim()}
               title="Subtask"
             ></div>
           </div>

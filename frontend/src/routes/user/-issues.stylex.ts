@@ -12,6 +12,8 @@ export const styles = stylex.create({
   relativeAnchor: { position: "relative" },
   issueRowTwoColumn: { cursor: "pointer" },
   issueRowHovered: { backgroundColor: "#fafafa" },
+  // API-derived percentages cannot be enumerated at build time.
+  progressBar: (width) => ({ width }),
   issueTitle: {
     color: userIssuesColors.issueTitle,
     fontSize: "15px",

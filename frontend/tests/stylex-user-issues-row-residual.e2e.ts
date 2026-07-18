@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
-test("user issue row static cursor and hover styles use route-local StyleX", async ({ page }) => {
+test("user issue row conditional and dynamic styles use route-local StyleX", async ({ page }) => {
   const source = readFileSync("src/routes/user/issues.tsx", "utf8");
   const styleSource = readFileSync("src/routes/user/-issues.stylex.ts", "utf8");
   const legacy = readFileSync(
@@ -15,10 +15,13 @@ test("user issue row static cursor and hover styles use route-local StyleX", asy
   expect(legacy).toContain('class="child-issue-list hide"');
   expect(source).toContain("issueStyles.issueRowTwoColumn");
   expect(source).toContain("issueStyles.issueRowHovered");
+  expect(source).toContain("issueStyles.progressBar");
+  expect(source).not.toContain("style={{ width: `${percentage}%` }}");
   expect(source).not.toContain('cursor: "pointer"');
   expect(source).not.toContain('backgroundColor: "#fafafa"');
   expect(styleSource).toContain('issueRowTwoColumn: { cursor: "pointer" }');
   expect(styleSource).toContain('issueRowHovered: { backgroundColor: "#fafafa" }');
+  expect(styleSource).toContain("progressBar: (width) => ({ width })");
 
   await mockUserIssues(page);
   await page.addInitScript(() => localStorage.setItem("useTwoColumnMode", "true"));
@@ -29,6 +32,7 @@ test("user issue row static cursor and hover styles use route-local StyleX", asy
   await row.hover();
   await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
   await expect(row.locator(".child-issue-list")).toHaveCSS("display", "none");
+  await expect(row.locator(".subtask-progress.upload-progress .bar")).toHaveCSS("width", "0px");
 });
 
 async function mockUserIssues(page: Page) {
@@ -65,7 +69,7 @@ async function mockUserIssues(page: Page) {
             authorLabel: "Alice",
             authorLoginId: "alice",
             childClosedCount: 0,
-            childOpenCount: 0,
+            childOpenCount: 2,
             createdLabel: "2026-07-17",
             id: 1,
             issueNumber: 1,
