@@ -1617,13 +1617,15 @@ function ColorButton({
   isActive?: boolean;
   onSelect?: () => void;
 }) {
+  const presetColorStyleProps = stylex.props(labelsFormDynamicStyles.presetColorBackground(color));
+
   return (
     <button
       type="button"
       {...stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive)}
-      className={`${stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive).className} issue-label btn-preset-color${isActive ? " active" : ""}`}
+      {...presetColorStyleProps}
+      className={`${stylex.props(styles.presetColorButton, isActive && styles.presetColorButtonActive).className} issue-label btn-preset-color${isActive ? " active" : ""} ${presetColorStyleProps.className ?? ""}`.trim()}
       data-stylex-owner="project-labels-preset-color"
-      style={{ backgroundColor: color }}
       onClick={onSelect}
     ></button>
   );

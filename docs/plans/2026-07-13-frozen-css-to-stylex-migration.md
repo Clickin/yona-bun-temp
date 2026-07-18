@@ -3510,6 +3510,8 @@ Batch 375 applies the workflow to the authenticated pull-request changes pending
 
 Batch 376 applies the workflow to the authenticated issue-detail keymap wrapper state. The fixed legacy `padding` and `margin-left` declarations move to a route-local StyleX owner while preserving the keymap DOM, keyboard interaction, copy, and responsive geometry; the focused keymap-wrapper test covers the legacy source contract and absence of the former inline spacing.
 
+Batch 377 applies the workflow to the authenticated labels-management preset-color state. The server-provided preset color moves from a literal inline background declaration to route-local Dynamic StyleX while preserving the preset button DOM, color selection interaction, copy, and responsive geometry; the focused preset-color test covers the legacy source contract and dynamic carrier.
+
 
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 

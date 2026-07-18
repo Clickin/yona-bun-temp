@@ -985,3 +985,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 376
 
 - Authenticated issue-detail keymap wrapper state: moved the fixed legacy `padding:10px 0` and `margin-left:55px` declarations into the route-local `styles.keymapWrapper`, preserving the keymap DOM, keyboard interaction, copy, and responsive geometry. Focused `stylex-project-issue-detail-keymap-wrapper.e2e.ts` verifies the legacy source contract, stable owner, StyleX spacing, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 377
+
+- Authenticated labels-management preset-color state: moved the server-provided preset color from the literal inline `backgroundColor` declaration into `labelsFormDynamicStyles.presetColorBackground(color)`, preserving the preset button DOM, color selection interaction, copy, and responsive geometry. Focused `stylex-project-labels-preset-color-dynamic.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background; live legacy visual parity remains unverified.
