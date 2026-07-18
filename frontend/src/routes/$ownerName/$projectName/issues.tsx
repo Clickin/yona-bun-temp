@@ -99,28 +99,6 @@ const legacyRouteLocalActiveProps = {
   className: undefined,
   "data-status": undefined,
 };
-const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "150px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-};
-const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "276px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-  zIndex: 1010,
-};
-
 export const Route = createFileRoute("/$ownerName/$projectName/issues")({
   component: ProjectIssuesRoute,
   validateSearch(search: Record<string, unknown>): ProjectIssuesSearch {
@@ -1186,7 +1164,7 @@ function MassUpdateToolbar({
             <li data-value="0">
               <button
                 type="button"
-                style={massUpdateOptionButtonStyle}
+                {...stylex.props(styles.massUpdateOptionButton)}
                 onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", "0")}
               >
                 {t("issue.noAssignee")}
@@ -1195,7 +1173,7 @@ function MassUpdateToolbar({
             <li data-value={currentUserId}>
               <button
                 type="button"
-                style={massUpdateOptionButtonStyle}
+                {...stylex.props(styles.massUpdateOptionButton)}
                 onClick={(event) =>
                   handleMassUpdateOptionClick(event, "assignee.id", currentUserId)
                 }
@@ -1209,7 +1187,7 @@ function MassUpdateToolbar({
                 <button
                   type="button"
                   className="usf-group"
-                  style={massUpdateOptionButtonStyle}
+                  {...stylex.props(styles.massUpdateOptionButton)}
                   onClick={(event) => handleMassUpdateOptionClick(event, "assignee.id", user.id)}
                 >
                   <span className="avatar-wrap smaller">
@@ -1333,7 +1311,7 @@ function MassUpdateDropdown({
             <li data-value={option.value} key={option.value}>
               <button
                 type="button"
-                style={massUpdateOptionButtonStyle}
+                {...stylex.props(styles.massUpdateOptionButton)}
                 onClick={(event) => handleMassUpdateOptionClick(event, option.value)}
               >
                 {option.label}
@@ -1446,7 +1424,7 @@ function LabelMassUpdateGroup({
         >
           <button
             type="button"
-            style={massUpdateOptionButtonStyle}
+            {...stylex.props(styles.massUpdateOptionButton)}
             onClick={(event) => handleMassUpdateOptionClick(event, label.id)}
           >
             <span className="issue-label active list-label" data-label-id={label.id}>
@@ -1463,20 +1441,6 @@ function LabelMassUpdateGroup({
 function massUpdateDropdownGroupClassName(isOpen: boolean) {
   return isOpen ? "btn-group open" : "btn-group";
 }
-
-const massUpdateOptionButtonStyle: CSSProperties = {
-  background: "transparent",
-  border: 0,
-  clear: "both",
-  color: "#333",
-  display: "block",
-  fontWeight: "normal",
-  lineHeight: "20px",
-  padding: "3px 20px",
-  textAlign: "left",
-  whiteSpace: "nowrap",
-  width: "100%",
-};
 
 function ProjectIssueItem({
   basePath,
@@ -2885,7 +2849,9 @@ function IssueSearchLabelSelect({
                 aria-controls="labelIds-options"
                 aria-expanded={open}
                 placeholder={selectedLabels.length > 0 ? "" : t("label.select")}
-                style={selectedLabels.length > 0 ? { width: 10 } : undefined}
+                {...(selectedLabels.length > 0
+                  ? stylex.props(styles.selectedLabelSearchInput)
+                  : {})}
                 onClick={() => setOpen(true)}
                 onFocus={() => setOpen(true)}
                 onKeyDown={(event) => {
@@ -3086,7 +3052,7 @@ function TwoColumnModeCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={TWO_COLUMN_MODE_POPOVER_STYLE}>
+        <div className="popover top" role="tooltip" {...stylex.props(styles.twoColumnPopover)}>
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">
@@ -3159,7 +3125,7 @@ function ShowSubtasksCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+        <div className="popover top" role="tooltip" {...stylex.props(styles.showSubtasksPopover)}>
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">{popoverContent}</div>
