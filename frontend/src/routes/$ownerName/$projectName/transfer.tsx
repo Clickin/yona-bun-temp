@@ -15,7 +15,7 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { projectTransferColors } from "./-transfer.stylex";
+import { projectTransferColors, projectTransferConditionalStyles } from "./-transfer.stylex";
 
 const styles = stylex.create({
   bubble: {
@@ -614,6 +614,9 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const memberEnrollmentCount = projectMemberCount(project);
+  const codeMenuStyleProps = booleanField(projectMenuSetting(project).code)
+    ? undefined
+    : stylex.props(projectTransferConditionalStyles.hidden);
 
   return (
     <ul className="nav nav-tabs">
@@ -686,8 +689,9 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className=""
-        style={booleanField(projectMenuSetting(project).code) ? undefined : { display: "none" }}
+        {...codeMenuStyleProps}
+        className={` ${codeMenuStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="project-transfer-code-menu"
       >
         <Link
           activeOptions={legacyLinkActiveOptions}

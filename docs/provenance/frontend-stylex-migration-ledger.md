@@ -865,3 +865,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 344
 
 - Authenticated project delete form code-menu state: moved conditional code-menu `display:none` into `styles.codeMenuHidden`, preserving the legacy settings-menu DOM, permission logic, copy, submit flow, and responsive geometry. Focused `stylex-project-deleteform-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 345
+
+- Authenticated project transfer form code-menu state: moved conditional code-menu `display:none` into `projectTransferConditionalStyles.hidden`, preserving the legacy settings-menu DOM, permission logic, copy, submit flow, and responsive geometry. Focused `stylex-project-transfer-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

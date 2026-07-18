@@ -31,3 +31,7 @@ export const projectTransferColors = stylex.defineVars({
   checkboxAccent: "#333333",
   agreementText: "#333333",
 });
+
+export const projectTransferConditionalStyles = stylex.create({
+  hidden: { display: "none" },
+});
