@@ -1198,26 +1198,33 @@ function MilestoneIssueRow({
                 ) : null}
               </span>
             ) : null}
-            {labels.map((label) => (
-              <button
-                type="button"
-                key={stringField(label.id)}
-                className="label issue-label list-label active"
-                data-category-id={stringField(label.categoryId)}
-                data-label-id={stringField(label.id)}
-                style={{ background: cssBackgroundColor(stringField(label.color)) }}
-                onClick={() => {
-                  void router.navigate({
-                    to: legacyProjectIssuesHref(ownerName, projectName, {
-                      labelIds: [stringField(label.id)],
-                      milestoneId,
-                    }),
-                  });
-                }}
-              >
-                {stringField(label.name)}
-              </button>
-            ))}
+            {labels.map((label) =>
+              (() => {
+                const labelColor = stylex.props(
+                  styles.labelColor(cssBackgroundColor(stringField(label.color))),
+                );
+                return (
+                  <button
+                    type="button"
+                    key={stringField(label.id)}
+                    {...labelColor}
+                    className={`${labelColor.className} label issue-label list-label active`}
+                    data-category-id={stringField(label.categoryId)}
+                    data-label-id={stringField(label.id)}
+                    onClick={() => {
+                      void router.navigate({
+                        to: legacyProjectIssuesHref(ownerName, projectName, {
+                          labelIds: [stringField(label.id)],
+                          milestoneId,
+                        }),
+                      });
+                    }}
+                  >
+                    {stringField(label.name)}
+                  </button>
+                );
+              })(),
+            )}
             <div className="child-issue-list hide">
               <MilestoneIssueChildRows
                 childIssues={issue.childIssues}
@@ -1452,21 +1459,28 @@ function MilestoneIssueChildRow({
           voterCount={numberField(childIssue.voterCount)}
         />
       </span>
-      {childIssueLabels.map((label) => (
-        <Link
-          to={legacyProjectIssuesHref(ownerName, projectName, {
-            labelIds: [label.id],
-            state: "open",
-          })}
-          className="label issue-label list-label active twoColumeModeTarget"
-          data-category-id={label.categoryId}
-          data-label-id={label.id}
-          key={label.id}
-          style={label.color ? { background: cssBackgroundColor(label.color) } : undefined}
-        >
-          {label.name}
-        </Link>
-      ))}
+      {childIssueLabels.map((label) =>
+        (() => {
+          const labelColor = label.color
+            ? stylex.props(styles.labelColor(cssBackgroundColor(label.color)))
+            : undefined;
+          return (
+            <Link
+              to={legacyProjectIssuesHref(ownerName, projectName, {
+                labelIds: [label.id],
+                state: "open",
+              })}
+              {...labelColor}
+              className={`${labelColor?.className ?? ""} label issue-label list-label active twoColumeModeTarget`}
+              data-category-id={label.categoryId}
+              data-label-id={label.id}
+              key={label.id}
+            >
+              {label.name}
+            </Link>
+          );
+        })(),
+      )}
       <span className="child-issue-date" title={stringField(childIssue.createdLabel)}>
         {stringField(childIssue.createdLabel)}
       </span>
