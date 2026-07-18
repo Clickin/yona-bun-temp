@@ -3,6 +3,10 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 307
+
+- `/$ownerName/$projectName/issue/$issueNumber` loaded issue detail label state: moved arbitrary server-provided label background colors from the issue label selector, selected-label links, child-issue labels, and timeline label boxes into the route-local Dynamic StyleX `labelColor(backgroundColor)` owner. Legacy label classes, links, metadata, contrast, order, and geometry remain unchanged. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` verifies legacy source evidence, computed runtime colors for parent/child labels, custom-property carriers, and absence of literal background declarations; live legacy visual parity remains unverified.
+
 ## Batch 302
 
 - `/$ownerName/$projectName/pullRequests` two-column state: moved the conditional left-search-column `display:none` declaration, corresponding to the legacy `yona.twoColumnMode.js` `.left-menu` hide behavior, into the route-local `searchColumnHidden` conditional StyleX owner. The row cursor remains dynamic state fallback, and generated popover placement remains React/plugin behavior rather than an invented fixed legacy declaration. Focused `stylex-project-pull-requests.e2e.ts` verifies legacy JS evidence, conditional owner, and responsive containment; live legacy visual parity remains unverified.

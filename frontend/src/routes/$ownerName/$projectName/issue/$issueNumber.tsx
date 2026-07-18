@@ -2052,8 +2052,9 @@ function LegacyLabelControl({
             <li className="select2-search-choice" key={stringField(label.id)}>
               <div>
                 <strong
-                  className="label issue-label active static"
-                  style={{ background: stringField(label.color) }}
+                  {...stylex.props(styles.labelColor(stringField(label.color)))}
+                  className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label issue-label active static`}
+                  data-stylex-owner="project-issue-detail-label-color"
                 >
                   {stringField(label.name)}
                 </strong>
@@ -2099,7 +2100,11 @@ function LegacyLabelControl({
                     onClick={() => toggle(id)}
                     onKeyDown={(event) => activateLegacyControl(event, () => toggle(id))}
                   >
-                    <span className="label" style={{ background: stringField(label.color) }}>
+                    <span
+                      {...stylex.props(styles.labelColor(stringField(label.color)))}
+                      className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label`}
+                      data-stylex-owner="project-issue-detail-label-color"
+                    >
                       {stringField(label.name)}
                     </span>
                   </div>
@@ -2141,6 +2146,7 @@ function IssueSelectedLabels({
         {labels.map((label) => (
           <Link
             {...LEGACY_LINK_PROPS}
+            {...stylex.props(styles.labelColor(stringField(label.color)))}
             to={listPath}
             params={{ ownerName, projectName }}
             search={{
@@ -2156,9 +2162,9 @@ function IssueSelectedLabels({
               orderDir: "desc",
               pageNum: 1,
             }}
-            className="label issue-label active static"
+            className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label issue-label active static`}
+            data-stylex-owner="project-issue-detail-label-color"
             key={String(label.id)}
-            style={{ background: stringField(label.color) }}
           >
             {label.name}
           </Link>
@@ -2312,6 +2318,7 @@ function IssueChildIssue({
       {labels.map((label) => (
         <Link
           {...LEGACY_LINK_PROPS}
+          {...stylex.props(styles.labelColor(stringField(label.color)))}
           to="/$ownerName/$projectName/issues"
           params={{ ownerName, projectName }}
           search={{
@@ -2327,11 +2334,11 @@ function IssueChildIssue({
             orderDir: "desc",
             pageNum: 1,
           }}
-          className="label issue-label list-label active twoColumeModeTarget"
+          className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label issue-label list-label active twoColumeModeTarget`}
+          data-stylex-owner="project-issue-detail-label-color"
           key={String(label.id)}
           data-category-id={stringField(label.categoryId)}
           data-label-id={stringField(label.id)}
-          style={{ background: stringField(label.color) }}
         >
           {label.name}
         </Link>
@@ -4310,7 +4317,11 @@ function issueEventLabelBox(value: string, labels: RestIssueDetailResponse["labe
     return labelName;
   }
   return (
-    <div className="label issue-label" style={{ backgroundColor: stringField(label.color) }}>
+    <div
+      {...stylex.props(styles.labelColor(stringField(label.color)))}
+      className={`${stylex.props(styles.labelColor(stringField(label.color))).className} label issue-label`}
+      data-stylex-owner="project-issue-detail-label-color"
+    >
       {labelName}
     </div>
   );

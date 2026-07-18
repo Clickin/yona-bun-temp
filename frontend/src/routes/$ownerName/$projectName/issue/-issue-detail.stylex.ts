@@ -8,6 +8,9 @@ export const issueDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  labelColor: (backgroundColor: string) => ({
+    backgroundColor,
+  }),
   page: {
     minHeight: "100%",
   },

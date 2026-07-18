@@ -35,6 +35,10 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(legacyOriginalMessage).toContain(".css('border', 0)");
   expect(route).not.toContain("style={{ border: 0 }}");
   expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
+  expect(route).not.toContain("style={{ background: stringField(label.color) }}");
+  expect(route).not.toContain("style={{ backgroundColor: stringField(label.color) }}");
+  expect(route).toContain("styles.labelColor(stringField(label.color))");
+  expect(styles).toContain("labelColor: (backgroundColor: string) => ({");
   expect(route).toContain('data-stylex-owner="project-issue-detail-mobile-metadata"');
   expect(styles).toContain('mobileMetadata: {\n    fontSize: "0.7em"');
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
@@ -113,6 +117,19 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
   expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(390);
   await expect(mobileMetadata).not.toHaveAttribute("style", /font-size|fontSize/);
+  const labelColors = page.locator('[data-stylex-owner="project-issue-detail-label-color"]');
+  await expect(labelColors).toHaveCount(2);
+  await expect(labelColors.filter({ hasText: "bug" }).first()).toHaveCSS(
+    "background-color",
+    "rgb(210, 40, 40)",
+  );
+  await expect(labelColors.filter({ hasText: "feature" }).first()).toHaveCSS(
+    "background-color",
+    "rgb(40, 110, 210)",
+  );
+  for (const label of await labelColors.all()) {
+    await expect(label).not.toHaveAttribute("style", /(?:^|;)\s*background(?:-color)?\s*:/i);
+  }
   const toggleBox = await toggle.boundingBox();
   expect(toggleBox).not.toBeNull();
   expect(toggleBox!.x).toBeGreaterThanOrEqual(0);
@@ -123,6 +140,22 @@ test("issue detail owns original-message and editor static declarations", async 
 });
 
 async function mockIssue(page: Page) {
+  const bugLabel = {
+    id: 1,
+    name: "bug",
+    color: "#d22828",
+    categoryId: 1,
+    categoryName: "Type",
+    categoryIsExclusive: false,
+  };
+  const featureLabel = {
+    id: 2,
+    name: "feature",
+    color: "#286ed2",
+    categoryId: 1,
+    categoryName: "Type",
+    categoryIsExclusive: false,
+  };
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -147,7 +180,7 @@ async function mockIssue(page: Page) {
     }),
   );
   await page.route("**/api/v1/owners/admin/projects/sample/labels", (route: Route) =>
-    route.fulfill({ contentType: "application/json", json: { labels: [] } }),
+    route.fulfill({ contentType: "application/json", json: { labels: [bugLabel, featureLabel] } }),
   );
   await page.route("**/api/v1/owners/admin/projects/sample/milestones**", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: { milestones: [] } }),
@@ -202,7 +235,7 @@ async function mockIssue(page: Page) {
             title: "Open subtask",
             state: "OPEN",
             isDraft: false,
-            labels: [],
+            labels: [featureLabel],
             assigneeLabel: "",
           },
           {
@@ -215,7 +248,7 @@ async function mockIssue(page: Page) {
           },
         ],
         attachments: [],
-        labels: [],
+        labels: [bugLabel],
         milestone: null,
         assigneeLoginId: null,
         commentCount: 1,

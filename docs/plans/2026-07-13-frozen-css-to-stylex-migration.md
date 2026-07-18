@@ -3369,6 +3369,8 @@ Batch 304 applies the workflow to the authenticated organization settings logo p
 
 Batch 305 applies the workflow to the authenticated `/user/issues` populated issue-list label state. The server-provided label background color moved to route-local Dynamic StyleX for parent and child labels while preserving legacy classes, contrast behavior, links, and responsive containment; the focused user-issues residual test covers the runtime custom-property carrier and computed color.
 
+Batch 307 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber` loaded issue-detail label state. Arbitrary server-provided label background colors moved to route-local Dynamic StyleX across the selected-label control, issue labels, child-issue labels, and timeline label boxes while preserving legacy classes, links, contrast, order, and geometry; the focused issue-detail residual test covers runtime colors, custom-property carriers, and the absence of literal background declarations.
+
 
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
