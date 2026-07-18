@@ -193,6 +193,9 @@ const styles = stylex.create({
   projectWrapper: {
     marginBottom: "10px",
   },
+  projectWrapperVisible: {
+    display: "block",
+  },
   recipientRadio: {
     minHeight: "20px",
     paddingLeft: "20px",
@@ -223,7 +226,6 @@ const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const projectInputStyleProps = stylex.props(styles.projectInput);
-const projectWrapperStyleProps = stylex.props(styles.projectWrapper);
 
 export const Route = createFileRoute("/sites/massmail")({
   component: SiteMassMailRoute,
@@ -395,6 +397,10 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const [projectQuery, setProjectQuery] = useState("");
   const [isProjectSuggestionMenuVisible, setProjectSuggestionMenuVisible] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const projectWrapperStateStyleProps = stylex.props(
+    styles.projectWrapper,
+    mailingType === "projects" && styles.projectWrapperVisible,
+  );
   const projectInputRef = useRef<HTMLInputElement>(null);
   const nextProjectId = useRef(1);
   const queryClient = useQueryClient();
@@ -501,11 +507,10 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
         {t("site.massMail.toProjects")}
       </label>
       <div
-        {...projectWrapperStyleProps}
-        className={`hide ${projectWrapperStyleProps.className ?? ""}`}
+        {...projectWrapperStateStyleProps}
+        className={`hide ${projectWrapperStateStyleProps.className ?? ""}`}
         data-stylex-owner="site-massmail-project-wrapper"
         id="project-list-wrap"
-        style={mailingType === "projects" ? { display: "block" } : undefined}
       >
         <div className="controls">
           <input

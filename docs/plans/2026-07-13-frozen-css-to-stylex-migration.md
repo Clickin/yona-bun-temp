@@ -3394,6 +3394,8 @@ Batch 315 applies the workflow to the authenticated `/organizations/$organizatio
 
 Batch 316 applies the workflow to the authenticated `/organizations/$organizationName/pullrequests` organization header logo state. The server-provided header `background-image` moves to the route-local Dynamic StyleX owner while preserving the legacy `project-header-outer` DOM/classes, breadcrumb copy, and responsive geometry; the focused header-logo test covers the legacy header/list source, Dynamic StyleX carrier, stable owner, and absence of a literal inline background declaration.
 
+Batch 317 applies the workflow to the authenticated `/sites/massmail` project-recipient state. The conditional `#project-list-wrap` display moves from a React inline declaration to a conditional StyleX owner, preserving the legacy `hide` class, recipient radio interaction, project input geometry, typeahead behavior, and responsive containment. The focused massmail project-input test covers hidden/visible state, computed display, no literal inline display, selection/add behavior, and desktop/mobile containment.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -53,6 +53,10 @@ test.describe("StyleX site massmail project input", () => {
     ]);
     expect(route).toContain('data-stylex-owner="site-massmail-project-input"');
     expect(route).toContain("styles.projectInput");
+    expect(route).toContain("projectWrapperVisible: {");
+    expect(route).not.toContain(
+      'style={mailingType === "projects" ? { display: "block" } : undefined}',
+    );
     expect(route).toContain('projectInput: {\n    margin: "0px"');
     expect(route).not.toContain("globalColors.");
     expect(theme).toContain("defineVars");
@@ -62,6 +66,9 @@ test.describe("StyleX site massmail project input", () => {
     await expect(page.locator(ownerSelector)).toBeHidden();
     await page.locator("#mailtoPrj").check();
     const input = page.locator(ownerSelector);
+    const wrapper = page.locator('[data-stylex-owner="site-massmail-project-wrapper"]');
+    await expect(wrapper).toHaveCSS("display", "block");
+    await expect(wrapper).not.toHaveAttribute("style", /display/u);
     await expect(input).toHaveAttribute("id", "input-project");
     await expect(input).toHaveAttribute("type", "text");
     await expect(input).toHaveClass(/(?:^|\s)span3(?:\s|$)/u);
