@@ -1386,7 +1386,10 @@ export function ProjectHomeBody({
             </div>
 
             <div className="span3 span-right-pane">
-              <div className="bubble-wrap gray project-home">
+              <div
+                className={`${stylex.props(projectHomeStyles.projectHome).className} bubble-wrap gray project-home`}
+                data-stylex-owner="project-home-side-panel"
+              >
                 <div
                   className={`${stylex.props(projectHomeStyles.projectButtonWrap).className} project-btn-wrap`}
                   data-stylex-owner="project-home-project-button-wrap"

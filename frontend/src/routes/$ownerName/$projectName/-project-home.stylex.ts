@@ -35,6 +35,7 @@ export const styles = stylex.create({
   },
   projectMenuInner: { height: "39px", margin: "0 auto" },
   page: { backgroundColor: projectHomeTheme.pageSurface },
+  projectHome: { padding: "10px" },
   header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
   overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },
   overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
