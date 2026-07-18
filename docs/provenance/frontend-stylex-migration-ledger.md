@@ -893,3 +893,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 351
 
 - Authenticated project posts keymap modal state: moved conditional modal `display:block` into `styles.keymapOpen`, preserving the legacy help-keymap DOM, keyboard interaction, copy, and responsive geometry. Focused `stylex-project-posts-keymap-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 352
+
+- Authenticated board-post original-message toggle state: moved fixed legacy `border:0` into `postDetailStyles.originalMessageToggle`, preserving the legacy toggle DOM, copy, interaction, and responsive geometry. Focused `stylex-project-post-detail-original-toggle.e2e.ts` verifies the legacy script, stable owner, route-local StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

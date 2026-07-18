@@ -3464,6 +3464,8 @@ Batch 350 applies the workflow to the authenticated project issues child-list st
 
 Batch 351 applies the workflow to the authenticated project posts keymap modal state. The conditional modal `display:block` declaration moves to route-local conditional StyleX while preserving the legacy help-keymap DOM, keyboard interaction, copy, and responsive geometry; the focused keymap test covers legacy source evidence and absence of the former inline declaration.
 
+Batch 352 applies the workflow to the authenticated board-post original-message toggle state. The fixed legacy `border:0` declaration moves into the route-local StyleX owner while preserving the legacy toggle DOM, copy, interaction, and responsive geometry; the focused original-message test covers legacy script evidence and absence of the former inline declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -1424,7 +1424,6 @@ function OriginalMessageMarkdown({
       <button
         type="button"
         {...sx.originalMessageToggle}
-        style={{ border: 0 }}
         data-stylex-owner="post-detail-original-message-toggle"
         onClick={(event) => {
           event.preventDefault();
