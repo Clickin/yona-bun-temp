@@ -586,11 +586,7 @@ function HomeScreen({
         <div
           {...stylex.props(anonymousHomeIntroBackgroundTheme, anonymousHomeIntroStyles.hero)}
           data-stylex-owner="anonymous-home-intro"
-          style={
-            {
-              "--siteintro-background-image": `url("${siteIntroBackgroundUrl}")`,
-            } as React.CSSProperties
-          }
+          {...stylex.props(anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl))}
         >
           <div
             {...stylex.props(anonymousHomeIntroStyles.cover)}
@@ -1967,6 +1963,10 @@ const anonymousHomeIntroOuterStyles = stylex.create({
       lineHeight: "0px",
     },
   },
+});
+
+const anonymousHomeIntroDynamicStyles = stylex.create({
+  background: (url: string) => ({ "--siteintro-background-image": `url("${url}")` }),
 });
 
 const anonymousHomeIntroStyles = stylex.create({

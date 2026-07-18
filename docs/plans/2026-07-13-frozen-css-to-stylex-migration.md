@@ -3615,3 +3615,5 @@ Batch 422 applies the workflow to the project issues static-owner state. Mass-up
 Batch 423 applies the workflow to the project labels form inline-owner state. Typeahead anchor/menu, new-label background color, and preset-color visibility move into conditional/Dynamic route-local StyleX owners while preserving label-form DOM, copy, interaction, and geometry; the focused inline-owner test covers all owners.
 
 Batch 424 applies the workflow to the project labels form color-input state. Two runtime color-preview box-shadow consumers move into a route-local Dynamic StyleX owner while preserving label-form DOM, copy, interaction, and geometry; the focused color-input test covers both consumers.
+
+Batch 425 applies the workflow to the anonymous home intro background state. The runtime background-image custom-property carrier moves into a route-local Dynamic StyleX owner while preserving the legacy intro DOM, asset rendering, and responsive geometry; the focused background test covers the dynamic owner.
