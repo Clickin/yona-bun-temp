@@ -1364,9 +1364,15 @@ export function ProjectHomeBody({
 
             <div className="span3 span-right-pane">
               <div className="bubble-wrap gray project-home">
-                <div className="project-btn-wrap">
+                <div
+                  className={`${stylex.props(projectHomeStyles.projectButtonWrap).className} project-btn-wrap`}
+                  data-stylex-owner="project-home-project-button-wrap"
+                >
                   {booleanField(menuSetting.issue) ? (
-                    <span className="project-btn-item">
+                    <span
+                      className={`${stylex.props(projectHomeStyles.projectButtonItem, projectHomeStyles.projectButtonItemFirst).className} project-btn-item`}
+                      data-stylex-owner="project-home-project-button-item"
+                    >
                       <Link
                         activeProps={{}}
                         to={toRoutePath(
@@ -1376,14 +1382,17 @@ export function ProjectHomeBody({
                             `/${ownerName}/${projectName}/issueform`,
                           ),
                         )}
-                        className="ybtn ybtn-success"
+                        className={`${stylex.props(projectHomeStyles.projectButtonLink).className} ybtn ybtn-success`}
                       >
                         {t("button.newIssue")}
                       </Link>
                     </span>
                   ) : null}
                   {booleanField(menuSetting.code) && stringField(project.vcs, "GIT") === "GIT" ? (
-                    <span className="project-btn-item">
+                    <span
+                      className={`${stylex.props(projectHomeStyles.projectButtonItem).className} project-btn-item`}
+                      data-stylex-owner="project-home-project-button-item"
+                    >
                       <Link
                         activeProps={{}}
                         to={toRoutePath(
@@ -1393,7 +1402,7 @@ export function ProjectHomeBody({
                             `/${ownerName}/${projectName}/newFork`,
                           ),
                         )}
-                        className="ybtn ybtn-inverse"
+                        className={`${stylex.props(projectHomeStyles.projectButtonLink).className} ybtn ybtn-inverse`}
                       >
                         {t("fork")}
                       </Link>
@@ -1408,7 +1417,10 @@ export function ProjectHomeBody({
                     projectName={projectName}
                   />
                 ) : null}
-                <div className="inner member-info">
+                <div
+                  className={`${stylex.props(projectHomeStyles.memberInner, projectHomeStyles.memberInnerInfo).className} inner member-info`}
+                  data-stylex-owner="project-home-member-inner"
+                >
                   <header>
                     <h3>{t("project.members")}</h3>
                     {booleanField(project.viewerCanUpdate) ? (
@@ -1429,12 +1441,17 @@ export function ProjectHomeBody({
                     ) : null}
                   </header>
                   <div className="member-wrap">
-                    <ul className="project-members">
-                      {members.map((member) => (
+                    <ul
+                      className={`${stylex.props(projectHomeStyles.members).className} project-members`}
+                      data-stylex-owner="project-home-members"
+                    >
+                      {members.map((member, index) => (
                         <ProjectMember
                           basePath={runtimeConfig.basePath}
                           key={stringField(member.loginId, stringField(member.userId, ""))}
                           member={member}
+                          first={index === 0}
+                          last={index === members.length - 1}
                         />
                       ))}
                     </ul>
@@ -2282,12 +2299,31 @@ function ProgressBar({
   );
 }
 
-function ProjectMember({ basePath, member }: { basePath: string; member: YoramUserItem }) {
+function ProjectMember({
+  basePath,
+  first,
+  last,
+  member,
+}: {
+  basePath: string;
+  first: boolean;
+  last: boolean;
+  member: YoramUserItem;
+}) {
   const loginId = stringField(member.loginId, "");
   const userLabel = stringField(member.userLabel, loginId);
 
   return (
-    <li className="member">
+    <li
+      className={`${
+        stylex.props(
+          projectHomeStyles.member,
+          first && projectHomeStyles.memberFirst,
+          last && projectHomeStyles.memberLast,
+        ).className
+      } member`}
+      data-stylex-owner="project-home-member"
+    >
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, prefixBasePath(basePath, `/${loginId}`))}
@@ -2306,9 +2342,15 @@ function ProjectMember({ basePath, member }: { basePath: string; member: YoramUs
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, prefixBasePath(basePath, `/${loginId}`))}
-        className="name"
+        className={`${stylex.props(projectHomeStyles.memberName).className} name`}
+        data-stylex-owner="project-home-member-name"
       >
-        <strong>{`${userLabel} (${loginId})`}</strong>
+        <strong
+          {...stylex.props(projectHomeStyles.memberNameText)}
+          data-stylex-owner="project-home-member-name-text"
+        >
+          {`${userLabel} (${loginId})`}
+        </strong>
       </Link>
     </li>
   );
