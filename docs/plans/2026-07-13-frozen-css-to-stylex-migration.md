@@ -3553,3 +3553,5 @@ Batch 390 applies the workflow to the authenticated project-history activity geo
 Batch 391 applies the workflow to the public user-profile static popover state. The shared two-column/show-subtasks popover geometry moves to a route-local StyleX owner while preserving legacy popover DOM, copy, hover/focus behavior, and responsive geometry; the focused profile-popover test covers the legacy source contract and owners.
 
 Batch 392 applies the workflow to the authenticated project-history whereis state. The fixed whereis, where, title, and date paint declarations move to route-local StyleX owners while preserving legacy history links, copy, and responsive geometry; the focused whereis-owner test covers the legacy source contract and owners.
+
+Batch 393 applies the workflow to the public user-profile static owner state. The avatar wrapper geometry/paint, profile-name typography, and edit alignment move to route-local StyleX while preserving the Dynamic avatar background carrier, DOM, copy, and responsive geometry; the focused static-owner test covers the legacy source contract and owners.

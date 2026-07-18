@@ -35,6 +35,17 @@ const LEGACY_LINK_PROPS = {
 };
 
 const userProfileStaticStyles = stylex.create({
+  avatarWrap: {
+    backgroundColor: "#ccc",
+    backgroundPosition: "center",
+    borderRadius: "4px",
+    height: "200px",
+    overflow: "hidden",
+    position: "relative",
+    width: "200px",
+  },
+  profileName: { fontSize: "18px", fontWeight: "bold" },
+  profileEdit: { marginTop: "5px", textAlign: "right" },
   faqPopover: {
     bottom: "100%",
     display: "block",
@@ -301,9 +312,9 @@ function PublicProfileBody({
               data-stylex-owner="user-profile-info"
             >
               <div
-                className="whoami-wrap"
-                data-stylex-owner="user-profile-avatar-background"
                 {...avatarBackgroundStyle}
+                className={`${stylex.props(userProfileStaticStyles.avatarWrap).className} whoami-wrap ${avatarBackgroundStyle.className ?? ""}`.trim()}
+                data-stylex-owner="user-profile-avatar-background"
               >
                 {profile.isGuest ? (
                   <div className="guest-user">
@@ -312,13 +323,19 @@ function PublicProfileBody({
                 ) : null}
               </div>
               <div className="whoami usf-group">
-                <span className="name">{profile.englishName}</span>
+                <span
+                  className={`${stylex.props(userProfileStaticStyles.profileName).className} name`}
+                >
+                  {profile.englishName}
+                </span>
                 <span className="loginid">@{profile.loginId}</span>
                 {runtimeConfig.showUserEmail && profile.primaryEmailAddress ? (
                   <span className="email">{profile.primaryEmailAddress}</span>
                 ) : null}
                 {profileResponse.viewerCanEditProfile ? (
-                  <div className="edit">
+                  <div
+                    className={`${stylex.props(userProfileStaticStyles.profileEdit).className} edit`}
+                  >
                     <Link
                       to="/user/editform"
                       reloadDocument

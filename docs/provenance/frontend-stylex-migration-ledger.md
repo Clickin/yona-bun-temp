@@ -1049,3 +1049,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 392
 
 - Authenticated project-history whereis state: moved fixed whereis, where, title, and date paint declarations into route-local `projectHistoryStyles`, preserving legacy history links, copy, and responsive geometry. Focused `stylex-project-history-whereis-owners.e2e.ts` verifies the legacy source contract and stable owners; live legacy visual parity remains unverified.
+
+## Batch 393
+
+- Public user-profile static owner state: moved avatar wrapper geometry/paint, profile-name typography, and edit alignment into `userProfileStaticStyles`, preserving the Dynamic avatar background carrier, DOM, copy, and responsive geometry. Focused `stylex-user-profile-static-owners.e2e.ts` verifies the legacy source contract and stable owners; live legacy visual parity remains unverified.
