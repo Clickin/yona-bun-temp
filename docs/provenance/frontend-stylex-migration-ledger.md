@@ -653,3 +653,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 290
 
 - `/$ownerName/$projectName/commit/$commitId` conditional review state: replaced remaining boolean display inline declarations for the block-review affordance, comment body/edit form, review form, and delete modal with conditional route-local StyleX variants. Focused `stylex-project-commit-detail-review-residual.e2e.ts` verifies visible/hidden transitions and no literal inline styles; live legacy visual parity remains unverified.
+
+## Batch 291
+
+- `/$user` public profile daysAgo filter state: moved the legacy `#daysAgoBtn` margin and bottom alignment into route-local StyleX, preserving its numeric field contract, copy, and profile stream geometry. Focused `stylex-user-profile.e2e.ts` verifies computed margin/alignment and desktop/mobile containment without inline style; live legacy visual parity remains unverified.

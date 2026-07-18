@@ -365,9 +365,9 @@ function PublicProfileBody({
                     type="number"
                     min="1"
                     max="99"
-                    className="input-mini-min"
+                    className={`${stylex.props(styles.daysAgoInput).className} input-mini-min`}
                     defaultValue={daysAgo}
-                    style={{ margin: "0px 5px", verticalAlign: "bottom" }}
+                    data-stylex-owner="user-profile-days-ago-input"
                   />
                   {t("userinfo.daysAgo.suffix")}
                 </div>

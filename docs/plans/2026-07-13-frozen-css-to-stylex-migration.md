@@ -3333,6 +3333,8 @@ Batch 289 applies the workflow to the authenticated project setting default-bran
 
 Batch 290 applies the workflow to authenticated project commit-detail conditional review states. Boolean display declarations for review/edit/delete surfaces moved to conditional StyleX variants; the focused review residual test covers visible/hidden interaction and no inline styles.
 
+Batch 291 applies the workflow to the public `/$user` daysAgo filter input. Its static margin and vertical alignment moved to route-local StyleX; the profile test covers computed placement and desktop/mobile containment.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
