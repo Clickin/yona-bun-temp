@@ -801,3 +801,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 328
 
 - Authenticated project issue-form editor textarea: moved static overflow/wrapping/resize and runtime height into `issueFormStyles.editorTextarea` and `editorTextareaHeight`, preserving editor behavior. Focused `stylex-project-issueform-inline-residual.e2e.ts` verifies source ownership and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 329
+
+- Authenticated `/user/issues` child-issue visible state: moved conditional `display:block` into `issueStyles.childIssueListVisible`, preserving `child-issue-list hide` classes, show-subtasks behavior, and responsive geometry. Focused `stylex-user-issues-child-list.e2e.ts` verifies source evidence, stable owner, and absence of the former inline display; live legacy visual parity remains unverified.

@@ -947,8 +947,15 @@ function UserIssueItem({
               </Link>
             ))}
             <div
-              className="child-issue-list hide"
-              style={showSubtasksAlways || isChildListVisible ? { display: "block" } : undefined}
+              {...(showSubtasksAlways || isChildListVisible
+                ? stylex.props(issueStyles.childIssueListVisible)
+                : undefined)}
+              className={`child-issue-list hide ${
+                showSubtasksAlways || isChildListVisible
+                  ? (stylex.props(issueStyles.childIssueListVisible).className ?? "")
+                  : ""
+              }`.trim()}
+              data-stylex-owner="user-issues-child-list-visible"
             >
               <UserIssueChildRows issue={issue} />
             </div>
