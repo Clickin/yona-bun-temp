@@ -102,6 +102,10 @@ test.describe("StyleX site project-list delete modal", () => {
     expect(route).toContain("boxShadow: siteProjectListTheme.modalShadow");
     expect(route).toContain('maxHeight: "400px"');
     expect(route).toContain("backgroundColor: siteProjectListTheme.modalBackdropSurface");
+    expect(route).toContain("styles.deleteModalVisible");
+    expect(route).toContain("styles.deleteModalHidden");
+    expect(route).toContain("deleteProject ? styles.deleteModalVisible : styles.deleteModalHidden");
+    expect(route).not.toContain('style={{ display: deleteProject ? "block" : "none" }}');
     expect(route).not.toContain("globalColors.");
   });
 

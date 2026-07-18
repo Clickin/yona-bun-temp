@@ -461,6 +461,12 @@ const styles = stylex.create({
     opacity: 1,
     transition: "opacity 0.3s linear, top 0.3s ease-out",
   },
+  deleteModalVisible: {
+    display: "block",
+  },
+  deleteModalHidden: {
+    display: "none",
+  },
   deleteModalHeader: {
     padding: "9px 15px",
     borderBottomColor: siteProjectListTheme.modalHeaderBorder,
@@ -659,7 +665,6 @@ const settingContentColumnStyleProps = stylex.props(
   styles.settingColumn,
   styles.settingContentColumn,
 );
-const deleteModalStyleProps = stylex.props(styles.deleteModal);
 const deleteModalHeaderStyleProps = stylex.props(styles.deleteModalHeader);
 const deleteModalCloseStyleProps = stylex.props(styles.deleteModalClose);
 const deleteModalBodyStyleProps = stylex.props(styles.deleteModalBody);
@@ -774,6 +779,10 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
       }
     },
   });
+  const deleteModalStateStyleProps = stylex.props(
+    styles.deleteModal,
+    deleteProject ? styles.deleteModalVisible : styles.deleteModalHidden,
+  );
 
   return (
     <>
@@ -919,11 +928,10 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
               />
 
               <div
-                {...deleteModalStyleProps}
+                {...deleteModalStateStyleProps}
                 id="alertDeletionWrap"
-                className={deleteModalStyleProps.className}
+                className={deleteModalStateStyleProps.className}
                 data-stylex-owner="site-project-list-delete-modal"
-                style={{ display: deleteProject ? "block" : "none" }}
                 aria-hidden={deleteProject ? "false" : deleteModalClosed ? "true" : undefined}
               >
                 <div
