@@ -861,14 +861,15 @@ function UserIssueItem({
     href: issueHref,
     id: `issue-item-${issue.id}`,
   } satisfies LegacyIssueRowAttrs;
+  const rowStyleProps = stylex.props(
+    useTwoColumnMode ? issueStyles.issueRowTwoColumn : null,
+    isHovered ? issueStyles.issueRowHovered : null,
+  );
 
   return (
     <li
       {...legacyIssueRowAttrs}
-      style={{
-        ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
-        ...(isHovered ? { backgroundColor: "#fafafa" } : {}),
-      }}
+      className={`${legacyIssueRowAttrs.className} ${rowStyleProps.className ?? ""}`.trim()}
       onClick={() => {
         setIsChildListVisible(true);
       }}
