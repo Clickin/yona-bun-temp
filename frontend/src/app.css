@@ -1277,12 +1277,6 @@ pre code {
   border: 0;
 }
 
-.project-overview-home h5 {
-  padding-left: 10px;
-  margin-bottom: 20px;
-  border-left: 3px solid #ff7332;
-}
-
 .project-overview-home .empty {
   text-align: center;
 }

@@ -2022,7 +2022,12 @@ function DashboardPane({
 
               <hr />
 
-              <h5>{t("project.dashboard.openIssuesByMilestone")}</h5>
+              <h5
+                {...stylex.props(projectHomeStyles.sectionHeading)}
+                data-stylex-owner="project-home-overview-heading"
+              >
+                {t("project.dashboard.openIssuesByMilestone")}
+              </h5>
               <div className="overview-milestone">
                 {milestones.length === 0 ? (
                   <DashboardEmpty
@@ -2098,7 +2103,12 @@ function DashboardPane({
           {booleanField(menuSetting.pullRequest) && stringField(project.vcs, "GIT") === "GIT" ? (
             <>
               {booleanField(menuSetting.issue) ? <hr /> : null}
-              <h5>{t("project.dashboard.pullRequests")}</h5>
+              <h5
+                {...stylex.props(projectHomeStyles.sectionHeading)}
+                data-stylex-owner="project-home-overview-heading"
+              >
+                {t("project.dashboard.pullRequests")}
+              </h5>
               <div className="overview-pullrequest">
                 {pullRequests.length > 0 ? (
                   <>
@@ -2192,7 +2202,12 @@ function DashboardPane({
 
         {booleanField(menuSetting.issue) ? (
           <div className="span6">
-            <h5>{t("project.dashboard.openIssuesByLabel")}</h5>
+            <h5
+              {...stylex.props(projectHomeStyles.sectionHeading)}
+              data-stylex-owner="project-home-overview-heading"
+            >
+              {t("project.dashboard.openIssuesByLabel")}
+            </h5>
             <DashboardLabels
               basePath={basePath}
               labels={labels}

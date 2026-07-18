@@ -14,6 +14,10 @@
 
 - `/$ownerName/$projectName/code/$branch/$filePath` folder rows use four colocated owners for border, overflow/ellipsis, filename/commit typography, and commit date metadata. Focused `stylex-project-code-folder-row.e2e.ts` verifies legacy code partials and exact scoped fallback retirement; generic code-viewer/dynatree fallback remains.
 
+## Project overview dashboard headings
+
+- Four dashboard h5 consumers now use the existing `sectionHeading` StyleX owner; exact `.project-overview-home h5` fallback is retired while empty/overview-label fallbacks remain.
+
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
