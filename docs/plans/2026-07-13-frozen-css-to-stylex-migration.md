@@ -3599,3 +3599,5 @@ Batch 414 applies the workflow to the help FAQ toggle sprite state. The runtime 
 Batch 415 applies the workflow to the root login-dialog visibility state. Conditional dialog/error `display:block` declarations move to route-local conditional StyleX owners while preserving login-dialog DOM, aria state, error copy, interaction, and responsive geometry; the focused root-dialog test covers both states.
 
 Batch 416 applies the workflow to the issue-form mention popup state. Runtime `left`/`top` coordinates move from a literal inline style to a route-local Dynamic StyleX owner while preserving mention DOM, suggestion interaction, placement behavior, and responsive geometry; the focused mention-popup test covers the dynamic carrier.
+
+Batch 417 applies the workflow to the project-home leave modal state. Conditional modal `display:block`/`display:none` declarations move to route-local conditional StyleX owners while preserving leave-modal DOM, aria state, mutation behavior, copy, and responsive geometry; the focused leave-modal test covers both states.

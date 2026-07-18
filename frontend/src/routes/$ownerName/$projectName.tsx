@@ -38,6 +38,8 @@ const projectHistoryStyles = stylex.create({
 
 const projectHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
+  leaveModalOpen: { display: "block" },
+  leaveModalClosed: { display: "none" },
 });
 import {
   cancelEnrollProjectRest,
@@ -1156,12 +1158,6 @@ export function ProjectHomeBody({
     setDescriptionEditing(false);
   };
   const leaveModalOpen = leaveModalPhase === "open";
-  const leaveModalStyle =
-    leaveModalPhase === "open"
-      ? { display: "block" }
-      : leaveModalPhase === "closed"
-        ? { display: "none" }
-        : undefined;
   const leaveModalAriaHidden =
     leaveModalPhase === "initial" ? undefined : leaveModalOpen ? "false" : "true";
   const openLeaveModal = (event: MouseEvent<HTMLButtonElement>) => {
@@ -1461,7 +1457,12 @@ export function ProjectHomeBody({
             id="alertLeave"
             className={leaveModalOpen ? "modal hide in" : "modal hide"}
             aria-hidden={leaveModalAriaHidden}
-            style={leaveModalStyle}
+            {...(leaveModalPhase === "open"
+              ? stylex.props(projectHeaderStyles.leaveModalOpen)
+              : leaveModalPhase === "closed"
+                ? stylex.props(projectHeaderStyles.leaveModalClosed)
+                : {})}
+            data-stylex-owner="project-home-leave-modal"
           >
             <div className="modal-header">
               <button type="button" className="close" onClick={closeLeaveModal}>
