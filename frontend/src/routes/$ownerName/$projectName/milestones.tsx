@@ -34,6 +34,8 @@ const sx = {
   icon: stylex.props(styles.icon),
   list: stylex.props(styles.list),
   row: stylex.props(styles.row),
+  rowLast: stylex.props(styles.row, styles.rowLast),
+  infos: stylex.props(styles.infos),
   meta: stylex.props(styles.meta),
   name: stylex.props(styles.name),
   separator: stylex.props(styles.separator),
@@ -41,6 +43,7 @@ const sx = {
   due: stylex.props(styles.due),
   dueOver: stylex.props(styles.due, styles.dueOver),
   completion: stylex.props(styles.completion),
+  completionNumber: stylex.props(styles.completionNumber),
   progressWrap: stylex.props(styles.progressWrap),
   progress: stylex.props(styles.progress),
   progressBar: (width: string) => stylex.props(styles.progressBar(width)),
@@ -251,7 +254,7 @@ function ProjectMilestonesBody({
                   className={`${sx.list.className} milestones`}
                   data-stylex-owner="project-milestones-list"
                 >
-                  {milestones.map((milestone) => (
+                  {milestones.map((milestone, index) => (
                     <MilestoneRow
                       key={stringField(milestone.id)}
                       filter={filter}
@@ -259,6 +262,7 @@ function ProjectMilestonesBody({
                       ownerName={ownerName}
                       projectName={projectName}
                       search={{ ...search, state: currentState }}
+                      isLast={index === milestones.length - 1}
                     />
                   ))}
                 </ul>
@@ -311,12 +315,14 @@ function MilestoneRow({
   ownerName,
   projectName,
   search,
+  isLast,
 }: {
   filter: string;
   milestone: ProjectMilestone;
   ownerName: string;
   projectName: string;
   search: MilestoneListSearch;
+  isLast: boolean;
 }) {
   const { t } = useLegacyMessages();
   const openCount = numberField(milestone.openIssueCount);
@@ -327,8 +333,16 @@ function MilestoneRow({
   const dueDateLabel = stringField(milestone.dueDateLabel);
 
   return (
-    <li {...sx.row} className="milestone" data-stylex-owner="project-milestones-item">
-      <div className="infos" data-stylex-owner="project-milestones-infos">
+    <li
+      {...(isLast ? sx.rowLast : sx.row)}
+      className={`${(isLast ? sx.rowLast : sx.row).className} milestone`}
+      data-stylex-owner="project-milestones-item"
+    >
+      <div
+        {...sx.infos}
+        className={`${sx.infos.className} infos`}
+        data-stylex-owner="project-milestones-infos"
+      >
         <div
           {...sx.meta}
           className={`${sx.meta.className} meta-info`}
@@ -399,7 +413,8 @@ function MilestoneRow({
           ) : null}
           <div {...sx.completion} className={`${sx.completion.className} pull-right`}>
             <span
-              className="number completion-rate"
+              {...sx.completionNumber}
+              className={`${sx.completionNumber.className} number completion-rate`}
               data-stylex-owner="project-milestones-completion"
             >
               {totalCount > 0 ? `${completionPercent} %` : ""}

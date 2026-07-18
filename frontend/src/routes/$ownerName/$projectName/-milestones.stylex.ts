@@ -108,6 +108,8 @@ export const styles = stylex.create({
     borderBottomWidth: "1px",
     padding: "15px 0px",
   },
+  rowLast: { borderBottomWidth: "0px" },
+  infos: { width: "100%" },
   meta: { margin: "5px 0px 10px" },
   name: { color: "#333", fontSize: "20px", fontWeight: "700", textDecoration: "none" },
   separator: { color: "#e4e4e4", margin: "0px 5px" },
@@ -115,6 +117,7 @@ export const styles = stylex.create({
   due: { color: milestoneColors.due },
   dueOver: { color: milestoneColors.active },
   completion: { float: "right", textAlign: "center" },
+  completionNumber: { fontSize: "20px", fontWeight: "700" },
   progressWrap: {
     color: "#999",
     fontSize: "11px",

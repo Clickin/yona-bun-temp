@@ -3171,44 +3171,6 @@ h1 {
   font-weight: 700;
 }
 
-.milestones {
-  padding-left: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.milestones .milestone {
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.milestones .milestone:last-of-type {
-  border-bottom: 0;
-}
-
-.milestones .meta-info {
-  margin: 5px 0 10px;
-}
-
-.milestones .infos {
-  width: 100%;
-}
-
-.milestones .milestone-name,
-.milestones .number {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.milestones .due-date {
-  color: #666;
-}
-
-.milestones .bar {
-  height: 100%;
-  background: #fd6956 !important;
-}
-
 .milestones .desc {
   padding: 15px;
   margin-top: 15px;
