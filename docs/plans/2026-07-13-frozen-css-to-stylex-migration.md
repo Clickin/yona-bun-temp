@@ -3619,3 +3619,5 @@ Batch 424 applies the workflow to the project labels form color-input state. Two
 Batch 425 applies the workflow to the anonymous home intro background state. The runtime background-image custom-property carrier moves into a route-local Dynamic StyleX owner while preserving the legacy intro DOM, asset rendering, and responsive geometry; the focused background test covers the dynamic owner.
 
 Batch 426 applies the workflow to the issue-detail legacy popover state. Runtime left/top coordinates and fixed/display/transform presentation move into a route-local Dynamic StyleX owner while preserving the popover DOM, copy, trigger interaction, and geometry; the focused legacy-popover test covers the dynamic owner.
+
+Batch 427 applies the workflow to the project issues row/label state. Runtime issue-row hover background and child-label background color move into route-local Dynamic StyleX owners while preserving issue-list DOM, copy, interaction, and geometry; the focused row-label test covers both dynamic owners.

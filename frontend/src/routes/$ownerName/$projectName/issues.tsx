@@ -1514,15 +1514,6 @@ function ProjectIssueItem({
   const issueListItemLegacyAttrs = { href: issueHref } satisfies LegacyIssueRowListAttributes;
   const currentIssueRowHoverStyle =
     issueRowHoverStyle?.issueId === issueId ? issueRowHoverStyle : null;
-  const issueRowStyle: CSSProperties | undefined =
-    currentIssueRowHoverStyle || useTwoColumnMode
-      ? {
-          ...(currentIssueRowHoverStyle
-            ? { backgroundColor: currentIssueRowHoverStyle.backgroundColor }
-            : {}),
-          ...(useTwoColumnMode ? { cursor: "pointer" } : {}),
-        }
-      : undefined;
   const issueRowLegacyForAttrs = {
     htmlFor: `issue-${issueId}`,
   } satisfies LegacyIssueRowForAttributes;
@@ -1601,11 +1592,9 @@ function ProjectIssueItem({
       onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
-      style={
-        currentIssueRowHoverStyle
-          ? { backgroundColor: currentIssueRowHoverStyle.backgroundColor }
-          : undefined
-      }
+      {...(currentIssueRowHoverStyle
+        ? stylex.props(styles.issueRowHoverBackground(currentIssueRowHoverStyle.backgroundColor))
+        : {})}
       {...(useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow) : {})}
       data-stylex-owner={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
       {...issueListItemLegacyAttrs}
@@ -1976,7 +1965,9 @@ function IssueChildRow({
           onClick={(event) =>
             handleChildLabelClick(event, String(label.id), childLabelHref(String(label.id)))
           }
-          style={childIssueLabelStyle(label.color)}
+          {...(childIssueLabelStyle(label.color)
+            ? stylex.props(styles.childLabelBackground(childIssueLabelStyle(label.color)!))
+            : {})}
         >
           {label.name}
         </Link>
@@ -1988,8 +1979,8 @@ function IssueChildRow({
   );
 }
 
-function childIssueLabelStyle(color: string | undefined): CSSProperties | undefined {
-  return color ? { background: color } : undefined;
+function childIssueLabelStyle(color: string | undefined): string | undefined {
+  return color || undefined;
 }
 
 function IssueChildCommentAndVotePair({

@@ -45,4 +45,6 @@ export const styles = stylex.create({
     transform: "translateX(-50%)",
     zIndex: 1010,
   },
+  issueRowHoverBackground: (backgroundColor: string) => ({ backgroundColor }),
+  childLabelBackground: (backgroundColor: string) => ({ background: backgroundColor }),
 });
