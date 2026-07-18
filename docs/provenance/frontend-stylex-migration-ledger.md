@@ -909,3 +909,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 355
 
 - Authenticated board-post comment-delete modal state: moved conditional modal `display:block` into `styles.deleteModalVisible`, preserving the legacy comment-delete DOM, copy, React visibility interaction, and responsive geometry. Focused `stylex-project-post-detail-delete-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.
+
+## Batch 356
+
+- Authenticated project-setting default-branch dropdown state: moved conditional dropdown `display:block` into `styles.defaultBranchDropVisible`, preserving the legacy Select2 DOM, branch selection behavior, copy, and responsive geometry. Focused `stylex-project-setting-default-branch.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.

@@ -45,6 +45,7 @@ export const styles = stylex.create({
   oldPlace: { color: "red" },
   defaultBranchContainer: { width: "220px" },
   defaultBranchDrop: { minWidth: "220px", width: "220px" },
+  defaultBranchDropVisible: { display: "block" },
   defaultBranchSelect: { minWidth: "220px" },
   reviewerCountPanelVisible: { display: "block" },
   reviewerCountPanelHidden: { display: "none" },

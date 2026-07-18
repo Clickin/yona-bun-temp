@@ -36,6 +36,7 @@ const sx = {
   oldPlace: stylex.props(styles.oldPlace),
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
+  defaultBranchDropVisible: stylex.props(styles.defaultBranchDropVisible),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   save: stylex.props(styles.save),
 } as const;
@@ -824,7 +825,7 @@ function DefaultBranchSelect2({
         <div
           className={`${sx.defaultBranchDrop.className} select2-drop select2-display-none select2-with-searchbox branches${open ? " select2-drop-active" : ""}`}
           data-stylex-owner="project-setting-default-branch-drop"
-          style={open ? { display: "block" } : undefined}
+          {...(open ? sx.defaultBranchDropVisible : {})}
         >
           <div className="select2-search">
             <input className="select2-input" type="text" />

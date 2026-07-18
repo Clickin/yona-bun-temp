@@ -3472,6 +3472,8 @@ Batch 354 applies the workflow to the authenticated milestone-detail delete-conf
 
 Batch 355 applies the workflow to the authenticated board-post comment-delete modal state. The conditional modal `display:block` declaration moves to the existing route-local StyleX owner while preserving the legacy comment-delete DOM, copy, React visibility interaction, and responsive geometry; the focused delete-modal test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 356 applies the workflow to the authenticated project-setting default-branch dropdown state. The conditional dropdown `display:block` declaration moves to route-local conditional StyleX while preserving the legacy Select2 DOM, branch selection behavior, copy, and responsive geometry; the focused default-branch test covers legacy source evidence and absence of the former inline display declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
