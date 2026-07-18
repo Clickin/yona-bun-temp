@@ -100,6 +100,9 @@ const styles = stylex.create({
   destinationProjectList: {
     borderLeftWidth: "0px",
   },
+  progressBar: {
+    width: "0%",
+  },
 });
 
 const disabledShellClassName = stylex.props(styles.disabledShell).className;
@@ -120,6 +123,7 @@ const searchInputClassName = stylex.props(styles.searchInput).className;
 const projectListClassName = stylex.props(styles.projectList).className;
 const destinationProjectClassName = stylex.props(styles.destinationProject).className;
 const destinationProjectListClassName = stylex.props(styles.destinationProjectList).className;
+const progressBarClassName = stylex.props(styles.progressBar).className;
 
 export const Route = createFileRoute("/migration")({
   component: MigrationRoute,
@@ -218,7 +222,10 @@ function MigrationScreen() {
           </div>
           <div className="span6 status">
             <div className="progress row">
-              <div className="bar span10 bar-danger" style={{ width: "0%" }}>
+              <div
+                className={`bar span10 bar-danger ${progressBarClassName}`}
+                data-stylex-owner="migration-progress-bar"
+              >
                 0/0
               </div>
             </div>

@@ -90,7 +90,7 @@ const EXPECTED_MIGRATION_SCREEN = `
       </div>
       <div class="span6 status">
         <div class="progress row">
-          <div class="bar span10 bar-danger" style="width: 0%;">0/0</div>
+          <div class="bar span10 bar-danger">0/0</div>
         </div>
         <table class="table">
           <thead>
@@ -150,7 +150,8 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(MIGRATION_ROUTE_SOURCE).not.toMatch(/setAttribute\(["'](?:style|tabindex)["']/u);
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
-  expect(MIGRATION_ROUTE_SOURCE).toContain('style={{ width: "0%" }}');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-progress-bar"');
+  expect(MIGRATION_ROUTE_SOURCE).not.toContain('style={{ width: "0%" }}');
 });
 
 test("migration disabled shell matches legacy migration/home.scala.html screen DOM", async ({
@@ -174,7 +175,10 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
     "tabindex",
     "2",
   );
-  await expect(page.locator(".progress .span10")).toHaveAttribute("style", "width: 0%;");
+  const progressBar = page.locator('[data-stylex-owner="migration-progress-bar"]');
+  await expect(progressBar).toHaveCount(1);
+  await expect(progressBar).not.toHaveAttribute("style", /width/);
+  await expect(progressBar).toHaveCSS("width", "0px");
   await expect(page.locator('head meta[name="viewport"]')).toHaveAttribute(
     "content",
     "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",

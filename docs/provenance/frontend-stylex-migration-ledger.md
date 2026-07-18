@@ -637,3 +637,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 286
 
 - `/$ownerName/$projectName/issue/$issueNumber` Dynamic StyleX subtask assertion correction: documented that the server-derived percentage is emitted through StyleX's custom property carrier and updated the focused E2E to reject only a literal inline `width` declaration while retaining computed geometry verification.
+
+## Batch 287
+
+- `/migration` disabled migration screen progress state: moved the fixed zero-progress width from the legacy progress-bar inline declaration into the route-local `styles.progressBar` StyleX owner, retaining `bar span10 bar-danger`, `0/0`, and the disabled screen geometry. Focused `stylex-migration-disabled-shell.e2e.ts` and `migration-parity.e2e.ts` verify the legacy source, stable owner, computed `0px`, no literal inline width, and desktop/mobile containment; live legacy visual parity remains unverified.

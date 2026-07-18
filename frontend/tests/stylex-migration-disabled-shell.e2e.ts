@@ -4,6 +4,10 @@ import { readFile } from "node:fs/promises";
 const routeSource = new URL("../src/routes/migration.tsx", import.meta.url);
 const routeThemeSource = new URL("../src/routes/-migration.stylex.ts", import.meta.url);
 const themeSource = new URL("../src/theme.stylex.ts", import.meta.url);
+const legacySource = new URL(
+  "../../yona-original/app/views/migration/home.scala.html",
+  import.meta.url,
+);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function openMigration(page: Page) {
@@ -18,19 +22,25 @@ async function openMigration(page: Page) {
 
 test.describe("StyleX migration disabled shell", () => {
   test("uses route paint theme ownership while retaining shared migration fallbacks", async () => {
-    const [route, routeTheme, theme] = await Promise.all([
+    const [route, routeTheme, theme, legacy] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(routeThemeSource, "utf8"),
       readFile(themeSource, "utf8"),
+      readFile(legacySource, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="migration-disabled-shell"');
     expect(route).toContain("styles.projectList");
-    expect(route).toContain('style={{ width: "0%" }}');
+    expect(route).toContain("styles.progressBar");
+    expect(route).toContain('data-stylex-owner="migration-progress-bar"');
+    expect(route).not.toContain('style={{ width: "0%" }}');
     expect(route).toContain('fontSize: "30px"');
     expect(route).toContain("backgroundColor: migrationTheme.boardSurface");
     expect(routeTheme).toContain('boardSurface: "#333333"');
     expect(routeTheme).toContain('paneHeaderSurface: "#e36b23"');
     expect(theme).not.toMatch(/^\s+migrationDisabled[A-Z]/m);
+    expect(legacy).toContain(
+      'style="width: {{vm.importResult.count/vm.expectedImportCount*100 || 0 }}%"',
+    );
   });
 
   test("keeps disabled copy, order, controls, and shared primitives", async ({ page }) => {
@@ -51,7 +61,10 @@ test.describe("StyleX migration disabled shell", () => {
       ),
     ).toBe(true);
     await expect(owner.locator("button.btn-danger")).toHaveCount(3);
-    await expect(owner.locator(".progress .bar")).toHaveAttribute("style", "width: 0%;");
+    const progressBar = owner.locator('[data-stylex-owner="migration-progress-bar"]');
+    await expect(progressBar).toHaveCount(1);
+    await expect(progressBar).not.toHaveAttribute("style", /width/);
+    await expect(progressBar).toHaveCSS("width", "0px");
     expect(
       await owner
         .locator(":scope > .header-pannel > *")
@@ -75,6 +88,7 @@ test.describe("StyleX migration disabled shell", () => {
       const sourceHeader = owner.locator(".source-project > .header");
       const sourceList = owner.locator(".left-project-list");
       const destinationList = owner.locator(".destination-project-list");
+      const progress = owner.locator('[data-stylex-owner="migration-progress-bar"]');
 
       await expect(board).toHaveCSS("background-color", "rgb(51, 51, 51)");
       await expect(board).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -85,20 +99,26 @@ test.describe("StyleX migration disabled shell", () => {
       );
       expect(sourceContentHeight).toBeCloseTo(viewport.height * 0.6, 1);
       await expect(destinationList).toHaveCSS("border-left-width", "0px");
-      const [ownerBox, sourceBox, destinationBox] = await Promise.all([
+      const [ownerBox, sourceBox, destinationBox, progressBox] = await Promise.all([
         owner.boundingBox(),
         sourceList.boundingBox(),
         destinationList.boundingBox(),
+        progress.boundingBox(),
       ]);
       expect(ownerBox).not.toBeNull();
       expect(sourceBox).not.toBeNull();
       expect(destinationBox).not.toBeNull();
+      expect(progressBox).not.toBeNull();
       expect(sourceBox!.height).toBeGreaterThanOrEqual(sourceContentHeight);
       expect(sourceBox!.height).toBeLessThanOrEqual(sourceContentHeight + 2);
       expect(sourceBox!.width).toBeGreaterThan(0);
       expect(destinationBox!.width).toBeGreaterThan(0);
       expect(sourceBox!.x).toBeGreaterThanOrEqual(ownerBox!.x);
       expect(destinationBox!.x + destinationBox!.width).toBeLessThanOrEqual(
+        ownerBox!.x + ownerBox!.width,
+      );
+      expect(progressBox!.x).toBeGreaterThanOrEqual(ownerBox!.x);
+      expect(progressBox!.x + progressBox!.width).toBeLessThanOrEqual(
         ownerBox!.x + ownerBox!.width,
       );
       // Legacy Bootstrap span columns intentionally exceed a 390px viewport; the owner
