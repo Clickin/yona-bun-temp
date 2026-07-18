@@ -14,6 +14,28 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { userFilesSearchColors } from "./-files.stylex";
 
 const styles = stylex.create({
+  fileHeader: {
+    backgroundColor: "#f1f1f1",
+    borderRadius: "5px",
+    color: "gray",
+    fontSize: "16px",
+    fontWeight: "bold",
+    marginBottom: "10px",
+    padding: "10px 5px",
+    textAlign: "center",
+  },
+  fileRow: {
+    borderBottomColor: "#eee",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderColor: "#fff",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: "gray",
+    fontFamily: "monospace",
+    lineHeight: "30px",
+    padding: "5px",
+  },
   searchRoot: {
     backgroundColor: userFilesSearchColors.rootSurface,
     borderColor: userFilesSearchColors.rootBorder,
@@ -242,7 +264,10 @@ function UserFilesScreen({
             </div>
           </form>
           <div className="attachment-files" data-stylex-owner="user-files-files">
-            <div className="attachment-files-header row" data-stylex-owner="user-files-header">
+            <div
+              className={`${stylex.props(styles.fileHeader).className} attachment-files-header row`}
+              data-stylex-owner="user-files-header"
+            >
               <div className="span1 header-preview">Preview</div>
               <div className="span5 header-file-name">Filename</div>
               <div className="span1 header-size">Size</div>
@@ -282,7 +307,7 @@ function UserFileRow({
 
   return (
     <div
-      className={`attachment-file-detail row${isHovered ? " hover" : ""}`}
+      className={`${stylex.props(styles.fileRow).className} attachment-file-detail row${isHovered ? " hover" : ""}`}
       data-stylex-owner="user-files-row"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
