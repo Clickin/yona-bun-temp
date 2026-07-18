@@ -4376,7 +4376,12 @@ function DeleteConfirm({
         <div
           className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
         >
-          <button type="button" className="ybtn ybtn-danger" onClick={confirmDelete}>
+          <button
+            type="button"
+            className={`${stylex.props(styles.dangerButton).className} ybtn ybtn-danger`}
+            data-stylex-owner="project-issue-detail-delete-danger-button"
+            onClick={confirmDelete}
+          >
             {confirmLabel}
           </button>
           <button type="button" className="ybtn" onClick={closeDialog}>
@@ -4452,7 +4457,8 @@ function CommentDeleteConfirm({
           <button
             id="comment-delete-confirm"
             type="button"
-            className="ybtn ybtn-danger"
+            className={`${stylex.props(styles.dangerButton).className} ybtn ybtn-danger`}
+            data-stylex-owner="project-issue-detail-comment-delete-danger-button"
             onClick={confirmDelete}
           >
             {confirmLabel}

@@ -52,6 +52,10 @@ export const styles = stylex.create({
     padding: "2px 6px",
     borderRadius: "3px",
   },
+  dangerButton: {
+    color: "#b13427",
+    borderColor: "#d98c82",
+  },
   modal: {
     position: "fixed",
     top: "18%",
