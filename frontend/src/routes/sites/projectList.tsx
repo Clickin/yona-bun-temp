@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { useState, type CSSProperties, type MouseEvent, type SyntheticEvent } from "react";
+import { useState, type MouseEvent, type SyntheticEvent } from "react";
 import {
   deleteSiteProjectRest,
   siteProjectsQueryOptions,
@@ -24,16 +24,15 @@ type ProjectListSearch = {
   pageNum?: number;
 };
 
-const paginationSpriteStyle = {
-  "--site-project-list-pagination-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
-
 const legacyLinkSuppressionProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
 const styles = stylex.create({
+  paginationSprite: (spriteUrl: string) => ({
+    "--site-project-list-pagination-sprite": `url(${spriteUrl})`,
+  }),
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: {
@@ -1059,8 +1058,7 @@ function ProjectListPagination({
               <i
                 {...paginationPrevIconStyleProps}
                 data-disabled="false"
-                data-stylex-owner="site-project-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -1076,8 +1074,7 @@ function ProjectListPagination({
                 {...paginationPrevDisabledIconStyleProps}
                 data-disabled="true"
                 data-pagination-state="off"
-                data-stylex-owner="site-project-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -1163,8 +1160,7 @@ function ProjectListPagination({
               <i
                 {...paginationNextIconStyleProps}
                 data-disabled="false"
-                data-stylex-owner="site-project-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -1181,8 +1177,7 @@ function ProjectListPagination({
                 {...paginationNextDisabledIconStyleProps}
                 data-disabled="true"
                 data-pagination-state="off"
-                data-stylex-owner="site-project-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}
