@@ -1001,3 +1001,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 380
 
 - Authenticated issue-detail comment share-link state: moved the fixed hidden display into `styles.shareLinkHidden`, preserving the legacy comment DOM, copy, and visibility behavior. Focused `stylex-project-issue-detail-share-link.e2e.ts` verifies the legacy source contract, stable owner, conditional StyleX ownership, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 381
+
+- Authenticated root user-menu dropdown color state: moved the theme navigation colors into existing route-local dropdown StyleX owners and isolated the fixed create-menu margin into `createMenuMargin`, preserving legacy user-menu DOM, copy, navigation, and responsive geometry. Focused `stylex-root-usermenu-dropdown-colors.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline colors; live legacy visual parity remains unverified.

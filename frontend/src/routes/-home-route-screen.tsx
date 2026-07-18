@@ -4875,6 +4875,7 @@ const authenticatedSiteUserMenuStyles = stylex.create({
     },
     fontSize: "14px",
   },
+  createMenuMargin: { marginLeft: "10px" },
   dropdownButton: {
     padding: "0 10px",
   },
@@ -5158,7 +5159,7 @@ function AuthenticatedSiteUserMenu({
         <li
           className={`gnb-usermenu-dropdown sidebar-open-btn ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.dropdownItem).className}`}
           id="sidebar-open-btn"
-          style={{ color: homeColors.navigationDropdownText }}
+          data-stylex-owner="root-usermenu-sidebar-dropdown"
         >
           <button
             type="button"
@@ -5182,8 +5183,8 @@ function AuthenticatedSiteUserMenu({
           </button>
         </li>
         <li
-          className={`${isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"} ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.dropdownItem).className}`}
-          style={{ color: homeColors.navigationDropdownText, marginLeft: "10px" }}
+          className={`${isCreateMenuOpen ? "gnb-usermenu-dropdown open" : "gnb-usermenu-dropdown"} ${stylex.props(authenticatedSiteUserMenuStyles.item, authenticatedSiteUserMenuStyles.dropdownItem, authenticatedSiteUserMenuStyles.createMenuMargin).className}`}
+          data-stylex-owner="root-usermenu-create-dropdown"
           onBlur={handleCreateMenuBlur}
         >
           <button
