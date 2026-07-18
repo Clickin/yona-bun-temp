@@ -4998,27 +4998,6 @@ div.markdown-preview {
   width: 100%;
 }
 
-.pullRequest-branchInfo code {
-  padding: 0;
-  color: #2a7f8f;
-  background: transparent;
-  border: none;
-}
-
-.pullRequest-branchInfo code a {
-  color: #2a7f8f;
-}
-
-.pullRequest-branchInfo code a.branchName {
-  color: #51aacc;
-}
-
-.pullRequest-branchInfo i {
-  margin: 0 5px;
-  color: #2a7f8f;
-  font-size: 12px;
-}
-
 .infos {
   display: flex;
   flex-wrap: wrap;

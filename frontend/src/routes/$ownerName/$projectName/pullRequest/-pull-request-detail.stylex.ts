@@ -19,4 +19,13 @@ export const styles = stylex.create({
   reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" },
   helpModalVisible: { display: "block" },
   helpModalHidden: { display: "none" },
+  branchInfoCode: {
+    backgroundColor: "transparent",
+    border: "none",
+    color: "#2a7f8f",
+    padding: "0",
+  },
+  branchInfoLink: { color: "#2a7f8f" },
+  branchName: { color: "#51aacc" },
+  branchInfoIcon: { color: "#2a7f8f", fontSize: "12px", margin: "0 5px" },
 });

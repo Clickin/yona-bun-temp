@@ -3688,3 +3688,5 @@ Batch 461 applies organization-route menu settings float. The organization setti
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.
 
 Batch 457 applies the workflow to the project-posts label reset state. The obsolete post-list button reset fallback is removed because the existing `labelButtonReset` StyleX owner covers border, cursor, and font inheritance while Dynamic label paint and legacy classes remain intact; the focused label-button test verifies fallback removal and composition.
+
+Batch 462 applies the workflow to pull-request detail branch info. Branch-info code, links, branch names, and icons move into colocated StyleX owners while preserving legacy DOM/classes/copy and navigation; the focused branch-info test covers the legacy partial and fallback removal.
