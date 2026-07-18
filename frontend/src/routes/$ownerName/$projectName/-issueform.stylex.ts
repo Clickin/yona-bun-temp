@@ -4,11 +4,49 @@ import * as stylex from "@stylexjs/stylex";
 // geometry, and type remain in the route and contextual legacy classes.
 export const projectIssueFormTheme = stylex.defineVars({
   errorText: "#db3a67",
+  attachmentErrorText: "#b94a48",
   savedText: "#62962a",
   savedBorder: "#8bc34a",
 });
 
 export const issueFormStyles = stylex.create({
+  attachedFilesVisible: { display: "block" },
+  attachedFile: {
+    boxSizing: "border-box",
+    height: "auto",
+    minHeight: "32px",
+    padding: "0 6px",
+    cursor: "default",
+  },
+  attachedFileMain: {
+    display: "inline-flex",
+    gap: "4px",
+    alignItems: "center",
+    maxWidth: "calc(100% - 36px)",
+    minHeight: "30px",
+    padding: "0 4px",
+    color: "inherit",
+    font: "inherit",
+    cursor: "pointer",
+    appearance: "none",
+    backgroundColor: "transparent",
+    border: "0",
+  },
+  attachedFileName: { minWidth: 0 },
+  uploadError: {
+    display: "inline-block",
+    maxWidth: "240px",
+    overflow: "hidden",
+    color: projectIssueFormTheme.attachmentErrorText,
+    fontSize: "11px",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    verticalAlign: "middle",
+  },
+  attachedFileDelete: {
+    display: "inline-block",
+    minHeight: "30px",
+  },
   taskListButton: { marginTop: "2px" },
   editorNoticeLabel: { padding: "4px 15px" },
   editorNoticeSaved: {

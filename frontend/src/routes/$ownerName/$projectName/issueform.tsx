@@ -2251,23 +2251,37 @@ function IssuePostFileUploader({
         <span className="plain">{t("common.attach.clickbutton")}</span>{" "}
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
-      <ul className={`attached-files unstyled${rows.length > 0 ? " has-files" : ""}`}>
+      <ul
+        {...stylex.props(rows.length > 0 && issueFormStyles.attachedFilesVisible)}
+        className={`attached-files unstyled${rows.length > 0 ? " has-files" : ""} ${stylex.props(rows.length > 0 && issueFormStyles.attachedFilesVisible).className ?? ""}`.trim()}
+        data-stylex-owner={rows.length > 0 ? "project-issue-form-attached-files" : undefined}
+      >
         {rows.map((row) => {
           const progressStyle = stylex.props(issueFormStyles.uploadProgressBar(`${row.progress}%`));
           return (
             <li
               key={row.key}
-              className={`attached-file temporary${row.status === "ready" ? " complete" : ""}`}
+              {...stylex.props(issueFormStyles.attachedFile)}
+              className={`attached-file temporary${row.status === "ready" ? " complete" : ""} ${stylex.props(issueFormStyles.attachedFile).className ?? ""}`.trim()}
+              data-stylex-owner="project-issue-form-attached-file"
             >
               <button
                 type="button"
-                className="attached-file-main"
+                {...stylex.props(issueFormStyles.attachedFileMain)}
+                className={`attached-file-main ${stylex.props(issueFormStyles.attachedFileMain).className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-attached-file-main"
                 aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
                 disabled={!row.attachment || row.status !== "ready"}
                 onClick={() => row.attachment && onInsert(row.attachment)}
               >
                 <i className="yobicon-supportrequest" />
-                <strong className="name">{row.name}</strong>{" "}
+                <strong
+                  {...stylex.props(issueFormStyles.attachedFileName)}
+                  className={`name ${stylex.props(issueFormStyles.attachedFileName).className ?? ""}`.trim()}
+                  data-stylex-owner="project-issue-form-attached-file-name"
+                >
+                  {row.name}
+                </strong>{" "}
                 <span className="size">{humanFileSize(row.size)}</span>
                 {row.status === "uploading" ? (
                   <span
@@ -2286,10 +2300,20 @@ function IssuePostFileUploader({
                   <span className="btn-insert-copy">{t("common.attach.clickToPost")}</span>
                 ) : null}
               </button>
-              {row.error ? <span className="upload-error">{row.error}</span> : null}
+              {row.error ? (
+                <span
+                  {...stylex.props(issueFormStyles.uploadError)}
+                  className={`upload-error ${stylex.props(issueFormStyles.uploadError).className ?? ""}`.trim()}
+                  data-stylex-owner="project-issue-form-upload-error"
+                >
+                  {row.error}
+                </span>
+              ) : null}
               <button
                 type="button"
-                className="btn-transparent btn-delete pull-right"
+                {...stylex.props(issueFormStyles.attachedFileDelete)}
+                className={`btn-transparent btn-delete pull-right ${stylex.props(issueFormStyles.attachedFileDelete).className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-attached-file-delete"
                 aria-label={`${t("button.delete")} ${row.name}`}
                 disabled={row.status === "deleting" || row.status === "uploading"}
                 onClick={() => onRemove(row)}
