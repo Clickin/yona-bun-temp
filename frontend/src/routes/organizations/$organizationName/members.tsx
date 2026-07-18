@@ -473,6 +473,7 @@ function OrganizationMember({
                 >
                   <button
                     type="button"
+                    className={`${stylex.props(styles.roleMenuItem).className} role-menu-item`}
                     data-loginid={loginId}
                     onClick={(event) => {
                       event.preventDefault();
@@ -541,6 +542,19 @@ const styles = stylex.create({
     padding: "10px 5px",
     position: "relative",
     width: "48.93617021276595%",
+  },
+  roleMenuItem: {
+    backgroundColor: "transparent",
+    border: "0",
+    clear: "both",
+    color: "#333",
+    display: "block",
+    fontWeight: "normal",
+    lineHeight: "20px",
+    padding: "3px 20px",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    width: "100%",
   },
   memberAvatar: {
     backgroundColor: organizationMemberColors.avatarSurface,

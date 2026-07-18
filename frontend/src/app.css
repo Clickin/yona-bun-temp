@@ -1246,20 +1246,6 @@ pre code {
   margin-top: 5px;
 }
 
-.members.project .member .member-setting .dropdown-menu > li > button {
-  display: block;
-  width: 100%;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: normal;
-  line-height: 20px;
-  color: #333;
-  text-align: left;
-  white-space: nowrap;
-  background: transparent;
-  border: 0;
-}
-
 .members.project .member .member-setting .dropdown-menu > li > button:hover,
 .members.project .member .member-setting .dropdown-menu > li > button:focus {
   color: #fff;

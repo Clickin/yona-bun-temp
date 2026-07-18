@@ -737,6 +737,7 @@ function ProjectMemberListItem({
                     >
                       <button
                         type="button"
+                        className={`${stylex.props(styles.roleMenuItem).className} role-menu-item`}
                         data-loginid={loginId}
                         onClick={(event) => onRoleItemClick(event, roleName)}
                       >
@@ -802,6 +803,19 @@ const styles = stylex.create({
     position: "absolute",
     right: "0px",
     top: "15px",
+  },
+  roleMenuItem: {
+    backgroundColor: "transparent",
+    border: "0",
+    clear: "both",
+    color: "#333",
+    display: "block",
+    fontWeight: "normal",
+    lineHeight: "20px",
+    padding: "3px 20px",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    width: "100%",
   },
   // _page.less `.members.project .member .member-setting .owner`.
   ownerLabel: {
