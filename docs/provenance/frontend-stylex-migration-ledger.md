@@ -981,3 +981,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 375
 
 - Authenticated pull-request changes pending-block state: split the literal inline `display:block` and runtime `top`/`left` declarations into conditional `styles.pendingBlockVisible` and Dynamic `styles.pendingBlockPosition(top, left)`, preserving the legacy review block DOM, interaction, and geometry. Focused `stylex-pull-request-changes-pending-block.e2e.ts` verifies the legacy source contract, stable owner, and split StyleX ownership; live legacy visual parity remains unverified.
+
+## Batch 376
+
+- Authenticated issue-detail keymap wrapper state: moved the fixed legacy `padding:10px 0` and `margin-left:55px` declarations into the route-local `styles.keymapWrapper`, preserving the keymap DOM, keyboard interaction, copy, and responsive geometry. Focused `stylex-project-issue-detail-keymap-wrapper.e2e.ts` verifies the legacy source contract, stable owner, StyleX spacing, and absence of the former inline declarations; live legacy visual parity remains unverified.
