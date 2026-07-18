@@ -613,3 +613,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 279
 
 - `/$ownerName/$projectName/issueform` uploading attachment state: moved the client upload percentage width into `-issueform.stylex.ts` Dynamic StyleX `uploadProgressBar(width)`, preserving the legacy `progress upload-progress`/`bar orange` classes and attachment upload interaction. Focused `stylex-project-issueform.e2e.ts` covers the runtime carrier, no direct width declaration, positive geometry, and completion after the mocked upload response; live legacy visual parity remains unverified.
+## Batch 280
+
+- `/$ownerName/$projectName/issue/$issueNumber` tasklist state: moved the fixed zero-width tasklist bar into `-issue-detail.stylex.ts`, preserving legacy tasklist/progress classes and title. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` covers the legacy partial, computed `0px` width, stable owner, and absence of inline width; live legacy visual parity remains unverified.

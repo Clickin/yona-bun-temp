@@ -3802,7 +3802,11 @@ function TasklistBar() {
         Tasks<span className="done-counter"></span>
       </div>
       <div className="task-progress">
-        <div className="bar red" style={{ width: 0 }} title="Tasklist"></div>
+        <div
+          className={`${stylex.props(styles.taskProgressBar).className} bar red`}
+          data-stylex-owner="project-issue-detail-task-progress-bar"
+          title="Tasklist"
+        ></div>
       </div>
     </div>
   );

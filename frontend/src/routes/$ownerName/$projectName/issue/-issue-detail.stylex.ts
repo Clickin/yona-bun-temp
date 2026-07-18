@@ -61,4 +61,7 @@ export const styles = stylex.create({
     position: "relative",
     overflow: "visible",
   },
+  taskProgressBar: {
+    width: "0px",
+  },
 });

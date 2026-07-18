@@ -13,9 +13,15 @@ test("issue detail owns original-message and editor static declarations", async 
   );
   const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
   const legacyEditor = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
+  const legacyTasklist = readFileSync(
+    "../yona-original/app/views/common/tasklistBar.scala.html",
+    "utf8",
+  );
 
   expect(legacyView).toContain("@partial_comments(project, issue)");
   expect(legacyEditor).toContain('style="position:relative;overflow: visible;"');
+  expect(legacyView).toContain("@common.tasklistBar()");
+  expect(legacyTasklist).toContain('class="bar red" style="width: 0;"');
   expect(route).toContain("style={{ border: 0 }}");
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
@@ -23,10 +29,21 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(route).toContain("data-stylex-owner-instance={wrapId}");
   expect(styles).toContain("originalMessageToggle: {");
   expect(styles).toContain("editorTabContent: {");
+  expect(styles).toContain('taskProgressBar: {\n    width: "0px"');
+  expect(route).toContain('data-stylex-owner="project-issue-detail-task-progress-bar"');
+  expect(route).not.toContain('<div className="bar red" style={{ width: 0 }}');
 
   await mockIssue(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issue/11`, { waitUntil: "commit" });
+
+  const taskProgressBar = page.locator(
+    '[data-stylex-owner="project-issue-detail-task-progress-bar"]',
+  );
+  await expect(taskProgressBar).toHaveCount(1);
+  await expect(taskProgressBar).toHaveCSS("width", "0px");
+  await expect(taskProgressBar).not.toHaveAttribute("style", /width/);
+  await expect(taskProgressBar).toHaveClass(/bar/);
 
   const toggle = page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"]');
   await expect(toggle).toHaveCSS("padding-left", "5px");
