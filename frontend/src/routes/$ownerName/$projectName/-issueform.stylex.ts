@@ -20,4 +20,5 @@ export const issueFormStyles = stylex.create({
   labelBackground: (backgroundColor: string) => ({ backgroundColor }),
   uploadProgressBar: (width: string) => ({ width }),
   mentionMirrorTransform: (transform: string) => ({ transform }),
+  mentionPopupPosition: (left: number, top: number) => ({ left, top }),
 });

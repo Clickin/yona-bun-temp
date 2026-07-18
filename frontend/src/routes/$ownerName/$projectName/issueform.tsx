@@ -2097,7 +2097,12 @@ function IssueMarkdownEditor({
                 id="editor-mention-options"
                 className="issue-combobox-options editor-mention-options"
                 role="listbox"
-                style={mentionPopupPosition}
+                {...stylex.props(
+                  issueFormStyles.mentionPopupPosition(
+                    mentionPopupPosition.left,
+                    mentionPopupPosition.top,
+                  ),
+                )}
               >
                 {mentionSuggestions.map((suggestion, index) => (
                   <button
