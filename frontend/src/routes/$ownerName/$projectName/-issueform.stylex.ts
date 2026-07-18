@@ -10,6 +10,7 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  cancelButton: { marginLeft: "0px" },
   attachedFilesVisible: { display: "block" },
   attachedFile: {
     boxSizing: "border-box",

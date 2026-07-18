@@ -1210,7 +1210,9 @@ function ProjectIssueFormBody({
                     </button>
                     <button
                       type="button"
-                      className="ybtn issue-form-cancel"
+                      {...stylex.props(issueFormStyles.cancelButton)}
+                      className={`ybtn issue-form-cancel ${stylex.props(issueFormStyles.cancelButton).className ?? ""}`.trim()}
+                      data-stylex-owner="project-issue-form-cancel-button"
                       onClick={cancelIssueForm}
                     >
                       {t("button.cancel")}

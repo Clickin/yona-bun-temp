@@ -3760,3 +3760,5 @@ Batch 488 applies the workflow to the `/sites/mail` send-action wrapper. The act
 Batch 489 applies the workflow to the issueform editor toolbar notice state. The task-list wrapper margin, editor notice padding, and saved notice paint move to three route-local StyleX owners while preserving legacy toolbar classes, draft state, markdown tabs, and generic fallback selectors.
 
 Batch 490 applies the workflow to the issueform attachment visible state. Six declarations that actively match the current React attachment DOM move into route-local StyleX owners while Dynamic progress, fake-file/help controls, generic upload rules, and legacy classes remain unchanged. The focused contract records the intentional retained fallback boundaries.
+
+Batch 491 applies the workflow to the issueform cancel action. The exact scoped `margin-left:0` declaration moves into one route-local StyleX owner while preserving legacy button classes and React cancel behavior; the focused contract verifies exact fallback retirement.
