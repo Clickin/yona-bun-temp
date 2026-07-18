@@ -961,19 +961,23 @@ function PostSelectedLabels({
     <dl>
       <dt>{t("label")}</dt>
       <dd>
-        {labels.map((label) => (
-          <Link
-            to="/$ownerName/$projectName/posts"
-            params={{ ownerName, projectName }}
-            search={{ labelIds: [label.id] }}
-            activeProps={legacyRouteLocalActiveProps}
-            className="label issue-label active static"
-            key={label.id}
-            style={{ background: label.color }}
-          >
-            {label.name}
-          </Link>
-        ))}
+        {labels.map((label) => {
+          const labelStyle = stylex.props(styles.labelBackground(label.color));
+          return (
+            <Link
+              to="/$ownerName/$projectName/posts"
+              params={{ ownerName, projectName }}
+              search={{ labelIds: [label.id] }}
+              activeProps={legacyRouteLocalActiveProps}
+              {...labelStyle}
+              className={`${labelStyle.className} label issue-label active static`}
+              data-stylex-owner="post-detail-label-background"
+              key={label.id}
+            >
+              {label.name}
+            </Link>
+          );
+        })}
       </dd>
     </dl>
   );

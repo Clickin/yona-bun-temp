@@ -11,6 +11,10 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   );
   const template = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   const boardTemplate = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const selectedLabelPartial = readFileSync(
+    "../yona-original/app/views/issue/partial_show_selected_label.scala.html",
+    "utf8",
+  );
   const responsiveStyles = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_responsive.less",
     "utf8",
@@ -30,6 +34,7 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(boardTemplate).toContain(
     '<div class="pull-right hide show-in-mobile" style="font-size: 0.7em">',
   );
+  expect(selectedLabelPartial).toContain('style="background:@label.color"');
   expect(responsiveStyles).toContain(".show-in-mobile {");
   expect(responsiveStyles).toContain("display: block !important;");
   expect(responsiveStyles).toContain(".hide-in-mobile {");
@@ -49,6 +54,9 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(route).not.toContain(
     'className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}',
   );
+  expect(route).not.toContain("style={{ background: label.color }}");
+  expect(route).toContain("styles.labelBackground(label.color)");
+  expect(theme).toContain("labelBackground: (backgroundColor: string) => ({ backgroundColor })");
   expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
   expect(theme).toContain('mobileMetadata: { fontSize: "0.7em" }');
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
@@ -59,6 +67,13 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/weblabs/demo/post/1`);
+
+  const label = page.locator('[data-stylex-owner="post-detail-label-background"]');
+  await expect(label).toHaveCount(1);
+  await expect(label).toHaveAttribute("style", /--x-backgroundColor/);
+  await expect(label).not.toHaveAttribute("style", /background(?:-color)?\s*:/i);
+  await expect(label).toHaveCSS("background-color", "rgb(210, 40, 40)");
+  await expect(label).toHaveAttribute("class", /issue-label/);
 
   const mobileMetadata = page.locator('[data-stylex-owner="post-detail-mobile-metadata"]');
   await expect(mobileMetadata).toHaveCount(1);
@@ -217,7 +232,16 @@ async function mockPost(page: Page) {
           canUpdate: false,
           canWatch: true,
         },
-        labels: [],
+        labels: [
+          {
+            categoryId: "cat-1",
+            categoryIsExclusive: false,
+            categoryName: "Status",
+            color: "rgb(210, 40, 40)",
+            id: "label-1",
+            name: "Bug",
+          },
+        ],
       },
     }),
   );

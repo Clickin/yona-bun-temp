@@ -8,6 +8,7 @@ export const postDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  labelBackground: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   header: { color: postDetailColors.bodyText },
   body: { color: postDetailColors.bodyText },
