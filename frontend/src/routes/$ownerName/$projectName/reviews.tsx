@@ -383,6 +383,8 @@ function ProjectReviewRow({
   const commentCount = Math.max(thread.comments.length - 1, 0);
   const authorRoute = `/${authorLoginId}`;
   const threadRoute = reviewThreadRoute(ownerName, projectName, thread);
+  const reviewTitleWrapProps = stylex.props(reviewsLayout.reviewTitleWrap);
+  const reviewTitleProps = stylex.props(reviewsLayout.reviewTitle);
 
   return (
     <li {...stylex.props(styles.row)} className="post-item" data-stylex-owner="project-reviews-row">
@@ -394,13 +396,18 @@ function ProjectReviewRow({
           height="32"
         />
       </Link>
-      <div className="title-wrap">
+      <div
+        {...reviewTitleWrapProps}
+        className={`title-wrap ${reviewTitleWrapProps.className ?? ""}`.trim()}
+        data-stylex-owner="project-reviews-title-wrap"
+      >
         <span className="post-id">{thread.id}</span>
         <Link
           {...stylex.props(styles.title)}
+          {...reviewTitleProps}
           to={threadRoute.to}
           hash={threadRoute.hash}
-          className="title"
+          className={`title ${stylex.props(styles.title).className ?? ""} ${reviewTitleProps.className ?? ""}`.trim()}
           data-stylex-owner="project-reviews-title"
         >
           {contents}

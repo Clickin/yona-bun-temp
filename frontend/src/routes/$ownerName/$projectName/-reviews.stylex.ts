@@ -13,4 +13,11 @@ export const reviewsLayout = stylex.create({
   exportAction: {
     padding: "10px",
   },
+  reviewTitleWrap: {
+    display: "block",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  reviewTitle: { overflowWrap: "normal" },
 });

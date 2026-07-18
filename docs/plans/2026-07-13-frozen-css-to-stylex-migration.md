@@ -3627,3 +3627,5 @@ Batch 428 applies the workflow to the home sidebar legacy popover state. Static 
 Batch 429 applies the workflow to the project-home overview state. Static overview section-heading and empty-state alignment declarations move into route-local StyleX owners while preserving dashboard DOM, copy, and geometry; the focused overview-static test covers both owners.
 
 Batch 430 applies the workflow to the project posts label state. Static label-button reset, padding, and font-weight declarations move into route-local StyleX owners composed with existing Dynamic label paint while preserving post-list DOM, copy, interaction, and geometry; the focused label-owner test covers both owners.
+
+Batch 431 applies the workflow to the project reviews title state. Static title-wrap overflow/truncation and title wrapping declarations move into route-local StyleX owners while preserving review-list DOM, copy, and geometry; the focused title-overflow test covers both owners.
