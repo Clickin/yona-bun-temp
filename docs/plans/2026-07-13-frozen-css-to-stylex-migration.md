@@ -3440,6 +3440,8 @@ Batch 338 applies the workflow to the authenticated new milestone form upload st
 
 Batch 339 applies the workflow to the authenticated project form conditional owner/VCS/menu state. The three boolean/enum display declarations move to route-local conditional StyleX while preserving the legacy protected-owner option, VCS warning, menu checkbox DOM, copy, submit behavior, and responsive form geometry; the focused projectform test covers source evidence and all three owners.
 
+Batch 340 applies the workflow to the authenticated milestone edit form upload state. The conditional paste-help `display:block` declaration moves to route-local conditional StyleX while preserving the legacy file uploader, copy, capability detection, and responsive upload geometry; the focused milestone-edit-form test covers legacy source evidence and absence of the former inline display.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

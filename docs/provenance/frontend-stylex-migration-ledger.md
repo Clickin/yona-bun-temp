@@ -845,3 +845,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 339
 
 - Authenticated project form conditional owner/VCS/menu state: moved the protected-owner, VCS-warning, and SUBVERSION menu display conditions into route-local conditional StyleX owners, preserving legacy DOM/classes/copy, field behavior, and responsive geometry. Focused `stylex-projectform-conditional-displays.e2e.ts` verifies source evidence, all three owners, and absence of the former inline display declarations; live legacy visual parity remains unverified.
+
+## Batch 340
+
+- Authenticated milestone edit form upload state: moved conditional paste-help `display:block` into `milestoneEditFormStyles.pasteHelpVisible`, preserving the legacy file uploader/upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-milestone-edit-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
