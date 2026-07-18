@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
+import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex";
 
 const projectHistoryStyles = stylex.create({
   stream: { marginBottom: "15px", width: "100%" },
@@ -1859,7 +1860,12 @@ function DashboardPane({
         <div className="span6">
           {booleanField(menuSetting.issue) ? (
             <>
-              <h5>{t("project.dashboard.openIssuesByAssignee")}</h5>
+              <h5
+                {...stylex.props(projectHomeStyles.sectionHeading)}
+                data-stylex-owner="project-home-overview-heading"
+              >
+                {t("project.dashboard.openIssuesByAssignee")}
+              </h5>
               <div className="overview-assignee">
                 {totalOpenIssues === 0 ? (
                   <DashboardEmpty
@@ -2199,7 +2205,11 @@ function DashboardEmpty({
   message: string;
 }) {
   return (
-    <div className="empty">
+    <div
+      {...stylex.props(projectHomeStyles.empty)}
+      className="empty"
+      data-stylex-owner="project-home-overview-empty"
+    >
       <p>{message}</p>
       <Link
         activeProps={{}}
