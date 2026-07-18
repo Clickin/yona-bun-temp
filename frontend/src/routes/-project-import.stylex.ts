@@ -23,6 +23,7 @@ export const styles = stylex.create({
     boxSizing: "border-box",
   },
   repoAuthVisible: { display: "block" },
+  protectedScopeHidden: { display: "none" },
   selectContainer: { width: "220px" },
   selectButton: {
     fontFamily: "inherit",

@@ -514,7 +514,7 @@ function ProjectImportScreen({
                       <li
                         id="opt-protected"
                         className="mt10"
-                        style={isSelectedOwnerGroup ? undefined : { display: "none" }}
+                        {...(isSelectedOwnerGroup ? {} : stylex.props(styles.protectedScopeHidden))}
                       >
                         <input
                           type="radio"

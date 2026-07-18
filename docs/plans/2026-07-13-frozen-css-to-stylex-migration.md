@@ -3575,3 +3575,5 @@ Batch 402 applies the workflow to the authenticated pull-request changes review 
 Batch 403 applies the workflow to the organization boards two-column popover state. Fixed popover geometry moves to a route-local StyleX owner while preserving the legacy checkbox/popover DOM, copy, hover/focus behavior, and responsive geometry; the focused organization-popover test covers the owner and former inline removal.
 
 Batch 404 applies the workflow to the public projects empty-state sprite. The runtime sprite URL moves from a literal inline custom-property declaration to a route-local Dynamic StyleX function while preserving the legacy empty-state DOM, copy, asset rendering, and responsive geometry; the focused empty-sprite test covers the legacy source contract and dynamic carrier.
+
+Batch 405 applies the workflow to the project import protected-scope state. The conditional hidden `display:none` declaration moves to a route-local conditional StyleX owner while preserving owner selection, radio DOM, copy, and form geometry; the focused protected-scope test covers the legacy source contract and owner.
