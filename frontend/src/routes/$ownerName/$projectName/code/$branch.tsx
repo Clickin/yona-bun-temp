@@ -344,7 +344,11 @@ function ProjectCodeFolderBody({
             className={`${stylex.props(styles.list).className} code-viewer-wrap`}
             data-stylex-owner="project-code-branch-viewer"
           >
-            <div id="spin" style={{ position: "fixed", top: "50%", left: "50%" }}></div>
+            <div
+              {...stylex.props(styles.spinner)}
+              data-stylex-owner="project-code-branch-spinner"
+              id="spin"
+            ></div>
             <FolderList code={code} />
           </div>
         </div>
@@ -382,8 +386,7 @@ function FolderList({ code }: { code: CodeBrowserResponse }) {
 
       {code.entries.length === 0 ? (
         <div
-          className="alert alert-warning nm"
-          style={{ borderTop: 0, paddingLeft: "23px" }}
+          className={`${stylex.props(styles.empty).className} alert alert-warning nm`}
           data-stylex-owner="project-code-branch-empty"
         >
           {t("code.nofiles")}

@@ -10,6 +10,7 @@ export const codeBranchTheme = stylex.defineVars({
 
 export const styles = stylex.create({
   tabs: { marginBottom: "0px" },
+  spinner: { left: "50%", position: "fixed", top: "50%" },
   header: {
     backgroundColor: codeBranchTheme.headerSurface,
     display: "block",
@@ -34,6 +35,7 @@ export const styles = stylex.create({
     padding: "0px 10px 0px 0px",
   },
   list: { overflow: "auto", width: "100%" },
+  empty: { borderTopStyle: "none", borderTopWidth: "0px", paddingLeft: "23px" },
   listHeader: {
     backgroundColor: codeBranchTheme.listHeaderSurface,
     boxSizing: "border-box",

@@ -590,3 +590,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 275
 
 - `/$user` populated public profile state: moved the API-derived subtask completion percentage width into the route-local Dynamic StyleX `progressBar` owner while preserving the legacy `bar` and conditional `done`/`red` classes. Frozen subtask-progress geometry and runtime label/color fallbacks remain unchanged. Focused `stylex-user-profile-subtask-progress.e2e.ts` covers the 33% populated progress bar and mobile containment; live legacy visual parity remains unverified.
+
+## Batch 274
+
+- `/$ownerName/$projectName/code/$branch` populated/empty folder state: moved the legacy fixed spinner position and empty-folder warning border/padding declarations into `-code-branch.stylex.ts` owners, preserving branch picker/list rendering, legacy classes, and React/TanStack navigation/query behavior. Dynamic branch/list fallback remains unchanged. Focused `stylex-project-code-branch-inline-residual.e2e.ts` passed desktop/mobile empty-folder fixtures.
