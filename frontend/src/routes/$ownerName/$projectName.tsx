@@ -2283,12 +2283,11 @@ function DashboardEmpty({
 }) {
   return (
     <div
-      {...stylex.props(projectHomeStyles.empty)}
-      className="empty"
+      className={`${stylex.props(projectHomeStyles.empty).className} empty`}
       data-stylex-owner="project-home-overview-empty"
     >
       <p
-        {...stylex.props(projectHomeStyles.emptyMessage)}
+        className={stylex.props(projectHomeStyles.emptyMessage).className}
         data-stylex-owner="project-home-overview-empty-message"
       >
         {message}

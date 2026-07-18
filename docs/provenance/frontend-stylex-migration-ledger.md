@@ -11,6 +11,10 @@ Date: 2026-07-15
 
 - Issue-detail and post-detail tasklist state: moved active `.tasklist`, `.task-title`, `.done-counter`, `.task-progress`, and red bar geometry into colocated StyleX owners for both React tasklist consumers. The legacy `task-show` class hook remains available for conditional visibility, runtime progress width remains Dynamic StyleX, and unrelated `.task-list-item*` selectors remain frozen fallback. Focused `stylex-tasklist-static-owners.e2e.ts` verifies both legacy callers and route owners; live legacy visual parity remains unverified.
 
+## Batch 449
+
+- Project overview dead-selector cleanup: removed the unused `.project-overview-home small` app.css fallback after source inspection confirmed the canonical React overview contains no `<small>` descendants. Legacy `project/partial_dashboard.scala.html` and frozen `_page.less` remain provenance evidence; all active overview selectors and TSX behavior are unchanged. Focused `stylex-project-overview-dead-small-selector.e2e.ts` verifies the legacy source and current consumer absence.
+
 ## Batch 307
 
 - `/$ownerName/$projectName/issue/$issueNumber` loaded issue detail label state: moved arbitrary server-provided label background colors from the issue label selector, selected-label links, child-issue labels, and timeline label boxes into the route-local Dynamic StyleX `labelColor(backgroundColor)` owner. Legacy label classes, links, metadata, contrast, order, and geometry remain unchanged. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` verifies legacy source evidence, computed runtime colors for parent/child labels, custom-property carriers, and absence of literal background declarations; live legacy visual parity remains unverified.

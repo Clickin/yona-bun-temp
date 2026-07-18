@@ -1286,13 +1286,6 @@ pre code {
   border-left: 3px solid #ff7332;
 }
 
-.project-overview-home small {
-  display: inline-block;
-  width: 35px;
-  margin-left: 3px;
-  color: #999;
-}
-
 .project-overview-home .empty {
   text-align: center;
 }
