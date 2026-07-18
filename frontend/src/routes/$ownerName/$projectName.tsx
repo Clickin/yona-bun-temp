@@ -2210,7 +2210,12 @@ function DashboardEmpty({
       className="empty"
       data-stylex-owner="project-home-overview-empty"
     >
-      <p>{message}</p>
+      <p
+        {...stylex.props(projectHomeStyles.emptyMessage)}
+        data-stylex-owner="project-home-overview-empty-message"
+      >
+        {message}
+      </p>
       <Link
         activeProps={{}}
         to={toRoutePath(basePath, actionHref)}
