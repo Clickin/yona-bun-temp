@@ -14,6 +14,8 @@ const projectHistoryStyles = stylex.create({
   header: { marginBottom: "5px" },
   others: { paddingLeft: "0" },
   date: { marginLeft: "0" },
+  pullRequestDate: { color: "#999" },
+  pullRequestLink: { marginRight: "17px" },
 });
 
 const projectHeaderStyles = stylex.create({
@@ -2029,13 +2031,19 @@ function DashboardPane({
                               {stringField(record.title, "")}
                             </Link>
                           </div>
-                          <div className="span3 num right-txt" style={{ color: "#999" }}>
+                          <div
+                            className={`${stylex.props(projectHistoryStyles.pullRequestDate).className} span3 num right-txt`}
+                            data-stylex-owner="project-history-pull-request-date"
+                          >
                             {stringField(record.createdLabel, "")}
                           </div>
                         </div>
                       );
                     })}
-                    <div className="right-txt mt5" style={{ marginRight: "17px" }}>
+                    <div
+                      className={`${stylex.props(projectHistoryStyles.pullRequestLink).className} right-txt mt5`}
+                      data-stylex-owner="project-history-pull-request-link"
+                    >
                       <Link
                         activeProps={{}}
                         to={toRoutePath(
