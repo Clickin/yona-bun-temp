@@ -693,7 +693,10 @@ function ProjectIssuesBody({
                     />
                   ))}
                 </ul>
-                <div className="pull-left" style={{ padding: "10px" }}>
+                <div
+                  className={`${stylex.props(styles.downloadWrap).className} pull-left`}
+                  data-stylex-owner="project-issues-download"
+                >
                   <Link
                     activeProps={{ className: "ybtn small" }}
                     to={excelHref("", ownerName, projectName, currentSearchString)}
@@ -2633,7 +2636,10 @@ function IssueSearchForm({
             >
               <i className="yobicon-cog vmiddle"></i>
               {labels.length === 0 ? (
-                <span className="vmiddle" style={{ marginLeft: "2px" }}>
+                <span
+                  className={`${stylex.props(styles.manageLabel).className} vmiddle`}
+                  data-stylex-owner="project-issues-manage-label"
+                >
                   {t("label.manage")}
                 </span>
               ) : null}
@@ -3042,10 +3048,10 @@ function TwoColumnModeCheckbox({
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
+      className={`${stylex.props(styles.relativeAnchor).className} two-column-icon mr10 hide-in-mobile`}
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      data-stylex-owner="project-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -3115,10 +3121,10 @@ function ShowSubtasksCheckbox({
 
   return (
     <div
-      className="show-subtasks mr10"
+      className={`${stylex.props(styles.relativeAnchor).className} show-subtasks mr10`}
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      data-stylex-owner="project-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -3160,7 +3166,10 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
 
   return (
     <>
-      <div className="pull-left" style={{ padding: "10px 0", marginLeft: "55px" }}>
+      <div
+        className={`${stylex.props(styles.keymapWrap).className} pull-left`}
+        data-stylex-owner="project-issues-keymap"
+      >
         <button
           type="button"
           className="ybtn ybtn-inverse ybtn-mini"
