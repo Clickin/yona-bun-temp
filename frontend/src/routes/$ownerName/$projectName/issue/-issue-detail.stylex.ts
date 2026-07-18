@@ -64,4 +64,7 @@ export const styles = stylex.create({
   taskProgressBar: {
     width: "0px",
   },
+  subtaskProgressBar: (width: string) => ({
+    width,
+  }),
 });

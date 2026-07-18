@@ -17,11 +17,16 @@ test("issue detail owns original-message and editor static declarations", async 
     "../yona-original/app/views/common/tasklistBar.scala.html",
     "utf8",
   );
+  const legacySubtasks = readFileSync(
+    "../yona-original/app/views/issue/partial_list_subtask.scala.html",
+    "utf8",
+  );
 
   expect(legacyView).toContain("@partial_comments(project, issue)");
   expect(legacyEditor).toContain('style="position:relative;overflow: visible;"');
   expect(legacyView).toContain("@common.tasklistBar()");
   expect(legacyTasklist).toContain('class="bar red" style="width: 0;"');
+  expect(legacySubtasks).toContain('style="width: @percentage%;" title="Subtask"');
   expect(route).toContain("style={{ border: 0 }}");
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
@@ -47,6 +52,15 @@ test("issue detail owns original-message and editor static declarations", async 
     await expect(bar).not.toHaveAttribute("style", /width/);
     await expect(bar).toHaveClass(/bar/);
   }
+
+  const subtaskProgressBar = page.locator(
+    '[data-stylex-owner="project-issue-detail-subtask-progress-bar"]',
+  );
+  await expect(subtaskProgressBar).toHaveCount(1);
+  await expect(subtaskProgressBar).toHaveCSS("width", "15px");
+  await expect(subtaskProgressBar).toHaveClass(/bar/);
+  await expect(subtaskProgressBar).toHaveClass(/red/);
+  await expect(subtaskProgressBar).not.toHaveAttribute("style", /width/);
 
   const toggle = page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"]');
   await expect(toggle).toHaveCSS("padding-left", "5px");
@@ -149,7 +163,26 @@ async function mockIssue(page: Page) {
           },
         ],
         timeline: [],
-        childIssues: [],
+        childOpenCount: 1,
+        childClosedCount: 1,
+        childIssues: [
+          {
+            issueNumber: 12,
+            title: "Open subtask",
+            state: "OPEN",
+            isDraft: false,
+            labels: [],
+            assigneeLabel: "",
+          },
+          {
+            issueNumber: 13,
+            title: "Closed subtask",
+            state: "CLOSED",
+            isDraft: false,
+            labels: [],
+            assigneeLabel: "",
+          },
+        ],
         attachments: [],
         labels: [],
         milestone: null,

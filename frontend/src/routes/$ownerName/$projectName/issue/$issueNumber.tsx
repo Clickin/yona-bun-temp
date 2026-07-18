@@ -2207,6 +2207,7 @@ function IssueChildIssues({
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
+  const progressStyle = stylex.props(styles.subtaskProgressBar(`${percentage}%`));
   const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
 
   return (
@@ -2223,8 +2224,9 @@ function IssueChildIssues({
           </Link>
           <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
             <div
-              className={`bar ${percentage === 100 ? "done" : "red"}`}
-              style={{ width: `${percentage}%` }}
+              {...progressStyle}
+              className={`${progressStyle.className} bar ${percentage === 100 ? "done" : "red"}`}
+              data-stylex-owner="project-issue-detail-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>

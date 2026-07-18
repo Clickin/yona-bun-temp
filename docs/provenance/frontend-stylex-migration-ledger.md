@@ -625,3 +625,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 283
 
 - `/$ownerName/$projectName/issue/$issueNumber` tasklist dual-position verification: documented the two legacy tasklist mounts and updated the focused E2E to assert each StyleX-owned bar independently, retaining the same zero-width output and legacy DOM contract.
+
+## Batch 284
+
+- `/$ownerName/$projectName/issue/$issueNumber` loaded issue detail subtask state: moved the server-derived closed/open percentage width into `-issue-detail.stylex.ts` Dynamic StyleX, preserving the legacy `upload-progress`, `bar`, conditional `red`/`done`, and `Subtask` title output. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` now covers the 50% populated subtask carrier alongside both tasklist bars; live legacy visual parity remains unverified.
