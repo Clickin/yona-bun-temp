@@ -2,7 +2,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, type SearchSchemaInput, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
 import type { ListProjectsResponse, YoramRecord } from "../api/types";
@@ -26,10 +26,6 @@ const LEGACY_PROJECTS_LINK_SEARCH = {
   labelIds: undefined,
   pageNum: undefined,
 };
-
-const paginationSpriteStyle = {
-  "--projects-directory-pagination-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
 
 type ProjectDirectoryItem = YoramRecord & {
   createdLabel?: string;
@@ -55,6 +51,9 @@ type ProjectDirectoryLabel = {
 };
 
 const styles = stylex.create({
+  paginationSprite: (spriteUrl: string) => ({
+    "--projects-directory-pagination-sprite": `url(${spriteUrl})`,
+  }),
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
@@ -822,7 +821,7 @@ function ProjectsPagination({
                 {...directoryPaginationPreviousIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="projects-directory-pagination-prev-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...directoryPaginationLabelStyleProps}
@@ -838,7 +837,7 @@ function ProjectsPagination({
                 {...directoryPaginationPreviousDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="projects-directory-pagination-prev-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...directoryPaginationDisabledLabelStyleProps}
@@ -911,7 +910,7 @@ function ProjectsPagination({
                 {...directoryPaginationNextIconStyleProps}
                 data-disabled="false"
                 data-stylex-owner="projects-directory-pagination-next-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -927,7 +926,7 @@ function ProjectsPagination({
                 {...directoryPaginationNextDisabledIconStyleProps}
                 data-disabled="true"
                 data-stylex-owner="projects-directory-pagination-next-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}
