@@ -10,9 +10,17 @@ test("records project pull request list owners and responsive containment", asyn
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
   const theme = readFileSync("src/routes/$ownerName/$projectName/-pull-requests.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/git/partial_list.scala.html", "utf8");
+  const twoColumn = readFileSync(
+    "../yona-original/public/javascripts/service/yona.twoColumnMode.js",
+    "utf8",
+  );
   expect(template).toContain('class="post-list-wrap"');
   expect(template).toContain('class="avatar-wrap mlarge"');
   expect(route).toContain('data-stylex-owner="project-pullrequests-tabs"');
+  expect(route).toContain("searchColumnHidden");
+  expect(route).not.toContain('style={leftMenuHiddenByTwoColumnMode ? { display: "none" }');
+  expect(theme).toContain('searchColumnHidden: { display: "none" }');
+  expect(twoColumn).toContain('$(".left-menu").hide(0)');
   expect(theme).toContain("export const pullRequestColors");
   await mockPullRequests(page);
   for (const viewport of [

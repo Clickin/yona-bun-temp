@@ -35,6 +35,7 @@ const sx = {
   searchInput: stylex.props(styles.searchInput),
   searchButton: stylex.props(styles.searchButton),
   tabs: stylex.props(styles.tabs),
+  searchColumnHidden: stylex.props(styles.searchColumnHidden),
   recentlyPushedBranch: stylex.props(styles.recentlyPushedBranch),
   reviewProgressItem: stylex.props(styles.reviewProgressItem),
   reviewProgressBar: (width: string) => stylex.props(styles.reviewProgressBar(width)),
@@ -311,8 +312,8 @@ function ProjectPullRequestsBody({
         <div className="row-fluid cb">
           <div
             {...sx.searchColumn}
+            {...(leftMenuHiddenByTwoColumnMode ? sx.searchColumnHidden : {})}
             data-stylex-owner="project-pullrequests-search-column"
-            style={leftMenuHiddenByTwoColumnMode ? { display: "none" } : undefined}
           >
             <form
               id="search"

@@ -3,6 +3,10 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 302
+
+- `/$ownerName/$projectName/pullRequests` two-column state: moved the conditional left-search-column `display:none` declaration, corresponding to the legacy `yona.twoColumnMode.js` `.left-menu` hide behavior, into the route-local `searchColumnHidden` conditional StyleX owner. The row cursor remains dynamic state fallback, and generated popover placement remains React/plugin behavior rather than an invented fixed legacy declaration. Focused `stylex-project-pull-requests.e2e.ts` verifies legacy JS evidence, conditional owner, and responsive containment; live legacy visual parity remains unverified.
+
 ## Batch 300
 
 - `/$ownerName/$projectName/post/$postNumber` mobile metadata state: moved the fixed `font-size:0.7em` declaration from `board/view.scala.html` into the route-local `mobileMetadata` StyleX owner, preserving responsive visibility, date copy, and containment. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies source ownership, desktop hidden/mobile visible state, computed size, and no literal inline style; live legacy visual parity remains unverified.
@@ -698,3 +702,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 298
 
 - `/_UIKit` original-message toggle state: moved the fixed `border:0; padding-left:5px; padding-right:5px` generated-toggle declarations from the legacy OriginalMessage behavior into route-local StyleX, preserving the `...` button, React show/hide interaction, and desktop/mobile containment. Focused `ui-kit.e2e.ts` verifies legacy source evidence, computed zero border/5px padding, stable ownership, and toggle behavior; live legacy visual parity remains unverified.
+
+## Batch 303
+
+- `/$ownerName/$projectName/setting` populated project-settings old-place state: moved the legacy `oldPlace` message's static `color:red` declaration into the route-local `styles.oldPlace` StyleX owner, preserving the previous-place copy, project-name form order, and desktop/mobile layout. The runtime old-place value remains data-driven text; no theme variable is introduced. Focused `stylex-project-setting.e2e.ts` verifies the Scala source declaration, stable owner, computed red color, and responsive form containment; live legacy visual parity remains unverified.

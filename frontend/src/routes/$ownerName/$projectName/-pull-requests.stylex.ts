@@ -10,6 +10,7 @@ export const pullRequestColors = stylex.defineVars({
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   searchColumn: { paddingTop: "0px" },
+  searchColumnHidden: { display: "none" },
   searchBar: {
     borderColor: pullRequestColors.inputBorder,
     borderStyle: "solid",

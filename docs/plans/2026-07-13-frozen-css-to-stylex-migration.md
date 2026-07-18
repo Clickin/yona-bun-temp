@@ -5,6 +5,13 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 302 applies the workflow to the authenticated project pull-request two-column state. The
+conditional left search-column `display:none` declaration now uses a route-local StyleX variant
+backed by the legacy `yona.twoColumnMode.js` hide behavior; dynamic row cursor and generated
+popover placement remain state/plugin-owned fallback. The existing focused pull-request test
+covers source evidence, conditional hide/show geometry, popover interaction, and desktop/mobile
+containment.
+
 Batch 300 applies the workflow to the authenticated board-post mobile metadata state. Its fixed `font-size:0.7em` declaration moved to route-local StyleX while legacy responsive classes and date output remain unchanged; the focused post-detail test covers desktop/mobile visibility, computed size, and containment.
 
 Batch 301 applies the workflow to the authenticated user-settings avatar state. Fixed 128px avatar and 500px crop-preview dimensions moved to route-local StyleX while upload/crop state remains React-owned; the focused settings test covers source evidence, computed geometry, interaction, and desktop/mobile containment.
@@ -3355,6 +3362,8 @@ Batch 293 corrects the pull-request action-wrapper focused geometry assertion to
 Batch 294 applies the workflow to the authenticated board post keymap-help wrapper. Its fixed legacy padding and left margin moved to route-local StyleX while the conditional modal display remains React state-owned; the focused residual test covers source evidence, computed spacing, modal interaction, and desktop/mobile containment.
 
 Batch 298 applies the workflow to the standalone `/_UIKit` original-message toggle. Its fixed generated-button border and horizontal padding moved to route-local StyleX while React owns the show/hide state; the focused UI kit test covers legacy source evidence, computed zero border/5px padding, toggle interaction, and desktop/mobile containment.
+
+Batch 303 applies the workflow to the authenticated project-setting old-place message. Its static legacy `color:red` declaration moved to a direct route-local StyleX owner while the data-driven previous-place text remains unchanged; the focused project-setting test covers source evidence, computed color, and desktop/mobile form containment.
 
 
 
