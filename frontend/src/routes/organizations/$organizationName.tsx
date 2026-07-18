@@ -733,7 +733,10 @@ export function OrganizationMenu({
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
+        <ul
+          className={`${stylex.props(styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
+          data-stylex-owner="organization-menu-group"
+        >
           <li className={active === "home" ? "active" : ""}>
             <Link
               activeOptions={{

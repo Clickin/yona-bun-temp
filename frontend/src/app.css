@@ -2715,11 +2715,6 @@ h1 {
   list-style: none;
 }
 
-.project-menu-gruop {
-  float: left;
-  margin-left: 110px;
-}
-
 .project-menu-nav > li {
   position: relative;
   float: left;
