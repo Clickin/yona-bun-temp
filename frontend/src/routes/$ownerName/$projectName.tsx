@@ -2919,7 +2919,10 @@ export function ProjectMenu({
           ) : null}
         </ul>
         {booleanField(project.viewerCanUpdate) ? (
-          <div className="project-setting">
+          <div
+            className={`${stylex.props(projectHomeStyles.projectSetting).className} project-setting`}
+            data-stylex-owner="project-menu-setting"
+          >
             <ul className="project-menu-nav">
               <li className={active === "setting" ? "active" : ""}>
                 <Link

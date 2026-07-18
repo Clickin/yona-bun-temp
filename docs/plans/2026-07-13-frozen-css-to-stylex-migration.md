@@ -3681,6 +3681,8 @@ Batch 458 applies the project-route project-menu group state. The typo-preserved
 
 Batch 459 applies the organization-route project-menu group state. The typo-preserved group float/margin geometry moves into the organization route-local StyleX owner, completing both consumers so the shared fallback can be retired; nav/active pseudo rules remain untouched.
 
+Batch 460 applies project-route menu settings float. The project settings wrapper float moves into a route-local StyleX owner while preserving menu DOM/classes; organization remains the shared fallback consumer and issue-form responsive override remains untouched.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.
 
 Batch 457 applies the workflow to the project-posts label reset state. The obsolete post-list button reset fallback is removed because the existing `labelButtonReset` StyleX owner covers border, cursor, and font inheritance while Dynamic label paint and legacy classes remain intact; the focused label-button test verifies fallback removal and composition.

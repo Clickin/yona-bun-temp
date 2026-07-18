@@ -27,6 +27,7 @@ export const styles = stylex.create({
     verticalAlign: "top",
   },
   projectMenuGroup: { float: "left", marginLeft: "110px" },
+  projectSetting: { float: "right" },
   page: { backgroundColor: projectHomeTheme.pageSurface },
   header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
   overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },
