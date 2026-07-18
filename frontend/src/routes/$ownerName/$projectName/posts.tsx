@@ -6,7 +6,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -41,17 +40,19 @@ type ProjectPostsSearch = {
   pageNum: number;
 };
 
-const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "276px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-  zIndex: 1010,
-};
+const twoColumnModePopoverStyles = stylex.create({
+  popover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "276px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+    zIndex: 1010,
+  },
+});
 
 type LegacyPostItemAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 const legacyRouteLocalActiveProps = {
@@ -721,7 +722,11 @@ function TwoColumnModeCheckbox() {
         </div>
       </label>
       {showPopover ? (
-        <div className="popover top" role="tooltip" style={TWO_COLUMN_MODE_POPOVER_STYLE}>
+        <div
+          className={`${stylex.props(twoColumnModePopoverStyles.popover).className} popover top`.trim()}
+          data-stylex-owner="project-posts-two-column-popover"
+          role="tooltip"
+        >
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>
           <div className="popover-content">
