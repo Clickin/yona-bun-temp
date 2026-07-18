@@ -1017,3 +1017,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 384
 
 - Authenticated project-history state: moved fixed `.main-stream` width, `.header-text` margin, `.others` padding, and `.date` margin into route-local `projectHistoryStyles`, preserving the legacy history DOM and responsive geometry. Focused `stylex-project-history-static-owners.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 385
+
+- Authenticated project-label category typeahead state: moved fixed suggestion-button background, border, display, padding, text alignment, and width into `labelsFormStyles.categorySuggestionButton`, preserving Bootstrap typeahead DOM, active-state behavior, copy, and geometry. Focused `stylex-project-labels-category-suggestion.e2e.ts` verifies the legacy source contract, stable owner, and absence of the former inline object; live legacy visual parity remains unverified.

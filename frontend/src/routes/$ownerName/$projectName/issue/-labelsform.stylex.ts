@@ -17,3 +17,14 @@ export const labelsFormDynamicStyles = stylex.create({
   labelNameBackground: (backgroundColor: string) => ({ backgroundColor }),
   presetColorBackground: (backgroundColor: string) => ({ backgroundColor }),
 });
+
+export const labelsFormStyles = stylex.create({
+  categorySuggestionButton: {
+    backgroundColor: "transparent",
+    border: 0,
+    display: "block",
+    padding: "3px 20px",
+    textAlign: "left",
+    width: "100%",
+  },
+});

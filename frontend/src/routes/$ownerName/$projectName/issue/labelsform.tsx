@@ -25,7 +25,7 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
-import { labelsFormColors, labelsFormDynamicStyles } from "./-labelsform.stylex";
+import { labelsFormColors, labelsFormDynamicStyles, labelsFormStyles } from "./-labelsform.stylex";
 
 const styles = stylex.create({
   copyForm: { margin: "30px auto" },
@@ -649,14 +649,8 @@ function ProjectLabelsBody({
                           >
                             <button
                               type="button"
-                              style={{
-                                background: "transparent",
-                                border: 0,
-                                display: "block",
-                                padding: "3px 20px",
-                                textAlign: "left",
-                                width: "100%",
-                              }}
+                              {...stylex.props(labelsFormStyles.categorySuggestionButton)}
+                              data-stylex-owner="project-labels-category-suggestion"
                               onClick={() => selectCategoryTypeaheadSuggestion(suggestion.value)}
                             >
                               {suggestion.parts.map((part, partIndex) =>
