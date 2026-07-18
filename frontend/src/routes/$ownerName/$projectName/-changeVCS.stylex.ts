@@ -11,3 +11,7 @@ export const projectChangeVcsTheme = stylex.defineVars({
   modalBackground: "#ffffff",
   backdrop: "rgba(0, 0, 0, 0.8)",
 });
+
+export const projectChangeVcsConditionalStyles = stylex.create({
+  hidden: { display: "none" },
+});

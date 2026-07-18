@@ -19,7 +19,7 @@ import {
   ProjectHeader as SharedProjectHeader,
   ProjectMenu as SharedProjectMenu,
 } from "../$projectName";
-import { projectChangeVcsTheme } from "./-changeVCS.stylex";
+import { projectChangeVcsConditionalStyles, projectChangeVcsTheme } from "./-changeVCS.stylex";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -355,6 +355,9 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const memberCount = projectMemberCount(project);
+  const codeMenuStyleProps = projectMenuEnabled(project, "code", "showCode")
+    ? undefined
+    : stylex.props(projectChangeVcsConditionalStyles.hidden);
 
   return (
     <ul className="nav nav-tabs">
@@ -427,8 +430,9 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className="active"
-        style={projectMenuEnabled(project, "code", "showCode") ? undefined : { display: "none" }}
+        {...codeMenuStyleProps}
+        className={`active ${codeMenuStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="project-change-vcs-code-menu"
       >
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}
