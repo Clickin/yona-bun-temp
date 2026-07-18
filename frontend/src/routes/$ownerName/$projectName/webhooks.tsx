@@ -21,7 +21,7 @@ import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { webhooksColors } from "./-webhooks.stylex";
+import { webhooksColors, webhooksStyles } from "./-webhooks.stylex";
 
 const styles = stylex.create({
   form: { margin: "30px auto" },
@@ -603,7 +603,10 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={projectMenuEnabled(project, "code", "showCode") ? undefined : { display: "none" }}
+        {...(projectMenuEnabled(project, "code", "showCode")
+          ? {}
+          : stylex.props(webhooksStyles.codeMenuHidden))}
+        data-stylex-owner="project-webhooks-code-menu"
       >
         <Link
           {...LEGACY_LINK_PROPS}

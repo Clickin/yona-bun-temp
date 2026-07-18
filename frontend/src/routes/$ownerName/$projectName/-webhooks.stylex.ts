@@ -10,3 +10,7 @@ export const webhooksColors = stylex.defineVars({
   mutedText: "#666666",
   white: "#ffffff",
 });
+
+export const webhooksStyles = stylex.create({
+  codeMenuHidden: { display: "none" },
+});

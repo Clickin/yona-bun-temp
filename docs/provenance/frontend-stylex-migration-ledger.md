@@ -869,3 +869,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 345
 
 - Authenticated project transfer form code-menu state: moved conditional code-menu `display:none` into `projectTransferConditionalStyles.hidden`, preserving the legacy settings-menu DOM, permission logic, copy, submit flow, and responsive geometry. Focused `stylex-project-transfer-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 346
+
+- Authenticated project webhooks code-menu state: moved conditional code-menu `display:none` into `webhooksStyles.codeMenuHidden`, preserving the legacy webhook/settings-menu DOM, permission logic, copy, form behavior, and responsive geometry. Focused `stylex-project-webhooks-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

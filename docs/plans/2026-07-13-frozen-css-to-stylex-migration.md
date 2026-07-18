@@ -3452,6 +3452,8 @@ Batch 344 applies the workflow to the authenticated project delete form code-men
 
 Batch 345 applies the workflow to the authenticated project transfer form code-menu state. The conditional code-menu `display:none` declaration moves to a route-local conditional StyleX owner while preserving the legacy settings-menu DOM, permission logic, copy, submit flow, and responsive geometry; the focused transfer test covers legacy source evidence and absence of the former inline declaration.
 
+Batch 346 applies the workflow to the authenticated project webhooks code-menu state. The conditional code-menu `display:none` declaration moves to route-local conditional StyleX while preserving the legacy webhook/settings-menu DOM, permission logic, copy, form behavior, and responsive geometry; the focused webhooks test covers legacy source evidence and absence of the former inline declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
