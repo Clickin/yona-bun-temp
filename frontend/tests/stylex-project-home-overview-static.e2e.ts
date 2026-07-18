@@ -13,4 +13,6 @@ test("project home overview static owners use StyleX", async () => {
   expect(route).toContain('data-stylex-owner="project-home-overview-heading"');
   expect(route).toContain('data-stylex-owner="project-home-overview-empty"');
   expect(route).toContain('data-stylex-owner="project-home-overview-empty-message"');
+  expect(route).toContain('data-stylex-owner="project-home-overview-number"');
+  expect(legacy).toContain('class="span3 num"');
 });

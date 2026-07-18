@@ -3631,3 +3631,5 @@ Batch 430 applies the workflow to the project posts label state. Static label-bu
 Batch 431 applies the workflow to the project reviews title state. Static title-wrap overflow/truncation and title wrapping declarations move into route-local StyleX owners while preserving review-list DOM, copy, and geometry; the focused title-overflow test covers both owners.
 
 Batch 432 applies the workflow to the project-home empty-message state. Empty-state paragraph margin, font-size, and color move into a route-local StyleX owner while preserving dashboard copy, DOM, and geometry; the focused overview-static test covers the owner.
+
+Batch 433 applies the workflow to the project-home overview number state. Static right-alignment and padding declarations move into a route-local StyleX owner while preserving dashboard counts, DOM, copy, and geometry; the focused overview-static test covers the owner.

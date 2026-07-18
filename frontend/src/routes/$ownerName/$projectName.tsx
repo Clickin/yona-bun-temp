@@ -1914,7 +1914,10 @@ function DashboardPane({
                               </span>
                             </Link>
                           </div>
-                          <div className="span3 num">
+                          <div
+                            className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
+                            data-stylex-owner="project-home-overview-number"
+                          >
                             <strong>{count}</strong>
                           </div>
                           <div className="span3 nm">
@@ -1939,7 +1942,9 @@ function DashboardPane({
                           <span className="name">{t("issue.noAssignee")}</span>
                         </Link>
                       </div>
-                      <div className="span3 num">
+                      <div
+                        className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
+                      >
                         <strong>{unassignedCount}</strong>
                       </div>
                       <div className="span3 nm">
@@ -1992,7 +1997,9 @@ function DashboardPane({
                               {stringField(record.title, "")}
                             </Link>
                           </div>
-                          <div className="span3 num">
+                          <div
+                            className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
+                          >
                             <strong>{count}</strong>
                           </div>
                           <div className="span3 nm">
@@ -2013,7 +2020,9 @@ function DashboardPane({
                           {t("issue.noMilestone")}
                         </Link>
                       </div>
-                      <div className="span3 num">
+                      <div
+                        className={`${stylex.props(projectHomeStyles.overviewNumber).className} span3 num`}
+                      >
                         <strong>{noMilestoneCount}</strong>
                       </div>
                       <div className="span3 nm"></div>
@@ -2180,7 +2189,9 @@ function DashboardLabels({
                       </span>
                     </Link>
                   </div>
-                  <div className="span2 num">
+                  <div
+                    className={`${stylex.props(projectHomeStyles.overviewNumber).className} span2 num`}
+                  >
                     <strong>{numberField(label.openIssueCount)}</strong>
                   </div>
                 </div>
