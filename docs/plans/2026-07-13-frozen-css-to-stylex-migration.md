@@ -3601,3 +3601,5 @@ Batch 415 applies the workflow to the root login-dialog visibility state. Condit
 Batch 416 applies the workflow to the issue-form mention popup state. Runtime `left`/`top` coordinates move from a literal inline style to a route-local Dynamic StyleX owner while preserving mention DOM, suggestion interaction, placement behavior, and responsive geometry; the focused mention-popup test covers the dynamic carrier.
 
 Batch 417 applies the workflow to the project-home leave modal state. Conditional modal `display:block`/`display:none` declarations move to route-local conditional StyleX owners while preserving leave-modal DOM, aria state, mutation behavior, copy, and responsive geometry; the focused leave-modal test covers both states.
+
+Batch 418 applies the workflow to the issue-detail conditional visibility state. Six conditional `display`/`visibility` declarations move to route-local conditional StyleX owners for voter/keymap modals, comment body, reply action, child-comment form, and notification receivers while preserving issue-detail DOM, interaction, copy, and responsive geometry; the focused conditional-visibility wave test covers all owners.

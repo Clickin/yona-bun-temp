@@ -12,6 +12,12 @@ export const styles = stylex.create({
   labelSearchInput: { width: "10px" },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   shareLinkHidden: { display: "none" },
+  votersModalVisible: { display: "block" },
+  keymapModalVisible: { display: "block" },
+  commentBodyHidden: { display: "none" },
+  replyVisible: { display: "block" },
+  childCommentFormVisible: { display: "block", visibility: "visible" },
+  notificationVisible: { display: "block" },
   voterSummary: { marginRight: "2px" },
   labelColor: (backgroundColor: string) => ({
     backgroundColor,

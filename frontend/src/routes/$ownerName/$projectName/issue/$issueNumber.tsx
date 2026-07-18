@@ -1555,7 +1555,7 @@ function IssueVoterListDialog({
         ref={modalRef}
         id={id}
         className={open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}
-        style={open ? { display: "block" } : undefined}
+        {...(open ? stylex.props(styles.votersModalVisible) : {})}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => onClose?.())}
       >
@@ -2449,7 +2449,7 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
         className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
         tabIndex={-1}
         role="dialog"
-        style={open ? { display: "block" } : undefined}
+        {...(open ? stylex.props(styles.keymapModalVisible) : {})}
         onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
         <div className="row-fluid">
@@ -3314,7 +3314,7 @@ function IssueCommentRow({
         />
         <div
           id={`comment-body-${commentId}`}
-          style={commentEditOpen ? { display: "none" } : undefined}
+          {...(commentEditOpen ? stylex.props(styles.commentBodyHidden) : {})}
         >
           <TasklistBar />
           <div
@@ -3464,7 +3464,7 @@ function ChildComments({
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         }}
-        style={replyVisible ? { display: "block" } : undefined}
+        {...(replyVisible ? stylex.props(styles.replyVisible) : {})}
       >
         Reply
       </div>
@@ -3483,7 +3483,7 @@ function ChildComments({
         {booleanField(issue.viewerCanComment) ? (
           <div
             className="child-comment-input-form"
-            style={formOpen ? { display: "block", visibility: "visible" } : undefined}
+            {...(formOpen ? stylex.props(styles.childCommentFormVisible) : {})}
           >
             <form action={newCommentAction} method="post" encType="multipart/form-data">
               <input
@@ -3513,7 +3513,7 @@ function ChildComments({
               </div>
               <div
                 className="notification-receiver"
-                style={notificationVisible ? { display: "block" } : undefined}
+                {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
               >
                 <span className="notification-receiver-title">Notification receivers </span>
                 <span className="notification-receiver-list"></span>
@@ -3623,7 +3623,7 @@ function CommentUpdateForm({
     <div
       id={`comment-editform-${commentId}`}
       className="comment-update-form"
-      style={formOpen ? { display: "block" } : undefined}
+      {...(formOpen ? stylex.props(styles.replyVisible) : {})}
     >
       <form
         action={prefixBasePath(
@@ -3820,7 +3820,7 @@ function MarkdownEditor({
         </div>
         <div
           className="notification-receiver"
-          style={notificationVisible ? { display: "block" } : undefined}
+          {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
         >
           <span className="notification-receiver-title">
             {t("notification.receiver.list.title")}
