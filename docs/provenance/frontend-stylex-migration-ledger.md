@@ -905,3 +905,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 354
 
 - Authenticated milestone-detail delete-confirm modal state: moved conditional modal `display:block`/`display:none` into `styles.deleteModalVisible` and `styles.deleteModalHidden`, preserving the legacy modal DOM, aria state, copy, deletion interaction, and responsive geometry. Focused `stylex-project-milestone-detail-delete-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.
+
+## Batch 355
+
+- Authenticated board-post comment-delete modal state: moved conditional modal `display:block` into `styles.deleteModalVisible`, preserving the legacy comment-delete DOM, copy, React visibility interaction, and responsive geometry. Focused `stylex-project-post-detail-delete-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.

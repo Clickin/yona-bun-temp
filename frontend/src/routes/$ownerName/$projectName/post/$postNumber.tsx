@@ -559,7 +559,8 @@ function ProjectPostDetailBody({
       <div
         id="deleteConfirm"
         className={`modal ${deleteModalOpen ? "in " : "hide "}fade`}
-        style={deleteModalOpen ? { display: "block" } : undefined}
+        {...(deleteModalOpen ? stylex.props(styles.deleteModalVisible) : {})}
+        data-stylex-owner="post-detail-delete-modal"
         aria-hidden={deleteModalOpen ? "false" : undefined}
       >
         <div className="modal-header">
