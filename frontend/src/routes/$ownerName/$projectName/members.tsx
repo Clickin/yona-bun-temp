@@ -708,7 +708,14 @@ function ProjectMemberListItem({
       </div>
       <div data-stylex-owner="project-members-member-id" {...stylex.props(styles.memberId)}>
         @{loginId}
-        {booleanField(memberRecord.isGuest) ? <span className="guest">GUEST</span> : null}
+        {booleanField(memberRecord.isGuest) ? (
+          <span
+            className={`${stylex.props(styles.guestBadge).className} guest`}
+            data-stylex-owner="project-members-guest-badge"
+          >
+            GUEST
+          </span>
+        ) : null}
       </div>
       <div
         className={`${stylex.props(styles.memberSetting).className} member-setting`}
@@ -816,6 +823,11 @@ const styles = stylex.create({
     textAlign: "left",
     whiteSpace: "nowrap",
     width: "100%",
+  },
+  guestBadge: {
+    backgroundColor: "rgba(255, 165, 0, 0.8)",
+    color: "#fff",
+    padding: "0 4px",
   },
   // _page.less `.members.project .member .member-setting .owner`.
   ownerLabel: {

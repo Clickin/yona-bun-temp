@@ -1289,12 +1289,6 @@ pre code {
   border: 0;
 }
 
-.members.project .guest {
-  padding: 0 4px;
-  color: #fff;
-  background-color: rgb(255 165 0 / 80%);
-}
-
 .project-overview-home h5 {
   padding-left: 10px;
   margin-bottom: 20px;
