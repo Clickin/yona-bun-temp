@@ -3805,6 +3805,7 @@ function TasklistBar() {
         <div
           className={`${stylex.props(styles.taskProgressBar).className} bar red`}
           data-stylex-owner="project-issue-detail-task-progress-bar"
+          data-stylex-owner-instance="tasklist"
           title="Tasklist"
         ></div>
       </div>

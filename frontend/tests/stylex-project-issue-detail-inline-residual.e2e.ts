@@ -40,8 +40,9 @@ test("issue detail owns original-message and editor static declarations", async 
   const taskProgressBar = page.locator(
     '[data-stylex-owner="project-issue-detail-task-progress-bar"]',
   );
-  await expect(taskProgressBar).toHaveCount(1);
+  await expect(taskProgressBar).toHaveCount(2);
   await expect(taskProgressBar).toHaveCSS("width", "0px");
+  await expect(taskProgressBar).toHaveAttribute("data-stylex-owner-instance", "tasklist");
   await expect(taskProgressBar).not.toHaveAttribute("style", /width/);
   await expect(taskProgressBar).toHaveClass(/bar/);
 

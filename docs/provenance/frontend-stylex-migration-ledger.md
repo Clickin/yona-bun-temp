@@ -619,3 +619,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 281
 
 - Anonymous home intro theme boundary: moved the route-specific background-image variable/theme from `theme.stylex.ts` into `-home-route-screen.stylex.ts`, leaving the shared theme module with only the breakpoint constant. Focused `stylex-anonymous-home-hero.e2e.ts` verifies route-local ownership and global-theme absence; rendered hero behavior is unchanged.
+## Batch 282
+
+- `/$ownerName/$projectName/issue/$issueNumber` tasklist duplicate-owner correction: documented the two legacy tasklist partial positions and added a stable `tasklist` owner-instance marker while retaining the same Dynamic StyleX zero-width declaration and geometry. Focused E2E verifies both instances.
