@@ -27,6 +27,9 @@ test("issue editform owns static label picker geometry", async ({ page }) => {
   expect(override).toContain(".select2-search-field input");
   expect(route).not.toContain('style={{ display: "inline-block" }}');
   expect(route).not.toContain('style={{ width: "10px" }}');
+  expect(route).not.toContain("style={{ background:");
+  expect(route).toContain("styles.labelBackground");
+  expect(stylexSource).toContain("labelBackground: (backgroundColor: string)");
   expect(stylexSource).toContain('labelPicker: { display: "inline-block" }');
   expect(stylexSource).toContain('labelSearchInput: { width: "10px" }');
   expect(route).toContain('data-stylex-owner="issue-editform-label-picker"');

@@ -954,7 +954,7 @@ function LegacyEditLabelSelect({
           <strong
             className="label issue-label active static"
             data-label-id={labelId}
-            style={{ background: stringField(label.color, "") }}
+            {...stylex.props(styles.labelBackground(stringField(label.color, "")))}
           >
             {labelName}
           </strong>
