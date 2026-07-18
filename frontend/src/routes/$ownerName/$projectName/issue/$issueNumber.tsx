@@ -2207,6 +2207,7 @@ function IssueChildIssues({
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
+  // Dynamic StyleX carries the server-derived percentage through a custom property.
   const progressStyle = stylex.props(styles.subtaskProgressBar(`${percentage}%`));
   const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
 

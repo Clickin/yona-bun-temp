@@ -60,7 +60,7 @@ test("issue detail owns original-message and editor static declarations", async 
   await expect(subtaskProgressBar).toHaveCSS("width", "15px");
   await expect(subtaskProgressBar).toHaveClass(/bar/);
   await expect(subtaskProgressBar).toHaveClass(/red/);
-  await expect(subtaskProgressBar).not.toHaveAttribute("style", /width/);
+  await expect(subtaskProgressBar).not.toHaveAttribute("style", /(?:^|;)\s*width:/);
 
   const toggle = page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"]');
   await expect(toggle).toHaveCSS("padding-left", "5px");

@@ -633,3 +633,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 285
 
 - `/$ownerName/$projectName/post/$postNumber` loaded board-post detail tasklist state: moved the fixed zero-width tasklist progress bar into `-post-detail.stylex.ts`, preserving both legacy tasklist mounts, `task-progress`, `bar red`, and the `Tasklist` title. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies each owner, computed `0px` width, class contract, and absence of inline width; live legacy visual parity remains unverified.
+
+## Batch 286
+
+- `/$ownerName/$projectName/issue/$issueNumber` Dynamic StyleX subtask assertion correction: documented that the server-derived percentage is emitted through StyleX's custom property carrier and updated the focused E2E to reject only a literal inline `width` declaration while retaining computed geometry verification.
