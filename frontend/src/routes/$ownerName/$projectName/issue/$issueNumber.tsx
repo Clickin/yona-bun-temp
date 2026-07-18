@@ -1379,20 +1379,30 @@ function IssuePostingHistory({
       <div
         ref={modalRef}
         id="-yona-posting-history"
-        className={open ? "modal in" : "modal hide"}
+        className={`${stylex.props(styles.modal).className} ${open ? "modal in" : "modal hide"}`}
+        data-stylex-owner="issue-detail-history-modal"
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => setOpen(false))}
       >
-        <div className="modal-header">
-          <button type="button" className="close" aria-hidden="true" onClick={closeHistory}>
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
+        >
+          <button
+            type="button"
+            className={`${stylex.props(styles.modalClose).className} close`}
+            aria-hidden="true"
+            onClick={closeHistory}
+          >
             ×
           </button>
           <h5 className="nm">{t("change.history")}</h5>
         </div>
-        <div className="modal-body">
+        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{historyMarkdown}</ReactMarkdown>
         </div>
-        <div className="modal-footer">
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
+        >
           <button className="ybtn ybtn-info ybtn-small" aria-hidden="true" onClick={closeHistory}>
             {t("button.confirm")}
           </button>
@@ -1579,18 +1589,25 @@ function IssueVoterListDialog({
       <div
         ref={modalRef}
         id={id}
-        className={open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}
+        className={`${stylex.props(styles.modal).className} ${open ? "modal hide voters-dialog in" : "modal hide voters-dialog"}`}
+        data-stylex-owner="issue-detail-voters-modal"
         {...(open ? stylex.props(styles.votersModalVisible) : {})}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, () => onClose?.())}
       >
-        <div className="modal-header">
-          <button type="button" className="close" onClick={onClose}>
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
+        >
+          <button
+            type="button"
+            className={`${stylex.props(styles.modalClose).className} close`}
+            onClick={onClose}
+          >
             ×
           </button>
           <h5 className="nm">{t("issue.voters")}</h5>
         </div>
-        <div className="modal-body">
+        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
           <ul className="unstyled">
             {voters.map((voter) => (
               <li key={stringField(voter.loginId)}>
@@ -1615,7 +1632,9 @@ function IssueVoterListDialog({
             ))}
           </ul>
         </div>
-        <div className="modal-footer">
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
+        >
           <button id="copyEmailBtn" className="ybtn ybtn-info ybtn-small" onClick={copyEmailText}>
             {t("button.copy.email")}
           </button>
@@ -2535,7 +2554,8 @@ function IssueDetailKeymap({ project }: { project: ProjectContainer }) {
       <div
         ref={modalRef}
         id="helpKeys"
-        className={open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}
+        className={`${stylex.props(styles.modal, styles.keymapModal).className} ${open ? "modal fade keymap-help in" : "modal hide fade keymap-help"}`}
+        data-stylex-owner="issue-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"
         {...(open ? stylex.props(styles.keymapModalVisible) : {})}
@@ -4181,20 +4201,29 @@ function DeleteConfirm({
       <div
         ref={modalRef}
         id="deleteConfirm"
-        className={open ? "modal fade in" : "modal hide fade"}
+        className={`${stylex.props(styles.modal).className} ${open ? "modal fade in" : "modal hide fade"}`}
+        data-stylex-owner="issue-detail-delete-confirm-modal"
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, onCancel)}
       >
-        <div className="modal-header">
-          <button type="button" className="close" onClick={closeDialog}>
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
+        >
+          <button
+            type="button"
+            className={`${stylex.props(styles.modalClose).className} close`}
+            onClick={closeDialog}
+          >
             ×
           </button>
-          <h3>{title}</h3>
+          <h3 className={stylex.props(styles.modalTitle).className}>{title}</h3>
         </div>
-        <div className="modal-body">
-          <p>{message}</p>
+        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
+          <p className={stylex.props(styles.modalBodyText).className}>{message}</p>
         </div>
-        <div className="modal-footer">
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
+        >
           <button type="button" className="ybtn ybtn-danger" onClick={confirmDelete}>
             {confirmLabel}
           </button>
@@ -4244,21 +4273,30 @@ function CommentDeleteConfirm({
       <div
         ref={modalRef}
         id="comment-delete-modal"
-        className={`modal ${open ? "in " : "hide "}fade`}
+        className={`${stylex.props(styles.modal).className} modal ${open ? "in " : "hide "}fade`}
+        data-stylex-owner="issue-detail-comment-delete-modal"
         aria-hidden={open ? "false" : undefined}
         tabIndex={open ? -1 : undefined}
         onKeyDown={(event) => closeOnEscape(event, onCancel)}
       >
-        <div className="modal-header">
-          <button type="button" className="close" onClick={closeDialog}>
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalHeader).className} modal-header`}
+        >
+          <button
+            type="button"
+            className={`${stylex.props(styles.modalClose).className} close`}
+            onClick={closeDialog}
+          >
             ×
           </button>
-          <h3>{title}</h3>
+          <h3 className={stylex.props(styles.modalTitle).className}>{title}</h3>
         </div>
-        <div className="modal-body">
-          <p>{message}</p>
+        <div className={`${stylex.props(styles.modalSection).className} modal-body`}>
+          <p className={stylex.props(styles.modalBodyText).className}>{message}</p>
         </div>
-        <div className="modal-footer">
+        <div
+          className={`${stylex.props(styles.modalSection, styles.modalFooter).className} modal-footer`}
+        >
           <button
             id="comment-delete-confirm"
             type="button"
