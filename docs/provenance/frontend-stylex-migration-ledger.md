@@ -1311,3 +1311,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 494
 
 - `/$ownerName/$projectName/branches` populated branch table residual: moved the remaining table-cell vertical-align/border reset and action-cell width/min-width/text alignment into route-local StyleX, and removed the complete route-scoped `.branch-list-wrap` fallback including redundant pull-request pseudo-dot rules. The explicit React-owned dot span, legacy table/row/cell classes, buttons, and mutations remain unchanged; shared table and Yobi button fallbacks remain. Focused `stylex-project-branches.e2e.ts` verifies legacy branch templates, all stable owners, computed reset/action/dot geometry, and exact route-scoped fallback retirement.
+
+## Batch 498
+
+- Authenticated `/$ownerName/$projectName` project-history activity typography: moved legacy `.header-text` overflow, ellipsis, typography, and `.actor` emphasis into `projectHistoryStyles` while preserving the history partial DOM, links, copy, and React behavior. Existing route-local whereis, where, title, and date owners cover the remaining declarations, so the exact history header/actor/whereis/title/date hierarchy is retired; generic activity-stream/list geometry remains fallback. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. Focused `stylex-project-history-typography.e2e.ts` verifies legacy/LESS evidence, stable owners, and exact fallback removal; live legacy visual parity remains unverified.

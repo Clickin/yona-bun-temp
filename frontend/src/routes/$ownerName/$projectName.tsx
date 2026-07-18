@@ -18,7 +18,18 @@ const projectHistoryStyles = stylex.create({
     marginBottom: "6px",
     padding: "1px 0 6px",
   },
-  header: { marginBottom: "5px" },
+  header: {
+    marginTop: "0",
+    marginBottom: "5px",
+    overflow: "hidden",
+    color: "#666",
+    fontSize: "12px",
+    lineHeight: "100%",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    wordBreak: "break-all",
+  },
+  actor: { fontWeight: "bold" },
   others: { paddingLeft: "0" },
   date: { marginLeft: "0" },
   pullRequestDate: { color: "#999" },
@@ -1792,7 +1803,12 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                     className={`${stylex.props(projectHistoryStyles.header).className} header-text`}
                     data-stylex-owner="project-history-header"
                   >
-                    <HistoryLink basePath={basePath} href={actorUrl} className="actor">
+                    <HistoryLink
+                      basePath={basePath}
+                      href={actorUrl}
+                      className={`actor ${stylex.props(projectHistoryStyles.actor).className}`}
+                      stylexOwner="project-history-actor"
+                    >
                       {stringField(itemRecord.actorName, "")}
                     </HistoryLink>{" "}
                     {t(`project.history.type.${itemType}`)}{" "}
@@ -1848,15 +1864,17 @@ function HistoryLink({
   children,
   className,
   href,
+  stylexOwner,
 }: {
   basePath: string;
   children: ReactNode;
   className: string;
   href: string;
+  stylexOwner?: string;
 }) {
   if (href === "#") {
     return (
-      <Link to="." className={className}>
+      <Link to="." className={className} data-stylex-owner={stylexOwner}>
         {children}
       </Link>
     );
@@ -1864,14 +1882,19 @@ function HistoryLink({
 
   if (href.startsWith("http://") || href.startsWith("https://")) {
     return (
-      <Link to={href} className={className}>
+      <Link to={href} className={className} data-stylex-owner={stylexOwner}>
         {children}
       </Link>
     );
   }
 
   return (
-    <Link activeProps={{}} to={toRoutePath(basePath, href)} className={className}>
+    <Link
+      activeProps={{}}
+      to={toRoutePath(basePath, href)}
+      className={className}
+      data-stylex-owner={stylexOwner}
+    >
       {children}
     </Link>
   );

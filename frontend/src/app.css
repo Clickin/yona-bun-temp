@@ -1815,52 +1815,6 @@ h1 {
   border-bottom: 0 none;
 }
 
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .header-text {
-  margin-top: 0;
-  margin-bottom: 6px;
-  overflow: hidden;
-  color: #666;
-  font-size: 12px;
-  line-height: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  word-break: break-all;
-}
-
-.content-container
-  .main-stream
-  .activity-streams
-  .activity-stream
-  .activity-desc
-  .header-text
-  .actor {
-  font-weight: bold;
-}
-
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .whereis {
-  color: #333;
-  font-size: 11px;
-}
-
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .whereis .where {
-  display: inline-block;
-  padding: 3px 5px;
-  color: #51aacc;
-  font-weight: bold;
-  background-color: #f7f7f7;
-  border-radius: 2px;
-  box-shadow: inset 0 0 5px #fff;
-}
-
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .whereis .title {
-  font-weight: bold;
-}
-
-.content-container .main-stream .activity-streams .activity-stream .activity-desc .others .date {
-  margin-left: 5px;
-  color: #bbb;
-}
-
 .lede {
   margin: 0 0 18px;
   max-width: 52ch;
