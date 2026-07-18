@@ -765,3 +765,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 319
 
 - `/$ownerName/$projectName/posts` populated board-list label state: moved server-provided label background, text, and inset shadow paint from the legacy `issueLabelStyle(label.color)` inline owner into colocated `-posts.stylex.ts` Dynamic StyleX `styles.labelPaint(backgroundColor, boxShadow, color)`, preserving legacy label classes, category/id metadata, copy, filtering behavior, and responsive geometry. Focused `stylex-project-posts-inline-residual.e2e.ts` verifies the board and common issue-label Scala sources, route-local dynamic owner, computed runtime paint, absence of literal inline background, and desktop/mobile containment; live legacy visual parity remains unverified.
+
+## Batch 320
+
+- Project pull-request changes comment-delete modal state: moved the conditional modal `display:block` declaration into `styles.commentDeleteModalVisible`, preserving the legacy modal DOM, delete copy, interaction, and responsive containment. Focused `stylex-project-pull-request-changes-delete-modal.e2e.ts` verifies the legacy view/partial sources, stable owner, StyleX source, and absence of the former inline display; live legacy visual parity remains unverified.

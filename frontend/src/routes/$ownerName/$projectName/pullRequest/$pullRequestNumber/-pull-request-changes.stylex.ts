@@ -21,4 +21,5 @@ export const styles = stylex.create({
   diffMeta: { cursor: "pointer" },
   threadReviewForm: { display: "block" },
   visibleForm: { display: "block" },
+  commentDeleteModalVisible: { display: "block" },
 });

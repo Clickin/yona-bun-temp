@@ -36,6 +36,7 @@ const sx = {
   browse: stylex.props(styles.browse),
   author: stylex.props(styles.author),
   diffs: stylex.props(styles.diffs),
+  commentDeleteModalVisible: stylex.props(styles.commentDeleteModalVisible),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -705,9 +706,10 @@ function CommentDeleteModal({
   return (
     <>
       <div
+        {...(isOpen ? sx.commentDeleteModalVisible : undefined)}
         id="comment-delete-modal"
         className={isOpen ? "modal hide fade in" : "modal hide fade"}
-        style={isOpen ? { display: "block" } : undefined}
+        data-stylex-owner="pull-request-changes-comment-delete-modal"
       >
         <div className="modal-header">
           <button type="button" className="close" onClick={closeModal}>

@@ -3400,6 +3400,8 @@ Batch 318 applies the workflow to the authenticated `/_import` repository-authen
 
 Batch 319 applies the workflow to the authenticated `/$ownerName/$projectName/posts` populated board-list label state. Server-provided label background, text, and inset shadow paint moves from the legacy inline helper to a route-local Dynamic StyleX owner while preserving the board label classes, metadata, copy, filtering behavior, and desktop/mobile containment; the focused posts residual test covers source evidence, computed paint, and absence of literal inline declarations.
 
+Batch 320 applies the workflow to the authenticated project pull-request changes comment-delete modal state. The conditional modal `display:block` declaration moves from a React inline style to a conditional StyleX owner, preserving the legacy modal DOM, delete copy, interaction, and responsive containment; the focused changes residual test covers source evidence and the absence of the former inline display.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
