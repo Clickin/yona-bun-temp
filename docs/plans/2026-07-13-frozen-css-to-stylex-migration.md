@@ -3402,6 +3402,8 @@ Batch 319 applies the workflow to the authenticated `/$ownerName/$projectName/po
 
 Batch 320 applies the workflow to the authenticated project pull-request changes comment-delete modal state. The conditional modal `display:block` declaration moves from a React inline style to a conditional StyleX owner, preserving the legacy modal DOM, delete copy, interaction, and responsive containment; the focused changes residual test covers source evidence and the absence of the former inline display.
 
+Batch 321 applies the workflow to the populated public `/$user` profile filter popover anchors. The static `position:relative` declarations move from React inline styles to a shared route-local StyleX owner, preserving the legacy common partial DOM, hover/focus popover behavior, and responsive containment; the focused user-profile test covers source evidence, computed position, and absence of literal inline declarations.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

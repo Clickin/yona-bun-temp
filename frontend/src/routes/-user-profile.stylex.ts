@@ -26,4 +26,7 @@ export const styles = stylex.create({
   progressBar: (width: string) => ({ width }),
   // Legacy user/partial_issues.scala.html paints each API-provided label color.
   issueLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
+  // Legacy common/twoColumnModeCheckboxArea.scala.html and showSubtasksCheckbox.scala.html
+  // require a positioned anchor for the React-owned popover.
+  popoverAnchor: { position: "relative" },
 });

@@ -1159,7 +1159,8 @@ function TwoColumnModeCheckbox() {
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      {...stylex.props(styles.popoverAnchor)}
+      data-stylex-owner="user-profile-two-column-popover-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}
@@ -1225,7 +1226,8 @@ function ShowSubtasksCheckbox() {
       className="show-subtasks mr10"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      style={{ position: "relative" }}
+      {...stylex.props(styles.popoverAnchor)}
+      data-stylex-owner="user-profile-show-subtasks-popover-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
       onMouseEnter={showPopover}

@@ -769,3 +769,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 320
 
 - Project pull-request changes comment-delete modal state: moved the conditional modal `display:block` declaration into `styles.commentDeleteModalVisible`, preserving the legacy modal DOM, delete copy, interaction, and responsive containment. Focused `stylex-project-pull-request-changes-delete-modal.e2e.ts` verifies the legacy view/partial sources, stable owner, StyleX source, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 321
+
+- Populated public `/$user` profile filter popover anchors: moved two static `position:relative` declarations into `-user-profile.stylex.ts` `styles.popoverAnchor`, preserving the legacy common partial DOM and hover/focus behavior. Focused `stylex-user-profile.e2e.ts` verifies the legacy source, stable owners, computed position, and absence of literal inline declarations; live legacy visual parity remains unverified.

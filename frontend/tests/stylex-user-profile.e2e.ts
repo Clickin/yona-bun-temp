@@ -7,6 +7,24 @@ test("public user profile renders legacy info and stream owners", async ({ page 
     new URL("../../yona-original/app/views/user/partial_projectlist.scala.html", import.meta.url),
     "utf8",
   );
+  const twoColumnLegacy = await readFile(
+    new URL(
+      "../../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const subtasksLegacy = await readFile(
+    new URL(
+      "../../yona-original/app/views/common/showSubtasksCheckbox.scala.html",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const styleSource = await readFile(
+    new URL("../src/routes/-user-profile.stylex.ts", import.meta.url),
+    "utf8",
+  );
   expect(legacy).toContain('<div class="pull-left" style="margin-left: 10px;">');
   expect(source).toContain('data-stylex-owner="user-profile-project-info"');
   expect(source).toContain("projectInfo");
@@ -14,6 +32,12 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   expect(source).toContain('data-stylex-owner="user-profile-days-ago-input"');
   expect(source).toContain("daysAgoInput");
   expect(source).not.toContain('style={{ margin: "0px 5px", verticalAlign: "bottom" }}');
+  expect(twoColumnLegacy).toContain('class="two-column-icon mr10 hide-in-mobile"');
+  expect(subtasksLegacy).toContain('class="show-subtasks mr10"');
+  expect(source).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
+  expect(source).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
+  expect(source).not.toContain('style={{ position: "relative" }}');
+  expect(styleSource).toContain('popoverAnchor: { position: "relative" }');
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.route("**/api/v1/session", (route) =>
@@ -81,6 +105,14 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   await expect(page.locator('[data-stylex-owner="user-profile-info"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="user-profile-stream"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="user-profile-tabs"]')).toBeVisible();
+  for (const owner of [
+    "user-profile-two-column-popover-anchor",
+    "user-profile-show-subtasks-popover-anchor",
+  ]) {
+    const anchor = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(anchor).toHaveCSS("position", "relative");
+    await expect(anchor).not.toHaveAttribute("style", /position/u);
+  }
   await page.getByRole("button", { name: /Projects/i }).click();
   const projectInfo = page.locator('[data-stylex-owner="user-profile-project-info"]');
   await expect(projectInfo).toBeVisible();
