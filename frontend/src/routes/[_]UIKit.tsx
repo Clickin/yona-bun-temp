@@ -345,10 +345,15 @@ function IssueLabel({
   color: string;
   editable?: boolean;
 }) {
+  const labelBackgroundProps = stylex.props(sx.styles.issueLabelBackground(color));
+  const labelTextProps = stylex.props(sx.styles.issueLabelText);
+
   return (
     <button
-      className={`issue-label active${editable ? " editable" : ""}`}
-      style={{ backgroundColor: color, color: "#fff" }}
+      {...labelBackgroundProps}
+      {...labelTextProps}
+      className={`issue-label active${editable ? " editable" : ""} ${labelBackgroundProps.className ?? ""} ${labelTextProps.className ?? ""}`.trim()}
+      data-stylex-owner="uikit-issue-label"
     >
       {children}
       <span className="delete">&times;</span>

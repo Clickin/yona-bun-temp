@@ -993,3 +993,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 378
 
 - Authenticated root user-menu site-admin action state: moved the fixed admin wrench link font size from the literal inline declaration into the existing `authenticatedSiteUserMenuStyles.adminLink` owner, preserving the legacy user-menu DOM, icon, navigation, and responsive geometry. Focused `stylex-root-usermenu-admin-font.e2e.ts` verifies the legacy source contract, stable owner, StyleX ownership, and absence of the former inline font declaration; live legacy visual parity remains unverified.
+
+## Batch 379
+
+- UIKit issue-label state: moved the runtime label background color into `sx.styles.issueLabelBackground(color)` Dynamic StyleX and fixed white text paint into `sx.styles.issueLabelText`, preserving the legacy label DOM, copy, and interaction. Focused `stylex-uikit-issue-label-dynamic.e2e.ts` verifies the stable owner, Dynamic/static StyleX sources, and absence of the former inline paint; live legacy visual parity remains unverified.

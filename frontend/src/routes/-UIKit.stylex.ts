@@ -1,6 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const styles = stylex.create({
+  issueLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
+  issueLabelText: { color: "#fff" },
   // Mirrors yobi.OriginalMessage.js's generated original-message toggle.
   originalMessageToggle: {
     borderStyle: "none",

@@ -3514,6 +3514,8 @@ Batch 377 applies the workflow to the authenticated labels-management preset-col
 
 Batch 378 applies the workflow to the authenticated root user-menu site-admin action state. The fixed admin wrench link font size moves from a literal inline declaration into the existing route-local StyleX owner while preserving the legacy user-menu DOM, icon, navigation, and responsive geometry; the focused admin-font test covers the legacy source contract and absence of the former inline font declaration.
 
+Batch 379 applies the workflow to the UIKit issue-label state. The runtime label background color moves to Dynamic StyleX and fixed white text paint moves to colocated StyleX while preserving the legacy label DOM, copy, and interaction; the focused UIKit label test covers the owner and absence of the former inline paint.
+
 
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
