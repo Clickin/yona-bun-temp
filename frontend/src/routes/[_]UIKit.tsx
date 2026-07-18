@@ -1,6 +1,8 @@
 import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute } from "@tanstack/react-router";
 import { prefixBasePath } from "../runtime-config";
+import * as sx from "./-UIKit.stylex";
 
 export const Route = createFileRoute("/_UIKit")({
   component: UIKitRoute,
@@ -247,7 +249,8 @@ function OriginalMessageDemo() {
         <blockquote>
           <button
             type="button"
-            style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}
+            {...stylex.props(sx.styles.originalMessageToggle)}
+            data-stylex-owner="uikit-original-message-toggle"
             onClick={() => {
               setShowsOriginalMessage((current) => !current);
             }}

@@ -3348,6 +3348,9 @@ Batch 293 corrects the pull-request action-wrapper focused geometry assertion to
 
 Batch 294 applies the workflow to the authenticated board post keymap-help wrapper. Its fixed legacy padding and left margin moved to route-local StyleX while the conditional modal display remains React state-owned; the focused residual test covers source evidence, computed spacing, modal interaction, and desktop/mobile containment.
 
+Batch 298 applies the workflow to the standalone `/_UIKit` original-message toggle. Its fixed generated-button border and horizontal padding moved to route-local StyleX while React owns the show/hide state; the focused UI kit test covers legacy source evidence, computed zero border/5px padding, toggle interaction, and desktop/mobile containment.
+
+
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,

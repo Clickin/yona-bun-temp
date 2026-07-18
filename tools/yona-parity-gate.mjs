@@ -372,6 +372,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/-(?:restricted-view|ui-kit-views)\.tsx$/i,
       /^frontend\/src\/routes\/\[_\]UIKit\/route\.tsx$/i,
       /^frontend\/src\/routes\/\[_\]UIKit\.tsx$/i,
+      /^frontend\/src\/routes\/-UIKit\.stylex\.ts$/i,
       /^frontend\/src\/routes\/-restricted\.stylex\.ts$/i,
       /^frontend\/src\/routes\/restricted\.tsx$/i,
       /^frontend\/src\/routes\/restricted\/route\.tsx$/i,

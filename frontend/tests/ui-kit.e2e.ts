@@ -16,6 +16,19 @@ const UIKIT_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/[_]UIKit.tsx", import.meta.url)),
   "utf8",
 );
+const UIKIT_STYLEX_SOURCE = readFileSync(
+  fileURLToPath(new URL("../src/routes/-UIKit.stylex.ts", import.meta.url)),
+  "utf8",
+);
+const ORIGINAL_MESSAGE_SOURCE = readFileSync(
+  fileURLToPath(
+    new URL(
+      "../../yona-original/public/javascripts/common/yobi.OriginalMessage.js",
+      import.meta.url,
+    ),
+  ),
+  "utf8",
+);
 const ROOT_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/__root.tsx", import.meta.url)),
   "utf8",
@@ -265,6 +278,18 @@ test("root shell owns login dialog state without delegated document modal mutati
 
 test("UI kit route owns original-message demo state", async () => {
   expect(UIKIT_ROUTE_SOURCE).toContain('data-original-message-owner="route"');
+  expect(UIKIT_ROUTE_SOURCE).toContain('data-stylex-owner="uikit-original-message-toggle"');
+  expect(UIKIT_ROUTE_SOURCE).toContain("sx.styles.originalMessageToggle");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain(
+    "style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}",
+  );
+  expect(UIKIT_STYLEX_SOURCE).toContain('borderStyle: "none"');
+  expect(UIKIT_STYLEX_SOURCE).toContain("borderWidth: 0");
+  expect(UIKIT_STYLEX_SOURCE).toContain("paddingLeft: 5");
+  expect(UIKIT_STYLEX_SOURCE).toContain("paddingRight: 5");
+  expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('border', 0)");
+  expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-left', '5px')");
+  expect(ORIGINAL_MESSAGE_SOURCE).toContain(".css('padding-right', '5px')");
   expect(UIKIT_ROUTE_SOURCE).toContain("setShowsViaEmailDemo");
   expect(UIKIT_ROUTE_SOURCE).not.toContain("yobi:original-message-scan");
 });
@@ -739,7 +764,16 @@ test("standalone UI kit route owns legacy data-via-email original message", asyn
   await page.locator('.switch.deactivate input[type="checkbox"]').check();
   await expect(fixture).toHaveAttribute("data-original-message-owner", "route");
   await expect(fixture.locator("blockquote > :first-child")).toHaveText("...");
-  await expect(fixture.locator('button[type="button"]')).toHaveText("...");
+  const toggle = fixture.locator('button[type="button"]');
+  await expect(toggle).toHaveText("...");
+  await expect(toggle).toHaveAttribute("data-stylex-owner", "uikit-original-message-toggle");
+  await expect(toggle).not.toHaveAttribute("style", /.+/);
+  await expect(toggle).toHaveCSS("border-top-width", "0px");
+  await expect(toggle).toHaveCSS("border-right-width", "0px");
+  await expect(toggle).toHaveCSS("border-bottom-width", "0px");
+  await expect(toggle).toHaveCSS("border-left-width", "0px");
+  await expect(toggle).toHaveCSS("padding-left", "5px");
+  await expect(toggle).toHaveCSS("padding-right", "5px");
   await expect(page.locator("#via-email-delimiter")).toBeHidden();
   await expect(page.locator("#via-email-hidden-line")).toBeHidden();
   await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
@@ -747,20 +781,31 @@ test("standalone UI kit route owns legacy data-via-email original message", asyn
   await page.evaluate(() => {
     document.dispatchEvent(new Event("yobi:original-message-scan"));
   });
-  await expect(fixture.locator('button[type="button"]')).toHaveCount(1);
+  await expect(toggle).toHaveCount(1);
   await expect(page.locator("#via-email-delimiter")).toBeHidden();
   await expect(page.locator("#via-email-hidden-line")).toBeHidden();
   await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
 
-  await fixture.locator('button[type="button"]').click();
+  await toggle.click();
   await expect(page.locator("#via-email-delimiter")).toBeVisible();
   await expect(page.locator("#via-email-hidden-line")).toBeVisible();
   await expect(page.locator("#via-email-hidden-sibling")).toBeVisible();
 
-  await fixture.locator('button[type="button"]').click();
+  await toggle.click();
   await expect(page.locator("#via-email-delimiter")).toBeHidden();
   await expect(page.locator("#via-email-hidden-line")).toBeHidden();
   await expect(page.locator("#via-email-hidden-sibling")).toBeHidden();
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const toggleBox = await toggle.boundingBox();
+    expect(toggleBox).not.toBeNull();
+    expect(toggleBox!.x).toBeGreaterThanOrEqual(0);
+    expect(toggleBox!.x + toggleBox!.width).toBeLessThanOrEqual(viewport.width);
+  }
 
   await page.locator('.switch.deactivate input[type="checkbox"]').uncheck();
   await expect(fixture).toHaveCount(0);

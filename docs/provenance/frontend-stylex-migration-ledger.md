@@ -682,3 +682,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 294
 
 - `/$ownerName/$projectName/post/$postNumber` keymap-help wrapper state: moved the fixed legacy `padding:10px 0; margin-left:55px` spacing into the route-local `keymapWrapper` StyleX owner, preserving the `pull-left` wrapper, keymap button/modal interaction, and responsive containment. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies the legacy help template, computed spacing, no literal inline style, visible modal state, and desktop/mobile containment; live legacy visual parity remains unverified.
+
+## Batch 298
+
+- `/_UIKit` original-message toggle state: moved the fixed `border:0; padding-left:5px; padding-right:5px` generated-toggle declarations from the legacy OriginalMessage behavior into route-local StyleX, preserving the `...` button, React show/hide interaction, and desktop/mobile containment. Focused `ui-kit.e2e.ts` verifies legacy source evidence, computed zero border/5px padding, stable ownership, and toggle behavior; live legacy visual parity remains unverified.
