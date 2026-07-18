@@ -2616,13 +2616,6 @@ h1 {
   text-decoration: underline;
 }
 
-.project-private,
-.project-protected {
-  margin-left: 5px;
-  color: #788ba7;
-  font-size: 14px;
-}
-
 .user-project-list .star {
   font-size: 24px;
   color: rgba(255, 255, 255, 0.22);

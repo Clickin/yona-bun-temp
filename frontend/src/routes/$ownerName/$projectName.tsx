@@ -1193,7 +1193,10 @@ export function ProjectHomeBody({
               </Link>
             </span>
             {booleanField(projectRecord.isPrivate) ? (
-              <span className="project-private">
+              <span
+                className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
+                data-stylex-owner="project-home-private-badge"
+              >
                 <i className="yobicon-lock"></i>
               </span>
             ) : null}
@@ -2569,12 +2572,19 @@ function ProjectHeaderContent({
                 </i>
               </span>
               {booleanField(recordField(project).isPrivate) ? (
-                <span className="project-private">
+                <span
+                  className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-private`}
+                  data-stylex-owner="project-header-private-badge"
+                >
                   <i className="yobicon-lock"></i>
                 </span>
               ) : null}
               {projectIsProtected(project) ? (
-                <span className="project-protected" title="Group Project">
+                <span
+                  className={`${stylex.props(projectHomeStyles.projectVisibilityBadge).className} project-protected`}
+                  data-stylex-owner="project-header-protected-badge"
+                  title="Group Project"
+                >
                   G
                 </span>
               ) : null}

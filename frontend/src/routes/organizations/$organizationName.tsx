@@ -419,7 +419,11 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             ) : null}
             {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
             {isProtected ? (
-              <span className="project-protected" title="Group Project">
+              <span
+                className={`${stylex.props(styles.projectVisibilityBadge).className} project-protected`}
+                data-stylex-owner="organization-project-protected-badge"
+                title="Group Project"
+              >
                 G
               </span>
             ) : null}

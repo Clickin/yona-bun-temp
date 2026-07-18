@@ -7,6 +7,7 @@ export const organizationHomeColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  projectVisibilityBadge: { color: "#788ba7", fontSize: "14px", marginLeft: "5px" },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
   overview: { color: organizationHomeColors.accentText },
