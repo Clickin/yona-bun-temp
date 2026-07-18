@@ -622,3 +622,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 282
 
 - `/$ownerName/$projectName/issue/$issueNumber` tasklist duplicate-owner correction: documented the two legacy tasklist partial positions and added a stable `tasklist` owner-instance marker while retaining the same Dynamic StyleX zero-width declaration and geometry. Focused E2E verifies both instances.
+## Batch 283
+
+- `/$ownerName/$projectName/issue/$issueNumber` tasklist dual-position verification: documented the two legacy tasklist mounts and updated the focused E2E to assert each StyleX-owned bar independently, retaining the same zero-width output and legacy DOM contract.

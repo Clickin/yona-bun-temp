@@ -41,10 +41,12 @@ test("issue detail owns original-message and editor static declarations", async 
     '[data-stylex-owner="project-issue-detail-task-progress-bar"]',
   );
   await expect(taskProgressBar).toHaveCount(2);
-  await expect(taskProgressBar).toHaveCSS("width", "0px");
-  await expect(taskProgressBar).toHaveAttribute("data-stylex-owner-instance", "tasklist");
-  await expect(taskProgressBar).not.toHaveAttribute("style", /width/);
-  await expect(taskProgressBar).toHaveClass(/bar/);
+  for (const bar of await taskProgressBar.all()) {
+    await expect(bar).toHaveCSS("width", "0px");
+    await expect(bar).toHaveAttribute("data-stylex-owner-instance", "tasklist");
+    await expect(bar).not.toHaveAttribute("style", /width/);
+    await expect(bar).toHaveClass(/bar/);
+  }
 
   const toggle = page.locator('[data-stylex-owner="project-issue-detail-original-message-toggle"]');
   await expect(toggle).toHaveCSS("padding-left", "5px");

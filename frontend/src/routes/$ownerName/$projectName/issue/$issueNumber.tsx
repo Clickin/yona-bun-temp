@@ -3796,6 +3796,7 @@ function MarkdownEditor({
 }
 
 function TasklistBar() {
+  // `issue/view.scala.html` mounts the tasklist partial in both issue-body positions.
   return (
     <div className="tasklist">
       <div className="task-title">
