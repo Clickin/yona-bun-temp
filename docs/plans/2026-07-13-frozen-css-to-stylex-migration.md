@@ -3655,3 +3655,5 @@ Batch 442 applies the workflow to the project-home member-card header state. Mem
 Batch 443 applies the workflow to project and organization member role-menu items. Shared base dropdown-button paint moves into identical route-local StyleX owners while preserving legacy classes, role interactions, and hover/focus fallback behavior; the focused role-menu test covers both legacy sources and base fallback removal.
 
 Batch 444 applies the workflow to the project-members guest badge. Static guest badge padding, color, and background move into a route-local StyleX owner while preserving the legacy class, copy, and member-row geometry; the focused guest-badge test covers the legacy source and fallback removal.
+
+Batch 445 applies the workflow to project-home dashboard progress. Shared base progress width/height/margin move into a route-local StyleX owner across assignee, milestone, and pull-request dashboard consumers while preserving dynamic bar widths and legacy progress classes; the focused dashboard-progress test covers both legacy partials and fallback removal.

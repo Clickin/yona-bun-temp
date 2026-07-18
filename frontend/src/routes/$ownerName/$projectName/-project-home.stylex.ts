@@ -16,6 +16,7 @@ export const styles = stylex.create({
     lineHeight: "20px",
     margin: "0",
   },
+  dashboardProgress: { height: "7px", marginTop: "7px", width: "100px" },
   cloneWrap: { borderRadius: "6px", padding: "5px 0", position: "relative" },
   cloneUrl: {
     backgroundColor: "#ffffff",

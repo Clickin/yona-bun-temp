@@ -1638,8 +1638,7 @@ function ProjectHomeMilestoneStatus({
         data-stylex-owner="project-home-milestone-progress-wrap"
       >
         <div
-          {...stylex.props(projectHomeStyles.milestoneProgress)}
-          className="progress progress-success nm"
+          className={`${stylex.props(projectHomeStyles.milestoneProgress, projectHomeStyles.dashboardProgress).className} progress progress-success nm`}
           data-stylex-owner="project-home-milestone-progress"
         >
           <div
@@ -2317,7 +2316,11 @@ function ProgressBar({
 }) {
   const progressStyle = stylex.props(styles.progressBar(`${percent}%`));
   return (
-    <div className={`progress ${className} ${percent === 0 ? "empty" : ""}`} title={`${percent}%`}>
+    <div
+      className={`${stylex.props(projectHomeStyles.dashboardProgress).className} progress ${className} ${percent === 0 ? "empty" : ""}`}
+      data-stylex-owner="project-home-dashboard-progress"
+      title={`${percent}%`}
+    >
       <div
         {...progressStyle}
         className={`${progressStyle.className} bar${success ? " bar-success" : ""}`}

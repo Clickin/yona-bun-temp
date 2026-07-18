@@ -1302,12 +1302,6 @@ pre code {
   color: #999;
 }
 
-.project-overview-home .progress {
-  width: 100px;
-  height: 7px;
-  margin-top: 7px;
-}
-
 .project-overview-home .empty {
   text-align: center;
 }
