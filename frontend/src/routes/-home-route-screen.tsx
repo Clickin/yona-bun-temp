@@ -5145,7 +5145,7 @@ function AuthenticatedSiteUserMenu({
                 search={LEGACY_SITE_USER_LIST_LINK_SEARCH}
                 title={t("menu.siteAdmin")}
                 className={`usermenu-icon-button show-progress-bar ${stylex.props(authenticatedSiteUserMenuStyles.itemLink, authenticatedSiteUserMenuStyles.adminLink).className}`}
-                style={{ fontSize: "16px" }}
+                data-stylex-owner="root-usermenu-site-admin-link"
               >
                 <i className="yobicon-wrench" />
               </Link>

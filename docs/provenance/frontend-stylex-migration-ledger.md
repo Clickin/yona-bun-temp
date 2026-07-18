@@ -989,3 +989,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 377
 
 - Authenticated labels-management preset-color state: moved the server-provided preset color from the literal inline `backgroundColor` declaration into `labelsFormDynamicStyles.presetColorBackground(color)`, preserving the preset button DOM, color selection interaction, copy, and responsive geometry. Focused `stylex-project-labels-preset-color-dynamic.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background; live legacy visual parity remains unverified.
+
+## Batch 378
+
+- Authenticated root user-menu site-admin action state: moved the fixed admin wrench link font size from the literal inline declaration into the existing `authenticatedSiteUserMenuStyles.adminLink` owner, preserving the legacy user-menu DOM, icon, navigation, and responsive geometry. Focused `stylex-root-usermenu-admin-font.e2e.ts` verifies the legacy source contract, stable owner, StyleX ownership, and absence of the former inline font declaration; live legacy visual parity remains unverified.
