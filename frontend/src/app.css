@@ -3293,20 +3293,6 @@ h1 {
   color: #666;
 }
 
-.milestones .progress-wrap {
-  width: 100%;
-  margin-top: 15px;
-  overflow: hidden;
-  color: #999;
-  font-size: 11px;
-}
-
-.milestones .progress {
-  display: block;
-  width: 100%;
-  height: 8px;
-}
-
 .milestones .bar {
   height: 100%;
   background: #fd6956 !important;

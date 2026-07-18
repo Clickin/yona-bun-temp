@@ -115,8 +115,21 @@ export const styles = stylex.create({
   due: { color: milestoneColors.due },
   dueOver: { color: milestoneColors.active },
   completion: { float: "right", textAlign: "center" },
-  progressWrap: { color: "#999", fontSize: "11px", marginTop: "15px", overflow: "hidden" },
-  progress: { backgroundColor: "#f5f5f5", borderRadius: "4px", height: "8px", overflow: "hidden" },
+  progressWrap: {
+    color: "#999",
+    fontSize: "11px",
+    marginTop: "15px",
+    overflow: "hidden",
+    width: "100%",
+  },
+  progress: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: "4px",
+    display: "block",
+    height: "8px",
+    overflow: "hidden",
+    width: "100%",
+  },
   progressBar: (width) => ({
     backgroundColor: milestoneColors.progress,
     height: "100%",

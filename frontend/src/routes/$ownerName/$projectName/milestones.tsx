@@ -407,8 +407,14 @@ function MilestoneRow({
           </div>
         </div>
 
-        <div {...sx.progressWrap} className={`${sx.progressWrap.className} progress-wrap`}>
-          <div {...sx.progress} className={`${sx.progress.className} progress progress-success`}>
+        <div
+          className={`${sx.progressWrap.className} progress-wrap`}
+          data-stylex-owner="project-milestones-progress-wrap"
+        >
+          <div
+            className={`${sx.progress.className} progress progress-success`}
+            data-stylex-owner="project-milestones-progress"
+          >
             <div
               {...sx.progressBar(`${completionPercent}%`)}
               className={`${sx.progressBar(`${completionPercent}%`).className} bar`}
