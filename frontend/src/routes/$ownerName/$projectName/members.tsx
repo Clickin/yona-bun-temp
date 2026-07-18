@@ -769,6 +769,7 @@ function ProjectMemberListItem({
 }
 
 const styles = stylex.create({
+  codeMenuHidden: { display: "none" },
   // Bootstrap 2.3.1 `.row-fluid` plus _page.less `.members.project`.
   memberList: {
     listStyle: "none",
@@ -1071,7 +1072,8 @@ function ProjectSettingMenu({
       <li
         id="subMenuProjectChangeVCS"
         className=""
-        style={booleanField(menuSetting.code) ? undefined : { display: "none" }}
+        {...(booleanField(menuSetting.code) ? {} : stylex.props(styles.codeMenuHidden))}
+        data-stylex-owner="project-members-code-menu"
       >
         <Link
           activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}

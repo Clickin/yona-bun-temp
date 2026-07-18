@@ -873,3 +873,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 346
 
 - Authenticated project webhooks code-menu state: moved conditional code-menu `display:none` into `webhooksStyles.codeMenuHidden`, preserving the legacy webhook/settings-menu DOM, permission logic, copy, form behavior, and responsive geometry. Focused `stylex-project-webhooks-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 347
+
+- Authenticated project members code-menu state: moved conditional code-menu `display:none` into the route-local conditional StyleX owner, preserving the legacy members/settings-menu DOM, permission logic, copy, member actions, and responsive geometry. Focused `stylex-project-members-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
