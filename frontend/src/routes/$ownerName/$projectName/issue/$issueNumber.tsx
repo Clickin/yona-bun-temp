@@ -3199,7 +3199,8 @@ function IssueCommentRow({
               to="."
               hash={commentHash}
               className="share-link"
-              style={{ display: "none" }}
+              {...stylex.props(styles.shareLinkHidden)}
+              data-stylex-owner="issue-detail-share-link"
             >
               [Link]
             </Link>

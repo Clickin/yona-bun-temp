@@ -997,3 +997,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 379
 
 - UIKit issue-label state: moved the runtime label background color into `sx.styles.issueLabelBackground(color)` Dynamic StyleX and fixed white text paint into `sx.styles.issueLabelText`, preserving the legacy label DOM, copy, and interaction. Focused `stylex-uikit-issue-label-dynamic.e2e.ts` verifies the stable owner, Dynamic/static StyleX sources, and absence of the former inline paint; live legacy visual parity remains unverified.
+
+## Batch 380
+
+- Authenticated issue-detail comment share-link state: moved the fixed hidden display into `styles.shareLinkHidden`, preserving the legacy comment DOM, copy, and visibility behavior. Focused `stylex-project-issue-detail-share-link.e2e.ts` verifies the legacy source contract, stable owner, conditional StyleX ownership, and absence of the former inline display; live legacy visual parity remains unverified.
