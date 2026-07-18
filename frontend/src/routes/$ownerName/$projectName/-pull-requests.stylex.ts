@@ -47,4 +47,5 @@ export const styles = stylex.create({
   reviewerCount: { marginTop: "-1px" },
   badge: { color: pullRequestColors.badge, fontWeight: "700", marginLeft: "4px" },
   content: { clear: "both", paddingTop: "15px" },
+  twoColumnPopover: { display: "block", left: "-75px", top: "-74px" },
 });

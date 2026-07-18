@@ -42,6 +42,7 @@ const sx = {
   reviewerCount: stylex.props(styles.reviewerCount),
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
+  twoColumnPopover: stylex.props(styles.twoColumnPopover),
 } as const;
 
 const LEGACY_LIST_LINK_PROPS = {
@@ -938,6 +939,7 @@ function TwoColumnModeCheckbox({
   };
 
   useEffect(() => clearPopoverTimers, []);
+  const popoverStyle = sx.twoColumnPopover;
 
   return (
     <div
@@ -965,9 +967,10 @@ function TwoColumnModeCheckbox({
       </label>
       {isPopoverVisible ? (
         <div
-          className="popover top"
           role="tooltip"
-          style={{ display: "block", left: "-75px", top: "-74px" }}
+          {...popoverStyle}
+          className={`popover top ${popoverStyle.className}`}
+          data-stylex-owner="project-pullrequests-two-column-popover"
         >
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>

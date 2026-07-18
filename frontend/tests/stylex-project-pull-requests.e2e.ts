@@ -14,6 +14,10 @@ test("records project pull request list owners and responsive containment", asyn
     "../yona-original/public/javascripts/service/yona.twoColumnMode.js",
     "utf8",
   );
+  const twoColumnTemplate = readFileSync(
+    "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
+    "utf8",
+  );
   expect(template).toContain('class="post-list-wrap"');
   expect(template).toContain('class="avatar-wrap mlarge"');
   expect(route).toContain('data-stylex-owner="project-pullrequests-tabs"');
@@ -21,6 +25,10 @@ test("records project pull request list owners and responsive containment", asyn
   expect(route).not.toContain('style={leftMenuHiddenByTwoColumnMode ? { display: "none" }');
   expect(theme).toContain('searchColumnHidden: { display: "none" }');
   expect(twoColumn).toContain('$(".left-menu").hide(0)');
+  expect(twoColumnTemplate).toContain('id="two-column-mode-checkbox"');
+  expect(route).toContain('data-stylex-owner="project-pullrequests-two-column-popover"');
+  expect(route).not.toContain('style={{ display: "block", left: "-75px", top: "-74px" }}');
+  expect(theme).toContain('twoColumnPopover: { display: "block", left: "-75px", top: "-74px" }');
   expect(theme).toContain("export const pullRequestColors");
   await mockPullRequests(page);
   for (const viewport of [
@@ -41,6 +49,17 @@ test("records project pull request list owners and responsive containment", asyn
     }));
     expect(geometry.width).toBeGreaterThan(0);
     expect(geometry.scrollWidth).toBe(viewport.width);
+
+    if (viewport.width === 1366) {
+      const toggle = page.locator("#two-column-mode-checkbox");
+      await toggle.hover();
+      const popover = owner(page, "project-pullrequests-two-column-popover");
+      await expect(popover).toBeVisible();
+      await expect(popover).toHaveCSS("display", "block");
+      await expect(popover).toHaveCSS("left", "-75px");
+      await expect(popover).toHaveCSS("top", "-74px");
+      expect(await popover.getAttribute("style")).toBeNull();
+    }
   }
 });
 

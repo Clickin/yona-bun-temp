@@ -781,3 +781,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 323
 
 - Authenticated issue-detail unauthorized vote state: moved the disabled-vote `color:#777` declaration into route-local `styles.disabledVote`, preserving `ybtn-disabled`, login-required title, heart control, and responsive geometry. Focused `stylex-project-issue-detail-disabled-vote.e2e.ts` verifies the legacy source, stable owner, palette ownership, and absence of the former inline color; live legacy visual parity remains unverified.
+
+## Batch 324
+
+- Authenticated `/$ownerName/$projectName/pullRequests` two-column hover-popover state: moved conditional `display:block` and fixed `left:-75px`/`top:-74px` offsets into route-local conditional StyleX `styles.twoColumnPopover`, preserving the common checkbox DOM, popover copy, hover/focus timing, and responsive containment. Focused `stylex-project-pull-requests.e2e.ts` verifies source evidence, computed offsets, and absence of the former inline style; live legacy visual parity remains unverified.
