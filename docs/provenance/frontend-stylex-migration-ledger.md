@@ -793,3 +793,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 326
 
 - `/$ownerName/$projectName/commit/$commitId` original-message toggle state: moved the generated toggle's static `border:0` declaration from the legacy `yobi.OriginalMessage` behavior into route-local `styles.originalMessageToggle`, preserving the `...` button, padding, React show/hide interaction, and commit-detail geometry. Focused `stylex-project-commit-detail-original-message.e2e.ts` verifies the legacy script/template source, stable owner, StyleX border ownership, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 327
+
+- Authenticated `/$ownerName/$projectName/setting` project-name transfer popover state: moved the relative name-field anchor and visible popover `display`, offsets, and width from React inline declarations into `-setting.stylex.ts` `styles.nameField`/`styles.namePopover`, preserving the legacy project-name input, `.popover.left.in` DOM, transfer copy, focus behavior, and responsive form geometry. Focused `stylex-project-setting.e2e.ts` verifies legacy source evidence, stable owners, computed popover geometry, and absence of literal inline offsets; live legacy visual parity remains unverified.

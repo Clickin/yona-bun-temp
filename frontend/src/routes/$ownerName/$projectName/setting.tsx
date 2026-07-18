@@ -30,6 +30,8 @@ const sx = {
   topBox: stylex.props(styles.topBox),
   logo: stylex.props(styles.logo),
   input: stylex.props(styles.input),
+  nameField: stylex.props(styles.nameField),
+  namePopover: stylex.props(styles.namePopover),
   textarea: stylex.props(styles.textarea),
   oldPlace: stylex.props(styles.oldPlace),
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
@@ -427,7 +429,7 @@ function ProjectSettingBody({
                 <dt>
                   <label htmlFor="project-name">{t("project.name.placeholder")}</label>
                 </dt>
-                <dd style={{ position: "relative" }}>
+                <dd {...sx.nameField} data-stylex-owner="project-setting-name-field">
                   <input
                     {...sx.input}
                     data-stylex-owner="project-setting-name-input"
@@ -444,12 +446,8 @@ function ProjectSettingBody({
                   {isProjectNamePopoverVisible ? (
                     <div
                       className="popover left in"
-                      style={{
-                        display: "block",
-                        left: "-296px",
-                        top: "-12px",
-                        width: "276px",
-                      }}
+                      {...sx.namePopover}
+                      data-stylex-owner="project-setting-name-popover"
                     >
                       <div className="arrow"></div>
                       <div className="popover-title" aria-hidden="true"></div>

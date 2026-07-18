@@ -28,6 +28,13 @@ export const styles = stylex.create({
     color: projectSettingColors.inputText,
     padding: "4px",
   },
+  nameField: { position: "relative" },
+  namePopover: {
+    display: "block",
+    left: "-296px",
+    top: "-12px",
+    width: "276px",
+  },
   textarea: {
     borderColor: projectSettingColors.inputBorder,
     borderStyle: "solid",

@@ -19,14 +19,21 @@ test("records project setting owners and responsive form containment", async ({ 
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-drop"');
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-select"');
   expect(route).toContain('data-stylex-owner="project-setting-old-place"');
+  expect(route).toContain('data-stylex-owner="project-setting-name-field"');
+  expect(route).toContain('data-stylex-owner="project-setting-name-popover"');
+  expect(template).toContain('data-placement="left"');
+  expect(template).toContain("data-content='@Messages(\"project.transfer.description6\")'");
   expect(route).not.toContain('style={{ color: "red" }}');
   expect(route).not.toContain("style={{ width: 220 }}");
   expect(route).not.toContain('style={{ minWidth: "220px" }}');
+  expect(route).not.toContain('left: "-296px"');
+  expect(route).not.toContain('top: "-12px"');
   expect(route).not.toContain('display: "block", width: 220');
   expect(theme).toContain("export const projectSettingColors");
   expect(theme).toContain('defaultBranchContainer: { width: "220px" }');
   expect(theme).toContain('defaultBranchDrop: { minWidth: "220px", width: "220px" }');
   expect(theme).toContain('defaultBranchSelect: { minWidth: "220px" }');
+  expect(theme).toContain("namePopover: {");
   expect(route).not.toContain(
     'style={reviewerCountPanelVisible ? undefined : { display: "none" }}',
   );
@@ -41,6 +48,15 @@ test("records project setting owners and responsive form containment", async ({ 
     await page.goto(`${basePath}/weblabs/demo/setting`);
     await expect(owner(page, "project-setting-form")).toBeVisible();
     await expect(owner(page, "project-setting-name-input")).toHaveValue("demo");
+    const nameField = owner(page, "project-setting-name-field");
+    await expect(nameField).toHaveCSS("position", "relative");
+    await owner(page, "project-setting-name-input").focus();
+    const namePopover = owner(page, "project-setting-name-popover");
+    await expect(namePopover).toBeVisible();
+    await expect(namePopover).toHaveCSS("display", "block");
+    await expect(namePopover).toHaveCSS("left", "-296px");
+    await expect(namePopover).toHaveCSS("top", "-12px");
+    await expect(namePopover).toHaveCSS("width", "276px");
     await expect(owner(page, "project-setting-description")).toHaveValue("Demo project");
     const oldPlace = owner(page, "project-setting-old-place");
     await expect(oldPlace).toHaveText("legacy-place");
