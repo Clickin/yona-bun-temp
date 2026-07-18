@@ -2496,45 +2496,8 @@ h1 {
   margin: 0;
 }
 
-.project-home-header .project-clone-wrap {
-  position: relative;
-  padding: 5px 0;
-  border-radius: 6px;
-}
-
-.project-home-header .project-clone-wrap .project-clone-url {
-  position: absolute;
-  right: 86px;
-  float: left;
-  width: 175px;
-  margin-bottom: 0;
-  text-align: right;
-  cursor: pointer;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-right: none;
-  border-radius: 3px 0 0 3px;
-  outline: 0;
-  transition: width 0.15s;
-}
-
 .project-home-header .project-clone-wrap .project-clone-url:focus {
   width: 450px !important;
-}
-
-.project-home-header .project-clone-wrap .project-clone-button {
-  position: absolute;
-  right: 0;
-  float: left;
-  width: 86px;
-  padding: 4px 0 !important;
-  margin-left: 0;
-  border-radius: 0 3px 3px 0;
-}
-
-.project-home-header .project-clone-wrap .project-clone-url {
-  width: 100px;
-  max-width: 125px;
 }
 
 .project-home-header .project-clone-wrap:hover .project-clone-url {

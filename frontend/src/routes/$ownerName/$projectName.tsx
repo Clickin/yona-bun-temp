@@ -1269,17 +1269,22 @@ export function ProjectHomeBody({
               </div>
             </div>
             {booleanField(menuSetting.code) ? (
-              <div className="project-clone-wrap span3 hide-in-mobile">
+              <div
+                className={`${stylex.props(projectHomeStyles.cloneWrap).className} project-clone-wrap span3 hide-in-mobile`}
+                data-stylex-owner="project-home-clone-wrap"
+              >
                 <input
                   type="text"
-                  className="project-clone-url"
+                  className={`${stylex.props(projectHomeStyles.cloneUrl).className} project-clone-url`}
+                  data-stylex-owner="project-home-clone-url"
                   id="cloneURL"
                   readOnly
                   value={cloneUrl}
                   onClick={(event) => event.currentTarget.select()}
                 />
                 <button
-                  className="ybtn project-clone-button"
+                  className={`${stylex.props(projectHomeStyles.cloneButton).className} ybtn project-clone-button`}
+                  data-stylex-owner="project-home-clone-button"
                   id="cloneURLBtn"
                   onClick={async () => {
                     await navigator.clipboard?.writeText(cloneUrl);
