@@ -171,7 +171,16 @@ it is not proven by moving every literal into `frontend/src/theme.stylex.ts`. Da
 a toggle remain out of scope, but the variable boundary must already permit them without mixing in
 route geometry.
 
-### 4.2.1 Theme-boundary correction gate
+### 4.2.1 Dynamic-style precedence
+
+For runtime styling, prefer the least dynamic representation that preserves parity. Use
+conditional StyleX first for boolean, finite-enum, pseudo-class, and media-query states. Use a
+StyleX dynamic-style function only when a value cannot be enumerated at build time (for example a
+server-provided percentage, color, or coordinate). Dynamic styles must not replace a conditional
+variant; values that still lose to frozen/plugin cascade or change parity remain explicitly
+documented fallbacks.
+
+### 4.2.2 Theme-boundary correction gate
 
 The theme-boundary correction gate is complete. The full inventory and all existing consumers were
 audited before resuming route work. Future route batches must still preserve the same boundary:
