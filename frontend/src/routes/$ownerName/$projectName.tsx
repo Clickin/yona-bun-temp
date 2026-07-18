@@ -1902,7 +1902,8 @@ function DashboardPane({
                                 basePath,
                                 issueHref(basePath, ownerName, projectName, `assigneeId=${userId}`),
                               )}
-                              className="usf-group"
+                              className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
+                              data-stylex-owner="project-home-assignee-link"
                               title={`${userLabel} (@${loginId})`}
                             >
                               <span className="avatar-wrap smaller">
@@ -1944,7 +1945,8 @@ function DashboardPane({
                             basePath,
                             issueHref(basePath, ownerName, projectName, "assigneeId=-1"),
                           )}
-                          className="usf-group"
+                          className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
+                          data-stylex-owner="project-home-assignee-link"
                         >
                           <span className="avatar-wrap smaller">
                             <i className="yobicon-blankstare"></i>
@@ -2065,7 +2067,8 @@ function DashboardPane({
                                   `/${ownerName}/${projectName}/pullRequests?contributorId=${numberField(record.contributorUserId)}`,
                                 ),
                               )}
-                              className="usf-group"
+                              className={`${stylex.props(projectHomeStyles.assigneeLink).className} usf-group`}
+                              data-stylex-owner="project-home-assignee-link"
                             >
                               <span
                                 className="avatar-wrap smaller"

@@ -11,6 +11,12 @@ export const styles = stylex.create({
   overviewLabelDd: { lineHeight: "30px", marginLeft: "140px" },
   overviewLabelFirst: { paddingTop: "0" },
   overviewLabelLast: { borderBottom: "none" },
+  assigneeLink: {
+    display: "block",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
   overviewNumber: { paddingRight: "15px", textAlign: "right" },
   milestoneProgressWrap: {
     color: "#999",

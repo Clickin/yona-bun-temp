@@ -3637,3 +3637,5 @@ Batch 433 applies the workflow to the project-home overview number state. Static
 Batch 434 applies the workflow to the project-home milestone status state. Static progress-wrap overflow/paint typography, progress dimensions, and progress-bar height move into route-local StyleX while the server-provided completion width remains Dynamic StyleX; the focused milestone-progress test covers the legacy partial, static owners, and dynamic width contract.
 
 Batch 435 applies the workflow to the project-home DashboardLabels overview-label state. Static label-list padding/border, first/last variants, and dt/dd geometry move into route-local StyleX while preserving legacy dashboard DOM and copy; the focused overview-label test covers the legacy partial and route owners.
+
+Batch 436 applies the workflow to the project-home DashboardAssignee `usf-group` state. Static truncation/link geometry moves into a shared route-local StyleX owner for all assignee consumers while preserving dashboard DOM and copy; the focused assignee-link test covers legacy evidence and the owner.

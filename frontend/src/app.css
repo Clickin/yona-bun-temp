@@ -1377,13 +1377,6 @@ pre code {
   border-bottom: none;
 }
 
-.project-overview-home .overview-assignee .usf-group {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .issue-label {
   font-size: 11px;
   line-height: 12px;
