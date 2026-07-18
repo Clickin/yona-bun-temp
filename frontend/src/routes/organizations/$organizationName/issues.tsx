@@ -868,9 +868,10 @@ function TwoColumnModeCheckbox() {
       </label>
       {showPopover ? (
         <div
-          className="popover top"
+          {...stylex.props(styles.twoColumnPopover)}
+          className={`popover top ${stylex.props(styles.twoColumnPopover).className ?? ""}`.trim()}
+          data-stylex-owner="organization-issues-two-column-popover"
           role="tooltip"
-          style={{ display: "block", left: "-75px", top: "-74px" }}
         >
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>

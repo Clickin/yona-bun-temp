@@ -805,3 +805,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 329
 
 - Authenticated `/user/issues` child-issue visible state: moved conditional `display:block` into `issueStyles.childIssueListVisible`, preserving `child-issue-list hide` classes, show-subtasks behavior, and responsive geometry. Focused `stylex-user-issues-child-list.e2e.ts` verifies source evidence, stable owner, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 330
+
+- Authenticated organization issue-list two-column hover-popover state: moved conditional `display:block` and fixed `left:-75px`/`top:-74px` offsets into route-local `styles.twoColumnPopover`, preserving common checkbox DOM, popover copy, hover/focus timing, and responsive geometry. Focused `stylex-organization-issues-inline-residual.e2e.ts` verifies source evidence, computed offsets, and absence of the former inline style; live legacy visual parity remains unverified.

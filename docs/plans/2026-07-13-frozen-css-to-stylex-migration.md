@@ -3420,6 +3420,8 @@ Batch 328 applies the workflow to the authenticated project issue-form editor te
 
 Batch 329 applies the workflow to the authenticated `/user/issues` child-issue visible state. The conditional child-list `display:block` declaration moves to a conditional StyleX owner while preserving the `child-issue-list hide` classes, show-subtasks interaction, and responsive issue geometry; the focused child-list test covers source evidence and the absence of the former inline display.
 
+Batch 330 applies the workflow to the authenticated organization issue-list two-column hover-popover state. The conditional popover display and fixed offsets move from a React inline declaration to route-local conditional StyleX while preserving the legacy common checkbox DOM, popover copy, hover/focus timing, and responsive containment; the focused organization-issues residual test covers source evidence, computed offsets, and absence of the former inline style.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

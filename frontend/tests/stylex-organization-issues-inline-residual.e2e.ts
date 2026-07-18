@@ -17,11 +17,19 @@ test("organization issue search moves the static project selector width into Sty
     "../yona-original/app/views/organization/group_issue_search_partial.scala.html",
     "utf8",
   );
+  const commonTemplate = readFileSync(
+    "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
+    "utf8",
+  );
   expect(template).toContain('id="projects"');
   expect(template).toContain('name="projectNames[]"');
   expect(route).toContain('data-stylex-owner="organization-issues-project-select"');
   expect(route).not.toContain('style={{ width: "100%" }}');
   expect(stylexSource).toContain('projectSelect: { width: "100%" }');
+  expect(commonTemplate).toContain('class="two-column-icon mr10 hide-in-mobile"');
+  expect(route).toContain('data-stylex-owner="organization-issues-two-column-popover"');
+  expect(route).not.toContain('style={{ display: "block", left: "-75px", top: "-74px" }}');
+  expect(stylexSource).toContain("twoColumnPopover: {");
 
   await mockIssues(page);
   await page.goto(`${basePath}/organizations/weblabs/issues?projectNames%5B%5D=sample`, {
@@ -39,6 +47,15 @@ test("organization issue search moves the static project selector width into Sty
   });
   expect(widths.select).toBeGreaterThan(0);
   expect(widths.select).toBeCloseTo(widths.form, 0);
+
+  const anchor = page.locator("#two-column-mode-checkbox");
+  await anchor.hover();
+  const popover = page.locator('[data-stylex-owner="organization-issues-two-column-popover"]');
+  await expect(popover).toBeVisible();
+  await expect(popover).toHaveCSS("display", "block");
+  await expect(popover).toHaveCSS("left", "-75px");
+  await expect(popover).toHaveCSS("top", "-74px");
+  await expect(popover).not.toHaveAttribute("style", /display|left|top/u);
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(398);
