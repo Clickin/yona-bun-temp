@@ -3480,6 +3480,8 @@ Batch 358 applies the workflow to the authenticated board-post comment-edit stat
 
 Batch 359 applies the workflow to the authenticated project-setting default-branch control state. The static Select2 choice dimensions and box-sizing declarations move to the route-local StyleX owner while preserving the legacy control DOM, branch selection behavior, copy, and responsive geometry; the focused control test covers legacy source evidence and absence of the former inline dimensions.
 
+Batch 360 applies the workflow to the authenticated organization-home leave modal state. The conditional modal `display:block` declaration moves to the route-local conditional StyleX owner while preserving the legacy leave-modal DOM, aria state, copy, leave interaction, and responsive geometry; the focused leave-modal test covers legacy source evidence and absence of the former inline display declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

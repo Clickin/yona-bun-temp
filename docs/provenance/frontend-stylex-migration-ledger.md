@@ -925,3 +925,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 359
 
 - Authenticated project-setting default-branch control state: moved static Select2 choice dimensions and box-sizing into `styles.defaultBranchChoice`, preserving the legacy control DOM, branch selection behavior, copy, and responsive geometry. Focused `stylex-project-setting-default-branch-control.e2e.ts` verifies the legacy source, stable owner, StyleX dimensions, and absence of the former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 360
+
+- Authenticated organization-home leave modal state: moved conditional modal `display:block` into `styles.leaveModalVisible`, preserving the legacy leave-modal DOM, aria state, copy, leave interaction, and responsive geometry. Focused `stylex-organization-home-leave-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.

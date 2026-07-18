@@ -181,6 +181,7 @@ function OrganizationHomeScreen({
       );
     },
   });
+  const leaveModalStyleProps = leaveModalOpen ? stylex.props(styles.leaveModalVisible) : undefined;
 
   return (
     <>
@@ -283,8 +284,9 @@ function OrganizationHomeScreen({
       </div>
       <div
         id="alertLeave"
-        className={leaveModalOpen ? "modal hide in" : "modal hide"}
-        style={leaveModalOpen ? { display: "block" } : undefined}
+        {...leaveModalStyleProps}
+        className={`${leaveModalOpen ? "modal hide in" : "modal hide"} ${leaveModalStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="organization-home-leave-modal"
         aria-hidden={leaveModalOpen ? false : leaveModalTouched ? true : undefined}
       >
         <div className="modal-header">
