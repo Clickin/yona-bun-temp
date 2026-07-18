@@ -531,6 +531,7 @@ function FileView({
 }) {
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
+  const openBrowserWrapStyleProps = stylex.props(styles.openBrowserWrap);
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
@@ -689,9 +690,9 @@ function FileView({
             </>
           ) : null}
           <span
-            className="open-in-browser-popover"
+            {...openBrowserWrapStyleProps}
+            className={`open-in-browser-popover ${openBrowserWrapStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="project-code-file-open-wrap"
-            style={{ display: "inline-block", position: "relative" }}
             onBlur={() => setIsOpenInBrowserPopoverVisible(false)}
             onFocus={() => setIsOpenInBrowserPopoverVisible(true)}
             onMouseEnter={() => setIsOpenInBrowserPopoverVisible(true)}

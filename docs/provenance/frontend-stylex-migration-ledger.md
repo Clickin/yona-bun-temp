@@ -785,3 +785,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 324
 
 - Authenticated `/$ownerName/$projectName/pullRequests` two-column hover-popover state: moved conditional `display:block` and fixed `left:-75px`/`top:-74px` offsets into route-local conditional StyleX `styles.twoColumnPopover`, preserving the common checkbox DOM, popover copy, hover/focus timing, and responsive containment. Focused `stylex-project-pull-requests.e2e.ts` verifies source evidence, computed offsets, and absence of the former inline style; live legacy visual parity remains unverified.
+
+## Batch 325
+
+- Authenticated project code-file open-in-browser popover anchor: moved `display:inline-block` and `position:relative` from the React inline wrapper into `-code-file.stylex.ts` `styles.openBrowserWrap`, preserving legacy action/popover DOM and hover/focus behavior. Focused `stylex-project-code-file-inline-residual.e2e.ts` verifies legacy view/partial/plugin sources, computed anchor behavior, and absence of literal inline declarations; live legacy visual parity remains unverified.

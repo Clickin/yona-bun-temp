@@ -3410,6 +3410,8 @@ Batch 323 applies the workflow to the authenticated issue-detail anonymous/unaut
 
 Batch 324 applies the workflow to the authenticated `/$ownerName/$projectName/pullRequests` two-column hover-popover state. The conditional popover display and fixed offsets move from a React inline declaration to route-local conditional StyleX while preserving the legacy common checkbox DOM, popover copy, hover/focus timing, and desktop/mobile containment; the focused project pull-request test covers source evidence, computed offsets, and absence of the former inline style.
 
+Batch 325 applies the workflow to the authenticated project code-file open-in-browser popover anchor. The static inline-block/relative wrapper declarations move to a route-local StyleX owner, preserving the legacy action/popover DOM, hover/focus behavior, and flex geometry; the focused code-file residual test covers source evidence, computed anchor behavior, and absence of literal inline declarations.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -17,15 +17,33 @@ const styleSource = readFileSync(
   ),
   "utf8",
 );
+const legacySource = readFileSync(
+  new URL("../../yona-original/app/views/code/view.scala.html", import.meta.url),
+  "utf8",
+);
+const legacyFilePartial = readFileSync(
+  new URL("../../yona-original/app/views/code/partial_view_file.scala.html", import.meta.url),
+  "utf8",
+);
 
 test("code file residual static declarations are StyleX-owned", () => {
   expect(routeSource).toContain('data-stylex-owner="project-code-file-spinner"');
   expect(routeSource).not.toContain('style={{ position: "fixed", top: "50%", left: "50%" }}');
   expect(styleSource).toContain('spinner: { left: "50%", position: "fixed", top: "50%" }');
+  expect(legacySource).toContain('$("#open-in-browser").popover');
+  expect(legacyFilePartial).toContain('id="open-in-browser"');
+  expect(routeSource).toContain('data-stylex-owner="project-code-file-open-wrap"');
+  expect(routeSource).not.toContain('style={{ display: "inline-block", position: "relative" }}');
+  expect(styleSource).toContain(
+    'openBrowserWrap: { display: "inline-block", position: "relative" }',
+  );
   expect(routeSource).toContain('data-stylex-owner="project-code-file-no-files"');
   expect(routeSource).toContain('data-stylex-owner="project-code-file-open-wrap"');
   expect(routeSource).not.toContain('style={{ borderTop: 0, paddingLeft: "23px" }}');
-  expect(routeSource).toContain('style={{ display: "inline-block", position: "relative" }}');
+  expect(routeSource).not.toContain('style={{ display: "inline-block", position: "relative" }}');
+  expect(styleSource).toContain(
+    'openBrowserWrap: { display: "inline-block", position: "relative" }',
+  );
   expect(styleSource).toContain("noFiles:");
   expect(styleSource).toContain('paddingLeft: "23px"');
 });
@@ -90,5 +108,14 @@ test("code file spinner keeps legacy fixed-center geometry without inline style"
     await expect(spinner).toHaveCSS("top", `${viewport.height / 2}px`);
     await expect(spinner).toHaveCSS("left", `${viewport.width / 2}px`);
     expect(await spinner.getAttribute("style")).toBeNull();
+    const openWrap = page.locator('[data-stylex-owner="project-code-file-open-wrap"]');
+    // The wrapper is a flex item, so the browser blockifies its inline-level display.
+    await expect(openWrap).toHaveCSS("display", "block");
+    await expect(openWrap).toHaveCSS("position", "relative");
+    await expect(openWrap).not.toHaveAttribute("style", /display|position/u);
+    await openWrap.hover();
+    await expect(
+      page.locator('[data-stylex-owner="project-code-file-open-popover"]'),
+    ).toBeVisible();
   }
 });
