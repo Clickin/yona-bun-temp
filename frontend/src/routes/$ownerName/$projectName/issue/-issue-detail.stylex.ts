@@ -109,4 +109,22 @@ export const styles = stylex.create({
   subtaskProgressBar: (width: string) => ({
     width,
   }),
+  subtaskProgressShell: {
+    boxShadow: "none",
+    display: "inline-block",
+    marginTop: "3px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "30px",
+  },
+  parentIssueState: {
+    borderRadius: "0",
+    color: "#fff",
+    fontSize: "12px",
+    lineHeight: "17px",
+    padding: "2px",
+    verticalAlign: "text-bottom",
+  },
+  parentIssueStateOpen: { backgroundColor: "#8bc34a" },
+  parentIssueStateClosed: { backgroundColor: "#f68c52" },
 });

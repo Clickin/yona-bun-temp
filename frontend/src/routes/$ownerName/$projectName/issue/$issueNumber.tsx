@@ -2233,6 +2233,13 @@ function IssueChildIssues({
   // Dynamic StyleX carries the server-derived percentage through a custom property.
   const progressStyle = stylex.props(styles.subtaskProgressBar(`${percentage}%`));
   const assigneeLabel = isCurrentIssueParent ? stringField(issue.assigneeLabel) : "";
+  const parentIssueStateVariant = parentIssueState.toLowerCase();
+  const parentIssueStateStyleProps =
+    parentIssueStateVariant === "open"
+      ? stylex.props(styles.parentIssueState, styles.parentIssueStateOpen)
+      : parentIssueStateVariant === "closed"
+        ? stylex.props(styles.parentIssueState, styles.parentIssueStateClosed)
+        : stylex.props(styles.parentIssueState);
 
   return (
     <div className="subtasks">
@@ -2246,7 +2253,10 @@ function IssueChildIssues({
           >
             {`#${parentIssueNumber} ${parentIssueTitle}${assigneeLabel ? ` - ${assigneeLabel}` : ""}`}
           </Link>
-          <div className={`upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}>
+          <div
+            className={`${stylex.props(styles.subtaskProgressShell).className} upload-progress ${percentage === 100 ? "done-outline" : "red-outline"}`}
+            data-stylex-owner="project-issue-detail-subtask-progress-shell"
+          >
             <div
               {...progressStyle}
               className={`${progressStyle.className} bar ${percentage === 100 ? "done" : "red"}`}
@@ -2258,7 +2268,10 @@ function IssueChildIssues({
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {totalCount}{" "}
           </span>
-          <span className={`parent-issue-state ${parentIssueState}`}>
+          <span
+            className={`${parentIssueStateStyleProps.className} parent-issue-state ${parentIssueState}`}
+            data-stylex-owner="project-issue-detail-parent-state"
+          >
             {issueStateLabel(parentIssueState, t)}
           </span>
         </div>
