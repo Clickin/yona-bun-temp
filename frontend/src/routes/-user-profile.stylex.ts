@@ -22,6 +22,34 @@ export const styles = stylex.create({
   projectInfo: {
     marginLeft: "10px",
   },
+  projectRow: {
+    borderBottom: "1px solid #dcdcdc",
+    overflow: "hidden",
+    padding: "15px 0px 10px",
+  },
+  projectHeader: {
+    fontSize: "20px",
+    fontWeight: "700",
+    marginBottom: "5px",
+    marginLeft: "10px",
+  },
+  projectDescription: {
+    color: "#bababa",
+    marginLeft: "10px",
+    maxHeight: "100px",
+    maxWidth: "647px",
+    overflowY: "auto",
+    textOverflow: "ellipsis",
+  },
+  projectNameTag: {
+    color: "#999999",
+    fontSize: "11px",
+    marginLeft: "10px",
+  },
+  projectStats: {
+    marginTop: "0px",
+    textAlign: "right",
+  },
   // Legacy user/view.scala.html partial_issues subtask progress width.
   progressBar: (width: string) => ({ width }),
   // Legacy user/partial_issues.scala.html paints each API-provided label color.

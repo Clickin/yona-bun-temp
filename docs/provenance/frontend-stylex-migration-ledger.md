@@ -3,6 +3,10 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 447
+
+- `/$user` populated public profile project-row state: moved only the active `.all-projects .project`, project header/description/name-tag, and `.stats-wrap` declarations into `-user-profile.stylex.ts` owners. Legacy project-list DOM, project links, watch/leave actions, and responsive geometry remain unchanged; inactive `owner-avatar-wrap`, `like`, and `members` selectors remain frozen fallback. Focused `stylex-user-profile-project-row.e2e.ts` verifies the legacy partial/LESS sources and stable owners; live legacy visual parity remains unverified.
+
 ## Batch 307
 
 - `/$ownerName/$projectName/issue/$issueNumber` loaded issue detail label state: moved arbitrary server-provided label background colors from the issue label selector, selected-label links, child-issue labels, and timeline label boxes into the route-local Dynamic StyleX `labelColor(backgroundColor)` owner. Legacy label classes, links, metadata, contrast, order, and geometry remain unchanged. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` verifies legacy source evidence, computed runtime colors for parent/child labels, custom-property carriers, and absence of literal background declarations; live legacy visual parity remains unverified.

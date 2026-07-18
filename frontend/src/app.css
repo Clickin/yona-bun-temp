@@ -2329,12 +2329,6 @@ h1 {
   list-style: none;
 }
 
-.all-projects .project {
-  padding: 15px 0 10px;
-  overflow: hidden;
-  border-bottom: 1px solid #dcdcdc;
-}
-
 .all-projects .project .info-wrap .owner-avatar-wrap {
   position: relative;
   display: inline;
@@ -2352,13 +2346,6 @@ h1 {
   vertical-align: top;
 }
 
-.all-projects .project .info-wrap .header {
-  margin-bottom: 5px;
-  margin-left: 10px;
-  font-size: 20px;
-  font-weight: bold;
-}
-
 .all-projects .project .info-wrap .header .yobicon-lock {
   color: #7f8c8d;
 }
@@ -2373,26 +2360,6 @@ h1 {
   margin-left: 10px;
   font-size: 11px;
   text-shadow: none;
-}
-
-.all-projects .project .info-wrap .desc {
-  max-width: 647px;
-  max-height: 100px;
-  margin-left: 10px;
-  overflow-y: auto;
-  color: #bababa;
-  text-overflow: ellipsis;
-}
-
-.all-projects .project .info-wrap .name-tag {
-  margin: 0 0 0 10px;
-  font-size: 11px;
-  color: #999;
-}
-
-.all-projects .project .stats-wrap {
-  margin-top: 0;
-  text-align: right;
 }
 
 .all-projects .project .stats-wrap .like {

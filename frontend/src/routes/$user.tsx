@@ -1071,7 +1071,10 @@ function ProfileProjectRow({
   const ownerPath = `/${project.ownerName}`;
 
   return (
-    <li className="project">
+    <li
+      className={`${stylex.props(styles.projectRow).className} project`}
+      data-stylex-owner="user-profile-project-row"
+    >
       <div className="info-wrap">
         <div className="pull-left">
           <Link {...LEGACY_LINK_PROPS} to={projectPath} className="avatar-wrap small">
@@ -1082,7 +1085,10 @@ function ProfileProjectRow({
           className={`${stylex.props(styles.projectInfo).className} pull-left`}
           data-stylex-owner="user-profile-project-info"
         >
-          <div className="header">
+          <div
+            className={`${stylex.props(styles.projectHeader).className} header`}
+            data-stylex-owner="user-profile-project-header"
+          >
             <Link {...LEGACY_LINK_PROPS} to={projectPath} className="project-name">
               {project.projectName}
             </Link>
@@ -1108,8 +1114,16 @@ function ProfileProjectRow({
               </>
             ) : null}
           </div>
-          <div className="desc">{project.overview}</div>
-          <div className="name-tag">
+          <div
+            className={`${stylex.props(styles.projectDescription).className} desc`}
+            data-stylex-owner="user-profile-project-description"
+          >
+            {project.overview}
+          </div>
+          <div
+            className={`${stylex.props(styles.projectNameTag).className} name-tag`}
+            data-stylex-owner="user-profile-project-name-tag"
+          >
             <i className="yobicon-friends yobicon-middle"></i>
             <strong>{project.memberCount}</strong>{" "}
             <Link {...LEGACY_LINK_PROPS} to={ownerPath} className="owner-name-small">
@@ -1125,7 +1139,10 @@ function ProfileProjectRow({
           </div>
         </div>
       </div>
-      <div className="stats-wrap pull-right">
+      <div
+        className={`${stylex.props(styles.projectStats).className} stats-wrap pull-right`}
+        data-stylex-owner="user-profile-project-stats"
+      >
         <div className="stats">
           {project.viewerCanWatch ? (
             <Link to={watchPath} reloadDocument className="ybtn watchBtn">
