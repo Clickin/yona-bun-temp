@@ -300,6 +300,7 @@ function PullRequestOverviewBody({
               ) : null}
             </div>
 
+            {/* Mirrors legacy git/view.scala.html's mr5 inline-block action wrapper. */}
             <div
               className={`${stylex.props(styles.actionWrapper).className} mr5`}
               data-stylex-owner="pull-request-detail-action-wrapper"

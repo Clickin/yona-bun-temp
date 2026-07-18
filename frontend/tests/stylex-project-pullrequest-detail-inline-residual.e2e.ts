@@ -67,8 +67,8 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
     const actionsBox = await actions.boundingBox();
     expect(actionBox).not.toBeNull();
     expect(actionsBox).not.toBeNull();
-    expect(actionBox!.left).toBeGreaterThanOrEqual(actionsBox!.left);
-    expect(actionBox!.right).toBeLessThanOrEqual(actionsBox!.right);
+    expect(actionBox!.x).toBeGreaterThanOrEqual(actionsBox!.x);
+    expect(actionBox!.x + actionBox!.width).toBeLessThanOrEqual(actionsBox!.x + actionsBox!.width);
     await expect(page.locator("#reviewers")).toContainText("1");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
   }

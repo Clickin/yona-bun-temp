@@ -3337,6 +3337,8 @@ Batch 291 applies the workflow to the public `/$user` daysAgo filter input. Its 
 
 Batch 292 applies the workflow to the authenticated pull-request detail action wrapper. Its fixed inline-block display moved to route-local StyleX; the pull-request detail test covers action order, computed display, and desktop/mobile containment.
 
+Batch 293 corrects the pull-request action-wrapper focused geometry assertion to use Playwright bounding-box `x`/`width` fields; the StyleX implementation and visible contract remain unchanged.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

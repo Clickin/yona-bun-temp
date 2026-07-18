@@ -661,3 +661,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 292
 
 - `/$ownerName/$projectName/pullRequest/$pullRequestNumber` action-wrapper state: moved the fixed `mr5` action wrapper `display:inline-block` declaration into route-local StyleX, preserving action order, permission branches, and responsive containment. Focused `stylex-project-pullrequest-detail-inline-residual.e2e.ts` verifies computed display, action copy, and no literal inline style; live legacy visual parity remains unverified.
+
+## Batch 293
+
+- `/$ownerName/$projectName/pullRequest/$pullRequestNumber` action-wrapper geometry assertion correction: fixed the focused Playwright containment check to use bounding-box `x`/`width` fields while retaining the same StyleX owner and legacy geometry contract.
