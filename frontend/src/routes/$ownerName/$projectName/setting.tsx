@@ -31,6 +31,9 @@ const sx = {
   logo: stylex.props(styles.logo),
   input: stylex.props(styles.input),
   textarea: stylex.props(styles.textarea),
+  defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
+  defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
+  defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   save: stylex.props(styles.save),
 } as const;
 
@@ -791,8 +794,8 @@ function DefaultBranchSelect2({
     <>
       <div
         id="s2id_project-default-branch"
-        className={`select2-container${open ? " select2-dropdown-open select2-container-active" : ""}`}
-        style={{ width: 220 }}
+        data-stylex-owner="project-setting-default-branch-container"
+        className={`${sx.defaultBranchContainer.className} select2-container${open ? " select2-dropdown-open select2-container-active" : ""}`}
       >
         <button
           type="button"
@@ -818,8 +821,9 @@ function DefaultBranchSelect2({
         </button>
         <input className="select2-focusser select2-offscreen" type="text" />
         <div
-          className={`select2-drop select2-display-none select2-with-searchbox branches${open ? " select2-drop-active" : ""}`}
-          style={open ? { display: "block", width: 220 } : undefined}
+          className={`${sx.defaultBranchDrop.className} select2-drop select2-display-none select2-with-searchbox branches${open ? " select2-drop-active" : ""}`}
+          data-stylex-owner="project-setting-default-branch-drop"
+          style={open ? { display: "block" } : undefined}
         >
           <div className="select2-search">
             <input className="select2-input" type="text" />
@@ -857,8 +861,8 @@ function DefaultBranchSelect2({
         name="defaultBranch"
         data-format="branch"
         data-dropdown-css-class="branches"
-        className="select2-offscreen"
-        style={{ minWidth: "220px" }}
+        data-stylex-owner="project-setting-default-branch-select"
+        className={`${sx.defaultBranchSelect.className} select2-offscreen`}
         tabIndex={-1}
         key={selectedBranch}
         defaultValue={selectedBranch}

@@ -14,7 +14,16 @@ test("records project setting owners and responsive form containment", async ({ 
   expect(template).toContain('id="project-desc"');
   expect(route).toContain('data-stylex-owner="project-setting-form"');
   expect(route).toContain('data-stylex-owner="project-setting-save"');
+  expect(route).toContain('data-stylex-owner="project-setting-default-branch-container"');
+  expect(route).toContain('data-stylex-owner="project-setting-default-branch-drop"');
+  expect(route).toContain('data-stylex-owner="project-setting-default-branch-select"');
+  expect(route).not.toContain("style={{ width: 220 }}");
+  expect(route).not.toContain('style={{ minWidth: "220px" }}');
+  expect(route).not.toContain('display: "block", width: 220');
   expect(theme).toContain("export const projectSettingColors");
+  expect(theme).toContain('defaultBranchContainer: { width: "220px" }');
+  expect(theme).toContain('defaultBranchDrop: { minWidth: "220px", width: "220px" }');
+  expect(theme).toContain('defaultBranchSelect: { minWidth: "220px" }');
   expect(route).not.toContain(
     'style={reviewerCountPanelVisible ? undefined : { display: "none" }}',
   );
@@ -30,6 +39,28 @@ test("records project setting owners and responsive form containment", async ({ 
     await expect(owner(page, "project-setting-form")).toBeVisible();
     await expect(owner(page, "project-setting-name-input")).toHaveValue("demo");
     await expect(owner(page, "project-setting-description")).toHaveValue("Demo project");
+    const defaultBranchContainer = owner(page, "project-setting-default-branch-container");
+    const defaultBranchSelect = owner(page, "project-setting-default-branch-select");
+    await expect(defaultBranchContainer).toHaveCSS("width", "220px");
+    await expect(defaultBranchSelect).toHaveCSS("min-width", "220px");
+    await expect(defaultBranchContainer).toBeVisible();
+    await defaultBranchContainer.locator("button.select2-choice").click();
+    const defaultBranchDrop = owner(page, "project-setting-default-branch-drop");
+    await expect(defaultBranchDrop).toBeVisible();
+    await expect(defaultBranchDrop).toHaveCSS("width", "220px");
+    const branchGeometry = await defaultBranchContainer.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, width: box.width };
+    });
+    const dropGeometry = await defaultBranchDrop.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, width: box.width };
+    });
+    expect(branchGeometry.width).toBe(220);
+    expect(dropGeometry.width).toBe(220);
+    expect(dropGeometry.left).toBeGreaterThanOrEqual(branchGeometry.left);
+    expect(dropGeometry.right).toBeLessThanOrEqual(branchGeometry.right + 2);
+    await defaultBranchContainer.locator("button.select2-choice").click();
     await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
     await expect(page.locator("#welReviewerCount")).toBeHidden();
     await expect(page.locator("#reviewerCountSettingPanel")).toHaveCSS("display", "block");

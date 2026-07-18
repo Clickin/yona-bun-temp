@@ -645,3 +645,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 288
 
 - `/$ownerName/$projectName/code/$branch/$filePath` code-view spinner state: moved the static `#spin` fixed-center positioning into route-local `styles.spinner`, preserving the code-viewer DOM and loading marker. Focused `stylex-project-code-file-inline-residual.e2e.ts` verifies fixed center geometry at desktop/mobile viewports and no literal inline style; live legacy visual parity remains unverified.
+
+## Batch 289
+
+- `/$ownerName/$projectName/setting` default-branch selector state: moved the fixed 220px Select2 container/dropdown width and hidden select minimum width into direct route-local StyleX, preserving conditional open display, field identity, and legacy control geometry. Focused `stylex-project-setting.e2e.ts` verifies source ownership, 220px computed geometry, open interaction, and desktop/mobile containment; live legacy visual parity remains unverified.

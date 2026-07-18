@@ -3329,6 +3329,8 @@ Batch 287 applies the workflow to the disabled `/migration` screen progress-bar 
 
 Batch 288 applies the workflow to the authenticated project code-file `#spin` residual. The fixed-center spinner positioning moved to route-local StyleX; the focused code-file test covers stable ownership, computed desktop/mobile geometry, and no literal inline style.
 
+Batch 289 applies the workflow to the authenticated project setting default-branch Select2 residual. The fixed 220px container/dropdown/select geometry moved to route-local StyleX while conditional display remains state-owned; the focused setting test covers interaction and desktop/mobile containment.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible
