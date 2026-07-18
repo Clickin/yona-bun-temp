@@ -13,6 +13,7 @@ impl AppRepositoryImpl<'_> {
         let state = site_user_filter_state(&filter.state)?;
         let query = filter.query.trim().to_string();
         let page = filter.page.max(1);
+        let initial_user_id = self.first_registered_user_id().await?;
         let site_admin_ids = self.site_admin_user_ids().await?;
         let mut users: Vec<n4user::Model> = n4user::Entity::find()
             .all(&self.db)
@@ -51,6 +52,7 @@ impl AppRepositoryImpl<'_> {
         };
 
         Ok(SiteUserListRecord {
+            initial_user_id,
             page,
             page_size: usize_to_u32_saturating(SITE_USER_PAGE_SIZE),
             query,
@@ -135,9 +137,9 @@ impl AppRepositoryImpl<'_> {
     pub async fn toggle_site_admin_role(
         &self,
         login_id: &str,
-    ) -> Result<Option<SiteUserRecord>, DbErr> {
+    ) -> Result<SiteAdminToggleResult, DbErr> {
         let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
-            return Ok(None);
+            return Ok(SiteAdminToggleResult::NotFound);
         };
         let existing = site_admin::Entity::find()
             .filter(site_admin::Column::AdminId.eq(Some(user.id)))
@@ -147,6 +149,9 @@ impl AppRepositoryImpl<'_> {
             self.ensure_site_admin(user.id).await?;
             true
         } else {
+            if self.first_registered_user_id().await? == Some(user.id) {
+                return Ok(SiteAdminToggleResult::ProtectedInitialAdmin);
+            }
             for row in existing {
                 site_admin::Entity::delete_by_id(row.id)
                     .exec(&self.db)
@@ -155,7 +160,10 @@ impl AppRepositoryImpl<'_> {
             false
         };
 
-        Ok(Some(site_user_record_from_model(user, is_site_admin)))
+        Ok(SiteAdminToggleResult::Updated(site_user_record_from_model(
+            user,
+            is_site_admin,
+        )))
     }
 
     /// Toggles a user's account between `ACTIVE` and `LOCKED`.
@@ -244,6 +252,9 @@ impl AppRepositoryImpl<'_> {
         let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
             return Ok(SiteUserDeleteResult::NotFound);
         };
+        if self.first_registered_user_id().await? == Some(user.id) {
+            return Ok(SiteUserDeleteResult::ProtectedInitialAdmin);
+        }
         if self.site_user_is_only_project_manager(user.id).await? {
             return Ok(SiteUserDeleteResult::OnlyManager);
         }

@@ -4235,12 +4235,25 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     assert_eq!(active["users"].as_array().unwrap().len(), 1);
     assert_eq!(login_ids(&active), vec!["member".to_string()]);
     assert_eq!(active["total"], 1);
+    assert_eq!(active["initialUserId"], admin_id);
     assert_eq!(user(&active, "member")["isSiteAdmin"], false);
     assert_eq!(user(&active, "member")["state"], "ACTIVE");
     assert_eq!(
         user(&active, "member")["avatarUrl"],
         format!("/yona/files/{}", member_avatar.id)
     );
+
+    let protected_revoke = rest_post(
+        app.clone(),
+        "/yona/api/v1/site/users/siteboss/site-admin/toggle",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(protected_revoke.status(), StatusCode::BAD_REQUEST);
+    assert!(response_text(protected_revoke)
+        .await
+        .contains("initial user must remain a site admin"));
 
     let forbidden_toggle = rest_post(
         app.clone(),

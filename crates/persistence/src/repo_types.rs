@@ -40,6 +40,7 @@ pub struct SiteUserRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SiteUserListRecord {
+    pub initial_user_id: Option<i64>,
     pub page: u32,
     pub page_size: u32,
     pub query: String,
@@ -66,8 +67,16 @@ pub struct AttachmentProjectResourceRecord {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SiteUserDeleteResult {
     Deleted(SiteUserRecord),
+    ProtectedInitialAdmin,
     NotFound,
     OnlyManager,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SiteAdminToggleResult {
+    Updated(SiteUserRecord),
+    ProtectedInitialAdmin,
+    NotFound,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -26,6 +26,7 @@ export interface SiteUser {
 }
 
 export interface SiteUserListResponse {
+  initialUserId?: number;
   page: number;
   pageSize: number;
   query: string;

@@ -1009,6 +1009,12 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                 <h2 {...titleStyleProps} data-stylex-owner="site-user-list-title-heading">
                   <LegacyMessage messageKey="site.sidebar.userList" />
                 </h2>
+                <p data-stylex-owner="site-user-list-initial-admin-policy">
+                  {t("site.userList.initialAdminPolicy", {
+                    fallback:
+                      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
+                  })}
+                </p>
                 <form
                   {...titleSearchFormStyleProps}
                   data-stylex-owner="site-user-list-title-search-form"
@@ -1116,6 +1122,7 @@ function SiteUserListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
                     onDismissPasswordResetAlert={dismissPasswordResetAlert}
                     passwordReset={passwordResetByLoginId[user.loginId]}
                     state={search.state}
+                    initialUserId={response?.initialUserId}
                     user={user}
                   />
                 ))}
@@ -1483,6 +1490,7 @@ function UserStateTabs({
 
 function UserListItem({
   even,
+  initialUserId,
   onDeleteClick,
   onDismissPasswordResetAlert,
   onResetPasswordClick,
@@ -1492,6 +1500,7 @@ function UserListItem({
   user,
 }: {
   even: boolean;
+  initialUserId?: number;
   onDeleteClick: (event: MouseEvent<HTMLButtonElement>, user: SiteUser) => void;
   onDismissPasswordResetAlert: (event: MouseEvent<HTMLButtonElement>, loginId: string) => void;
   onResetPasswordClick: (loginId: string) => void;
@@ -1590,6 +1599,15 @@ function UserListItem({
           <button
             {...(user.isSiteAdmin ? actionInfoButtonStyleProps : actionLabelInfoButtonStyleProps)}
             type="button"
+            disabled={user.id === initialUserId}
+            title={
+              user.id === initialUserId
+                ? t("site.userList.initialAdminPolicy", {
+                    fallback:
+                      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
+                  })
+                : undefined
+            }
             data-action="site-admin"
             data-stylex-owner="site-user-list-row-action-button"
             onClick={() => onToggleClick(user.loginId, "site-admin")}
@@ -1601,6 +1619,15 @@ function UserListItem({
           <button
             {...actionDangerButtonStyleProps}
             type="button"
+            disabled={user.id === initialUserId}
+            title={
+              user.id === initialUserId
+                ? t("site.userList.initialAdminPolicy", {
+                    fallback:
+                      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
+                  })
+                : undefined
+            }
             data-action="delete"
             data-stylex-owner="site-user-list-row-action-button"
             onClick={(event) => onDeleteClick(event, user)}

@@ -87,6 +87,7 @@ struct RestSiteUserItem {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteUserListResponse {
+    initial_user_id: Option<i64>,
     page: u32,
     page_size: u32,
     query: String,
@@ -1816,6 +1817,9 @@ async fn direct_delete_site_user_by_legacy_path(
             ConnectError::permission_denied("site.userList.deleteAlert"),
         )
         .into_response(),
+        Ok(persistence::SiteUserDeleteResult::ProtectedInitialAdmin) => {
+            RestRouteError::bad_request("the initial user must remain a site admin").into_response()
+        }
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
 }
@@ -1949,8 +1953,18 @@ async fn rest_toggle_site_user_admin(
     let user = repository
         .toggle_site_admin_role(&login_id)
         .await
-        .map_err(|error| RestRouteError::internal(error.to_string()))?
-        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    let user = match user {
+        persistence::SiteAdminToggleResult::Updated(user) => user,
+        persistence::SiteAdminToggleResult::NotFound => {
+            return Err(RestRouteError::not_found("user not found"));
+        }
+        persistence::SiteAdminToggleResult::ProtectedInitialAdmin => {
+            return Err(RestRouteError::bad_request(
+                "the initial user must remain a site admin",
+            ));
+        }
+    };
 
     Ok(Json(RestSiteUserMutationResponse {
         user: rest_site_user_from_record(&repository, &service.base_path, user)
@@ -2015,6 +2029,11 @@ async fn rest_delete_site_user(
         persistence::SiteUserDeleteResult::OnlyManager => {
             return Err(RestRouteError::from_connect_error(
                 ConnectError::permission_denied("site.userList.deleteAlert"),
+            ));
+        }
+        persistence::SiteUserDeleteResult::ProtectedInitialAdmin => {
+            return Err(RestRouteError::bad_request(
+                "the initial user must remain a site admin",
             ));
         }
     };
@@ -5232,6 +5251,7 @@ async fn rest_site_user_list_from_record(
     }
 
     Ok(RestSiteUserListResponse {
+        initial_user_id: record.initial_user_id,
         page: record.page,
         page_size: record.page_size,
         query: record.query,

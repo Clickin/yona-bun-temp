@@ -58,6 +58,7 @@ test.describe("StyleX site user-list title strip", () => {
     ]);
 
     expect(route).toContain('data-stylex-owner="site-user-list-title-strip"');
+    expect(route).toContain('data-stylex-owner="site-user-list-initial-admin-policy"');
     expect(route).toContain('data-stylex-owner="site-user-list-title-heading"');
     expect(route).toContain('data-stylex-owner="site-user-list-title-search-form"');
     expect(route).toContain("styles.titleArea");
@@ -86,6 +87,15 @@ test.describe("StyleX site user-list title strip", () => {
         Array.from(titleArea.children).map((child) => child.tagName),
       ),
     ).toEqual(["H2", "FORM"]);
+  });
+
+  test("explains the initial Site Admin protection policy", async ({ page }) => {
+    const owner = await openUserList(page);
+    await expect(
+      owner.locator('[data-stylex-owner="site-user-list-initial-admin-policy"]'),
+    ).toHaveText(
+      "The first registered user is the initial Site Admin and cannot have this role revoked or be removed.",
+    );
   });
 
   test("owns title and form presentation classes while retaining semantic order", async ({
