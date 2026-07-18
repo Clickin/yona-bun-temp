@@ -1004,7 +1004,9 @@ function PullRequestFileDiff({
               onMouseUp={(event) => {
                 event.stopPropagation();
               }}
-              style={{ top: pendingBlock.top, left: pendingBlock.left, display: "block" }}
+              {...stylex.props(styles.pendingBlockPosition(pendingBlock.top, pendingBlock.left))}
+              {...stylex.props(styles.pendingBlockVisible)}
+              data-stylex-owner="pull-request-changes-pending-block"
             >
               <button
                 type="button"

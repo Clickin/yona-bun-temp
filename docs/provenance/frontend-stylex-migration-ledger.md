@@ -977,3 +977,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 374
 
 - Authenticated issue-detail label search state: moved the fixed Select2 search-input width from the literal inline declaration into the route-local `styles.labelSearchInput`, preserving the legacy label-picker DOM, focus interaction, and responsive geometry. Focused `stylex-project-issue-detail-label-search.e2e.ts` verifies the legacy Select2 source contract, stable owner, StyleX source, and absence of the former inline width; live legacy visual parity remains unverified.
+
+## Batch 375
+
+- Authenticated pull-request changes pending-block state: split the literal inline `display:block` and runtime `top`/`left` declarations into conditional `styles.pendingBlockVisible` and Dynamic `styles.pendingBlockPosition(top, left)`, preserving the legacy review block DOM, interaction, and geometry. Focused `stylex-pull-request-changes-pending-block.e2e.ts` verifies the legacy source contract, stable owner, and split StyleX ownership; live legacy visual parity remains unverified.

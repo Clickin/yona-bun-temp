@@ -22,4 +22,6 @@ export const styles = stylex.create({
   threadReviewForm: { display: "block" },
   visibleForm: { display: "block" },
   commentDeleteModalVisible: { display: "block" },
+  pendingBlockVisible: { display: "block" },
+  pendingBlockPosition: (top: number, left: number) => ({ top, left }),
 });
