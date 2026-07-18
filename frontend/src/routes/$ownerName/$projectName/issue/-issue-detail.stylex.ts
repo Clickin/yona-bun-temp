@@ -8,6 +8,13 @@ export const issueDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  legacyPopoverPosition: (left: number, top: number) => ({
+    display: "block",
+    left,
+    position: "fixed",
+    top,
+    transform: "translate(-50%, -100%)",
+  }),
   labelControl: { display: "inline-block" },
   labelSearchInput: { width: "10px" },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },

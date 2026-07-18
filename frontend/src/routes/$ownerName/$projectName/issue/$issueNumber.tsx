@@ -8,7 +8,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
@@ -89,21 +88,19 @@ function LegacyHoverPopover({
     onMouseLeave: hide,
     ...(focusable ? { onBlur: hide, onFocus: show } : {}),
   };
-  const popoverStyle: CSSProperties | undefined = position
-    ? {
-        display: "block",
-        left: position.left,
-        position: "fixed",
-        top: position.top - 10,
-        transform: "translate(-50%, -100%)",
-      }
+  const popoverStyleProps = position
+    ? stylex.props(styles.legacyPopoverPosition(position.left, position.top - 10))
     : undefined;
 
   return (
     <>
       {children(triggerProps)}
       {position ? (
-        <div className="popover top in" style={popoverStyle}>
+        <div
+          {...popoverStyleProps}
+          className={`popover top in ${popoverStyleProps?.className ?? ""}`.trim()}
+          data-stylex-owner="issue-detail-legacy-popover"
+        >
           <div className="arrow"></div>
           <div className="popover-content">{content}</div>
         </div>
