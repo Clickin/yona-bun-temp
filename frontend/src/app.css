@@ -5193,13 +5193,6 @@ div.markdown-preview {
   margin-bottom: 8px;
 }
 
-.site-admin-page #project-list-wrap {
-  padding: 12px;
-  margin-top: 10px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-}
-
 .site-admin-page .project-select-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -5209,14 +5202,6 @@ div.markdown-preview {
 .site-admin-page .project-select-row #input-project {
   box-sizing: border-box;
   width: 100%;
-}
-
-.site-admin-page #selected-projects {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-height: 24px;
-  margin-top: 10px;
 }
 
 .site-admin-page .label {
@@ -5236,17 +5221,6 @@ div.markdown-preview {
   color: #fff;
   background-color: #51aacc;
   border-color: #3e91af;
-}
-
-.site-admin-page .selected-project-remove {
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  line-height: inherit;
-  text-shadow: inherit;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
 }
 
 .site-admin-page .ybtn-danger {

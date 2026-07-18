@@ -193,6 +193,14 @@ const styles = stylex.create({
   projectWrapper: {
     marginBottom: "10px",
   },
+  projectWrapperPanel: {
+    borderColor: "#dddddd",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    marginTop: "10px",
+    padding: "12px",
+  },
   projectWrapperVisible: {
     display: "block",
   },
@@ -220,6 +228,23 @@ const styles = stylex.create({
     textShadow: siteMassMailColors.tagShadow,
     verticalAlign: "baseline",
     whiteSpace: "nowrap",
+  },
+  selectedProjects: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    marginTop: "10px",
+    minHeight: "24px",
+  },
+  selectedProjectRemove: {
+    backgroundColor: "transparent",
+    border: 0,
+    color: "inherit",
+    cursor: "pointer",
+    font: "inherit",
+    lineHeight: "inherit",
+    padding: 0,
+    textShadow: "inherit",
   },
 });
 
@@ -402,6 +427,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const projectWrapperStateStyleProps = stylex.props(
     styles.projectWrapper,
+    styles.projectWrapperPanel,
     mailingType === "projects" && styles.projectWrapperVisible,
   );
   const projectInputRef = useRef<HTMLInputElement>(null);
@@ -511,7 +537,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </label>
       <div
         {...projectWrapperStateStyleProps}
-        className={`hide ${projectWrapperStateStyleProps.className ?? ""}`}
+        className={`hide ${projectWrapperStateStyleProps.className ?? ""} ${stylex.props(styles.projectWrapperPanel).className ?? ""}`.trim()}
         data-stylex-owner="site-massmail-project-wrapper"
         id="project-list-wrap"
       >
@@ -583,7 +609,11 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </ul>
           ) : null}
         </div>
-        <div id="selected-projects">
+        <div
+          {...stylex.props(styles.selectedProjects)}
+          data-stylex-owner="site-massmail-selected-projects"
+          id="selected-projects"
+        >
           {selectedProjects.map((project) => (
             <span
               {...stylex.props(styles.selectedProjectTag)}
@@ -593,7 +623,8 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               {project.name}{" "}
               <button
                 type="button"
-                className="selected-project-remove"
+                className={`selected-project-remove ${stylex.props(styles.selectedProjectRemove).className ?? ""}`.trim()}
+                data-stylex-owner="site-massmail-selected-project-remove"
                 onClick={(event) => {
                   event.preventDefault();
                   setSelectedProjects((current) =>
