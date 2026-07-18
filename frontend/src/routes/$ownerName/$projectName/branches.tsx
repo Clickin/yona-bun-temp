@@ -142,11 +142,17 @@ function ProjectBranchesBody({
                 data-stylex-owner="project-branches-table-head"
               >
                 <tr>
-                  <th>{t("title.branches")}</th>
-                  <th>{t("code.branches.commit")}</th>
-                  <th>{t("code.branches.pullRequest")}</th>
+                  <th className={stylex.props(styles.tableCell).className}>
+                    {t("title.branches")}
+                  </th>
+                  <th className={stylex.props(styles.tableCell).className}>
+                    {t("code.branches.commit")}
+                  </th>
+                  <th className={stylex.props(styles.tableCell).className}>
+                    {t("code.branches.pullRequest")}
+                  </th>
                   {branches.permissions.canDelete || branches.permissions.canUpdate ? (
-                    <th></th>
+                    <th className={stylex.props(styles.tableCell).className}></th>
                   ) : null}
                 </tr>
               </thead>
@@ -215,7 +221,7 @@ function BranchRow({
       data-stylex-owner="project-branches-row"
     >
       <td
-        className={`${stylex.props(styles.branchNameCell).className} branchName`}
+        className={`${stylex.props(styles.tableCell, styles.branchNameCell).className} branchName`}
         data-stylex-owner="project-branches-branch-cell"
       >
         <Link
@@ -247,7 +253,7 @@ function BranchRow({
         ) : null}
       </td>
       <td
-        className={`${stylex.props(styles.commitCell).className} commit`}
+        className={`${stylex.props(styles.tableCell, styles.commitCell).className} commit`}
         data-stylex-owner="project-branches-commit-cell"
       >
         <Link
@@ -280,7 +286,7 @@ function BranchRow({
         </span>
       </td>
       <td
-        className={`${stylex.props(styles.pullRequestCell).className} pullRequest`}
+        className={`${stylex.props(styles.tableCell, styles.pullRequestCell).className} pullRequest`}
         data-stylex-owner="project-branches-pull-request-cell"
       >
         {branch.pullRequest ? (
@@ -326,7 +332,10 @@ function BranchRow({
         )}
       </td>
       {branches.permissions.canDelete || branches.permissions.canUpdate ? (
-        <td className="actions" data-stylex-owner="project-branches-actions">
+        <td
+          className={`${stylex.props(styles.tableCell, styles.actions).className} actions`}
+          data-stylex-owner="project-branches-actions"
+        >
           {branches.permissions.canUpdate && !isHead ? (
             <button
               type="button"
@@ -391,6 +400,10 @@ const styles = stylex.create({
     fontSize: "12px",
     lineHeight: "34px",
   },
+  tableCell: {
+    border: "none",
+    verticalAlign: "top",
+  },
   branchRow: {
     borderBottomColor: projectBranchesTheme.rowBorder,
     borderBottomStyle: "solid",
@@ -400,7 +413,6 @@ const styles = stylex.create({
   branchNameCell: {
     minWidth: "180px",
     paddingTop: "13px",
-    verticalAlign: "top",
   },
   branchLink: {
     color: projectBranchesTheme.branchLink,
@@ -418,7 +430,6 @@ const styles = stylex.create({
   },
   commitCell: {
     paddingTop: "13px",
-    verticalAlign: "top",
     width: "155px",
   },
   commitId: {
@@ -431,8 +442,12 @@ const styles = stylex.create({
   },
   pullRequestCell: {
     paddingTop: "13px",
-    verticalAlign: "top",
     width: "170px",
+  },
+  actions: {
+    minWidth: "220px",
+    textAlign: "right",
+    width: "220px",
   },
   pullRequestDot: {
     borderRadius: "10px",

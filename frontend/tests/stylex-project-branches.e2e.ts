@@ -5,6 +5,15 @@ const SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/branches.tsx", import.meta.url),
   "utf8",
 );
+const APP_CSS = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const LEGACY_BRANCHES = readFileSync(
+  new URL("../../yona-original/app/views/code/branches.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_BRANCH_ROW = readFileSync(
+  new URL("../../yona-original/app/views/code/partial_branchrow.scala.html", import.meta.url),
+  "utf8",
+);
 
 test("project branches owns the legacy branch table with route StyleX", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -23,6 +32,9 @@ test("project branches owns the legacy branch table with route StyleX", async ({
   await expect(page.locator('[data-stylex-owner="project-branches-pull-request-link"]')).toHaveText(
     "pullRequest-3",
   );
+  await expect(page.locator('[data-stylex-owner="project-branches-pull-request-dot"]')).toHaveCount(
+    1,
+  );
   await expect(page.locator("[data-toggle], [data-placement], [data-request-method]")).toHaveCount(
     0,
   );
@@ -39,12 +51,26 @@ test("project branches owns the legacy branch table with route StyleX", async ({
       const commit = table.querySelector<HTMLElement>(
         "[data-stylex-owner='project-branches-commit-cell']",
       )!;
+      const actions = table.querySelector<HTMLElement>(
+        "[data-stylex-owner='project-branches-actions']",
+      )!;
+      const cell = table.querySelector<HTMLElement>("th")!;
+      const dot = table.querySelector<HTMLElement>(
+        "[data-stylex-owner='project-branches-pull-request-dot']",
+      )!;
       return {
         headBackground: getComputedStyle(head).backgroundColor,
         headLineHeight: getComputedStyle(head).lineHeight,
         rowBorder: getComputedStyle(row).borderBottomWidth,
         branchMinWidth: getComputedStyle(branch).minWidth,
         commitWidth: getComputedStyle(commit).width,
+        cellVerticalAlign: getComputedStyle(cell).verticalAlign,
+        cellBorder: getComputedStyle(cell).border,
+        actionsWidth: getComputedStyle(actions).width,
+        actionsMinWidth: getComputedStyle(actions).minWidth,
+        actionsTextAlign: getComputedStyle(actions).textAlign,
+        dotWidth: getComputedStyle(dot).width,
+        dotHeight: getComputedStyle(dot).height,
       };
     });
   expect(metrics).toEqual({
@@ -53,11 +79,33 @@ test("project branches owns the legacy branch table with route StyleX", async ({
     rowBorder: "1px",
     branchMinWidth: "180px",
     commitWidth: "155px",
+    cellVerticalAlign: "top",
+    cellBorder: "0px none rgb(51, 51, 51)",
+    actionsWidth: "220px",
+    actionsMinWidth: "220px",
+    actionsTextAlign: "right",
+    dotWidth: "10px",
+    dotHeight: "10px",
   });
 
   expect(SOURCE).not.toContain('data-toggle="tooltip"');
   expect(SOURCE).not.toContain("data-placement");
   expect(SOURCE).not.toContain("data-request-method");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .pullRequest .pullrequest-state.open::before");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .pullRequest .pullrequest-state.closed::before");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .pullRequest .pullrequest-state.merged::before");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .actions");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .thead");
+  expect(APP_CSS).not.toContain(".branch-list-wrap tr");
+  expect(APP_CSS).not.toContain(".branch-list-wrap th");
+  expect(APP_CSS).not.toContain(".branch-list-wrap td");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .branchName");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .commit");
+  expect(APP_CSS).not.toContain(".branch-list-wrap .pullRequest");
+  expect(LEGACY_BRANCHES).toContain('class="table branch-list-wrap"');
+  expect(LEGACY_BRANCH_ROW).toContain('<td class="branchName">');
+  expect(LEGACY_BRANCH_ROW).toContain('<td class="actions">');
+  expect(LEGACY_BRANCH_ROW).toContain("pullrequest-state");
 });
 
 async function mockBranches(page: Page) {
