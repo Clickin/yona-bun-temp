@@ -6982,23 +6982,6 @@ div.markdown-preview {
   opacity: 0.65;
 }
 
-.issue-form-page-wrap .attached-file .upload-progress {
-  display: inline-block;
-  width: 100px;
-  height: 7px;
-  margin: 0;
-  overflow: hidden;
-  vertical-align: middle;
-  background: #f0f0f0;
-  box-shadow: inset 0 1px 1px rgb(0 0 0 / 25%);
-}
-
-.issue-form-page-wrap .attached-file .upload-progress .bar {
-  display: block;
-  height: 100%;
-  background: #f36c22;
-}
-
 .issue-form-page-wrap .attached-file-main > i {
   display: inline-block;
   width: auto;

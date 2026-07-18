@@ -2230,7 +2230,11 @@ function IssuePostFileUploader({
                 <strong className="name">{row.name}</strong>{" "}
                 <span className="size">{humanFileSize(row.size)}</span>
                 {row.status === "uploading" ? (
-                  <span className="progress upload-progress">
+                  <span
+                    {...stylex.props(issueFormStyles.uploadProgress)}
+                    className="progress upload-progress"
+                    data-stylex-owner="project-issue-form-upload-progress-shell"
+                  >
                     <span
                       {...progressStyle}
                       className={`${progressStyle.className ?? ""} bar orange`.trim()}

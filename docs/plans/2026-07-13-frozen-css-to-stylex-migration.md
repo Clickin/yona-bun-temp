@@ -3689,6 +3689,8 @@ Batch 463 applies the project-route project-menu shell state. Outer/inner height
 
 Batch 465 applies the project-home side-panel state. The active `.project-home` padding moves into a route-local StyleX owner while preserving the bubble DOM/classes; stale `.project-home .issue-wrap/.project-status` selectors remain untouched.
 
+Batch 466 applies the issueform attachment upload-progress shell state. Route-scoped wrapper and bar geometry/paint move into colocated StyleX while the server-provided progress width remains Dynamic StyleX; the focused upload-progress-shell test covers the file-uploader partial, frozen declarations, and stable owners.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.
 
 Batch 457 applies the workflow to the project-posts label reset state. The obsolete post-list button reset fallback is removed because the existing `labelButtonReset` StyleX owner covers border, cursor, and font inheritance while Dynamic label paint and legacy classes remain intact; the focused label-button test verifies fallback removal and composition.

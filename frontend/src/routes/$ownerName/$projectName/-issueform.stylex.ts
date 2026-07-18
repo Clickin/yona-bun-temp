@@ -18,7 +18,22 @@ export const issueFormStyles = stylex.create({
   milestonePicker: { width: "100%" },
   labelPicker: { display: "inline-block" },
   labelBackground: (backgroundColor: string) => ({ backgroundColor }),
-  uploadProgressBar: (width: string) => ({ width }),
+  uploadProgress: {
+    backgroundColor: "#f0f0f0",
+    boxShadow: "inset 0 1px 1px rgb(0 0 0 / 25%)",
+    display: "inline-block",
+    height: "7px",
+    margin: "0",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "100px",
+  },
+  uploadProgressBar: (width: string) => ({
+    backgroundColor: "#f36c22",
+    display: "block",
+    height: "100%",
+    width,
+  }),
   mentionMirrorTransform: (transform: string) => ({ transform }),
   mentionPopupPosition: (left: number, top: number) => ({ left, top }),
 });
