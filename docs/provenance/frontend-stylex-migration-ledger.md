@@ -965,3 +965,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 371
 
 - Authenticated issue-form mention mirror scroll state: moved the runtime textarea scroll `transform` from the literal inline declaration into the route-local Dynamic StyleX `issueFormStyles.mentionMirrorTransform(...)`, preserving the legacy editor/mention DOM and scroll behavior. Focused `stylex-project-issueform-mention-scroll-dynamic.e2e.ts` verifies the legacy editor/mention source contract, stable owner, Dynamic StyleX source, and absence of the former inline transform; live legacy visual parity remains unverified.
+
+## Batch 372
+
+- Authenticated organization-issues header background state: moved the server-provided organization logo URL from the literal inline declaration in `organization/header.scala.html` into the route-local Dynamic StyleX `organizationHeaderStyles.background(...)`, preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry. Focused `stylex-organization-issues-header-background.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background declaration; live legacy visual parity remains unverified.

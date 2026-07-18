@@ -22,6 +22,10 @@ import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-organization-issues.stylex";
 
+const organizationHeaderStyles = stylex.create({
+  background: (backgroundImage: string) => ({ backgroundImage }),
+});
+
 type OrganizationIssuesSearch = {
   assigneeId: string;
   authorId: string;
@@ -892,7 +896,11 @@ function OrganizationHeader({
   organizationName: string;
 }) {
   return (
-    <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
+    <div
+      {...stylex.props(organizationHeaderStyles.background(`url('${logoUrl}')`))}
+      className="project-header-outer"
+      data-stylex-owner="organization-issues-header-background"
+    >
       <div className="project-header-inner">
         <div className="project-header-wrap">
           <div className="project-header-avatar">
