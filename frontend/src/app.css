@@ -4591,13 +4591,6 @@ div.markdown-preview {
   width: 100%;
 }
 
-.issue-detail-page .comments .event {
-  padding: 2px 0 2px 55px;
-  color: #666;
-  font-size: 1em;
-  line-height: 30px;
-}
-
 .issue-detail-page .comments .event.event-index {
   padding: 0;
   font-size: 12px;
@@ -4663,11 +4656,6 @@ div.markdown-preview {
 .issue-detail-page .comments .event .state.label-deleted {
   color: #f4511e;
   background: #ffccbc;
-}
-
-.issue-detail-page .comments .event .date {
-  color: #aaa;
-  font-size: 11px;
 }
 
 @media (max-width: 720px) {

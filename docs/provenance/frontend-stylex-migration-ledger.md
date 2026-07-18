@@ -1214,6 +1214,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - `/$ownerName/$projectName/issue/$issueNumber` sidebar metadata: moved the active legacy `dl` margin, `dd` padding, and assignee `.name` font-size into route-local StyleX owners across all three metadata blocks and four `dd` consumers. Existing sidebar padding remains on `sidebarMeta`; dead `p`/`.status` selectors remain frozen fallback and are deferred. Focused `stylex-project-issue-detail-sidebar-metadata.e2e.ts` verifies owner coverage, legacy source evidence, and exact fallback retirement; live legacy visual parity remains unverified.
 
+## Batch 477
+
+- `/$ownerName/$projectName/issue/$issueNumber` timeline event base/date: moved the active `.comments .event` padding/color/font/line-height and `.event .date` color/font-size into route-local StyleX owners across nine event and nine date consumers. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. Event-index, state geometry, and all state-variant colors remain frozen fallback. Focused `stylex-project-issue-detail-event-base.e2e.ts` verifies both timeline partials, owner coverage, and exact scoped fallback retirement; live legacy visual parity remains unverified.
+
 ## Batch 476
 
 - `/$ownerName/$projectName/issue/$issueNumber` subtasks geometry: moved the route-scoped `.subtasks` margins, `.issue-item` padding, `.parent-issue` font size, and parent delimiter margin/border into four colocated StyleX owners. Parent/child DOM, legacy classes, progress/state owners, and responsive behavior remain unchanged; generic/shared fallbacks remain. Focused `stylex-project-issue-detail-subtasks.e2e.ts` verifies legacy sources, stable owners, desktop/mobile-safe declarations, and exact route-scoped fallback retirement; live legacy visual parity remains unverified.

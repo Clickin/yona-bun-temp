@@ -115,6 +115,13 @@ export const styles = stylex.create({
   author: {
     color: issueDetailColors.accentText,
   },
+  timelineEvent: {
+    padding: "2px 0 2px 55px",
+    color: "#666",
+    fontSize: "1em",
+    lineHeight: "30px",
+  },
+  timelineEventDate: { color: "#aaa", fontSize: "11px" },
   disabledVote: {
     color: issueDetailColors.mutedText,
   },

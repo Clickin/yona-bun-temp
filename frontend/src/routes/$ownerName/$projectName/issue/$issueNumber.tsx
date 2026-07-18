@@ -2930,11 +2930,20 @@ function IssueEventRow({
 
   if (eventType === "ISSUE_STATE_CHANGED") {
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className={`state ${newValue}`}>{issueStateLabel(newValue, t)}</span>
         {sender}
         {issueStateEventText(newValue)}
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -2947,7 +2956,12 @@ function IssueEventRow({
     const targetLoginId = stringField(event.targetLoginId, stringField(event.newValue));
     const targetLabel = stringField(event.targetLabel, targetLoginId);
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className="state changed">{t("issue.state.assigned")}</span>
         {sender}
         {targetLoginId === senderLoginId ? " self-assigned this issue" : " assigned this issue to "}
@@ -2961,7 +2975,11 @@ function IssueEventRow({
             loginId={targetLoginId}
           />
         )}
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -2989,7 +3007,12 @@ function IssueEventRow({
         </span>
       );
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className="state milestone-changed">{t("issue.update.milestone.id")}</span>
         {language === "ko-KR" ? (
           <>
@@ -3000,7 +3023,11 @@ function IssueEventRow({
             {sender} changed milestone to {milestone}
           </>
         )}
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3013,7 +3040,12 @@ function IssueEventRow({
     const [fromOwner, fromProject] = stringField(event.oldValue).split("/");
     const fromProjectName = [fromOwner, fromProject].filter(Boolean).join("/");
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className="state changed">moved</span>
         {sender} moved this issue from{" "}
         <strong>
@@ -3026,7 +3058,11 @@ function IssueEventRow({
             {fromProjectName}
           </Link>
         </strong>
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3038,7 +3074,12 @@ function IssueEventRow({
   if (eventType === "ISSUE_REFERRED_FROM_COMMIT") {
     const commitId = stringField(event.newValue);
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className="state changed">mentioned</span>
         {sender} mentioned this issue in{" "}
         <strong>
@@ -3053,7 +3094,11 @@ function IssueEventRow({
             @{commitId}
           </Link>
         </strong>
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3066,7 +3111,12 @@ function IssueEventRow({
     const pullRequestNumber = stringField(event.pullRequestNumber, stringField(event.newValue));
     const pullRequestTitle = stringField(event.pullRequestTitle, pullRequestNumber);
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         <span className="state changed">mentioned</span>
         {sender} mentioned this issue in{" "}
         <strong>
@@ -3080,7 +3130,11 @@ function IssueEventRow({
             {pullRequestTitle}
           </Link>
         </strong>
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3107,7 +3161,12 @@ function IssueEventRow({
       />
     );
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         {grouped ? (
           <span className="state"></span>
         ) : (
@@ -3118,7 +3177,11 @@ function IssueEventRow({
         {sender}
         {added ? " shared current issue to " : " cancelled issue sharing with "}
         {target}
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3135,7 +3198,12 @@ function IssueEventRow({
       issue.labels,
     );
     return (
-      <li className="event" id={`event-${eventId}`}>
+      <li
+        {...stylex.props(styles.timelineEvent)}
+        className={`${stylex.props(styles.timelineEvent).className} event`}
+        id={`event-${eventId}`}
+        data-stylex-owner="issue-detail-timeline-event"
+      >
         {grouped ? (
           <span className="state"></span>
         ) : (
@@ -3146,7 +3214,11 @@ function IssueEventRow({
         {sender}
         {added ? " added " : " removed "}
         {label} label
-        <span className="date">
+        <span
+          {...stylex.props(styles.timelineEventDate)}
+          className={`${stylex.props(styles.timelineEventDate).className} date`}
+          data-stylex-owner="issue-detail-timeline-event-date"
+        >
           <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
             {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
           </Link>
@@ -3156,9 +3228,18 @@ function IssueEventRow({
   }
 
   return (
-    <li className="event" id={`event-${eventId}`}>
+    <li
+      {...stylex.props(styles.timelineEvent)}
+      className={`${stylex.props(styles.timelineEvent).className} event`}
+      id={`event-${eventId}`}
+      data-stylex-owner="issue-detail-timeline-event"
+    >
       {stringField(event.newValue)} by {sender}
-      <span className="date">
+      <span
+        {...stylex.props(styles.timelineEventDate)}
+        className={`${stylex.props(styles.timelineEventDate).className} date`}
+        data-stylex-owner="issue-detail-timeline-event-date"
+      >
         <Link {...LEGACY_LINK_PROPS} to="." hash={eventHash}>
           {legacyRelativeDateLabel(stringField(event.createdLabel), language)}
         </Link>
