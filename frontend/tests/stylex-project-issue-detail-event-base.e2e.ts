@@ -42,12 +42,18 @@ test("issue detail timeline event base/date use route-local StyleX", async () =>
   expect(routeSource.match(/data-stylex-owner="issue-detail-timeline-event-date"/g)).toHaveLength(
     9,
   );
+  expect(routeSource.match(/data-stylex-owner="issue-detail-timeline-event-state"/g)).toHaveLength(
+    10,
+  );
   expect(styleSource).toContain("timelineEvent: {");
   expect(styleSource).toContain('padding: "2px 0 2px 55px"');
   expect(styleSource).toContain('timelineEventDate: { color: "#aaa", fontSize: "11px" }');
-  expect(routeSource).toContain("className={`state ${newValue}`}");
+  expect(styleSource).toContain("timelineEventState: {");
+  expect(styleSource).toContain('width: "90px"');
+  expect(routeSource).toContain("state ${newValue}");
   expect(appCss).not.toContain(".issue-detail-page .comments .event {");
   expect(appCss).not.toContain(".issue-detail-page .comments .event .date {");
+  expect(appCss).not.toContain(".issue-detail-page .comments .event .state {");
   expect(appCss).toContain(".issue-detail-page .comments .event.event-index {");
-  expect(appCss).toContain(".issue-detail-page .comments .event .state {");
+  expect(appCss).toContain(".issue-detail-page .comments .event .state.open {");
 });

@@ -1210,6 +1210,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - `/$ownerName/$projectName/issue/$issueNumber` child comment/vote font12: moved the route-scoped `.issue-detail-page .font12` declaration into the colocated StyleX owner while preserving the `font12 no-border-at-child` DOM/classes and responsive geometry. Focused `stylex-project-issue-detail-font12.e2e.ts` verifies the legacy callers, LESS declaration, stable owner, and exact fallback retirement; live legacy visual parity remains unverified.
 
+## Batch 478
+
+- `/$ownerName/$projectName/issue/$issueNumber` timeline state base: moved shared `.comments .event .state` geometry and neutral paint into `timelineEventState` across ten active state spans. Event-index overrides and all variant colors remain fallback. Focused `stylex-project-issue-detail-event-base.e2e.ts` verifies state owner coverage and exact fallback retirement; live legacy visual parity remains unverified.
+
 ## Batch 474
 
 - `/$ownerName/$projectName/issue/$issueNumber` sidebar metadata: moved the active legacy `dl` margin, `dd` padding, and assignee `.name` font-size into route-local StyleX owners across all three metadata blocks and four `dd` consumers. Existing sidebar padding remains on `sidebarMeta`; dead `p`/`.status` selectors remain frozen fallback and are deferred. Focused `stylex-project-issue-detail-sidebar-metadata.e2e.ts` verifies owner coverage, legacy source evidence, and exact fallback retirement; live legacy visual parity remains unverified.

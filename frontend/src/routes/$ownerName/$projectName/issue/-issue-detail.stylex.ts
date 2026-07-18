@@ -128,6 +128,18 @@ export const styles = stylex.create({
     lineHeight: "30px",
   },
   timelineEventDate: { color: "#aaa", fontSize: "11px" },
+  timelineEventState: {
+    display: "inline-block",
+    width: "90px",
+    marginRight: "10px",
+    padding: "6px 0",
+    color: "#fff",
+    fontWeight: "bold",
+    lineHeight: "14px",
+    textAlign: "center",
+    backgroundColor: "#777",
+    borderRadius: "5px",
+  },
   disabledVote: {
     color: issueDetailColors.mutedText,
   },

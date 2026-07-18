@@ -4590,19 +4590,6 @@ div.markdown-preview {
   line-height: normal;
 }
 
-.issue-detail-page .comments .event .state {
-  display: inline-block;
-  width: 90px;
-  margin-right: 10px;
-  padding: 6px 0;
-  color: #fff;
-  font-weight: bold;
-  line-height: 14px;
-  text-align: center;
-  background: #777;
-  border-radius: 5px;
-}
-
 .issue-detail-page .comments .event.event-index .state {
   width: auto;
   margin-right: 0;

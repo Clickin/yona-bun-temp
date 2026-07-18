@@ -2939,7 +2939,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className={`state ${newValue}`}>{issueStateLabel(newValue, t)}</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state ${newValue}`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          {issueStateLabel(newValue, t)}
+        </span>
         {sender}
         {issueStateEventText(newValue)}
         <span
@@ -2965,7 +2971,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className="state changed">{t("issue.state.assigned")}</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          {t("issue.state.assigned")}
+        </span>
         {sender}
         {targetLoginId === senderLoginId ? " self-assigned this issue" : " assigned this issue to "}
         {targetLoginId === senderLoginId ? null : (
@@ -3016,7 +3028,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className="state milestone-changed">{t("issue.update.milestone.id")}</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state milestone-changed`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          {t("issue.update.milestone.id")}
+        </span>
         {language === "ko-KR" ? (
           <>
             {sender}님이 마일스톤을 {milestone}(으)로 변경했습니다.
@@ -3049,7 +3067,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className="state changed">moved</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          moved
+        </span>
         {sender} moved this issue from{" "}
         <strong>
           <Link
@@ -3083,7 +3107,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className="state changed">mentioned</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          mentioned
+        </span>
         {sender} mentioned this issue in{" "}
         <strong>
           Commit{" "}
@@ -3120,7 +3150,13 @@ function IssueEventRow({
         id={`event-${eventId}`}
         data-stylex-owner="issue-detail-timeline-event"
       >
-        <span className="state changed">mentioned</span>
+        <span
+          {...stylex.props(styles.timelineEventState)}
+          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          data-stylex-owner="issue-detail-timeline-event-state"
+        >
+          mentioned
+        </span>
         {sender} mentioned this issue in{" "}
         <strong>
           Pull request -{pullRequestNumber}{" "}
@@ -3171,9 +3207,17 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         {grouped ? (
-          <span className="state"></span>
+          <span
+            {...stylex.props(styles.timelineEventState)}
+            className={`${stylex.props(styles.timelineEventState).className} state`}
+            data-stylex-owner="issue-detail-timeline-event-state"
+          ></span>
         ) : (
-          <span className={`state ${added ? "sharer-added" : "sharer-deleted"}`}>
+          <span
+            {...stylex.props(styles.timelineEventState)}
+            className={`${stylex.props(styles.timelineEventState).className} state ${added ? "sharer-added" : "sharer-deleted"}`}
+            data-stylex-owner="issue-detail-timeline-event-state"
+          >
             {added ? t("issue.sharer") : t("issue.event.sharer.deleted.title")}
           </span>
         )}
@@ -3208,9 +3252,17 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         {grouped ? (
-          <span className="state"></span>
+          <span
+            {...stylex.props(styles.timelineEventState)}
+            className={`${stylex.props(styles.timelineEventState).className} state`}
+            data-stylex-owner="issue-detail-timeline-event-state"
+          ></span>
         ) : (
-          <span className={`state ${added ? "label-added" : "label-deleted"}`}>
+          <span
+            {...stylex.props(styles.timelineEventState)}
+            className={`${stylex.props(styles.timelineEventState).className} state ${added ? "label-added" : "label-deleted"}`}
+            data-stylex-owner="issue-detail-timeline-event-state"
+          >
             {added ? "Added" : "Removed"}
           </span>
         )}
