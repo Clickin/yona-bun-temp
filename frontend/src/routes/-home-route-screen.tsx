@@ -11,14 +11,14 @@ import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { globalBreakpoints } from "../theme.stylex";
+import { useRootLoginDialog, useRootToast } from "./__root";
+import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
 import {
   anonymousHomeIntroBackgroundTheme,
   anonymousHomeIntroBackgroundVars,
-  globalBreakpoints,
-} from "../theme.stylex";
-import { useRootLoginDialog, useRootToast } from "./__root";
-import siteIntroBackgroundUrl from "../assets/legacy/photo-svetacreative.jpg";
-import { homeColors } from "./-home-route-screen.stylex";
+  homeColors,
+} from "./-home-route-screen.stylex";
 
 type LegacyUserLinkSearch = {
   daysAgo: number;

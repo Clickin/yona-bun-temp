@@ -19,6 +19,7 @@ test.use({ locale: "ko-KR" });
 test("anonymous Home hero has complete global-theme StyleX ownership", () => {
   const route = readFileSync(resolve("src/routes/-home-route-screen.tsx"), "utf8");
   const theme = readFileSync(resolve("src/routes/-home-route-screen.stylex.ts"), "utf8");
+  const globalTheme = readFileSync(resolve("src/theme.stylex.ts"), "utf8");
   const appCss = readFileSync(resolve("src/app.css"), "utf8");
   const legacy = readFileSync(
     resolve("../yona-original/app/views/index/partial_intro.scala.html"),
@@ -46,6 +47,10 @@ test("anonymous Home hero has complete global-theme StyleX ownership", () => {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(theme).toContain('anonymousHomeIntroCtaSurface: "#ff7332"');
+  expect(theme).toContain("anonymousHomeIntroBackgroundVars");
+  expect(theme).toContain("anonymousHomeIntroBackgroundTheme");
+  expect(globalTheme).not.toContain("anonymousHomeIntroBackgroundVars");
+  expect(globalTheme).not.toContain("anonymousHomeIntroBackgroundTheme");
   expect(theme).toContain('anonymousHomeIntroCtaHoverSurface: "#e95e01"');
   expect(heroSource).not.toMatch(
     /className="(?:siteintro|siteintro-cover|siteintro-wrap|site-heading|site-features|signup-btn|ybtn)(?:\s|")/u,

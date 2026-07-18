@@ -616,3 +616,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 280
 
 - `/$ownerName/$projectName/issue/$issueNumber` tasklist state: moved the fixed zero-width tasklist bar into `-issue-detail.stylex.ts`, preserving legacy tasklist/progress classes and title. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` covers the legacy partial, computed `0px` width, stable owner, and absence of inline width; live legacy visual parity remains unverified.
+## Batch 281
+
+- Anonymous home intro theme boundary: moved the route-specific background-image variable/theme from `theme.stylex.ts` into `-home-route-screen.stylex.ts`, leaving the shared theme module with only the breakpoint constant. Focused `stylex-anonymous-home-hero.e2e.ts` verifies route-local ownership and global-theme absence; rendered hero behavior is unchanged.
