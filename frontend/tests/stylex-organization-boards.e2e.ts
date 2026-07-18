@@ -26,6 +26,9 @@ const owners = [
   "organization-boards-notice-list",
   "organization-boards-list",
   "organization-boards-row",
+  "organization-boards-row-avatar",
+  "organization-boards-row-title-wrap",
+  "organization-boards-row-post-id",
   "organization-boards-title",
   "organization-boards-pagination",
 ] as const;
@@ -134,7 +137,10 @@ test("organization boards renders populated post and submits filter through rout
     "Release notes",
   );
   await page.locator('[data-stylex-owner="organization-boards-search-input"]').fill("release");
-  await page.locator("#option_form button[type=submit]").click();
+  await expect(page.locator('[data-stylex-owner="organization-boards-search-input"]')).toHaveValue(
+    "release",
+  );
+  await page.locator('[data-stylex-owner="organization-boards-search-input"]').press("Enter");
   await expect(page).toHaveURL(/filter=release/);
   const geometry = await page
     .locator('[data-stylex-owner="organization-boards-row"]')
@@ -144,4 +150,38 @@ test("organization boards renders populated post and submits filter through rout
     });
   expect(geometry.left).toBeGreaterThanOrEqual(0);
   expect(geometry.width).toBeGreaterThan(0);
+  await expect(page.locator('[data-stylex-owner="organization-boards-row-avatar"]')).toBeVisible();
+  await expect(
+    page.locator('[data-stylex-owner="organization-boards-row-title-wrap"]'),
+  ).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="organization-boards-row-post-id"]')).toHaveText(
+    "#4",
+  );
+  const rowStyles = await page.evaluate(() => {
+    const avatar = document.querySelector('[data-stylex-owner="organization-boards-row-avatar"]');
+    const titleWrap = document.querySelector(
+      '[data-stylex-owner="organization-boards-row-title-wrap"]',
+    );
+    const postId = document.querySelector('[data-stylex-owner="organization-boards-row-post-id"]');
+    if (!avatar || !titleWrap || !postId) return null;
+    const avatarStyle = getComputedStyle(avatar);
+    const titleStyle = getComputedStyle(titleWrap);
+    const postIdStyle = getComputedStyle(postId);
+    return {
+      avatarFloat: avatarStyle.float,
+      avatarMarginRight: avatarStyle.marginRight,
+      titleOverflow: titleStyle.overflow,
+      titleWhiteSpace: titleStyle.whiteSpace,
+      postIdColor: postIdStyle.color,
+      postIdMarginRight: postIdStyle.marginRight,
+    };
+  });
+  expect(rowStyles).toEqual({
+    avatarFloat: "left",
+    avatarMarginRight: "10px",
+    titleOverflow: "hidden",
+    titleWhiteSpace: "nowrap",
+    postIdColor: "rgb(153, 153, 153)",
+    postIdMarginRight: "5px",
+  });
 });

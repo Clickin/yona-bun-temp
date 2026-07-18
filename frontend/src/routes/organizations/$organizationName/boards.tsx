@@ -28,6 +28,21 @@ const styles = stylex.create({
     borderBottomStyle: "solid",
     borderBottomWidth: "1px",
   },
+  rowAvatar: { float: "left", marginRight: "10px" },
+  rowTitleWrap: {
+    display: "block",
+    lineHeight: "20px",
+    overflow: "hidden",
+    position: "relative",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  rowPostId: {
+    color: organizationBoardsColors.postIdText,
+    fontSize: "13px",
+    fontWeight: "bold",
+    marginRight: "5px",
+  },
   twoColumnAnchor: { position: "relative" },
   twoColumnPopover: {
     bottom: "100%",
@@ -391,21 +406,31 @@ function BoardPagination({
 
 function OrganizationBoardPost({ basePath, post }: { basePath: string; post: BoardPostListItem }) {
   const { t } = useLegacyMessages();
+  const rowStyleProps = stylex.props(styles.row);
+  const avatarStyleProps = stylex.props(styles.rowAvatar);
+  const titleWrapStyleProps = stylex.props(styles.rowTitleWrap);
+  const postIdStyleProps = stylex.props(styles.rowPostId);
   return (
     <li
-      {...stylex.props(styles.row)}
-      className="post-item title"
+      {...rowStyleProps}
+      className={`${rowStyleProps.className ?? ""} post-item title`.trim()}
       data-stylex-owner="organization-boards-row"
     >
       <Link
         to="/$user"
         params={{ user: post.authorLoginId }}
-        className="avatar-wrap mlarge hide-in-mobile"
+        {...avatarStyleProps}
+        className={`${avatarStyleProps.className ?? ""} avatar-wrap mlarge hide-in-mobile`.trim()}
+        data-stylex-owner="organization-boards-row-avatar"
         title={post.authorLoginId}
       >
         <img src={post.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
       </Link>
-      <div className="title-wrap">
+      <div
+        {...titleWrapStyleProps}
+        className={`${titleWrapStyleProps.className ?? ""} title-wrap`.trim()}
+        data-stylex-owner="organization-boards-row-title-wrap"
+      >
         <Link
           to="/$ownerName/$projectName/post/$postNumber"
           params={{
@@ -440,7 +465,13 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
         >
           {post.projectName}
         </Link>
-        <span className="post-id">#{post.postNumber}</span>
+        <span
+          {...postIdStyleProps}
+          className={`${postIdStyleProps.className ?? ""} post-id`.trim()}
+          data-stylex-owner="organization-boards-row-post-id"
+        >
+          #{post.postNumber}
+        </span>
         <span className="infos-item" title={post.createdLabel}>
           {post.createdLabel}
         </span>

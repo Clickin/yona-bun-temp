@@ -1318,3 +1318,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 499
 
 - `/$ownerName/$projectName/issue/labelsform` label-list rows: applied `listTableRow` and conditional `listTableRowLast` StyleX owners to rendered label rows, retiring only the dead `.label-editor-wrap .new-label-wrap` and `.issue-label-list-wrap` app.css blocks. Shared `.issue-label` and `.category-exclusive` fallback remains active for cross-route consumers. Focused `stylex-project-labelsform.e2e.ts` verifies legacy evidence, first/last border behavior, and exact dead fallback absence.
+
+## Batch 500
+
+- `/organizations/$organizationName/boards` aggregate rows: applied route-local StyleX owners for the legacy avatar float/margin, title-wrap truncation, and post-id typography from `group_board_list_partial.scala.html` and frozen `_page.less`. Legacy classes/DOM and router/query behavior remain unchanged; shared `.post-list-wrap` fallback remains because project, organization, and user list routes still consume it. Focused `stylex-organization-boards.e2e.ts` verifies legacy evidence, stable owners, computed declarations, and filter submission.
