@@ -28,6 +28,12 @@ export const styles = stylex.create({
   },
   projectMenuGroup: { float: "left", marginLeft: "110px" },
   projectSetting: { float: "right" },
+  projectMenuOuter: {
+    backgroundColor: "#ececec",
+    borderBottom: "1px solid #dddddd",
+    height: "39px",
+  },
+  projectMenuInner: { height: "39px", margin: "0 auto" },
   page: { backgroundColor: projectHomeTheme.pageSurface },
   header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
   overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },

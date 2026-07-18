@@ -2834,8 +2834,14 @@ export function ProjectMenu({
   };
 
   return (
-    <div className="project-menu-outer">
-      <div className="project-menu-inner">
+    <div
+      className={`${stylex.props(projectHomeStyles.projectMenuOuter).className} project-menu-outer`}
+      data-stylex-owner="project-menu-outer"
+    >
+      <div
+        className={`${stylex.props(projectHomeStyles.projectMenuInner).className} project-menu-inner`}
+        data-stylex-owner="project-menu-inner"
+      >
         <ul
           className={`${stylex.props(projectHomeStyles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
           data-stylex-owner="project-menu-group"
