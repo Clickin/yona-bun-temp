@@ -1215,7 +1215,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Project milestones progress residual: moved static `.milestones .progress-wrap` and `.milestones .progress` geometry into existing `-milestones.stylex.ts` owners, adding stable wrap/progress owners while preserving dynamic bar width. The `.milestones .bar` `background:#fd6956 !important` fallback remains because frozen cascade priority can outrank generated StyleX paint. Focused `stylex-project-milestones-progress-residual.e2e.ts` verifies sources, owners, and retained fallback.
 
-## Batch 473
+## Batch 495
 
 - Project milestones populated-list residual: moved `.infos` width, completion `.number` typography, last-row border reset, and progress `.bar` height/paint into route-local StyleX owners, preserving legacy milestone classes, DOM, links, filtering, and React state. The `.milestones .desc` block remains deferred because no active React milestone-list consumer emits that description node; it is retained as a frozen fallback for future parity. Focused `stylex-project-milestones-progress-residual.e2e.ts` verifies the migrated owners and exact fallback retirement.
 

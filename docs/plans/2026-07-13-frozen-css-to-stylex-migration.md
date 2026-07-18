@@ -3691,7 +3691,7 @@ Batch 465 applies the project-home side-panel state. The active `.project-home` 
 
 Batch 467 applies the project-milestones progress residual. Static progress-wrap width/paint and progress display/size/overflow geometry move into existing route-local StyleX owners while the dynamic bar width remains Dynamic StyleX and the legacy important red background fallback is retained.
 
-Batch 473 applies the populated project-milestones residual. Route-local StyleX now owns `.infos` width, completion `.number` typography, the conditional last-row border reset, and progress `.bar` height/paint. The unused `.milestones .desc` fallback remains deferred because no active React milestone-list consumer emits that node.
+Batch 495 applies the populated project-milestones residual. Route-local StyleX now owns `.infos` width, completion `.number` typography, the conditional last-row border reset, and progress `.bar` height/paint. The unused `.milestones .desc` fallback remains deferred because no active React milestone-list consumer emits that node.
 
 Batch 469 applies the issueform error state. Shared load/mutation error clear, margin, color, and weight move into one route-local StyleX owner across three consumers while preserving classes, roles, copy, and React-owned error state.
 
