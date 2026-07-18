@@ -23,6 +23,7 @@ test("issue detail owns original-message and editor static declarations", async 
   );
 
   expect(legacyView).toContain("@partial_comments(project, issue)");
+  expect(legacyView).toContain('class="pull-right hide show-in-mobile" style="font-size: 0.7em"');
   expect(legacyEditor).toContain('style="position:relative;overflow: visible;"');
   expect(legacyView).toContain("@common.tasklistBar()");
   expect(legacyTasklist).toContain('class="bar red" style="width: 0;"');
@@ -33,6 +34,9 @@ test("issue detail owns original-message and editor static declarations", async 
   );
   expect(legacyOriginalMessage).toContain(".css('border', 0)");
   expect(route).not.toContain("style={{ border: 0 }}");
+  expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
+  expect(route).toContain('data-stylex-owner="project-issue-detail-mobile-metadata"');
+  expect(styles).toContain('mobileMetadata: {\n    fontSize: "0.7em"');
   expect(route).not.toContain('className="tab-content" style={{ position: "relative"');
   expect(route).toContain('data-stylex-owner="project-issue-detail-original-message-toggle"');
   expect(styles).toContain('borderWidth: "0px"');
@@ -47,6 +51,11 @@ test("issue detail owns original-message and editor static declarations", async 
   await mockIssue(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issue/11`, { waitUntil: "commit" });
+
+  const mobileMetadata = page.locator('[data-stylex-owner="project-issue-detail-mobile-metadata"]');
+  await expect(mobileMetadata).toHaveCount(1);
+  await expect(mobileMetadata).toHaveCSS("font-size", "12.6px");
+  await expect(mobileMetadata).toBeHidden();
 
   const taskProgressBar = page.locator(
     '[data-stylex-owner="project-issue-detail-task-progress-bar"]',
@@ -97,6 +106,13 @@ test("issue detail owns original-message and editor static declarations", async 
   expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(mobileMetadata).toBeVisible();
+  await expect(mobileMetadata).toHaveCSS("font-size", "12.6px");
+  const mobileMetadataBox = await mobileMetadata.boundingBox();
+  expect(mobileMetadataBox).not.toBeNull();
+  expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(390);
+  await expect(mobileMetadata).not.toHaveAttribute("style", /font-size|fontSize/);
   const toggleBox = await toggle.boundingBox();
   expect(toggleBox).not.toBeNull();
   expect(toggleBox!.x).toBeGreaterThanOrEqual(0);

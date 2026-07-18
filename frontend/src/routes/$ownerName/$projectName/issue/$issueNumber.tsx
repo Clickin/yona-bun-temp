@@ -818,7 +818,10 @@ function IssueDetailBody({
                 star
               </i>
             </span>
-            <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
+            <div
+              className={`${stylex.props(styles.mobileMetadata).className} pull-right hide show-in-mobile`}
+              data-stylex-owner="project-issue-detail-mobile-metadata"
+            >
               <span className="date" title={createdLabel}>
                 {createdDisplayLabel}
               </span>

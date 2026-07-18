@@ -5,6 +5,8 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 299 applies the workflow to the authenticated issue-detail mobile metadata state. Its fixed `font-size:0.7em` declaration moved to a route-local StyleX owner while the legacy responsive classes and date/state output remain unchanged; the focused issue-detail test covers desktop/mobile visibility, computed size, and containment.
+
 Batch 297 applies the workflow to the public user profile project-list wrapper. Its fixed legacy `margin-left:10px` spacing moved to a route-local StyleX owner while project links, watch/leave actions, and responsive geometry remain unchanged; the focused profile E2E covers source evidence, computed spacing, interactions, and desktop/mobile containment.
 
 Batch 295 applies the workflow to the authenticated pull-request changes ranged and non-ranged review-thread forms. Their fixed legacy `display:block` declarations moved to one route-local StyleX owner with separate stable markers; the `.review-form` hidden cascade, pending-block coordinates, and conditional review visibility remain documented fallback/state ownership. Focused Playwright passed 2/2 with desktop/mobile containment; live legacy visual parity remains unverified.

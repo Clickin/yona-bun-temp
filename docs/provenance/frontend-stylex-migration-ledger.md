@@ -3,6 +3,10 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 299
+
+- `/$ownerName/$projectName/issue/$issueNumber` mobile metadata state: moved the fixed `font-size:0.7em` declaration from `issue/view.scala.html` into the route-local `mobileMetadata` StyleX owner, preserving the legacy responsive visibility classes, date/state copy, and containment. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` verifies source ownership, desktop hidden/mobile visible state, computed font size, and no literal inline style; live legacy visual parity remains unverified.
+
 ## Batch 297
 
 - `/$user` project-list state: moved the fixed `margin-left:10px` project-info wrapper spacing from `user/partial_projectlist.scala.html` into the route-local `projectInfo` StyleX owner, preserving project copy, watch/leave actions, legacy classes, and responsive containment. Focused `stylex-user-profile.e2e.ts` verifies the legacy partial, computed margin, no literal inline style, project interactions, and desktop/mobile containment; live legacy visual parity remains unverified.

@@ -14,6 +14,9 @@ export const styles = stylex.create({
   header: {
     borderBottomColor: issueDetailColors.mutedText,
   },
+  mobileMetadata: {
+    fontSize: "0.7em",
+  },
   body: {
     minWidth: 0,
   },
