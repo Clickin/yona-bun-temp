@@ -144,6 +144,8 @@ const styles = stylex.create({
       "@media (max-width: 767px)": "0px",
     },
   },
+  rootLoginDialogVisible: { display: "block" },
+  rootLoginDialogErrorVisible: { display: "block" },
   rootLoginDialogForm: {
     margin: "20px auto",
     width: {
@@ -607,7 +609,7 @@ function RootLoginDialog({
       ]
         .filter(Boolean)
         .join(" ")}
-      style={visible ? { display: "block" } : undefined}
+      {...(visible ? stylex.props(styles.rootLoginDialogVisible) : {})}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
@@ -687,7 +689,8 @@ function RootLoginDialog({
               </dl>
               <div
                 className={["error", rootLoginDialogErrorClassName].filter(Boolean).join(" ")}
-                style={state.errorMessage ? { display: "block" } : undefined}
+                {...(state.errorMessage ? stylex.props(styles.rootLoginDialogErrorVisible) : {})}
+                data-stylex-owner="root-login-dialog-error"
               >
                 <i
                   className={["yobicon-error", rootLoginDialogErrorIconClassName]
