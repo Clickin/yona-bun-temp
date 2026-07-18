@@ -732,8 +732,8 @@ function ProfileIssueSubtaskSummary({
             }`}
           >
             <div
-              className={`bar ${percentage === 100 ? "done" : "red"}`}
-              style={{ width: `${percentage}%` }}
+              className={`${stylex.props(styles.progressBar(`${percentage}%`)).className} bar ${percentage === 100 ? "done" : "red"}`}
+              data-stylex-owner="user-profile-subtask-progress-bar"
               title="Subtask"
             ></div>
           </div>

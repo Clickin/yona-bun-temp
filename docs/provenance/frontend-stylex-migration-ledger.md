@@ -587,3 +587,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 273
 
 - `/organizations/$organizationName/pullrequests` populated review-progress state: moved the API-derived comment-thread progress width into the route-local StyleX dynamic style function while retaining conditional state classes, legacy progress/bar classes, and runtime avatar/logo/plugin URL fallbacks. The static `margin-right:20px` declaration remains StyleX-owned. Focused `stylex-organization-pullrequests-inline-residual.e2e.ts` passed desktop/mobile populated fixtures.
+## Batch 275
+
+- `/$user` populated public profile state: moved the API-derived subtask completion percentage width into the route-local Dynamic StyleX `progressBar` owner while preserving the legacy `bar` and conditional `done`/`red` classes. Frozen subtask-progress geometry and runtime label/color fallbacks remain unchanged. Focused `stylex-user-profile-subtask-progress.e2e.ts` covers the 33% populated progress bar and mobile containment; live legacy visual parity remains unverified.
