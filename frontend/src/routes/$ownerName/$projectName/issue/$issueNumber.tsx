@@ -2306,11 +2306,13 @@ function IssueChildIssue({
   const issueNumber = stringField(child.issueNumber);
   const state = booleanField(child.isDraft) ? "draft" : stringField(child.state, "open");
   const isClosed = state === "closed";
+  const isSelected = issueNumber === currentIssueNumber;
   const labels = (child.labels ?? []).slice().sort(compareLabels);
 
   return (
     <div
-      className={`issue-item ${issueNumber === currentIssueNumber ? "selected-child" : ""} child-issue`}
+      className={`${isSelected ? stylex.props(styles.selectedChild).className : ""} issue-item ${isSelected ? "selected-child" : ""} child-issue`.trim()}
+      data-stylex-owner={isSelected ? "project-issue-detail-selected-child" : undefined}
     >
       <span className={`state-label ${state}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}

@@ -4309,13 +4309,6 @@ div.markdown-preview {
   border-top: 1px dashed #ddd;
 }
 
-.issue-detail-page .child-issues .selected-child {
-  font-weight: bold;
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
 .issue-detail-page .font12 {
   font-size: 12px;
 }

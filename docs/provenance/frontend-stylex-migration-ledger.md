@@ -1194,6 +1194,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - `/$ownerName/$projectName/issue/$issueNumber` subtasks parent state: moved parent upload-progress shell display/width/margin/overflow/vertical alignment/box shadow and parent-state badge geometry plus open/closed background paint into route-local StyleX owners. Server-derived progress width remains Dynamic StyleX; legacy classes, DOM, copy, and React state behavior remain unchanged. Focused `stylex-project-issue-detail-parent-subtask-state.e2e.ts` verifies the full legacy sources, stable owners, and state variants; live legacy visual parity remains unverified.
 
+## Batch 471
+
+- `/$ownerName/$projectName/issue/$issueNumber` selected child state: moved conditional selected-child font weight, surface, border, and radius into `styles.selectedChild`, preserving the current-child condition, `selected-child`/`child-issue` classes, DOM, and navigation. Focused `stylex-project-issue-detail-selected-child.e2e.ts` verifies the full legacy sources and conditional owner; live legacy visual parity remains unverified.
+
 ## Batch 466
 
 - `/$ownerName/$projectName/issueform` attachment upload-progress shell: moved the route-scoped wrapper `display`, width, height, margin, overflow, vertical alignment, background, and inset shadow plus bar display, height, and orange paint into colocated StyleX. The server-provided progress width remains Dynamic StyleX, and uploader DOM/classes, upload state, and React events remain unchanged. Focused `stylex-project-issueform-upload-progress-shell.e2e.ts` verifies the full legacy sources, static owners, and Dynamic width contract; live legacy visual parity remains unverified.

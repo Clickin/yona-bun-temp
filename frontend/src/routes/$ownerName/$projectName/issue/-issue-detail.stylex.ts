@@ -127,4 +127,10 @@ export const styles = stylex.create({
   },
   parentIssueStateOpen: { backgroundColor: "#8bc34a" },
   parentIssueStateClosed: { backgroundColor: "#f68c52" },
+  selectedChild: {
+    backgroundColor: "#f5f5f5",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontWeight: "bold",
+  },
 });
