@@ -2046,7 +2046,8 @@ function LegacyLabelControl({
   return (
     <div
       className={`select2-container select2-container-multi hide issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
-      style={{ display: "inline-block" }}
+      {...stylex.props(styles.labelControl)}
+      data-stylex-owner="project-issue-detail-label-control"
     >
       <ul className="select2-choices">
         {labels

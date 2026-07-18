@@ -8,6 +8,7 @@ export const issueDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  labelControl: { display: "inline-block" },
   labelColor: (backgroundColor: string) => ({
     backgroundColor,
   }),

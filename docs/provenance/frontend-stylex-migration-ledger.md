@@ -881,3 +881,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 348
 
 - Authenticated project change-VCS code-menu state: moved conditional code-menu `display:none` into the route-local conditional StyleX owner, preserving the legacy change-VCS/settings-menu DOM, permission logic, copy, form behavior, and responsive geometry. Focused `stylex-project-change-vcs-code-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 349
+
+- Authenticated issue-detail label-control state: moved fixed legacy `display:inline-block` into `issueDetailStyles.labelControl`, preserving Select2-compatible DOM/classes, label interaction, and responsive geometry. Focused `stylex-project-issue-detail-label-control.e2e.ts` verifies the legacy source, stable owner, route-local StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

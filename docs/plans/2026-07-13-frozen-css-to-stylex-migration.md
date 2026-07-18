@@ -3458,6 +3458,8 @@ Batch 347 applies the workflow to the authenticated project members code-menu st
 
 Batch 348 applies the workflow to the authenticated project change-VCS code-menu state. The conditional code-menu `display:none` declaration moves to route-local conditional StyleX while preserving the legacy change-VCS/settings-menu DOM, permission logic, copy, form behavior, and responsive geometry; the focused change-VCS test covers legacy source evidence and absence of the former inline declaration.
 
+Batch 349 applies the workflow to the authenticated issue-detail label-control state. The fixed legacy `display:inline-block` declaration moves to a route-local StyleX owner while preserving Select2-compatible DOM/classes, label interaction, and responsive geometry; the focused label-control test covers legacy source evidence and absence of the former inline declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
