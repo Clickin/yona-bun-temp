@@ -30,6 +30,7 @@ export const styles = stylex.create({
     width: "100%",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
+  pasteHelpVisible: { display: "block" },
   save: {
     backgroundColor: postFormColors.action,
     borderColor: postFormColors.action,

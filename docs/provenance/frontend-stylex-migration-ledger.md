@@ -821,3 +821,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 333
 
 - Authenticated pull-request detail help-modal state: moved conditional `display:block/none` into `styles.helpModalVisible` and `styles.helpModalHidden`, preserving the legacy modal DOM, copy, aria state, open/close behavior, and responsive geometry. Focused `stylex-project-pull-request-detail-help-modal.e2e.ts` verifies the legacy source, both conditional StyleX owners, and absence of the former inline style; live legacy visual parity remains unverified.
+
+## Batch 334
+
+- Authenticated project post form upload state: moved conditional paste-help `display:block` into `styles.pasteHelpVisible`, preserving the legacy upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-postform-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
