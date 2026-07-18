@@ -547,6 +547,9 @@ function MySeriesMenuTabs({
   const defaultLoginPagePopoverTimer = useRef<number | null>(null);
   const defaultLoginPageTitle = t("button.setDefaultLoginPage");
   const defaultLoginPageContent = t("button.setDefaultLoginPage.desc");
+  const defaultLoginPageHiddenProps = hideDefaultLoginPageButton
+    ? stylex.props(issueStyles.defaultLoginPageHidden)
+    : undefined;
   const legacyTabActiveOptions = {
     exact: true,
     explicitUndefined: true,
@@ -621,10 +624,11 @@ function MySeriesMenuTabs({
       >
         <button
           type="button"
-          className="ybtn hide-in-mobile"
           id="setDefaultLoginPage"
           title={defaultLoginPageTitle}
-          style={hideDefaultLoginPageButton ? { display: "none" } : undefined}
+          {...defaultLoginPageHiddenProps}
+          className={`ybtn hide-in-mobile ${defaultLoginPageHiddenProps?.className ?? ""}`.trim()}
+          data-stylex-owner="user-issues-default-login-button"
           onBlur={hideDefaultLoginPagePopover}
           onClick={() => {
             hideDefaultLoginPagePopover();

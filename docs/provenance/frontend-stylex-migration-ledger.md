@@ -941,3 +941,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 364
 
 - Authenticated board-post disabled-comment state: moved fixed legacy `cursor:text` into `styles.disabledComment`, preserving the legacy disabled textarea DOM, copy, interaction restrictions, and responsive geometry. Focused `stylex-project-post-detail-disabled-comment.e2e.ts` verifies the legacy source, stable owner, StyleX cursor, and absence of the former inline cursor; live legacy visual parity remains unverified.
+
+## Batch 366
+
+- Authenticated user-issues default-login action state: moved conditional action `display:none` into `issueStyles.defaultLoginPageHidden`, preserving the legacy action DOM, mutation behavior, copy, and responsive geometry. Focused `stylex-user-issues-default-login-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display; live legacy visual parity remains unverified.

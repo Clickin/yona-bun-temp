@@ -11,6 +11,7 @@ export const userIssuesColors = stylex.defineVars({
 export const styles = stylex.create({
   relativeAnchor: { position: "relative" },
   childIssueListVisible: { display: "block" },
+  defaultLoginPageHidden: { display: "none" },
   issueRowTwoColumn: { cursor: "pointer" },
   issueRowHovered: { backgroundColor: "#fafafa" },
   // API-derived percentages cannot be enumerated at build time.
