@@ -332,7 +332,8 @@ function OrganizationMembersBody({
           <div
             id="alertDeletion"
             className={deleteUserId === null ? "modal hide" : "modal hide in"}
-            style={deleteUserId === null ? undefined : { display: "block" }}
+            {...(deleteUserId === null ? {} : stylex.props(styles.deleteModalVisible))}
+            data-stylex-owner="organization-members-delete-modal"
           >
             <div className="modal-header">
               <button type="button" className="close" onClick={dismissDeleteMemberModal}>
@@ -497,6 +498,9 @@ function OrganizationMember({
 }
 
 const styles = stylex.create({
+  deleteModalVisible: {
+    display: "block",
+  },
   // Legacy organization/members.scala.html typeahead action declarations.
   suggestionAction: {
     backgroundColor: "transparent",

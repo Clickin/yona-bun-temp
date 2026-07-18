@@ -3430,6 +3430,8 @@ Batch 333 applies the workflow to the authenticated pull-request detail help-mod
 
 Batch 334 applies the workflow to the authenticated project post form upload state. The conditional paste-help `display:block` declaration moves to route-local conditional StyleX while preserving the legacy upload partial, copy, capability detection, and responsive upload geometry; the focused postform test covers legacy source evidence and the absence of the former inline display.
 
+Batch 335 applies the workflow to the authenticated organization member-delete confirmation state. The conditional modal `display:block` declaration moves to the route-local StyleX owner while preserving the legacy modal DOM, copy, backdrop, mutation flow, and responsive geometry; the focused organization-members test covers source evidence and delete interaction.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

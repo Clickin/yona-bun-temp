@@ -825,3 +825,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 334
 
 - Authenticated project post form upload state: moved conditional paste-help `display:block` into `styles.pasteHelpVisible`, preserving the legacy upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-postform-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 335
+
+- Authenticated organization member-delete confirmation state: moved conditional modal `display:block` into `styles.deleteModalVisible`, preserving the legacy modal DOM, copy, backdrop, mutation flow, and responsive geometry. Focused `stylex-organization-members-delete-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and delete interaction; live legacy visual parity remains unverified.
