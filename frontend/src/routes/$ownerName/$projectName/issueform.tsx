@@ -1938,12 +1938,28 @@ function IssueMarkdownEditor({
     <div className="mt10 issue-markdown-editor">
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("edit")}>
+          <button
+            type="button"
+            {...stylex.props(
+              issueFormStyles.markdownTab,
+              activeTab === "edit" && issueFormStyles.markdownTabActive,
+            )}
+            data-stylex-owner="project-issue-form-markdown-tab-edit"
+            onClick={() => setActiveTab("edit")}
+          >
             {t("common.editor.edit")}
           </button>
         </li>
         <li className={activeTab === "preview" ? "active" : undefined}>
-          <button type="button" onClick={() => setActiveTab("preview")}>
+          <button
+            type="button"
+            {...stylex.props(
+              issueFormStyles.markdownTab,
+              activeTab === "preview" && issueFormStyles.markdownTabActive,
+            )}
+            data-stylex-owner="project-issue-form-markdown-tab-preview"
+            onClick={() => setActiveTab("preview")}
+          >
             {t("common.editor.preview")}
           </button>
         </li>

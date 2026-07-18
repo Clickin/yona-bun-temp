@@ -6536,30 +6536,6 @@ div.markdown-preview {
   margin-bottom: 0;
 }
 
-.issue-form-page-wrap .issue-markdown-editor > .nav-tabs > li > button {
-  display: block;
-  box-sizing: border-box;
-  min-height: 29px;
-  padding: 4px 15px;
-  margin-right: 2px;
-  color: #3592b5;
-  font: inherit;
-  font-weight: bold;
-  line-height: 20px;
-  cursor: pointer;
-  appearance: none;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px 4px 0 0;
-}
-
-.issue-form-page-wrap .issue-markdown-editor > .nav-tabs > li.active > button {
-  color: #555;
-  cursor: default;
-  background: #fff;
-  border-color: #ddd #ddd transparent;
-}
-
 .issue-form-page-wrap .task-list-button {
   margin-top: 2px;
 }

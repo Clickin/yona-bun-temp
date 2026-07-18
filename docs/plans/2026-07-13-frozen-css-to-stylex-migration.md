@@ -3732,3 +3732,5 @@ Batch 476 applies the workflow to the issue-detail subtasks state. Four route-sc
 Batch 478 applies the workflow to the issue-detail timeline state base geometry. Active state spans receive one route-local StyleX owner for shared geometry/neutral paint; event-index overrides and all state-variant colors remain frozen fallback. The focused event-base test covers state consumer coverage and exact scoped fallback retirement.
 
 Batch 479 applies a finite conditional StyleX lookup for issue-detail timeline state variants, preserving event-index and neutral fallback selectors.
+
+Batch 481 applies the workflow to issueform markdown Edit/Preview tabs. The two route-only tab button base and conditional active declarations move into StyleX while preserving legacy DOM, tab state, and generic nav/editor fallback; legacy Scala HTML/JS is output DOM/UX evidence and behavior remains React-owned. The focused contract verifies the common editor source, two owners, and exact scoped fallback removal.
