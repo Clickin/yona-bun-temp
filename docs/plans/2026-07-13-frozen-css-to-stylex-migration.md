@@ -3583,3 +3583,5 @@ Batch 406 applies the workflow to the site issue-list pagination sprite state. T
 Batch 407 applies the workflow to the project change-VCS modal visibility state. The conditional modal `display:block`/`display:none` declarations move to route-local conditional StyleX while preserving modal DOM, aria state, mutation behavior, copy, and responsive geometry; the focused modal-visibility test covers both states.
 
 Batch 408 applies the workflow to the project issues keymap modal state. The conditional keymap `display:block` declaration moves to a route-local conditional StyleX owner while preserving keymap DOM, keyboard interaction, copy, and responsive geometry; the focused keymap-visibility test covers the owner and former inline removal.
+
+Batch 409 applies the workflow to the site post-list pagination sprite state. The shared runtime sprite URL moves from four inline custom-property declarations to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused post-list pagination test covers all consumers.

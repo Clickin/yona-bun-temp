@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import type { CSSProperties } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { sitePostsQueryOptions, siteUpdateQueryOptions, type SitePost } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
@@ -15,9 +14,11 @@ type PostListRouteSearch = {
   pageNum?: number;
 };
 
-const paginationSpriteStyle = {
-  "--site-post-list-pagination-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
+const paginationStyles = stylex.create({
+  paginationSprite: (spriteUrl: string) => ({
+    "--site-post-list-pagination-sprite": `url(${spriteUrl})`,
+  }),
+});
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -507,7 +508,7 @@ function PostListPagination({
               <i
                 {...paginationPrevIconStyleProps}
                 data-stylex-owner="site-post-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -523,7 +524,7 @@ function PostListPagination({
                 {...paginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationOffLabelStyleProps}
@@ -610,7 +611,7 @@ function PostListPagination({
               <i
                 {...paginationNextIconStyleProps}
                 data-stylex-owner="site-post-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -627,7 +628,7 @@ function PostListPagination({
                 {...paginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
                 data-stylex-owner="site-post-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}

@@ -98,6 +98,7 @@ test.describe("StyleX site post-list pagination", () => {
       expect(route).toContain(`styles.${style}`);
     }
     expect(route).toContain("globalBreakpoints.mobile");
+    expect(route).toContain("paginationStyles.paginationSprite(legacySpriteUrl)");
     expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
     expect(route).toContain('"--site-post-list-pagination-sprite": `url(${legacySpriteUrl})`');
     for (const token of [
