@@ -829,3 +829,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 335
 
 - Authenticated organization member-delete confirmation state: moved conditional modal `display:block` into `styles.deleteModalVisible`, preserving the legacy modal DOM, copy, backdrop, mutation flow, and responsive geometry. Focused `stylex-organization-members-delete-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and delete interaction; live legacy visual parity remains unverified.
+
+## Batch 336
+
+- Authenticated organization setting name-validation state: moved the hidden `wrongName` message `display:none` into `organizationSettingFormStyles.wrongNameHidden`, preserving the legacy `msg wrongName` span, validation copy/state, and responsive form geometry. Focused `stylex-organization-settingform-wrong-name.e2e.ts` verifies the legacy source, stable owner, conditional visibility, and absence of the former inline display; live legacy visual parity remains unverified.

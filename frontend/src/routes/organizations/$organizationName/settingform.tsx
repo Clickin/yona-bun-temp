@@ -10,6 +10,7 @@ import type { OrganizationDetail } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import { organizationSettingFormStyles } from "./-organization-settingform.stylex";
 import { organizationSettingColors, organizationSettingStyles } from "./-settingform.stylex";
 
 // Legacy output source: yona-original/app/views/organization/setting.scala.html.
@@ -54,6 +55,9 @@ function OrganizationSettingsBody({
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const logoStyleProps = stylex.props(organizationSettingStyles.logo(`url('${logoUrl}')`));
+  const wrongNameStyleProps = wrongNameMessage
+    ? undefined
+    : stylex.props(organizationSettingFormStyles.wrongNameHidden);
   const styles = stylex.create({
     bubble: { backgroundColor: organizationSettingColors.bubbleSurface },
     field: {
@@ -222,8 +226,9 @@ function OrganizationSettingsBody({
                         </span>
                       ) : null}
                       <span
-                        className="msg wrongName"
-                        style={wrongNameMessage ? undefined : { display: "none" }}
+                        {...wrongNameStyleProps}
+                        className={`msg wrongName ${wrongNameStyleProps?.className ?? ""}`.trim()}
+                        data-stylex-owner="organization-setting-wrong-name"
                       >
                         {wrongNameMessage}
                       </span>
