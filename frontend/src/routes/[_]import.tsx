@@ -92,6 +92,7 @@ function ProjectImportScreen({
     false;
   const initiallyUsesRepoAuth = initialAuthId !== "" || repoAuthError !== undefined;
   const [usesRepoAuth, setUsesRepoAuth] = React.useState(initiallyUsesRepoAuth);
+  const repoAuthStyleProps = usesRepoAuth ? stylex.props(styles.repoAuthVisible) : undefined;
   const [repoAuthChanged, setRepoAuthChanged] = React.useState(false);
   const [projectScope, setProjectScope] = React.useState(initialProjectScope);
   const [menuCodeChecked, setMenuCodeChecked] = React.useState(true);
@@ -269,9 +270,10 @@ function ProjectImportScreen({
                   </label>
 
                   <div
+                    {...repoAuthStyleProps}
                     id="repoAuth"
-                    className="repo-auth-wrap"
-                    style={usesRepoAuth ? { display: "block" } : undefined}
+                    className={`repo-auth-wrap ${repoAuthStyleProps?.className ?? ""}`.trim()}
+                    data-stylex-owner="project-import-repo-auth"
                   >
                     <div className="row-fluid">
                       <dl className="span6">

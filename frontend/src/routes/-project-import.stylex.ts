@@ -22,5 +22,6 @@ export const styles = stylex.create({
     maxWidth: "100%",
     boxSizing: "border-box",
   },
+  repoAuthVisible: { display: "block" },
   advanced: { color: projectImportColors.accentText },
 });

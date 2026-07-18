@@ -757,3 +757,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 317
 
 - `/sites/massmail` authenticated project-recipient state: moved the conditional `#project-list-wrap` `display:block` declaration from a React inline style into the route-local conditional StyleX `styles.projectWrapperVisible`, preserving the legacy `hide` class, recipient radio interaction, project input/typeahead behavior, and responsive geometry. Focused `stylex-site-massmail-project-input.e2e.ts` verifies the legacy source boundary, hidden/visible state, computed display, absence of literal inline display, selection/add behavior, and desktop/mobile containment; live legacy visual parity remains unverified.
+
+## Batch 318
+
+- `/_import` repository-authenticated state: moved the conditional `#repoAuth` `display:block` declaration from the React inline style into route-local conditional StyleX `styles.repoAuthVisible`, preserving the legacy `repo-auth-wrap` class, checkbox interaction, auth fields, focus behavior, and responsive form geometry. Focused `stylex-project-import-repo-auth.e2e.ts` verifies the legacy importing template, stable owner, Dynamic StyleX source, and absence of the former inline declaration; live legacy visual parity remains unverified.

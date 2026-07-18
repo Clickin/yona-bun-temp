@@ -499,7 +499,9 @@ test("project import form renders legacy server auth and owner validation state"
   await expect(page.locator("#useRepoAuth")).toBeChecked();
   await expect(page.locator("#repoAuth input[name='authId']")).toBeFocused();
   await expect(page.locator("#repoAuth")).toBeVisible();
-  await expect(page.locator("#repoAuth")).toHaveAttribute("style", "display: block;");
+  const repoAuthStyle = await page.locator("#repoAuth").getAttribute("style");
+  expect(repoAuthStyle).toMatch(/(?:^|;)\s*--x-display\s*:\s*block\s*(?:;|$)/i);
+  expect(repoAuthStyle).not.toMatch(/(?:^|;)\s*display\s*:/i);
   await expect(page.locator("#repoAuth input[name='authId']")).toHaveValue("deploy-bot");
   await expect(page.locator("#url")).toHaveValue("https://github.com/yona-projects/yona.git");
   await expect(page.locator("#project-name")).toHaveValue("restored-import");
@@ -511,16 +513,18 @@ test("project import form renders legacy server auth and owner validation state"
     "Owner information is not valid.",
   );
   expect(
-    await canonicalizeElements(page, [
-      "#useRepoAuth",
-      "#repoAuth",
-      "#project-owner",
-      "#project-owner + span.orange-text",
-    ]),
+    (
+      await canonicalizeElements(page, [
+        "#useRepoAuth",
+        "#repoAuth",
+        "#project-owner",
+        "#project-owner + span.orange-text",
+      ])
+    ).replace(/ style="[^"]*"/u, ""),
   ).toEqual(
     [
       '<input id="useRepoAuth" type="checkbox"></input>',
-      '<div class="repo-auth-wrap" id="repoAuth" style="display:block"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
+      '<div class="repo-auth-wrap" id="repoAuth"><div class="row-fluid"><dl class="span6"><dt>Access ID</dt><dd><input class="text" name="authId" placeholder="Entered information will not be stored anywhere." type="text" value="deploy-bot"></input></dd></dl><dl class="span6"><dt>Access Password</dt><dd><input class="text" name="authPw" type="password"></input></dd></dl></div></div>',
       '<select class="mb10 select2-offscreen" data-format="user" id="project-owner" name="owner"><option value="admin">admin</option><option value="weblabs">weblabs</option></select>',
       '<span class="orange-text">Owner information is not valid.</span>',
     ].join(""),
