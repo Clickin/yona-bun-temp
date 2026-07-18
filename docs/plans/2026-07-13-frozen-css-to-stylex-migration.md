@@ -3561,3 +3561,5 @@ Batch 394 applies the workflow to the authenticated project-issues clickable-row
 Batch 395 applies the workflow to the authenticated user-issues static popover state. The two-column/show-subtasks popover geometry moves to route-local StyleX owners while preserving legacy popover DOM, copy, visibility behavior, and responsive geometry; the focused user-issues popover test covers the legacy source contract and owners.
 
 Batch 396 applies the workflow to the authenticated project-posts static popover state. The two-column popover geometry moves to a route-local StyleX owner while preserving legacy popover DOM, copy, visibility behavior, and responsive geometry; the focused posts-popover test covers the legacy source contract and owner.
+
+Batch 397 applies the workflow to the authenticated project-milestones filtered issue-link state. The conditional hidden `display:none` declaration moves to a route-local conditional StyleX owner while preserving milestone filtering, issue-link DOM, copy, and geometry; the focused hidden-issue test covers the legacy source contract and owner.

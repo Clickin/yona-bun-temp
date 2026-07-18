@@ -1065,3 +1065,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 396
 
 - Authenticated project-posts static popover state: moved two-column popover geometry into `twoColumnModePopoverStyles.popover`, preserving legacy popover DOM, copy, visibility behavior, and responsive geometry. Focused `stylex-project-posts-two-column-popover.e2e.ts` verifies the legacy source contract and stable owner; live legacy visual parity remains unverified.
+
+## Batch 397
+
+- Authenticated project-milestones filtered issue-link state: moved conditional hidden `display:none` into `milestoneListStyles.hiddenIssueLink`, preserving milestone filtering, issue-link DOM, copy, and geometry. Focused `stylex-project-milestones-hidden-issue.e2e.ts` verifies the legacy source contract and stable owner; live legacy visual parity remains unverified.

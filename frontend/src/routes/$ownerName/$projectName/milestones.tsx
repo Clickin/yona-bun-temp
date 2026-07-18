@@ -14,6 +14,8 @@ import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-milestones.stylex";
 
+const milestoneListStyles = stylex.create({ hiddenIssueLink: { display: "none" } });
+
 const sx = {
   page: stylex.props(styles.page),
   tabWrap: stylex.props(styles.tabWrap),
@@ -473,11 +475,13 @@ function MilestoneIssueLink({
       {...LEGACY_MILESTONE_LIST_LINK_PROPS}
       {...sx.issueLink}
       className={`${sx.issueLink.className} issue-link`}
-      data-stylex-owner="project-milestones-issue-link"
+      data-stylex-owner={
+        style ? "project-milestones-hidden-issue-link" : "project-milestones-issue-link"
+      }
       to="/$ownerName/$projectName/issue/$issueNumber"
       params={{ ownerName, projectName, issueNumber }}
       target="_blank"
-      style={style}
+      {...(style ? stylex.props(milestoneListStyles.hiddenIssueLink) : {})}
     >
       <div {...sx.issueItem} className={`${sx.issueItem.className} issue-item`}>
         <span
