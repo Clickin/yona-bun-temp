@@ -21,6 +21,8 @@ import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
 
+const issueListKeymapStyles = stylex.create({ visible: { display: "block" } });
+
 const projectIssuesStyles = stylex.create({ clickableRow: { cursor: "pointer" } });
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
@@ -3201,8 +3203,9 @@ function IssueListKeymap({ project }: { project: ProjectContainer }) {
         </button>
         <div
           id="helpKeys"
-          className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""}`}
-          style={keymapOpen ? { display: "block" } : undefined}
+          {...(keymapOpen ? stylex.props(issueListKeymapStyles.visible) : undefined)}
+          className={`modal ${keymapOpen ? "" : "hide "}fade keymap-help${keymapOpen ? " in" : ""} ${keymapOpen ? (stylex.props(issueListKeymapStyles.visible).className ?? "") : ""}`.trim()}
+          data-stylex-owner="project-issues-keymap-modal"
           tabIndex={-1}
           role="dialog"
           onKeyDown={(event) => {
