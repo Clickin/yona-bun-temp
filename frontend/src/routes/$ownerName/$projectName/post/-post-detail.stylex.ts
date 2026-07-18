@@ -35,6 +35,8 @@ export const styles = stylex.create({
   editorTabContent: { overflow: "visible", position: "relative" },
   originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
   deleteModalVisible: { display: "block" },
+  commentBodyHidden: { display: "none" },
+  commentEditorVisible: { display: "block" },
   tasklistProgress: { width: 0 },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   mobileMetadata: { fontSize: "0.7em" },

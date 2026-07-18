@@ -917,3 +917,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 357
 
 - Authenticated code-file open-in-browser popover state: moved static popover positioning and visible display declarations into the route-local `styles.popover`, preserving the legacy code-file anchor/popover DOM, hover interaction, copy, and responsive geometry. Focused `stylex-project-code-file-open-popover.e2e.ts` verifies the legacy source, stable owner, StyleX positioning, and absence of the former inline positioning declaration; live legacy visual parity remains unverified.
+
+## Batch 358
+
+- Authenticated board-post comment-edit state: moved conditional comment-body `display:none` and editor `display:block` into `styles.commentBodyHidden`/`styles.commentEditorVisible`, preserving the legacy comment DOM, editor interaction, copy, and responsive geometry. Focused `stylex-project-post-detail-comment-edit.e2e.ts` verifies the legacy sources, stable owners, conditional StyleX, and absence of the former inline declarations; live legacy visual parity remains unverified.

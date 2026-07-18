@@ -1371,7 +1371,11 @@ function PostCommentRow({
           postNumber={postNumber}
           projectName={projectName}
         />
-        <div id={`comment-body-${commentId}`} style={isEditing ? { display: "none" } : undefined}>
+        <div
+          id={`comment-body-${commentId}`}
+          {...(isEditing ? stylex.props(styles.commentBodyHidden) : {})}
+          data-stylex-owner="post-detail-comment-body"
+        >
           <TasklistBar />
           <div
             className="comment-body markdown-wrap"
@@ -1491,7 +1495,8 @@ function PostCommentUpdateForm({
     <div
       id={`comment-editform-${commentId}`}
       className="comment-update-form"
-      style={isEditing ? { display: "block" } : undefined}
+      {...(isEditing ? stylex.props(styles.commentEditorVisible) : {})}
+      data-stylex-owner="post-detail-comment-editor"
     >
       <form
         action={prefixBasePath(
