@@ -3,6 +3,14 @@
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15
 
+## Batch 300
+
+- `/$ownerName/$projectName/post/$postNumber` mobile metadata state: moved the fixed `font-size:0.7em` declaration from `board/view.scala.html` into the route-local `mobileMetadata` StyleX owner, preserving responsive visibility, date copy, and containment. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies source ownership, desktop hidden/mobile visible state, computed size, and no literal inline style; live legacy visual parity remains unverified.
+
+## Batch 301
+
+- `/user/editform` avatar state: moved the fixed 128px avatar and 500px crop-preview dimensions from `user/edit.scala.html` into route-local StyleX owners, preserving upload/crop behavior and responsive containment. Focused `stylex-user-settings-page-shell.e2e.ts` verifies legacy source, stable owners, computed dimensions, crop interaction, and desktop/mobile containment; live legacy visual parity remains unverified.
+
 ## Batch 299
 
 - `/$ownerName/$projectName/issue/$issueNumber` mobile metadata state: moved the fixed `font-size:0.7em` declaration from `issue/view.scala.html` into the route-local `mobileMetadata` StyleX owner, preserving the legacy responsive visibility classes, date/state copy, and containment. Focused `stylex-project-issue-detail-inline-residual.e2e.ts` verifies source ownership, desktop hidden/mobile visible state, computed font size, and no literal inline style; live legacy visual parity remains unverified.

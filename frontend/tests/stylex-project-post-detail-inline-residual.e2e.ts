@@ -10,6 +10,11 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
     "utf8",
   );
   const template = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
+  const boardTemplate = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const responsiveStyles = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
   const tasklistTemplate = readFileSync(
     "../yona-original/app/views/common/tasklistBar.scala.html",
     "utf8",
@@ -22,6 +27,12 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(template).toContain(
     '<div class="tab-content" style="position:relative;overflow: visible;">',
   );
+  expect(boardTemplate).toContain(
+    '<div class="pull-right hide show-in-mobile" style="font-size: 0.7em">',
+  );
+  expect(responsiveStyles).toContain(".show-in-mobile {");
+  expect(responsiveStyles).toContain("display: block !important;");
+  expect(responsiveStyles).toContain(".hide-in-mobile {");
   expect(originalMessage).toContain(".css('border', 0)");
   expect(originalMessage).toContain(".css('padding-left', '5px')");
   expect(tasklistTemplate).toContain(
@@ -38,6 +49,8 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(route).not.toContain(
     'className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}',
   );
+  expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
+  expect(theme).toContain('mobileMetadata: { fontSize: "0.7em" }');
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
   expect(theme).toContain("originalMessageToggle: { paddingLeft: 5, paddingRight: 5 }");
   expect(theme).toContain("tasklistProgress: { width: 0 }");
@@ -46,6 +59,40 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/weblabs/demo/post/1`);
+
+  const mobileMetadata = page.locator('[data-stylex-owner="post-detail-mobile-metadata"]');
+  await expect(mobileMetadata).toHaveCount(1);
+  await expect(mobileMetadata).not.toHaveAttribute("style", /.+/);
+  const desktopMetadata = await mobileMetadata.evaluate((element) => ({
+    display: getComputedStyle(element).display,
+    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+  }));
+  expect(desktopMetadata.display).toBe("none");
+  // The legacy 18px title × 0.7em computes to 12.6px and Chromium exposes
+  // the rounded used value (13px) for this inherited heading context.
+  expect(desktopMetadata.fontSize).toBeCloseTo(12.6, 0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(mobileMetadata).toBeVisible();
+  const mobileMetadataStyle = await mobileMetadata.evaluate((element) => ({
+    display: getComputedStyle(element).display,
+    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+  }));
+  expect(mobileMetadataStyle.display).toBe("block");
+  expect(mobileMetadataStyle.fontSize).toBeCloseTo(12.6, 0);
+  const mobileMetadataBox = await mobileMetadata.boundingBox();
+  const titleBox = await page.locator(".title").first().boundingBox();
+  expect(mobileMetadataBox).not.toBeNull();
+  expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(390);
+  if (titleBox) {
+    expect(mobileMetadataBox!.x).toBeGreaterThanOrEqual(titleBox.x);
+    expect(mobileMetadataBox!.x + mobileMetadataBox!.width).toBeLessThanOrEqual(
+      titleBox.x + titleBox.width,
+    );
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
 
   const tabContent = page.locator('[data-stylex-owner="post-detail-editor-tab-content"]').first();
   await expect(tabContent).toHaveCount(1);

@@ -50,6 +50,7 @@ const sx = {
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
   tasklistProgress: stylex.props(styles.tasklistProgress),
   keymapWrapper: stylex.props(styles.keymapWrapper),
+  mobileMetadata: stylex.props(styles.mobileMetadata),
 } as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
@@ -359,7 +360,11 @@ function ProjectPostDetailBody({
           </div>
           <div className="title">
             <strong className="board-id">#{postNumber}</strong> {post.title}
-            <div className="pull-right hide show-in-mobile" style={{ fontSize: "0.7em" }}>
+            <div
+              {...sx.mobileMetadata}
+              className="pull-right hide show-in-mobile"
+              data-stylex-owner="post-detail-mobile-metadata"
+            >
               <span className="date" title={post.createdLabel}>
                 {legacyRelativeDateLabel(post.createdLabel, language)}
               </span>

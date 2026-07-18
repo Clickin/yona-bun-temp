@@ -35,4 +35,5 @@ export const styles = stylex.create({
   originalMessageToggle: { paddingLeft: 5, paddingRight: 5 },
   tasklistProgress: { width: 0 },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
+  mobileMetadata: { fontSize: "0.7em" },
 });

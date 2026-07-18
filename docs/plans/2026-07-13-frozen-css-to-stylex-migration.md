@@ -5,6 +5,10 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 300 applies the workflow to the authenticated board-post mobile metadata state. Its fixed `font-size:0.7em` declaration moved to route-local StyleX while legacy responsive classes and date output remain unchanged; the focused post-detail test covers desktop/mobile visibility, computed size, and containment.
+
+Batch 301 applies the workflow to the authenticated user-settings avatar state. Fixed 128px avatar and 500px crop-preview dimensions moved to route-local StyleX while upload/crop state remains React-owned; the focused settings test covers source evidence, computed geometry, interaction, and desktop/mobile containment.
+
 Batch 299 applies the workflow to the authenticated issue-detail mobile metadata state. Its fixed `font-size:0.7em` declaration moved to a route-local StyleX owner while the legacy responsive classes and date/state output remain unchanged; the focused issue-detail test covers desktop/mobile visibility, computed size, and containment.
 
 Batch 297 applies the workflow to the public user profile project-list wrapper. Its fixed legacy `margin-left:10px` spacing moved to a route-local StyleX owner while project links, watch/leave actions, and responsive geometry remain unchanged; the focused profile E2E covers source evidence, computed spacing, interactions, and desktop/mobile containment.
