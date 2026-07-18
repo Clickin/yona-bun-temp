@@ -823,6 +823,20 @@ const styles = stylex.create({
     textAlign: "left",
     whiteSpace: "nowrap",
     width: "100%",
+    ":hover": {
+      backgroundColor: "#0081c2",
+      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
+      color: "#fff",
+      outline: "0",
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: "#0081c2",
+      backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)",
+      color: "#fff",
+      outline: "0",
+      textDecoration: "none",
+    },
   },
   guestBadge: {
     backgroundColor: "rgba(255, 165, 0, 0.8)",
