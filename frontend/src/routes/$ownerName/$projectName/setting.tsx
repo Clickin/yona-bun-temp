@@ -476,10 +476,10 @@ function ProjectSettingBody({
                     name="overview"
                     maxLength={250}
                     {...sx.textarea}
+                    {...stylex.props(styles.textareaHeight(`${overviewHeight}px`))}
                     data-stylex-owner="project-setting-description"
                     className="textarea"
                     style={{
-                      height: `${overviewHeight}px`,
                       overflow: "hidden",
                       overflowWrap: "break-word",
                       resize: "none",

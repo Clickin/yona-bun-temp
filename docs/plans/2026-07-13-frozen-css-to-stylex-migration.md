@@ -3502,6 +3502,8 @@ Batch 371 applies the workflow to the authenticated issue-form mention mirror sc
 
 Batch 372 applies the workflow to the authenticated organization-issues header background state. The server-provided organization logo URL moves from a literal inline declaration to a route-local Dynamic StyleX owner while preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry; the focused header-background test covers the legacy source contract and absence of the former inline declaration.
 
+Batch 373 applies the workflow to the authenticated project-setting description state. The runtime textarea height moves from a literal inline declaration to a route-local Dynamic StyleX function while preserving the legacy editor overflow/wrapping/resize behavior, copy, and responsive geometry; the focused overview-height test covers the legacy source contract and dynamic carrier.
+
 
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 

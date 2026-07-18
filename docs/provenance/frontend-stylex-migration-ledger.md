@@ -969,3 +969,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 372
 
 - Authenticated organization-issues header background state: moved the server-provided organization logo URL from the literal inline declaration in `organization/header.scala.html` into the route-local Dynamic StyleX `organizationHeaderStyles.background(...)`, preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry. Focused `stylex-organization-issues-header-background.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background declaration; live legacy visual parity remains unverified.
+
+## Batch 373
+
+- Authenticated project-setting description state: moved the runtime overview textarea height from the literal inline declaration into the route-local Dynamic StyleX `styles.textareaHeight(...)`, preserving the legacy overflow, wrapping, resize behavior, copy, and responsive geometry. Focused `stylex-project-setting-overview-height-dynamic.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline height; live legacy visual parity remains unverified.
