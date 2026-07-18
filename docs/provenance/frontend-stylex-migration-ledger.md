@@ -813,3 +813,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 331
 
 - Authenticated `/sites/massmail` project-suggestion dropdown state: moved conditional typeahead-menu `display:block` into `styles.projectSuggestionMenuVisible`, preserving legacy typeahead classes, suggestion copy, selection/add interaction, and responsive geometry. Focused `stylex-site-massmail-project-input.e2e.ts` verifies computed display, absence of literal inline display, and selection behavior; live legacy visual parity remains unverified.
+
+## Batch 332
+
+- Authenticated `/_import` owner/VCS Select2 state: moved fixed 220px container/dropdown geometry and inherited button-label declarations into `-project-import.stylex.ts` owners, preserving Select2 DOM/classes, owner switching, VCS disabled behavior, and responsive form geometry. Focused `stylex-project-import-repo-auth.e2e.ts` verifies source evidence, stable owners, StyleX geometry ownership, and absence of former inline widths; live legacy visual parity remains unverified.

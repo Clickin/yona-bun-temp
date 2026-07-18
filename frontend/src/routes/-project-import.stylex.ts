@@ -23,5 +23,14 @@ export const styles = stylex.create({
     boxSizing: "border-box",
   },
   repoAuthVisible: { display: "block" },
+  selectContainer: { width: "220px" },
+  selectButton: {
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    fontWeight: "inherit",
+    textAlign: "left",
+    width: "100%",
+  },
+  selectDropOpen: { display: "block", width: "220px" },
   advanced: { color: projectImportColors.accentText },
 });

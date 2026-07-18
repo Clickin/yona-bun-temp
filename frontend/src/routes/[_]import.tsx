@@ -314,19 +314,14 @@ function ProjectImportScreen({
                 </dt>
                 <dd>
                   <div
-                    className={`select2-container mb10${ownerMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
-                    style={{ width: 220 }}
+                    {...stylex.props(styles.selectContainer)}
+                    className={`${stylex.props(styles.selectContainer).className} select2-container mb10${ownerMenuOpen ? " select2-dropdown-open select2-container-active" : ""}`}
+                    data-stylex-owner="project-import-owner-select"
                   >
                     <button
                       type="button"
-                      className="select2-choice"
-                      style={{
-                        fontFamily: "inherit",
-                        fontSize: "inherit",
-                        fontWeight: "inherit",
-                        textAlign: "left",
-                        width: "100%",
-                      }}
+                      {...stylex.props(styles.selectButton)}
+                      className={`${stylex.props(styles.selectButton).className} select2-choice`}
                       aria-expanded={ownerMenuOpen}
                       onClick={() => setOwnerMenuOpen((open) => !open)}
                     >
@@ -362,7 +357,7 @@ function ProjectImportScreen({
                     />
                     <div
                       className={`select2-drop select2-display-none select2-with-searchbox${ownerMenuOpen ? " select2-drop-active" : ""}`}
-                      style={ownerMenuOpen ? { display: "block", width: 220 } : undefined}
+                      {...(ownerMenuOpen ? stylex.props(styles.selectDropOpen) : {})}
                     >
                       <div className="select2-search">
                         <input
@@ -379,14 +374,8 @@ function ProjectImportScreen({
                           >
                             <button
                               type="button"
-                              className="select2-result-label"
-                              style={{
-                                fontFamily: "inherit",
-                                fontSize: "inherit",
-                                fontWeight: "inherit",
-                                textAlign: "left",
-                                width: "100%",
-                              }}
+                              {...stylex.props(styles.selectButton)}
+                              className={`${stylex.props(styles.selectButton).className} select2-result-label`}
                               onClick={() => {
                                 setOwnerName(option.ownerName);
                                 setOwnerMenuOpen(false);
@@ -569,19 +558,14 @@ function ProjectImportScreen({
                   </div>
                   <div className="span10 cu-desc">
                     <div
-                      className="select2-container select2-container-disabled mb10 mt5"
-                      style={{ width: 220 }}
+                      {...stylex.props(styles.selectContainer)}
+                      className={`${stylex.props(styles.selectContainer).className} select2-container select2-container-disabled mb10 mt5`}
+                      data-stylex-owner="project-import-vcs-select"
                     >
                       <button
                         type="button"
-                        className="select2-choice"
-                        style={{
-                          fontFamily: "inherit",
-                          fontSize: "inherit",
-                          fontWeight: "inherit",
-                          textAlign: "left",
-                          width: "100%",
-                        }}
+                        {...stylex.props(styles.selectButton)}
+                        className={`${stylex.props(styles.selectButton).className} select2-choice`}
                         disabled
                       >
                         <span className="select2-chosen">{t("project.new.vcsType.git")}</span>
