@@ -19,4 +19,5 @@ export const issueFormStyles = stylex.create({
   labelPicker: { display: "inline-block" },
   labelBackground: (backgroundColor: string) => ({ backgroundColor }),
   uploadProgressBar: (width: string) => ({ width }),
+  mentionMirrorTransform: (transform: string) => ({ transform }),
 });

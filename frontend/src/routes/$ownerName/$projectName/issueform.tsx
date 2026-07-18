@@ -2080,7 +2080,10 @@ function IssueMarkdownEditor({
               <div
                 className="editor-mention-mirror"
                 aria-hidden="true"
-                style={{ transform: `translateY(-${textareaScrollTop}px)` }}
+                {...stylex.props(
+                  issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
+                )}
+                data-stylex-owner="project-issue-form-mention-mirror"
               >
                 {bodyMarkdown.slice(0, caretPosition)}
                 <span ref={mentionMarkerRef} className="editor-mention-marker">

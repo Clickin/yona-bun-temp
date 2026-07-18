@@ -961,3 +961,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 370
 
 - Authenticated project-home header background state: moved the server-provided project background URL from the literal inline declaration in `project/header.scala.html` into the route-local Dynamic StyleX `projectHeaderStyles.background(...)`, preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry. Focused `stylex-project-home-header-background.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background declaration; live legacy visual parity remains unverified.
+
+## Batch 371
+
+- Authenticated issue-form mention mirror scroll state: moved the runtime textarea scroll `transform` from the literal inline declaration into the route-local Dynamic StyleX `issueFormStyles.mentionMirrorTransform(...)`, preserving the legacy editor/mention DOM and scroll behavior. Focused `stylex-project-issueform-mention-scroll-dynamic.e2e.ts` verifies the legacy editor/mention source contract, stable owner, Dynamic StyleX source, and absence of the former inline transform; live legacy visual parity remains unverified.
