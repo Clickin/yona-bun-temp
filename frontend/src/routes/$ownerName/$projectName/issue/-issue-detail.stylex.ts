@@ -80,6 +80,9 @@ export const styles = stylex.create({
   sidebarMeta: {
     padding: "15px 0 0 52px",
   },
+  sidebarMetaDl: { marginBottom: "20px" },
+  sidebarMetaDd: { padding: "5px 0px" },
+  sidebarMetaAssigneeName: { fontSize: "11px" },
   indexTimeline: {
     display: "block",
     clear: "both",

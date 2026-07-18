@@ -1068,16 +1068,26 @@ function IssueDetailBody({
                 method="post"
               >
                 <input type="hidden" name="issues[0].id" value={issueId} />
-                <dl>
+                <dl
+                  {...stylex.props(styles.sidebarMetaDl)}
+                  data-stylex-owner="issue-detail-sidebar-dl"
+                >
                   {showIssue ? (
-                    <dd className="project-btn-item">
+                    <dd
+                      {...stylex.props(styles.sidebarMetaDd)}
+                      className={`${stylex.props(styles.sidebarMetaDd).className} project-btn-item`}
+                      data-stylex-owner="issue-detail-sidebar-dd"
+                    >
                       <Link to={newSubtaskPath} className="ybtn ybtn-success">
                         {t("button.newSubtask")}
                       </Link>
                     </dd>
                   ) : null}
                   <dt>{t("issue.assignee")}</dt>
-                  <dd>
+                  <dd
+                    {...stylex.props(styles.sidebarMetaDd)}
+                    data-stylex-owner="issue-detail-sidebar-dd"
+                  >
                     {canUpdate ? (
                       <>
                         <input
@@ -1120,7 +1130,13 @@ function IssueDetailBody({
                             alt=""
                           />
                         </span>
-                        <strong className="name">{stringField(issue.assigneeLabel)}</strong>
+                        <strong
+                          {...stylex.props(styles.sidebarMetaAssigneeName)}
+                          className={`${stylex.props(styles.sidebarMetaAssigneeName).className} name`}
+                          data-stylex-owner="issue-detail-sidebar-assignee-name"
+                        >
+                          {stringField(issue.assigneeLabel)}
+                        </strong>
                         <span className="loginid">
                           {" "}
                           <strong>@</strong>
@@ -1133,9 +1149,15 @@ function IssueDetailBody({
                   </dd>
                 </dl>
                 {showMilestone ? (
-                  <dl>
+                  <dl
+                    {...stylex.props(styles.sidebarMetaDl)}
+                    data-stylex-owner="issue-detail-sidebar-dl"
+                  >
                     <dt>{t("milestone")}</dt>
-                    <dd>
+                    <dd
+                      {...stylex.props(styles.sidebarMetaDd)}
+                      data-stylex-owner="issue-detail-sidebar-dd"
+                    >
                       {hasProjectMilestones ? (
                         canUpdate ? (
                           <IssueMilestoneSelect
@@ -1176,7 +1198,10 @@ function IssueDetailBody({
                     </dd>
                   </dl>
                 ) : null}
-                <dl>
+                <dl
+                  {...stylex.props(styles.sidebarMetaDl)}
+                  data-stylex-owner="issue-detail-sidebar-dl"
+                >
                   <dt>
                     {t("issue.dueDate")}
                     <span
@@ -1191,7 +1216,10 @@ function IssueDetailBody({
                         : ""}
                     </span>
                   </dt>
-                  <dd>
+                  <dd
+                    {...stylex.props(styles.sidebarMetaDd)}
+                    data-stylex-owner="issue-detail-sidebar-dd"
+                  >
                     {canUpdate ? (
                       <div className="search search-bar">
                         <input

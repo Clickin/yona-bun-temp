@@ -4343,22 +4343,9 @@ div.markdown-preview {
   padding: 15px 0 0 10px;
 }
 
-.issue-detail-page .issue-info dl {
-  margin-bottom: 20px;
-}
-
-.issue-detail-page .issue-info dd {
-  padding: 5px 0;
-}
-
 .issue-detail-page .issue-info p {
   margin-bottom: 5px;
   line-height: 14px;
-}
-
-.issue-detail-page .issue-info .name,
-.issue-detail-page .issue-info .status {
-  font-size: 11px;
 }
 
 .issue-detail-page .issue-info .status {
