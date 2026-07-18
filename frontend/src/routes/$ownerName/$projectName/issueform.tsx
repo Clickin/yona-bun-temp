@@ -2672,24 +2672,30 @@ function IssueLabelSelect({
           }}
         >
           <ul className="select2-choices">
-            {selectedLabels.map((label) => (
-              <li key={label.id} className="select2-search-choice issue-label-token">
-                <div>
-                  <strong
-                    className="label issue-label active static"
-                    style={{ backgroundColor: normalizedColor(label.color) }}
-                  >
-                    {label.name}
-                  </strong>
-                </div>
-                <button
-                  type="button"
-                  className="select2-search-choice-close btn-transparent"
-                  aria-label={`${t("button.delete")} ${label.name}`}
-                  onClick={() => onRemove(label.id)}
-                ></button>
-              </li>
-            ))}
+            {selectedLabels.map((label) => {
+              const labelBackground = stylex.props(
+                issueFormStyles.labelBackground(normalizedColor(label.color)),
+              );
+              return (
+                <li key={label.id} className="select2-search-choice issue-label-token">
+                  <div>
+                    <strong
+                      {...labelBackground}
+                      className={`${labelBackground.className} label issue-label active static`}
+                      data-stylex-owner="project-issue-form-label-background"
+                    >
+                      {label.name}
+                    </strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="select2-search-choice-close btn-transparent"
+                    aria-label={`${t("button.delete")} ${label.name}`}
+                    onClick={() => onRemove(label.id)}
+                  ></button>
+                </li>
+              );
+            })}
             <li className="select2-search-field">
               <input
                 type="text"
@@ -2715,32 +2721,38 @@ function IssueLabelSelect({
             className={`select2-drop select2-drop-multi issue-labels issue-combobox-options${isOpen ? " select2-drop-active" : " select2-display-none"}`}
           >
             <ul className="select2-results" role="listbox">
-              {labels.map((label) => (
-                <li key={label.id}>
-                  <div
-                    className="select2-result-label"
-                    role="option"
-                    tabIndex={0}
-                    aria-selected={selectedLabelIds.includes(label.id)}
-                    aria-label={displayLabelName(label.name)}
-                    onClick={() => onSelect(label.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onSelect(label.id);
-                      }
-                    }}
-                  >
-                    <strong
-                      className="label issue-label active static"
-                      style={{ backgroundColor: normalizedColor(label.color) }}
+              {labels.map((label) => {
+                const labelBackground = stylex.props(
+                  issueFormStyles.labelBackground(normalizedColor(label.color)),
+                );
+                return (
+                  <li key={label.id}>
+                    <div
+                      className="select2-result-label"
+                      role="option"
+                      tabIndex={0}
+                      aria-selected={selectedLabelIds.includes(label.id)}
+                      aria-label={displayLabelName(label.name)}
+                      onClick={() => onSelect(label.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onSelect(label.id);
+                        }
+                      }}
                     >
-                      {label.name}
-                    </strong>
-                    <small>{label.categoryName}</small>
-                  </div>
-                </li>
-              ))}
+                      <strong
+                        {...labelBackground}
+                        className={`${labelBackground.className} label issue-label active static`}
+                        data-stylex-owner="project-issue-form-label-background"
+                      >
+                        {label.name}
+                      </strong>
+                      <small>{label.categoryName}</small>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

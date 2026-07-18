@@ -3386,6 +3386,8 @@ Batch 310 applies the workflow to the authenticated `/$ownerName/$projectName/po
 
 Batch 311 applies the workflow to the authenticated `/$ownerName/$projectName/milestones` populated milestone-list state. Server-provided issue-label background colors move to the route-local Dynamic StyleX owner while preserving legacy label classes, metadata, issue links, filtering, and responsive geometry; the focused milestone-list label test covers computed runtime color, the absence of a literal inline background declaration, and mobile containment.
 
+Batch 313 applies the workflow to the authenticated `/$ownerName/$projectName/issueform` selected and available label state. Server-provided label background colors move to route-local Dynamic StyleX while preserving Select2 DOM/classes, copy, interaction, and responsive geometry; the focused issue-form label test covers runtime custom-property carriers, computed colors, and absence of literal inline background declarations.
+
 
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
