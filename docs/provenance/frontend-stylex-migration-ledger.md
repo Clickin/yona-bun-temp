@@ -718,3 +718,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 304
 
 - `/organizations/$organizationName/settingform` loaded organization-settings logo state: moved the server-provided logo `background-image` from a literal React inline style into the route-local Dynamic StyleX `organizationSettingStyles.logo(backgroundImage)`. The legacy URL remains data-driven and cannot be enumerated; the logo-wrap classes, responsive geometry, fallback URL, upload validation, and mutation behavior remain unchanged. Focused `stylex-organization-settingform-inline-residual.e2e.ts` verifies the Dynamic StyleX source carrier, computed desktop/mobile background image, interaction, and containment; live legacy visual parity remains unverified.
+
+## Batch 306
+
+- `/$user` populated public-profile state: moved the server-provided avatar background URL and issue-label colors from literal inline declarations into `-user-profile.stylex.ts` Dynamic StyleX owners, preserving the legacy `whoami-wrap`, issue-label links, arbitrary API values, classes, and responsive geometry. Focused `stylex-user-profile-dynamic-owners.e2e.ts` verifies the legacy template/partial declarations, custom-property carriers, computed avatar/label paint, and viewport containment; live legacy visual parity remains unverified.

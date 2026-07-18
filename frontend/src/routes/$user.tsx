@@ -276,6 +276,9 @@ function PublicProfileBody({
   const issues = profileResponse.issueItems;
   const openIssues = issues.filter((issue) => stringField(issue, "state") === "open");
   const closedIssues = issues.filter((issue) => stringField(issue, "state") === "closed");
+  const avatarBackgroundStyle = stylex.props(
+    styles.avatarBackground(`url('${profile.avatarUrl}')`),
+  );
 
   return (
     <>
@@ -297,7 +300,8 @@ function PublicProfileBody({
             >
               <div
                 className="whoami-wrap"
-                style={{ backgroundImage: `url('${profile.avatarUrl}')` }}
+                data-stylex-owner="user-profile-avatar-background"
+                {...avatarBackgroundStyle}
               >
                 {profile.isGuest ? (
                   <div className="guest-user">
@@ -636,7 +640,8 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 className="label issue-label list-label"
                 data-label-id={String(label.id)}
                 key={String(label.id)}
-                style={{ background: label.color }}
+                {...stylex.props(styles.issueLabelBackground(label.color))}
+                data-stylex-owner="user-profile-issue-label-background"
               >
                 {label.name}
               </Link>
@@ -843,7 +848,8 @@ function ProfileIssueChildRow({
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
           key={String(label.id)}
-          style={{ background: label.color }}
+          {...stylex.props(styles.issueLabelBackground(label.color))}
+          data-stylex-owner="user-profile-issue-label-background"
         >
           {label.name}
         </Link>

@@ -7,6 +7,8 @@ export const userProfileColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  // Legacy user/view.scala.html renders the API-provided avatar as a background image.
+  avatarBackground: (backgroundImage: string) => ({ backgroundImage }),
   profile: { color: userProfileColors.mutedText },
   info: { color: userProfileColors.accentText },
   stream: { minWidth: 0 },
@@ -22,4 +24,6 @@ export const styles = stylex.create({
   },
   // Legacy user/view.scala.html partial_issues subtask progress width.
   progressBar: (width: string) => ({ width }),
+  // Legacy user/partial_issues.scala.html paints each API-provided label color.
+  issueLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
 });
