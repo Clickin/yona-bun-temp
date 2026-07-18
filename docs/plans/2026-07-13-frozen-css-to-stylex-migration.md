@@ -3482,6 +3482,8 @@ Batch 359 applies the workflow to the authenticated project-setting default-bran
 
 Batch 360 applies the workflow to the authenticated organization-home leave modal state. The conditional modal `display:block` declaration moves to the route-local conditional StyleX owner while preserving the legacy leave-modal DOM, aria state, copy, leave interaction, and responsive geometry; the focused leave-modal test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 361 applies the workflow to the authenticated board-post modal states. The history modal, comment-delete modal, and keymap modal conditional `display:block` declarations move to route-local conditional StyleX owners while preserving the legacy modal DOM, aria state, copy, interactions, and responsive geometry; the focused modal tests cover legacy source evidence and absence of the former inline display declarations.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -163,6 +163,7 @@ function ProjectPostNotFoundBody({
   projectName: string;
 }) {
   const { t } = useLegacyMessages();
+  const historyModalStyleProps = open ? stylex.props(styles.historyModalVisible) : undefined;
 
   return (
     <div {...sx.page} data-stylex-owner="post-detail-page">
@@ -697,8 +698,9 @@ function PostingHistory({
       </button>
       <div
         id="-yona-posting-history"
-        className={`modal ${open ? "in" : "hide"}`}
-        style={open ? { display: "block" } : undefined}
+        {...historyModalStyleProps}
+        className={`modal ${open ? "in" : "hide"} ${historyModalStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="post-detail-history-modal"
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
@@ -754,12 +756,15 @@ function CommentDeleteConfirm({
   open: boolean;
   title: string;
 }) {
+  const commentDeleteStyleProps = open ? stylex.props(styles.commentDeleteVisible) : undefined;
+
   return (
     <>
       <div
         id="comment-delete-modal"
-        className={`modal ${open ? "in " : "hide "}fade`}
-        style={open ? { display: "block" } : undefined}
+        {...commentDeleteStyleProps}
+        className={`modal ${open ? "in " : "hide "}fade ${commentDeleteStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="post-detail-comment-delete-modal"
         aria-hidden={open ? "false" : undefined}
       >
         <div className="modal-header">
@@ -1931,7 +1936,8 @@ function BoardDetailKeymap({
       <div
         id="helpKeys"
         className={`modal ${open ? "in " : "hide "}fade keymap-help`}
-        style={open ? { display: "block" } : undefined}
+        {...(open ? stylex.props(styles.keymapModalVisible) : {})}
+        data-stylex-owner="post-detail-keymap-modal"
         tabIndex={-1}
         role="dialog"
         aria-hidden={open ? "false" : undefined}

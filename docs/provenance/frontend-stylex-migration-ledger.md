@@ -929,3 +929,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 360
 
 - Authenticated organization-home leave modal state: moved conditional modal `display:block` into `styles.leaveModalVisible`, preserving the legacy leave-modal DOM, aria state, copy, leave interaction, and responsive geometry. Focused `stylex-organization-home-leave-modal.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.
+
+## Batch 361
+
+- Authenticated board-post modal states: moved conditional history, comment-delete, and keymap modal `display:block` declarations into `styles.historyModalVisible`, `styles.commentDeleteVisible`, and `styles.keymapModalVisible`, preserving legacy modal DOM, aria state, copy, interactions, and responsive geometry. Focused `stylex-project-post-detail-modal-visibility.e2e.ts` and `stylex-project-post-detail-keymap-modal.e2e.ts` verify legacy sources, stable owners, conditional StyleX, and absence of the former inline displays; live legacy visual parity remains unverified.
