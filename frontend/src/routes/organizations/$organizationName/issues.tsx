@@ -385,7 +385,11 @@ function QuickSearch({
   const projectNames = search.projectNames.join(",");
 
   return (
-    <ul className="lst-stacked unstyled">
+    <ul
+      {...stylex.props(styles.quickSearch)}
+      className={`${stylex.props(styles.quickSearch).className} lst-stacked unstyled`}
+      data-stylex-owner="organization-issues-quick-search"
+    >
       <li className={!search.assigneeId && !search.authorId && !search.mentionId ? "active" : ""}>
         <button
           type="button"
