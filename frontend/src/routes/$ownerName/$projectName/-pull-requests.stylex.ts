@@ -48,4 +48,5 @@ export const styles = stylex.create({
   badge: { color: pullRequestColors.badge, fontWeight: "700", marginLeft: "4px" },
   content: { clear: "both", paddingTop: "15px" },
   twoColumnPopover: { display: "block", left: "-75px", top: "-74px" },
+  rowPointer: { cursor: "pointer" },
 });

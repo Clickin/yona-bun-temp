@@ -1,13 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-} from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import {
@@ -43,6 +37,7 @@ const sx = {
   badge: stylex.props(styles.badge),
   content: stylex.props(styles.content),
   twoColumnPopover: stylex.props(styles.twoColumnPopover),
+  rowPointer: stylex.props(styles.rowPointer),
 } as const;
 
 const LEGACY_LIST_LINK_PROPS = {
@@ -735,7 +730,7 @@ function ProjectPullRequestRow({
     ? "infos-item over"
     : "infos-item";
   const pullRequestId = stringField(pullRequest.id, String(pullRequest.pullRequestNumber));
-  const rowStyle: CSSProperties | undefined = useTwoColumnMode ? { cursor: "pointer" } : undefined;
+  const rowStyle = useTwoColumnMode ? sx.rowPointer : undefined;
   const titleHistoryLabel = `${pullRequest.pullRequestNumber} ${titleParts.title}`;
   const handleRowClickCapture = (event: ReactMouseEvent<HTMLLIElement>) => {
     if (!useTwoColumnMode) {
@@ -757,9 +752,10 @@ function ProjectPullRequestRow({
 
   return (
     <li
-      className={`post-item title${highlighted ? " highlightBg" : ""}`}
+      {...rowStyle}
+      className={`post-item title${highlighted ? " highlightBg" : ""} ${rowStyle?.className ?? ""}`.trim()}
       onClickCapture={handleRowClickCapture}
-      style={rowStyle}
+      data-stylex-owner="project-pullrequests-row"
     >
       <div className="span10 span-hard-wrap">
         <Link
