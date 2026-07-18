@@ -12,4 +12,6 @@ export const styles = stylex.create({
     color,
   }),
   keymapOpen: { display: "block" },
+  labelButtonReset: { border: 0, cursor: "pointer", fontFamily: "inherit" },
+  labelList: { fontWeight: "normal", padding: "2px 3px" },
 });

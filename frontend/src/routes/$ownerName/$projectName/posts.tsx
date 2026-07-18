@@ -591,8 +591,9 @@ function ProjectBoardPost({
           return (
             <button
               type="button"
+              {...stylex.props(styles.labelButtonReset, styles.labelList)}
               {...(labelPaint ?? {})}
-              className={`label issue-label list-label active ${labelPaint?.className ?? ""}`}
+              className={`label issue-label list-label active ${stylex.props(styles.labelButtonReset, styles.labelList).className ?? ""} ${labelPaint?.className ?? ""}`.trim()}
               data-category-id={label.categoryId}
               data-label-id={label.id}
               data-stylex-owner="project-posts-label-paint"
