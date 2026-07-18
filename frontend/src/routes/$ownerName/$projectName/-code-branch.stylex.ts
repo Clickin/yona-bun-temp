@@ -19,6 +19,7 @@ export const styles = stylex.create({
     marginTop: "10px",
   },
   picker: { width: "220px" },
+  pickerDropOpen: { display: "block", width: "220px" },
   pickerChoice: {
     fontFamily: "inherit",
     fontSize: "inherit",

@@ -3446,6 +3446,8 @@ Batch 341 applies the workflow to the authenticated board-post edit form upload 
 
 Batch 342 applies the workflow to the authenticated user edit avatar upload/crop state. Upload progress visibility/width and crop-modal visibility move to route-local conditional StyleX while preserving the legacy avatar DOM, classes, copy, React upload/crop behavior, and responsive geometry; the focused user-editform test covers source evidence and all three owners.
 
+Batch 343 applies the workflow to the authenticated code browser branch Select2 state. The conditional dropdown `display:block` and fixed 220px width move to route-local conditional StyleX while preserving Select2 DOM/classes, branch options, interaction, and responsive geometry; the focused code-branch test covers legacy source evidence and absence of the former inline declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

@@ -857,3 +857,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 342
 
 - Authenticated user edit avatar upload/crop state: moved upload-progress hidden display, progress-bar width, and crop-modal visible display into route-local conditional StyleX owners, preserving the legacy avatar DOM/classes/copy, React upload/crop state, and responsive geometry. Focused `stylex-user-editform-avatar-visibility.e2e.ts` verifies the legacy source, three stable owners, conditional StyleX, and absence of former inline declarations; live legacy visual parity remains unverified.
+
+## Batch 343
+
+- Authenticated code browser branch Select2 state: moved conditional dropdown `display:block` and width `220px` into `styles.pickerDropOpen`, preserving Select2 DOM/classes, branch options, interaction, and responsive geometry. Focused `stylex-project-code-branch-dropdown.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

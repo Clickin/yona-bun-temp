@@ -177,7 +177,8 @@ function ProjectCodeFolderBody({
               />
               <div
                 className={`select2-drop select2-display-none select2-with-searchbox branches${branchMenuOpen ? " select2-drop-active" : ""}`}
-                style={branchMenuOpen ? { display: "block", width: 220 } : undefined}
+                {...(branchMenuOpen ? stylex.props(styles.pickerDropOpen) : {})}
+                data-stylex-owner="project-code-branch-picker-drop"
               >
                 <div className="select2-search">
                   <input
