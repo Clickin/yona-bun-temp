@@ -15,6 +15,11 @@ test("records project setting owners and responsive form containment", async ({ 
   expect(route).toContain('data-stylex-owner="project-setting-form"');
   expect(route).toContain('data-stylex-owner="project-setting-save"');
   expect(theme).toContain("export const projectSettingColors");
+  expect(route).not.toContain(
+    'style={reviewerCountPanelVisible ? undefined : { display: "none" }}',
+  );
+  expect(route).not.toContain('style={{ display: reviewerCountEnabled ? "block" : "none" }}');
+  expect(theme).toContain("reviewerCountPanelHidden");
   await mockSetting(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -25,6 +30,18 @@ test("records project setting owners and responsive form containment", async ({ 
     await expect(owner(page, "project-setting-form")).toBeVisible();
     await expect(owner(page, "project-setting-name-input")).toHaveValue("demo");
     await expect(owner(page, "project-setting-description")).toHaveValue("Demo project");
+    await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
+    await expect(page.locator("#welReviewerCount")).toBeHidden();
+    await expect(page.locator("#reviewerCountSettingPanel")).toHaveCSS("display", "block");
+    await expect(page.locator("#welReviewerCount")).toHaveCSS("display", "none");
+    await page.locator("#reviewerCountEnable").check();
+    await expect(page.locator("#welReviewerCount")).toBeVisible();
+    await expect(page.locator("#welReviewerCount")).toHaveCSS("display", "block");
+    await page.locator("#menuSettingCode").uncheck();
+    await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
+    await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
+    await expect(page.locator("#reviewerCountSettingPanel")).toHaveCSS("display", "none");
+    await expect(page.locator("#defaultBranceSettingPanel")).toHaveCSS("display", "none");
     const geometry = await owner(page, "project-setting-form").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
@@ -79,7 +96,7 @@ async function mockSetting(page: Page) {
   await page.route("**/api/v1/owners/**/projects/**/container", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: project }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/branches", (route: Route) =>
+  await page.route("**/api/v1/projects/**/branches", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: { branches: [{ name: "main" }], defaultBranch: "main" },

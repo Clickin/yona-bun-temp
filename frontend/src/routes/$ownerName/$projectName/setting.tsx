@@ -580,9 +580,14 @@ function ProjectSettingBody({
             {isGit ? (
               <>
                 <div
-                  className="box-wrap middle reviewer-count-wrap"
+                  className={`box-wrap middle reviewer-count-wrap ${
+                    stylex.props(
+                      reviewerCountPanelVisible
+                        ? styles.reviewerCountPanelVisible
+                        : styles.reviewerCountPanelHidden,
+                    ).className
+                  }`}
                   id="reviewerCountSettingPanel"
-                  style={reviewerCountPanelVisible ? undefined : { display: "none" }}
                 >
                   <div className="cu-label vmiddle">{t("project.reviewer.count")}</div>{" "}
                   <div className="cu-desc">
@@ -612,8 +617,13 @@ function ProjectSettingBody({
                     </label>
                     <div
                       id="welReviewerCount"
-                      className="hide"
-                      style={{ display: reviewerCountEnabled ? "block" : "none" }}
+                      className={`hide ${
+                        stylex.props(
+                          reviewerCountEnabled
+                            ? styles.reviewerCountControlsVisible
+                            : styles.reviewerCountControlsHidden,
+                        ).className
+                      }`}
                     >
                       <input
                         type="hidden"
@@ -660,9 +670,14 @@ function ProjectSettingBody({
                 </div>
 
                 <div
-                  className="box-wrap middle"
+                  className={`box-wrap middle ${
+                    stylex.props(
+                      menuCodeChecked
+                        ? styles.defaultBranchPanelVisible
+                        : styles.defaultBranchPanelHidden,
+                    ).className
+                  }`}
                   id="defaultBranceSettingPanel"
-                  style={menuCodeChecked ? undefined : { display: "none" }}
                 >
                   <div className="cu-label vmiddle">{t("code.branches.defaultBranch")}</div>{" "}
                   <div className="cu-desc">
@@ -980,8 +995,10 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className=""
-        style={showCode ? undefined : { display: "none" }}
+        className={
+          stylex.props(showCode ? styles.changeVcsMenuVisible : styles.changeVcsMenuHidden)
+            .className
+        }
       >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
