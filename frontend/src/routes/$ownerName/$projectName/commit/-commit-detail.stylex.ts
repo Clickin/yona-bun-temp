@@ -16,6 +16,7 @@ export const styles = stylex.create({
   browseTabs: { marginBottom: "20px" },
   reviewTabs: { marginBottom: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
+  reviewTextarea: { height: "100px" },
   reviewFormVisible: { display: "block" },
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
