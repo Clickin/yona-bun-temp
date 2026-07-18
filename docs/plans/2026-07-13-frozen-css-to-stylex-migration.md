@@ -3466,6 +3466,8 @@ Batch 351 applies the workflow to the authenticated project posts keymap modal s
 
 Batch 352 applies the workflow to the authenticated board-post original-message toggle state. The fixed legacy `border:0` declaration moves into the route-local StyleX owner while preserving the legacy toggle DOM, copy, interaction, and responsive geometry; the focused original-message test covers legacy script evidence and absence of the former inline declaration.
 
+Batch 353 applies the workflow to the authenticated issue-form title suggestion category state. The server-provided suggestion label color moves to the existing route-local Dynamic StyleX color owner while preserving suggestion DOM, copy, selection behavior, and responsive geometry; the focused suggestion-color test covers legacy source evidence and absence of the former literal inline color declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

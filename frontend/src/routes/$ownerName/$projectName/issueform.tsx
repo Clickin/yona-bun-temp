@@ -1409,7 +1409,12 @@ function TitleInput({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => chooseSuggestion(suggestion)}
             >
-              <small style={{ color: normalizedColor(suggestion.labelColor ?? "") }}>
+              <small
+                {...stylex.props(
+                  issueFormStyles.labelBackground(normalizedColor(suggestion.labelColor ?? "")),
+                )}
+                data-stylex-owner="project-issueform-title-suggestion-category"
+              >
                 {suggestion.category}
               </small>{" "}
               {suggestion.name}
