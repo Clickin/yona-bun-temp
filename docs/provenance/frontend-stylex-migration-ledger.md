@@ -1021,3 +1021,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 385
 
 - Authenticated project-label category typeahead state: moved fixed suggestion-button background, border, display, padding, text alignment, and width into `labelsFormStyles.categorySuggestionButton`, preserving Bootstrap typeahead DOM, active-state behavior, copy, and geometry. Focused `stylex-project-labels-category-suggestion.e2e.ts` verifies the legacy source contract, stable owner, and absence of the former inline object; live legacy visual parity remains unverified.
+
+## Batch 386
+
+- Authenticated issue-detail secondary comment share-link state: reused `styles.shareLinkHidden` for the second comment share-link consumer, preserving the legacy comment DOM, copy, visibility behavior, and responsive geometry. Focused `stylex-project-issue-detail-share-link-secondary.e2e.ts` verifies the legacy source contract, stable owner, and absence of the former inline display; live legacy visual parity remains unverified.

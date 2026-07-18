@@ -3198,8 +3198,7 @@ function IssueCommentRow({
               {...LEGACY_LINK_PROPS}
               to="."
               hash={commentHash}
-              className="share-link"
-              {...stylex.props(styles.shareLinkHidden)}
+              className={`${stylex.props(styles.shareLinkHidden).className} share-link`}
               data-stylex-owner="issue-detail-share-link"
             >
               [Link]
@@ -4020,8 +4019,8 @@ function IssueIndexComment({
               {...LEGACY_LINK_PROPS}
               to="."
               hash={commentHash}
-              className="share-link"
-              style={{ display: "none" }}
+              className={`${stylex.props(styles.shareLinkHidden).className} share-link`}
+              data-stylex-owner="issue-detail-share-link-secondary"
             >
               [Link]
             </Link>

@@ -3539,3 +3539,5 @@ route families.
 Batch 384 applies the workflow to the authenticated project-history state. The fixed stream, header, others, and date spacing declarations move to route-local StyleX owners while preserving the legacy history DOM and responsive geometry; the focused history test covers the legacy source contract and absence of the former inline declarations.
 
 Batch 385 applies the workflow to the authenticated project-label category typeahead state. The fixed suggestion-button presentation declarations move to direct route-local StyleX while preserving Bootstrap typeahead DOM, active-state behavior, copy, and geometry; the focused category-suggestion test covers the legacy source contract and absence of the former inline object.
+
+Batch 386 applies the workflow to the authenticated issue-detail secondary comment share-link state. The fixed hidden display reuses the existing route-local StyleX owner while preserving the legacy comment DOM, copy, visibility behavior, and responsive geometry; the focused secondary-share-link test covers the legacy source contract and absence of the former inline display.
