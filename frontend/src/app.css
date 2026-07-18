@@ -4309,59 +4309,6 @@ div.markdown-preview {
   border-top: 1px dashed #ddd;
 }
 
-.issue-detail-page .item-count-groups {
-  margin-top: 2px;
-  line-height: 14px;
-  border: 1px solid #eee;
-  border-radius: 3px;
-}
-
-.issue-detail-page .no-border-at-child .item-count-groups {
-  border: none !important;
-}
-
-.issue-detail-page .item-count-groups .comments-count:hover {
-  color: #be00be;
-}
-
-.issue-detail-page .item-count-groups .vote-count:hover {
-  color: #f58c52;
-}
-
-.issue-detail-page .item-count-groups .vote-color {
-  color: #f36c22;
-}
-
-.issue-detail-page .item-count-groups .comments-count-color {
-  color: #8b008b;
-}
-
-.issue-detail-page .item-count-groups a:nth-child(2) {
-  margin-left: -5px;
-}
-
-.issue-detail-page .item-count-groups .count-groups {
-  display: inline-block;
-  padding: 0 5px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.issue-detail-page .item-count-groups .count-groups.item-icon {
-  padding-top: 2px;
-  font-size: 9px;
-  line-height: 12px;
-  border-left: 1px solid #eee;
-}
-
-.issue-detail-page .item-count-groups .count-groups.item-icon:first-child {
-  border-left: none;
-}
-
-.issue-detail-page .item-count-groups .count-groups.item-count {
-  padding: 0 5px 0 0;
-}
-
 .board-body .author-info {
   display: block;
   margin: 10px 20px;

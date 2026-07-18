@@ -136,4 +136,34 @@ export const styles = stylex.create({
     borderRadius: "4px",
     fontWeight: "bold",
   },
+  itemCountGroup: {
+    border: "1px solid #eee",
+    borderRadius: "3px",
+    lineHeight: "14px",
+    marginTop: "2px",
+  },
+  itemCountGroupNoBorder: { border: "none" },
+  itemCountLinkComment: {
+    color: "#8b008b",
+    ":hover": { color: "#be00be" },
+  },
+  itemCountLinkVote: {
+    color: "#f36c22",
+    ":hover": { color: "#f58c52" },
+  },
+  itemCountLinkOffset: { marginLeft: "-5px" },
+  countGroup: {
+    display: "inline-block",
+    margin: "0 auto",
+    padding: "0 5px",
+    textAlign: "center",
+  },
+  countGroupIcon: {
+    borderLeft: "1px solid #eee",
+    fontSize: "9px",
+    lineHeight: "12px",
+    paddingTop: "2px",
+  },
+  countGroupIconFirst: { borderLeft: "none" },
+  countGroupCount: { padding: "0 5px 0 0" },
 });

@@ -2397,34 +2397,80 @@ function IssueChildCommentAndVotePair({
     return null;
   }
 
+  const itemCountGroupStyleProps = stylex.props(
+    styles.itemCountGroup,
+    styles.itemCountGroupNoBorder,
+  );
+  const commentLinkStyleProps = stylex.props(styles.itemCountLinkComment);
+  const voteLinkStyleProps = commentCount
+    ? stylex.props(styles.itemCountLinkVote, styles.itemCountLinkOffset)
+    : stylex.props(styles.itemCountLinkVote);
+  const commentIconStyleProps = stylex.props(
+    styles.countGroup,
+    styles.countGroupIcon,
+    styles.countGroupIconFirst,
+  );
+  const voteIconStyleProps = stylex.props(
+    styles.countGroup,
+    styles.countGroupIcon,
+    !commentCount ? styles.countGroupIconFirst : undefined,
+  );
+  const countStyleProps = stylex.props(styles.countGroup, styles.countGroupCount);
+
   return (
-    <span className="item-count-groups">
+    <span
+      {...itemCountGroupStyleProps}
+      className={`${itemCountGroupStyleProps.className} item-count-groups`}
+      data-stylex-owner="project-issue-detail-item-count-group"
+    >
       {commentCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
+          {...commentLinkStyleProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="comments"
-          className="comments-count comments-count-color"
+          className={`${commentLinkStyleProps.className} comments-count comments-count-color`}
+          data-stylex-owner="project-issue-detail-comment-count-link"
         >
-          <span className="count-groups item-icon">
+          <span
+            {...commentIconStyleProps}
+            className={`${commentIconStyleProps.className} count-groups item-icon`}
+            data-stylex-owner="project-issue-detail-comment-count-icon"
+          >
             <i className="yobicon-comment2"></i>
           </span>
-          <span className="count-groups item-count">{commentCount}</span>
+          <span
+            {...countStyleProps}
+            className={`${countStyleProps.className} count-groups item-count`}
+          >
+            {commentCount}
+          </span>
         </Link>
       ) : null}
       {voterCount ? (
         <Link
           {...LEGACY_LINK_PROPS}
+          {...voteLinkStyleProps}
           to="/$ownerName/$projectName/issue/$issueNumber"
           params={{ ownerName, projectName, issueNumber: stringField(child.issueNumber) }}
           hash="vote"
-          className="vote-count vote-color"
+          className={`${voteLinkStyleProps.className} vote-count vote-color`}
+          data-stylex-owner="project-issue-detail-vote-count-link"
         >
-          <span className="count-groups item-icon">
+          <span
+            {...voteIconStyleProps}
+            className={`${voteIconStyleProps.className} count-groups item-icon`}
+            data-stylex-owner="project-issue-detail-vote-count-icon"
+          >
             <i className="yobicon-hearts"></i>
           </span>
-          <span className="count-groups item-count strong">{voterCount}</span>
+          <span
+            {...countStyleProps}
+            className={`${countStyleProps.className} count-groups item-count strong`}
+          >
+            {voterCount}
+          </span>
         </Link>
       ) : null}
     </span>
