@@ -225,6 +225,7 @@ for (const viewport of [
     const cropImage = owner(page, "user-settings-avatar-crop-image");
     const cropPreview = owner(page, "user-settings-avatar-crop-preview");
     await expect(avatar).toHaveCSS("width", "128px");
+    await expect(avatar).toHaveCSS("min-width", "128px");
     await expect(avatar).toHaveCSS("max-width", "none");
     await expect(cropImage).toHaveCSS("width", "128px");
     await expect(cropImage).toHaveCSS("max-width", "none");

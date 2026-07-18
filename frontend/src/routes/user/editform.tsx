@@ -465,6 +465,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
         <div className="avatar-frm">
           <div className="avatar-wrap xlarge">
+            {/* min-width in the colocated StyleX owner preserves the legacy 128px contract against `.avatar-wrap img { width: 100%; }`. */}
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
             <img
               src={avatarUrl || undefined}

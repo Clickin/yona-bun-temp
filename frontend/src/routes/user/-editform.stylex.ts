@@ -26,9 +26,9 @@ export const userSettingsAvatarStyles = stylex.create({
   image: {
     maxWidth: "none",
     minWidth: "128px",
-    width: "128px !important",
+    width: "128px",
   },
   cropPreview: {
-    maxWidth: "500px !important",
+    maxWidth: "500px",
   },
 });
