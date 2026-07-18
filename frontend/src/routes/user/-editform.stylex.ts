@@ -31,4 +31,7 @@ export const userSettingsAvatarStyles = stylex.create({
   cropPreview: {
     maxWidth: "500px",
   },
+  hidden: { display: "none" },
+  progressFull: { width: "100%" },
+  cropVisible: { display: "block" },
 });

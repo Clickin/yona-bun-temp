@@ -853,3 +853,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 341
 
 - Authenticated board-post edit form upload state: moved conditional paste-help `display:block` into `styles.pasteHelpVisible`, preserving the legacy file uploader/upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-post-edit-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 342
+
+- Authenticated user edit avatar upload/crop state: moved upload-progress hidden display, progress-bar width, and crop-modal visible display into route-local conditional StyleX owners, preserving the legacy avatar DOM/classes/copy, React upload/crop state, and responsive geometry. Focused `stylex-user-editform-avatar-visibility.e2e.ts` verifies the legacy source, three stable owners, conditional StyleX, and absence of former inline declarations; live legacy visual parity remains unverified.

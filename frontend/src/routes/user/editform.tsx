@@ -382,6 +382,15 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       avatarMutation.mutate(avatarFile);
     }
   };
+  const avatarProgressHiddenProps = avatarMutation.isPending
+    ? undefined
+    : stylex.props(userSettingsAvatarStyles.hidden);
+  const avatarProgressFullProps = avatarMutation.isPending
+    ? stylex.props(userSettingsAvatarStyles.progressFull)
+    : undefined;
+  const avatarCropVisibleProps = avatarCropModalOpen
+    ? stylex.props(userSettingsAvatarStyles.cropVisible)
+    : undefined;
 
   return (
     <>
@@ -474,13 +483,15 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
             />
           </div>
           <div
-            className={`upload-progress avatar ${stylex.props(styles.avatarProgress).className}`}
+            {...avatarProgressHiddenProps}
+            className={`upload-progress avatar ${stylex.props(styles.avatarProgress).className} ${avatarProgressHiddenProps?.className ?? ""}`.trim()}
             data-stylex-owner="user-settings-avatar-progress"
-            style={avatarMutation.isPending ? undefined : { display: "none" }}
           >
             <div
-              className={`bar orange ${stylex.props(styles.avatarProgressBar).className}`}
-              style={avatarMutation.isPending ? { width: "100%" } : undefined}
+              className={`bar orange ${stylex.props(styles.avatarProgressBar).className} ${
+                avatarProgressFullProps?.className ?? ""
+              }`.trim()}
+              data-stylex-owner="user-settings-avatar-progress-bar"
             ></div>
           </div>
           <div className="btn-wrap mt10 center-txt">
@@ -523,14 +534,14 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </div>
       <div
         id="avatarCropWrap"
-        className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className}`}
         data-stylex-owner="user-settings-avatar-crop"
         role="dialog"
         data-backdrop="static"
         aria-hidden={
           avatarCropModalHasOpened ? (avatarCropModalOpen ? "false" : "true") : undefined
         }
-        style={avatarCropModalOpen ? { display: "block" } : undefined}
+        {...avatarCropVisibleProps}
+        className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className} ${avatarCropVisibleProps?.className ?? ""}`.trim()}
       >
         <div className="modal-header center-txt">
           <div className="avatar-wrap xlarge">
