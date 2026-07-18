@@ -93,7 +93,7 @@ const EXPECTED_AUTHENTICATED_HOME = `
       <table class="welcome-table table borderless">
         <tbody>
           <tr>
-            <td><a href="__BASE_PATH__/projects/new" class="ybtn ybtn-success">Create new project</a></td>
+            <td><a href="__BASE_PATH__/projectform" class="ybtn ybtn-success">Create new project</a></td>
             <td>Create your own project</td>
           </tr>
           <tr>
@@ -567,7 +567,7 @@ test("authenticated home route has no generic LegacyInternalLink adapter", () =>
   );
   expect(routeSource).toContain('"aria-current": undefined');
   expect(routeSource).toContain('"data-status": undefined');
-  expect(routeSource).toContain('const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new"');
+  expect(routeSource).toContain('const PROJECT_FORM_PATH: string = "/projectform"');
   expect(routeSource).toContain(
     'const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new"',
   );
@@ -4277,7 +4277,7 @@ async function canonicalizeHtml(page: Page, html: string) {
           current.matches(
             "div.site-guide-outer > table.welcome-table td:first-child > a.ybtn.ybtn-success",
           ) &&
-          ["/projects/new", "/organizations/new", "/projects"].some((path) =>
+          ["/projectform", "/organizations/new", "/projects"].some((path) =>
             (current.getAttribute("href") ?? "").endsWith(path),
           );
         const isAuthenticatedHomeIntroGuideToggle =

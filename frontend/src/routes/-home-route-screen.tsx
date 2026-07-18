@@ -73,7 +73,7 @@ const LEGACY_LOGIN_FORM_LINK_SEARCH = {
   password: undefined!,
   redirectUrl: undefined!,
 } satisfies LegacyLoginFormLinkSearch;
-const LEGACY_GUIDE_NEW_PROJECT_PATH: string = "/projects/new";
+const PROJECT_FORM_PATH: string = "/projectform";
 const LEGACY_NOTIFICATION_NEW_ISSUE_PATH: string = "/user/issues/new";
 const LEGACY_NOTIFICATION_NEW_MY_ISSUE_PATH: string = "/user/issues/new/mine";
 const LEGACY_AUTHENTICATED_LOGOUT_PATH: string = "/users/logout";
@@ -354,8 +354,7 @@ function HomeScreen({
                   <tr>
                     <td {...stylex.props(authenticatedHomeIntroGuideStyles.cell)}>
                       <Link
-                        to={LEGACY_GUIDE_NEW_PROJECT_PATH}
-                        reloadDocument
+                        to={PROJECT_FORM_PATH}
                         {...stylex.props(authenticatedHomeIntroGuideStyles.cta)}
                         data-stylex-owner="authenticated-home-intro-guide-cta"
                       >

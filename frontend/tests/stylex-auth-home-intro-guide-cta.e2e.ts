@@ -89,7 +89,7 @@ for (const viewport of [
     const ctas = page.locator(CTA);
     await expect(ctas).toHaveCount(3);
     await expect(ctas).toHaveText(["새 프로젝트 만들기", "새 그룹 만들기", "프로젝트 목록"]);
-    for (const [index, href] of ["/projects/new", "/organizations/new", "/projects"].entries()) {
+    for (const [index, href] of ["/projectform", "/organizations/new", "/projects"].entries()) {
       await expect(ctas.nth(index)).toHaveAttribute("href", `${BASE_PATH}${href}`);
       await expect(ctas.nth(index)).not.toHaveClass(/(?:^|\s)ybtn(?:\s|$)/u);
       await expect(ctas.nth(index)).not.toHaveClass(/(?:^|\s)ybtn-success(?:\s|$)/u);
