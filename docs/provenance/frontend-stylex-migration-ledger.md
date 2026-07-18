@@ -1142,4 +1142,8 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Project-route utility shell state: moved project header `.project-util-wrap`, `.project-util`, direct item, and `.icons-ul` geometry into `-project-home.stylex.ts` owners. Organization remains a fallback consumer of the shared app.css selectors; watcher-state selectors remain unchanged. Focused `stylex-project-util-shell.e2e.ts` verifies legacy sources and route owners.
 
+## Batch 454
+
+- Organization-route utility shell state: moved organization header utility wrapper/list/item geometry into `-organization-home.stylex.ts`, completing project and organization consumers and retiring the shared `.project-util*` app.css selectors. Watcher-state selectors remain unchanged. Focused `stylex-organization-util-shell.e2e.ts` verifies the legacy source and owners.
+
 | 2026-07-19 | Pull-request create/edit selector geometry StyleX ownership wave | `yona-original/app/views/git/create.scala.html`, `git/edit.scala.html`, and frozen `_page.less` pull-request-wrap rules establish wrapper, field-title, and arrow geometry. Legacy Scala HTML/JS is output DOM/UX evidence; React pull-request state owns form behavior. | `frontend/src/routes/$ownerName/$projectName/newPullRequestForm.tsx` and `pullRequest/$pullRequestNumber/editform.tsx` use colocated StyleX owners for wrapper/title/arrow consumers while preserving classes and select2 residual. | `frontend/tests/stylex-pull-request-create-edit-geometry.e2e.ts` verifies both sources, fallback removal, and retained select2 selector; live legacy visual parity remains unverified. |

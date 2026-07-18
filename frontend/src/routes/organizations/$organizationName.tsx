@@ -650,9 +650,18 @@ export function OrganizationHeader({
             </div>
           </div>
           {viewerCanEnroll ? (
-            <div className="project-util-wrap">
-              <ul className="project-util">
-                <li className={enrollmentDropdownOpen ? "open" : undefined}>
+            <div
+              className={`${stylex.props(styles.projectUtilWrap).className} project-util-wrap`}
+              data-stylex-owner="organization-header-util-wrap"
+            >
+              <ul
+                className={`${stylex.props(styles.projectUtil).className} project-util`}
+                data-stylex-owner="organization-header-util"
+              >
+                <li
+                  className={`${stylex.props(styles.projectUtilItem).className}${enrollmentDropdownOpen ? " open" : ""}`}
+                  data-stylex-owner="organization-header-util-item"
+                >
                   <button
                     className={`ybtn ybtn-small ${enrollmentRequested ? "ybtn-info " : ""}dropdown-toggle`}
                     type="button"

@@ -2687,27 +2687,6 @@ h1 {
   color: #e91e63;
 }
 
-.project-util-wrap {
-  position: absolute;
-  right: 0;
-  bottom: 20px;
-}
-
-.project-util {
-  margin: 0;
-  list-style: none;
-}
-
-.project-util > li {
-  position: relative;
-  float: left;
-  margin-left: 15px;
-}
-
-.project-util .icons-ul {
-  margin: 10px 0 10px 25px;
-}
-
 .watcher-count {
   opacity: 0.9 !important;
   border: 0 !important;
