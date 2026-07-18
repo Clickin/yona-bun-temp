@@ -5,6 +5,8 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 295 applies the workflow to the authenticated pull-request changes ranged and non-ranged review-thread forms. Their fixed legacy `display:block` declarations moved to one route-local StyleX owner with separate stable markers; the `.review-form` hidden cascade, pending-block coordinates, and conditional review visibility remain documented fallback/state ownership. Focused Playwright passed 2/2 with desktop/mobile containment; live legacy visual parity remains unverified.
+
 ## 1. Outcome
 
 Move the React application's legacy component, layout, state, and responsive styling from the

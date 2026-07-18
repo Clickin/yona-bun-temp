@@ -461,8 +461,8 @@ function NonRangedThread({
           action={action}
           method="post"
           encType="multipart/form-data"
-          className="review-form"
-          style={{ display: "block" }}
+          className={`review-form ${stylex.props(styles.threadReviewForm).className ?? ""}`}
+          data-stylex-owner="pull-request-changes-non-ranged-review-form"
         >
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody
@@ -1168,8 +1168,8 @@ function InlineThread({
           action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId)}
           method="post"
           encType="multipart/form-data"
-          className="review-form"
-          style={{ display: "block" }}
+          className={`review-form ${stylex.props(styles.threadReviewForm).className ?? ""}`}
+          data-stylex-owner="pull-request-changes-ranged-review-form"
         >
           <input type="hidden" name="thread.id" value={thread.id} />
           <ThreadReplyFormBody

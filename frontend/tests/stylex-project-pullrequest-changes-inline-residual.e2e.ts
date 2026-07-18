@@ -8,6 +8,13 @@ const ROUTE_SOURCE = readFileSync(
   ),
   "utf8",
 );
+const LEGACY_THREAD_FORM_SOURCE = readFileSync(
+  new URL(
+    "../../yona-original/app/views/partial_comment_form_on_thread.scala.html",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("pull request changes owns static review and editor declarations in StyleX", async ({
   page,
@@ -32,6 +39,27 @@ test("pull request changes owns static review and editor declarations in StyleX"
     await expect(editorTabs).toHaveCSS("overflow", "visible");
     await expect(page.locator("#reviewcards-open .review-card")).toContainText("Review note");
     await expect(page.locator("#editor-contents-comment")).toBeVisible();
+    const nonRangedForm = page.locator(
+      '[data-stylex-owner="pull-request-changes-non-ranged-review-form"]',
+    );
+    const rangedForm = page.locator(
+      '[data-stylex-owner="pull-request-changes-ranged-review-form"]',
+    );
+    await expect(nonRangedForm).toHaveCount(1);
+    await expect(rangedForm).toHaveCount(1);
+    for (const form of [nonRangedForm, rangedForm]) {
+      await expect(form).toBeVisible();
+      await expect(form).toHaveCSS("display", "block");
+      await expect(form.locator(".right-txt .ybtn").first()).toBeVisible();
+      const formBox = await form.boundingBox();
+      const threadBox = await form
+        .locator("xpath=ancestor::*[contains(@class, 'comment-thread-wrap')][1]")
+        .boundingBox();
+      expect(formBox).not.toBeNull();
+      expect(threadBox).not.toBeNull();
+      expect(formBox!.x).toBeGreaterThanOrEqual(threadBox!.x - 1);
+      expect(formBox!.x + formBox!.width).toBeLessThanOrEqual(threadBox!.x + threadBox!.width + 1);
+    }
     await expect(page.locator("body")).toHaveJSProperty("scrollWidth", viewport.width);
   }
 });
@@ -45,6 +73,12 @@ test("pull request changes static residual source owners preserve legacy values"
   expect(ROUTE_SOURCE).not.toContain('style={{ marginBottom: "10px" }}');
   expect(ROUTE_SOURCE).not.toContain('style={{ position: "relative", overflow: "visible" }}');
   expect(ROUTE_SOURCE).not.toContain("style={{ border: 0, paddingLeft: 5, paddingRight: 5 }}");
+  expect(ROUTE_SOURCE).not.toContain('style={{ display: "block" }}');
+  expect(ROUTE_SOURCE).toContain('data-stylex-owner="pull-request-changes-non-ranged-review-form"');
+  expect(ROUTE_SOURCE).toContain('data-stylex-owner="pull-request-changes-ranged-review-form"');
+  expect(LEGACY_THREAD_FORM_SOURCE).toContain(
+    '<form action="@urlToPostNewComment(thread)" method="post" enctype="multipart/form-data" class="review-form" style="display:block;">',
+  );
 });
 
 async function mockChanges(page: Page) {
@@ -117,13 +151,13 @@ async function mockChanges(page: Page) {
         ],
         commitId: "",
         createdLabel: "Jul 5, 2026",
-        endLine: 2,
+        endLine: 1,
         endSide: "B",
         id: 91,
         path: "src/main.rs",
         prevCommitId: "",
         pullRequestNumber: 9,
-        startLine: 2,
+        startLine: 1,
         startSide: "B",
         state: "open",
       };
@@ -132,9 +166,15 @@ async function mockChanges(page: Page) {
         body: JSON.stringify({
           cardThreads: [thread],
           commits: [],
-          files: [],
-          inlineThreads: [],
-          nonRangedThreads: [],
+          files: [
+            {
+              path: "src/main.rs",
+              patch:
+                "diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1 @@\n-old\n+new",
+            },
+          ],
+          inlineThreads: [thread],
+          nonRangedThreads: [thread],
           pullRequest: pullRequestDetail(),
           threads: [thread],
         }),

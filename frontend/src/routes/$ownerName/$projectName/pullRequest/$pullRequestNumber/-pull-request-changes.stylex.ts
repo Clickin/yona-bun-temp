@@ -19,5 +19,6 @@ export const styles = stylex.create({
   editorTabContent: { position: "relative", overflow: "visible" },
   originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
   diffMeta: { cursor: "pointer" },
+  threadReviewForm: { display: "block" },
   visibleForm: { display: "block" },
 });
