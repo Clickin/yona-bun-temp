@@ -35,6 +35,7 @@ export const styles = stylex.create({
     color: projectSettingColors.inputText,
     padding: "4px",
   },
+  oldPlace: { color: "red" },
   defaultBranchContainer: { width: "220px" },
   defaultBranchDrop: { minWidth: "220px", width: "220px" },
   defaultBranchSelect: { minWidth: "220px" },

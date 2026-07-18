@@ -12,11 +12,14 @@ test("records project setting owners and responsive form containment", async ({ 
   const template = readFileSync("../yona-original/app/views/project/setting.scala.html", "utf8");
   expect(template).toContain('id="project-name"');
   expect(template).toContain('id="project-desc"');
+  expect(template).toContain("<span style='color: red'>");
   expect(route).toContain('data-stylex-owner="project-setting-form"');
   expect(route).toContain('data-stylex-owner="project-setting-save"');
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-container"');
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-drop"');
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-select"');
+  expect(route).toContain('data-stylex-owner="project-setting-old-place"');
+  expect(route).not.toContain('style={{ color: "red" }}');
   expect(route).not.toContain("style={{ width: 220 }}");
   expect(route).not.toContain('style={{ minWidth: "220px" }}');
   expect(route).not.toContain('display: "block", width: 220');
@@ -39,6 +42,9 @@ test("records project setting owners and responsive form containment", async ({ 
     await expect(owner(page, "project-setting-form")).toBeVisible();
     await expect(owner(page, "project-setting-name-input")).toHaveValue("demo");
     await expect(owner(page, "project-setting-description")).toHaveValue("Demo project");
+    const oldPlace = owner(page, "project-setting-old-place");
+    await expect(oldPlace).toHaveText("legacy-place");
+    await expect(oldPlace).toHaveCSS("color", "rgb(255, 0, 0)");
     const defaultBranchContainer = owner(page, "project-setting-default-branch-container");
     const defaultBranchSelect = owner(page, "project-setting-default-branch-select");
     await expect(defaultBranchContainer).toHaveCSS("width", "220px");
@@ -120,6 +126,7 @@ async function mockSetting(page: Page) {
     isCodeAccessibleMemberOnly: false,
     isUsingReviewerCount: false,
     defaultReviewerCount: 1,
+    oldPlace: "legacy-place",
   };
   await page.route("**/api/v1/owners/**/projects/**/settings", (route: Route) =>
     route.fulfill({ contentType: "application/json", json: project }),

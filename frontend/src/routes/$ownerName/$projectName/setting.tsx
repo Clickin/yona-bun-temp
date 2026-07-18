@@ -31,6 +31,7 @@ const sx = {
   logo: stylex.props(styles.logo),
   input: stylex.props(styles.input),
   textarea: stylex.props(styles.textarea),
+  oldPlace: stylex.props(styles.oldPlace),
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
@@ -458,7 +459,9 @@ function ProjectSettingBody({
                   {oldPlace ? (
                     <div>
                       {t("project.previous.place", { args: [""] })}
-                      <span style={{ color: "red" }}>{oldPlace}</span>
+                      <span {...sx.oldPlace} data-stylex-owner="project-setting-old-place">
+                        {oldPlace}
+                      </span>
                     </div>
                   ) : null}
                   <br />
