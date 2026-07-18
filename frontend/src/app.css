@@ -2470,32 +2470,6 @@ h1 {
   color: #51aacc;
 }
 
-.project-home-header {
-  position: relative;
-  padding: 5px 0;
-  margin-bottom: 20px;
-}
-
-.project-home-header .project-overview {
-  padding: 0 10px;
-  border-left: 3px solid #fc491e;
-}
-
-.project-home-header .project-overview h3 {
-  font-size: 14px;
-  font-weight: normal;
-  line-height: 30px;
-}
-
-.project-home-header .project-overview h3 .markdown-wrap p {
-  display: inline-block;
-  margin: 0;
-}
-
-.project-home-header .project-description-edit input {
-  margin: 0;
-}
-
 .project-home-header .project-clone-wrap .project-clone-url:focus {
   width: 450px !important;
 }

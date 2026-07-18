@@ -3,6 +3,11 @@ import * as stylex from "@stylexjs/stylex";
 export const projectHomeTheme = stylex.defineVars({ pageSurface: "#ffffff" });
 export const styles = stylex.create({
   page: { backgroundColor: projectHomeTheme.pageSurface },
+  header: { marginBottom: "20px", padding: "5px 0", position: "relative" },
+  overview: { borderLeft: "3px solid #fc491e", padding: "0 10px" },
+  overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
+  markdownParagraph: { display: "inline-block", margin: "0" },
+  descriptionEditInput: { margin: "0" },
   cloneWrap: { borderRadius: "6px", padding: "5px 0", position: "relative" },
   cloneUrl: {
     backgroundColor: "#ffffff",

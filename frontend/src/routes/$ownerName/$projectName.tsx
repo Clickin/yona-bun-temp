@@ -1198,18 +1198,32 @@ export function ProjectHomeBody({
               </span>
             ) : null}
           </div>
-          <div className="project-home-header row-fluid">
-            <div className="project-overview span9 span-hard-wrap">
+          <div
+            className={`${stylex.props(projectHomeStyles.header).className} project-home-header row-fluid`}
+            data-stylex-owner="project-home-header"
+          >
+            <div
+              className={`${stylex.props(projectHomeStyles.overview).className} project-overview span9 span-hard-wrap`}
+              data-stylex-owner="project-home-overview"
+            >
               <div
                 className={
                   descriptionEditing ? "project-description hidden" : "project-description"
                 }
               >
-                <h3>
+                <h3
+                  {...stylex.props(projectHomeStyles.overviewHeading)}
+                  data-stylex-owner="project-home-overview-heading"
+                >
                   <span id="project-description" className="markdown-wrap">
                     {overviewText ? (
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => (
+                            <p {...stylex.props(projectHomeStyles.markdownParagraph)}>{children}</p>
+                          ),
+                        }}
                         urlTransform={(url) =>
                           projectMarkdownUrlTransform(runtimeConfig.basePath, url)
                         }
@@ -1249,7 +1263,8 @@ export function ProjectHomeBody({
                     type="text"
                     id="project-description-input"
                     ref={descriptionInputRef}
-                    className="span6"
+                    className={`${stylex.props(projectHomeStyles.descriptionEditInput).className} span6`}
+                    data-stylex-owner="project-home-description-edit-input"
                     placeholder={t("project.description.placeholder")}
                     value={descriptionDraft}
                     onChange={(event) => setDescriptionDraft(event.currentTarget.value)}
