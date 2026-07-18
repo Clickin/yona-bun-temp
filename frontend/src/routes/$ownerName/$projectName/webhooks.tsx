@@ -486,13 +486,29 @@ function ProjectWebhooksList({
           key={webhook.id}
         >
           <div className="span5">
-            <h6 className="mr20 truncate">{stringField(webhook.payloadUrl, "")}</h6>
+            <h6
+              {...stylex.props(webhooksStyles.listItemHeading)}
+              className="mr20 truncate"
+              data-stylex-owner="project-webhooks-list-item-heading"
+            >
+              {stringField(webhook.payloadUrl, "")}
+            </h6>
           </div>
           <div className="span2 text-center">
-            <h6>{stringField(webhook.secret, "") || "NONE"}</h6>
+            <h6
+              {...stylex.props(webhooksStyles.listItemHeading)}
+              data-stylex-owner="project-webhooks-list-item-heading"
+            >
+              {stringField(webhook.secret, "") || "NONE"}
+            </h6>
           </div>
           <div className="span2 text-center">
-            <h6>{stringField(webhook.webhookType, "")}</h6>
+            <h6
+              {...stylex.props(webhooksStyles.listItemHeading)}
+              data-stylex-owner="project-webhooks-list-item-heading"
+            >
+              {stringField(webhook.webhookType, "")}
+            </h6>
           </div>
           <div className="span2 text-center">
             <input

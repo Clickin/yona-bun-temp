@@ -12,5 +12,6 @@ export const webhooksColors = stylex.defineVars({
 });
 
 export const webhooksStyles = stylex.create({
+  listItemHeading: { paddingLeft: "8px" },
   codeMenuHidden: { display: "none" },
 });
