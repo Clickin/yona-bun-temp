@@ -4,9 +4,20 @@ import * as stylex from "@stylexjs/stylex";
 // geometry, and type remain in the route and contextual legacy classes.
 export const projectIssueFormTheme = stylex.defineVars({
   errorText: "#db3a67",
+  savedText: "#62962a",
+  savedBorder: "#8bc34a",
 });
 
 export const issueFormStyles = stylex.create({
+  taskListButton: { marginTop: "2px" },
+  editorNoticeLabel: { padding: "4px 15px" },
+  editorNoticeSaved: {
+    padding: "2px 4px",
+    color: projectIssueFormTheme.savedText,
+    border: "1px solid",
+    borderColor: projectIssueFormTheme.savedBorder,
+    borderRadius: "3px",
+  },
   editorTabContent: { position: "relative", overflow: "visible" },
   markdownTab: {
     display: "block",

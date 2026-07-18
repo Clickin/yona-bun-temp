@@ -6452,21 +6452,6 @@ div.markdown-preview {
   margin-bottom: 0;
 }
 
-.issue-form-page-wrap .task-list-button {
-  margin-top: 2px;
-}
-
-.issue-form-page-wrap .editor-notice-label {
-  padding: 4px 15px;
-}
-
-.issue-form-page-wrap .editor-notice-label .saved {
-  padding: 2px 4px;
-  color: #62962a;
-  border: 1px solid #8bc34a;
-  border-radius: 3px;
-}
-
 .issue-form-page-wrap .issue-editor-tab-content {
   position: relative;
   overflow: visible;

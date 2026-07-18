@@ -3750,3 +3750,5 @@ Batch 487 applies the workflow to the site mass-mail selected-projects state. Th
 Batch 488 applies the workflow to the site mail send-action wrapper. The sole active `.site-setting-wrap .mail-btn-wrap` centering declaration moves into a route-local StyleX owner while preserving the legacy wrapper/button DOM and existing button owner; generic/dead mail fallbacks remain. The focused contract verifies legacy source evidence, stable ownership, and exact scoped fallback retirement.
 
 Batch 488 applies the workflow to the `/sites/mail` send-action wrapper. The active `.site-setting-wrap .mail-btn-wrap` centering declaration moves to a route-local StyleX owner while preserving the legacy wrapper classes, existing send-button owner, mutation behavior, and generic mail wrapper fallback.
+
+Batch 489 applies the workflow to the issueform editor toolbar notice state. The task-list wrapper margin, editor notice padding, and saved notice paint move to three route-local StyleX owners while preserving legacy toolbar classes, draft state, markdown tabs, and generic fallback selectors.

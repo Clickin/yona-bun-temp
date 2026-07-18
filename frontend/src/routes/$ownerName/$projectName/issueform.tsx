@@ -1964,7 +1964,11 @@ function IssueMarkdownEditor({
           </button>
         </li>
         <li>
-          <div className="task-list-button">
+          <div
+            {...stylex.props(issueFormStyles.taskListButton)}
+            className={`task-list-button ${stylex.props(issueFormStyles.taskListButton).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-task-list-button"
+          >
             <button
               type="button"
               className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
@@ -1990,8 +1994,20 @@ function IssueMarkdownEditor({
           </div>
         </li>
         <li>
-          <div className="editor-notice-label">
-            {draftNotice ? <span className="saved">{draftNotice}</span> : null}
+          <div
+            {...stylex.props(issueFormStyles.editorNoticeLabel)}
+            className={`editor-notice-label ${stylex.props(issueFormStyles.editorNoticeLabel).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-editor-notice"
+          >
+            {draftNotice ? (
+              <span
+                {...stylex.props(issueFormStyles.editorNoticeSaved)}
+                className={`saved ${stylex.props(issueFormStyles.editorNoticeSaved).className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-editor-notice-saved"
+              >
+                {draftNotice}
+              </span>
+            ) : null}
           </div>
         </li>
       </ul>
