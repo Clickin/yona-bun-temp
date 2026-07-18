@@ -5005,36 +5005,6 @@ div.markdown-preview {
   color: #666;
 }
 
-.pullRequest-stateInfo {
-  margin-top: 15px;
-}
-
-.pullRequest-stateInfo .alert {
-  padding: 15px;
-  font-size: 13px;
-  font-weight: bold;
-  border-radius: 3px;
-}
-
-.pullRequest-stateInfo .alert i {
-  margin-top: -2px;
-  font-size: 15px;
-  vertical-align: middle;
-}
-
-.pullRequest-stateInfo .alert.alert-success {
-  color: #468847;
-}
-
-.pullRequest-stateInfo .alert.alert-error {
-  color: #b94a48;
-}
-
-.pullRequest-stateInfo .alert.alert-warning,
-.pullRequest-stateInfo .alert.alert-warnning {
-  color: #c09853;
-}
-
 .pull-request-conflict-guide {
   margin-top: 18px;
   padding: 14px 16px;

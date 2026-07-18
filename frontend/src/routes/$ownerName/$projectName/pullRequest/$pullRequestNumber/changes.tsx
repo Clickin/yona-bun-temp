@@ -30,6 +30,7 @@ import {
   PullRequestStateInfo,
 } from "../$pullRequestNumber";
 import { styles } from "./-pull-request-changes.stylex";
+import { styles as detailStyles } from "../-pull-request-detail.stylex";
 
 const sx = {
   page: stylex.props(styles.page),
@@ -352,7 +353,11 @@ function ProjectPullRequestChangesBody({
                 />
                 {selectedCommit ? <SelectedCommitInfo commit={selectedCommit} /> : null}
                 <div className="diff-body diffs-wrap-scroll">
-                  <div id="state" className="pullRequest-stateInfo">
+                  <div
+                    id="state"
+                    className={`${stylex.props(detailStyles.state).className} pullRequest-stateInfo`}
+                    data-stylex-owner="pull-request-changes-state"
+                  >
                     <PullRequestStateInfo
                       currentUserLoginId={currentUser.loginId}
                       pullRequest={pullRequest}

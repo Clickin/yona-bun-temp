@@ -3692,3 +3692,5 @@ Batch 450 applies the workflow to pull-request create/edit selector geometry. Pu
 Batch 457 applies the workflow to the project-posts label reset state. The obsolete post-list button reset fallback is removed because the existing `labelButtonReset` StyleX owner covers border, cursor, and font inheritance while Dynamic label paint and legacy classes remain intact; the focused label-button test verifies fallback removal and composition.
 
 Batch 462 applies the workflow to pull-request detail branch info. Branch-info code, links, branch names, and icons move into colocated StyleX owners while preserving legacy DOM/classes/copy and navigation; the focused branch-info test covers the legacy partial and fallback removal.
+
+Batch 464 applies the workflow to pull-request state-info alerts across the detail and changes routes. Scoped state wrapper, alert, icon, and success/error/warning paint move into the shared pull-request detail StyleX owner while preserving the legacy partial DOM/classes/copy and React state behavior; the focused state-info test covers both legacy callers and fallback removal.

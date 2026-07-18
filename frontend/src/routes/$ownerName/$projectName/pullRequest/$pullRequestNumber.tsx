@@ -973,7 +973,7 @@ export function PullRequestStateInfo({
 
   if (pullRequest.state.toLowerCase() === "merged") {
     return (
-      <div className="alert alert-info">
+      <div className={`alert alert-info ${stylex.props(styles.alert).className}`}>
         <Link
           to="/$user"
           params={{ user: pullRequest.receiver.loginId }}
@@ -1024,23 +1024,29 @@ export function PullRequestStateInfo({
   }
   if (pullRequest.isMerging) {
     return (
-      <div className="alert alert-warnning">
-        <i className="yobicon-supportrequest mr5"></i>
+      <div
+        className={`alert alert-warnning ${stylex.props(styles.alert, styles.alertWarning).className}`}
+      >
+        <i className={`${stylex.props(styles.alertIcon).className} yobicon-supportrequest mr5`}></i>
         <span>{t("pullRequest.is.merging")}</span>
       </div>
     );
   }
   if (!pullRequest.conflict) {
     return (
-      <div className="alert alert-success">
-        <i className="yobicon-check-circle-alt mr5"></i>
+      <div
+        className={`alert alert-success ${stylex.props(styles.alert, styles.alertSuccess).className}`}
+      >
+        <i
+          className={`${stylex.props(styles.alertIcon).className} yobicon-check-circle-alt mr5`}
+        ></i>
         <span>{t("pullRequest.is.safe")}</span>
       </div>
     );
   }
   return (
-    <div className="alert alert-error">
-      <i className="yobicon-error mr5"></i>
+    <div className={`alert alert-error ${stylex.props(styles.alert, styles.alertError).className}`}>
+      <i className={`${stylex.props(styles.alertIcon).className} yobicon-error mr5`}></i>
       <span>{t("pullRequest.is.not.safe")}</span>
       {currentUserLoginId === pullRequest.contributor.loginId ? (
         <PullRequestConflictGuide pullRequest={pullRequest} runtimeConfig={runtimeConfig} />
