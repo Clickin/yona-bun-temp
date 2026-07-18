@@ -746,3 +746,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 314
 
 - `/$ownerName/$projectName/issue/labelsform` label-edit modal state: moved the server-provided edit-preview label background from the React inline declaration into colocated `-labelsform.stylex.ts` Dynamic StyleX `labelsFormDynamicStyles.labelNameBackground(backgroundColor)`, preserving the legacy modal input, preset controls, copy, interaction, and responsive geometry. Focused `stylex-project-labelsform-owners.e2e.ts` verifies the legacy source contract, computed runtime color, custom-property carrier, absence of a literal background declaration, and desktop/mobile containment; live legacy visual parity remains unverified.
+
+## Batch 315
+
+- `/organizations/$organizationName` authenticated organization profile/header state: moved the server-provided header `background-image` from a literal React inline declaration into colocated `-organization-home.stylex.ts` Dynamic StyleX `headerBackground(backgroundImage)`, preserving the legacy header DOM/classes, organization logo image, breadcrumb, enrollment controls, and responsive geometry. Focused `stylex-organization-profile-logo.e2e.ts` verifies the legacy header source, custom-property carrier, computed runtime background image, logo image URL, and mobile containment; live legacy visual parity remains unverified.

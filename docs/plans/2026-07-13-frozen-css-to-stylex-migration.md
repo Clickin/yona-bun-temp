@@ -3390,6 +3390,8 @@ Batch 313 applies the workflow to the authenticated `/$ownerName/$projectName/is
 
 Batch 314 applies the workflow to the authenticated `/$ownerName/$projectName/issue/labelsform` label-edit modal state. The server-provided edit-preview label color moves from a literal inline background declaration to route-local Dynamic StyleX while preserving the legacy modal input, preset controls, copy, interaction, and desktop/mobile containment; the focused labels-form owners test covers the runtime custom-property carrier and absence of a literal background declaration.
 
+Batch 315 applies the workflow to the authenticated `/organizations/$organizationName` organization profile/header logo state. The server-provided header background URL moves to route-local Dynamic StyleX while the legacy header DOM, logo image, breadcrumb, enrollment controls, and responsive geometry remain unchanged. Its focused browser gate verifies the legacy source declaration, runtime custom-property carrier, computed background image, logo image, and mobile containment.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

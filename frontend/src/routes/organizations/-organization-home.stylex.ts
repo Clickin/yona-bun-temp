@@ -7,6 +7,7 @@ export const organizationHomeColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
   overview: { color: organizationHomeColors.accentText },
   projects: { minWidth: 0 },

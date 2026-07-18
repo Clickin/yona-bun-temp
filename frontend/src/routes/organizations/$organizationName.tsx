@@ -584,6 +584,7 @@ export function OrganizationHeader({
   const queryClient = useQueryClient();
   const [enrollmentRequested, setEnrollmentRequested] = useState(initialEnrollmentRequested);
   const [enrollmentDropdownOpen, setEnrollmentDropdownOpen] = useState(false);
+  const headerBackgroundStyle = stylex.props(styles.headerBackground(`url('${logoUrl}')`));
   const enrollmentMutation = useMutation({
     mutationFn: async (nextRequested: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -602,7 +603,11 @@ export function OrganizationHeader({
   });
 
   return (
-    <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
+    <div
+      {...headerBackgroundStyle}
+      className={`project-header-outer ${headerBackgroundStyle.className ?? ""}`.trim()}
+      data-stylex-owner="organization-profile-header-background"
+    >
       <div className="project-header-inner">
         <div className="project-header-wrap">
           <div className="project-header-avatar">
