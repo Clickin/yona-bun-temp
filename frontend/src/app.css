@@ -6708,44 +6708,6 @@ div.markdown-preview {
   border-radius: 0;
 }
 
-.issue-form-page-wrap .issue-due-date-option .search-bar {
-  position: relative;
-}
-
-.issue-form-page-wrap .issue-due-date-option #issueDueDate {
-  box-sizing: border-box;
-  width: 100%;
-  padding-right: 34px;
-}
-
-.issue-form-page-wrap .issue-due-date-option .btn-calendar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  box-sizing: border-box;
-  width: 30px;
-  min-height: 30px;
-  padding: 0;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-}
-
-.issue-form-page-wrap .issue-due-date-native-picker {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 1px;
-  min-width: 1px;
-  height: 1px;
-  min-height: 1px;
-  padding: 0;
-  clip-path: inset(50%);
-  overflow: hidden;
-  white-space: nowrap;
-  border: 0;
-}
-
 .issue-project-utility-menu {
   display: block;
 }

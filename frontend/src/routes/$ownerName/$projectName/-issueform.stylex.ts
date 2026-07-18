@@ -10,6 +10,38 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  dueDateSearchBar: { position: "relative" },
+  dueDateInput: {
+    boxSizing: "border-box",
+    width: "100%",
+    paddingRight: "34px",
+  },
+  dueDateCalendarButton: {
+    position: "absolute",
+    top: "0",
+    right: "0",
+    boxSizing: "border-box",
+    width: "30px",
+    minHeight: "30px",
+    padding: "0",
+    cursor: "pointer",
+    backgroundColor: "transparent",
+    border: "0",
+  },
+  dueDateNativePicker: {
+    position: "absolute",
+    top: "15px",
+    right: "15px",
+    width: "1px",
+    minWidth: "1px",
+    height: "1px",
+    minHeight: "1px",
+    padding: "0",
+    clipPath: "inset(50%)",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    border: "0",
+  },
   cancelButton: { marginLeft: "0px" },
   attachedFilesVisible: { display: "block" },
   attachedFile: {

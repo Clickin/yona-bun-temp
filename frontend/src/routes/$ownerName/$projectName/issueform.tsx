@@ -2657,7 +2657,11 @@ function IssueDueDateInput({
     <dl className="issue-option issue-due-date-option">
       <dt>{t("issue.dueDate")}</dt>
       <dd>
-        <div className="search search-bar">
+        <div
+          {...stylex.props(issueFormStyles.dueDateSearchBar)}
+          className={`search search-bar ${stylex.props(issueFormStyles.dueDateSearchBar).className ?? ""}`.trim()}
+          data-stylex-owner="project-issue-form-due-date-search"
+        >
           <label className="blind" htmlFor="issueDueDate">
             {t("issue.dueDate")}
           </label>
@@ -2666,14 +2670,18 @@ function IssueDueDateInput({
             type="text"
             id="issueDueDate"
             name="dueDate"
-            className="textbox full"
+            {...stylex.props(issueFormStyles.dueDateInput)}
+            className={`textbox full ${stylex.props(issueFormStyles.dueDateInput).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-due-date-input"
             value={dueDate}
             autoComplete="off"
             onChange={(event) => onChange(event.currentTarget.value)}
           />
           <button
             type="button"
-            className="search-btn btn-calendar"
+            {...stylex.props(issueFormStyles.dueDateCalendarButton)}
+            className={`search-btn btn-calendar ${stylex.props(issueFormStyles.dueDateCalendarButton).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-due-date-calendar"
             aria-label={t("issue.dueDate")}
             onClick={openPicker}
           >
@@ -2682,7 +2690,9 @@ function IssueDueDateInput({
           <input
             ref={datePickerRef}
             type="date"
-            className="issue-due-date-native-picker"
+            {...stylex.props(issueFormStyles.dueDateNativePicker)}
+            className={`issue-due-date-native-picker ${stylex.props(issueFormStyles.dueDateNativePicker).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-due-date-native-picker"
             aria-label={t("milestone.form.dueDate")}
             tabIndex={-1}
             value={nativeDateValue}
