@@ -6,4 +6,9 @@ export const styles = stylex.create({
   search: { backgroundColor: postsTheme.searchSurface },
   twoColumnMode: { position: "relative" },
   keymap: { marginLeft: "55px", padding: "10px 0" },
+  labelPaint: (backgroundColor: string, boxShadow: string, color: string) => ({
+    backgroundColor,
+    boxShadow,
+    color,
+  }),
 });

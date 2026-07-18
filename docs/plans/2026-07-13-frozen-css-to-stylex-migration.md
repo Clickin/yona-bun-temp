@@ -3398,6 +3398,8 @@ Batch 317 applies the workflow to the authenticated `/sites/massmail` project-re
 
 Batch 318 applies the workflow to the authenticated `/_import` repository-authenticated state. The conditional `#repoAuth` display moves from a React inline declaration to a conditional StyleX owner, preserving the legacy `repo-auth-wrap` class, checkbox interaction, auth fields, focus behavior, and responsive form geometry; the focused project-import test covers the legacy source boundary, stable owner, Dynamic StyleX source, and absence of the former inline declaration.
 
+Batch 319 applies the workflow to the authenticated `/$ownerName/$projectName/posts` populated board-list label state. Server-provided label background, text, and inset shadow paint moves from the legacy inline helper to a route-local Dynamic StyleX owner while preserving the board label classes, metadata, copy, filtering behavior, and desktop/mobile containment; the focused posts residual test covers source evidence, computed paint, and absence of literal inline declarations.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

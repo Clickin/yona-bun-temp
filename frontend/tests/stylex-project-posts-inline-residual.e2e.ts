@@ -7,16 +7,24 @@ test("project posts owns the board controls' former inline declarations", async 
   const source = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
   const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
   const legacy = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
+  const labelLegacy = readFileSync(
+    "../yona-original/app/views/common/issueLabelColor.scala.html",
+    "utf8",
+  );
   const keymapLegacy = readFileSync("../yona-original/app/views/help/keymap.scala.html", "utf8");
   expect(legacy).toContain('<div class="page-wrap-outer">');
   expect(legacy).toContain("@common.twoColumnModeCheckboxArea(false)");
   expect(keymapLegacy).toContain('style="padding:10px 0; margin-left: 55px;"');
+  expect(labelLegacy).toContain("background-color: @label.color");
   expect(source).toContain('data-stylex-owner="project-posts-two-column-mode"');
   expect(source).toContain('data-stylex-owner="project-posts-keymap"');
+  expect(source).toContain('data-stylex-owner="project-posts-label-paint"');
+  expect(source).not.toContain("style={issueLabelStyle(label.color)}");
   expect(source).not.toContain('style={{ position: "relative" }}');
   expect(source).not.toContain('style={{ padding: "10px 0", marginLeft: "55px" }}');
   expect(styleSource).toContain('twoColumnMode: { position: "relative" }');
   expect(styleSource).toContain('keymap: { marginLeft: "55px", padding: "10px 0" }');
+  expect(styleSource).toContain("labelPaint:");
 
   await mockPosts(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -52,6 +60,17 @@ test("project posts owns the board controls' former inline declarations", async 
   await expect(page.locator("#two-column-mode")).toBeChecked();
   await page.locator("#two-column-mode").uncheck();
   await expect(page.locator("#two-column-mode")).not.toBeChecked();
+
+  const label = page.locator('[data-stylex-owner="project-posts-label-paint"]').first();
+  await expect(label).toBeVisible();
+  await expect(label).toHaveCSS("background-color", "rgb(225, 29, 72)");
+  await expect(label).toHaveCSS("color", "rgb(255, 255, 255)");
+  const inlineDeclarations = (await label.getAttribute("style"))
+    ?.split(";")
+    .map((declaration) => declaration.split(":", 1)[0].trim().toLowerCase())
+    .filter(Boolean);
+  expect(inlineDeclarations).not.toContain("background");
+  expect(inlineDeclarations).not.toContain("background-color");
 
   const keymapButton = keymapOwner.locator("button.ybtn-inverse");
   await keymapButton.click();
@@ -115,7 +134,16 @@ async function mockPosts(page: Page) {
         canAttachFiles: true,
         canMarkNotice: true,
         canMarkReadme: true,
-        labels: [],
+        labels: [
+          {
+            categoryId: "3",
+            categoryIsExclusive: false,
+            categoryName: "type",
+            color: "#e11d48",
+            id: "8",
+            name: "bug",
+          },
+        ],
         readme: false,
       },
     }),
@@ -131,7 +159,16 @@ async function mockPosts(page: Page) {
             authorLoginId: "dev",
             commentCount: 1,
             createdLabel: "Jul 2, 2026",
-            labels: [],
+            labels: [
+              {
+                categoryId: "3",
+                categoryIsExclusive: false,
+                categoryName: "type",
+                color: "#e11d48",
+                id: "8",
+                name: "bug",
+              },
+            ],
             notice: false,
             ownerName: "admin",
             postNumber: "3",

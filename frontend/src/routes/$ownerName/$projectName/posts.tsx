@@ -575,18 +575,32 @@ function ProjectBoardPost({
             <span className="count-groups item-count ">{post.commentCount}</span>
           </Link>
         </span>
-        {post.labels.map((label) => (
-          <button
-            type="button"
-            className="label issue-label list-label active"
-            data-category-id={label.categoryId}
-            data-label-id={label.id}
-            key={label.id}
-            style={issueLabelStyle(label.color)}
-          >
-            {label.name}
-          </button>
-        ))}
+        {post.labels.map((label) => {
+          // API-provided label paint uses Dynamic StyleX carriers; literal inline declarations stay retired.
+          const paint = issueLabelStyle(label.color);
+          const labelPaint = paint
+            ? stylex.props(
+                styles.labelPaint(
+                  String(paint.backgroundColor ?? ""),
+                  String(paint.boxShadow ?? ""),
+                  String(paint.color ?? ""),
+                ),
+              )
+            : undefined;
+          return (
+            <button
+              type="button"
+              {...(labelPaint ?? {})}
+              className={`label issue-label list-label active ${labelPaint?.className ?? ""}`}
+              data-category-id={label.categoryId}
+              data-label-id={label.id}
+              data-stylex-owner="project-posts-label-paint"
+              key={label.id}
+            >
+              {label.name}
+            </button>
+          );
+        })}
       </div>
     </li>
   );

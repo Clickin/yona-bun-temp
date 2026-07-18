@@ -761,3 +761,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 318
 
 - `/_import` repository-authenticated state: moved the conditional `#repoAuth` `display:block` declaration from the React inline style into route-local conditional StyleX `styles.repoAuthVisible`, preserving the legacy `repo-auth-wrap` class, checkbox interaction, auth fields, focus behavior, and responsive form geometry. Focused `stylex-project-import-repo-auth.e2e.ts` verifies the legacy importing template, stable owner, Dynamic StyleX source, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 319
+
+- `/$ownerName/$projectName/posts` populated board-list label state: moved server-provided label background, text, and inset shadow paint from the legacy `issueLabelStyle(label.color)` inline owner into colocated `-posts.stylex.ts` Dynamic StyleX `styles.labelPaint(backgroundColor, boxShadow, color)`, preserving legacy label classes, category/id metadata, copy, filtering behavior, and responsive geometry. Focused `stylex-project-posts-inline-residual.e2e.ts` verifies the board and common issue-label Scala sources, route-local dynamic owner, computed runtime paint, absence of literal inline background, and desktop/mobile containment; live legacy visual parity remains unverified.
