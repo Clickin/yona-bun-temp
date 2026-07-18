@@ -1200,22 +1200,6 @@ pre code {
   margin: 10px 0;
 }
 
-.auth-provider-logo {
-  font-family: Roboto, sans-serif;
-}
-
-.auth-provider-logo svg {
-  vertical-align: middle;
-}
-
-.auth-provider-logo .github {
-  display: inline-block;
-  width: 30px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  margin-left: -4px;
-}
-
 .inner-bubble {
   position: relative;
   margin-bottom: 10px;

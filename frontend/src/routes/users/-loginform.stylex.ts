@@ -5,3 +5,15 @@ export const loginFormColors = stylex.defineVars({
   inputBorder: "#cccccc",
   inputFocusBorder: "#f36c22",
 });
+
+export const loginProviderStyles = stylex.create({
+  logo: { fontFamily: "Roboto, sans-serif" },
+  logoSvg: { verticalAlign: "middle" },
+  github: {
+    display: "inline-block",
+    marginBottom: "3px",
+    marginLeft: "-4px",
+    marginTop: "3px",
+    width: "30px",
+  },
+});

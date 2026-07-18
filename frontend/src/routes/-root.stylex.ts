@@ -6,3 +6,15 @@ export const rootColors = stylex.defineVars({
   toastShadow: "1px 1px 3px #000000",
   errorText: "#e74c3c",
 });
+
+export const rootProviderStyles = stylex.create({
+  logo: { fontFamily: "Roboto, sans-serif" },
+  logoSvg: { verticalAlign: "middle" },
+  github: {
+    display: "inline-block",
+    marginBottom: "3px",
+    marginLeft: "-4px",
+    marginTop: "3px",
+    width: "30px",
+  },
+});

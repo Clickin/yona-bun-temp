@@ -3641,3 +3641,5 @@ Batch 435 applies the workflow to the project-home DashboardLabels overview-labe
 Batch 436 applies the workflow to the project-home DashboardAssignee `usf-group` state. Static truncation/link geometry moves into a shared route-local StyleX owner for all assignee consumers while preserving dashboard DOM and copy; the focused assignee-link test covers legacy evidence and the owner.
 
 Batch 437 applies the workflow to the project issues milestone-tag and empty-avatar state. Static milestone truncation/color and unassigned-avatar geometry move into route-local StyleX owners while preserving the legacy classes, issue-list DOM, copy, and responsive geometry; the focused milestone-avatar owner test covers the legacy source paths and app.css fallback removal.
+
+Batch 438 applies the workflow to OAuth provider logos across the profile, standalone login, and root login-dialog consumers. Provider wrapper typography, SVG alignment, and GitHub sizing move into route-local StyleX owners while preserving OAuth DOM, copy, navigation, and responsive geometry; the focused provider-logo owner test covers all legacy source paths and app.css fallback removal.

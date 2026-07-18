@@ -13,7 +13,7 @@ import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { rootColors } from "./-root.stylex";
+import { rootColors, rootProviderStyles } from "./-root.stylex";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -776,16 +776,32 @@ function RootOAuthProviderLink({ basePath, provider }: { basePath: string; provi
   return (
     <Link to={providerLoginPath} className="ybtn oauth-login-btn" reloadDocument>
       {normalized === "github" ? (
-        <span className="auth-provider-logo">
-          <span className="github">
-            <svg aria-hidden="true" height="24" version="1.1" viewBox="0 0 16 16" width="19">
+        <span
+          className={`${stylex.props(rootProviderStyles.logo).className} auth-provider-logo`}
+          data-stylex-owner="root-provider-logo"
+        >
+          <span
+            className={`${stylex.props(rootProviderStyles.github).className} github`}
+            data-stylex-owner="root-provider-github"
+          >
+            <svg
+              {...stylex.props(rootProviderStyles.logoSvg)}
+              aria-hidden="true"
+              height="24"
+              version="1.1"
+              viewBox="0 0 16 16"
+              width="19"
+            >
               <path d={GITHUB_OAUTH_LOGO_PATH} />
             </svg>
           </span>{" "}
           <span className="provider-name">Sign in with github</span>
         </span>
       ) : (
-        <span className="auth-provider-logo">
+        <span
+          className={`${stylex.props(rootProviderStyles.logo).className} auth-provider-logo`}
+          data-stylex-owner="root-provider-logo"
+        >
           <img
             src={prefixBasePath(
               basePath,
