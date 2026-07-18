@@ -17,6 +17,12 @@ export const styles = stylex.create({
   form: { backgroundColor: newPullRequestTheme.formSurface },
   editorWrapper: { position: "relative" },
   branchPicker: { width: "220px" },
+  select2Choice: {
+    boxSizing: "border-box",
+    width: "100%",
+    height: "auto",
+    textAlign: "left",
+  },
   editorTabContent: { position: "relative", overflow: "visible" },
   conflictModalOpen: { display: "block" },
   conflictModalClosed: { display: "none" },

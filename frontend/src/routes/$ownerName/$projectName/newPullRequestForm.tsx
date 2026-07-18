@@ -567,7 +567,8 @@ function PullRequestSelect2Closed({
     >
       <button
         type="button"
-        className="select2-choice"
+        className={`${stylex.props(styles.select2Choice).className} select2-choice`}
+        data-stylex-owner={`new-pull-request-${controlId}-select2-choice`}
         aria-expanded="false"
         onClick={() => controlRef.current?.focus()}
       >
