@@ -16,6 +16,12 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page.locator('[data-stylex-owner="project-issue-form"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-issue-form-title-row"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issue-form-editor"]')).toBeVisible();
+  const editorTextarea = page.locator('[data-stylex-owner="project-issue-form-editor-textarea"]');
+  await expect(editorTextarea).toHaveCSS("height", /\d+px/u);
+  await expect(editorTextarea).toHaveCSS("overflow", "hidden");
+  await expect(editorTextarea).toHaveCSS("overflow-wrap", "break-word");
+  await expect(editorTextarea).toHaveAttribute("style", /--x-height:\s*\d+px/u);
+  await expect(editorTextarea).not.toHaveAttribute("style", /(?:^|;)\s*height\s*:/u);
   await expect(page.locator('[data-stylex-owner="project-issue-form-actions"]')).toBeVisible();
   await expect(page.locator("#title")).toHaveAttribute("tabindex", "1");
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");

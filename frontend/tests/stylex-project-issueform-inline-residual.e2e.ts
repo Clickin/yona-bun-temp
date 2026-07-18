@@ -9,7 +9,13 @@ test("issue form owns static editor and selector declarations", () => {
   expect(legacy).toContain('style="position:relative;overflow: visible;"');
   expect(route).not.toContain('style={{ width: "100%" }}');
   expect(route).not.toContain('style={{ display: "inline-block" }}');
+  expect(route).toContain('data-stylex-owner="project-issue-form-editor-textarea"');
+  expect(route).not.toContain("height: `${textareaContentHeight}px`");
   expect(styles).toContain('editorTabContent: { position: "relative", overflow: "visible" }');
+  expect(styles).toContain("editorTextareaHeight: (height: string) => ({ height })");
+  expect(styles).toContain('overflowWrap: "break-word"');
+  expect(route).not.toContain('style={{ resize: "none" }}');
+  expect(styles).toContain('resize: "none"');
   expect(styles).toContain('assigneePicker: { width: "100%" }');
   expect(styles).toContain('milestonePicker: { width: "100%" }');
   expect(styles).toContain('labelPicker: { display: "inline-block" }');

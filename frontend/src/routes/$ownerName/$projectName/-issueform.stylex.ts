@@ -8,6 +8,12 @@ export const projectIssueFormTheme = stylex.defineVars({
 
 export const issueFormStyles = stylex.create({
   editorTabContent: { position: "relative", overflow: "visible" },
+  editorTextarea: {
+    overflow: "hidden",
+    overflowWrap: "break-word",
+    resize: "none",
+  },
+  editorTextareaHeight: (height: string) => ({ height }),
   assigneePicker: { width: "100%" },
   milestonePicker: { width: "100%" },
   labelPicker: { display: "inline-block" },

@@ -1710,6 +1710,10 @@ function IssueMarkdownEditor({
   const [mentionPopupPosition, setMentionPopupPosition] = useState({ left: 4, top: 34 });
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
   const [textareaContentHeight, setTextareaContentHeight] = useState(300);
+  const editorTextareaStyleProps = stylex.props(
+    issueFormStyles.editorTextarea,
+    issueFormStyles.editorTextareaHeight(`${textareaContentHeight}px`),
+  );
   const textareaBoxRef = useRef<HTMLDivElement>(null);
   const mentionMarkerRef = useRef<HTMLSpanElement>(null);
   const mentionPopupRef = useRef<HTMLDivElement>(null);
@@ -1994,12 +1998,8 @@ function IssueMarkdownEditor({
                   ? `editor-mention-option-${Math.max(activeSuggestion, 0)}`
                   : undefined
               }
-              style={{
-                height: `${textareaContentHeight}px`,
-                overflow: "hidden",
-                overflowWrap: "break-word",
-                resize: "none",
-              }}
+              {...editorTextareaStyleProps}
+              data-stylex-owner="project-issue-form-editor-textarea"
               onChange={(event) => {
                 setTextareaContentHeight(300);
                 setDismissedMentionKey(null);

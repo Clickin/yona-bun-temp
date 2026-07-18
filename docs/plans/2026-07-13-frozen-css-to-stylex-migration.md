@@ -3416,6 +3416,8 @@ Batch 326 applies the workflow to the authenticated `/$ownerName/$projectName/co
 
 Batch 327 applies the workflow to the authenticated project-setting project-name transfer popover. The relative name-field anchor and visible popover display/offset/width declarations move to route-local StyleX while preserving the legacy `.popover.left.in` DOM, transfer copy, focus behavior, and responsive form geometry; the focused project-setting test covers source evidence, computed popover geometry, and absence of literal inline offsets.
 
+Batch 328 applies the workflow to the authenticated project issue-form editor textarea. Static overflow/wrapping/resize and runtime height declarations move to route-local conditional/Dynamic StyleX, retaining editor behavior and responsive geometry; the focused issue-form residual test covers source ownership and absence of the former inline declarations.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
