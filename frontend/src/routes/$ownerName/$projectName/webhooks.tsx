@@ -487,7 +487,7 @@ function ProjectWebhooksList({
         >
           <div className="span5">
             <h6
-              {...stylex.props(webhooksStyles.listItemHeading)}
+              {...stylex.props(webhooksStyles.listItemHeading, webhooksStyles.truncate)}
               className="mr20 truncate"
               data-stylex-owner="project-webhooks-list-item-heading"
             >

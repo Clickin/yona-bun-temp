@@ -1459,12 +1459,6 @@ span.issue-label {
   margin: 0 auto;
 }
 
-.webhook-editor-wrap .webhook-list-wrap .list-item .truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .webhook-editor-wrap .webhook-list-wrap .list-item .table {
   table-layout: fixed;
 }
