@@ -21,7 +21,7 @@ test("project posts label buttons preserve legacy reset and spacing in StyleX", 
   ]);
   expect(legacy).toContain("board-labels");
   expect(appCss).toContain(".issue-label.list-label");
-  expect(appCss).toContain(".post-list-wrap .infos > button.issue-label.list-label");
+  expect(appCss).not.toContain(".post-list-wrap .infos > button.issue-label.list-label");
   expect(route).toContain("styles.labelButtonReset");
   expect(route).toContain("styles.labelList");
   expect(route).toContain("styles.labelPaint");
