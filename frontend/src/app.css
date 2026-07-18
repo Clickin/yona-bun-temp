@@ -4291,24 +4291,6 @@ div.markdown-preview {
   margin-bottom: 20px;
 }
 
-.issue-detail-page .subtasks {
-  margin-top: 40px;
-  margin-bottom: 15px;
-}
-
-.issue-detail-page .subtasks .issue-item {
-  padding: 0 3px;
-}
-
-.issue-detail-page .subtasks .parent-issue {
-  font-size: 16px;
-}
-
-.issue-detail-page .subtasks .parent-issue-delimeter {
-  margin: 5px 0 0;
-  border-top: 1px dashed #ddd;
-}
-
 .board-body .author-info {
   display: block;
   margin: 10px 20px;

@@ -189,6 +189,20 @@ export const styles = stylex.create({
     borderRadius: "4px",
     fontWeight: "bold",
   },
+  subtasks: {
+    marginTop: "40px",
+    marginBottom: "15px",
+  },
+  subtaskItem: {
+    padding: "0 3px",
+  },
+  parentIssue: {
+    fontSize: "16px",
+  },
+  parentIssueDelimiter: {
+    margin: "5px 0 0",
+    borderTop: "1px dashed #ddd",
+  },
   itemCountGroup: {
     border: "1px solid #eee",
     borderRadius: "3px",

@@ -2273,7 +2273,12 @@ function IssueChildIssues({
   ];
 
   if (isDirectSharedChildIssue || (!totalCount && visibleChildren.length === 0)) {
-    return <div className="subtasks"></div>;
+    return (
+      <div
+        className={`${stylex.props(styles.subtasks).className} subtasks`}
+        data-stylex-owner="project-issue-detail-subtasks"
+      ></div>
+    );
   }
 
   const percentage = totalCount ? Math.trunc((childClosedCount / totalCount) * 100) : 0;
@@ -2289,9 +2294,15 @@ function IssueChildIssues({
         : stylex.props(styles.parentIssueState);
 
   return (
-    <div className="subtasks">
+    <div
+      className={`${stylex.props(styles.subtasks).className} subtasks`}
+      data-stylex-owner="project-issue-detail-subtasks"
+    >
       <div className="child-issues">
-        <div className="issue-item parent-issue">
+        <div
+          className={`${stylex.props(styles.subtaskItem, styles.parentIssue).className} issue-item parent-issue`}
+          data-stylex-owner="project-issue-detail-parent-issue"
+        >
           <Link
             {...LEGACY_LINK_PROPS}
             to="/$ownerName/$projectName/issue/$issueNumber"
@@ -2322,7 +2333,10 @@ function IssueChildIssues({
             {issueStateLabel(parentIssueState, t)}
           </span>
         </div>
-        <hr className="parent-issue-delimeter" />
+        <hr
+          className={`${stylex.props(styles.parentIssueDelimiter).className} parent-issue-delimeter`}
+          data-stylex-owner="project-issue-detail-parent-issue-delimiter"
+        />
         <div className="child-issues">
           {visibleChildren.map((child) => (
             <IssueChildIssue
@@ -2358,8 +2372,10 @@ function IssueChildIssue({
 
   return (
     <div
-      className={`${isSelected ? stylex.props(styles.selectedChild).className : ""} issue-item ${isSelected ? "selected-child" : ""} child-issue`.trim()}
-      data-stylex-owner={isSelected ? "project-issue-detail-selected-child" : undefined}
+      className={`${stylex.props(styles.subtaskItem).className} ${isSelected ? stylex.props(styles.selectedChild).className : ""} issue-item ${isSelected ? "selected-child" : ""} child-issue`.trim()}
+      data-stylex-owner={
+        isSelected ? "project-issue-detail-selected-child" : "project-issue-detail-subtask-item"
+      }
     >
       <span className={`state-label ${state}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
