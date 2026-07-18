@@ -3535,3 +3535,5 @@ generated fallback, production build, and base-path delivery are all green. The 
 component slice should then be the root shell user menu because it owns `_usermenu.less`, has
 desktop/mobile coverage, and can retire one bounded fallback module without touching unrelated
 route families.
+
+Batch 384 applies the workflow to the authenticated project-history state. The fixed stream, header, others, and date spacing declarations move to route-local StyleX owners while preserving the legacy history DOM and responsive geometry; the focused history test covers the legacy source contract and absence of the former inline declarations.

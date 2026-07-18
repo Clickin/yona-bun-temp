@@ -1013,3 +1013,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 383
 
 - Authenticated issue-detail voter summary state: moved the fixed voter-summary `margin-right:2px` into `styles.voterSummary`, preserving legacy comment/voter DOM, tooltip copy, and responsive geometry. Focused `stylex-project-issue-detail-voter-summary.e2e.ts` verifies the legacy source contract, stable owner, StyleX spacing, and absence of the former inline margin; live legacy visual parity remains unverified.
+
+## Batch 384
+
+- Authenticated project-history state: moved fixed `.main-stream` width, `.header-text` margin, `.others` padding, and `.date` margin into route-local `projectHistoryStyles`, preserving the legacy history DOM and responsive geometry. Focused `stylex-project-history-static-owners.e2e.ts` verifies the legacy source contract, stable owners, and absence of the former inline declarations; live legacy visual parity remains unverified.

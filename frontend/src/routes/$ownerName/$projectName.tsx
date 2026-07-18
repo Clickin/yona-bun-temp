@@ -9,6 +9,13 @@ import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
 
+const projectHistoryStyles = stylex.create({
+  stream: { width: "100%" },
+  header: { marginBottom: "5px" },
+  others: { paddingLeft: "0" },
+  date: { marginLeft: "0" },
+});
+
 const projectHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
 });
@@ -1661,7 +1668,10 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
 
   return (
     <div className="content-container nm">
-      <div className="main-stream" style={{ width: "100%" }}>
+      <div
+        className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}
+        data-stylex-owner="project-history-stream"
+      >
         <ul className="activity-streams unstyled">
           {items.map((item) => {
             const itemRecord = recordField(item);
@@ -1689,7 +1699,10 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                   />
                 </HistoryLink>
                 <div className="activity-desc">
-                  <p className="header-text" style={{ marginBottom: "5px" }}>
+                  <p
+                    className={`${stylex.props(projectHistoryStyles.header).className} header-text`}
+                    data-stylex-owner="project-history-header"
+                  >
                     <HistoryLink basePath={basePath} href={actorUrl} className="actor">
                       {stringField(itemRecord.actorName, "")}
                     </HistoryLink>{" "}
@@ -1703,10 +1716,13 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                       </HistoryLink>
                     </span>
                   </p>
-                  <p className="others" style={{ paddingLeft: "0" }}>
+                  <p
+                    className={`${stylex.props(projectHistoryStyles.others).className} others`}
+                    data-stylex-owner="project-history-others"
+                  >
                     <span
-                      className="date"
-                      style={{ marginLeft: "0" }}
+                      className={`${stylex.props(projectHistoryStyles.date).className} date`}
+                      data-stylex-owner="project-history-date"
                       title={stringField(
                         itemRecord.createdTitle,
                         stringField(itemRecord.createdLabel, ""),
