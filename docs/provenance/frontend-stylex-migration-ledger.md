@@ -583,3 +583,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 272
 
 - `/projectform` loaded project-create state: moved owner and VCS select `min-width:220px` declarations into `projectFormLayout.select`, preserving `mb10`/`mt5`, Select2 metadata, owner/VCS interactions, and the legacy mobile form shell. Focused `stylex-projectform-inline-residual.e2e.ts` passed 1/1.
+
+## Batch 273
+
+- `/organizations/$organizationName/pullrequests` populated review-progress state: moved the API-derived comment-thread progress width into the route-local StyleX dynamic style function while retaining conditional state classes, legacy progress/bar classes, and runtime avatar/logo/plugin URL fallbacks. The static `margin-right:20px` declaration remains StyleX-owned. Focused `stylex-organization-pullrequests-inline-residual.e2e.ts` passed desktop/mobile populated fixtures.

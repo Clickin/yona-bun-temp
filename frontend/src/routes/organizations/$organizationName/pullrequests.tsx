@@ -30,7 +30,7 @@ const sx = {
   pagination: stylex.props(styles.pagination),
   progress: stylex.props(styles.progress),
   progressMeta: stylex.props(styles.progress, styles.progressMeta),
-  progressFill: stylex.props(styles.progressFill),
+  progressFill: (width: string) => stylex.props(styles.progressFill(width)),
 } as const;
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -403,6 +403,7 @@ function OrganizationPullRequestItem({
     pullRequestNumber: String(pullRequest.pullRequestNumber),
   };
   const percent = percentOf(pullRequest.closedCommentThreadCount, pullRequest.commentThreadCount);
+  const progressFill = sx.progressFill(`${percent}%`);
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
   const pullRequestRowHref = prefixBasePath(
     basePath,
@@ -495,10 +496,9 @@ function OrganizationPullRequestItem({
               <i className="infos-icon yobicon-post2 vmiddle"></i>
               <div className="upload-progress">
                 <div
-                  {...sx.progressFill}
-                  className={`${sx.progressFill.className} bar orange`}
+                  {...progressFill}
+                  className={`${progressFill.className} bar orange`}
                   data-stylex-owner="organization-pullrequests-row-progress-fill"
-                  style={{ width: `${percent}%` }}
                 ></div>
               </div>
               <Link

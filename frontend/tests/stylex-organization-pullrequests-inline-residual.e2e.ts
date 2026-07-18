@@ -6,9 +6,7 @@ const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${
 
 test.use({ locale: "en-US" });
 
-test("moves static review progress spacing into StyleX and keeps dynamic width inline", async ({
-  page,
-}) => {
+test("moves static review progress spacing and dynamic width into StyleX", async ({ page }) => {
   const route = readFileSync("src/routes/organizations/$organizationName/pullrequests.tsx", "utf8");
   const stylex = readFileSync(
     "src/routes/organizations/$organizationName/-organization-pullrequests.stylex.ts",
@@ -20,7 +18,8 @@ test("moves static review progress spacing into StyleX and keeps dynamic width i
   );
   expect(template).toContain('style="margin-right:20px;"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-row-progress"');
-  expect(route).toContain("style={{ width: `${percent}%` }}");
+  expect(route).toContain("sx.progressFill(`${percent}%`)");
+  expect(route).not.toContain("style={{ width: `${percent}%` }}");
   expect(route).not.toContain("style={{ marginRight: 20 }}");
   expect(stylex).toContain('progressMeta: { marginRight: "20px" }');
 
@@ -36,7 +35,9 @@ test("moves static review progress spacing into StyleX and keeps dynamic width i
     await expect(progress).toBeVisible();
     await expect(progress).toHaveCSS("margin-right", "20px");
     await expect(progressFill).toHaveCSS("width", "15px");
-    expect(await progressFill.getAttribute("style")).toContain("width: 50%");
+    const inlineStyle = await progressFill.getAttribute("style");
+    expect(inlineStyle).toContain("--x-width: 50%");
+    expect(inlineStyle).not.toMatch(/(?:^|;)\s*width\s*:/u);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
   }
 });
