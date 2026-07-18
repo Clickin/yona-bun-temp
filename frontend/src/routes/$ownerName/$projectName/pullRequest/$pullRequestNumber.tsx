@@ -1074,33 +1074,51 @@ function PullRequestConflictGuide({
   );
 
   return (
-    <div className="howto-resolve-conflict">
+    <div className="howto-resolve-conflict" data-stylex-owner="pull-request-detail-conflict-guide">
       <h6>{t("pullRequest.resolve.conflict")}</h6>
-      <div className="help">
-        <ol>
+      <div className={`${stylex.props(styles.conflictHelp).className} help`}>
+        <ol className={stylex.props(styles.conflictList).className}>
           <li>
-            {t("pullRequest.resolver.step1")} <code>{`git checkout ${fromBranchName}`}</code>
+            {t("pullRequest.resolver.step1")}{" "}
+            <code
+              className={stylex.props(styles.conflictCode).className}
+            >{`git checkout ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step2")}{" "}
-            <code>{`git remote add upstream ${upstreamUrl}`}</code>
+            <code
+              className={stylex.props(styles.conflictCode).className}
+            >{`git remote add upstream ${upstreamUrl}`}</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step3")} <code>git fetch upstream</code>
+            {t("pullRequest.resolver.step3")}{" "}
+            <code className={stylex.props(styles.conflictCode).className}>git fetch upstream</code>
           </li>
           <li>
-            {t("pullRequest.resolver.step4")} <code>{`git rebase upstream/${toBranchName}`}</code>
+            {t("pullRequest.resolver.step4")}{" "}
+            <code
+              className={stylex.props(styles.conflictCode).className}
+            >{`git rebase upstream/${toBranchName}`}</code>
           </li>
           <li>{t("pullRequest.resolver.step5")}</li>
           <li>
-            {t("pullRequest.resolver.step6")} <code>git add resolved_file</code>
+            {t("pullRequest.resolver.step6")}{" "}
+            <code className={stylex.props(styles.conflictCode).className}>
+              git add resolved_file
+            </code>
           </li>
           <li>
-            {t("pullRequest.resolver.step7")} <code>git rebase --continue</code>
+            {t("pullRequest.resolver.step7")}{" "}
+            <code className={stylex.props(styles.conflictCode).className}>
+              git rebase --continue
+            </code>
           </li>
           <li>{t("pullRequest.resolver.step8")}</li>
           <li>
-            {t("pullRequest.resolver.step9")} <code>{`git push -f origin ${fromBranchName}`}</code>
+            {t("pullRequest.resolver.step9")}{" "}
+            <code
+              className={stylex.props(styles.conflictCode).className}
+            >{`git push -f origin ${fromBranchName}`}</code>
           </li>
           <li>
             {t("pullRequest.resolver.step10")}
@@ -1111,7 +1129,7 @@ function PullRequestConflictGuide({
                 projectName: pullRequest.projectName,
                 pullRequestNumber: String(pullRequest.pullRequestNumber),
               }}
-              className="ybtn ybtn-mini ybtn-primary"
+              className={`${stylex.props(styles.conflictButton).className} ybtn ybtn-mini ybtn-primary`}
               {...LEGACY_LINK_PROPS}
             >
               {t("button.page.refresh")}

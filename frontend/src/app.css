@@ -4987,32 +4987,6 @@ div.markdown-preview {
   color: #666;
 }
 
-.pull-request-conflict-guide {
-  margin-top: 18px;
-  padding: 14px 16px;
-  border: 1px solid #e8b3ad;
-  color: #7d251d;
-  background: #fff4f2;
-}
-
-.pull-request-conflict-guide .howto-resolve-conflict {
-  margin-top: 12px;
-}
-
-.pull-request-conflict-guide h6 {
-  margin: 0 0 8px;
-  font-size: 14px;
-}
-
-.pull-request-conflict-guide ol {
-  margin: 0 0 0 20px;
-  padding: 0;
-}
-
-.pull-request-conflict-guide li {
-  margin: 5px 0;
-}
-
 .comment-thread-wrap {
   position: relative;
   max-width: 876px;
