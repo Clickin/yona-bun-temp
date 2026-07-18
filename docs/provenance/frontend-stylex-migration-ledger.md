@@ -889,3 +889,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 350
 
 - Authenticated project issues child-list state: moved conditional child-list `display:block` into `styles.childIssueListVisible`, preserving the legacy child-issue DOM, reveal behavior, copy, and responsive geometry. Focused `stylex-project-issues-child-list.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.
+
+## Batch 351
+
+- Authenticated project posts keymap modal state: moved conditional modal `display:block` into `styles.keymapOpen`, preserving the legacy help-keymap DOM, keyboard interaction, copy, and responsive geometry. Focused `stylex-project-posts-keymap-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline declaration; live legacy visual parity remains unverified.

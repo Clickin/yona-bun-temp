@@ -11,4 +11,5 @@ export const styles = stylex.create({
     boxShadow,
     color,
   }),
+  keymapOpen: { display: "block" },
 });

@@ -742,6 +742,7 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
   const showPullRequest = stringField((project as Record<string, unknown>).vcs, "GIT") === "GIT";
   const showProjectSetting = booleanField((project as Record<string, unknown>).viewerCanUpdate);
   const modalClassName = isOpen ? "modal fade keymap-help in" : "modal hide fade keymap-help";
+  const keymapOpenStyleProps = isOpen ? stylex.props(styles.keymapOpen) : undefined;
   const closeModal = (event: ReactMouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
@@ -766,8 +767,9 @@ function BoardListKeymap({ project }: { project: ProjectContainer }) {
       </button>
       <div
         id="helpKeys"
-        className={modalClassName}
-        style={isOpen ? { display: "block" } : undefined}
+        {...keymapOpenStyleProps}
+        className={`${modalClassName} ${keymapOpenStyleProps?.className ?? ""}`.trim()}
+        data-stylex-owner="project-posts-keymap-modal"
         tabIndex={-1}
         role="dialog"
         onKeyUp={(event) => {
