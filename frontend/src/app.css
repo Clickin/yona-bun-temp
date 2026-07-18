@@ -2533,19 +2533,6 @@ h1 {
   width: 105px;
 }
 
-.project-home .inner header {
-  padding: 10px 0;
-  background-color: #f8f8f8;
-}
-
-.project-home .inner header h3 {
-  display: inline-block;
-  margin: 0;
-  font-size: 12px;
-  line-height: 20px;
-  color: #4c4c4c;
-}
-
 .project-home .inner header .project-status {
   float: right;
   line-height: 19px;

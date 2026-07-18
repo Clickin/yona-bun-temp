@@ -3649,3 +3649,5 @@ Batch 439 applies the workflow to the project-home action/member card state. Pro
 Batch 440 applies the workflow to the project-home clone controls. Base clone-wrap, clone URL, and clone button static declarations move into route-local StyleX while preserving clone DOM, copy, clipboard behavior, and existing focus/hover width rules; the focused clone-controls test covers the legacy sources, owners, fallback removal, and retained conditional rules.
 
 Batch 441 applies the workflow to the project-home header/overview state. Header/overview spacing, heading typography, markdown paragraph presentation, and description editor input margin move into route-local StyleX while preserving project-home DOM, copy, editing behavior, and clone controls; the focused header-overview test covers legacy sources and fallback removal.
+
+Batch 442 applies the workflow to the project-home member-card header state. Member header background/padding and heading typography move into route-local StyleX while preserving member DOM, add-link behavior, and copy; the focused member-header test covers legacy sources and fallback removal.

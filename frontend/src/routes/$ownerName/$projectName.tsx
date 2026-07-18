@@ -1441,8 +1441,16 @@ export function ProjectHomeBody({
                   className={`${stylex.props(projectHomeStyles.memberInner, projectHomeStyles.memberInnerInfo).className} inner member-info`}
                   data-stylex-owner="project-home-member-inner"
                 >
-                  <header>
-                    <h3>{t("project.members")}</h3>
+                  <header
+                    className={`${stylex.props(projectHomeStyles.memberHeader).className}`}
+                    data-stylex-owner="project-home-member-header"
+                  >
+                    <h3
+                      {...stylex.props(projectHomeStyles.memberHeaderHeading)}
+                      data-stylex-owner="project-home-member-header-heading"
+                    >
+                      {t("project.members")}
+                    </h3>
                     {booleanField(project.viewerCanUpdate) ? (
                       <Link
                         activeProps={{}}

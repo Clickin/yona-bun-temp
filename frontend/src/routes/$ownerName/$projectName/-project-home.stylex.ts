@@ -8,6 +8,14 @@ export const styles = stylex.create({
   overviewHeading: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
   markdownParagraph: { display: "inline-block", margin: "0" },
   descriptionEditInput: { margin: "0" },
+  memberHeader: { backgroundColor: "#f8f8f8", padding: "10px 0" },
+  memberHeaderHeading: {
+    color: "#4c4c4c",
+    display: "inline-block",
+    fontSize: "12px",
+    lineHeight: "20px",
+    margin: "0",
+  },
   cloneWrap: { borderRadius: "6px", padding: "5px 0", position: "relative" },
   cloneUrl: {
     backgroundColor: "#ffffff",
