@@ -45,6 +45,8 @@ test("source fully owns the legacy help FAQ subtree without presentation classes
   expect(yobicon).toContain(`.yobicon-q:before {
     content: "\\e48f";`);
   expect(route).toContain('import legacySpriteUrl from "../assets/legacy/sprite.png"');
+  expect(route).toContain("faqStyles.sprite(legacySpriteUrl)");
+  expect(route).not.toContain("faqSpriteStyle");
   expect(route).toContain(`faqQuestionControl: {
     backgroundColor: "transparent",`);
   expect(route).toContain(`faqQuestion: {

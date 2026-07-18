@@ -3593,3 +3593,5 @@ Batch 411 applies the workflow to the labels-form change-VCS menu state. The con
 Batch 412 applies the workflow to the site user-list pagination sprite state. The shared runtime sprite URL moves from four inline custom-property declarations to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused user-list pagination test covers all consumers.
 
 Batch 413 applies the workflow to the issue-detail sharer-list state. The conditional sharer-list `display:block` declaration moves to route-local conditional StyleX owners while preserving share-list DOM, toggle behavior, copy, and responsive geometry; the focused sharer-list test covers both visible consumers.
+
+Batch 414 applies the workflow to the help FAQ toggle sprite state. The runtime FAQ sprite URL moves from a literal inline custom-property declaration to a route-local Dynamic StyleX owner while preserving FAQ DOM, icon geometry, toggle interaction, and responsive layout; the focused FAQ test covers the dynamic carrier.

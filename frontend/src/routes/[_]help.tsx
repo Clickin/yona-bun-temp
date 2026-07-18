@@ -9,9 +9,11 @@ import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "./-home-route-screen";
 import { helpColors } from "./-help.stylex";
 
-const faqSpriteStyle = {
-  "--help-faq-sprite": `url(${legacySpriteUrl})`,
-} as React.CSSProperties;
+const faqStyles = stylex.create({
+  sprite: (spriteUrl: string) => ({
+    "--help-faq-sprite": `url(${spriteUrl})`,
+  }),
+});
 
 const styles = stylex.create({
   breadcrumbOuter: {
@@ -429,7 +431,7 @@ function HelpFaqRow({
           {...stylex.props(styles.faqToggleIcon, isOpen && styles.faqToggleIconOpen)}
           aria-hidden="true"
           data-stylex-owner="help-faq-toggle-icon"
-          style={faqSpriteStyle}
+          {...stylex.props(faqStyles.sprite(legacySpriteUrl))}
         />
       </div>
       <div
