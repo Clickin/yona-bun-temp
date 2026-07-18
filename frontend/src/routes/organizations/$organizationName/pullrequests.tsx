@@ -31,6 +31,7 @@ const sx = {
   progress: stylex.props(styles.progress),
   progressMeta: stylex.props(styles.progress, styles.progressMeta),
   progressFill: (width: string) => stylex.props(styles.progressFill(width)),
+  headerLogo: (backgroundImage: string) => stylex.props(styles.headerLogo(backgroundImage)),
 } as const;
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -553,8 +554,14 @@ function OrganizationHeader({
   logoUrl: string;
   organizationName: string;
 }) {
+  const logoStyleProps = sx.headerLogo(`url('${logoUrl}')`);
+
   return (
-    <div className="project-header-outer" style={{ backgroundImage: `url('${logoUrl}')` }}>
+    <div
+      {...logoStyleProps}
+      className={`project-header-outer ${logoStyleProps.className ?? ""}`.trim()}
+      data-stylex-owner="organization-pullrequests-header-logo"
+    >
       <div className="project-header-inner">
         <div className="project-header-wrap">
           <div className="project-header-avatar">

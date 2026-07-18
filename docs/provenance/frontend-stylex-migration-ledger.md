@@ -750,3 +750,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 315
 
 - `/organizations/$organizationName` authenticated organization profile/header state: moved the server-provided header `background-image` from a literal React inline declaration into colocated `-organization-home.stylex.ts` Dynamic StyleX `headerBackground(backgroundImage)`, preserving the legacy header DOM/classes, organization logo image, breadcrumb, enrollment controls, and responsive geometry. Focused `stylex-organization-profile-logo.e2e.ts` verifies the legacy header source, custom-property carrier, computed runtime background image, logo image URL, and mobile containment; live legacy visual parity remains unverified.
+
+## Batch 316
+
+- `/organizations/$organizationName/pullrequests` organization header logo state: moved the server-provided organization logo `background-image` from the legacy header inline declaration into colocated `-organization-pullrequests.stylex.ts` Dynamic StyleX `styles.headerLogo(backgroundImage)`, preserving `project-header-outer` classes, header DOM order, breadcrumb copy, and responsive geometry. Focused `stylex-organization-pullrequests-header-logo.e2e.ts` verifies the legacy header/list source contract, stable owner, Dynamic StyleX carrier, and absence of the literal inline background declaration; live legacy visual parity remains unverified.
