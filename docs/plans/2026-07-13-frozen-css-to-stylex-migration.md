@@ -3570,3 +3570,5 @@ Batch 399 applies the workflow to the authenticated project pull-request list ro
 Batch 400 applies the workflow to the authenticated commit review textarea state. The fixed review textarea height moves to a route-local StyleX owner while preserving editor DOM, review interaction, copy, and responsive geometry; the focused textarea test covers the legacy source contract and owner.
 
 Batch 401 applies the workflow to the authenticated project review sort action. Fixed side-effect button reset declarations move to a route-local StyleX owner while preserving sort behavior, legacy classes, copy, and responsive geometry; the focused side-effect test covers the owner and former inline removal.
+
+Batch 402 applies the workflow to the authenticated pull-request changes review state. The fixed review textarea height and collapsed diff `display:none` move to conditional/static route-local StyleX owners while preserving diff toggling, editor DOM, copy, and responsive geometry; the focused review-owner test covers both declarations.

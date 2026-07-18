@@ -20,6 +20,8 @@ export const styles = stylex.create({
   originalMessageToggle: { border: 0, paddingLeft: 5, paddingRight: 5 },
   diffMeta: { cursor: "pointer" },
   threadReviewForm: { display: "block" },
+  reviewTextarea: { height: "100px" },
+  diffCodeHidden: { display: "none" },
   visibleForm: { display: "block" },
   commentDeleteModalVisible: { display: "block" },
   pendingBlockVisible: { display: "block" },

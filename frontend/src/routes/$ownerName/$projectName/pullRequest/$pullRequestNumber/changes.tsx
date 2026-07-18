@@ -512,11 +512,7 @@ function ThreadReplyFormBody({
       </div>
       <div className="write-comment-box">
         <div className="write-comment-wrap">
-          <Editor
-            editorMode="code-review-body"
-            textareaStyle={{ height: "100px" }}
-            wrapId={wrapId}
-          />
+          <Editor editorMode="code-review-body" wrapId={wrapId} />
           <UploadForm />
           <div className="right-txt">
             <button
@@ -883,7 +879,6 @@ function PullRequestFileDiff({
     left: number;
     top: number;
   } | null>(null);
-  const codeStyle = isExpanded ? undefined : { display: "none" };
   const toggleExpanded = () => setIsExpanded((current) => !current);
   const parsed = parseUnifiedDiff(file.path, file.patch);
   const pathA = isNullDiffPath(parsed.pathA) ? "" : parsed.pathA;
@@ -931,7 +926,7 @@ function PullRequestFileDiff({
             );
             setPendingBlock(block);
           }}
-          style={codeStyle}
+          {...(isExpanded ? {} : stylex.props(styles.diffCodeHidden))}
         >
           <div className="patch-header">
             {pathA ? <div className="path">{`--- ${pathA}`}</div> : null}
@@ -1712,15 +1707,7 @@ function stringField(value: unknown, fallback: string) {
   return typeof value === "string" ? value : fallback;
 }
 
-function Editor({
-  editorMode,
-  textareaStyle,
-  wrapId,
-}: {
-  editorMode: string;
-  textareaStyle?: { height: string };
-  wrapId: string;
-}) {
+function Editor({ editorMode, wrapId }: { editorMode: string; wrapId: string }) {
   const { t } = useLegacyMessages();
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   return (
@@ -1772,10 +1759,14 @@ function Editor({
           <div className="textarea-box">
             <textarea
               name="contents"
-              className="editorSeries content comment nm"
+              className={`editorSeries content comment nm ${editorMode === "code-review-body" ? (stylex.props(styles.reviewTextarea).className ?? "") : ""}`.trim()}
               data-editor-mode={editorMode}
               id={`editor-contents-${wrapId}`}
-              style={textareaStyle}
+              data-stylex-owner={
+                editorMode === "code-review-body"
+                  ? "pull-request-changes-review-textarea"
+                  : undefined
+              }
               {...legacyMarkdownTextareaAttr}
             ></textarea>
           </div>
