@@ -939,7 +939,8 @@ function UserIssueItem({
                 }}
                 className={`label issue-label list-label twoColumeModeTarget ${contrastClassForLabelColor(label.color)}`}
                 data-label-id={label.id}
-                style={{ background: label.color }}
+                {...stylex.props(issueStyles.issueLabelBackground(label.color))}
+                data-stylex-owner="user-issues-issue-label-background"
                 key={String(label.id)}
               >
                 {label.name}
@@ -1181,7 +1182,8 @@ function UserIssueChildRow({
           data-category-id={String(label.categoryId ?? "")}
           data-label-id={String(label.id)}
           key={String(label.id)}
-          style={childIssueLabelStyle(label.color)}
+          {...stylex.props(issueStyles.issueLabelBackground(label.color))}
+          data-stylex-owner="user-issues-child-issue-label-background"
           to="/$ownerName/$projectName/issues"
           params={{ ownerName, projectName }}
           search={{
@@ -1206,10 +1208,6 @@ function UserIssueChildRow({
       </span>
     </div>
   );
-}
-
-function childIssueLabelStyle(color: string | undefined): CSSProperties | undefined {
-  return color ? { background: color } : undefined;
 }
 
 function UserIssueChildCommentAndVotePair({

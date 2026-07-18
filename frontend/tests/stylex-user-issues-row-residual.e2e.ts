@@ -10,9 +10,21 @@ test("user issue row conditional and dynamic styles use route-local StyleX", asy
     "../yona-original/app/views/issue/my_partial_list.scala.html",
     "utf8",
   );
+  const childLegacy = readFileSync(
+    "../yona-original/app/views/issue/partial_view_child.scala.html",
+    "utf8",
+  );
 
   expect(legacy).toContain('<li class="post-item title"');
   expect(legacy).toContain('class="child-issue-list hide"');
+  expect(legacy).toContain('class="label issue-label list-label twoColumeModeTarget"');
+  expect(legacy).toContain('style="background:@label.color"');
+  expect(childLegacy).toContain('class="label issue-label list-label active twoColumeModeTarget"');
+  expect(childLegacy).toContain('style="background:@label.color"');
+  expect(source).toContain("issueStyles.issueLabelBackground(label.color)");
+  expect(source).not.toContain("style={{ background: label.color }}");
+  expect(source).not.toContain("childIssueLabelStyle(label.color)");
+  expect(styleSource).toContain("issueLabelBackground: (backgroundColor) => ({ backgroundColor })");
   expect(source).toContain("issueStyles.issueRowTwoColumn");
   expect(source).toContain("issueStyles.issueRowHovered");
   expect(source).toContain("issueStyles.progressBar");
@@ -33,6 +45,26 @@ test("user issue row conditional and dynamic styles use route-local StyleX", asy
   await expect(row).toHaveCSS("background-color", "rgb(250, 250, 250)");
   await expect(row.locator(".child-issue-list")).toHaveCSS("display", "none");
   await expect(row.locator(".subtask-progress.upload-progress .bar")).toHaveCSS("width", "0px");
+  const label = row.locator('[data-stylex-owner="user-issues-issue-label-background"]');
+  await expect(label).toHaveCount(1);
+  await expect(label).toHaveCSS("background-color", "rgb(18, 52, 86)");
+  await expect(label).toHaveAttribute("style", /--x-backgroundColor:\s*#123456/u);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: "commit" });
+  const mobileRow = page.locator("li.post-item.title").first();
+  const mobileLabel = mobileRow.locator('[data-stylex-owner="user-issues-issue-label-background"]');
+  await expect(mobileLabel).toHaveCSS("background-color", "rgb(18, 52, 86)");
+  const [mobileRowBox, mobileLabelBox] = await Promise.all([
+    mobileRow.boundingBox(),
+    mobileLabel.boundingBox(),
+  ]);
+  expect(mobileRowBox).not.toBeNull();
+  expect(mobileLabelBox).not.toBeNull();
+  expect(mobileLabelBox!.x).toBeGreaterThanOrEqual(mobileRowBox!.x);
+  expect(mobileLabelBox!.x + mobileLabelBox!.width).toBeLessThanOrEqual(
+    mobileRowBox!.x + mobileRowBox!.width + 1,
+  );
 });
 
 async function mockUserIssues(page: Page) {
@@ -73,7 +105,7 @@ async function mockUserIssues(page: Page) {
             createdLabel: "2026-07-17",
             id: 1,
             issueNumber: 1,
-            labels: [],
+            labels: [{ id: 42, name: "Server color", color: "#123456" }],
             ownerName: "alice",
             projectName: "sample",
             state: "open",

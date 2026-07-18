@@ -14,6 +14,7 @@ export const styles = stylex.create({
   issueRowHovered: { backgroundColor: "#fafafa" },
   // API-derived percentages cannot be enumerated at build time.
   progressBar: (width) => ({ width }),
+  issueLabelBackground: (backgroundColor) => ({ backgroundColor }),
   issueTitle: {
     color: userIssuesColors.issueTitle,
     fontSize: "15px",
