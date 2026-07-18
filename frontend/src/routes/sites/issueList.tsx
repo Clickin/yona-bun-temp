@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import { type CSSProperties, type KeyboardEvent } from "react";
+import { type KeyboardEvent } from "react";
 import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   siteIssuesQueryOptions,
@@ -26,9 +26,11 @@ type IssueListRouteSearch = {
   state?: string;
 } & Record<string, unknown>;
 
-const paginationSpriteStyle = {
-  "--site-issue-list-pagination-sprite": `url(${legacySpriteUrl})`,
-} as CSSProperties;
+const paginationStyles = stylex.create({
+  paginationSprite: (spriteUrl: string) => ({
+    "--site-issue-list-pagination-sprite": `url(${spriteUrl})`,
+  }),
+});
 
 const legacySiteSidebarLinkProps = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -676,8 +678,8 @@ function IssueListPagination({
             >
               <i
                 {...issueListPaginationPrevIconStyleProps}
-                data-stylex-owner="site-issue-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
+                data-stylex-owner="site-issue-list-pagination-first"
               ></i>
               <span
                 {...issueListPaginationLabelStyleProps}
@@ -692,8 +694,8 @@ function IssueListPagination({
               <i
                 {...issueListPaginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
-                data-stylex-owner="site-issue-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
+                data-stylex-owner="site-issue-list-pagination-prev"
               ></i>
               <span
                 {...issueListPaginationOffLabelStyleProps}
@@ -763,8 +765,8 @@ function IssueListPagination({
               </span>
               <i
                 {...issueListPaginationNextIconStyleProps}
-                data-stylex-owner="site-issue-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
+                data-stylex-owner="site-issue-list-pagination-next"
               ></i>
             </Link>
           ) : (
@@ -780,8 +782,8 @@ function IssueListPagination({
               <i
                 {...issueListPaginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
-                data-stylex-owner="site-issue-list-pagination-icon"
-                style={paginationSpriteStyle}
+                {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
+                data-stylex-owner="site-issue-list-pagination-last"
               ></i>
             </>
           )}
