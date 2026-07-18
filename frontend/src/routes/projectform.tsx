@@ -13,7 +13,11 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { projectFormLayout, projectFormTheme } from "./-projectform.stylex";
+import {
+  projectFormConditionalStyles,
+  projectFormLayout,
+  projectFormTheme,
+} from "./-projectform.stylex";
 
 type ProjectCreateSearch = {
   owner?: string;
@@ -109,6 +113,11 @@ function ProjectCreateScreen({
   const [menuReviewChecked, setMenuReviewChecked] = React.useState(() =>
     defaultMenus.has("review"),
   );
+  const protectedScopeStyleProps = isSelectedOwnerGroup
+    ? undefined
+    : stylex.props(projectFormConditionalStyles.hidden);
+  const svnWarningStyleProps =
+    vcs === "GIT" ? stylex.props(projectFormConditionalStyles.hidden) : undefined;
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
@@ -332,9 +341,10 @@ function ProjectCreateScreen({
                       </li>
 
                       <li
+                        {...protectedScopeStyleProps}
                         id="opt-protected"
-                        className="mt10"
-                        style={isSelectedOwnerGroup ? undefined : { display: "none" }}
+                        className={`mt10 ${protectedScopeStyleProps?.className ?? ""}`.trim()}
+                        data-stylex-owner="project-form-protected-scope"
                       >
                         <input
                           type="radio"
@@ -405,9 +415,10 @@ function ProjectCreateScreen({
                     </select>
 
                     <span
+                      {...svnWarningStyleProps}
                       id="svn"
-                      className="ml10 notice"
-                      style={vcs === "GIT" ? { display: "none" } : undefined}
+                      className={`ml10 notice ${svnWarningStyleProps?.className ?? ""}`.trim()}
+                      data-stylex-owner="project-form-vcs-warning"
                     >
                       {t("project.svn.warning")}
                     </span>
@@ -556,11 +567,14 @@ function MenuCheckbox({
   name: string;
   onChange?: (checked: boolean) => void;
 }) {
+  const hiddenStyleProps = hidden ? stylex.props(projectFormConditionalStyles.hidden) : undefined;
+
   return (
     <label
       htmlFor={id}
-      className="bg-radiobtn label-public inline-list"
-      style={hidden ? { display: "none" } : undefined}
+      {...hiddenStyleProps}
+      className={`bg-radiobtn label-public inline-list ${hiddenStyleProps?.className ?? ""}`.trim()}
+      data-stylex-owner={`project-form-menu-${name}`}
     >
       <input
         type="checkbox"

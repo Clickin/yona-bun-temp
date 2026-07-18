@@ -15,3 +15,7 @@ export const projectFormLayout = stylex.create({
     minWidth: "220px",
   },
 });
+
+export const projectFormConditionalStyles = stylex.create({
+  hidden: { display: "none" },
+});
