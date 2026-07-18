@@ -2940,8 +2940,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state ${newValue}`}
+          {...stylex.props(styles.timelineEventState, timelineEventStateVariant(newValue))}
+          className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(newValue)).className} state ${newValue}`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           {issueStateLabel(newValue, t)}
@@ -2972,8 +2972,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
+          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           {t("issue.state.assigned")}
@@ -3029,8 +3029,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state milestone-changed`}
+          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
+          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state milestone-changed`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           {t("issue.update.milestone.id")}
@@ -3068,8 +3068,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
+          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           moved
@@ -3108,8 +3108,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
+          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           mentioned
@@ -3151,8 +3151,8 @@ function IssueEventRow({
         data-stylex-owner="issue-detail-timeline-event"
       >
         <span
-          {...stylex.props(styles.timelineEventState)}
-          className={`${stylex.props(styles.timelineEventState).className} state changed`}
+          {...stylex.props(styles.timelineEventState, styles.timelineStateChanged)}
+          className={`${stylex.props(styles.timelineEventState, styles.timelineStateChanged).className} state changed`}
           data-stylex-owner="issue-detail-timeline-event-state"
         >
           mentioned
@@ -3214,8 +3214,11 @@ function IssueEventRow({
           ></span>
         ) : (
           <span
-            {...stylex.props(styles.timelineEventState)}
-            className={`${stylex.props(styles.timelineEventState).className} state ${added ? "sharer-added" : "sharer-deleted"}`}
+            {...stylex.props(
+              styles.timelineEventState,
+              timelineEventStateVariant(added ? "sharer-added" : "sharer-deleted"),
+            )}
+            className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(added ? "sharer-added" : "sharer-deleted")).className} state ${added ? "sharer-added" : "sharer-deleted"}`}
             data-stylex-owner="issue-detail-timeline-event-state"
           >
             {added ? t("issue.sharer") : t("issue.event.sharer.deleted.title")}
@@ -3259,8 +3262,11 @@ function IssueEventRow({
           ></span>
         ) : (
           <span
-            {...stylex.props(styles.timelineEventState)}
-            className={`${stylex.props(styles.timelineEventState).className} state ${added ? "label-added" : "label-deleted"}`}
+            {...stylex.props(
+              styles.timelineEventState,
+              timelineEventStateVariant(added ? "label-added" : "label-deleted"),
+            )}
+            className={`${stylex.props(styles.timelineEventState, timelineEventStateVariant(added ? "label-added" : "label-deleted")).className} state ${added ? "label-added" : "label-deleted"}`}
             data-stylex-owner="issue-detail-timeline-event-state"
           >
             {added ? "Added" : "Removed"}
@@ -4666,6 +4672,33 @@ function isAddingEvent(event: IssueTimelineItem) {
 
 function isDeletingEvent(event: IssueTimelineItem) {
   return stringField(event.newValue) === "" && stringField(event.oldValue) !== "";
+}
+
+function timelineEventStateVariant(variant: string) {
+  switch (variant) {
+    case "open":
+      return styles.timelineStateOpen;
+    case "closed":
+      return styles.timelineStateClosed;
+    case "changed":
+    case "merged":
+    case "milestone-changed":
+      return styles.timelineStateChanged;
+    case "rejected":
+      return styles.timelineStateRejected;
+    case "conflict":
+      return styles.timelineStateConflict;
+    case "resolved":
+      return styles.timelineStateResolved;
+    case "sharer-added":
+    case "label-added":
+      return styles.timelineStateAdded;
+    case "sharer-deleted":
+    case "label-deleted":
+      return styles.timelineStateDeleted;
+    default:
+      return undefined;
+  }
 }
 
 function stringField(value: unknown, fallback = "") {

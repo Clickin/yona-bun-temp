@@ -4592,44 +4592,6 @@ div.markdown-preview {
   margin-right: 3px;
 }
 
-.issue-detail-page .comments .event .state.open {
-  background: #b6da54;
-}
-
-.issue-detail-page .comments .event .state.closed {
-  background: #fd6956;
-}
-
-.issue-detail-page .comments .event .state.changed,
-.issue-detail-page .comments .event .state.merged,
-.issue-detail-page .comments .event .state.milestone-changed {
-  background: #65c9df;
-}
-
-.issue-detail-page .comments .event .state.rejected {
-  background: #f39c12;
-}
-
-.issue-detail-page .comments .event .state.conflict {
-  background: #c0392b;
-}
-
-.issue-detail-page .comments .event .state.resolved {
-  background: #468847;
-}
-
-.issue-detail-page .comments .event .state.sharer-added,
-.issue-detail-page .comments .event .state.label-added {
-  color: #0097a7;
-  background: #b2ebf2;
-}
-
-.issue-detail-page .comments .event .state.sharer-deleted,
-.issue-detail-page .comments .event .state.label-deleted {
-  color: #f4511e;
-  background: #ffccbc;
-}
-
 @media (max-width: 720px) {
   .write-comment-box {
     padding: 0;
