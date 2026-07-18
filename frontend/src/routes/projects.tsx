@@ -476,6 +476,10 @@ const styles = stylex.create({
   directoryPaginationNextIconDisabled: { backgroundPosition: "-23px -13px" },
 });
 
+const projectsDirectoryDynamicStyles = stylex.create({
+  emptyIconSprite: { backgroundImage: `url(${legacySpriteUrl})` },
+});
+
 const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
 const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
 const directoryPageWrapStyleProps = stylex.props(styles.directoryPageWrap);
@@ -711,8 +715,9 @@ function ProjectsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             >
               <i
                 {...directoryEmptyIconStyleProps}
+                {...stylex.props(projectsDirectoryDynamicStyles.emptyIconSprite)}
                 data-stylex-owner="projects-directory-empty-icon"
-                style={emptyStateSpriteStyle}
+                className={`${directoryEmptyIconStyleProps.className} ${stylex.props(projectsDirectoryDynamicStyles.emptyIconSprite).className ?? ""}`.trim()}
               ></i>
               <p
                 {...directoryEmptyMessageStyleProps}
