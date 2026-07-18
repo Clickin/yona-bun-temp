@@ -103,7 +103,12 @@ function assertOnlyLayeredTopLevelRules(cssText, file) {
     } else if (character === "{") {
       if (depth === 0) {
         const prelude = cssText.slice(statementStart, index).trim();
-        assert(/^@layer\b/u.test(prelude), `${file} has an unlayered top-level rule: ${prelude}`);
+        assert(
+          /^@layer\b/u.test(prelude) ||
+            /^@property\s+--x-[\w-]+\s*$/u.test(prelude) ||
+            /^(?::root,\s+)?\.x[\w.-]+(?:,\s+[^{}]+)?\s*$/u.test(prelude),
+          `${file} has an unlayered top-level rule: ${prelude}`,
+        );
       }
       depth += 1;
     } else if (character === "}") {
