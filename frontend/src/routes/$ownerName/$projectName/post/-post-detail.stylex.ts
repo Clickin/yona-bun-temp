@@ -5,6 +5,8 @@ export const postDetailColors = stylex.defineVars({
   bodyText: "#333333",
   metaText: "#999999",
   surface: "#ffffff",
+  taskProgressSurface: "#d4d4d4",
+  taskProgressRed: "red",
 });
 
 export const styles = stylex.create({
@@ -43,6 +45,20 @@ export const styles = stylex.create({
   disabledComment: { cursor: "text" },
   shareLinkHidden: { display: "none" },
   tasklistProgress: { width: 0 },
+  tasklist: {
+    boxShadow: "none",
+    display: "none",
+    filter: "none",
+    padding: "10px 20px 0px",
+  },
+  taskTitle: { fontWeight: "500" },
+  taskDoneCounter: { marginLeft: "5px" },
+  taskProgress: { backgroundColor: postDetailColors.taskProgressSurface },
+  taskProgressBar: {
+    backgroundColor: postDetailColors.taskProgressRed,
+    height: "2px",
+    transitionDuration: "0.2s",
+  },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   mobileMetadata: { fontSize: "0.7em" },
 });

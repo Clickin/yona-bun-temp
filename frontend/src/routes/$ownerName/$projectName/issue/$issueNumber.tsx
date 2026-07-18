@@ -3832,11 +3832,24 @@ function MarkdownEditor({
 function TasklistBar() {
   // `issue/view.scala.html` mounts the tasklist partial in both issue-body positions.
   return (
-    <div className="tasklist">
-      <div className="task-title">
-        Tasks<span className="done-counter"></span>
+    <div
+      className={`${stylex.props(styles.tasklist).className} tasklist`}
+      data-stylex-owner="project-issue-detail-tasklist"
+    >
+      <div
+        className={`${stylex.props(styles.taskTitle).className} task-title`}
+        data-stylex-owner="project-issue-detail-task-title"
+      >
+        Tasks
+        <span
+          className={`${stylex.props(styles.taskDoneCounter).className} done-counter`}
+          data-stylex-owner="project-issue-detail-task-done-counter"
+        ></span>
       </div>
-      <div className="task-progress">
+      <div
+        className={`${stylex.props(styles.taskProgress).className} task-progress`}
+        data-stylex-owner="project-issue-detail-task-progress"
+      >
         <div
           className={`${stylex.props(styles.taskProgressBar).className} bar red`}
           data-stylex-owner="project-issue-detail-task-progress-bar"

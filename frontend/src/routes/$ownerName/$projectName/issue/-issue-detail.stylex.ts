@@ -5,6 +5,8 @@ export const issueDetailColors = stylex.defineVars({
   mutedText: "#777777",
   emptySurface: "#f7f7f7",
   accentText: "#337581",
+  taskProgressSurface: "#d4d4d4",
+  taskProgressRed: "red",
 });
 
 export const styles = stylex.create({
@@ -90,8 +92,20 @@ export const styles = stylex.create({
     overflow: "visible",
   },
   taskProgressBar: {
+    backgroundColor: issueDetailColors.taskProgressRed,
+    height: "2px",
+    transitionDuration: "0.2s",
     width: "0px",
   },
+  tasklist: {
+    boxShadow: "none",
+    display: "none",
+    filter: "none",
+    padding: "10px 20px 0px",
+  },
+  taskTitle: { fontWeight: "500" },
+  taskDoneCounter: { marginLeft: "5px" },
+  taskProgress: { backgroundColor: issueDetailColors.taskProgressSurface },
   subtaskProgressBar: (width: string) => ({
     width,
   }),

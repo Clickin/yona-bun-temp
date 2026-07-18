@@ -48,6 +48,7 @@ const sx = {
   watch: stylex.props(styles.watch),
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
+  tasklist: stylex.props(styles.tasklist),
   tasklistProgress: stylex.props(styles.tasklistProgress),
   keymapWrapper: stylex.props(styles.keymapWrapper),
   mobileMetadata: stylex.props(styles.mobileMetadata),
@@ -1897,13 +1898,23 @@ function CommentEditAttachmentFiles({ attachments }: { attachments: BoardAttachm
 
 function TasklistBar() {
   return (
-    <div className="tasklist">
-      <div className="task-title">
-        Tasks<span className="done-counter"></span>
+    <div className={`${sx.tasklist.className} tasklist`} data-stylex-owner="post-detail-tasklist">
+      <div
+        className={`${stylex.props(styles.taskTitle).className} task-title`}
+        data-stylex-owner="post-detail-task-title"
+      >
+        Tasks
+        <span
+          className={`${stylex.props(styles.taskDoneCounter).className} done-counter`}
+          data-stylex-owner="post-detail-task-done-counter"
+        ></span>
       </div>
-      <div className="task-progress">
+      <div
+        className={`${stylex.props(styles.taskProgress).className} task-progress`}
+        data-stylex-owner="post-detail-task-progress"
+      >
         <div
-          className={`${sx.tasklistProgress.className} bar red`}
+          className={`${stylex.props(styles.taskProgressBar).className} ${sx.tasklistProgress.className} bar red`}
           data-stylex-owner="post-detail-tasklist-progress"
           title="Tasklist"
         ></div>
