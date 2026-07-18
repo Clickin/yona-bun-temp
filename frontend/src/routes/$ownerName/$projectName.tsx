@@ -2989,7 +2989,14 @@ function CountBadge({
   className?: string;
   count: number;
 }) {
-  return count > 0 ? <span className={className}>{count}</span> : null;
+  return count > 0 ? (
+    <span
+      className={`${stylex.props(projectHomeStyles.menuCount).className} ${className}`}
+      data-stylex-owner="project-menu-count"
+    >
+      {count}
+    </span>
+  ) : null;
 }
 
 function projectMenuSetting(project: ProjectContainer) {

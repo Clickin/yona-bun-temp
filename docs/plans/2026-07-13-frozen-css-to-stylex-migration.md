@@ -3675,4 +3675,6 @@ Batch 454 applies the organization-route utility shell state. Organization heade
 
 Batch 455 applies the project-header watcher state. Watcher count paint, conditional watching background, and watch-button padding move into route-local conditional/static StyleX while preserving dynamic watch state, legacy classes, links, and dropdown behavior; the down-arrow pseudo and unrelated watcher fallbacks remain frozen.
 
+Batch 456 applies the project-menu count badge state. Static count badge geometry and paint move into a route-local StyleX owner while preserving count text, class names, menu DOM, and conditional rendering; unrelated project-menu shell selectors remain frozen.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.
