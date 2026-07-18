@@ -1,0 +1,21 @@
+import { readFile } from "node:fs/promises";
+import { expect, test } from "@playwright/test";
+
+const routeSource = new URL("../src/routes/$ownerName/$projectName.tsx", import.meta.url);
+const legacySource = new URL(
+  "../../yona-original/app/views/project/header.scala.html",
+  import.meta.url,
+);
+
+test("project home header background uses Dynamic StyleX", async () => {
+  const [route, legacy] = await Promise.all([
+    readFile(routeSource, "utf8"),
+    readFile(legacySource, "utf8"),
+  ]);
+  expect(legacy).toContain("project-header-outer");
+  expect(legacy).toContain("urlToProjectBG(project)");
+  expect(route).toContain('data-stylex-owner="project-home-header-background"');
+  expect(route).toContain("projectHeaderStyles.background");
+  expect(route).toContain("backgroundImageUrl");
+  expect(route).not.toContain("style={{ backgroundImage: `url('${backgroundImageUrl}')` }}");
+});

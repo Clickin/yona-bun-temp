@@ -8,6 +8,10 @@ import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
+
+const projectHeaderStyles = stylex.create({
+  background: (backgroundImage: string) => ({ backgroundImage }),
+});
 import {
   cancelEnrollProjectRest,
   deleteProjectMemberRest,
@@ -2326,8 +2330,9 @@ function ProjectHeaderContent({
 
   return (
     <div
+      {...stylex.props(projectHeaderStyles.background(`url('${backgroundImageUrl}')`))}
       className="project-header-outer"
-      style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
+      data-stylex-owner="project-home-header-background"
     >
       <div className="project-header-inner">
         <div className="project-header-wrap">

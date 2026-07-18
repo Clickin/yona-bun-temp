@@ -957,3 +957,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 369
 
 - Authenticated milestone-detail issue-filter state: moved conditional filtered-row `display:none` into `styles.issueRowHidden`, preserving legacy search markers, issue-row DOM, filter behavior, copy, and responsive geometry. Focused `stylex-project-milestone-detail-filter-visibility.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 370
+
+- Authenticated project-home header background state: moved the server-provided project background URL from the literal inline declaration in `project/header.scala.html` into the route-local Dynamic StyleX `projectHeaderStyles.background(...)`, preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry. Focused `stylex-project-home-header-background.e2e.ts` verifies the legacy source contract, stable owner, Dynamic StyleX source, and absence of the former inline background declaration; live legacy visual parity remains unverified.

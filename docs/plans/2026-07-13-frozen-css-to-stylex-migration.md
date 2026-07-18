@@ -3496,6 +3496,9 @@ Batch 368 applies the workflow to the authenticated user-issues default-login po
 
 Batch 369 applies the workflow to the authenticated milestone-detail issue-filter state. The conditional filtered-row `display:none` declaration moves to the route-local conditional StyleX owner while preserving the legacy search markers, issue-row DOM, filter behavior, copy, and responsive geometry; the focused filter test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 370 applies the workflow to the authenticated project-home header background state. The server-provided project background URL moves from a literal inline declaration to a route-local Dynamic StyleX owner while preserving the legacy project-header DOM, overlay cascade, copy, and responsive geometry; the focused header-background test covers the legacy source contract and absence of the former inline declaration.
+
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 
