@@ -45,6 +45,8 @@ import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
 import { styles } from "./-issue-detail.stylex";
 
+const issueSharerStyles = stylex.create({ visible: { display: "block" } });
+
 const issueInlineOwners = stylex.create({
   fullWidth: { width: "100%" },
   disabledComment: { cursor: "text" },
@@ -582,7 +584,7 @@ function IssueDetailBody({
   ]
     .filter(Boolean)
     .join(" ");
-  const sharerListStyle = sharerListOpen ? { display: "block" } : undefined;
+  const sharerListStyleProps = sharerListOpen ? stylex.props(issueSharerStyles.visible) : undefined;
   const bodyMarkdown = translatedBodyMarkdown ?? stringField(issue.bodyMarkdown);
   const bodyChecksum = stringField(issue.bodyChecksum, "body-sha1");
   const historyMarkdown = stringField(issue.historyMarkdown);
@@ -994,7 +996,11 @@ function IssueDetailBody({
                 projectName={projectName}
               />
             </div>
-            <dl className={sharerListClassName} style={sharerListStyle}>
+            <dl
+              {...sharerListStyleProps}
+              className={`${sharerListClassName} ${sharerListStyleProps?.className ?? ""}`.trim()}
+              data-stylex-owner="issue-detail-sharer-list"
+            >
               <dt className="issue-share-title mb10">
                 {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
@@ -1004,7 +1010,8 @@ function IssueDetailBody({
               <dd
                 id="sharer-list"
                 className={sharerListVisible ? "" : "hideFromDisplayOnly"}
-                style={sharerListStyle}
+                {...sharerListStyleProps}
+                data-stylex-owner="issue-detail-sharer-list-content"
               >
                 {canUpdate ? (
                   <input

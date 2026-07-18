@@ -3591,3 +3591,5 @@ Batch 410 applies the workflow to the site project-list pagination sprite state.
 Batch 411 applies the workflow to the labels-form change-VCS menu state. The conditional hidden `display:none` declaration moves to a route-local conditional StyleX owner while preserving settings-menu DOM, navigation, permission behavior, and geometry; the focused visibility test covers the owner and former inline removal.
 
 Batch 412 applies the workflow to the site user-list pagination sprite state. The shared runtime sprite URL moves from four inline custom-property declarations to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused user-list pagination test covers all consumers.
+
+Batch 413 applies the workflow to the issue-detail sharer-list state. The conditional sharer-list `display:block` declaration moves to route-local conditional StyleX owners while preserving share-list DOM, toggle behavior, copy, and responsive geometry; the focused sharer-list test covers both visible consumers.
