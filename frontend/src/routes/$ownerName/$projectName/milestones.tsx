@@ -499,18 +499,25 @@ function MilestoneIssueLink({
             #{issueNumber}
           </span>
           {titleText}
-          {sortLabels(issue.labels).map((label) => (
-            <span
-              key={stringField(label.id)}
-              {...sx.label}
-              className={`${sx.label.className} label issue-label list-label active`}
-              data-category-id={stringField(label.categoryId)}
-              data-label-id={stringField(label.id)}
-              style={{ background: cssBackgroundColor(stringField(label.color)) }}
-            >
-              {stringField(label.name)}
-            </span>
-          ))}
+          {sortLabels(issue.labels).map((label) =>
+            (() => {
+              const labelColor = stylex.props(
+                styles.labelColor(cssBackgroundColor(stringField(label.color))),
+              );
+              return (
+                <span
+                  key={stringField(label.id)}
+                  {...sx.label}
+                  {...labelColor}
+                  className={`${sx.label.className} ${labelColor.className} label issue-label list-label active`}
+                  data-category-id={stringField(label.categoryId)}
+                  data-label-id={stringField(label.id)}
+                >
+                  {stringField(label.name)}
+                </span>
+              );
+            })(),
+          )}
         </span>
       </div>
     </Link>

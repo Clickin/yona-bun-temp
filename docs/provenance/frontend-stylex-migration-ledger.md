@@ -730,3 +730,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 310
 
 - `/$ownerName/$projectName/post/$postNumber` loaded board-post label state: moved the server-provided selected-label background color from the legacy inline declaration into colocated `-post-detail.stylex.ts` Dynamic StyleX `labelBackground(backgroundColor)`, preserving the legacy `label issue-label active static` link, label copy, project-post filtering, and responsive sidebar geometry. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies the dynamic custom-property carrier, computed runtime color, legacy class contract, and absence of a literal inline background declaration; live legacy visual parity remains unverified.
+
+## Batch 311
+
+- `/$ownerName/$projectName/milestones` populated milestone-list state: moved each server-provided issue-label background color from the legacy milestone-list label owner into colocated `-milestones.stylex.ts` Dynamic StyleX `labelColor(backgroundColor)`, preserving legacy label classes, category/id metadata, issue links, filtering, copy, and responsive geometry. Focused `stylex-project-milestones-label-color.e2e.ts` verifies the legacy list source, route-local dynamic owner, computed runtime color, absence of a literal inline background declaration, and mobile containment; live legacy visual parity remains unverified.

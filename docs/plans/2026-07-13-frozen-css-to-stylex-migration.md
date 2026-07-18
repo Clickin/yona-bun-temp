@@ -3384,6 +3384,8 @@ Batch 309 applies the workflow to the authenticated `/organizations/$organizatio
 
 Batch 310 applies the workflow to the authenticated `/$ownerName/$projectName/post/$postNumber` loaded board-post label state. The server-provided selected-label background color moves to route-local Dynamic StyleX while preserving the legacy label link, classes, copy, and responsive sidebar geometry; the focused post-detail residual test covers the runtime color carrier and absence of a literal inline background declaration.
 
+Batch 311 applies the workflow to the authenticated `/$ownerName/$projectName/milestones` populated milestone-list state. Server-provided issue-label background colors move to the route-local Dynamic StyleX owner while preserving legacy label classes, metadata, issue links, filtering, and responsive geometry; the focused milestone-list label test covers computed runtime color, the absence of a literal inline background declaration, and mobile containment.
+
 
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent

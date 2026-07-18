@@ -161,4 +161,5 @@ export const styles = stylex.create({
     marginLeft: "4px",
     padding: "1px 5px",
   },
+  labelColor: (backgroundColor: string) => ({ backgroundColor }),
 });
