@@ -14,17 +14,21 @@ const legacyPartial = readFileSync(
   "../yona-original/app/views/git/partial_info.scala.html",
   "utf8",
 );
+const legacyRoot = readFileSync("../yona-original/app/views/git/view.scala.html", "utf8");
 
 test("pull request detail owns static author and reviewer spacing in StyleX", async ({ page }) => {
   expect(legacyPartial).toContain('style="display:inline-block; margin-right:5px;"');
+  expect(legacyRoot).toContain('<div class="mr5" style="display:inline-block;">');
   expect(legacyPartial).toContain(
     'style="font-size: 13px; vertical-align: middle; margin: 0 10px;"',
   );
   expect(routeSource).toContain('data-stylex-owner="pull-request-detail-author"');
   expect(routeSource).toContain('data-stylex-owner="pull-request-detail-reviewers"');
   expect(routeSource).toContain('data-stylex-owner="pull-request-detail-reviewer-summary"');
+  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-action-wrapper"');
   expect(routeSource).not.toContain('style={{ marginTop: "20px" }}');
   expect(routeSource).not.toContain('style={{ display: "inline-block", marginRight: "5px" }}');
+  expect(routeSource).not.toContain('style={{ display: "inline-block" }}');
   expect(styleSource).toContain(
     'author: { color: pullRequestDetailColors.accentText, marginTop: "20px" }',
   );
@@ -32,6 +36,7 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
   expect(styleSource).toContain(
     'reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }',
   );
+  expect(styleSource).toContain('actionWrapper: { display: "inline-block" }');
   await mockDetail(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -43,6 +48,7 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
     const author = page.locator('[data-stylex-owner="pull-request-detail-author"]');
     const reviewers = page.locator('[data-stylex-owner="pull-request-detail-reviewers"]');
     const summary = page.locator('[data-stylex-owner="pull-request-detail-reviewer-summary"]');
+    const actionWrapper = page.locator('[data-stylex-owner="pull-request-detail-action-wrapper"]');
     await expect(author).toHaveCSS("margin-top", "20px");
     await expect(reviewers).toHaveCSS("display", "inline-block");
     await expect(reviewers).toHaveCSS("margin-right", "5px");
@@ -50,6 +56,19 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
     await expect(summary).toHaveCSS("vertical-align", "middle");
     await expect(summary).toHaveCSS("margin-top", "0px");
     await expect(summary).toHaveCSS("margin-right", "10px");
+    // The wrapper owns the legacy inline-block declaration; as a flex item its
+    // browser-computed outer display is block while preserving the same action row geometry.
+    await expect(actionWrapper).toHaveCSS("display", "block");
+    await expect(actionWrapper).toHaveCSS("margin-right", "5px");
+    await expect(actionWrapper).toContainText("Edit");
+    await expect(actionWrapper).toContainText("Close");
+    const actions = page.locator('[data-stylex-owner="pull-request-detail-actions"]');
+    const actionBox = await actionWrapper.boundingBox();
+    const actionsBox = await actions.boundingBox();
+    expect(actionBox).not.toBeNull();
+    expect(actionsBox).not.toBeNull();
+    expect(actionBox!.left).toBeGreaterThanOrEqual(actionsBox!.left);
+    expect(actionBox!.right).toBeLessThanOrEqual(actionsBox!.right);
     await expect(page.locator("#reviewers")).toContainText("1");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
   }

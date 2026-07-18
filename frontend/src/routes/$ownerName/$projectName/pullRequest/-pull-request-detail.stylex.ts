@@ -13,6 +13,7 @@ export const styles = stylex.create({
   content: { minWidth: 0, borderColor: pullRequestDetailColors.contentBorder },
   state: { color: pullRequestDetailColors.mutedText },
   actions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" },
+  actionWrapper: { display: "inline-block" },
   comments: { minWidth: 0 },
   reviewers: { display: "inline-block", marginRight: "5px" },
   reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" },

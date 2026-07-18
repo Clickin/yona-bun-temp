@@ -3335,6 +3335,8 @@ Batch 290 applies the workflow to authenticated project commit-detail conditiona
 
 Batch 291 applies the workflow to the public `/$user` daysAgo filter input. Its static margin and vertical alignment moved to route-local StyleX; the profile test covers computed placement and desktop/mobile containment.
 
+Batch 292 applies the workflow to the authenticated pull-request detail action wrapper. Its fixed inline-block display moved to route-local StyleX; the pull-request detail test covers action order, computed display, and desktop/mobile containment.
+
 After this plan is approved for execution, start only with Wave 0 and the existing transparent
 root-boundary pilot. Do not begin broad component conversion until the layer precedence test,
 generated fallback, production build, and base-path delivery are all green. The first visible

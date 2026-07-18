@@ -300,7 +300,10 @@ function PullRequestOverviewBody({
               ) : null}
             </div>
 
-            <div className="mr5" style={{ display: "inline-block" }}>
+            <div
+              className={`${stylex.props(styles.actionWrapper).className} mr5`}
+              data-stylex-owner="pull-request-detail-action-wrapper"
+            >
               {pullRequest.permissions.canUpdate ? (
                 <Link
                   to="/$ownerName/$projectName/pullRequest/$pullRequestNumber/editform"
