@@ -1057,3 +1057,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 394
 
 - Authenticated project-issues clickable-row state: moved finite two-column `cursor:pointer` into conditional `projectIssuesStyles.clickableRow`, preserving the dynamic hover background carrier, issue-row DOM, keyboard interaction, and geometry. Focused `stylex-project-issues-clickable-row.e2e.ts` verifies the legacy source contract and stable owner; live legacy visual parity remains unverified.
+
+## Batch 395
+
+- Authenticated user-issues static popover state: moved two-column/show-subtasks popover geometry into route-local `userIssuesStaticStyles`, preserving legacy popover DOM, copy, visibility behavior, and responsive geometry. Focused `stylex-user-issues-static-popovers.e2e.ts` verifies the legacy source contract and stable owners; live legacy visual parity remains unverified.

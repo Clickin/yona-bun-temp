@@ -3557,3 +3557,5 @@ Batch 392 applies the workflow to the authenticated project-history whereis stat
 Batch 393 applies the workflow to the public user-profile static owner state. The avatar wrapper geometry/paint, profile-name typography, and edit alignment move to route-local StyleX while preserving the Dynamic avatar background carrier, DOM, copy, and responsive geometry; the focused static-owner test covers the legacy source contract and owners.
 
 Batch 394 applies the workflow to the authenticated project-issues clickable-row state. The finite two-column cursor declaration moves to conditional route-local StyleX while preserving the dynamic hover background carrier, issue-row DOM, keyboard interaction, and geometry; the focused clickable-row test covers the legacy source contract and owner.
+
+Batch 395 applies the workflow to the authenticated user-issues static popover state. The two-column/show-subtasks popover geometry moves to route-local StyleX owners while preserving legacy popover DOM, copy, visibility behavior, and responsive geometry; the focused user-issues popover test covers the legacy source contract and owners.

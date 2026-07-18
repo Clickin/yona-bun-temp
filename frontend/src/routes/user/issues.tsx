@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import type { CSSProperties, FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
+import type { FormEvent, HTMLAttributes, KeyboardEvent, MouseEvent } from "react";
 import { apiQueryKeys } from "../../api/query-keys";
 import { currentSessionQueryOptions } from "../../api/session";
 import {
@@ -34,27 +34,28 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
 };
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
-const SHOW_SUBTASKS_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "150px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-};
-
-const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "10px",
-  minWidth: "180px",
-  pointerEvents: "none",
-  position: "absolute",
-  transform: "translateX(-50%)",
-};
+const userIssuesStaticStyles = stylex.create({
+  twoColumnPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "180px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
+  showSubtasksPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "150px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
+});
 
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
@@ -1375,7 +1376,11 @@ function TwoColumnModeCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={TWO_COLUMN_MODE_POPOVER_STYLE}>
+        <div
+          className={`${stylex.props(userIssuesStaticStyles.twoColumnPopover).className} popover top`}
+          role="tooltip"
+          data-stylex-owner="user-issues-two-column-popover"
+        >
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">
@@ -1445,7 +1450,11 @@ function ShowSubtasksCheckbox({
         </div>
       </label>
       {isPopoverVisible ? (
-        <div className="popover top" role="tooltip" style={SHOW_SUBTASKS_POPOVER_STYLE}>
+        <div
+          className={`${stylex.props(userIssuesStaticStyles.showSubtasksPopover).className} popover top`}
+          role="tooltip"
+          data-stylex-owner="user-issues-show-subtasks-popover"
+        >
           <div className="arrow" />
           <h3 className="popover-title">{popoverTitle}</h3>
           <div className="popover-content">{popoverContent}</div>
