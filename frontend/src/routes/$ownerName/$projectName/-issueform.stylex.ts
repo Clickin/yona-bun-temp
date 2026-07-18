@@ -11,4 +11,5 @@ export const issueFormStyles = stylex.create({
   assigneePicker: { width: "100%" },
   milestonePicker: { width: "100%" },
   labelPicker: { display: "inline-block" },
+  uploadProgressBar: (width: string) => ({ width }),
 });

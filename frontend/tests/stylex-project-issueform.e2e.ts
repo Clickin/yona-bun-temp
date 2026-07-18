@@ -5,9 +5,9 @@ const SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
   "utf8",
 );
+const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project issue form preserves legacy editor layout with StyleX owners", async ({ page }) => {
-  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   page.on("pageerror", (error) => console.log(`[issueform-pageerror] ${error.message}`));
   await mockIssueForm(page);
   await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
@@ -45,6 +45,61 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   expect(SOURCE).not.toContain("$yobi.loadModule");
   expect(SOURCE).not.toContain('data-toggle="select2"');
   expect(SOURCE).not.toMatch(/href="javascript:/u);
+});
+
+test("issue form upload progress uses a dynamic route-local StyleX width", async ({ page }) => {
+  const styles = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/-issueform.stylex.ts", import.meta.url),
+    "utf8",
+  );
+  const legacy = readFileSync("../yona-original/app/views/issue/create.scala.html", "utf8");
+  const uploadLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  expect(legacy).toContain("@common.fileUploader(ResourceType.ISSUE_POST, null)");
+  expect(uploadLess).toContain(".upload-progress");
+  expect(SOURCE).toContain('data-stylex-owner="project-issue-form-upload-progress"');
+  expect(SOURCE).toContain("issueFormStyles.uploadProgressBar(`${row.progress}%`)");
+  expect(SOURCE).not.toContain("style={{ width: `${row.progress}%` }}");
+  expect(styles).toContain("uploadProgressBar: (width: string) => ({ width })");
+
+  let releaseUpload: (() => void) | undefined;
+  const uploadPaused = new Promise<void>((resolve) => {
+    releaseUpload = resolve;
+  });
+  await page.route("**/files", async (route) => {
+    await uploadPaused;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 501,
+        mimeType: "image/png",
+        name: "diagram.png",
+        size: 1,
+        url: "/files/501/diagram.png",
+      }),
+    });
+  });
+  await mockIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
+
+  const input = page.locator('#upload input[type="file"]');
+  await input.setInputFiles({
+    name: "diagram.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("x"),
+  });
+  const progress = page.locator('[data-stylex-owner="project-issue-form-upload-progress"]');
+  await expect(progress).toBeVisible();
+  await expect(progress).toHaveAttribute("style", /--x-width:\s*1%/u);
+  await expect(progress).not.toHaveAttribute("style", /(?:^|;)\s*width\s*:/u);
+  const progressWidth = await progress.evaluate((element) => element.getBoundingClientRect().width);
+  expect(progressWidth).toBeGreaterThan(0);
+  expect(progressWidth).toBeLessThan(2);
+
+  releaseUpload?.();
+  await expect(progress).toHaveCount(0);
 });
 
 async function mockIssueForm(page: Page) {

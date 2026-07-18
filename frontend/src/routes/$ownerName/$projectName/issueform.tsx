@@ -2199,42 +2199,49 @@ function IssuePostFileUploader({
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
       <ul className={`attached-files unstyled${rows.length > 0 ? " has-files" : ""}`}>
-        {rows.map((row) => (
-          <li
-            key={row.key}
-            className={`attached-file temporary${row.status === "ready" ? " complete" : ""}`}
-          >
-            <button
-              type="button"
-              className="attached-file-main"
-              aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
-              disabled={!row.attachment || row.status !== "ready"}
-              onClick={() => row.attachment && onInsert(row.attachment)}
+        {rows.map((row) => {
+          const progressStyle = stylex.props(issueFormStyles.uploadProgressBar(`${row.progress}%`));
+          return (
+            <li
+              key={row.key}
+              className={`attached-file temporary${row.status === "ready" ? " complete" : ""}`}
             >
-              <i className="yobicon-supportrequest" />
-              <strong className="name">{row.name}</strong>{" "}
-              <span className="size">{humanFileSize(row.size)}</span>
-              {row.status === "uploading" ? (
-                <span className="progress upload-progress">
-                  <span className="bar orange" style={{ width: `${row.progress}%` }} />
-                </span>
-              ) : null}
-              {row.attachment && row.status === "ready" ? (
-                <span className="btn-insert-copy">{t("common.attach.clickToPost")}</span>
-              ) : null}
-            </button>
-            {row.error ? <span className="upload-error">{row.error}</span> : null}
-            <button
-              type="button"
-              className="btn-transparent btn-delete pull-right"
-              aria-label={`${t("button.delete")} ${row.name}`}
-              disabled={row.status === "deleting" || row.status === "uploading"}
-              onClick={() => onRemove(row)}
-            >
-              &times;
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                className="attached-file-main"
+                aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
+                disabled={!row.attachment || row.status !== "ready"}
+                onClick={() => row.attachment && onInsert(row.attachment)}
+              >
+                <i className="yobicon-supportrequest" />
+                <strong className="name">{row.name}</strong>{" "}
+                <span className="size">{humanFileSize(row.size)}</span>
+                {row.status === "uploading" ? (
+                  <span className="progress upload-progress">
+                    <span
+                      {...progressStyle}
+                      className={`${progressStyle.className ?? ""} bar orange`.trim()}
+                      data-stylex-owner="project-issue-form-upload-progress"
+                    />
+                  </span>
+                ) : null}
+                {row.attachment && row.status === "ready" ? (
+                  <span className="btn-insert-copy">{t("common.attach.clickToPost")}</span>
+                ) : null}
+              </button>
+              {row.error ? <span className="upload-error">{row.error}</span> : null}
+              <button
+                type="button"
+                className="btn-transparent btn-delete pull-right"
+                aria-label={`${t("button.delete")} ${row.name}`}
+                disabled={row.status === "deleting" || row.status === "uploading"}
+                onClick={() => onRemove(row)}
+              >
+                &times;
+              </button>
+            </li>
+          );
+        })}
       </ul>
       {rows.length > 0 ? (
         <p className="right-txt help attach-save-help">

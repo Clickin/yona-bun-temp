@@ -610,3 +610,6 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 278
 
 - `/$ownerName/$projectName/milestone/$milestoneId` loaded milestone detail: moved server-derived milestone completion and child subtask percentage widths into `-milestone-detail.stylex.ts` Dynamic StyleX `progressBar` owners, preserving legacy progress/bar and conditional `red`/`done` classes. Existing focused `stylex-project-milestone-detail-inline-residual.e2e.ts` covers the 50% runtime carrier and absence of inline width; live legacy visual parity remains unverified.
+## Batch 279
+
+- `/$ownerName/$projectName/issueform` uploading attachment state: moved the client upload percentage width into `-issueform.stylex.ts` Dynamic StyleX `uploadProgressBar(width)`, preserving the legacy `progress upload-progress`/`bar orange` classes and attachment upload interaction. Focused `stylex-project-issueform.e2e.ts` covers the runtime carrier, no direct width declaration, positive geometry, and completion after the mocked upload response; live legacy visual parity remains unverified.
