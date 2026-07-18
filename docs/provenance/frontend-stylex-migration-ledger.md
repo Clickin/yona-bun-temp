@@ -849,3 +849,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 340
 
 - Authenticated milestone edit form upload state: moved conditional paste-help `display:block` into `milestoneEditFormStyles.pasteHelpVisible`, preserving the legacy file uploader/upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-milestone-edit-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.
+
+## Batch 341
+
+- Authenticated board-post edit form upload state: moved conditional paste-help `display:block` into `styles.pasteHelpVisible`, preserving the legacy file uploader/upload partial, `help-pastable` DOM/class/copy, capability detection, and responsive geometry. Focused `stylex-project-post-edit-form-paste.e2e.ts` verifies the legacy source, route-local owner, and absence of the former inline display; live legacy visual parity remains unverified.

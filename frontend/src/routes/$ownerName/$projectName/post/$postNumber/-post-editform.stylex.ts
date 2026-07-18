@@ -14,4 +14,5 @@ export const styles = stylex.create({
   editorContent: { overflow: "visible", position: "relative" },
   notificationReceiver: { color: postEditFormTheme.notificationText },
   upload: { backgroundColor: postEditFormTheme.uploadSurface },
+  pasteHelpVisible: { display: "block" },
 });

@@ -336,7 +336,8 @@ function BoardPostFileUploader({ resourceId }: { resourceId: string }) {
         <span className="plain">{t("common.attach.clickbutton")}</span>
         <span
           className="help help-pastable"
-          style={pasteSupported ? { display: "block" } : undefined}
+          {...(pasteSupported ? stylex.props(styles.pasteHelpVisible) : {})}
+          data-stylex-owner="post-edit-form-paste-help"
         >
           {t("common.attach.pastehere")}
         </span>
