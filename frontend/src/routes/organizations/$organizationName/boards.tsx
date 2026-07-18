@@ -1,13 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   listOrganizationBoardsQueryOptions,
   type BoardPostListItem,
@@ -35,6 +29,14 @@ const styles = stylex.create({
     borderBottomWidth: "1px",
   },
   twoColumnAnchor: { position: "relative" },
+  twoColumnPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "5px",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
   title: { color: organizationBoardsColors.titleText, textDecoration: "none" },
 });
 
@@ -44,15 +46,6 @@ type OrganizationBoardsSearch = {
   orderDir: string;
   pageNum: number;
   projectNames: string[];
-};
-
-const TWO_COLUMN_MODE_POPOVER_STYLE: CSSProperties = {
-  bottom: "100%",
-  display: "block",
-  left: "50%",
-  marginBottom: "5px",
-  position: "absolute",
-  transform: "translateX(-50%)",
 };
 
 export const Route = createFileRoute("/organizations/$organizationName/boards")({
@@ -543,7 +536,12 @@ function TwoColumnModeCheckbox() {
         </div>
       </label>
       {showPopover ? (
-        <div className="popover top" role="tooltip" style={TWO_COLUMN_MODE_POPOVER_STYLE}>
+        <div
+          {...stylex.props(styles.twoColumnPopover)}
+          className="popover top"
+          role="tooltip"
+          data-stylex-owner="organization-boards-two-column-popover"
+        >
           <div className="arrow"></div>
           <h3 className="popover-title">{t("common.two.column.mode")}</h3>
           <div className="popover-content">
