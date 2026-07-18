@@ -1277,39 +1277,6 @@ pre code {
   border: 0;
 }
 
-.project-overview-home .empty {
-  text-align: center;
-}
-
-.project-overview-home .empty p {
-  margin-bottom: 15px;
-  font-size: 13px;
-  color: #999;
-}
-
-.project-overview-home .overview-label {
-  padding: 5px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.project-overview-home .overview-label dt {
-  width: 120px;
-  line-height: 30px;
-}
-
-.project-overview-home .overview-label dd {
-  margin-left: 140px;
-  line-height: 30px;
-}
-
-.project-overview-home .overview-label:first-of-type {
-  padding-top: 0;
-}
-
-.project-overview-home .overview-label:last-of-type {
-  border-bottom: none;
-}
-
 .issue-label {
   font-size: 11px;
   line-height: 12px;

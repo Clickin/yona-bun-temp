@@ -2253,12 +2253,26 @@ function DashboardLabels({
             index === 0 && projectHomeStyles.overviewLabelFirst,
             index === entries.length - 1 && projectHomeStyles.overviewLabelLast,
           )}
-          className="dl-horizontal overview-label"
+          className={`dl-horizontal overview-label ${
+            stylex.props(
+              projectHomeStyles.overviewLabel,
+              index === 0 && projectHomeStyles.overviewLabelFirst,
+              index === entries.length - 1 && projectHomeStyles.overviewLabelLast,
+            ).className ?? ""
+          }`.trim()}
           data-stylex-owner="project-home-overview-label"
           key={categoryName}
         >
-          <dt {...stylex.props(projectHomeStyles.overviewLabelDt)}>{categoryName}</dt>
-          <dd {...stylex.props(projectHomeStyles.overviewLabelDd)}>
+          <dt
+            {...stylex.props(projectHomeStyles.overviewLabelDt)}
+            data-stylex-owner="project-home-overview-label-term"
+          >
+            {categoryName}
+          </dt>
+          <dd
+            {...stylex.props(projectHomeStyles.overviewLabelDd)}
+            data-stylex-owner="project-home-overview-label-definition"
+          >
             {categoryLabels.map((label) => {
               const labelId = numberField(label.id);
               return (

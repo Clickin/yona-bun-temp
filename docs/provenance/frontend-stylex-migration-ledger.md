@@ -16,7 +16,12 @@
 
 ## Project overview dashboard headings
 
-- Four dashboard h5 consumers now use the existing `sectionHeading` StyleX owner; exact `.project-overview-home h5` fallback is retired while empty/overview-label fallbacks remain.
+- Four dashboard h5 consumers now use the existing `sectionHeading` StyleX owner; exact `.project-overview-home h5` fallback is retired.
+- DashboardEmpty and DashboardLabels already own the active empty/overview-label consumers through route-local StyleX; the exact `.project-overview-home .empty` and `.overview-label*` fallback blocks are now retired while generic selectors remain deferred. Focused `stylex-project-overview-dashboard-visible-state.e2e.ts` verifies the cleanup.
+
+## Project overview visible states
+
+- Existing `empty`, `emptyMessage`, `overviewLabel`, `overviewLabelDt`, `overviewLabelDd`, `overviewLabelFirst`, and `overviewLabelLast` owners cover all active dashboard consumers; exact project-overview empty/label fallbacks are retired. Focused `stylex-project-overview-dashboard-visible-state.e2e.ts` verifies legacy evidence and generic fallback retention.
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
 Date: 2026-07-15

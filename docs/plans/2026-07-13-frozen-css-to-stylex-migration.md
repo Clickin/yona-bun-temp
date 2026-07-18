@@ -3731,6 +3731,10 @@ Code browser folder-row wave moves list row, filename, commit message, and commi
 
 Project overview dashboard heading wave applies the existing sectionHeading owner to all four active h5 consumers and retires only the exact scoped heading fallback.
 
+Project overview dashboard visible-state cleanup retires the exact empty-state and overview-label fallback blocks now that DashboardEmpty and DashboardLabels already own every active consumer through route-local StyleX; generic empty/label selectors remain deferred.
+
+Project overview visible-state wave retires exact empty-state and overview-label scoped fallbacks after verifying existing StyleX owners for wrapper/message, label rows, dt/dd, and first/last variants.
+
 Batch 476 applies the workflow to the issue-detail subtasks state. Four route-scoped owners move the subtasks wrapper margins, issue-item padding, parent-issue typography, and parent delimiter geometry into colocated StyleX while preserving child/parent DOM, legacy classes, progress/state owners, and responsive behavior. Generic/shared fallbacks remain untouched; the focused subtasks contract verifies legacy sources, owner coverage, desktop/mobile-safe declarations, and exact fallback removal.
 
 Batch 478 applies the workflow to the issue-detail timeline state base geometry. Active state spans receive one route-local StyleX owner for shared geometry/neutral paint; event-index overrides and all state-variant colors remain frozen fallback. The focused event-base test covers state consumer coverage and exact scoped fallback retirement.
