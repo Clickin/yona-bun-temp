@@ -507,7 +507,7 @@ function PostListPagination({
             >
               <i
                 {...paginationPrevIconStyleProps}
-                data-stylex-owner="site-post-list-pagination-icon"
+                data-stylex-owner="site-post-list-pagination-dynamic-sprite"
                 {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
@@ -523,7 +523,7 @@ function PostListPagination({
               <i
                 {...paginationPrevDisabledIconStyleProps}
                 data-pagination-state="off"
-                data-stylex-owner="site-post-list-pagination-icon"
+                data-stylex-owner="site-post-list-pagination-dynamic-sprite"
                 {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
@@ -610,7 +610,7 @@ function PostListPagination({
               </span>
               <i
                 {...paginationNextIconStyleProps}
-                data-stylex-owner="site-post-list-pagination-icon"
+                data-stylex-owner="site-post-list-pagination-dynamic-sprite"
                 {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
@@ -627,7 +627,7 @@ function PostListPagination({
               <i
                 {...paginationNextDisabledIconStyleProps}
                 data-pagination-state="off"
-                data-stylex-owner="site-post-list-pagination-icon"
+                data-stylex-owner="site-post-list-pagination-dynamic-sprite"
                 {...stylex.props(paginationStyles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>

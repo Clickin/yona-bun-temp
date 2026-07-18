@@ -5,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = new URL("../src/routes/sites/postList.tsx", import.meta.url);
 const themeSource = new URL("../src/routes/sites/-postList.stylex.ts", import.meta.url);
 const owners = {
-  icon: '[data-stylex-owner="site-post-list-pagination-icon"]',
+  icon: '[data-stylex-owner="site-post-list-pagination-dynamic-sprite"]',
   input: '[data-stylex-owner="site-post-list-pagination-input"]',
   item: '[data-stylex-owner="site-post-list-pagination-item"]',
   label: '[data-stylex-owner="site-post-list-pagination-label"]',
@@ -100,7 +100,9 @@ test.describe("StyleX site post-list pagination", () => {
     expect(route).toContain("globalBreakpoints.mobile");
     expect(route).toContain("paginationStyles.paginationSprite(legacySpriteUrl)");
     expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png"');
-    expect(route).toContain('"--site-post-list-pagination-sprite": `url(${legacySpriteUrl})`');
+    expect(route).toContain(
+      'paginationSprite: (spriteUrl: string) => ({\n    "--site-post-list-pagination-sprite": `url(${spriteUrl})`,',
+    );
     for (const token of [
       "sitePostListPaginationWrapperMargin",
       "sitePostListPaginationListDesktopMarginLeft",
