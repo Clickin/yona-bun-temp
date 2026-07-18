@@ -5,7 +5,7 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const routeSource = "src/routes/organizations/$organizationName/settingform.tsx";
 const styleSource = "src/routes/organizations/$organizationName/-settingform.stylex.ts";
 
-test("organization setting form owns the static inline residuals in StyleX", () => {
+test("organization setting form owns static and dynamic inline residuals in StyleX", () => {
   const route = readFileSync(routeSource, "utf8");
   const styles = readFileSync(styleSource, "utf8");
 
@@ -13,8 +13,9 @@ test("organization setting form owns the static inline residuals in StyleX", () 
   expect(route).toContain('data-stylex-owner="organization-setting-top-box"');
   expect(route).toContain('data-stylex-owner="organization-setting-logo"');
   expect(route).not.toContain("style={{ paddingTop: 20 }}");
-  expect(route).toContain("style={{ backgroundImage:");
-  expect(styles).not.toContain("logo: (backgroundImage: string) => ({ backgroundImage })");
+  expect(route).not.toContain("style={{ backgroundImage:");
+  expect(route).toContain("organizationSettingStyles.logo");
+  expect(styles).toContain("logo: (backgroundImage: string) => ({ backgroundImage })");
   expect(styles).toContain('topBox: { paddingTop: "20px" }');
 });
 
@@ -35,6 +36,7 @@ for (const viewport of [
     await expect(logo).toBeVisible();
     await expect(topBox).toHaveCSS("padding-top", viewport.name === "mobile" ? "10px" : "20px");
     await expect(logo).toHaveCSS("background-image", /group_default\.png/u);
+    await expect(logo).toHaveAttribute("style", /--x-backgroundImage:\s*url\(/u);
 
     const geometry = await page.locator("#saveSetting").evaluate((form) => {
       const formBox = form.getBoundingClientRect();

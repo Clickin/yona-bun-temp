@@ -3365,6 +3365,10 @@ Batch 298 applies the workflow to the standalone `/_UIKit` original-message togg
 
 Batch 303 applies the workflow to the authenticated project-setting old-place message. Its static legacy `color:red` declaration moved to a direct route-local StyleX owner while the data-driven previous-place text remains unchanged; the focused project-setting test covers source evidence, computed color, and desktop/mobile form containment.
 
+Batch 304 applies the workflow to the authenticated organization settings logo preview. Its server-provided background image moved from a literal inline declaration to a route-local Dynamic StyleX function because the value cannot be enumerated at build time; the focused organization-setting residual test covers the custom-property carrier, computed desktop/mobile background, upload validation, and containment.
+
+Batch 305 applies the workflow to the authenticated `/user/issues` populated issue-list label state. The server-provided label background color moved to route-local Dynamic StyleX for parent and child labels while preserving legacy classes, contrast behavior, links, and responsive containment; the focused user-issues residual test covers the runtime custom-property carrier and computed color.
+
 
 
 After this plan is approved for execution, start only with Wave 0 and the existing transparent

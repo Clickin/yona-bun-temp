@@ -11,6 +11,10 @@ Date: 2026-07-15
 
 - `/$ownerName/$projectName/post/$postNumber` mobile metadata state: moved the fixed `font-size:0.7em` declaration from `board/view.scala.html` into the route-local `mobileMetadata` StyleX owner, preserving responsive visibility, date copy, and containment. Focused `stylex-project-post-detail-inline-residual.e2e.ts` verifies source ownership, desktop hidden/mobile visible state, computed size, and no literal inline style; live legacy visual parity remains unverified.
 
+## Batch 305
+
+- `/user/issues` populated issue-list label state: moved the server-provided label background color from the legacy inline `background:@label.color` declaration into the route-local Dynamic StyleX `issueLabelBackground(backgroundColor)` owner for both parent and child issue labels. The arbitrary API color remains runtime-driven rather than a theme token, while legacy label classes, contrast classes, links, and responsive row geometry are preserved. Focused `stylex-user-issues-row-residual.e2e.ts` verifies Scala source evidence, the dynamic custom-property carrier, computed color, and desktop/mobile row containment; live legacy visual parity remains unverified.
+
 ## Batch 301
 
 - `/user/editform` avatar state: moved the fixed 128px avatar and 500px crop-preview dimensions from `user/edit.scala.html` into route-local StyleX owners, preserving upload/crop behavior and responsive containment. Focused `stylex-user-settings-page-shell.e2e.ts` verifies legacy source, stable owners, computed dimensions, crop interaction, and desktop/mobile containment; live legacy visual parity remains unverified.
@@ -706,3 +710,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 303
 
 - `/$ownerName/$projectName/setting` populated project-settings old-place state: moved the legacy `oldPlace` message's static `color:red` declaration into the route-local `styles.oldPlace` StyleX owner, preserving the previous-place copy, project-name form order, and desktop/mobile layout. The runtime old-place value remains data-driven text; no theme variable is introduced. Focused `stylex-project-setting.e2e.ts` verifies the Scala source declaration, stable owner, computed red color, and responsive form containment; live legacy visual parity remains unverified.
+
+## Batch 304
+
+- `/organizations/$organizationName/settingform` loaded organization-settings logo state: moved the server-provided logo `background-image` from a literal React inline style into the route-local Dynamic StyleX `organizationSettingStyles.logo(backgroundImage)`. The legacy URL remains data-driven and cannot be enumerated; the logo-wrap classes, responsive geometry, fallback URL, upload validation, and mutation behavior remain unchanged. Focused `stylex-organization-settingform-inline-residual.e2e.ts` verifies the Dynamic StyleX source carrier, computed desktop/mobile background image, interaction, and containment; live legacy visual parity remains unverified.

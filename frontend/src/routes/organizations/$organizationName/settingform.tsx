@@ -53,6 +53,7 @@ function OrganizationSettingsBody({
   const organizationName = stringField(organization.organizationName, "organization");
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
+  const logoStyleProps = stylex.props(organizationSettingStyles.logo(`url('${logoUrl}')`));
   const styles = stylex.create({
     bubble: { backgroundColor: organizationSettingColors.bubbleSurface },
     field: {
@@ -156,8 +157,8 @@ function OrganizationSettingsBody({
               >
                 <div className="setting-box left">
                   <div
-                    className="logo-wrap"
-                    style={{ backgroundImage: `url('${logoUrl}')` }}
+                    {...logoStyleProps}
+                    className={`logo-wrap ${logoStyleProps.className ?? ""}`.trim()}
                     data-stylex-owner="organization-setting-logo"
                   ></div>
                   <div className="logo-desc">

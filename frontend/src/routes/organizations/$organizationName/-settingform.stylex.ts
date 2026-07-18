@@ -11,5 +11,6 @@ export const organizationSettingColors = stylex.defineVars({
 });
 
 export const organizationSettingStyles = stylex.create({
+  logo: (backgroundImage: string) => ({ backgroundImage }),
   topBox: { paddingTop: "20px" },
 });
