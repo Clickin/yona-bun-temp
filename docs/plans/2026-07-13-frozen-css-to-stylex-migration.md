@@ -3579,3 +3579,5 @@ Batch 404 applies the workflow to the public projects empty-state sprite. The ru
 Batch 405 applies the workflow to the project import protected-scope state. The conditional hidden `display:none` declaration moves to a route-local conditional StyleX owner while preserving owner selection, radio DOM, copy, and form geometry; the focused protected-scope test covers the legacy source contract and owner.
 
 Batch 406 applies the workflow to the site issue-list pagination sprite state. The shared runtime sprite URL moves from four inline custom-property declarations to a route-local Dynamic StyleX owner while preserving pagination DOM, labels, navigation, asset rendering, and responsive geometry; the focused pagination-sprite test covers all consumers.
+
+Batch 407 applies the workflow to the project change-VCS modal visibility state. The conditional modal `display:block`/`display:none` declarations move to route-local conditional StyleX while preserving modal DOM, aria state, mutation behavior, copy, and responsive geometry; the focused modal-visibility test covers both states.

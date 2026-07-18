@@ -21,6 +21,11 @@ import {
 } from "../$projectName";
 import { projectChangeVcsConditionalStyles, projectChangeVcsTheme } from "./-changeVCS.stylex";
 
+const projectChangeVcsModalStateStyles = stylex.create({
+  visible: { display: "block" },
+  hidden: { display: "none" },
+});
+
 const legacyLinkActiveProps = {
   "aria-current": undefined,
   className: undefined,
@@ -168,6 +173,11 @@ function ProjectChangeVcsBody({
   const projectName = stringField(project.projectName, "project");
   const currentVcs = stringField(project.currentVcs, "GIT");
   const nextVcs = stringField(project.nextVcs, currentVcs === "GIT" ? "Subversion" : "GIT");
+  const modalStateProps = changeVcsModalOpen
+    ? stylex.props(projectChangeVcsModalStateStyles.visible)
+    : changeVcsModalTouched
+      ? stylex.props(projectChangeVcsModalStateStyles.hidden)
+      : undefined;
   const changeMutation = useMutation({
     mutationFn: async () => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -297,16 +307,10 @@ function ProjectChangeVcsBody({
           </div>
           <div
             id="alertChangeVCS"
-            className={`${stylex.props(styles.modal).className} modal hide${changeVcsModalOpen ? " in" : ""}`}
+            {...modalStateProps}
+            className={`${stylex.props(styles.modal).className} modal hide${changeVcsModalOpen ? " in" : ""} ${modalStateProps?.className ?? ""}`.trim()}
             data-stylex-owner="project-change-vcs-modal"
             aria-hidden={changeVcsModalOpen ? false : changeVcsModalTouched ? true : undefined}
-            style={
-              changeVcsModalOpen
-                ? { display: "block" }
-                : changeVcsModalTouched
-                  ? { display: "none" }
-                  : undefined
-            }
           >
             <div className="modal-header" data-stylex-owner="project-change-vcs-modal-header">
               <button type="button" className="close" onClick={dismissChangeVcsModal}>

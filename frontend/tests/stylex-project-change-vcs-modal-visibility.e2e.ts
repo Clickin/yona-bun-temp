@@ -10,5 +10,6 @@ test("change VCS modal visibility uses conditional StyleX", async () => {
   expect(route).toContain('data-stylex-owner="project-change-vcs-modal"');
   expect(route).toContain("projectChangeVcsModalStateStyles.visible");
   expect(route).toContain("projectChangeVcsModalStateStyles.hidden");
+  expect(route).toContain("modalStateProps");
   expect(route).not.toContain("style={\n              changeVcsModalOpen");
 });
