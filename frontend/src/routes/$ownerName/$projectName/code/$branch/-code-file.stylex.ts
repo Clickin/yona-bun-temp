@@ -67,5 +67,13 @@ export const styles = stylex.create({
   action: { color: codeFileColors.actionText },
   // React-owned replacement for the legacy #open-in-browser popover anchor.
   openBrowserWrap: { display: "inline-block", position: "relative" },
-  popover: { color: codeFileColors.popoverText },
+  popover: {
+    bottom: "100%",
+    color: codeFileColors.popoverText,
+    display: "block",
+    left: "50%",
+    marginBottom: "5px",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
 });

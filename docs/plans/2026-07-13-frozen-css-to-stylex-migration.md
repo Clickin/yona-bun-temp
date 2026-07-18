@@ -3474,6 +3474,8 @@ Batch 355 applies the workflow to the authenticated board-post comment-delete mo
 
 Batch 356 applies the workflow to the authenticated project-setting default-branch dropdown state. The conditional dropdown `display:block` declaration moves to route-local conditional StyleX while preserving the legacy Select2 DOM, branch selection behavior, copy, and responsive geometry; the focused default-branch test covers legacy source evidence and absence of the former inline display declaration.
 
+Batch 357 applies the workflow to the authenticated code-file open-in-browser popover state. The static popover positioning and visible display declarations move to route-local StyleX while preserving the legacy code-file anchor/popover DOM, hover interaction, copy, and responsive geometry; the focused popover test covers legacy source evidence and absence of the former inline positioning declaration.
+
 Batch 312 applies the workflow to the authenticated `/$ownerName/$projectName/issue/$issueNumber/editform` selected-label state. The server-provided selected label color moves to route-local Dynamic StyleX while preserving the legacy Select2 label picker DOM, classes, copy, selected state, and geometry; the focused editform label test covers the dynamic owner and absence of a literal inline background declaration.
 
 

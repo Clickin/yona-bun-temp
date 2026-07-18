@@ -712,17 +712,9 @@ function FileView({
             {isOpenInBrowserPopoverVisible ? (
               <div
                 {...stylex.props(styles.popover)}
-                className={`${stylex.props(styles.popover).className} popover top in`}
+                className={`${stylex.props(styles.popover).className} popover top in`.trim()}
                 data-stylex-owner="project-code-file-open-popover"
                 role="tooltip"
-                style={{
-                  bottom: "100%",
-                  display: "block",
-                  left: "50%",
-                  marginBottom: "5px",
-                  position: "absolute",
-                  transform: "translateX(-50%)",
-                }}
               >
                 <div className="arrow"></div>
                 <div className="popover-content">{t("code.open.desc")}</div>

@@ -913,3 +913,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 356
 
 - Authenticated project-setting default-branch dropdown state: moved conditional dropdown `display:block` into `styles.defaultBranchDropVisible`, preserving the legacy Select2 DOM, branch selection behavior, copy, and responsive geometry. Focused `stylex-project-setting-default-branch.e2e.ts` verifies the legacy source, stable owner, conditional StyleX, and absence of the former inline display declaration; live legacy visual parity remains unverified.
+
+## Batch 357
+
+- Authenticated code-file open-in-browser popover state: moved static popover positioning and visible display declarations into the route-local `styles.popover`, preserving the legacy code-file anchor/popover DOM, hover interaction, copy, and responsive geometry. Focused `stylex-project-code-file-open-popover.e2e.ts` verifies the legacy source, stable owner, StyleX positioning, and absence of the former inline positioning declaration; live legacy visual parity remains unverified.
