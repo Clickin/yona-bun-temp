@@ -2836,7 +2836,10 @@ export function ProjectMenu({
   return (
     <div className="project-menu-outer">
       <div className="project-menu-inner">
-        <ul className="project-menu-nav project-menu-gruop">
+        <ul
+          className={`${stylex.props(projectHomeStyles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
+          data-stylex-owner="project-menu-group"
+        >
           <ProjectMenuItem
             active={active === "home"}
             label={t("title.projectHome")}

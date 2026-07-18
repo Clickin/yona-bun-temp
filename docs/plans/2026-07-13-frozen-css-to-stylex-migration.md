@@ -3677,6 +3677,8 @@ Batch 455 applies the project-header watcher state. Watcher count paint, conditi
 
 Batch 456 applies the project-menu count badge state. Static count badge geometry and paint move into a route-local StyleX owner while preserving count text, class names, menu DOM, and conditional rendering; unrelated project-menu shell selectors remain frozen.
 
+Batch 458 applies the project-route project-menu group state. The typo-preserved `.project-menu-gruop` float/margin geometry moves into a project route-local StyleX owner while preserving the legacy class and DOM; the shared app.css fallback remains because organization still consumes it, and nav/active pseudo rules remain untouched.
+
 Batch 450 applies the workflow to pull-request create/edit selector geometry. Pull-request wrapper, field-title, and arrow geometry move into colocated StyleX owners across create and edit forms while preserving legacy classes, DOM, and behavior; the focused create-edit geometry test covers both legacy sources and retains the Bootstrap select2 residual.
 
 Batch 457 applies the workflow to the project-posts label reset state. The obsolete post-list button reset fallback is removed because the existing `labelButtonReset` StyleX owner covers border, cursor, and font inheritance while Dynamic label paint and legacy classes remain intact; the focused label-button test verifies fallback removal and composition.
