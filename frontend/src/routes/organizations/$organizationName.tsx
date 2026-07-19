@@ -345,7 +345,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
       className="project"
       data-item="project-item"
       data-value={dataValue}
-      {...(hidden ? stylex.props(styles.projectHidden) : {})}
+      {...stylex.props(styles.project, hidden && styles.projectHidden)}
       data-stylex-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">

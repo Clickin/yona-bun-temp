@@ -60,6 +60,8 @@ export const styles = stylex.create({
   home: { color: organizationHomeColors.mutedText },
   overview: { color: organizationHomeColors.accentText },
   projects: { minWidth: 0 },
+  // organization/view.scala.html + yona-common item-search: an empty query shows every project.
+  project: { display: "list-item" },
   projectInfo: { float: "left" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
   leaveModalVisible: { display: "block" },

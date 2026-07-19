@@ -672,6 +672,7 @@ test("organization home filters projects like legacy item-search", async ({ page
   await expect(searchButton.locator(".yobicon-search")).toHaveCount(1);
   await expect(createProjectLink).toHaveAttribute("href", `${basePath}/projectform?owner=weblabs`);
   await expect(page.locator(".all-projects .project")).toBeVisible();
+  await expect(page.locator(".all-projects .project")).toHaveCSS("display", "list-item");
   await expect(page).toHaveURL(`${basePath}/organizations/weblabs`);
 
   await filter.fill("missing");
