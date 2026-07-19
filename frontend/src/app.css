@@ -3803,8 +3803,6 @@ div.markdown-preview {
   color: #999;
 }
 
-.pull-request-actions,
-.pull-request-branches,
 .thread-actrow,
 .actions {
   display: flex;
@@ -3815,14 +3813,6 @@ div.markdown-preview {
 
 .content-wrap.frm-wrap .actions {
   display: block;
-}
-
-.pull-request-branches label {
-  min-width: 190px;
-}
-
-.pull-request-branches select {
-  width: 100%;
 }
 
 .infos {

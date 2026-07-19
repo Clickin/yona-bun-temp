@@ -4123,3 +4123,14 @@ post create/edit forms deliberately preserve that absence. The focused contract 
 `.board-form label` and `.board-check`, then verifies the real edit form in normal and
 fallback-off managed runs at desktop and 390px. Global fallback discovery remains
 incomplete/non-green, so this is not generated-fallback unlinking or live-legacy visual parity.
+
+Batch 563 retires only the source-less `.pull-request-actions` and `.pull-request-branches`
+arms from the shared fallback flex group, plus the two coupled branch label/select blocks.
+Frozen `git/create.scala.html:30-106` and `git/edit.scala.html` establish the actual
+`.pull-request-wrap` selector sequence and `.actions` submit/cancel output; neither template,
+their LESS context, nor current React production source emits either retired temporary class.
+The shared `.thread-actrow`, `.actions`, and all `.pullrequeset-tab-menu` fallback remain.
+Focused static evidence records RED then absence GREEN, while the managed PR edit-form fixture
+preserves real selector/action order and desktop/390px containment in normal and fallback-off
+runs. Global fallback discovery remains incomplete/non-green, so this is neither generated
+fallback unlinking nor live-legacy visual-parity proof.
