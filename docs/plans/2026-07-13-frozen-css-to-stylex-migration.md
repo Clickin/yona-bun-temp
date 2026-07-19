@@ -276,6 +276,15 @@ batch requires a concrete reason such as shared-file ownership, plugin-generated
 non-isolatable backend dependency. Do not grow a batch beyond the available worker slots merely to
 reduce command count.
 
+Target discovery is not part of the per-turn loop. The canonical screen/state inventory and
+dependency queue live in `docs/plans/2026-07-19-stylex-route-wave-checklist.md`; every batch must
+select its IDs from that checklist and update only those rows after integration. Do not rescan all
+route files merely to choose the next target. A full inventory refresh is allowed only by the
+checklist's explicit refresh triggers (route-set change, visible ownership change, last-consumer
+retirement, exhausted ready queue, or disproved evidence). Delegate/index/helper routes remain
+states or implementation details of their owner screen and must not inflate screen or completion
+counts.
+
 1. The main agent selects all batch targets before implementation and proves that their route
    TSX, focused E2E, route-local StyleX module, API contract, and legacy selector ownership do not
    overlap.

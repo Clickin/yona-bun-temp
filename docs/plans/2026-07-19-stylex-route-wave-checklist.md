@@ -1,89 +1,189 @@
-# StyleX Route Wave Checklist
+# StyleX Screen Migration Checklist
 
 Status: **active canonical target inventory**  
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
-Snapshot: 2026-07-19, `frontend/src/routes/**/*.tsx` 116 files
+Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala templates: 242)
 
-이 문서는 매 turn마다 다음 화면을 다시 탐색하지 않기 위한 Wave 1 실행 queue다. 새 wave는 아래 `NEXT`에서만 고른다. 현재 코드나 fallback 소비자가 바뀌었을 때만 해당 행을 재검증하고, 전 route inventory를 반복하지 않는다.
+이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다.
 
-## Status rules
+## Completion model
 
-- `NEXT`: active React consumer와 route-local legacy selector가 확인되어 2~6 owner wave를 바로 구성할 수 있다.
-- `BLOCKED`: shared fallback, 다른 visible state, 또는 공용 component 선행 작업이 필요하다. 선행조건이 해소될 때만 재분류한다.
-- `DONE`: 현재 route-local active owner 후보가 없다. 새 consumer가 생기지 않는 한 재조사하지 않는다.
-- `DEAD`: runtime consumer가 없는 residual이다. active owner migration과 섞지 않고 별도 cleanup batch에서만 다룬다.
+각 화면은 아래 여섯 gate를 순서대로 통과한다. `StyleX` 파일이 있거나 route-local 후보가 없다는 이유만으로 완료 처리하지 않는다.
 
-## NEXT execution queue
+- `L`: legacy root/partials/LESS와 visible-state matrix 확인
+- `O`: 모든 frozen-backed visual owner를 StyleX로 이전
+- `E`: desktop/mobile 및 interaction focused E2E 통과
+- `C`: exact source/DOM search로 해당 fallback 소비자 0 확인
+- `R`: 소비자 0인 fallback declaration/block 삭제
+- `✓`: L/O/E/C/R 모두 완료
 
-한 행은 한 route/visible-state wave다. 서로 다른 파일의 행은 worker 3개까지 병렬 구현하고, browser/build/Vitest는 integration batch당 한 번 실행한다.
+상태값은 `NEXT`, `READY`, `DEPENDENCY`, `DEFERRED`, `INVALID`, `COMPLETE`만 사용한다. `className`은 legacy DOM 계약일 수 있으므로 완료 판정 근거가 아니라 조사 우선순위 proxy다.
 
-| Done | Batch | Route/state | React owners (2~6) | Exact legacy selectors to retire | Legacy evidence |
-| --- | --- | --- | --- | --- | --- |
-| [x] | A1 | `/$ownerName/$projectName/issue/$issueNumber` populated body/sidebar | `issueBoardAuthor`, `issueBoardContent`, `issueBoardActions`, `issueBoardFooter`, `issueInfo` | `.issue-detail-page .board-body .author-info`, `.board-body .content`, `.board-actrow`, `.board-footer`, `.issue-info` | `issue/view.scala.html:138-206,294-330,454+`; frozen `_page.less` issue-detail rules |
-| [x] | A2 | `/$ownerName/$projectName/issues` populated list | `issuePostItem`, `issueTitleWrap`, `issuePostId`, `issueSubtaskProgress`, `issueChildDate` | `.issue-list-page .post-item`, `.title-wrap`, `.title-wrap .post-id`, `.for-subtask-progressbar`, `.child-issue .child-issue-date` | `issue/partial_list.scala.html`, `partial_list_draft.scala.html`, `partial_view_childIssueList.scala.html`; `_page.less:3312-3559` |
-| [x] | A3 | `/$ownerName/$projectName/setting` authenticated setting boxes | `settingBox`, `settingLogo`, `settingLogoDesc`, `settingDescs`, `settingPoint`, `settingFields` | `.box-wrap .setting-box` and its route-local left/right descendants | `project/setting.scala.html:30-169`; `_page.less:2213-2270` |
-| [x] | B1 | `/$ownerName/$projectName/issueform` remaining editor shell | `issueEditorCell`, `issueEditorTabContent` | `.issue-form-page-wrap .issue-editor-cell`, `.issue-editor-tab-content`; current-only `.right-menu`/combobox/title-head fallback retained | `common/editor.scala.html`, `issue/create.scala.html` exact inline declarations |
-| [x] | B2 | `/$ownerName/$projectName/pullRequest/$pullRequestNumber` overview branches/actions | **DEAD/INVALID** — requested selectors are absent from legacy; cited `_page.less:4296-4314` is posting-history diff CSS | no safe owner; implementation intentionally stopped | `git/view.scala.html`/`git/partial_state.scala.html` only expose `.pullRequest-branchInfo`/`.pullRequest-stateInfo`; `_page.less:4296-4314` is unrelated |
-| [x] | B3 | `/$ownerName/$projectName/search` populated/empty project search | `searchCategory`, `searchBox`, `searchResultTitle`, `searchListItem`, `emptyResult` | shared `.search-category-wrap`, `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` retained for global/organization consumers | `search/partial_search.scala.html` and result partials; `_page.less:6375-6415` |
-| [x] | D1 | `/organizations/$organizationName/settingform` populated settings top-box | `settingBox`, `logo`, `logoDesc`, `descs`, `point`, `textarea` | shared `.box-wrap .setting-box*` fallback retained; project setting is the existing owned consumer and app.css duplicate was retired in A3 | `organization/setting.scala.html:36-72`, `partial_settingmenu.scala.html`; `_page.less:2081-2120`, `_responsive.less:126-142` |
-| [ ] | E2 | `/organizations/$organizationName/search` populated result rows | category item, result title, list item/project inset, title wrap/post id, content/meta, empty result | generic search fallback remains until the dead `LegacySearchBody` consumer is removed and global/project/organization owners are all verified | `search/partial_search.scala.html`, organization result partials; `_page.less:6375-6491` |
-| [x] | C1 | `/search` populated/empty global search family | category shell, result heading/list/item, empty result | `.search-category-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` | `search/result.scala.html`, `search/partial_search.scala.html`, result partials; `_page.less:6375-6491` |
+## Immediate queue
 
-`C1` is completed for the top-level `/search` route only. `-search-screen.tsx` and project/organization search remain out of scope; shared app.css selectors remain fallback-owned by those consumers.
+한 batch는 서로 다른 screen ID 3개, 총 12~18 owner를 기본으로 한다. worker는 독립 worktree에서 병렬 구현하고 integration worktree에서 browser/typecheck/Vitest/build를 한 번 실행한다.
 
-## Current wave
+| Order | IDs | Work | Dependency |
+| --- | --- | --- | --- |
+| 1 | SEARCH-02, SEARCH-03 | 죽은 `LegacySearchBody` 제거 + organization search states 이전 | 병렬 구현 후 exact consumer audit |
+| 2 | HELP-01..03, AUTH-01..04 | help/markdown과 auth form의 route-local owners | 독립 3-worker batches |
+| 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
+| 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
+| 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
+| 6 | SITE/HOME/ROOT | leaf routes 후 shared shell/layout retirement | 마지막 소비자 증명 필요 |
 
-- [x] Batch 515: issueform assignee control, hidden focus-input display, and selected-value ellipsis owners. The hidden input remains 1px under frozen `.select2-offscreen`; shared Select2/combobox fallback remains.
+## Canonical screen checklist
 
-## Shared-search dependency queue
+`Gates`의 `L-----`은 legacy mapping만 확인됐다는 뜻이다. 이전 ledger로 owner가 일부 존재하더라도 전체 state의 C/R gate가 증명되지 않았다면 `O`를 올리지 않는다.
 
-- [ ] E1: remove the unreferenced `LegacySearchBody` subtree in `frontend/src/routes/-search-screen.tsx`. Only `DefaultSearchErrorBody`, `RequestTextTooLargeErrorBody`, error predicates, and `emptySearchResult` have runtime importers. This is dead-consumer removal, not a StyleX owner wave.
-- [ ] E2: migrate the organization-search populated/empty result owners listed above in one route/state wave.
-- [ ] E3: rerun exact consumer search for the generic search blocks and retire only declarations whose global/project/organization owners are complete. Do not remove shared error/empty fallback without a remaining-consumer proof.
+### Shared, top-level, auth
 
-Refresh snapshot: 2026-07-19 after Batch D1. Project and top-level/auth/user/verify families have no additional route-safe frozen-backed owner candidate. Do not repeat the 116-route inventory until E1–E3 complete or another documented refresh trigger fires.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| HOME-01 | `/`: anonymous intro; authenticated dashboard; project/org/recent lists; flashes | `index/index.scala.html`, `partial_intro`, `sidebar`, `myProjectList*`, `allProjectList*`, `allOrganizationList*`, `myRecentIssueList*` | DEPENDENCY | L----- |
+| HOME-02 | `/notifications`, `/notification`: empty/populated/expanded notification states | `index/notifications.scala.html`, `partial_notifications.scala.html` | DEPENDENCY | L----- |
+| ROOT-01 | global navbar/usermenu/sidebar; anonymous/authenticated; login dialog/error | `common/navbar.scala.html`, `usermenu*.scala.html`, `loginDialog.scala.html`, site layout | DEPENDENCY | L----- |
+| HELP-01 | `/_help`: TOC/FAQ closed/open and sprite states | `help/toc.scala.html` | READY | L----- |
+| HELP-02 | shared markdown help navigation active/inactive | `help/markdown.scala.html` | READY | L----- |
+| HELP-03 | markdown pane/table/code/task-list responsive states | `help/markdown.scala.html`; `_markdown.less`, `_responsive.less` | DEPENDENCY | L----- |
+| SEARCH-01 | `/search`: all result types, empty, pagination, 403/413/500 | `search/result.scala.html`, `partial_search` and all result partials | DEPENDENCY | LOE--- |
+| SEARCH-02 | `-search-screen`: remove unreferenced `LegacySearchBody`; retain imported error bodies/predicates | same search templates | NEXT | L----- |
+| SEARCH-03 | `/organizations/$organizationName/search`: categories, populated result types, empty | search templates and organization result partials | NEXT | L----- |
+| SEARCH-04 | exact global/project/org consumer audit and declaration-level retirement | `_page.less:6375-6491` | DEPENDENCY | ------ |
+| DIR-01 | `/projects`: populated/empty/filter/pagination/fork/member states | `project/list.scala.html` | DEPENDENCY | L----- |
+| DIR-02 | `/orgs`: populated/empty/filter/pagination | `organization/list.scala.html` | DEPENDENCY | L----- |
+| CREATE-01 | `/projectform`: owner/scope/VCS/options/validation | `project/create.scala.html`, `common/select2.scala.html` | DEPENDENCY | L----- |
+| IMPORT-01 | `/_import`: owner/scope/VCS/repo-auth/validation/submission | `project/importing.scala.html`, `common/select2.scala.html` | DEPENDENCY | L----- |
+| MIG-01 | `/migration`: disabled/forbidden plus reachable source/destination/progress states | `migration/home.scala.html`, `migrationPageLayout.scala.html` | DEFERRED | L----- |
+| AUTH-01 | `/users/loginform`: login/error/OAuth/already-authenticated redirect | `user/login.scala.html`, `common/loginDialog.scala.html` | READY | L----- |
+| AUTH-02 | `/users/signupform`: validation/OAuth/restricted/success/error | `user/signup.scala.html` | READY | L----- |
+| AUTH-03 | `/lostPassword`: anonymous/authenticated/requested/error | `site/lostPassword.scala.html` | READY | L----- |
+| AUTH-04 | `/resetPassword`: valid form/validation/invalid token | `user/resetPassword.scala.html` | READY | L----- |
+| AUTH-05 | `/restricted`, `/secret`, `/restart`: standalone restricted/setup/result states | `restricted.scala.html`, `welcome/secret.scala.html`, `welcome/restart.scala.html` | READY | L----- |
+| UIKIT-01 | `/_UIKit`: controls, tabs/switches, labels/message demo states | `help/UIKit.scala.html` | DEFERRED | L----- |
 
-## Coverage ledger
+### User and organization
 
-The inventory was produced in one O(n) pass over the 116 route TSX files and checked against the sorted `rg --files frontend/src/routes | rg '\\.tsx$'` set.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| USER-01 | `/$user`: profile plus issues/PR/projects populated/empty/not-found | `user/view.scala.html`, `partial_issues`, `partial_pullRequests`, `partial_projectlist` | DEPENDENCY | L----- |
+| USER-02 | `/user/editform`: settings shell/profile/avatar upload-crop | `user/edit.scala.html`, `partial_edit_tabmenu` | READY | L----- |
+| USER-03 | editform emails/password/notifications/token state matrices | `user/edit_{emails,password,notifications,token}.scala.html`, tab menu | DEPENDENCY | L----- |
+| USER-04 | `/user/files`: empty/populated/search/actions/pagination | `user/userFiles.scala.html`, `common/mySeriesMenuTab.scala.html` | READY | L----- |
+| USER-05 | `/user/issues`: open/closed/filter/quick-search/subtasks/pagination | `issue/my_list.scala.html`, `my_partial_*` | READY | L----- |
+| USER-06 | direct issue form new/mine/comment-derived states | `issue/create.scala.html` | DEPENDENCY | L----- |
+| ORG-01 | `/organizations/new`: form/validation/success/error | `organization/create.scala.html` | READY | L----- |
+| ORG-02 | organization layout/home: header/menu/project/member/filter states | `organizationLayout`, `header`, `menu`, `view.scala.html` | READY | L----- |
+| ORG-03 | settingform/members/delete: logo, enrollment, roles, modals | `organization/{setting,members,deleteForm}.scala.html`, `partial_settingmenu` | DEPENDENCY | LOE--- |
+| ORG-04 | boards/issues/pullrequests open/closed/populated/empty/pagination | `group_{board,issue,pullrequest}_list*.scala.html` | DEPENDENCY | L----- |
 
-### Project family — 57 files
+### Project settings and home
 
-- `NEXT` 0: all catalogued project rows are resolved; B2 was invalidated rather than migrated.
-- `DEAD` 1: `milestones.tsx` (`.milestones .desc` has no active React consumer).
-- `DONE` 31: the previous 26 routes plus A1–A3, B1, and B3.
-- `BLOCKED` 24: project root plus `closedPullRequests`, code/file/commit detail routes, compare, issue edit, milestone detail/edit/new, PR create/edit/changes/list variants, post detail/edit/form/list, reviews, sent PRs, and `settingform`. Their remaining selectors are shared code/editor/uploader/post-list/Select2/Bootstrap/modal fallbacks or need another state first.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| PROJECT-01 | project layout/home readme/dashboard/history/nohead | `projectLayout`, `header`, `projectMenu`, `home`, `partial_readme`, `partial_dashboard*`, `partial_history` | DEPENDENCY | L----- |
+| PROJECT-02 | setting/settingform loaded/error/validation | `project/setting.scala.html`, `partial_settingmenu` | DEPENDENCY | LOE--- |
+| PROJECT-03 | changeVCS/delete/transfer/members | corresponding project templates plus setting menu | DEPENDENCY | L----- |
+| PROJECT-04 | issue labels categories/labels CRUD | `project/issuelabels.scala.html`, `partial_issuelabels_*` | DEPENDENCY | L----- |
+| PROJECT-05 | webhooks list/create/delete/test | `project/webhooks.scala.html`, `partial_webhooks_list` | DEPENDENCY | L----- |
+| PROJECT-06 | watchers and statistics/chart states | `project/watchers.scala.html`, `project/statistics.scala.html` | READY | L----- |
 
-### Top-level, auth, user, verify — 37 files
+### Issue, milestone, board
 
-- `NEXT` 0: top-level `search.tsx` is complete; `-search-screen.tsx` remains blocked as a separate shared screen.
-- `DEAD` 1: `[_]UIKit.tsx` demo-only surface.
-- `DONE` 12: the previous 11 routes plus top-level `search.tsx`.
-- `BLOCKED` 24: `$user`, `-search-screen`, home/root/global shell, markdown help, import, auth forms, org/project directory/form, restart/restricted/secret, user settings/files/issues, and verification state branches. Remaining selectors are shared or state-prerequisite boundaries.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| ISSUE-01 | issues filter shell/list/draft/empty/paging/mass-update | `issue/list.scala.html`, `partial_list*`, `partial_searchform`, `partial_massupdate` | DEPENDENCY | LOE--- |
+| ISSUE-02 | issue create form/editor/options/upload/validation | `issue/create.scala.html`, assignee/label/subtask partials | DEPENDENCY | LOE--- |
+| ISSUE-03 | issue detail header/body/sidebar/open-closed/error | `issue/view.scala.html` | DEPENDENCY | LOE--- |
+| ISSUE-04 | issue comments/events/child/voter/attachment/modal states | `partial_comments`, `partial_history`, `partial_index_comments`, child/voter partials | DEPENDENCY | L----- |
+| ISSUE-05 | issue edit loaded/editor/options/error | `issue/edit.scala.html`, assignee/label/subtask partials | DEPENDENCY | L----- |
+| MILE-01 | milestone list open/closed/empty | `milestone/list.scala.html`, `partial_status` | READY | L----- |
+| MILE-02 | milestone create/edit forms and validation | `milestone/create.scala.html`, `edit.scala.html` | READY | L----- |
+| MILE-03 | milestone detail/progress/issues/mass-update/empty | `milestone/view.scala.html`, issue list/mass-update partials | DEPENDENCY | L----- |
+| BOARD-01 | board list populated/empty/filter/paging | `board/list.scala.html`, `partial_list` | READY | L----- |
+| BOARD-02 | board create/edit editor/upload/validation | `board/create.scala.html`, `edit.scala.html` | DEPENDENCY | L----- |
+| BOARD-03 | post detail/body/sidebar/error | `board/view.scala.html` | READY | L----- |
+| BOARD-04 | post comments/history/labels/attachments states | board comment/history and issue label partials | DEPENDENCY | L----- |
 
-### Organization, site-admin, redirect-only — 22 files
+### Code, pull request, fork
 
-- `NEXT` 1: organization search E2.
-- `DEAD` 3: leave redirect, organization closed-PR delegate, site pagination helper.
-- `DONE` 4: the previous three routes plus organization settingform D1.
-- `BLOCKED` 14: organization home/boards/issues/members/PR and nine site-admin screens. Their remaining selectors are shared across sibling routes.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| CODE-01 | branches list/default/delete/error | `code/branches.scala.html`, `partial_branchrow` | READY | L----- |
+| CODE-02 | repository/nohead/folder/tree/branch selector | `code/view.scala.html`, `nohead*.scala.html`, `partial_view_folder` | DEPENDENCY | L----- |
+| CODE-03 | file/binary/rendered/code/error states | `partial_view_file.scala.html` | DEPENDENCY | L----- |
+| CODE-04 | commit history root/branch/file/empty/paging | `code/history.scala.html` | DEPENDENCY | L----- |
+| CODE-05 | commit detail metadata/diff/comments/binary | `code/diff.scala.html`, code-comment/shared diff partials | DEPENDENCY | L----- |
+| CODE-06 | compare valid/empty/invalid/SVN | `code/compare.scala.html`, `compare_svn.scala.html` | DEPENDENCY | L----- |
+| PR-01 | open/sent/closed lists/filter/paging/empty | `git/list.scala.html`, `partial_search`, `partial_list`, `partial_state` | READY | L----- |
+| PR-02 | create/edit branch/source/form/validation | `git/create.scala.html`, `edit.scala.html`, branch partials | DEPENDENCY | L----- |
+| PR-03 | detail open/merged/closed/info/state | `git/view.scala.html`, `partial_branch`, `partial_info`, `partial_state` | DEPENDENCY | L----- |
+| PR-04 | detail events/reviews/merge outcomes/modals | `partial_pull_request_event`, `partial_reviewlist`, `partial_merge_result` | DEPENDENCY | L----- |
+| PR-05 | changes aggregate/commit diff/comments/reviews | `git/viewChanges.scala.html`, shared diff and review partials | DEPENDENCY | L----- |
+| PR-06 | reviews list populated/empty/filter/paging | `reviewthread/list.scala.html`, `partial_list`, `common/reviewForm` | DEPENDENCY | L----- |
+| FORK-01 | fork owner choice/progress/error/list | `git/fork.scala.html`, `partial_forklist` | READY | L----- |
 
-## Dead residual cleanup queue
+### Site administration
 
-These are deletion-only candidates, not StyleX owners. Before removal, rerun an exact source/DOM consumer search and add a focused static contract.
+| ID | Route / visible states | Legacy root and principal partials | Status | Gates |
+| --- | --- | --- | --- | --- |
+| SITE-01 | user/project/issue/post lists: filters, states, empty, pagination, modals | `site/{userList,projectList,issueList,postList}.scala.html`, pagination partials | READY | L----- |
+| SITE-02 | mail/massmail form, selection, preview/result/error | `site/mail.scala.html`, `massMail.scala.html` | READY | L----- |
+| SITE-03 | data/diagnostic/update result and error states | `site/{data,diagnostic,update}.scala.html`, update notification | READY | L----- |
+| SITE-04 | shared site management layout/sidebar/pagination retirement | `siteMngLayout.scala.html`, pagination partials | DEPENDENCY | ------ |
+
+## Non-screen route files
+
+다음은 별도 migration target으로 세지 않는다. 해당 owner screen의 state로만 추적한다.
+
+- index/splat/delegate wrappers under project code, commits, issue, milestone, post, PR changes, fork
+- `users/login.tsx`, `user/issues_/new.tsx`, its `index.tsx` and `mine.tsx`
+- organization index and closed-pull-request delegates
+- `notifications.tsx`, `notification.tsx` wrappers
+- `sites/-pagination.tsx`, `-last-outlet-transition.tsx`
+- colocated `*.stylex.ts`, CSS, asset modules
+
+## Dependency graph
+
+```text
+leaf route/state owners (parallel, 3 workers)
+    ├─ forms → shared editor / Select2 / uploader
+    ├─ lists → shared list / pagination
+    ├─ code → tree / diff → PR changes / reviews
+    └─ org/project/user settings → shared menu/tab
+                         ↓
+exact source + rendered DOM consumer audit
+                         ↓
+shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
+```
+
+## Already completed or invalidated waves
+
+- A1 issue detail body/sidebar, A2 populated issue list, A3 project setting boxes
+- B1 issueform editor shell, B3 project search
+- C1 top-level search populated-family ownership (empty/error/shared retirement remains SEARCH-01/04)
+- D1 organization setting top box
+- B2 requested PR selectors: `INVALID`; cited LESS was unrelated posting-history diff CSS and must not count as completion
+
+## Dead residual cleanup
+
+Deletion-only candidates. Each requires declaration-level exact source/DOM proof; broad subtree deletion is forbidden.
 
 - [ ] `.milestones .desc`
-- [ ] `#notification-projects li button` base/hover/active blocks
-- [ ] `.profile-frmwrap .avatar-frm` residual with no emitted ancestor
+- [ ] `#notification-projects li button` base/hover/active
+- [ ] `.profile-frmwrap .avatar-frm` with absent ancestor proof
 - [ ] `.all-projects .project .forked`
 - [ ] `.stats-wrap .like` variants
-- [ ] `.site-admin-page` subtree
+- [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item)
 
 ## Refresh trigger
 
-Do not repeat full inventory per turn. Refresh only when one of these occurs:
+Full inventory refresh is allowed only when:
 
-1. all `NEXT` rows are checked;
-2. a shared selector's last consumer is retired;
+1. every `NEXT`/`READY` row is exhausted;
+2. a shared selector loses its last consumer;
 3. a route changes its visible DOM/state ownership;
-4. the route-file set differs from the recorded 116-file snapshot.
+4. the sorted route file set differs from the 116-file snapshot;
+5. a checklist row is disproved by legacy or runtime evidence.
+
+Otherwise update only the completed screen row and select the next IDs from this document. Do not rescan all routes per turn.
