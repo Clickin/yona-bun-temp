@@ -111,6 +111,11 @@ const styles = stylex.create({
   confirmationNotice: {
     textAlign: "center",
   },
+  socialOnlyNotice: {
+    display: "block",
+    margin: "0px",
+    textAlign: "center",
+  },
   validationPopover: {
     position: "absolute",
     top: "var(--yoram-stylex-validation-popover-top)",
@@ -187,6 +192,7 @@ const submitClassName = stylex.props(styles.submit).className;
 const actionRowClassName = stylex.props(styles.actionRow).className;
 const loginLinkClassName = stylex.props(styles.loginLink).className;
 const confirmationNoticeClassName = stylex.props(styles.confirmationNotice).className;
+const socialOnlyNoticeClassName = stylex.props(styles.socialOnlyNotice).className;
 
 export const Route = createFileRoute("/users/signupform")({
   component: SignupFormRoute,
@@ -224,7 +230,6 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const capabilities = capabilitiesQuery.data as AuthUiCapabilities | undefined;
   const socialLoginOnly = capabilities?.socialLoginOnly === true;
   const signupRequireConfirm = capabilities?.signupRequireConfirm === true;
-  const standardPasswordSignup = !socialLoginOnly && !signupRequireConfirm;
   const siteName = runtimeConfig.siteName ?? "Yoram";
   const title = lookupLegacyMessage(language, "title.signupFor", { args: [siteName] });
 
@@ -278,38 +283,29 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       <title>{t("title.signup")}</title>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <div
-          className={
-            standardPasswordSignup ? `page full ${standaloneSignupClassName}` : "page full"
-          }
-          data-stylex-owner={standardPasswordSignup ? "standalone-signup-form" : undefined}
+          className={`page full ${standaloneSignupClassName}`}
+          data-stylex-owner="standalone-signup-form"
         >
           <div
-            className={
-              standardPasswordSignup
-                ? `center-wrap tag-line-wrap signup ${taglineWrapClassName}`
-                : "center-wrap tag-line-wrap signup"
-            }
-            data-stylex-part={standardPasswordSignup ? "standalone-signup-tagline" : undefined}
-            data-stylex-owner={standardPasswordSignup ? "standalone-signup-tagline" : undefined}
+            className={`center-wrap tag-line-wrap signup ${taglineWrapClassName}`}
+            data-stylex-part="standalone-signup-tagline"
+            data-stylex-owner="standalone-signup-tagline"
           >
             <h1
-              className={standardPasswordSignup ? `title ${titleClassName}` : "title"}
-              data-stylex-part={standardPasswordSignup ? "standalone-signup-title" : undefined}
-              data-stylex-owner={standardPasswordSignup ? "standalone-signup-title" : undefined}
+              className={`title ${titleClassName}`}
+              data-stylex-part="standalone-signup-title"
+              data-stylex-owner="standalone-signup-title"
             >
               <HighlightedLegacyMessage message={title} />
             </h1>
-            <p
-              className={standardPasswordSignup ? `tag-line ${taglineClassName}` : "tag-line"}
-              data-stylex-part={standardPasswordSignup ? "standalone-signup-copy" : undefined}
-            >
+            <p className={`tag-line ${taglineClassName}`} data-stylex-part="standalone-signup-copy">
               {t("app.description")}
             </p>
           </div>
 
           {signupRequireConfirm ? (
             <div
-              className={confirmationNoticeClassName}
+              className={`center-txt ${confirmationNoticeClassName}`}
               data-stylex-owner="standalone-signup-confirmation-notice"
               data-stylex-part="signup-confirmation-notice"
             >
@@ -326,13 +322,9 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
           <div
             ref={formWrapRef}
-            className={
-              standardPasswordSignup
-                ? `signup-form-wrap frm-wrap ${formWrapClassName}`
-                : "signup-form-wrap frm-wrap"
-            }
-            data-stylex-part={standardPasswordSignup ? "standalone-signup-form-wrap" : undefined}
-            data-stylex-owner={standardPasswordSignup ? "standalone-signup-form-wrap" : undefined}
+            className={`signup-form-wrap frm-wrap ${formWrapClassName}`}
+            data-stylex-part="standalone-signup-form-wrap"
+            data-stylex-owner="standalone-signup-form-wrap"
           >
             <form
               action={prefixBasePath(runtimeConfig.basePath, "/users/signup")}
@@ -341,33 +333,31 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               onSubmit={handleSubmit}
             >
               {socialLoginOnly ? (
-                <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
+                <div
+                  className={`btns-row nm ${socialOnlyNoticeClassName}`}
+                  data-stylex-owner="standalone-signup-social-only-notice"
+                >
+                  {t("app.warn.support.social.login.only")}
+                </div>
               ) : (
                 <>
                   <dl
-                    className={standardPasswordSignup ? definitionListClassName : undefined}
-                    data-stylex-part={
-                      standardPasswordSignup ? "standalone-signup-fields" : undefined
-                    }
+                    className={definitionListClassName}
+                    data-stylex-part="standalone-signup-fields"
                   >
-                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
-                      <label
-                        className={standardPasswordSignup ? labelClassName : undefined}
-                        htmlFor="loginId"
-                      >
+                    <dt className={labelTermClassName}>
+                      <label className={labelClassName} htmlFor="loginId">
                         {t("user.signupId")}
                       </label>
                     </dt>
-                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
+                    <dd className={labelDefinitionClassName}>
                       <input
                         id="loginId"
                         ref={loginIdRef}
                         type="text"
                         name="loginId"
-                        className={standardPasswordSignup ? textInputClassName : "text password"}
-                        data-stylex-part={
-                          standardPasswordSignup ? "standalone-signup-login-id" : undefined
-                        }
+                        className={textInputClassName}
+                        data-stylex-part="standalone-signup-login-id"
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleLoginIdBlur}
@@ -375,52 +365,41 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover
                         containerRef={formWrapRef}
                         message={fieldErrors.loginId}
-                        standardPasswordSignup={standardPasswordSignup}
                         targetRef={loginIdRef}
                         validationFor="loginId"
                       />
                     </dd>
 
-                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
-                      <label
-                        className={standardPasswordSignup ? labelClassName : undefined}
-                        htmlFor="uname"
-                      >
+                    <dt className={labelTermClassName}>
+                      <label className={labelClassName} htmlFor="uname">
                         {t("user.name")}
                       </label>
                     </dt>
-                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
+                    <dd className={labelDefinitionClassName}>
                       <input
                         id="uname"
                         type="text"
                         name="name"
-                        className={standardPasswordSignup ? textInputClassName : "text password"}
-                        data-stylex-part={
-                          standardPasswordSignup ? "standalone-signup-name" : undefined
-                        }
+                        className={textInputClassName}
+                        data-stylex-part="standalone-signup-name"
                         placeholder=""
                         autoComplete="off"
                       />
                     </dd>
 
-                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
-                      <label
-                        className={standardPasswordSignup ? labelClassName : undefined}
-                        htmlFor="email"
-                      >
+                    <dt className={labelTermClassName}>
+                      <label className={labelClassName} htmlFor="email">
                         {t("user.email")}
                       </label>
                     </dt>
-                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
+                    <dd className={labelDefinitionClassName}>
                       <input
                         id="email"
                         ref={emailRef}
                         type="text"
                         name="email"
-                        className={standardPasswordSignup ? textInputClassName : "text password"}
-                        data-stylex-part={
-                          standardPasswordSignup ? "standalone-signup-email" : undefined
-                        }
+                        className={textInputClassName}
+                        data-stylex-part="standalone-signup-email"
                         placeholder=""
                         autoComplete="off"
                         onBlur={handleEmailBlur}
@@ -428,32 +407,24 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover
                         containerRef={formWrapRef}
                         message={fieldErrors.email}
-                        standardPasswordSignup={standardPasswordSignup}
                         targetRef={emailRef}
                         validationFor="email"
                       />
                     </dd>
 
-                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
-                      <label
-                        className={standardPasswordSignup ? labelClassName : undefined}
-                        htmlFor="password"
-                      >
+                    <dt className={labelTermClassName}>
+                      <label className={labelClassName} htmlFor="password">
                         {t("user.password")}
                       </label>
                     </dt>
-                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
+                    <dd className={labelDefinitionClassName}>
                       <input
                         id="password"
                         ref={passwordRef}
                         type="password"
                         name="password"
-                        className={
-                          standardPasswordSignup ? passwordTextInputClassName : "text password"
-                        }
-                        data-stylex-part={
-                          standardPasswordSignup ? "standalone-signup-password" : undefined
-                        }
+                        className={passwordTextInputClassName}
+                        data-stylex-part="standalone-signup-password"
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handlePasswordKeyUp}
@@ -461,32 +432,24 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover
                         containerRef={formWrapRef}
                         message={fieldErrors.password}
-                        standardPasswordSignup={standardPasswordSignup}
                         targetRef={passwordRef}
                         validationFor="password"
                       />
                     </dd>
 
-                    <dt className={standardPasswordSignup ? labelTermClassName : undefined}>
-                      <label
-                        className={standardPasswordSignup ? labelClassName : undefined}
-                        htmlFor="retypedPassword"
-                      >
+                    <dt className={labelTermClassName}>
+                      <label className={labelClassName} htmlFor="retypedPassword">
                         {t("validation.retypePassword")}
                       </label>
                     </dt>
-                    <dd className={standardPasswordSignup ? labelDefinitionClassName : undefined}>
+                    <dd className={labelDefinitionClassName}>
                       <input
                         id="retypedPassword"
                         ref={retypedPasswordRef}
                         type="password"
                         name="retypedPassword"
-                        className={
-                          standardPasswordSignup ? passwordTextInputClassName : "text password"
-                        }
-                        data-stylex-part={
-                          standardPasswordSignup ? "standalone-signup-retyped-password" : undefined
-                        }
+                        className={passwordTextInputClassName}
+                        data-stylex-part="standalone-signup-retyped-password"
                         placeholder=""
                         autoComplete="off"
                         onKeyUp={handleRetypedPasswordKeyUp}
@@ -494,7 +457,6 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <FieldPopover
                         containerRef={formWrapRef}
                         message={fieldErrors.retypedPassword}
-                        standardPasswordSignup={standardPasswordSignup}
                         targetRef={retypedPasswordRef}
                         validationFor="retypedPassword"
                       />
@@ -503,23 +465,13 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
                   {submitError ? <div className="error-message">{submitError}</div> : null}
                   <div
-                    className={
-                      standardPasswordSignup ? `btns-row ${buttonRowClassName}` : "btns-row"
-                    }
-                    data-stylex-part={
-                      standardPasswordSignup ? "standalone-signup-submit-row" : undefined
-                    }
+                    className={`btns-row ${buttonRowClassName}`}
+                    data-stylex-part="standalone-signup-submit-row"
                   >
                     <button
                       type="submit"
-                      className={
-                        standardPasswordSignup
-                          ? `ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`
-                          : "ybtn ybtn-primary ybtn-large ybtn-fullsize"
-                      }
-                      data-stylex-part={
-                        standardPasswordSignup ? "standalone-signup-submit" : undefined
-                      }
+                      className={`ybtn ybtn-primary ybtn-large ybtn-fullsize ${submitClassName}`}
+                      data-stylex-part="standalone-signup-submit"
                       disabled={registerMutation.isPending}
                     >
                       {t("user.signupBtn")}
@@ -527,18 +479,11 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                   </div>
 
                   <div
-                    className={standardPasswordSignup ? `act-row ${actionRowClassName}` : "act-row"}
-                    data-stylex-part={
-                      standardPasswordSignup ? "standalone-signup-actions" : undefined
-                    }
+                    className={`act-row ${actionRowClassName}`}
+                    data-stylex-part="standalone-signup-actions"
                   >
                     {t("user.isAlreadySignupUser")}{" "}
-                    <Link
-                      to="/users/loginform"
-                      className={
-                        standardPasswordSignup ? `go-login ${loginLinkClassName}` : "go-login"
-                      }
-                    >
+                    <Link to="/users/loginform" className={`go-login ${loginLinkClassName}`}>
                       {t("title.login")}
                     </Link>
                   </div>
@@ -706,13 +651,11 @@ async function readLegacyExistence(runtimeConfig: RuntimeConfig, path: string) {
 function FieldPopover({
   containerRef,
   message,
-  standardPasswordSignup,
   targetRef,
   validationFor,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>;
   message?: string;
-  standardPasswordSignup: boolean;
   targetRef: React.RefObject<HTMLInputElement | null>;
   validationFor: SignupField;
 }) {
@@ -720,7 +663,7 @@ function FieldPopover({
   const [position, setPosition] = React.useState({ left: "0px", top: "0px" });
 
   React.useLayoutEffect(() => {
-    if (!message || !standardPasswordSignup) {
+    if (!message) {
       return;
     }
 
@@ -741,17 +684,9 @@ function FieldPopover({
     };
 
     updatePosition();
-  }, [containerRef, message, standardPasswordSignup, targetRef]);
+  }, [containerRef, message, targetRef]);
 
   if (!message) return null;
-  if (!standardPasswordSignup) {
-    return (
-      <div className="popover left in">
-        <div className="arrow"></div>
-        <div className="popover-content">{message}</div>
-      </div>
-    );
-  }
 
   return (
     <div

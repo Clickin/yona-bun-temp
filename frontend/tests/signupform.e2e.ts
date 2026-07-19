@@ -177,17 +177,74 @@ test("signup confirmation and social-only branches preserve legacy visible copy 
     "If needed, please contact moc.elpmaxe@nimda",
   ]);
   expect(
-    await routeRoot
-      .locator(":scope > *")
-      .evaluateAll((elements) => elements.map((element) => element.className)),
+    await routeRoot.locator(":scope > *").evaluateAll((elements) =>
+      elements.map((element) =>
+        Array.from(element.classList)
+          .filter((className) => !className.startsWith("x") && !className.includes("__styles."))
+          .join(" "),
+      ),
+    ),
   ).toEqual(["center-wrap tag-line-wrap signup", "center-txt", "signup-form-wrap frm-wrap"]);
+  for (const owner of [
+    "standalone-signup-form",
+    "standalone-signup-tagline",
+    "standalone-signup-title",
+    "standalone-signup-confirmation-notice",
+    "standalone-signup-form-wrap",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toBeVisible();
+  }
+  expect(
+    await routeRoot
+      .locator("input")
+      .evaluateAll((inputs) =>
+        inputs.every(
+          (input) => !input.classList.contains("text") && !input.classList.contains("password"),
+        ),
+      ),
+  ).toBe(true);
+  await routeRoot.locator("button[type='submit']").click();
+  await expect(
+    routeRoot.locator('[data-stylex-owner="standalone-signup-validation-popover"]'),
+  ).toHaveCount(4);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const confirmationMobile = await readSignupMetrics(page);
+  expectBox(confirmationMobile.form, { height: 484, width: 370.5, x: 9.75, y: 232 });
+  expectBox(confirmationMobile.loginId, { height: 36, width: 160.19, x: 220.06, y: 259 });
+  expect(confirmationMobile.form.right).toBeLessThanOrEqual(
+    confirmationMobile.viewport.scrollWidth,
+  );
 
   await page.unroute("**/api/v1/auth/capabilities");
   await mockCapabilities(page, { socialLoginOnly: true });
   await page.reload();
-  await expect(page.locator(".signup-form-wrap form > .btns-row.nm")).toHaveText(
-    "Only allow sign-in via social login",
+  const socialOnlyNotice = page.locator(
+    '[data-stylex-owner="standalone-signup-social-only-notice"]',
   );
+  await expect(socialOnlyNotice).toHaveText("Only allow sign-in via social login");
+  await expect(socialOnlyNotice).toHaveCSS("display", "block");
+  await expect(socialOnlyNotice).toHaveCSS("margin", "0px");
+  await expect(socialOnlyNotice).toHaveCSS("text-align", "center");
+  const socialBoxes = await page.evaluate(() => {
+    const form = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="standalone-signup-form-wrap"]',
+    );
+    const notice = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="standalone-signup-social-only-notice"]',
+    );
+    if (!form || !notice) throw new Error("Missing social-only signup owners");
+    const formBox = form.getBoundingClientRect();
+    const noticeBox = notice.getBoundingClientRect();
+    return {
+      formWidth: formBox.width,
+      noticeContained: noticeBox.left >= formBox.left && noticeBox.right <= formBox.right,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+  expect(socialBoxes.formWidth).toBeCloseTo(370.5, 1);
+  expect(socialBoxes.noticeContained).toBe(true);
+  expect(socialBoxes.scrollWidth).toBe(390);
   await expect(page.locator(".signup-form-wrap input")).toHaveCount(0);
   await expect(page.locator(".signup-form-wrap button[type='submit']")).toHaveCount(0);
 });
