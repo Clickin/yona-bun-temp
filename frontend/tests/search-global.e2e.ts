@@ -547,6 +547,78 @@ test("global project search renders legacy partial_projects.scala.html populated
   );
 });
 
+test("global search residual StyleX owners preserve populated, empty, and category navigation geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockGlobalSearch(page);
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/search?keyword=sample&searchType=project`);
+    await expect(page.locator('[data-stylex-owner="global-search-category-item"]')).toHaveCount(8);
+    await expect(page.locator('[data-stylex-owner="global-search-avatar"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="global-search-content"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="global-search-meta"]')).toHaveCount(2);
+    await expect(page.locator('[data-stylex-owner="global-search-keyword"]')).toHaveCount(2);
+
+    const metrics = await page.evaluate(() => {
+      const avatar = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="global-search-avatar"]',
+      );
+      const content = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="global-search-content"]',
+      );
+      const item = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="global-search-result-item"]',
+      );
+      const meta = document.querySelector<HTMLElement>('[data-stylex-owner="global-search-meta"]');
+      if (!avatar || !content || !item || !meta) throw new Error("missing residual owners");
+      const avatarBox = avatar.getBoundingClientRect();
+      const itemBox = item.getBoundingClientRect();
+      return {
+        avatarHeight: getComputedStyle(avatar).height,
+        avatarInsideItem: avatarBox.top >= itemBox.top && avatarBox.bottom <= itemBox.bottom,
+        contentDisplay: getComputedStyle(content).display,
+        metaColor: getComputedStyle(meta).color,
+        noOverflow: document.documentElement.scrollWidth === innerWidth,
+      };
+    });
+    expect(metrics).toEqual({
+      avatarHeight: "40px",
+      avatarInsideItem: true,
+      contentDisplay: "block",
+      metaColor: "rgb(153, 153, 153)",
+      noOverflow: true,
+    });
+
+    await page.locator('[data-stylex-owner="global-search-category-item"] a').first().click();
+    await expect(page).toHaveURL(`${basePath}/search?keyword=sample&searchType=issue`);
+    const emptyResult = page.locator('[data-stylex-owner="global-search-empty-result"]');
+    await expect(emptyResult).toBeVisible();
+    expect(
+      await emptyResult.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          backgroundImage: style.backgroundImage,
+          minHeight: style.minHeight,
+          paddingLeft: style.paddingLeft,
+          textAlign: style.textAlign,
+        };
+      }),
+    ).toEqual({
+      backgroundImage: expect.stringContaining("no_contents.jpg"),
+      minHeight: "250px",
+      paddingLeft: "20px",
+      textAlign: "center",
+    });
+    await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
+  }
+});
+
 test("global search result navigation keeps legacy hrefs through TanStack Router Link", async ({
   page,
 }) => {

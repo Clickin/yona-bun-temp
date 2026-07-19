@@ -227,10 +227,21 @@ function GlobalSearchSuccessBody({
                       <li
                         className={`${category.type === activeType ? "active" : ""} ${
                           count === 0 ? "empty" : ""
+                        } ${
+                          stylex.props(
+                            styles.categoryItem,
+                            category.type === activeType && styles.categoryItemActive,
+                          ).className
                         }`}
+                        data-stylex-owner="global-search-category-item"
                         key={category.type}
                       >
                         <Link
+                          {...stylex.props(
+                            styles.categoryLink,
+                            category.type === activeType && styles.categoryLinkActive,
+                            count === 0 && styles.categoryLinkEmpty,
+                          )}
                           to="/search"
                           search={{
                             keyword: keywordValue,
@@ -240,7 +251,16 @@ function GlobalSearchSuccessBody({
                           activeProps={legacySearchPaginationLinkActiveProps}
                         >
                           {t(category.labelKey)}{" "}
-                          <span className="num-badge pull-right">{count}</span>
+                          <span
+                            className={`num-badge pull-right ${
+                              stylex.props(
+                                styles.categoryBadge,
+                                category.type === activeType && styles.categoryBadgeActive,
+                              ).className
+                            }`}
+                          >
+                            {count}
+                          </span>
                         </Link>
                       </li>
                     );
@@ -308,7 +328,12 @@ function GlobalSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
-    return <div className="empty-result"></div>;
+    return (
+      <div
+        className={`empty-result ${stylex.props(styles.emptyResult).className}`}
+        data-stylex-owner="global-search-empty-result"
+      ></div>
+    );
   }
 
   if (searchType === "project") {
@@ -339,7 +364,8 @@ function GlobalSearchResultList({
               <Link
                 to={projectLink.to}
                 hash={projectLink.hash || undefined}
-                className="avatar-wrap"
+                className={`avatar-wrap ${stylex.props(styles.avatar).className}`}
+                data-stylex-owner="global-search-avatar"
               >
                 <GlobalSearchProjectLogoImage
                   src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
@@ -352,7 +378,7 @@ function GlobalSearchResultList({
                 <Link
                   to={projectLink.to}
                   hash={projectLink.hash || undefined}
-                  className="title project-link"
+                  className={`title project-link ${stylex.props(styles.projectLink).className}`}
                 >
                   <GlobalSearchHighlightedText
                     text={`${item.ownerName}/${item.projectName}`}
@@ -361,7 +387,10 @@ function GlobalSearchResultList({
                 </Link>
               </div>
               {originProjectLink ? (
-                <div className="search-meta-info nm np">
+                <div
+                  className={`search-meta-info nm np ${stylex.props(styles.meta, styles.metaNoPadding).className}`}
+                  data-stylex-owner="global-search-meta"
+                >
                   <span>
                     <i className="yobicon-split yobicon-white vmiddle"></i> {t("fork.original")}
                   </span>
@@ -369,28 +398,34 @@ function GlobalSearchResultList({
                     <Link
                       to={originProjectLink.to}
                       hash={originProjectLink.hash || undefined}
-                      className="project-link"
+                      className={`project-link ${stylex.props(styles.projectLink).className}`}
                     >
                       {item.originOwnerName}/{item.originProjectName}
                     </Link>
                   </span>
                 </div>
               ) : null}
-              <div className="search-content np">
-                <p className="search-content-body">
+              <div
+                className={`search-content np ${stylex.props(styles.content, styles.contentNoPadding).className}`}
+                data-stylex-owner="global-search-content"
+              >
+                <p className={`search-content-body ${stylex.props(styles.contentBody).className}`}>
                   <GlobalSearchHighlightedText
                     text={item.snippets[0]?.text ?? ""}
                     keyword={result.keyword}
                   />
                 </p>
               </div>
-              <div className="search-meta-info np">
-                <span className="meta-info">
+              <div
+                className={`search-meta-info np ${stylex.props(styles.meta, styles.metaNoPadding).className}`}
+                data-stylex-owner="global-search-meta"
+              >
+                <span className={`meta-info ${stylex.props(styles.metaItem).className}`}>
                   {t("project.create")}{" "}
                   <strong title={item.createdLabel}>{item.createdLabel}</strong>
                 </span>
                 {item.updatedLabel ? (
-                  <span className="meta-info">
+                  <span className={`meta-info ${stylex.props(styles.metaItem).className}`}>
                     {t("project.codeUpdate")}{" "}
                     <strong title={item.updatedLabel}>{item.updatedLabel}</strong>
                   </span>
@@ -422,14 +457,21 @@ function GlobalSearchResultList({
                 <RouterLink
                   to={userLink.to}
                   hash={userLink.hash || undefined}
-                  className="avatar-wrap"
+                  className={`avatar-wrap ${stylex.props(styles.avatar).className}`}
+                  data-stylex-owner="global-search-avatar"
                   title={item.authorLoginId}
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img src={item.avatarUrl} />
+                    <img {...stylex.props(styles.avatarImage)} src={item.avatarUrl} />
                   ) : (
-                    <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                    <img
+                      {...stylex.props(styles.avatarImage)}
+                      src={item.avatarUrl || ""}
+                      alt={item.authorLabel}
+                      width="32"
+                      height="32"
+                    />
                   )}
                 </RouterLink>
                 <div
@@ -439,7 +481,7 @@ function GlobalSearchResultList({
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
-                    className="title user-link"
+                    className={`title user-link ${stylex.props(styles.userLink).className}`}
                   >
                     <GlobalSearchHighlightedText
                       text={`${item.authorLabel} (@${item.authorLoginId})`}
@@ -491,7 +533,7 @@ function GlobalSearchResultList({
               searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
-                className="search-content-body"
+                className={`search-content-body ${stylex.props(styles.contentBody).className}`}
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <GlobalSearchHighlightedText text={snippet.text} keyword={result.keyword} />
@@ -530,7 +572,10 @@ function GlobalSearchResultList({
                     </Link>
                   </div>
                 ) : null}
-                <div className="search-content">
+                <div
+                  className={`search-content ${stylex.props(styles.content).className}`}
+                  data-stylex-owner="global-search-content"
+                >
                   {reviewThreadOnPullRequest ? (
                     snippets
                   ) : (
@@ -539,11 +584,14 @@ function GlobalSearchResultList({
                     </Link>
                   )}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`search-meta-info ${stylex.props(styles.meta).className}`}
+                  data-stylex-owner="global-search-meta"
+                >
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className="project-link meta-item"
+                    className={`project-link meta-item ${stylex.props(styles.projectLink, styles.metaItem).className}`}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
@@ -551,17 +599,20 @@ function GlobalSearchResultList({
                     <RouterLink
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
-                      className="meta-item"
+                      className={`meta-item ${stylex.props(styles.metaItem).className}`}
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
                     </RouterLink>
                   ) : (
-                    <span className="meta-item">
+                    <span className={`meta-item ${stylex.props(styles.metaItem).className}`}>
                       {t(globalSearchNoAuthorMessageKey(searchType))}
                     </span>
                   )}
-                  <span className="meta-item" title={item.createdLabel}>
+                  <span
+                    className={`meta-item ${stylex.props(styles.metaItem).className}`}
+                    title={item.createdLabel}
+                  >
                     {item.createdLabel}
                   </span>
                 </div>
@@ -607,10 +658,13 @@ function GlobalSearchResultList({
                     <GlobalSearchHighlightedText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
-                <div className="search-content">
+                <div
+                  className={`search-content ${stylex.props(styles.content).className}`}
+                  data-stylex-owner="global-search-content"
+                >
                   {item.snippets.map((snippet) => (
                     <p
-                      className="search-content-body"
+                      className={`search-content-body ${stylex.props(styles.contentBody).className}`}
                       key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                     >
                       <GlobalSearchHighlightedText text={snippet.text} keyword={result.keyword} />
@@ -618,16 +672,21 @@ function GlobalSearchResultList({
                     </p>
                   ))}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`search-meta-info ${stylex.props(styles.meta).className}`}
+                  data-stylex-owner="global-search-meta"
+                >
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className="project-link meta-item"
+                    className={`project-link meta-item ${stylex.props(styles.projectLink, styles.metaItem).className}`}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
                   {item.updatedLabel ? (
-                    <span className="due-date meta-item">
+                    <span
+                      className={`due-date meta-item ${stylex.props(styles.metaItem).className}`}
+                    >
                       {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
                       {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
                     </span>
@@ -642,7 +701,12 @@ function GlobalSearchResultList({
     );
   }
 
-  return <div className="empty-result"></div>;
+  return (
+    <div
+      className={`empty-result ${stylex.props(styles.emptyResult).className}`}
+      data-stylex-owner="global-search-empty-result"
+    ></div>
+  );
 }
 
 function GlobalSearchPagination({ result }: { result: SearchResponse }) {
@@ -784,7 +848,7 @@ function renderGlobalSearchResultTitle(message: string): ReactNode {
   return (
     <>
       {match[1]}
-      <strong>{match[2]}</strong>
+      <strong {...stylex.props(styles.resultHeadingAccent)}>{match[2]}</strong>
       {match[3]}
     </>
   );
@@ -815,7 +879,11 @@ function GlobalSearchHighlightedText({ keyword, text }: { keyword: string; text:
       nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
     }
     nodes.push(
-      <strong className="keyword" key={`keyword-${start}`}>
+      <strong
+        className={`keyword ${stylex.props(styles.keyword).className}`}
+        data-stylex-owner="global-search-keyword"
+        key={`keyword-${start}`}
+      >
         {matchText}
       </strong>,
     );
@@ -842,7 +910,7 @@ function globalSearchInternalLinkTarget(href: string, runtimeConfig: RuntimeConf
 
 function GlobalSearchProjectLogoImage({ src }: { src: string }) {
   /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
-  return <img src={src} />;
+  return <img {...stylex.props(styles.avatarImage)} src={src} />;
 }
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {
