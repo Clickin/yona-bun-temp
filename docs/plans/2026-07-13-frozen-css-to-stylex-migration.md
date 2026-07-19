@@ -4070,3 +4070,16 @@ fallback. The focused global-search contract records observed RED then exact abs
 normal/fallback-off visible global-search output proves only the generated-asset boundary.
 Global fallback discovery remains incomplete/non-green, so this is not a generated-fallback
 unlinking or live-legacy visual-parity claim.
+
+Batch 558 retires only the stale `.secret-page` selector branches from the active secret/restart
+fallback groups: `.secret-page .secret-box`, `.secret-page .secret-wrap`,
+`.secret-page .secret-wrap.restart`, `.secret-page .logo`, and `.secret-page .logo:hover`.
+Frozen `welcome/secret.scala.html:40-47` and `welcome/restart.scala.html:40-47` establish the
+standalone `.secret-wrap`, `.secret-box`, and `.logo` output and inline declarations; neither
+template emits `secret-page`, and restart does not emit the `.restart` modifier. Current React
+`/secret` and `/restart` retain only those live classes with route-local StyleX paint/geometry.
+Delete the dead branch selectors without changing the shared active declaration blocks, and retain
+the restart `:has(.secret-box.txt-center)` fallback. The focused static contract records RED then
+absence GREEN; normal/fallback-off `/secret` output proves its existing StyleX owner and the
+generated-asset boundary. Global fallback discovery remains incomplete/non-green, so this is not
+a generated-fallback unlinking or live-legacy visual-parity claim.

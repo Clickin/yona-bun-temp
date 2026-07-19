@@ -114,6 +114,26 @@ test("runtime-error-banner fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".runtime-error-banner");
 });
 
+test("secret-page fallback selector branches have no React emitter", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".secret-page .secret-box",
+    ".secret-page .secret-wrap",
+    ".secret-page .logo",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+
+  for (const retainedSelector of [
+    ".secret-box {",
+    ".secret-wrap {",
+    ".secret-wrap .logo {",
+    ".page-wrap-outer:has(.secret-box.txt-center) .secret-wrap",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+});
+
 test("code and diff fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [
@@ -164,6 +184,15 @@ async function mockMassMailSession(page: Page) {
   );
   await page.route("**/api/v1/projects", (route) =>
     route.fulfill({ json: { projects: [{ ownerName: "admin", projectName: "projectYobi" }] } }),
+  );
+}
+
+async function mockSecretSetup(page: Page) {
+  await page.route("**/api/v1/auth/capabilities", (route) =>
+    route.fulfill({ json: { secretSetupRequired: true } }),
+  );
+  await page.route("**/api/v1/session", (route) =>
+    route.fulfill({ json: { isAnonymous: true } }),
   );
 }
 
@@ -727,6 +756,28 @@ test("notifications output retains the runtime fallback boundary without its dea
     list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);
   await expect(page.locator(".notification-page, .activity-streams")).toHaveCount(0);
+});
+
+test("secret setup output retains active fallback classes without secret-page branches", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockSecretSetup(page);
+  await page.goto(`${basePath}/secret`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const owner = page.locator('[data-stylex-owner="secret-setup"]');
+  await expect(owner).toBeVisible();
+  await expect(owner).toHaveClass(/\bsecret-wrap\b/u);
+  await expect(owner.locator('[data-stylex-part="secret-setup-logo"]')).toHaveText("Yoram");
+  await expect(owner.locator('[data-stylex-part="secret-setup-box"]')).toBeVisible();
+  await expect(owner.locator(".secret-box, .logo")).toHaveCount(2);
+  await expect(page.locator(".secret-page")).toHaveCount(0);
 });
 
 test("global search output retains the runtime fallback boundary without the dead search-layout bridge", async ({

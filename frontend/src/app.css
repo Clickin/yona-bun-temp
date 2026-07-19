@@ -406,27 +406,20 @@ select:focus {
   background-color: #e95e01;
 }
 
-.secret-box,
-.secret-page .secret-box {
+.secret-box {
   width: 50vw;
   margin: 20px auto;
 }
 
-.secret-wrap,
-.secret-page .secret-wrap {
+.secret-wrap {
   text-align: center;
-}
-
-.secret-page .secret-wrap.restart {
-  padding: 50px 0;
 }
 
 .page-wrap-outer:has(.secret-box.txt-center) .secret-wrap {
   padding: 50px 0;
 }
 
-.secret-wrap .logo,
-.secret-page .logo {
+.secret-wrap .logo {
   display: block;
   width: 123px;
   height: 55px;
@@ -439,8 +432,7 @@ select:focus {
   background-color: #f36c22;
 }
 
-.secret-wrap .logo:hover,
-.secret-page .logo:hover {
+.secret-wrap .logo:hover {
   color: #fff;
 }
 
