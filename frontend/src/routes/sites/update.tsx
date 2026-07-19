@@ -14,6 +14,31 @@ const legacySiteSidebarLinkProps = {
 };
 const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 const styles = stylex.create({
+  page: {
+    marginTop: "10px",
+    minHeight: "450px",
+    "@media all and (max-width: 720px)": {
+      boxSizing: "border-box",
+      minWidth: "10px",
+      padding: "0px",
+      width: "100%",
+    },
+  },
+  content: { margin: "0px auto" },
+  sidebarColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0px",
+    minHeight: "30px",
+    width: {
+      default: "14.893617021276595%",
+      "@media (min-width: 1200px)": "14.52991452991453%",
+      "@media (min-width: 768px) and (max-width: 979px)": "14.3646408839779%",
+      "@media (max-width: 767px)": "100%",
+    },
+    "@media (max-width: 767px)": { float: "none" },
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -180,10 +205,10 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer">
-        <div className="site-setting-wrap">
+      <div {...stylex.props(styles.page)} data-stylex-owner="site-update-page">
+        <div {...stylex.props(styles.content)} data-stylex-owner="site-update-content">
           <div className="row-fluid">
-            <div className="span2">
+            <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-update-sidebar-column">
               <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
             </div>
             <div className="span10">

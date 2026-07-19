@@ -1990,6 +1990,14 @@ and diagnostic bodies remain separate owners. Focused normal and fallback-off de
 checks cover the source-equivalent grid ratios, title visibility, and containment. This is not
 Wave 1 completion.
 
+The update page/settings/sidebar shell now has three route-local StyleX owners across available,
+current, and error states. Frozen page minimum-height/top spacing, settings margin, responsive
+page containment, and Bootstrap span2 desktop/tablet/mobile geometry are owned directly by
+StyleX; only `page-wrap-outer`, `site-setting-wrap`, and `span2` retire on `/sites/update`.
+`row-fluid`, `span10`, state leaves, and the shared shell remain separate fallback boundaries.
+Focused normal and fallback-off checks cover the exact source breakpoint values, 1366px frame,
+and 390px stacked containment. This is not Wave 1 completion.
+
 The ninety-first slice migrates the warning surface of `/sites/data` from
 `site/data.scala.html`, `_page.less`, and `_mixins.less`. StyleX owns only the exact inline-block
 warning wrapper and notice text color through global theme variables; title, export/import
