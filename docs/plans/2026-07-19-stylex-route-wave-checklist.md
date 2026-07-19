@@ -25,8 +25,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | SEARCH-01, SEARCH-05, HELP-01 | global/project search residual + help TOC | 독립 3-worker batch; 이후 SEARCH-04 audit |
-| 2 | HELP-02..03, AUTH-01..04 | markdown과 auth form의 route-local owners | 독립 3-worker batches |
+| 1 | HELP-03, AUTH-01, AUTH-02 | markdown content + login/signup forms | 독립 3-worker batch |
+| 2 | AUTH-03..05, USER-02 | standalone auth와 user settings shell | 독립 3-worker batches |
 | 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
 | 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
 | 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
@@ -43,14 +43,14 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 | HOME-01 | `/`: anonymous intro; authenticated dashboard; project/org/recent lists; flashes | `index/index.scala.html`, `partial_intro`, `sidebar`, `myProjectList*`, `allProjectList*`, `allOrganizationList*`, `myRecentIssueList*` | DEPENDENCY | L----- |
 | HOME-02 | `/notifications`, `/notification`: empty/populated/expanded notification states | `index/notifications.scala.html`, `partial_notifications.scala.html` | DEPENDENCY | L----- |
 | ROOT-01 | global navbar/usermenu/sidebar; anonymous/authenticated; login dialog/error | `common/navbar.scala.html`, `usermenu*.scala.html`, `loginDialog.scala.html`, site layout | DEPENDENCY | L----- |
-| HELP-01 | `/_help`: TOC/FAQ closed/open and sprite states | `help/toc.scala.html` | READY | L----- |
-| HELP-02 | shared markdown help navigation active/inactive | `help/markdown.scala.html` | READY | L----- |
+| HELP-01 | `/_help`: TOC/FAQ closed/open and sprite states | `help/toc.scala.html` | COMPLETE | LOECR✓ |
+| HELP-02 | shared markdown help navigation active/inactive | `help/markdown.scala.html` | DEPENDENCY | LOE--- |
 | HELP-03 | markdown pane/table/code/task-list responsive states | `help/markdown.scala.html`; `_markdown.less`, `_responsive.less` | DEPENDENCY | L----- |
-| SEARCH-01 | `/search`: residual category/avatar/content/body/meta/link/empty/error states | `search/result.scala.html`, `partial_search` and all result partials | NEXT | LOE--- |
+| SEARCH-01 | `/search`: residual category/avatar/content/body/meta/link/empty/error states | `search/result.scala.html`, `partial_search` and all result partials | DEPENDENCY | LOE--- |
 | SEARCH-02 | `-search-screen`: dead `LegacySearchBody` removed; imported error bodies/predicates retained | same search templates | COMPLETE | L--CR✓ |
 | SEARCH-03 | `/organizations/$organizationName/search`: categories, populated result types, empty | search templates and organization result partials | DEPENDENCY | LOE--- |
-| SEARCH-04 | exact global/project/org consumer audit; retire only search-scoped `app.css` declarations | `_page.less:6375-6505`; generated frozen Yobi remains whole-module fallback | DEPENDENCY | ------ |
-| SEARCH-05 | project search residual input/avatar/title/content/body/meta/link states | project search template and result partials | NEXT | LOE--- |
+| SEARCH-04 | no safe retirement: bridge-only flex/reset/spacing, legacy DOM classes, and empty image/geometry remain | `_page.less:6375-6505`; generated frozen Yobi remains whole-module fallback | DEPENDENCY | ---C-- |
+| SEARCH-05 | project search residual input/avatar/title/content/body/meta/link states | project search template and result partials | DEPENDENCY | LOE--- |
 | DIR-01 | `/projects`: populated/empty/filter/pagination/fork/member states | `project/list.scala.html` | DEPENDENCY | L----- |
 | DIR-02 | `/orgs`: populated/empty/filter/pagination | `organization/list.scala.html` | DEPENDENCY | L----- |
 | CREATE-01 | `/projectform`: owner/scope/VCS/options/validation | `project/create.scala.html`, `common/select2.scala.html` | DEPENDENCY | L----- |
@@ -166,6 +166,9 @@ shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
 - D1 organization setting top box
 - SEARCH-02 dead shared renderer and its private subtree
 - SEARCH-03 organization category/result-title/item-avatar/title/content-meta/empty owners; C/R waits for SEARCH-01/05
+- SEARCH-01/05 global and project residual search owners; SEARCH-04 audit found no declaration-safe bridge retirement
+- HELP-01 FAQ owner family, including corrected static → dynamic → conditional sprite composition
+- HELP-02 markdown navigation active/inactive owners; pane/content remains HELP-03
 - B2 requested PR selectors: `INVALID`; cited LESS was unrelated posting-history diff CSS and must not count as completion
 
 ## Dead residual cleanup
