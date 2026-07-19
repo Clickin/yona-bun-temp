@@ -11,6 +11,8 @@ const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violatio
 const STYLEX_LEDGER_FILE = "docs/provenance/frontend-stylex-migration-ledger.md";
 const STYLEX_PLAN_FILE = "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md";
 const FALLBACK_OFF_E2E_FILE = "frontend/tests/legacy-fallback-off.e2e.ts";
+const FALLBACK_OFF_REPORT_PATTERN =
+  /^docs\/provenance\/ui-parity-reports\/fallback-off-.+\.md$/u;
 const FROZEN_LEGACY_STYLE_PATTERN = /^yona-original\/.*\.(?:css|less)$/u;
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
@@ -73,7 +75,8 @@ function isFormalFallbackRetirementBatch(changedFiles, frontendE2EFiles) {
   return (
     changesRuntimeAsset &&
     requiredFiles.every((file) => changedFiles.includes(file)) &&
-    frontendE2EFiles.includes(FALLBACK_OFF_E2E_FILE)
+    frontendE2EFiles.includes(FALLBACK_OFF_E2E_FILE) &&
+    changedFiles.some((file) => FALLBACK_OFF_REPORT_PATTERN.test(file))
   );
 }
 
@@ -301,7 +304,7 @@ export function evaluateScalaHtmlGoalGuard({
       frontendEvidenceFiles,
       frontendImplementationFiles,
       message:
-        "Scala HTML goal guard blocked evidence-only frontend work. Frontend E2E/CSS/UI parity evidence changed without a TSX route implementation change. Rebuild the target screen from yona-original Scala HTML in the same change, or use the formal fallback-retirement batch (legacy-fallback-off E2E plus StyleX ledger and plan) for React-asset-only cleanup.",
+        "Scala HTML goal guard blocked evidence-only frontend work. Frontend E2E/CSS/UI parity evidence changed without a TSX route implementation change. Rebuild the target screen from yona-original Scala HTML in the same change, or use a formal fallback-retirement batch: React runtime asset, legacy-fallback-off E2E, dated fallback-off global-run report, StyleX ledger, and plan. Frozen yona-original CSS/LESS cannot be changed.",
     };
   }
 

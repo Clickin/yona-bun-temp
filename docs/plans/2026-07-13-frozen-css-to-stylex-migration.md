@@ -180,8 +180,10 @@ pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend test:e2e:fa
 
 `frontend/index.html` retains the default link. `frontend/vite.config.ts` removes only that link
 when `VITE_DISABLE_LEGACY_FALLBACK=1`; frozen Yona CSS/LESS is never modified, copied, or used as
-an editable input. The fallback-off E2E suite is intentionally global. Its failures form the
-retirement queue and must be classified before a fix:
+an editable input. This is intentionally destructive at the **React runtime asset** boundary:
+the fallback is unlinked for an entire global browser run, then each visible break is assigned to
+its real React owner. It is not permission for a global CSS rewrite or a source CSS/LESS edit.
+Its failures form the retirement queue and must be classified before a fix:
 
 1. a React-owned element can express the rule: migrate the exact frozen declaration into its
    colocated StyleX owner;
@@ -192,9 +194,19 @@ retirement queue and must be classified before a fix:
 No new catch-all stylesheet is permitted. A permanent fallback unlink requires a green global
 fallback-off run, declaration/consumer retirement proof in the ledger, and normal fallback-on
 regression gates. A formal fallback-retirement batch may contain CSS/E2E evidence without a
-fabricated route TSX edit only when it changes the runtime asset, this plan, the StyleX ledger, and
-`frontend/tests/legacy-fallback-off.e2e.ts`; the Scala-HTML guard enforces that shape and rejects
-every `yona-original/**/*.css` or `yona-original/**/*.less` mutation.
+fabricated route TSX edit only when it changes the React runtime asset, this plan, the StyleX
+ledger, `frontend/tests/legacy-fallback-off.e2e.ts`, and a dated
+`docs/provenance/ui-parity-reports/fallback-off-*.md` global-run report. The report records the
+exact command, default/fallback-off mode, desktop/mobile scope, failures or green result, and the
+owner/bridge/parity-defect classification for every visible failure. The Scala-HTML guard enforces
+that shape and rejects every `yona-original/**/*.css` or `yona-original/**/*.less` mutation.
+
+For each classified React owner, the next implementation batch is deliberately narrow: copy only
+the exact legacy declarations into colocated StyleX, preserve DOM/behavior, and run the focused
+fallback-off E2E once per assembled route/state wave. Global fallback-off runs occur at the
+discovery and retirement boundaries, not once per owner. A global/font/asset rule with no React
+owner may use the smallest reviewed bridge with exact frozen provenance; all other failures must
+be repaired in their owner rather than hidden by a new global override.
 
 ### 3.3 Precedence proof
 

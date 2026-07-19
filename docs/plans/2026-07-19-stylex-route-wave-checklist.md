@@ -25,9 +25,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | FALLBACK-OFF-01 | run one global fallback-off E2E discovery batch and classify all visible failures | Batch 532 runtime toggle; default fallback stays enabled |
-| 2 | StyleX owner / global bridge / parity defect | repair the classified failure in the owning lane | frozen `yona-original` CSS/LESS stays immutable |
-| 3 | C/R selector families | retire only after fallback-off + exact multi-route consumer proof | shared fallback retirement, not new screen ownership |
+| 1 | FALLBACK-OFF-01 | unlink only the React-served fallback asset, run global desktop/mobile E2E, and record a dated classification report | Batch 532 runtime toggle; default fallback stays enabled |
+| 2 | StyleX owner / global bridge / parity defect | repair the classified failure in the owning lane; use one focused fallback-off E2E per assembled 2–6-owner wave | frozen `yona-original` CSS/LESS stays immutable |
+| 3 | C/R selector families | retire only after a green global fallback-off run plus exact multi-route consumer proof | shared fallback retirement, not new screen ownership |
 | 4 | SITE-04 / ROOT-01 / PROJECT-01 | last-consumer lanes after all shared-family proof | no isolated route owner remains |
 
 ## Canonical screen checklist
