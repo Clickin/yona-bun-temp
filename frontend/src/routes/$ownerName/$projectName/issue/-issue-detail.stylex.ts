@@ -181,7 +181,14 @@ export const styles = stylex.create({
     display: "block",
     margin: "10px 20px",
   },
-  issueInfo: { padding: "15px 0 0 10px" },
+  // `_page.less` keeps the desktop metadata gutter at 52px and only narrows it
+  // at the frozen 720px responsive boundary.
+  issueInfo: {
+    padding: "15px 0 0 52px",
+    "@media all and (max-width: 720px)": {
+      padding: "15px 0 0 10px",
+    },
+  },
   boardFooter: {
     marginTop: "20px",
     fontSize: "0",

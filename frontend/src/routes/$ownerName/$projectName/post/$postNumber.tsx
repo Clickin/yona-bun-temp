@@ -357,8 +357,12 @@ function ProjectPostDetailBody({
           "/legacy-assets/javascripts/lib/elevator/jquery.elevator.css",
         )}
       />
-      <div data-stylex-owner="post-detail-shell">
-        <div {...sx.header} data-stylex-owner="post-detail-header">
+      <div className="project-page-wrap board-view" data-stylex-owner="post-detail-shell">
+        <div
+          {...sx.header}
+          className={`${sx.header.className} board-header issue`}
+          data-stylex-owner="post-detail-header"
+        >
           <div className="pull-right mr10 mt10 hide-in-mobile">
             <div className="date" title={post.createdLabel}>
               {legacyRelativeDateLabel(post.createdLabel, language)}
@@ -378,7 +382,11 @@ function ProjectPostDetailBody({
           </div>
         </div>
 
-        <div {...sx.body} data-stylex-owner="post-detail-body">
+        <div
+          {...sx.body}
+          className={`${sx.body.className} board-body row-fluid`}
+          data-stylex-owner="post-detail-body"
+        >
           <div className="span9 span-left-pane">
             <div
               className={`${sx.author.className} author-info`}
@@ -438,6 +446,7 @@ function ProjectPostDetailBody({
                   <TasklistBar />
                   <div
                     {...sx.content}
+                    className={`${sx.content.className} content markdown-wrap`}
                     data-stylex-owner="post-detail-content"
                     data-allowed-update={String(canUpdate)}
                   >
@@ -455,7 +464,11 @@ function ProjectPostDetailBody({
             >
               <AttachedFiles attachments={post.attachments} />
             </div>
-            <div {...sx.actions} data-stylex-owner="post-detail-actions">
+            <div
+              {...sx.actions}
+              className={`${sx.actions.className} board-actrow right-txt`}
+              data-stylex-owner="post-detail-actions"
+            >
               <div className="pull-left">
                 <div>
                   {canWatch ? (

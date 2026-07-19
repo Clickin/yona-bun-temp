@@ -213,6 +213,26 @@ test("project issue detail restores live Korean metadata controls and editor geo
   await expect.poll(() => massUpdateRequests.length).toBe(3);
 });
 
+test("project issue detail keeps the frozen desktop and mobile issue-info gutters", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssueDetail(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(page.locator(".span-right-pane .issue-info")).toHaveCSS(
+    "padding",
+    "15px 0px 0px 52px",
+  );
+
+  await page.setViewportSize({ width: 720, height: 900 });
+  await expect(page.locator(".span-right-pane .issue-info")).toHaveCSS(
+    "padding",
+    "15px 0px 0px 10px",
+  );
+});
+
 test("project issue detail matches legacy issue/view.scala.html voter state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page);
@@ -281,7 +301,7 @@ test("project issue detail matches legacy issue/view.scala.html voter state", as
     footerMarginTop: "20px",
     footerTextAlign: "right",
     headerMargin: "15px 0px",
-    issueInfoPadding: "15px 0px 0px 10px",
+    issueInfoPadding: "15px 0px 0px 52px",
     leftPaneWidth: 938,
     outerMarginTop: "10px",
     outerMinHeight: "450px",
