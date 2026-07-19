@@ -464,27 +464,6 @@ select:focus {
   color: #fff;
 }
 
-.app-shell {
-  width: 95%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px 0 60px;
-}
-
-.app-shell:has(> .project-header-outer),
-.app-shell:has(> .project-menu-outer),
-.app-shell.home-page,
-.app-shell.issue-list-page,
-.app-shell.issue-detail-page,
-.app-shell.issue-form-page,
-.app-shell.user-issue-list-page,
-.app-shell.board-page,
-.app-shell.pull-request-page {
-  width: 100%;
-  max-width: none;
-  padding: 0 0 60px;
-}
-
 .sidebar {
   position: sticky;
   top: 0;
@@ -2017,10 +1996,6 @@ h1 {
   margin-right: auto;
   margin-left: auto;
   background-color: #fff;
-}
-
-.app-shell.user-issue-list-page .page-wrap {
-  width: calc(100% - 20px);
 }
 
 .project-page-wrap {
@@ -5304,37 +5279,6 @@ div.markdown-preview {
 
   .issue-form-project-header {
     height: 120px;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-outer,
-  .app-shell:has(.issue-form-page-wrap) .project-menu-inner,
-  .app-shell:has(.issue-form-page-wrap) .project-menu-nav {
-    height: 39px;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-gruop {
-    float: left;
-    margin-left: 0;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-nav > li {
-    float: left;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-setting {
-    float: right;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-nav > li > a {
-    display: inline-block;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-nav .menu-name {
-    display: none;
-  }
-
-  .app-shell:has(.issue-form-page-wrap) .project-menu-nav .short-menu {
-    display: block;
   }
 
   .issue-form-page-wrap .content-wrap {

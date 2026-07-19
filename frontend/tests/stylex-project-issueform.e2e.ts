@@ -12,7 +12,13 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await mockIssueForm(page);
   await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
 
+  await expect(page.locator('link[href$="legacy-assets/stylesheets/legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
   await expect(page).toHaveTitle("New issue - admin/sample");
+  await expect(page.locator(".app-shell")).toHaveCount(0);
+  await expect(page.locator(".project-header-outer")).toBeVisible();
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issue-form"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-issue-form-title-row"]')).toBeVisible();
   const editorCell = page.locator('[data-stylex-owner="project-issue-form-editor"]');
@@ -71,6 +77,7 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(uploadShell).toHaveCSS("min-height", "100px");
+  await expect(page.locator(".project-menu-outer")).toBeVisible();
 });
 
 test("issue form upload progress uses a dynamic route-local StyleX width", async ({ page }) => {

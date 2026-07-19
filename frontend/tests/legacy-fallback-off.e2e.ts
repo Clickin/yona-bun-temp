@@ -104,6 +104,11 @@ test("site-admin fallback bridge has no React emitter", () => {
   }
 });
 
+test("app-shell fallback bridge has no remaining selector", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".app-shell");
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
@@ -313,7 +318,7 @@ test("massmail default and selected-project output retain the runtime fallback b
   );
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toBeHidden();
-  await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
+  await expect(page.locator(".app-shell, .site-admin-page, .project-select-row")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-massmail-page",
     "site-massmail-setting-grid",
@@ -325,7 +330,7 @@ test("massmail default and selected-project output retain the runtime fallback b
   await page.locator("#input-project").fill("admin/projectYobi");
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects")).toHaveText("admin/projectYobi x");
-  await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
+  await expect(page.locator(".app-shell, .site-admin-page, .project-select-row")).toHaveCount(0);
 });
 
 test("project-list output retains the runtime fallback boundary without its dead bridge", async ({
