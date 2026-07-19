@@ -1426,3 +1426,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 - AUTH-04: reset-password owns its remaining title margin/highlight, tagline spacing, and input box-model declarations. Static validation surface and Dynamic StyleX position now compose in one `stylex.props` call.
 - AUTH-05: the secret setup form shell, fields/focus, and action row join the existing restricted and restart owners. Frozen mobile form/input widths and 16px `!important` input rule remain fallback-owned.
 - Dynamic-port assembled browser verification is the canonical batch path; fixed-port direct Playwright is no longer used for this workflow. The next fixed batch is USER-02, USER-03, and USER-04.
+
+## Batch 527
+
+- USER-02: six route-local groups cover profile fields, avatar form/image, upload progress, fake-file control, reset action, and crop display while preserving React/TanStack upload and save behavior.
+- USER-03: the email route applies shared avatar/address/delete owners to valid and pending secondary rows and composes set-main width conditionally. Password, notification, and token roots retain their previously recorded owners and remain separate legacy-root audit units.
+- USER-04: six owner groups cover list paint, header/cells, conditional row hover, preview/image, filename/icon, and metadata/action/location across empty, populated, search, and pagination states. The Scala search wrapper/input/button classes are restored.
+- Shared form/button/avatar fallback and the user-files search/grid/responsive bridge remain. The next fixed batch is USER-01, USER-05, and ORG-01.
