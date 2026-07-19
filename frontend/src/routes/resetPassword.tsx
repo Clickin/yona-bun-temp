@@ -36,14 +36,19 @@ const styles = stylex.create({
   },
   title: {
     display: "inline-block",
+    margin: "0px",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
     fontSize: "3.3em",
     lineHeight: "42px",
     fontWeight: "400",
   },
+  titleHighlight: {
+    color: resetPasswordTheme.titleHighlight,
+  },
   tagline: {
     marginTop: "10px",
+    marginBottom: "0px",
     fontSize: "1.2em",
     color: resetPasswordTheme.taglineText,
   },
@@ -56,11 +61,13 @@ const styles = stylex.create({
     margin: "54px auto 0px",
   },
   textInput: {
+    boxSizing: "content-box",
     width: {
       default: "386px",
       "@media (max-width: 767px)": "95%",
     },
     height: "27px",
+    minHeight: "0px",
     marginBottom: "10px",
     fontSize: "12px",
     fontWeight: "700",
@@ -157,12 +164,12 @@ const styles = stylex.create({
 const validTokenResetClassName = stylex.props(styles.validTokenReset).className;
 const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
 const titleClassName = stylex.props(styles.title).className;
+const titleHighlightClassName = stylex.props(styles.titleHighlight).className;
 const taglineClassName = stylex.props(styles.tagline).className;
 const formWrapClassName = stylex.props(styles.formWrap).className;
 const passwordInputClassName = stylex.props(styles.textInput, styles.passwordInput).className;
 const buttonRowClassName = stylex.props(styles.buttonRow).className;
 const submitClassName = stylex.props(styles.submit).className;
-const validationPopoverClassName = stylex.props(styles.validationPopover).className;
 const validationPopoverArrowClassName = stylex.props(styles.validationPopoverArrow).className;
 const validationPopoverContentClassName = stylex.props(styles.validationPopoverContent).className;
 const badRequestClassName = stylex.props(styles.badRequest).className;
@@ -255,7 +262,10 @@ function ResetPasswordScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
             className={validTokenReset ? `title ${titleClassName}` : "title"}
             data-stylex-part={validTokenReset ? "reset-password-title" : undefined}
           >
-            <HighlightedLegacyMessage message={title} />
+            <HighlightedLegacyMessage
+              highlightClassName={validTokenReset ? titleHighlightClassName : undefined}
+              message={title}
+            />
           </h1>
           <p
             className={validTokenReset ? `tag-line ${taglineClassName}` : "tag-line"}
@@ -421,7 +431,8 @@ function FieldPopover({
     left: placement ? `${placement.left}px` : "-154px",
     top: placement ? `${placement.top}px` : "0",
   };
-  const positionStyle = stylex.props(
+  const ownedStyle = stylex.props(
+    styles.validationPopover,
     resetPasswordStyles.validationPopoverPosition(position.left, position.top),
   );
   const fallbackStyle = stylex.props(
@@ -432,8 +443,7 @@ function FieldPopover({
     return (
       <div
         ref={popoverRef}
-        {...positionStyle}
-        className={validationPopoverClassName}
+        {...ownedStyle}
         data-stylex-owner="reset-password-validation-popover"
         data-stylex-part="reset-password-validation-popover-surface"
       >
@@ -503,7 +513,13 @@ function BadRequestPage({
   );
 }
 
-function HighlightedLegacyMessage({ message }: { message: string }) {
+function HighlightedLegacyMessage({
+  highlightClassName,
+  message,
+}: {
+  highlightClassName?: string;
+  message: string;
+}) {
   const match = /^(.*)<span class="highlight">([\s\S]*)<\/span>(.*)$/.exec(message);
   if (!match) {
     return <>{message}</>;
@@ -512,7 +528,12 @@ function HighlightedLegacyMessage({ message }: { message: string }) {
   return (
     <>
       {match[1]}
-      <span className="highlight">{match[2]}</span>
+      <span
+        className={highlightClassName ? `highlight ${highlightClassName}` : "highlight"}
+        data-stylex-part={highlightClassName ? "reset-password-title-highlight" : undefined}
+      >
+        {match[2]}
+      </span>
       {match[3]}
     </>
   );

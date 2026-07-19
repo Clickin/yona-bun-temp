@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 
 // Frozen paint evidence: user/resetPassword.scala.html + _page.less and validation popover rules.
 export const resetPasswordTheme = stylex.defineVars({
+  titleHighlight: "#ff7332",
   taglineText: "#7c7c7c",
   inputBorder: "#cccccc",
   inputFocusBorder: "#f36c22",

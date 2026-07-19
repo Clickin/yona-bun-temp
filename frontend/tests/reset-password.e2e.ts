@@ -26,6 +26,10 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
     "Reset password for Yoram",
   );
   await expect(routeRoot.locator(":scope > .reset-password .highlight")).toHaveText("Yoram");
+  await expect(routeRoot.locator('[data-stylex-part="reset-password-title-highlight"]')).toHaveCSS(
+    "color",
+    "rgb(255, 115, 50)",
+  );
   await expect(routeRoot.locator(":scope > .reset-password .tag-line")).toHaveText(
     "Web-based platform for collaborative software development",
   );
@@ -96,6 +100,18 @@ test("reset-password preserves the legacy visible form and desktop/mobile geomet
   expectBox(desktop.submit, { height: 30, width: 400, x: 440, y: 348 });
   expect(desktop.password.right).toBeLessThanOrEqual(desktop.form.right);
   expect(desktop.submit.right).toBe(desktop.form.right);
+  await expect(routeRoot.locator('[data-stylex-part="reset-password-title"]')).toHaveCSS(
+    "margin",
+    "0px",
+  );
+  await expect(routeRoot.locator('[data-stylex-part="reset-password-copy"]')).toHaveCSS(
+    "margin-bottom",
+    "0px",
+  );
+  await expect(routeRoot.locator('[data-stylex-part="reset-password-password"]')).toHaveCSS(
+    "box-sizing",
+    "content-box",
+  );
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await readResetPasswordMetrics(page);
@@ -362,13 +378,14 @@ async function directChildOrder(root: Locator) {
   return root.locator(":scope > *").evaluateAll((elements) =>
     elements.map((element) => {
       if (element.className) {
-        return element.className
+        const semanticClassName = element.className
           .split(/\s+/u)
           .filter(
             (classToken) =>
               classToken && !classToken.startsWith("x") && !classToken.includes("__styles."),
           )
           .join(" ");
+        return semanticClassName || element.tagName;
       }
       return element.tagName;
     }),
@@ -431,17 +448,21 @@ async function readResetPasswordMetrics(page: Page) {
 }
 
 async function expectValidationPopovers(page: Page, messages: string[]) {
-  const popovers = page.locator('form[name="passwordReset"] .popover.left.in .popover-content');
+  const popovers = page.locator(
+    'form[name="passwordReset"] [data-stylex-part="reset-password-validation-popover-content"]',
+  );
   await expect(popovers).toHaveText(messages);
 }
 
 async function readPopoverBoxes(page: Page) {
-  return page.locator('form[name="passwordReset"] .popover.left.in').evaluateAll((popovers) =>
-    popovers.map((popover) => {
-      const box = popover.getBoundingClientRect();
-      return { height: box.height, width: box.width, x: box.x, y: box.y };
-    }),
-  );
+  return page
+    .locator('form[name="passwordReset"] [data-stylex-owner="reset-password-validation-popover"]')
+    .evaluateAll((popovers) =>
+      popovers.map((popover) => {
+        const box = popover.getBoundingClientRect();
+        return { height: box.height, width: box.width, x: box.x, y: box.y };
+      }),
+    );
 }
 
 async function readBadRequestMetrics(page: Page) {
