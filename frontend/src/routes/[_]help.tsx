@@ -428,10 +428,13 @@ function HelpFaqRow({
           </button>
         </span>
         <i
-          {...stylex.props(styles.faqToggleIcon, isOpen && styles.faqToggleIconOpen)}
+          {...stylex.props(
+            styles.faqToggleIcon,
+            faqStyles.sprite(legacySpriteUrl),
+            isOpen && styles.faqToggleIconOpen,
+          )}
           aria-hidden="true"
           data-stylex-owner="help-faq-toggle-icon"
-          {...stylex.props(faqStyles.sprite(legacySpriteUrl))}
         />
       </div>
       <div
