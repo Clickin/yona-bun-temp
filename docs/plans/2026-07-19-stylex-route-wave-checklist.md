@@ -2,7 +2,7 @@
 
 Status: **active canonical target inventory**  
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
-Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala templates: 242)
+Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
 이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다.
 
@@ -25,12 +25,13 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | ORG-02, PROJECT-06, MILE-01 | independent layout/statistics/list screens | 독립 3-worker batch |
-| 2 | BOARD-01, BOARD-03, CODE-01 | independent board/code list/detail screens | 독립 3-worker batch |
-| 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
-| 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
-| 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
-| 6 | SITE/HOME/ROOT | leaf routes 후 shared shell/layout retirement | 마지막 소비자 증명 필요 |
+| 1 | ORG-02, MILE-01, BOARD-01 | parent organization home, milestone list, post list | 독립 3-worker batch |
+| 2 | BOARD-03, CODE-01, PROJECT-02 | post detail, branch list, project setting | 독립 3-worker batch |
+| 3 | PROJECT-04, PROJECT-05, ORG-01 | labels, webhooks, organization create | Select2/form fallback remains shared |
+| 4 | USER/ORG/SITE lanes | child routes are parallel only when their TSX owners differ | shared tab/menu/list shell |
+| 5 | ISSUE/BOARD/MILESTONE lanes | list/form/detail owner order | below serial edges |
+| 6 | CODE/PR lanes | tree/diff before PR changes/reviews | shared diff/tree plugins |
+| 7 | PROJECT-01, SITE-04, HOME/ROOT | leaf routes first, then shared shell/layout retirement | last-consumer proof required |
 
 ## Canonical screen checklist
 
@@ -132,6 +133,46 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 | SITE-02 | mail/massmail form, selection, preview/result/error | `site/mail.scala.html`, `massMail.scala.html` | READY | L----- |
 | SITE-03 | data/diagnostic/update result and error states | `site/{data,diagnostic,update}.scala.html`, update notification | READY | L----- |
 | SITE-04 | shared site management layout/sidebar/pagination retirement | `siteMngLayout.scala.html`, pagination partials | DEPENDENCY | ------ |
+
+## Resolved execution map
+
+This is the lookup table used to select future work. It deliberately records the actual React
+screen owner rather than a TanStack wrapper path; wrappers are listed only in **Non-screen route
+files**. Counts are conservative logical owner groups, not `className` counts. A row with existing
+StyleX owners still stays in this map until its `C/R` gates are proven.
+
+| IDs | Actual React owner(s) | Scheduling lane / hard dependency | Remaining groups |
+| --- | --- | --- | --- |
+| HOME-01, HOME-02, ROOT-01 | `index.tsx`, `-home-route-screen.tsx`, `notifications.tsx`, `notification.tsx`, `__root.tsx` | final shared shell lane; ROOT-01 last | 4–8 each |
+| HELP-02, HELP-03 | `[_]help.tsx`, `-legacy-markdown-help.tsx` | shared responsive `!important` fallback | 4–6 |
+| SEARCH-01, SEARCH-03, SEARCH-05 | `search.tsx`, `organizations/$organizationName/search.tsx`, `$ownerName/$projectName/search.tsx` | schedule together before SEARCH-04 retirement decision | 5–6 each |
+| DIR-01, DIR-02 | `projects.tsx`, `orgs.tsx` | shared list/pagination | 5 each |
+| CREATE-01, IMPORT-01 | `projectform.tsx`, `[_]import.tsx` | shared form/Select2 | 5–6 each |
+| AUTH-01..05 | `users/loginform.tsx`, `users/signupform.tsx`, `lostPassword.tsx`, `resetPassword.tsx`, `restricted.tsx`, `secret.tsx`, `restart.tsx` | shared auth/mobile fallback | 3–6 each |
+| USER-01 | `$user.tsx`, `-user-profile.stylex.ts` | profile/list/tab fallback | 14–20 |
+| USER-02, USER-03 | `user/editform.tsx`, `user/editform/{emails,password,notifications,token}.tsx` | same tab/form owner; serialize shared selector retirement | 8–14 total |
+| USER-04, USER-05, USER-06 | `user/files.tsx`, `user/issues.tsx`, `user/issues/-direct-issue-form-screen.tsx` | USER-06 delegates project issue editor; files/issues share list controls | 6–22 |
+| ORG-01 | `organizations/new.tsx` | shared form fallback | 4–7 |
+| ORG-02 | `organizations/$organizationName.tsx` | parent owns legacy organization layout; `index.tsx` is wrapper only | 8–12 |
+| ORG-03, ORG-04 | `organizations/$organizationName/{settingform,members,deleteForm,boards,issues,pullrequests}.tsx` | setting menu; then list/filter/pagination; closed PR is wrapper | 12–30 |
+| PROJECT-01 | `$ownerName/$projectName.tsx` | project header/menu shared by all project routes; final project-shell lane | 6+ |
+| PROJECT-02, PROJECT-03 | `$ownerName/$projectName/{setting,settingform,changeVCS,deleteform,transfer,members}.tsx` | shared setting menu/forms; serialize common selector retirement | 4–8 |
+| PROJECT-04, PROJECT-05 | `$ownerName/$projectName/issue/labelsform.tsx`, `$ownerName/$projectName/webhooks.tsx` | Select2/label and list/form fallback | 4–6 |
+| PROJECT-06 | `$ownerName/$projectName/{watchers,statistics}.tsx` | independent routes but currently retained as C/R evidence work, not a fresh skeleton target | 3–6 |
+| ISSUE-01, ISSUE-02 | `$ownerName/$projectName/{issues,issueform}.tsx` | list/editor foundations | 6+ |
+| ISSUE-03 → ISSUE-04 → ISSUE-05 | `$ownerName/$projectName/issue/$issueNumber.tsx`, `.../editform.tsx` | same detail owner: header/body before comments/events, then edit | 5–6 each |
+| MILE-01, MILE-02, MILE-03 | `$ownerName/$projectName/{milestones,newMilestoneForm,milestone/$milestoneId, milestone/$milestoneId/editform}.tsx` | list/form parallel; detail waits issue mass-update/list | 4–6 each |
+| BOARD-01, BOARD-02, BOARD-03 → BOARD-04 | `$ownerName/$projectName/{posts,postform,post/$postNumber,post/$postNumber/editform}.tsx` | board detail comments/history must follow detail; no `boards.tsx` exists for project posts | 5–6 each |
+| CODE-01, CODE-02 → CODE-06 | `$ownerName/$projectName/{branches,code,code/$branch,code/$branch/$filePath,commits,commit/$commitId,compare/$revisionRange}.tsx` | branch/tree/file/history/diff/compare; tree and diff are prerequisite owners | 4–6 each |
+| PR-01, PR-02, PR-03 → PR-04, PR-05, PR-06 | `$ownerName/$projectName/{pullRequests,newPullRequestForm,pullRequest/$pullRequestNumber,pullRequest/$pullRequestNumber/changes,reviews}.tsx` | detail events follow detail; changes/reviews wait code diff/review foundations | 5–6 each |
+| FORK-01 | `$ownerName/$projectName/newFork.tsx` | use after project-shell contract is stable | 4–6 |
+| SITE-01, SITE-02, SITE-03 → SITE-04 | `sites/{userList,projectList,issueList,postList,mail,massmail,data,diagnostic,update}.tsx`, `sites/-pagination.tsx` | shared site layout/sidebar/pagination is a strict last-consumer lane | 4–18 |
+| MIG-01, UIKIT-01 | `migration.tsx`, `[_]UIKit.tsx` | deferred; never selected without an explicit scope change | n/a |
+
+Selection protocol: choose only the first eligible IDs from **Immediate queue** and this map;
+update the selected row after integration. Do not re-run a route-wide discovery scan unless a
+**Refresh trigger** applies. A worker receives the exact owner path(s) above, legacy root,
+permitted write scope, and the indicated serial edge.
 
 ## Non-screen route files
 

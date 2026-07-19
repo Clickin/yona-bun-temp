@@ -3843,3 +3843,13 @@ Batch 526 applies AUTH-03, AUTH-04, and AUTH-05 in parallel. Lost-password owner
 Batch 527 applies USER-02, USER-03, and USER-04 in parallel. The profile settings root now owns its profile/avatar/upload/progress/reset/crop presentation, the email child route completes valid and pending secondary-row ownership without bundling unrelated legacy roots, and user files gains six conditional owner groups across empty, populated, search, action, and pagination states while restoring the Scala search skeleton classes. Shared form/button/avatar and current search/grid/responsive fallback remains. The next fixed queue is USER-01, USER-05, and ORG-01.
 
 Batch 528 applies USER-01, USER-05, and ORG-01 in parallel. Public profile root owns its identity/stream/issue geometry across populated, empty, and missing-user states. Current-user issues owns its quick-filter/control/popover state family. Organization creation completes the legacy duplicate-name REST validation position without changing its existing form ownership. The next fixed queue is ORG-02, PROJECT-06, and MILE-01.
+
+Batch 529 is an execution-planning batch, not a StyleX owner migration. It reconciles the complete
+116-file route inventory into the canonical screen checklist's resolved execution map: each
+remaining screen ID now names its real React owner, legacy root, route-wrapper exclusions,
+logical-owner estimate, fallback dependency, and mandatory serialization edge. The assembled
+inventory measured 110 routable entries, 81 directly importing StyleX, and 27 inheriting StyleX
+through an imported screen owner. `PROJECT-06` is retained as C/R evidence work rather than a
+new-skeleton target; `ORG-02` is corrected to the parent organization route and `BOARD-01` to
+`posts.tsx`. Future batches select directly from the fixed queue/map and must not re-discover the
+route universe unless a documented refresh trigger occurs.
