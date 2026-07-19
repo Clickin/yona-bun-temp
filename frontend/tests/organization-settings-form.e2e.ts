@@ -370,6 +370,31 @@ test("organization settings logo input reset source is React-owned", () => {
   expect(logoInputSlice).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("organization settings top-box StyleX owners preserve legacy declarations", () => {
+  const source = readFileSync(ORGANIZATION_SETTINGS_ROUTE_SOURCE, "utf8");
+  const style = readFileSync(
+    "src/routes/organizations/$organizationName/-settingform.stylex.ts",
+    "utf8",
+  );
+  for (const owner of [
+    "organization-setting-box-left",
+    "organization-setting-box-right",
+    "organization-setting-logo",
+    "organization-setting-logo-desc",
+    "organization-setting-descs",
+    "organization-setting-logo-point",
+    "organization-setting-description",
+  ])
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+  expect(style).toContain('width: "399px"');
+  expect(style).toContain('width: "260px"');
+  expect(style).toContain('height: "188px"');
+  expect(style).toContain('width: "380px"');
+  expect(style).toContain('height: "80px"');
+  expect(style).toContain('paddingRight: "20px"');
+  expect(style).toContain('paddingLeft: "20px"');
+});
+
 test("organization settings name submit shows legacy validation warning", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[] =

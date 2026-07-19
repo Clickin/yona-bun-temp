@@ -55,6 +55,15 @@ function OrganizationSettingsBody({
   const organizationId = stringField(organization.id, "");
   const logoUrl = stringField(organization.logoUrl, "") || "/assets/images/group_default.png";
   const logoStyleProps = stylex.props(organizationSettingStyles.logo(`url('${logoUrl}')`));
+  const settingBoxStyleProps = stylex.props(organizationSettingStyles.settingBox);
+  const settingBoxLeftStyleProps = stylex.props(organizationSettingStyles.settingBoxLeft);
+  const settingBoxRightStyleProps = stylex.props(organizationSettingStyles.settingBoxRight);
+  const logoDescStyleProps = stylex.props(organizationSettingStyles.logoDesc);
+  const pointStyleProps = stylex.props(organizationSettingStyles.point);
+  const descsItemStyleProps = stylex.props(organizationSettingStyles.descsItem);
+  const descsLastStyleProps = stylex.props(organizationSettingStyles.descsLast);
+  const fieldGeometryStyleProps = stylex.props(organizationSettingStyles.fieldGeometry);
+  const textareaGeometryStyleProps = stylex.props(organizationSettingStyles.textareaGeometry);
   const wrongNameStyleProps = wrongNameMessage
     ? undefined
     : stylex.props(organizationSettingFormStyles.wrongNameHidden);
@@ -159,30 +168,54 @@ function OrganizationSettingsBody({
                 className={`box-wrap top clearfix frm-wrap ${stylex.props(organizationSettingStyles.topBox).className}`}
                 data-stylex-owner="organization-setting-top-box"
               >
-                <div className="setting-box left">
+                <div
+                  {...settingBoxStyleProps}
+                  {...settingBoxLeftStyleProps}
+                  className={`${settingBoxStyleProps.className} ${settingBoxLeftStyleProps.className} setting-box left`}
+                  data-stylex-owner="organization-setting-box-left"
+                >
                   <div
                     {...logoStyleProps}
                     className={`logo-wrap ${logoStyleProps.className ?? ""}`.trim()}
                     data-stylex-owner="organization-setting-logo"
                   ></div>
-                  <div className="logo-desc">
-                    <ul className="unstyled descs">
-                      <li>
+                  <div
+                    {...logoDescStyleProps}
+                    className={`${logoDescStyleProps.className} logo-desc`}
+                    data-stylex-owner="organization-setting-logo-desc"
+                  >
+                    <ul className="unstyled descs" data-stylex-owner="organization-setting-descs">
+                      <li
+                        {...descsItemStyleProps}
+                        data-stylex-owner="organization-setting-descs-item"
+                      >
                         <strong>{t("organization.logo")}</strong>
                       </li>
-                      <li>
+                      <li
+                        {...descsItemStyleProps}
+                        data-stylex-owner="organization-setting-descs-item"
+                      >
                         {t("organization.logo.type")}{" "}
                         <span
-                          className={`point ${stylex.props(styles.logoPoint).className}`}
+                          className={`point ${pointStyleProps.className}`}
                           data-stylex-owner="organization-setting-logo-point"
                         >
                           bmp, jpg, gif, png
                         </span>
                       </li>
-                      <li>
-                        {t("organization.logo.maxFileSize")} <span className="point">5MB</span>
+                      <li
+                        {...descsItemStyleProps}
+                        data-stylex-owner="organization-setting-descs-item"
+                      >
+                        {t("organization.logo.maxFileSize")}{" "}
+                        <span {...pointStyleProps} className={`point ${pointStyleProps.className}`}>
+                          5MB
+                        </span>
                       </li>
-                      <li>
+                      <li
+                        {...descsLastStyleProps}
+                        data-stylex-owner="organization-setting-descs-last"
+                      >
                         <div className="btn-wrap">
                           <div className="nbtn medium white fake-file-wrap">
                             <i className="yobicon-upload"></i> {t("button.upload")}
@@ -202,13 +235,18 @@ function OrganizationSettingsBody({
                     </ul>
                   </div>
                 </div>
-                <dl className="setting-box right">
+                <dl
+                  {...settingBoxStyleProps}
+                  {...settingBoxRightStyleProps}
+                  className={`${settingBoxStyleProps.className} ${settingBoxRightStyleProps.className} setting-box right`}
+                  data-stylex-owner="organization-setting-box-right"
+                >
                   <dt>
                     <label htmlFor="project-name">{t("organization.name.placeholder")}</label>
                   </dt>
                   <dd>
                     <input
-                      className={stylex.props(styles.field).className}
+                      className={`${fieldGeometryStyleProps.className} ${stylex.props(styles.field).className}`}
                       data-stylex-owner="organization-setting-name-field"
                       id="project-name"
                       type="text"
@@ -244,7 +282,8 @@ function OrganizationSettingsBody({
                       id="project-desc"
                       name="descr"
                       maxLength={250}
-                      className={`textarea ${stylex.props(styles.field).className}`}
+                      className={`textarea ${textareaGeometryStyleProps.className} ${stylex.props(styles.field).className}`}
+                      data-stylex-owner="organization-setting-description"
                       defaultValue={stringField(organization.description, "")}
                     ></textarea>
                   </dd>
