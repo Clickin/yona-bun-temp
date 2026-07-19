@@ -3634,14 +3634,18 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
     const checkboxStyle = window.getComputedStyle(checkbox);
     const inputStyle = window.getComputedStyle(input);
     return {
+      checkboxHasStyleXOwner: checkbox.getAttribute("data-stylex-owner"),
       checkboxBox,
       checkboxFloat: checkboxStyle.float,
+      checkboxMarginRight: checkboxStyle.marginRight,
       inputBox,
       inputMarginTop: inputStyle.marginTop,
       titleBox,
     };
   });
+  expect(desktop.checkboxHasStyleXOwner).toBe("project-issues-mass-update-check");
   expect(desktop.checkboxFloat).toBe("left");
+  expect(desktop.checkboxMarginRight).toBe("15px");
   expect(desktop.inputMarginTop).toBe("15px");
   expect(desktop.checkboxBox.width).toBeGreaterThan(0);
   expect(desktop.titleBox.left).toBeGreaterThanOrEqual(desktop.checkboxBox.right + 15);

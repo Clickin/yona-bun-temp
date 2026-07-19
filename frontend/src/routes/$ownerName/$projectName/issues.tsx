@@ -1603,9 +1603,8 @@ function ProjectIssueItem({
         {showMassUpdateControls ? (
           /* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */
           <label
-            {...stylex.props(styles.massUpdateCheck)}
             htmlFor={`issue-${issueId}`}
-            className="mass-update-check hide-in-mobile"
+            className={`mass-update-check hide-in-mobile ${stylex.props(styles.massUpdateCheck).className}`}
             data-stylex-owner="project-issues-mass-update-check"
           >
             <input
