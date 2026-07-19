@@ -123,6 +123,10 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   );
   await expect(progress).toBeVisible();
   await expect(progressShell).toBeVisible();
+  expect(await progressShell.evaluate((element) => element.tagName)).toBe("DIV");
+  await expect(progressShell).toHaveClass(/\bprogress\b/u);
+  await expect(progressShell).toHaveClass(/\bupload-progress\b/u);
+  await expect(progressShell.locator("xpath=..")).toHaveClass(/\bpull-right\b/u);
   await expect(progressShell).toHaveCSS("display", "inline-block");
   await expect(progressShell).toHaveCSS("width", "100px");
   await expect(progressShell).toHaveCSS("height", "7px");
@@ -132,8 +136,15 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   await expect(progressShell).toHaveCSS("vertical-align", "middle");
   await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
   await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
+  expect(await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON())).toMatchObject({
+    height: 7,
+    width: 100,
+  });
   await expect(progress).toHaveAttribute("style", /--x-width:\s*1%/u);
   await expect(progress).not.toHaveAttribute("style", /(?:^|;)\s*width\s*:/u);
+  await expect(progress).toHaveCSS("background-color", "rgb(243, 108, 34)");
+  await expect(progress).toHaveCSS("display", "block");
+  await expect(progress).toHaveCSS("height", "7px");
   const progressWidth = await progress.evaluate((element) => element.getBoundingClientRect().width);
   expect(progressWidth).toBeGreaterThan(0);
   expect(progressWidth).toBeLessThan(2);
@@ -148,6 +159,14 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   await expect(progressShell).toHaveCSS("vertical-align", "middle");
   await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
   await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
+  expect(await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON())).toMatchObject({
+    height: 7,
+    width: 100,
+  });
+  await expect(progress).toHaveCSS("background-color", "rgb(243, 108, 34)");
+  await expect(progress).toHaveCSS("display", "block");
+  await expect(progress).toHaveCSS("height", "7px");
+  expect(await progress.evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(2);
 
   releaseUpload?.();
   await expect(progress).toHaveCount(0);

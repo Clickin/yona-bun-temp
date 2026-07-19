@@ -2394,19 +2394,6 @@ function IssuePostFileUploader({
                   {row.name}
                 </strong>{" "}
                 <span className="size">{humanFileSize(row.size)}</span>
-                {row.status === "uploading" ? (
-                  <span
-                    {...stylex.props(issueFormStyles.uploadProgress)}
-                    className={`progress upload-progress ${stylex.props(issueFormStyles.uploadProgress).className ?? ""}`.trim()}
-                    data-stylex-owner="project-issue-form-upload-progress-shell"
-                  >
-                    <span
-                      {...progressStyle}
-                      className={`${progressStyle.className ?? ""} bar orange`.trim()}
-                      data-stylex-owner="project-issue-form-upload-progress"
-                    />
-                  </span>
-                ) : null}
                 {row.attachment && row.status === "ready" ? (
                   <span
                     {...stylex.props(issueFormStyles.attachedFileInsertCopy)}
@@ -2417,6 +2404,21 @@ function IssuePostFileUploader({
                   </span>
                 ) : null}
               </button>
+              {row.status === "uploading" ? (
+                <div className="pull-right">
+                  <div
+                    {...stylex.props(issueFormStyles.uploadProgress)}
+                    className={`progress upload-progress ${stylex.props(issueFormStyles.uploadProgress).className ?? ""}`.trim()}
+                    data-stylex-owner="project-issue-form-upload-progress-shell"
+                  >
+                    <div
+                      {...progressStyle}
+                      className={`${progressStyle.className ?? ""} bar orange`.trim()}
+                      data-stylex-owner="project-issue-form-upload-progress"
+                    />
+                  </div>
+                </div>
+              ) : null}
               {row.error ? (
                 <span
                   {...stylex.props(issueFormStyles.uploadError)}
