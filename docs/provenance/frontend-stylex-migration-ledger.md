@@ -1370,3 +1370,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 510
 
 - Authenticated `/$ownerName/$projectName/issueform` attached-file disabled/icon auxiliary state: `attachedFileMainDisabled` conditionally composes on uploading/unavailable rows and `attachedFileMainIcon` owns the support icon's inline geometry. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. The exact `.attached-file-main:disabled` and `.attached-file-main > i` route-scoped app.css blocks are retired; generic `.attached-file` remains. Focused attachment contract verifies legacy uploader/uploadForm/create sources, owners, conditional disabled behavior, icon declarations, and exact fallback absence.
+
+## Batch 515
+
+- Authenticated `/$ownerName/$projectName/issueform` assignee control/value state: `assigneeControl`, `assigneeControlInput`, and `assigneeValue` own the effective 30px control height, block input display, and selected-value overflow/ellipsis/nowrap declarations. Frozen `.select2-offscreen` remains the effective 1px hidden-input geometry owner. `yona-original/app/views/issue/create.scala.html`, `issue/partial_assignee.scala.html`, and `_override.less` establish the output contract. The exact route-scoped control/direct-input/value fallback blocks are retired; shared Select2 choice, dropdown, and combobox-options cascade remains.

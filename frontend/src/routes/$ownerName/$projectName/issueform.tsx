@@ -2505,7 +2505,8 @@ function IssueAssigneeSelect({
       <dt>{t("issue.assignee")}</dt>
       <dd>
         <div
-          className={`${stylex.props(issueFormStyles.assigneePicker).className} select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
+          {...stylex.props(issueFormStyles.assigneeControl, issueFormStyles.assigneePicker)}
+          className={`${stylex.props(issueFormStyles.assigneeControl, issueFormStyles.assigneePicker).className} select2-container bigdrop issue-combobox issue-assignee-control${isOpen ? " select2-dropdown-open" : ""}`}
           data-stylex-owner="project-issue-form-assignee-picker"
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -2535,7 +2536,11 @@ function IssueAssigneeSelect({
               }
             }}
           >
-            <span className="select2-chosen issue-assignee-value">
+            <span
+              {...stylex.props(issueFormStyles.assigneeValue)}
+              className={`select2-chosen issue-assignee-value ${stylex.props(issueFormStyles.assigneeValue).className ?? ""}`.trim()}
+              data-stylex-owner="project-issue-form-assignee-value"
+            >
               {selected ? `${displayName(selected)} (${selected.loginId})` : t("issue.noAssignee")}
             </span>
             <span className="select2-arrow" aria-hidden="true">
@@ -2543,7 +2548,9 @@ function IssueAssigneeSelect({
             </span>
           </div>
           <input
-            className="select2-focusser select2-offscreen"
+            {...stylex.props(issueFormStyles.assigneeControlInput)}
+            className={`select2-focusser select2-offscreen ${stylex.props(issueFormStyles.assigneeControlInput).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-assignee-control-input"
             type="text"
             autoComplete="off"
             aria-label={t("issue.assignee")}

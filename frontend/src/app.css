@@ -5961,15 +5961,6 @@ div.markdown-preview {
   position: relative;
 }
 
-.issue-form-page-wrap .issue-assignee-control,
-.issue-form-page-wrap .issue-assignee-control > input {
-  height: 30px;
-}
-
-.issue-form-page-wrap .issue-assignee-control > input {
-  display: block;
-}
-
 .issue-form-page-wrap .issue-combobox-options {
   position: absolute;
   top: calc(100% + 2px);
@@ -6016,12 +6007,6 @@ div.markdown-preview {
   border-bottom-color: transparent;
   border-radius: 4px 4px 0 0;
   box-shadow: inset 0 1px 0 #fff;
-}
-
-.issue-form-page-wrap .issue-assignee-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .issue-form-page-wrap .issue-assignee-arrow {

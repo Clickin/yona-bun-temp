@@ -57,6 +57,13 @@ export const issueFormStyles = stylex.create({
     height: "30px",
     margin: "0 4px 4px",
   },
+  assigneeControl: { height: "30px" },
+  assigneeControlInput: { display: "block" },
+  assigneeValue: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
   issueLabelToken: {
     display: "inline-flex",
     gap: "4px",
