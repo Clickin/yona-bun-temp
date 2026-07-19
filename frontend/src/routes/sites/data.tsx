@@ -11,6 +11,50 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { siteDataColors } from "./-data.stylex";
 
 const styles = stylex.create({
+  page: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      [globalBreakpoints.mobile]: "0px",
+    },
+    width: "100%",
+  },
+  settingWrap: {
+    margin: "0px auto",
+  },
+  settingGrid: {
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    minHeight: "30px",
+  },
+  settingSidebarColumn: {
+    marginLeft: "0px",
+    width: "14.893617021276595%",
+  },
+  settingContentColumn: {
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
+  },
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: {
@@ -176,13 +220,19 @@ function SiteDataScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer" data-stylex-owner="site-data-page">
-        <div className="site-setting-wrap" data-stylex-owner="site-data-content">
-          <div className="row-fluid">
-            <div className="span2" data-stylex-owner="site-data-sidebar-column">
+      <div {...stylex.props(styles.page)} data-stylex-owner="site-data-page">
+        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-data-content">
+          <div {...stylex.props(styles.settingGrid)} data-stylex-owner="site-data-setting-grid">
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
+              data-stylex-owner="site-data-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
+              data-stylex-owner="site-data-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-data-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-data-title-heading">
                   {t("site.sidebar.data")}
