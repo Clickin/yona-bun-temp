@@ -75,6 +75,17 @@ const LEGACY_REFERENCE_PATTERN = /yona-original\//;
 
 const PARITY_SLICES = [
   {
+    id: "legacy-fallback-asset-retirement",
+    label: "Generated legacy fallback asset retirement",
+    status: "parity",
+    implementationPatterns: [/^frontend\/scripts\/build-legacy-css\.mjs$/i],
+    testKeywords: ["legacy-fallback-off", "generated fallback", "fallback-off"],
+    provenanceDocs: [
+      "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
+      "docs/provenance/frontend-stylex-migration-ledger.md",
+    ],
+  },
+  {
     id: "public-landing",
     label: "Public landing and global navigation",
     status: "parity",

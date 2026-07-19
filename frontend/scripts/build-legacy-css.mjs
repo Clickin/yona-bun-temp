@@ -77,6 +77,19 @@ assertUnique(
   "runtime cascade path",
 );
 
+const deadYobiFallbackSelectors = [
+  ".all-projects .project .info-wrap .forked",
+  ".all-projects .project .stats-wrap .like",
+  ".all-projects .project .stats-wrap .like .num",
+  ".all-projects .project .stats-wrap .like .ico",
+  ".profile-frmwrap .avatar-frm",
+  ".profile-frmwrap .avatar-frm .avatar-wrap",
+  ".profile-frmwrap .avatar-frm .avatar-wrap .progress",
+  ".profile-frmwrap .avatar-frm .avatar-wrap .progress.loading",
+  ".profile-frmwrap .avatar-frm .btn-wrap",
+  ".profile-frmwrap .avatar-frm .btn-wrap .nbtn i",
+];
+
 const renderedSources = [];
 const sourceManifest = [];
 for (const [cascadeIndex, entry] of runtimeCascade.entries()) {
@@ -94,7 +107,10 @@ for (const [cascadeIndex, entry] of runtimeCascade.entries()) {
           })
         ).css
       : source;
-  const normalized = rewriteRelativeUrls(stripCharset(rendered), entry.runtimePath);
+  const normalized = retireDeadYobiSelectors(
+    rewriteRelativeUrls(stripCharset(rendered), entry.runtimePath),
+    entry.id,
+  );
   renderedSources.push(`/* source:${entry.id} */\n${normalized.trim()}\n`);
   sourceManifest.push({
     cascadeIndex,
@@ -196,6 +212,26 @@ function rewriteRelativeUrls(cssText, sourceRuntimePath) {
     const relativePath = path.posix.relative(outputDirectory, absoluteRuntimePath) || ".";
     return `url(${quote}${relativePath}${suffix}${quote})`;
   });
+}
+
+function retireDeadYobiSelectors(cssText, sourceId) {
+  if (sourceId !== "yobi") {
+    return cssText;
+  }
+
+  let rendered = cssText;
+  for (const selector of deadYobiFallbackSelectors) {
+    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    const rule = new RegExp(`(^|\\n)${escapedSelector}\\s*\\{[^{}]*\\}\\s*`, "gu");
+    const matches = [...rendered.matchAll(rule)];
+    if (matches.length !== 1) {
+      throw new Error(
+        `Expected exactly one rendered Yobi rule for dead fallback selector ${selector}, found ${matches.length}.`,
+      );
+    }
+    rendered = rendered.replace(rule, "$1");
+  }
+  return rendered;
 }
 
 async function lessSourceFiles(entryPath, source) {

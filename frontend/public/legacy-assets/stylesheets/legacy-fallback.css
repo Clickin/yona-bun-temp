@@ -14785,12 +14785,6 @@ input.white:-ms-input-placeholder {
   color: #999;
   font-size: 19px;
 }
-.all-projects .project .info-wrap .forked {
-  padding: 3px 5px;
-  text-shadow: none;
-  font-size: 11px;
-  margin-left: 10px;
-}
 .all-projects .project .info-wrap .desc {
   margin-left: 10px;
   overflow-y: auto;
@@ -14809,20 +14803,6 @@ input.white:-ms-input-placeholder {
   margin-top: 0px;
   text-align: right;
   /*.leaveProject { margin-top:2px; }*/
-}
-.all-projects .project .stats-wrap .like {
-  display: inline-block ;
-  vertical-align: middle;
-  width: 42px;
-  text-align: left;
-  margin-right: 20px;
-}
-.all-projects .project .stats-wrap .like .num {
-  color: #4489A4;
-}
-.all-projects .project .stats-wrap .like .ico {
-  vertical-align: text-bottom;
-  margin-right: 3px;
 }
 .all-projects .project .stats-wrap .members {
   width: 100%;
@@ -17967,36 +17947,6 @@ label.issue-item-row {
   margin: 0;
   padding: 0;
   font-size: 12px;
-}
-.profile-frmwrap .avatar-frm {
-  display: inline-block;
-  vertical-align: top;
-  margin: 30px;
-  margin-right: 50px;
-}
-.profile-frmwrap .avatar-frm .avatar-wrap {
-  position: relative;
-}
-.profile-frmwrap .avatar-frm .avatar-wrap .progress {
-  position: absolute;
-  width: 130px;
-  height: 0px;
-  padding: 0;
-  margin: 0;
-  bottom: 0px;
-  background: #F36C22;
-  opacity: 0.8;
-  -webkit-transition-duration: 1s;
-}
-.profile-frmwrap .avatar-frm .avatar-wrap .progress.loading {
-  height: 130px;
-}
-.profile-frmwrap .avatar-frm .btn-wrap {
-  margin-left: 10px;
-}
-.profile-frmwrap .avatar-frm .btn-wrap .nbtn i {
-  vertical-align: top;
-  margin-right: 2px;
 }
 .profile-frmwrap dl {
   display: inline-block;

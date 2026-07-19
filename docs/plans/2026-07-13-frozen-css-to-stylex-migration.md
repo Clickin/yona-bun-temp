@@ -20,6 +20,15 @@ including exact hover/focus, finite starred conditional, and 390px typography. T
 overlay, generic controls, and cross-route organization consumers remain lower-layer fallback until
 their complete consumer boundaries can be migrated together.
 
+Batch 537 performs the first formal dead-selector retirement inside the generated runtime asset.
+The frozen Yobi LESS stays byte-identical: the build applies a deterministic post-render exclusion
+only to ten separately proven consumer-free project-list and profile-avatar selectors. The duplicate
+project-list selectors and dead `.milestones .desc` replica are removed from React `app.css`; the
+generated milestone rule remains because Yobi is still a live whole-module fallback. The normal-mode
+runtime contract proves the exact ten exclusions and nearby live selectors, while fallback-off
+continues to prove that the runtime link is removed. This removes no active selector module and is
+not permanent fallback unlinking.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused
