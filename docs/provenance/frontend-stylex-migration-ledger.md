@@ -1378,3 +1378,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 516
 
 - Populated `/$ownerName/$projectName/issue/$issueNumber` body/sidebar: route-local StyleX owns author margin/display, content minimum/padding/margin, action-row spacing/overflow, board-footer alignment/type, and issue-info padding. `yona-original/app/views/issue/view.scala.html` and frozen `_page.less` issue-detail rules establish the output. Exact `.issue-detail-page` duplicates are retired; generic `.board-body`, `.board-actrow`, and `.board-footer` fallbacks remain for other consumers.
+
+## Batch 517
+
+- Populated `/$ownerName/$projectName/issues` list: route-local StyleX owns row display/spacing/border and active surface, title truncation, post-id typography, finite complete/open subtask progress variants, and conditional child-date visibility. Legacy issue list, draft, subtask, and child partials plus frozen `_page.less:3312-3559` establish the output. Exact issue-list scoped blocks are retired; remaining title, label, avatar, and list fallbacks stay for their active consumers.

@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type FormEvent as ReactFormEvent,
   type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -1583,7 +1582,7 @@ function ProjectIssueItem({
 
   return (
     <li
-      className={`post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""}`}
+      className={`post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""} ${stylex.props(styles.issuePostItem, issueSelected ? styles.issuePostItemActive : undefined).className}`}
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
@@ -1596,8 +1595,9 @@ function ProjectIssueItem({
         ? stylex.props(styles.issueRowHoverBackground(currentIssueRowHoverStyle.backgroundColor))
         : {})}
       {...(useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow) : {})}
-      data-stylex-owner={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
+      data-stylex-owner-clickable={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
       {...issueListItemLegacyAttrs}
+      data-stylex-owner="project-issues-post-item"
     >
       <div className="span9 span-hard-wrap">
         {showMassUpdateControls ? (
@@ -1615,14 +1615,21 @@ function ProjectIssueItem({
           </label>
         ) : null}
         <div {...issueRowLegacyForAttrs} className="issue-item-row">
-          <div className="title-wrap" onClickCapture={handleTitleWrapClick}>
+          <div
+            className={`title-wrap ${stylex.props(styles.titleWrap).className}`}
+            onClickCapture={handleTitleWrapClick}
+            data-stylex-owner="project-issues-title-wrap"
+          >
             <Link
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
               className="title"
             >
-              <span className="post-id">
+              <span
+                className={`post-id ${stylex.props(styles.postId).className}`}
+                data-stylex-owner="project-issues-post-id"
+              >
                 {issue.isDraft && draftNumberSource === "draft-list" ? (
                   <span className="draft-number">#{t("issue.state.draft")}</span>
                 ) : issue.isDraft ? (
@@ -1895,6 +1902,7 @@ function IssueChildRow({
   projectName: string;
   useTwoColumnMode: boolean;
 }) {
+  const [hovered, setHovered] = useState(false);
   const issueNumber = stringField(issue.issueNumber, "");
   const issueId = stringField(issue.id, "");
   const issueParams = { issueNumber, ownerName, projectName };
@@ -1941,7 +1949,12 @@ function IssueChildRow({
       : "issue-item  child-issue";
 
   return (
-    <div className={childClassName} onClickCapture={handleChildRowClick}>
+    <div
+      className={childClassName}
+      onClickCapture={handleChildRowClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <span className={`state-label ${isClosed ? "closed" : "open"}`}>
         {isClosed ? <i className=" yobicon-checkmark"></i> : null}
       </span>
@@ -1980,7 +1993,11 @@ function IssueChildRow({
           {label.name}
         </Link>
       ))}
-      <span className="child-issue-date" title={issue.createdLabel}>
+      <span
+        className={`child-issue-date ${stylex.props(hovered ? styles.childDateVisible : styles.childDate).className}`}
+        title={issue.createdLabel}
+        data-stylex-owner="project-issues-child-date"
+      >
         {issue.createdLabel}
       </span>
     </div>
@@ -2065,16 +2082,17 @@ function IssueSubtaskSummary({
           <div
             className={`subtask-progress upload-progress ${
               percentage === 100 ? "done-outline" : "red-outline"
-            }`}
+            } ${stylex.props(styles.subtaskProgress, percentage === 100 ? styles.subtaskProgressDone : styles.subtaskProgressOpen).className}`}
+            data-stylex-owner="project-issues-subtask-progress"
           >
             <div
-              className={`${stylex.props(styles.progressBar(`${percentage}%`)).className} bar ${percentage === 100 ? "done" : "red"}`}
+              className={`${stylex.props(styles.subtaskProgressBar, styles.progressBar(`${percentage}%`), percentage === 100 ? styles.subtaskProgressDoneBar : styles.subtaskProgressOpenBar).className} bar ${percentage === 100 ? "done" : "red"}`}
               title="Subtask"
               data-stylex-owner="project-issues-subtask-progress-bar"
             ></div>
           </div>
           <span
-            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""}`}
+            className={`subtask-progress completion-ratio${percentage === 100 ? " txt-green" : ""} ${stylex.props(styles.subtaskProgressRatio).className}`}
           >
             {percentage === 100 ? "" : `${childClosedCount}/`}
             {childTotalCount}
