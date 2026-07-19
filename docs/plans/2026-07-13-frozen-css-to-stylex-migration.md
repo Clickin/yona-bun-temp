@@ -4102,3 +4102,14 @@ declarations. The static contract records observed RED then exact absence GREEN;
 project-home fixture retains the real right rail/member-info structure in normal and fallback-off
 modes, proving only the generated-asset boundary. Global discovery remains incomplete/non-green;
 this is not an unlinking or live-legacy visual-parity claim.
+
+Batch 561 retires only four source-less temporary site-list bridge blocks: `.post-row`,
+`.post-row-main`, standalone `.post-title`, and `.post-row-meta`. Legacy
+`site/postList.scala.html:26-68` and `site/issueList.scala.html:35-83` instead establish the
+shared `post-list-wrap > row-fluid.listitem` avatar/info/meta skeleton; frozen
+`_page.less:5389-5431` retains its nested `.post-list-wrap .post-title` rule and is untouched.
+The current site post/issue routes already own the actual row, info, title-link, and metadata
+elements with StyleX and have no temporary class emitter. The focused contract records observed
+selector presence before deletion, exact absence afterward, and normal/fallback-off managed
+browser checks for both lists at desktop and 390px. Global fallback discovery remains
+incomplete/non-green, so this is not generated-fallback unlinking or live-legacy visual parity.

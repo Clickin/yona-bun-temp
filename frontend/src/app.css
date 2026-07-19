@@ -2967,21 +2967,6 @@ h1 {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-.post-row {
-  display: grid;
-  gap: 6px;
-  padding: 11px 0;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.post-row-main {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-  align-items: center;
-  min-width: 0;
-}
-
 .issue-list-page .post-list-wrap {
   list-style: none;
 }
@@ -3148,23 +3133,6 @@ h1 {
 
 .issue-list-page .child-issue-list .yobicon-checkmark {
   color: #fd6956;
-}
-
-.post-title {
-  min-width: 0;
-  color: #333;
-  font-size: 15px;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.post-row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  align-items: center;
-  color: #777;
-  font-size: 12px;
 }
 
 .readme .readme-wrap {

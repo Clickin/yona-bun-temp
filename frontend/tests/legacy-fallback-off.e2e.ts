@@ -126,6 +126,36 @@ test("runtime-grid fallback bridge has no remaining selectors", () => {
   }
 });
 
+test("site post-row fallback bridges have no remaining selectors", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".post-row {",
+    ".post-row-main {",
+    ".post-title {",
+    ".post-row-meta {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+
+  for (const [route, owners] of [
+    [
+      "src/routes/sites/postList.tsx",
+      ["site-post-list-row", "site-post-list-info", "site-post-list-title-link", "site-post-list-metadata"],
+    ],
+    [
+      "src/routes/sites/issueList.tsx",
+      ["site-issue-list-row", "site-issue-list-info", "site-issue-list-title-link", "site-issue-list-metadata"],
+    ],
+  ] as const) {
+    const source = readFileSync(route, "utf8");
+    for (const owner of owners) expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).not.toContain('className="post-row"');
+    expect(source).not.toContain('className="post-row-main"');
+    expect(source).not.toContain('className="post-row-meta"');
+    expect(source).not.toContain('className="post-title"');
+  }
+});
+
 test("dead temporary typography bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".eyebrow {");
@@ -327,6 +357,48 @@ async function mockPostListSession(page: Page) {
             title: "Release checklist",
           },
         ],
+        total: 1,
+        totalPages: 1,
+      },
+    }),
+  );
+}
+
+async function mockIssueListSession(page: Page) {
+  const fulfill = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-issue-list" },
+      json: { isAnonymous: false, isConfirmed: true, isSiteAdmin: true, loginId: "siteboss" },
+    });
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
+    await page.route(url, fulfill);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/site/issues?*", (route) =>
+    route.fulfill({
+      json: {
+        issues: [
+          {
+            authorAvatarUrl: "/assets/images/default-avatar-128.png",
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            commentCount: 5,
+            createdLabel: "1 day ago",
+            createdTitle: "2026-06-29 13:00",
+            issueNumber: "42",
+            labels: [],
+            ownerName: "acme",
+            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectName: "roadmap",
+            state: "open",
+            title: "Fix release blocker",
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        state: "open",
         total: 1,
         totalPages: 1,
       },
@@ -804,7 +876,24 @@ test("post-list output retains the runtime fallback boundary without its dead br
   );
   const container = page.locator('[data-stylex-owner="site-post-list-container"]');
   await expect(container).toBeVisible();
-  await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
+  const row = container.locator('[data-stylex-owner="site-post-list-row"]');
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-project-avatar"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-info"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-metadata"]')).toHaveCount(1);
+  await expect(row.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveText("Release checklist");
+  expect(await row.evaluate((element) => {
+    const [avatar, info, metadata] = Array.from(element.children).map((child) =>
+      child.getBoundingClientRect(),
+    );
+    const rowBox = element.getBoundingClientRect();
+    return {
+      avatarLeft: avatar.left,
+      infoTop: info.top,
+      metadataTop: metadata.top,
+      rowBottom: rowBox.bottom,
+    };
+  })).toEqual(expect.objectContaining({ avatarLeft: expect.any(Number), infoTop: expect.any(Number), metadataTop: expect.any(Number), rowBottom: expect.any(Number) }));
   await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-post-list-page-wrap-outer",
@@ -813,6 +902,58 @@ test("post-list output retains the runtime fallback boundary without its dead br
     "site-post-list-setting-sidebar-column",
     "site-post-list-setting-content-column",
   ]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileRow = await row.evaluate((element) => {
+    const rowBox = element.getBoundingClientRect();
+    const titleBox = element.querySelector('[data-stylex-owner="site-post-list-title-link"]')?.getBoundingClientRect();
+    return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
+  });
+  expect(mobileRow.titleBox).not.toBeNull();
+  expect(mobileRow.titleBox!.right).toBeLessThanOrEqual(mobileRow.rowBox.right + 1);
+  expect(mobileRow.scrollWidth).toBeLessThanOrEqual(390);
+});
+
+test("issue-list output retains StyleX row ownership without the dead post-row bridges", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockIssueListSession(page);
+  await page.goto(`${basePath}/sites/issueList?state=open`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const row = page.locator('[data-stylex-owner="site-issue-list-row"]');
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-project-avatar"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-info"]')).toHaveCount(1);
+  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-metadata"]')).toHaveCount(1);
+  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText("Fix release blocker");
+  const desktop = await row.evaluate((element) => {
+    const rowBox = element.getBoundingClientRect();
+    const avatarBox = element.children[0]?.getBoundingClientRect();
+    const infoBox = element.children[1]?.getBoundingClientRect();
+    const metadataBox = element.children[2]?.getBoundingClientRect();
+    return { rowBox, avatarBox, infoBox, metadataBox };
+  });
+  expect(desktop.avatarBox!.left).toBeGreaterThanOrEqual(desktop.rowBox.left);
+  expect(desktop.infoBox!.top).toBeGreaterThanOrEqual(desktop.rowBox.top);
+  expect(desktop.metadataBox!.bottom).toBeLessThanOrEqual(desktop.rowBox.bottom + 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await row.evaluate((element) => {
+    const rowBox = element.getBoundingClientRect();
+    const titleBox = element.querySelector('[data-stylex-owner="site-issue-list-title-link"]')?.getBoundingClientRect();
+    return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
+  });
+  expect(mobile.titleBox).not.toBeNull();
+  expect(mobile.titleBox!.right).toBeLessThanOrEqual(mobile.rowBox.right + 1);
+  expect(mobile.scrollWidth).toBeLessThanOrEqual(390);
+  await expect(page.locator(".post-row, .post-row-main, .post-row-meta")).toHaveCount(0);
 });
 
 test("project posts retains legacy label output without the dead board-badge bridge", async ({
