@@ -341,6 +341,9 @@ test("project webhooks renders legacy project/partial_webhooks_list.scala.html p
     gitPushChecked: true,
     headBackground: "rgb(250, 250, 250)",
     headBorderBottomWidth: "2px",
+    headCellLineHeight: "30px",
+    headCellPaddingLeft: "8px",
+    itemHeadingPaddingLeft: "8px",
     listItemBorderBottomWidth: "1px",
     payloadText: "https://hooks.example.test/yona",
     secretText: "NONE",
@@ -951,15 +954,22 @@ async function webhookListMetrics(page: Page) {
     const head = document.querySelector("#webhooksList .list-head");
     const firstItem = document.querySelector("#webhooksList .list-item");
     const cells = firstItem ? Array.from(firstItem.children) : [];
+    const firstHeadCell = head?.firstElementChild;
+    const itemHeading = firstItem?.querySelector("h6");
     const checkbox = firstItem?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
     const button = firstItem?.querySelector("button.ybtn-danger");
     const headStyle = head ? getComputedStyle(head) : null;
     const itemStyle = firstItem ? getComputedStyle(firstItem) : null;
+    const headCellStyle = firstHeadCell ? getComputedStyle(firstHeadCell) : null;
+    const itemHeadingStyle = itemHeading ? getComputedStyle(itemHeading) : null;
     return {
       deleteButtonText: button?.textContent?.trim(),
       gitPushChecked: checkbox?.checked,
       headBackground: headStyle?.backgroundColor,
       headBorderBottomWidth: headStyle?.borderBottomWidth,
+      headCellLineHeight: headCellStyle?.lineHeight,
+      headCellPaddingLeft: headCellStyle?.paddingLeft,
+      itemHeadingPaddingLeft: itemHeadingStyle?.paddingLeft,
       listItemBorderBottomWidth: itemStyle?.borderBottomWidth,
       payloadText: cells[0]?.textContent?.trim(),
       requestMarkerCount: firstItem?.querySelectorAll("[data-request-method], [data-request-uri]")

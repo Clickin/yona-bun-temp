@@ -463,35 +463,32 @@ function ProjectWebhooksList({
   return (
     <>
       <div
-        {...stylex.props(styles.listHead)}
-        className="row-fluid list-head"
+        className={`${stylex.props(styles.listHead).className} row-fluid list-head`}
         data-stylex-owner="project-webhooks-list-head"
       >
-        <div {...stylex.props(styles.listHeadCell)} className="span5 payload-url">
+        <div className={`${stylex.props(styles.listHeadCell).className} span5 payload-url`}>
           <strong>{t("project.webhook.payloadUrl")}</strong>
         </div>
-        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
+        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
           <strong>{t("project.webhook.secret")}</strong>
         </div>
-        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
+        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
           <strong>Type of message</strong>
         </div>
-        <div {...stylex.props(styles.listHeadCell)} className="span2 secret text-center">
+        <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
           <strong>Include git push events</strong>
         </div>
-        <div {...stylex.props(styles.listHeadCell)} className="span1 secret text-center"></div>
+        <div className={`${stylex.props(styles.listHeadCell).className} span1 secret text-center`}></div>
       </div>
       {webhooks.map((webhook) => (
         <div
-          {...stylex.props(styles.listItem)}
-          className="row-fluid list-item vertical-align"
+          className={`${stylex.props(styles.listItem).className} row-fluid list-item vertical-align`}
           data-webhook-id={webhook.id}
           key={webhook.id}
         >
           <div className="span5">
             <h6
-              {...stylex.props(webhooksStyles.listItemHeading, webhooksStyles.truncate)}
-              className="mr20 truncate"
+              className={`${stylex.props(webhooksStyles.listItemHeading, webhooksStyles.truncate).className} mr20 truncate`}
               data-stylex-owner="project-webhooks-list-item-heading"
             >
               {stringField(webhook.payloadUrl, "")}
@@ -499,7 +496,7 @@ function ProjectWebhooksList({
           </div>
           <div className="span2 text-center">
             <h6
-              {...stylex.props(webhooksStyles.listItemHeading)}
+              className={stylex.props(webhooksStyles.listItemHeading).className}
               data-stylex-owner="project-webhooks-list-item-heading"
             >
               {stringField(webhook.secret, "") || "NONE"}
@@ -507,7 +504,7 @@ function ProjectWebhooksList({
           </div>
           <div className="span2 text-center">
             <h6
-              {...stylex.props(webhooksStyles.listItemHeading)}
+              className={stylex.props(webhooksStyles.listItemHeading).className}
               data-stylex-owner="project-webhooks-list-item-heading"
             >
               {stringField(webhook.webhookType, "")}
