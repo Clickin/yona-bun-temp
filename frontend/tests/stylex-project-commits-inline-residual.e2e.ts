@@ -6,8 +6,24 @@ const SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/$ownerName/$projectName/commits.tsx", import.meta.url)),
   "utf8",
 );
+const STYLE_SOURCE = readFileSync(
+  fileURLToPath(
+    new URL("../src/routes/$ownerName/$projectName/-commits.stylex.ts", import.meta.url),
+  ),
+  "utf8",
+);
+const LEGACY_SOURCE = readFileSync(
+  fileURLToPath(new URL("../../yona-original/app/views/code/history.scala.html", import.meta.url)),
+  "utf8",
+);
+const LESS_SOURCE = readFileSync(
+  fileURLToPath(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  ),
+  "utf8",
+);
 
-test("project commits owns legacy inline selector and tabs geometry in route StyleX", async ({
+test("project commits owns inline selectors, tabs, and populated row typography in route StyleX", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -42,6 +58,34 @@ test("project commits owns legacy inline selector and tabs geometry in route Sty
   await expect(row.locator(".date")).toContainText("Jul 17, 2026");
   await expect(row.locator(".author .avatar-wrap")).toHaveCount(1);
 
+  const commitId = page.locator('[data-stylex-owner="project-commits-commit-id"]');
+  await expect(commitId).toHaveCSS("width", "70px");
+  await expect(commitId).toHaveCSS("padding", "12px 3px");
+  await expect(commitId).toHaveCSS("font-size", "12px");
+  await expect(commitId.locator("a")).toHaveCSS("color", "rgb(81, 170, 204)");
+  await expect(page.locator('[data-stylex-owner="project-commits-messages"]')).toHaveCSS(
+    "vertical-align",
+    "top",
+  );
+  await expect(page.locator('[data-stylex-owner="project-commits-date"]')).toHaveCSS(
+    "width",
+    "100px",
+  );
+  const author = page.locator('[data-stylex-owner="project-commits-author"]');
+  await expect(author).toHaveCSS("width", /^(40|41(?:\.\d+)?)px$/u);
+  await expect(page.locator('[data-stylex-owner="project-commits-message-summary"]')).toHaveCSS(
+    "padding",
+    "5px",
+  );
+  await expect(page.locator('[data-stylex-owner="project-commits-message-summary"]')).toHaveCSS(
+    "font-size",
+    "14px",
+  );
+  await expect(page.locator('[data-stylex-owner="project-commits-comment-count"]')).toHaveCSS(
+    "margin-right",
+    "8px",
+  );
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "commit" });
   const mobileTabs = page.locator('[data-stylex-owner="project-commits-tabs"]');
@@ -54,6 +98,31 @@ test("project commits owns legacy inline selector and tabs geometry in route Sty
   expect(SOURCE).not.toContain("style={{ width: 220 }}");
   expect(SOURCE).not.toContain('style={{ marginBottom: "20px" }}');
   expect(SOURCE).not.toContain('style={branchMenuOpen ? { display: "block", width: 220 }');
+  for (const owner of [
+    "project-commits-commit-id",
+    "project-commits-messages",
+    "project-commits-date",
+    "project-commits-author",
+    "project-commits-message-summary",
+    "project-commits-comment-count",
+  ]) {
+    expect(SOURCE).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(STYLE_SOURCE).toContain("commitIdCell");
+  expect(STYLE_SOURCE).toContain("messagesCell");
+  expect(STYLE_SOURCE).toContain("commitMessage");
+  expect(STYLE_SOURCE).toContain("commentCount");
+  expect(STYLE_SOURCE).toContain('width: "70px"');
+  expect(STYLE_SOURCE).toContain('width: "100px"');
+  expect(STYLE_SOURCE).toContain('width: "40px"');
+  expect(STYLE_SOURCE).toContain('padding: "5px"');
+  expect(STYLE_SOURCE).toContain('marginRight: "8px"');
+  expect(LEGACY_SOURCE).toContain('class="commit-wrap"');
+  expect(LEGACY_SOURCE).toContain('class="code-table commits');
+  expect(LEGACY_SOURCE).toContain('class="number-of-comments"');
+  expect(LESS_SOURCE).toContain(".commit-wrap {");
+  expect(LESS_SOURCE).toContain(".btn-copy-commitId");
+  expect(LESS_SOURCE).toContain(".commitMsg.short");
 });
 
 async function mockHistory(page: Page) {
@@ -93,10 +162,10 @@ async function mockHistory(page: Page) {
             authorEmail: "admin@example.com",
             authorLoginId: "admin",
             authorName: "Admin",
-            commentCount: 0,
+            commentCount: 2,
             commitId: "abcdef1234567890",
             commitShortId: "abcdef1",
-            message: "Initial commit",
+            message: "Initial commit\nDetails",
             shortMessage: "Initial commit",
           },
         ],

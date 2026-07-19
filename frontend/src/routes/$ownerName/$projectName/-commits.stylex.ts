@@ -1,6 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const commitsTheme = stylex.defineVars({
+  commitIdLink: "#51aacc",
+  commentText: "#666666",
   historySurface: "#ffffff",
   mutedText: "#777777",
 });
@@ -20,4 +22,38 @@ export const styles = stylex.create({
   tabs: { marginBottom: "20px" },
   history: { backgroundColor: commitsTheme.historySurface },
   table: { color: commitsTheme.mutedText },
+  commitIdCell: {
+    position: "relative",
+    width: "70px",
+    padding: "12px 3px",
+    textAlign: "center",
+    verticalAlign: "top",
+    fontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    fontSize: "12px",
+  },
+  commitIdLink: { color: commitsTheme.commitIdLink },
+  messagesCell: { verticalAlign: "top" },
+  dateCell: {
+    width: "100px",
+    fontSize: "12px",
+    verticalAlign: "top",
+  },
+  authorCell: {
+    width: "40px",
+    lineHeight: "1",
+    textAlign: "right",
+    verticalAlign: "top",
+  },
+  commitMessage: {
+    padding: "5px",
+    fontSize: "14px",
+    textOverflow: "ellipsis",
+    verticalAlign: "middle",
+    whiteSpace: "pre-line",
+    wordBreak: "break-word",
+  },
+  commentCount: {
+    marginRight: "8px",
+    color: commitsTheme.commentText,
+  },
 });

@@ -1326,3 +1326,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 501
 
 - `/$ownerName/$projectName/webhooks` dead-wrapper residual: existing route-local StyleX owners cover active form/list output, so the obsolete `.webhook-editor-wrap .new-webhook-wrap` and `.webhook-editor-wrap .webhook-list-wrap` app.css blocks (including table-only descendants with no active React consumers) are removed. The outer wrapper and existing route-owned list-head/list-item owners remain unchanged. Legacy Scala HTML/JS is output DOM/UX evidence; behavior remains React-owned. Focused `stylex-project-webhooks-residual.e2e.ts` verifies legacy source evidence, exact dead selector absence, and active ownership.
+
+## Batch 502
+
+- `/$ownerName/$projectName/commits` populated rows: route-local StyleX owners now cover commit-id cell/link typography, messages/date/author cells, commit summary, and comment count. Legacy `commit-wrap`/`code-table commits`/`commitMsg` classes, copy-button hover behavior, shared app.css selectors, and React state/navigation remain intact because branch/file-history and pull-request screens share the fallback. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. Focused `stylex-project-commits-inline-residual.e2e.ts` verifies populated desktop computed declarations, mobile geometry, stable owners, and frozen Scala/LESS evidence.

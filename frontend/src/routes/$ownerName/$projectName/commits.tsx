@@ -372,7 +372,10 @@ export function ProjectCodeHistoryBody({
                       );
                       return (
                         <tr key={commit.commitId}>
-                          <td className="commit-id">
+                          <td
+                            className={`${stylex.props(styles.commitIdCell).className} commit-id`}
+                            data-stylex-owner="project-commits-commit-id"
+                          >
                             <button
                               type="button"
                               className="ybtn ybtn-mini btn-copy-commitId"
@@ -387,13 +390,20 @@ export function ProjectCodeHistoryBody({
                               activeOptions={legacyCodeHistoryLinkActiveOptions}
                               activeProps={legacyCodeHistoryLinkActiveProps}
                               title={t("code.showCommit")}
+                              className={stylex.props(styles.commitIdLink).className}
                             >
                               {commit.commitShortId}
                             </Link>
                           </td>
-                          <td className="messages">
+                          <td
+                            className={`${stylex.props(styles.messagesCell).className} messages`}
+                            data-stylex-owner="project-commits-messages"
+                          >
                             {commit.commentCount > 0 ? (
-                              <span className="number-of-comments">
+                              <span
+                                className={`${stylex.props(styles.commentCount).className} number-of-comments`}
+                                data-stylex-owner="project-commits-comment-count"
+                              >
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}
@@ -403,8 +413,16 @@ export function ProjectCodeHistoryBody({
                               to={showCommitPath}
                             />
                           </td>
-                          <td className="date">{commit.authorDate}</td>
-                          <td className="author">
+                          <td
+                            className={`${stylex.props(styles.dateCell).className} date`}
+                            data-stylex-owner="project-commits-date"
+                          >
+                            {commit.authorDate}
+                          </td>
+                          <td
+                            className={`${stylex.props(styles.authorCell).className} author`}
+                            data-stylex-owner="project-commits-author"
+                          >
                             <CommitAuthor basePath={runtimeConfig.basePath} commit={commit} />
                           </td>
                         </tr>
@@ -469,7 +487,8 @@ function CommitMessage({
         search={{}}
         activeOptions={legacyCodeHistoryLinkActiveOptions}
         activeProps={legacyCodeHistoryLinkActiveProps}
-        className="commitMsg short"
+        className={`${stylex.props(styles.commitMessage).className} commitMsg short`}
+        data-stylex-owner="project-commits-message-summary"
       >
         {summary}
       </Link>
