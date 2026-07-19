@@ -374,11 +374,7 @@ function ProjectSearchSuccessBody({
           <div className="project-page-wrap">
             <div className="row-fluid">
               <div className="span2">
-                <ul
-                  {...sx.searchCategory}
-                  className={`${sx.searchCategory.className} lst-stacked unstyled search-category-wrap`}
-                  data-stylex-owner="project-search-category"
-                >
+                <ul className="lst-stacked unstyled search-category-wrap">
                   {PROJECT_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
                     const className = `${category.type === activeType ? "active" : ""} ${
@@ -386,7 +382,9 @@ function ProjectSearchSuccessBody({
                     }`;
                     return (
                       <li
+                        {...sx.searchCategory}
                         className={`${sx.searchCategory.className} ${className}`}
+                        data-stylex-owner="project-search-category-item"
                         key={category.type}
                       >
                         <Link

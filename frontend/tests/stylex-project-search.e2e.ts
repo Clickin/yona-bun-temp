@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
+const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
 test("project search StyleX owners preserve populated and empty result contracts", async () => {
   const [route, style, legacy, issues, users, posts, less] = await Promise.all([
     readFile(new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url), "utf8"),
@@ -37,7 +39,7 @@ test("project search StyleX owners preserve populated and empty result contracts
   expect(less).toContain(".search-category-wrap");
   expect(less).toContain(".search-list-wrap");
   for (const owner of [
-    "project-search-category",
+    "project-search-category-item",
     "project-search-box",
     "project-search-result-title",
     "project-search-list",
@@ -61,8 +63,10 @@ test("project search populated and empty states keep responsive bounds and links
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
-    await page.goto("/weblabs/demo/search?keyword=bug&searchType=issue");
-    await expect(page.locator('[data-stylex-owner="project-search-category"]')).toBeVisible();
+    await page.goto(`${basePath}/weblabs/demo/search?keyword=bug&searchType=issue`);
+    const categoryItems = page.locator('[data-stylex-owner="project-search-category-item"]');
+    await expect(categoryItems).toHaveCount(7);
+    await expect(categoryItems.first()).toBeVisible();
     await expect(page.locator('[data-stylex-owner="project-search-list-item"]')).toBeVisible();
     await expect(
       page.locator('[data-stylex-owner="project-search-list-item"] a.title'),
@@ -80,7 +84,7 @@ test("project search populated and empty states keep responsive bounds and links
   await page.route("**/api/v1/owners/**/projects/**/search?**", (route) =>
     route.fulfill({ contentType: "application/json", json: emptyResponse() }),
   );
-  await page.goto("/weblabs/demo/search?keyword=none&searchType=issue");
+  await page.goto(`${basePath}/weblabs/demo/search?keyword=none&searchType=issue`);
   await expect(page.locator('[data-stylex-owner="project-search-empty-result"]')).toBeVisible();
 });
 
