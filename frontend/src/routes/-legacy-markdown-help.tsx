@@ -1,10 +1,12 @@
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
 import type { ComponentPropsWithoutRef } from "react";
 import { useState } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath } from "../runtime-config";
+import { markdownHelpNavStyles as navStyles } from "./-legacy-markdown-help.stylex";
 
 const MARKDOWN_HELP_TARGETS = [
   "markdownHeaders",
@@ -20,6 +22,22 @@ const MARKDOWN_HELP_TARGETS = [
 ] as const;
 
 type MarkdownHelpTarget = (typeof MARKDOWN_HELP_TARGETS)[number];
+
+const MARKDOWN_HELP_NAV_ITEMS: ReadonlyArray<{
+  label: string;
+  target: MarkdownHelpTarget;
+}> = [
+  { label: "Header", target: "markdownHeaders" },
+  { label: "Text Style", target: "markdownStyling" },
+  { label: "Link", target: "markdownLinks" },
+  { label: "List", target: "markdownLists" },
+  { label: "Checklist", target: "markdownTaskList" },
+  { label: "Image", target: "markdownImages" },
+  { label: "Blockquote", target: "markdownBlockquotes" },
+  { label: "Code", target: "markdownCodes" },
+  { label: "Table", target: "markdownTables" },
+  { label: "Short Link", target: "markdownShortLinks" },
+];
 
 const MARKDOWN_HEADER_SAMPLE = `
 # This is an H1
@@ -258,121 +276,54 @@ export function LegacyMarkdownHelp() {
   };
 
   return (
-    <div className="markdown-help">
-      <ul className="markdown-help-nav">
-        <li>
-          <span className="label">{t("title.markdown.help")}</span>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownHeaders")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownHeaders")}
-            aria-expanded={activeTarget === "markdownHeaders"}
-            onClick={() => toggleActiveTarget("markdownHeaders")}
+    <div
+      {...stylex.props(navStyles.root)}
+      className={`${stylex.props(navStyles.root).className} markdown-help`}
+      data-stylex-owner="markdown-help-nav-root"
+    >
+      <ul
+        {...stylex.props(navStyles.nav)}
+        className={`${stylex.props(navStyles.nav).className} markdown-help-nav`}
+        data-stylex-owner="markdown-help-nav-list"
+      >
+        <li {...stylex.props(navStyles.navItem)} data-stylex-owner="markdown-help-nav-item">
+          <span
+            {...stylex.props(navStyles.navLabel)}
+            className={`${stylex.props(navStyles.navLabel).className} label`}
+            data-stylex-owner="markdown-help-nav-label"
           >
-            Header
-          </button>
+            {t("title.markdown.help")}
+          </span>
         </li>{" "}
-        <li className={`help-nav${activeClass("markdownStyling")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownStyling")}
-            aria-expanded={activeTarget === "markdownStyling"}
-            onClick={() => toggleActiveTarget("markdownStyling")}
-          >
-            Text Style
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownLinks")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownLinks")}
-            aria-expanded={activeTarget === "markdownLinks"}
-            onClick={() => toggleActiveTarget("markdownLinks")}
-          >
-            Link
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownLists")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownLists")}
-            aria-expanded={activeTarget === "markdownLists"}
-            onClick={() => toggleActiveTarget("markdownLists")}
-          >
-            List
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownTaskList")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownTaskList")}
-            aria-expanded={activeTarget === "markdownTaskList"}
-            onClick={() => toggleActiveTarget("markdownTaskList")}
-          >
-            Checklist
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownImages")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownImages")}
-            aria-expanded={activeTarget === "markdownImages"}
-            onClick={() => toggleActiveTarget("markdownImages")}
-          >
-            Image
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownBlockquotes")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownBlockquotes")}
-            aria-expanded={activeTarget === "markdownBlockquotes"}
-            onClick={() => toggleActiveTarget("markdownBlockquotes")}
-          >
-            Blockquote
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownCodes")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownCodes")}
-            aria-expanded={activeTarget === "markdownCodes"}
-            onClick={() => toggleActiveTarget("markdownCodes")}
-          >
-            Code
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownTables")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownTables")}
-            aria-expanded={activeTarget === "markdownTables"}
-            onClick={() => toggleActiveTarget("markdownTables")}
-          >
-            Table
-          </button>
-        </li>{" "}
-        <li className={`help-nav${activeClass("markdownShortLinks")}`}>
-          <button
-            type="button"
-            className="markdown-help-nav-button"
-            aria-controls={markdownHelpContentId("markdownShortLinks")}
-            aria-expanded={activeTarget === "markdownShortLinks"}
-            onClick={() => toggleActiveTarget("markdownShortLinks")}
-          >
-            Short Link
-          </button>
-        </li>
+        {MARKDOWN_HELP_NAV_ITEMS.map(({ label, target }) => {
+          const active = activeTarget === target;
+          const itemStyle = stylex.props(
+            navStyles.navItem,
+            navStyles.navChoice,
+            active && navStyles.navChoiceActive,
+          );
+          const buttonStyle = stylex.props(navStyles.navButton);
+          return (
+            <li
+              {...itemStyle}
+              className={`${itemStyle.className} help-nav${activeClass(target)}`}
+              data-stylex-owner="markdown-help-nav-choice"
+              key={target}
+            >
+              <button
+                {...buttonStyle}
+                type="button"
+                className={`${buttonStyle.className} markdown-help-nav-button`}
+                aria-controls={markdownHelpContentId(target)}
+                aria-expanded={active}
+                data-stylex-owner="markdown-help-nav-button"
+                onClick={() => toggleActiveTarget(target)}
+              >
+                {label}
+              </button>
+            </li>
+          );
+        })}
       </ul>
       <ul className="markdown-help-wrap">
         <li

@@ -11,6 +11,26 @@ const SHARED_MARKDOWN_HELP_SOURCE = readFileSync(
   "utf8",
 );
 
+const SHARED_MARKDOWN_HELP_STYLE_SOURCE = readFileSync(
+  new URL("../src/routes/-legacy-markdown-help.stylex.ts", import.meta.url),
+  "utf8",
+);
+
+const LEGACY_MARKDOWN_HELP_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
+  "utf8",
+);
+
+const LEGACY_PAGE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
+
+const LEGACY_RESPONSIVE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
+  "utf8",
+);
+
 const EXPECTED_HELP_SCREEN = `
 <div class="unsupported hidden">
   <div class="unsupported-inner">
@@ -441,9 +461,36 @@ test("shared markdown help uses typed React targets without legacy target marker
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain("currentTarget.dataset");
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toContain('data-toggle="markdown-help"');
   expect(SHARED_MARKDOWN_HELP_SOURCE).not.toMatch(/data-target=["']markdown/u);
-  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
-    'onClick={() => toggleActiveTarget("markdownLinks")}',
+  expect(LEGACY_MARKDOWN_HELP_SOURCE).toContain('class="markdown-help-nav"');
+  expect(LEGACY_MARKDOWN_HELP_SOURCE).toContain("welClickedMenu.toggleClass('active')");
+  expect(LEGACY_PAGE_LESS_SOURCE).toContain(".markdown-help-nav {");
+  expect(LEGACY_PAGE_LESS_SOURCE).toContain("&.active {");
+  expect(LEGACY_RESPONSIVE_LESS_SOURCE).toContain(".markdown-help .markdown-help-nav li");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("MARKDOWN_HELP_NAV_ITEMS.map");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("active && navStyles.navChoiceActive");
+  expect(SHARED_MARKDOWN_HELP_SOURCE).toContain("onClick={() => toggleActiveTarget(target)}");
+  for (const ownerName of ["root", "list", "item", "label", "choice", "button"]) {
+    expect(SHARED_MARKDOWN_HELP_SOURCE).toContain(
+      `data-stylex-owner="markdown-help-nav-${ownerName}"`,
+    );
+  }
+  for (const styleName of [
+    "root:",
+    "nav:",
+    "navItem:",
+    "navLabel:",
+    "navChoice:",
+    "navChoiceActive:",
+    "navButton:",
+  ]) {
+    expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(styleName);
+  }
+  const themeBlock = SHARED_MARKDOWN_HELP_STYLE_SOURCE.slice(
+    SHARED_MARKDOWN_HELP_STYLE_SOURCE.indexOf("stylex.defineVars({"),
+    SHARED_MARKDOWN_HELP_STYLE_SOURCE.indexOf("});") + 3,
   );
+  for (const geometry of ["margin:", "padding:", "width:", "height:"])
+    expect(themeBlock).not.toContain(geometry);
 
   await mockMarkdownHelpIssueForm(page);
   await page.goto(`${basePath}/admin/sample/issueform`);
@@ -503,6 +550,15 @@ test("shared markdown help uses typed React targets without legacy target marker
   const linkNav = navItems.filter({ hasText: /^Link$/u });
   const listNav = navItems.filter({ hasText: /^List$/u });
   await expect(linkNav).toHaveText("Link");
+  await expect(markdownHelp).toHaveAttribute("data-stylex-owner", "markdown-help-nav-root");
+  await expect(markdownHelp.locator(".markdown-help-nav")).toHaveCSS(
+    "background-color",
+    "rgb(247, 247, 247)",
+  );
+  await expect(linkNav).toHaveCSS("color", "rgb(158, 158, 158)");
+  await expect(linkNav).toHaveCSS("font-weight", "400");
+  await expect(linkNav).toHaveCSS("padding", "5px 7px");
+  await expect(linkNav.locator("button")).toHaveCSS("vertical-align", "baseline");
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
   expect(await readMarkdownHelpMetrics(page)).toEqual({
     labelContainedInNav: true,
@@ -515,6 +571,10 @@ test("shared markdown help uses typed React targets without legacy target marker
 
   await linkNav.click();
   await expect(linkNav).toHaveClass(/active/);
+  await expect(linkNav).toHaveCSS("color", "rgb(51, 51, 51)");
+  await expect(linkNav).toHaveCSS("font-weight", "700");
+  expect(await linkNav.evaluate((node) => getComputedStyle(node, "::before").content)).toBe('" "');
+  expect(await linkNav.evaluate((node) => getComputedStyle(node, "::after").content)).toBe('" "');
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toHaveClass(/active/);
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLinks")).toBeVisible();
   await expect(markdownHelp.locator(".markdown-help-wrap > .markdownLists")).not.toHaveClass(
@@ -539,6 +599,9 @@ test("shared markdown help uses typed React targets without legacy target marker
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator(".markdown-help")).toBeVisible();
+  await expect(
+    page.locator('.markdown-help-nav > [data-stylex-owner="markdown-help-nav-choice"]').first(),
+  ).toHaveCSS("padding", "5px 8px");
   expect(await readMarkdownHelpMobileMetrics(page)).toEqual({
     labelContainedInNav: true,
     navInsideRoot: true,

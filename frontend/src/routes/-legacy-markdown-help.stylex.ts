@@ -1,0 +1,95 @@
+import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../theme.stylex";
+
+export const markdownHelpColors = stylex.defineVars({
+  navSurface: "#f7f7f7",
+  navBorder: "#dddddd",
+  navLabelSurface: "#c7c9c9",
+  navText: "#9e9e9e",
+  navTextActive: "#333333",
+  paneSurface: "#ffffff",
+});
+
+export const markdownHelpNavStyles = stylex.create({
+  root: {
+    marginTop: "5px",
+    marginRight: "0px",
+    marginBottom: "0px",
+    marginLeft: "0px",
+  },
+  nav: {
+    backgroundColor: markdownHelpColors.navSurface,
+    borderColor: markdownHelpColors.navBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    borderBottomStyle: "none",
+    listStyle: "none",
+  },
+  navItem: {
+    display: "inline-block",
+    lineHeight: "20px",
+    paddingTop: "5px",
+    paddingRight: { default: "7px", [globalBreakpoints.mobile]: "8px" },
+    paddingBottom: "5px",
+    paddingLeft: { default: "7px", [globalBreakpoints.mobile]: "8px" },
+  },
+  navLabel: {
+    backgroundColor: markdownHelpColors.navLabelSurface,
+    textShadow: "none",
+  },
+  navChoice: {
+    color: {
+      default: markdownHelpColors.navText,
+      ":hover": markdownHelpColors.navTextActive,
+    },
+    cursor: "pointer",
+    position: "relative",
+  },
+  navChoiceActive: {
+    color: markdownHelpColors.navTextActive,
+    fontWeight: "bold",
+    "::before": {
+      borderBottomColor: markdownHelpColors.navBorder,
+      borderLeftColor: "transparent",
+      borderRightColor: "transparent",
+      borderTopColor: "transparent",
+      borderStyle: "outset outset solid outset",
+      borderWidth: "7px",
+      bottom: "0px",
+      content: '" "',
+      height: "0px",
+      left: "50%",
+      marginLeft: "-7px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0px",
+    },
+    "::after": {
+      borderBottomColor: markdownHelpColors.paneSurface,
+      borderLeftColor: "transparent",
+      borderRightColor: "transparent",
+      borderTopColor: "transparent",
+      borderStyle: "outset outset solid outset",
+      borderWidth: "7px",
+      bottom: "-1px",
+      content: '" "',
+      height: "0px",
+      left: "50%",
+      marginLeft: "-7px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0px",
+    },
+  },
+  navButton: {
+    appearance: "none",
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderWidth: "0px",
+    color: "inherit",
+    cursor: "pointer",
+    font: "inherit",
+    padding: "0px",
+    verticalAlign: "baseline",
+  },
+});

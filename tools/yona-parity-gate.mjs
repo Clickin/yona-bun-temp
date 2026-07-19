@@ -172,6 +172,7 @@ const PARITY_SLICES = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/src\/api\/project-labels\.ts$/i,
+      /^frontend\/src\/routes\/-legacy-markdown-help\.stylex\.ts$/i,
       /^frontend\/src\/routes\/-legacy-markdown-help\.tsx$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
