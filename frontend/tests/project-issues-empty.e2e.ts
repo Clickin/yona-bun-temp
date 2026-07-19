@@ -5,6 +5,22 @@ const PROJECT_ISSUES_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/issues.tsx", import.meta.url),
   "utf8",
 );
+const PROJECT_ISSUES_STYLE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/-issues.stylex.ts", import.meta.url),
+  "utf8",
+);
+const PROJECT_ISSUES_APP_CSS_SOURCE = readFileSync(
+  new URL("../src/app.css", import.meta.url),
+  "utf8",
+);
+const LEGACY_ISSUE_SEARCH_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/issue/partial_searchform.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_ISSUE_PAGE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
 const SITE_LAYOUT_SHELL_SOURCE = readFileSync(
   new URL("../src/routes/-home-route-screen.tsx", import.meta.url),
   "utf8",
@@ -995,6 +1011,15 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
 
   const labelsWrap = page.locator(".labels-wrap");
+  const labelsOwner = page.locator('[data-stylex-owner="project-issues-labels-wrap"]');
+  await expect(labelsOwner).toHaveCount(1);
+  await expect(labelsOwner).toHaveCSS("position", "relative");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-stylex-owner="project-issues-labels-wrap"');
+  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('labelsWrap: { position: "relative" }');
+  expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(".issue-list-page .left-menu .labels-wrap {");
+  expect(LEGACY_ISSUE_SEARCH_SOURCE).toContain('<div class="labels-wrap">');
+  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".labels-wrap {");
+  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain("position:relative;");
   const control = labelsWrap.locator("#s2id_labelIds");
   await expect(control).toHaveClass(/select2-container-multi/u);
   await expect(control).toHaveClass(/issue-labels/u);
@@ -1056,6 +1081,7 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".labels-wrap")).toBeHidden();
+  await expect(labelsOwner).toHaveCSS("position", "relative");
 });
 
 test("project issue list preserves legacy selected-label Select2 DOM", async ({ page }) => {

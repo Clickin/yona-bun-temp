@@ -12,6 +12,7 @@ export const styles = stylex.create({
   childIssueListVisible: { display: "block" },
   progressBar: (width: string) => ({ width }),
   relativeAnchor: { position: "relative" },
+  labelsWrap: { position: "relative" },
   results: { backgroundColor: issuesTheme.resultsSurface },
   massUpdateOptionButton: {
     background: "transparent",

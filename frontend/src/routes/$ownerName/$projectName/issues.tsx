@@ -2600,7 +2600,10 @@ function IssueSearchForm({
             </button>
           </dd>
         </dl>
-        <div className="labels-wrap">
+        <div
+          className={`${stylex.props(styles.labelsWrap).className} labels-wrap`}
+          data-stylex-owner="project-issues-labels-wrap"
+        >
           {labelControls.showManageLink ? (
             <Link
               activeProps={legacyRouteLocalActiveProps}
