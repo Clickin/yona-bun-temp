@@ -25,8 +25,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | HELP-03, AUTH-01, AUTH-02 | markdown content + login/signup forms | 독립 3-worker batch |
-| 2 | AUTH-03..05, USER-02 | standalone auth와 user settings shell | 독립 3-worker batches |
+| 1 | AUTH-03, AUTH-04, AUTH-05 | standalone auth screens | 독립 3-worker batch |
+| 2 | USER-02, USER-03, USER-04 | user settings screens | 독립 3-worker batch |
 | 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
 | 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
 | 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
@@ -45,7 +45,7 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 | ROOT-01 | global navbar/usermenu/sidebar; anonymous/authenticated; login dialog/error | `common/navbar.scala.html`, `usermenu*.scala.html`, `loginDialog.scala.html`, site layout | DEPENDENCY | L----- |
 | HELP-01 | `/_help`: TOC/FAQ closed/open and sprite states | `help/toc.scala.html` | COMPLETE | LOECR✓ |
 | HELP-02 | shared markdown help navigation active/inactive | `help/markdown.scala.html` | DEPENDENCY | LOE--- |
-| HELP-03 | markdown pane/table/code/task-list responsive states | `help/markdown.scala.html`; `_markdown.less`, `_responsive.less` | DEPENDENCY | L----- |
+| HELP-03 | markdown pane/table/code/task-list responsive states | `help/markdown.scala.html`; `_markdown.less`, `_responsive.less` | DEPENDENCY | LOE--- |
 | SEARCH-01 | `/search`: residual category/avatar/content/body/meta/link/empty/error states | `search/result.scala.html`, `partial_search` and all result partials | DEPENDENCY | LOE--- |
 | SEARCH-02 | `-search-screen`: dead `LegacySearchBody` removed; imported error bodies/predicates retained | same search templates | COMPLETE | L--CR✓ |
 | SEARCH-03 | `/organizations/$organizationName/search`: categories, populated result types, empty | search templates and organization result partials | DEPENDENCY | LOE--- |
@@ -56,8 +56,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 | CREATE-01 | `/projectform`: owner/scope/VCS/options/validation | `project/create.scala.html`, `common/select2.scala.html` | DEPENDENCY | L----- |
 | IMPORT-01 | `/_import`: owner/scope/VCS/repo-auth/validation/submission | `project/importing.scala.html`, `common/select2.scala.html` | DEPENDENCY | L----- |
 | MIG-01 | `/migration`: disabled/forbidden plus reachable source/destination/progress states | `migration/home.scala.html`, `migrationPageLayout.scala.html` | DEFERRED | L----- |
-| AUTH-01 | `/users/loginform`: login/error/OAuth/already-authenticated redirect | `user/login.scala.html`, `common/loginDialog.scala.html` | READY | L----- |
-| AUTH-02 | `/users/signupform`: validation/OAuth/restricted/success/error | `user/signup.scala.html` | READY | L----- |
+| AUTH-01 | `/users/loginform`: login/error/OAuth/already-authenticated redirect | `user/login.scala.html`, `common/loginDialog.scala.html` | DEPENDENCY | LOE--- |
+| AUTH-02 | `/users/signupform`: validation/OAuth/restricted/success/error | `user/signup.scala.html` | DEPENDENCY | LOE--- |
 | AUTH-03 | `/lostPassword`: anonymous/authenticated/requested/error | `site/lostPassword.scala.html` | READY | L----- |
 | AUTH-04 | `/resetPassword`: valid form/validation/invalid token | `user/resetPassword.scala.html` | READY | L----- |
 | AUTH-05 | `/restricted`, `/secret`, `/restart`: standalone restricted/setup/result states | `restricted.scala.html`, `welcome/secret.scala.html`, `welcome/restart.scala.html` | READY | L----- |
@@ -168,7 +168,8 @@ shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
 - SEARCH-03 organization category/result-title/item-avatar/title/content-meta/empty owners; C/R waits for SEARCH-01/05
 - SEARCH-01/05 global and project residual search owners; SEARCH-04 audit found no declaration-safe bridge retirement
 - HELP-01 FAQ owner family, including corrected static → dynamic → conditional sprite composition
-- HELP-02 markdown navigation active/inactive owners; pane/content remains HELP-03
+- HELP-02 markdown navigation and HELP-03 pane/content owners; frozen responsive important rules remain a shared dependency
+- AUTH-01 standalone login residuals and AUTH-02 signup capability-state owners; shared form/login fallback remains a dependency
 - B2 requested PR selectors: `INVALID`; cited LESS was unrelated posting-history diff CSS and must not count as completion
 
 ## Dead residual cleanup

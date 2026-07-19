@@ -1412,3 +1412,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 - SEARCH-04 exact audit retires no `app.css`: category/list/content/meta blocks still include bridge-only flex/reset/spacing declarations not owned by all three routes; `.title-wrap`, `.post-id`, and `.keyword` have broader consumers; empty states retain the frozen background image and route-specific geometry. Generated Yobi fallback remains a whole-module artifact. This is a proven dependency, not an assumed completion.
 - Shared markdown-help navigation: six route-local owners cover nav shell/list/item/label/button and conditional active arrows/paint, preserving typed React toggle state and the legacy ten-label order. HELP-03 pane/table/code/task-list declarations remain.
 - Help FAQ correction: the sprite dynamic carrier, static icon geometry, and conditional open position are now composed in one `stylex.props(static, dynamic, conditional)` call. This prevents a later spread from replacing the static/conditional class; desktop/mobile closed/open positions pass 3/3.
+
+## Batch 525
+
+- HELP-03: six shared markdown-help owners cover conditional pane visibility, output shell, input/output code blocks, table cells, and task-list checkboxes. Frozen responsive `!important` declarations remain fallback-owned.
+- AUTH-01: four standalone-login residual owners cover the highlighted title and OAuth row, separator title, and provider button while preserving React/TanStack behavior.
+- AUTH-02: the signup shell, field, action, and validation owners now cover confirmation-password capability output; one route-local owner covers the social-only notice. No geometry was promoted into theme variables.
+- The next fixed batch is AUTH-03, AUTH-04, and AUTH-05 from the canonical checklist; no full route rescan is required.
