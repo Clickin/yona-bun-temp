@@ -902,7 +902,12 @@ function IssueDetailBody({
                 activeOptions={{ exact: true }}
               >
                 <span className="avatar-wrap smaller">
-                  <img src={stringField(issue.authorAvatarUrl)} width="20" height="20" alt="" />
+                  <img
+                    src={stringField(issue.authorAvatarUrl) || undefined}
+                    width="20"
+                    height="20"
+                    alt=""
+                  />
                 </span>
                 {issue.authorLoginId ? (
                   <>

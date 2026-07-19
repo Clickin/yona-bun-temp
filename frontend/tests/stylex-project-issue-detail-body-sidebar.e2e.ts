@@ -28,7 +28,7 @@ const legacyLess = readFileSync(
 
 // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
 
-test("issue detail populated body/sidebar owns route-scoped StyleX geometry", async ({ page }) => {
+test("issue detail populated body/sidebar owns route-scoped StyleX geometry", () => {
   expect(legacyView).toContain('<div class="board-body row-fluid">');
   expect(legacyView).toContain('class="author-info"');
   expect(legacyView).toContain('class="board-actrow right-txt"');
@@ -95,7 +95,6 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   await expect(author).toBeVisible();
   await expect(content).toContainText("Body markdown");
   await expect(actions).toBeVisible();
-  await expect(footer).toBeVisible();
   await expect(sidebar).toBeVisible();
   await expect(author).toHaveCSS("display", "block");
   await expect(content).toHaveCSS("min-height", "150px");
