@@ -114,6 +114,14 @@ test("runtime-error-banner fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".runtime-error-banner");
 });
 
+test("dead temporary typography bridges have no remaining selectors", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".eyebrow {");
+  expect(appCss).not.toContain(".lede {");
+  expect(appCss).toContain("h1 {");
+  expect(appCss).toContain(".content-container .main-stream .activity-streams {");
+});
+
 test("secret-page fallback selector branches have no React emitter", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

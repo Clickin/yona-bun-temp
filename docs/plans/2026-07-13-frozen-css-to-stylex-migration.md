@@ -4083,3 +4083,11 @@ the restart `:has(.secret-box.txt-center)` fallback. The focused static contract
 absence GREEN; normal/fallback-off `/secret` output proves its existing StyleX owner and the
 generated-asset boundary. Global fallback discovery remains incomplete/non-green, so this is not
 a generated-fallback unlinking or live-legacy visual-parity claim.
+
+Batch 559 retires only the source-less standalone `.eyebrow` and `.lede` temporary typography
+bridges from `app.css`. Complete current production TS/TSX and frozen legacy view/LESS/CSS
+inventories have no emitter or styling source for either selector. The exact static contract
+records RED then absence GREEN while requiring the adjacent `h1` and generic activity-stream
+fallback boundaries to remain. The stable populated project-post fixture runs in normal and
+fallback-off modes solely to prove the generated-asset boundary; global discovery remains
+incomplete/non-green, so this is not an unlinking or live-legacy visual-parity claim.
