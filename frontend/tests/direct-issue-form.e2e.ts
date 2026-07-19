@@ -56,6 +56,13 @@ test("direct issue create migrates the fallback-off project header geometry from
     '[data-stylex-owner="project-header-avatar"]',
     '[data-stylex-owner="project-header-avatar-image"]',
     '[data-stylex-owner="project-header-breadcrumb-wrap"]',
+    '[data-stylex-owner="project-header-breadcrumb"]',
+    '[data-stylex-owner="project-header-breadcrumb-author"]',
+    '[data-stylex-owner="project-header-breadcrumb-author-link"]',
+    '[data-stylex-owner="project-header-breadcrumb-separator"]',
+    '[data-stylex-owner="project-header-breadcrumb-name"]',
+    '[data-stylex-owner="project-header-breadcrumb-name-link"]',
+    '[data-stylex-owner="project-header-breadcrumb-favorite-star"]',
     '[data-stylex-owner="project-header-util-wrap"]',
     '[data-stylex-owner="project-header-watcher-item"]',
     '[data-stylex-owner="project-header-watch-button-group"]',
@@ -92,7 +99,23 @@ test("direct issue create migrates the fallback-off project header geometry from
         width: style('[data-stylex-owner="project-header-avatar"]').width,
       },
       breadcrumb,
+      breadcrumbAuthorLinkStyle: {
+        color: style('[data-stylex-owner="project-header-breadcrumb-author-link"]').color,
+      },
+      breadcrumbNameStyle: {
+        color: style('[data-stylex-owner="project-header-breadcrumb-name"]').color,
+      },
+      breadcrumbSeparatorStyle: {
+        color: style('[data-stylex-owner="project-header-breadcrumb-separator"]').color,
+        padding: style('[data-stylex-owner="project-header-breadcrumb-separator"]').padding,
+      },
+      breadcrumbStarStyle: {
+        color: style('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').color,
+        fontSize: style('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').fontSize,
+      },
       breadcrumbStyle: {
+        fontSize: style('[data-stylex-owner="project-header-breadcrumb"]').fontSize,
+        lineHeight: style('[data-stylex-owner="project-header-breadcrumb"]').lineHeight,
         padding: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').padding,
         position: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').position,
       },
@@ -134,9 +157,16 @@ test("direct issue create migrates the fallback-off project header geometry from
   expect(desktop.avatarImage.height).toBeCloseTo(80, 0);
   expect(desktop.breadcrumbStyle.position).toBe("absolute");
   expect(desktop.breadcrumbStyle.padding).toBe("2px 10px");
+  expect(desktop.breadcrumbStyle.fontSize).toBe("19.5px");
+  expect(desktop.breadcrumbStyle.lineHeight).toBe("30px");
+  expect(desktop.breadcrumbAuthorLinkStyle.color).toBe("rgb(255, 255, 255)");
+  expect(desktop.breadcrumbNameStyle.color).toBe("rgb(252, 73, 30)");
+  expect(desktop.breadcrumbSeparatorStyle.color).toBe("rgb(255, 255, 255)");
+  expect(desktop.breadcrumbSeparatorStyle.padding).toBe("0px 5px");
+  expect(desktop.breadcrumbStarStyle.color).toBe("rgba(255, 255, 255, 0.22)");
+  expect(desktop.breadcrumbStarStyle.fontSize).toBe("24px");
   expect(desktop.breadcrumb.left).toBeCloseTo(desktop.wrap.left + 90, 0);
   expect(desktop.breadcrumb.bottom).toBeCloseTo(desktop.header.bottom - 18, 0);
-  // Breadcrumb descendant typography remains shared fallback ownership.
   if (!fallbackOff) {
     expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
     expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
@@ -164,6 +194,7 @@ test("direct issue create migrates the fallback-off project header geometry from
         box: element.getBoundingClientRect(),
         style: {
           bottom: style.bottom,
+          fontSize: style.fontSize,
           height: style.height,
           left: style.left,
           minWidth: style.minWidth,
@@ -173,6 +204,8 @@ test("direct issue create migrates the fallback-off project header geometry from
     };
     return {
       avatar: required('[data-stylex-owner="project-header-avatar"]'),
+      breadcrumbAuthor: required('[data-stylex-owner="project-header-breadcrumb-author"]'),
+      breadcrumbName: required('[data-stylex-owner="project-header-breadcrumb-name"]'),
       breadcrumb: required('[data-stylex-owner="project-header-breadcrumb-wrap"]'),
       documentWidth: document.documentElement.scrollWidth,
       header: required('[data-project-header-owner="outer"]'),
@@ -196,7 +229,28 @@ test("direct issue create migrates the fallback-off project header geometry from
   expect(mobile.breadcrumb.style.left).toBe("52px");
   expect(mobile.breadcrumb.box.left).toBeCloseTo(mobile.wrap.box.left + 52, 0);
   expect(mobile.breadcrumb.box.right).toBeLessThanOrEqual(mobile.header.box.right);
+  expect(mobile.breadcrumbAuthor.style.fontSize).toBe("13.65px");
+  expect(mobile.breadcrumbName.style.fontSize).toBe("13.65px");
   expect(mobile.watchVisible).toBe("none");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.route("**/api/v1/auth/session", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ csrfToken: "csrf" }) });
+  });
+  await page.route("**/api/v1/owners/weblabs/projects/portal/favorite", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ favorited: true, ownerName: "weblabs", projectName: "portal" }),
+    });
+  });
+  await page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]').click();
+  await expect(page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]')).toHaveClass(
+    /starred/u,
+  );
+  await expect(page.locator('[data-stylex-owner="project-header-breadcrumb-favorite-star"]')).toHaveCSS(
+    "color",
+    "rgb(233, 30, 99)",
+  );
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {

@@ -14,6 +14,12 @@ or the narrow reviewed global bridge allowed below. A red discovery run is evide
 claim; permanent unlinking remains blocked until the complete fallback-off suite is green and the
 ledger proves each retired source consumer is gone.
 
+Batch 535 applies this gate to authenticated direct issue-create's shared ProjectHeader breadcrumb
+state. The route-local React owner now covers the frozen author/separator/name/star declarations,
+including exact hover/focus, finite starred conditional, and 390px typography. The header-inner
+overlay, generic controls, and cross-route organization consumers remain lower-layer fallback until
+their complete consumer boundaries can be migrated together.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused

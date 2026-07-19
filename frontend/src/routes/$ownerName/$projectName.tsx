@@ -93,6 +93,28 @@ const projectHeaderStyles = stylex.create({
       left: "52px",
     },
   },
+  breadcrumb: { fontSize: "1.5em", lineHeight: "30px" },
+  breadcrumbAuthor: {
+    "@media all and (max-width: 720px)": { fontSize: "0.7em" },
+  },
+  breadcrumbAuthorLink: {
+    color: "#fff",
+    ":hover": { color: "#fff", textDecoration: "underline" },
+  },
+  breadcrumbSeparator: { color: "#fff", padding: "0 5px" },
+  breadcrumbName: {
+    color: "#fc491e",
+    "@media all and (max-width: 720px)": { fontSize: "0.7em" },
+  },
+  breadcrumbNameLink: {
+    ":hover": { color: "#fc491e", textDecoration: "underline" },
+  },
+  breadcrumbFavoriteStar: {
+    color: "rgba(255, 255, 255, 0.22)",
+    fontSize: "24px",
+    ":hover": { color: "#e91e63", cursor: "pointer" },
+  },
+  breadcrumbFavoriteStarred: { color: "#e91e63" },
   leaveModalOpen: { display: "block" },
   leaveModalClosed: { display: "none" },
 });
@@ -2645,21 +2667,45 @@ function ProjectHeaderContent({
             className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}
             data-stylex-owner="project-header-breadcrumb-wrap"
           >
-            <div className="project-breadcrumb">
-              <span className="project-author hide-in-mobile">
+            <div
+              {...stylex.props(projectHeaderStyles.breadcrumb)}
+              className={`${stylex.props(projectHeaderStyles.breadcrumb).className} project-breadcrumb`}
+              data-stylex-owner="project-header-breadcrumb"
+            >
+              <span
+                {...stylex.props(projectHeaderStyles.breadcrumbAuthor)}
+                className={`${stylex.props(projectHeaderStyles.breadcrumbAuthor).className} project-author hide-in-mobile`}
+                data-stylex-owner="project-header-breadcrumb-author"
+              >
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
+                  {...stylex.props(projectHeaderStyles.breadcrumbAuthorLink)}
+                  className={stylex.props(projectHeaderStyles.breadcrumbAuthorLink).className}
+                  data-stylex-owner="project-header-breadcrumb-author-link"
                   to={toRoutePath(basePath, prefixBasePath(basePath, `/${ownerName}`))}
                 >
                   {ownerName}
                 </Link>
               </span>{" "}
-              <span className="project-separator hide-in-mobile">/</span>{" "}
-              <span className="project-name">
+              <span
+                {...stylex.props(projectHeaderStyles.breadcrumbSeparator)}
+                className={`${stylex.props(projectHeaderStyles.breadcrumbSeparator).className} project-separator hide-in-mobile`}
+                data-stylex-owner="project-header-breadcrumb-separator"
+              >
+                /
+              </span>{" "}
+              <span
+                {...stylex.props(projectHeaderStyles.breadcrumbName)}
+                className={`${stylex.props(projectHeaderStyles.breadcrumbName).className} project-name`}
+                data-stylex-owner="project-header-breadcrumb-name"
+              >
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
+                  {...stylex.props(projectHeaderStyles.breadcrumbNameLink)}
+                  className={stylex.props(projectHeaderStyles.breadcrumbNameLink).className}
+                  data-stylex-owner="project-header-breadcrumb-name-link"
                   to={toRoutePath(basePath, projectHref(basePath, ownerName, projectName))}
                 >
                   {projectName}
@@ -2685,7 +2731,19 @@ function ProjectHeaderContent({
                 }}
               >
                 <i
-                  className={`${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
+                  {...stylex.props(
+                    projectHeaderStyles.breadcrumbFavoriteStar,
+                    isFavoritedProject ? projectHeaderStyles.breadcrumbFavoriteStarred : undefined,
+                  )}
+                  className={`${
+                    stylex.props(
+                      projectHeaderStyles.breadcrumbFavoriteStar,
+                      isFavoritedProject
+                        ? projectHeaderStyles.breadcrumbFavoriteStarred
+                        : undefined,
+                    ).className
+                  } ${isFavoritedProject ? "starred" : ""} star material-icons va-text-top`}
+                  data-stylex-owner="project-header-breadcrumb-favorite-star"
                 >
                   star
                 </i>
