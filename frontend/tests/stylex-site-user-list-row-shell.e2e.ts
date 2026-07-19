@@ -7,6 +7,7 @@ const owners = { list: "site-user-list-row-list", row: "site-user-list-row" } as
 test("row shell ownership follows the populated legacy list", () => {
   const route = readFileSync("src/routes/sites/userList.tsx", "utf8");
   const theme = readFileSync("src/routes/sites/-userList.stylex.ts", "utf8");
+  const appCss = readFileSync("src/app.css", "utf8");
   const legacy = readFileSync("../yona-original/app/views/site/userList.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
@@ -20,6 +21,12 @@ test("row shell ownership follows the populated legacy list", () => {
   expect(route).toContain('data-stylex-owner="site-user-list-row-leave-date"');
   expect(route).not.toContain('state === "DELETED" ? "row-fluid listitem "');
   expect(route).not.toContain('className="span4 listitem-col"');
+  for (const retiredSelector of [
+    ".site-admin-page .user-list-wrap",
+    ".site-admin-page .user-list-wrap .listitem",
+    ".site-admin-page .user-list-wrap .listitem:last-child",
+  ])
+    expect(appCss).not.toContain(retiredSelector);
   for (const owner of [
     "site-user-list-row-avatar",
     "site-user-list-row-avatar-image",

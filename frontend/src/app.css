@@ -4412,25 +4412,6 @@ div.markdown-preview {
   min-width: 0;
 }
 
-.site-admin-page .user-list-wrap {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  border: 1px solid #ddd;
-  border-top: 0;
-}
-
-.site-admin-page .user-list-wrap .listitem {
-  align-items: center;
-  gap: 16px;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.site-admin-page .user-list-wrap .listitem:last-child {
-  border-bottom: 0;
-}
-
 .page-navigation-wrap {
   clear: both;
   width: 100%;

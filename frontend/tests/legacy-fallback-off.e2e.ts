@@ -55,6 +55,47 @@ async function mockProjectListSession(page: Page) {
   );
 }
 
+async function mockUserListSession(page: Page) {
+  const fulfill = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-user-list" },
+      json: { isAnonymous: false, isConfirmed: true, isSiteAdmin: true, loginId: "siteboss" },
+    });
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
+    await page.route(url, fulfill);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/site/users?*", (route) =>
+    route.fulfill({
+      json: {
+        page: 1,
+        pageSize: 20,
+        query: "",
+        siteAdminCount: 1,
+        state: "ACTIVE",
+        total: 1,
+        totalPages: 1,
+        users: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            createdAt: "2026-06-28",
+            displayName: "Alice",
+            emailAddress: "alice@example.com",
+            id: 1,
+            isGuest: false,
+            isSiteAdmin: false,
+            lastStateModifiedAt: "",
+            loginId: "alice",
+            state: "ACTIVE",
+          },
+        ],
+      },
+    }),
+  );
+}
+
 async function mockPostListSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
@@ -198,6 +239,27 @@ test("project-list output retains the runtime fallback boundary without its dead
     "acme/roadmap",
   );
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
+});
+
+test("user-list output retains the runtime fallback boundary without its dead bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockUserListSession(page);
+  await page.goto(`${basePath}/sites/userList`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const list = page.locator('[data-stylex-owner="site-user-list-row-list"]');
+  await expect(list).toBeVisible();
+  await expect(list.locator('[data-stylex-owner="site-user-list-row-user-name"]')).toHaveText(
+    "Alice",
+  );
+  await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(0);
 });
 
 test("post-list output retains the runtime fallback boundary without its dead bridge", async ({
