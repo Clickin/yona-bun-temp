@@ -2,6 +2,12 @@ import * as stylex from "@stylexjs/stylex";
 
 // user/partial_issues.scala.html issue title paint only. Geometry stays in the frozen legacy cascade.
 export const userIssuesColors = stylex.defineVars({
+  controlBorder: "#03afff",
+  controlHoverBackground: "#03afff",
+  controlHoverText: "#fff0ff",
+  controlSelectedBackground: "#aee5ff",
+  controlSelectedText: "#0293d6",
+  controlText: "#03a9f4",
   inputBorder: "#cccccc",
   inputText: "#555555",
   tabBorder: "#dddddd",
@@ -10,6 +16,64 @@ export const userIssuesColors = stylex.defineVars({
 
 export const styles = stylex.create({
   relativeAnchor: { position: "relative" },
+  controlsListItem: { marginLeft: "-18px" },
+  modeControl: {
+    display: "inline-block",
+    lineHeight: "37px",
+    marginLeft: "10px",
+  },
+  modeControlLabel: { paddingLeft: "0px", paddingTop: "4px" },
+  modeControlInput: {
+    borderStyle: "none",
+    borderWidth: "0px",
+    float: "none",
+    margin: "4px 4px 0px 2px",
+    minHeight: "0px",
+    padding: "0px",
+    verticalAlign: "top",
+  },
+  modeControlBorder: {
+    borderColor: userIssuesColors.controlBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: userIssuesColors.controlText,
+    padding: "3px 3px 0px 3px",
+  },
+  modeControlBorderHover: {
+    backgroundColor: userIssuesColors.controlHoverBackground,
+    color: userIssuesColors.controlHoverText,
+  },
+  modeControlBorderSelected: {
+    backgroundColor: userIssuesColors.controlSelectedBackground,
+  },
+  modeControlText: {
+    lineHeight: "20px",
+    padding: "0px 4px 0px 0px",
+    verticalAlign: "text-bottom",
+  },
+  modeControlTextHover: { color: userIssuesColors.controlHoverText },
+  modeControlTextSelected: { color: userIssuesColors.controlSelectedText },
+  twoColumnPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "180px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
+  showSubtasksPopover: {
+    bottom: "100%",
+    display: "block",
+    left: "50%",
+    marginBottom: "10px",
+    minWidth: "150px",
+    pointerEvents: "none",
+    position: "absolute",
+    transform: "translateX(-50%)",
+  },
   defaultLoginPagePopover: {
     display: "block",
     left: "50%",

@@ -34,29 +34,6 @@ type LegacyOrderButtonAttrs = HTMLAttributes<HTMLButtonElement> & {
 };
 type LegacyIssueRowAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
 
-const userIssuesStaticStyles = stylex.create({
-  twoColumnPopover: {
-    bottom: "100%",
-    display: "block",
-    left: "50%",
-    marginBottom: "10px",
-    minWidth: "180px",
-    pointerEvents: "none",
-    position: "absolute",
-    transform: "translateX(-50%)",
-  },
-  showSubtasksPopover: {
-    bottom: "100%",
-    display: "block",
-    left: "50%",
-    marginBottom: "10px",
-    minWidth: "150px",
-    pointerEvents: "none",
-    position: "absolute",
-    transform: "translateX(-50%)",
-  },
-});
-
 export const Route = createFileRoute("/user/issues")({
   component: UserIssuesRoute,
   validateSearch(search: Record<string, unknown>): UserIssuesSearch {
@@ -348,7 +325,11 @@ function UserIssuesBody({
                   }}
                 />
               </li>
-              <li className="show-subtasks-li">
+              <li
+                className="show-subtasks-li"
+                {...stylex.props(issueStyles.controlsListItem)}
+                data-stylex-owner="user-issues-subtasks-list-item"
+              >
                 <ShowSubtasksCheckbox
                   checked={showSubtasksAlways}
                   onToggle={(checked) => {
@@ -1330,6 +1311,17 @@ function TwoColumnModeCheckbox({
   const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.two.column.mode");
   const popoverContent = t("common.two.column.mode.desc");
+  const [isControlHovered, setIsControlHovered] = useState(false);
+  const borderProps = stylex.props(
+    issueStyles.modeControlBorder,
+    isControlHovered ? issueStyles.modeControlBorderHover : null,
+    checked ? issueStyles.modeControlBorderSelected : null,
+  );
+  const textProps = stylex.props(
+    issueStyles.modeControlText,
+    isControlHovered ? issueStyles.modeControlTextHover : null,
+    checked ? issueStyles.modeControlTextSelected : null,
+  );
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1356,7 +1348,7 @@ function TwoColumnModeCheckbox({
       className="two-column-icon mr10 hide-in-mobile"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(issueStyles.relativeAnchor)}
+      {...stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl)}
       data-stylex-owner="user-issues-two-column-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
@@ -1364,20 +1356,35 @@ function TwoColumnModeCheckbox({
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox">
-        <div className="two-column-icon-border">
+      <label className="checkbox" {...stylex.props(issueStyles.modeControlLabel)}>
+        <div
+          {...borderProps}
+          className={`two-column-icon-border${checked ? " two-column-icon-selected" : ""} ${borderProps.className ?? ""}`.trim()}
+          data-stylex-owner="user-issues-two-column-border"
+          onMouseEnter={() => setIsControlHovered(true)}
+          onMouseLeave={() => setIsControlHovered(false)}
+        >
           <input
             checked={checked}
             id="two-column-mode"
             type="checkbox"
+            {...stylex.props(issueStyles.modeControlInput)}
+            data-stylex-owner="user-issues-two-column-input"
             onChange={(event) => onToggle(event.currentTarget.checked)}
           />
-          <span className="two-column-mode-text">{t("common.two.column.view")}</span>
+          <span
+            {...textProps}
+            className={`two-column-mode-text ${textProps.className ?? ""}`.trim()}
+            data-stylex-owner="user-issues-two-column-text"
+          >
+            {t("common.two.column.view")}
+          </span>
         </div>
       </label>
       {isPopoverVisible ? (
         <div
-          className={`${stylex.props(userIssuesStaticStyles.twoColumnPopover).className} popover top`}
+          {...stylex.props(issueStyles.twoColumnPopover)}
+          className={`${stylex.props(issueStyles.twoColumnPopover).className} popover top`}
           role="tooltip"
           data-stylex-owner="user-issues-two-column-popover"
         >
@@ -1404,6 +1411,17 @@ function ShowSubtasksCheckbox({
   const popoverTimer = useRef<number | null>(null);
   const popoverTitle = t("common.show.subtasks");
   const popoverContent = t("common.show.subtasks.desc");
+  const [isControlHovered, setIsControlHovered] = useState(false);
+  const borderProps = stylex.props(
+    issueStyles.modeControlBorder,
+    isControlHovered ? issueStyles.modeControlBorderHover : null,
+    checked ? issueStyles.modeControlBorderSelected : null,
+  );
+  const textProps = stylex.props(
+    issueStyles.modeControlText,
+    isControlHovered ? issueStyles.modeControlTextHover : null,
+    checked ? issueStyles.modeControlTextSelected : null,
+  );
   const clearPopoverTimer = () => {
     if (popoverTimer.current !== null) {
       window.clearTimeout(popoverTimer.current);
@@ -1430,7 +1448,7 @@ function ShowSubtasksCheckbox({
       className="show-subtasks mr10"
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(issueStyles.relativeAnchor)}
+      {...stylex.props(issueStyles.relativeAnchor, issueStyles.modeControl)}
       data-stylex-owner="user-issues-subtasks-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
@@ -1438,20 +1456,35 @@ function ShowSubtasksCheckbox({
       onMouseLeave={hidePopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox">
-        <div className="show-subtasks-button-border">
+      <label className="checkbox" {...stylex.props(issueStyles.modeControlLabel)}>
+        <div
+          {...borderProps}
+          className={`show-subtasks-button-border${checked ? " show-subtasks-selected" : ""} ${borderProps.className ?? ""}`.trim()}
+          data-stylex-owner="user-issues-subtasks-border"
+          onMouseEnter={() => setIsControlHovered(true)}
+          onMouseLeave={() => setIsControlHovered(false)}
+        >
           <input
             checked={checked}
             id="toggle-show-subtasks"
             type="checkbox"
+            {...stylex.props(issueStyles.modeControlInput)}
+            data-stylex-owner="user-issues-subtasks-input"
             onChange={(event) => onToggle(event.currentTarget.checked)}
           />
-          <span className="show-subtasks-text">{t("common.show.subtasks")}</span>
+          <span
+            {...textProps}
+            className={`show-subtasks-text ${textProps.className ?? ""}`.trim()}
+            data-stylex-owner="user-issues-subtasks-text"
+          >
+            {t("common.show.subtasks")}
+          </span>
         </div>
       </label>
       {isPopoverVisible ? (
         <div
-          className={`${stylex.props(userIssuesStaticStyles.showSubtasksPopover).className} popover top`}
+          {...stylex.props(issueStyles.showSubtasksPopover)}
+          className={`${stylex.props(issueStyles.showSubtasksPopover).className} popover top`}
           role="tooltip"
           data-stylex-owner="user-issues-show-subtasks-popover"
         >
