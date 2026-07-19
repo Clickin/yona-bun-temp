@@ -24,15 +24,20 @@ test("global search populated and empty states retain legacy-backed StyleX owner
     expect(pageLess).toContain(declaration);
   }
   for (const owner of [
-    "global-search-category-shell",
+    "global-search-category",
     "global-search-result-heading",
     "global-search-result-list",
     "global-search-result-item",
-    "global-search-empty-result",
   ]) {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
-  for (const declaration of ["resultHeading:", "resultList:", "resultItem:", "resultTitleWrap:"]) {
+  for (const declaration of [
+    "category:",
+    "resultHeading:",
+    "resultList:",
+    "resultItem:",
+    "resultTitleWrap:",
+  ]) {
     expect(style).toContain(declaration);
   }
 });

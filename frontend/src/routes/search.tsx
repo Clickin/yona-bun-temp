@@ -218,10 +218,7 @@ function GlobalSearchSuccessBody({
         <div data-stylex-owner="global-search-shell">
           <div className="project-page-wrap">
             <div className="row-fluid">
-              <div
-                {...stylex.props(styles.categoryShell)}
-                data-stylex-owner="global-search-category-shell"
-              >
+              <div {...stylex.props(styles.category)} data-stylex-owner="global-search-category">
                 <ul className="lst-stacked unstyled search-category-wrap">
                   {GLOBAL_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
@@ -311,7 +308,7 @@ function GlobalSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
-    return <div className="empty-result" data-stylex-owner="global-search-empty-result"></div>;
+    return <div className="empty-result"></div>;
   }
 
   if (searchType === "project") {
@@ -645,7 +642,7 @@ function GlobalSearchResultList({
     );
   }
 
-  return <div className="empty-result" data-stylex-owner="global-search-empty-result"></div>;
+  return <div className="empty-result"></div>;
 }
 
 function GlobalSearchPagination({ result }: { result: SearchResponse }) {

@@ -33,11 +33,6 @@ export const styles = stylex.create({
     width: "100%",
   },
   result: { borderTopColor: searchColors.border, borderTopStyle: "solid", borderTopWidth: "1px" },
-  categoryShell: {
-    borderRightColor: searchColors.border,
-    borderRightStyle: "solid",
-    borderRightWidth: "1px",
-  },
   resultHeading: {
     fontSize: "16px",
     marginTop: "15px",
