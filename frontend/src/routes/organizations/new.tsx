@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createOrganizationRest } from "../../api/org-project";
 import { apiQueryKeys } from "../../api/query-keys";
+import { RestApiError } from "../../api/rest-client";
 import { readSessionBootstrap } from "../../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
@@ -242,6 +243,7 @@ function OrganizationNewScreen({
   const queryClient = useQueryClient();
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [nameError, setNameError] = React.useState("");
+  const [serverNameError, setServerNameError] = React.useState("");
   const createMutation = useMutation({
     mutationFn: async (input: { description: string; organizationName: string }) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -256,6 +258,15 @@ function OrganizationNewScreen({
         prefixBasePath(runtimeConfig.basePath, `/organizations/${organization.organizationName}`),
       );
     },
+    onError(error) {
+      if (error instanceof RestApiError) {
+        setServerNameError(t(error.message));
+      }
+    },
+    onMutate() {
+      setNameError("");
+      setServerNameError("");
+    },
   });
 
   React.useEffect(() => {
@@ -268,6 +279,7 @@ function OrganizationNewScreen({
     const organizationName = String(formData.get("name") ?? "");
     if (!/^[A-Za-z0-9가-힣-]+([_.][A-Za-z0-9가-힣-]+)*$/u.test(organizationName)) {
       setNameError(t("organization.name.alert"));
+      setServerNameError("");
       return;
     }
     setNameError("");
@@ -325,7 +337,7 @@ function OrganizationNewScreen({
                         className={validationRootStyleProps.className}
                         data-stylex-owner="organization-new-validation"
                       >
-                        {warning ? (
+                        {serverNameError || warning ? (
                           <span
                             {...(nameError
                               ? hiddenValidationTextStyleProps
@@ -337,7 +349,7 @@ function OrganizationNewScreen({
                             }
                             data-stylex-owner="organization-new-validation"
                           >
-                            {t(warning)}
+                            {serverNameError || (warning ? t(warning) : "")}
                           </span>
                         ) : null}
                         <span

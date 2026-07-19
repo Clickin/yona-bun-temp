@@ -196,7 +196,33 @@ test("organization create preserves REST/CSRF success and TanStack cancel bounda
   expect(documents).toEqual([]);
 });
 
-async function mockAuthenticatedSession(page: Page) {
+test("organization create keeps a duplicate-name REST error in the legacy validation position", async ({
+  page,
+}) => {
+  const requests = await mockAuthenticatedSession(page, { duplicateName: true });
+  await page.goto("/yona/organizations/new");
+
+  await page.locator("#name").fill("team-alpha");
+  await page.locator("#descr").fill("Existing team");
+  await page.locator(`div[data-stylex-owner="${owners.actions}"] button`).click();
+
+  const validation = page.locator(
+    `[data-stylex-owner="${owners.validation}"][data-errtype="name"]`,
+  );
+  await expect(validation.locator("span").first()).toBeVisible();
+  await expect(validation.locator("span").first()).toHaveText(
+    "Already existent user's login id or group name.",
+  );
+  await expect(validation.locator("span").last()).toBeHidden();
+  await expect(page).toHaveURL("/yona/organizations/new");
+  expect(requests.createdOrganizations).toEqual([
+    { description: "Existing team", organizationName: "team-alpha" },
+  ]);
+  await expect(page.locator("#name")).toHaveValue("team-alpha");
+  await expect(page.locator("#descr")).toHaveValue("Existing team");
+});
+
+async function mockAuthenticatedSession(page: Page, options: { duplicateName?: boolean } = {}) {
   const requests = {
     createdOrganizations: [] as Array<{ description: string; organizationName: string }>,
     csrfHeaders: [] as string[],
@@ -235,6 +261,20 @@ async function mockAuthenticatedSession(page: Page) {
         organizationName: body.organizationName ?? "",
       });
       requests.csrfHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+      if (options.duplicateName) {
+        await route.fulfill({
+          body: JSON.stringify({
+            error: {
+              code: "organization_name_duplicate",
+              message: "organization.name.duplicate",
+              status: 400,
+            },
+          }),
+          contentType: "application/json",
+          status: 400,
+        });
+        return;
+      }
     }
     await route.fulfill({
       body: JSON.stringify({
