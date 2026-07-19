@@ -72,7 +72,7 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 900, scrollWidth: 1366, width: 1366 });
   expectBox(metrics.navbar, { height: 40, width: 1366, x: 0, y: 0 });
-  expectBox(metrics.inner, { height: 40, width: 1319.08, x: 23.45, y: 0 });
+  expectBox(metrics.inner, { height: 40, width: 1338.67, x: 13.66, y: 0 });
   expectBox(metrics.pin, { height: 26, width: 25, x: -6, y: 6 });
   expectBox(metrics.logo, { height: 29, width: 29.77, x: 80.45, y: 5 });
   expectBox(metrics.listAll, { height: 37, width: 63.02, x: 110.22, y: 1 });
@@ -158,7 +158,7 @@ test("site layout GNB outer and inner keep the frozen border-box bridge without 
     };
   });
   expectBox(outerBox, { height: 40, width: 1366, x: 0, y: 0 });
-  expectBox(innerBox, { height: 40, width: 1319.08, x: 23.45, y: 0 });
+  expectBox(innerBox, { height: 40, width: 1338.67, x: 13.66, y: 0 });
 });
 
 test("anonymous home login Link opens and dismisses the legacy root dialog", async ({ page }) => {
@@ -378,7 +378,34 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await mockSession(page, { isAnonymous: false, isGuest: false, isSiteAdmin: true });
   await mockAuthenticatedHomeData(page);
 
+  await page.setViewportSize({ height: 900, width: 1366 });
   await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  for (const [viewport, expectedInner] of [
+    [{ height: 900, width: 1366 }, { height: 40, width: 1338.67, x: 13.66, y: 0 }],
+    [{ height: 844, width: 390 }, { height: 40, width: 362.59, x: 13.7, y: 0 }],
+  ] as const) {
+    await page.setViewportSize(viewport);
+
+    const outer = page.locator('[data-stylex-owner="global-gnb-outer"]');
+    const inner = page.locator('[data-stylex-owner="global-gnb-inner"]');
+    const pin = page.locator('[data-stylex-owner="global-sidebar-open-pin"]');
+    const affixBox = await readElementBox(page.locator('[data-stylex-owner="site-admin-affix"]'));
+    const outerBox = await readElementBox(outer);
+    expectBox(outerBox, {
+      height: 40,
+      width: viewport.width,
+      x: 0,
+      y: affixBox.y + affixBox.height,
+    });
+    expectBox(await readElementBox(inner), { ...expectedInner, y: outerBox.y });
+    const pinBox = await readElementBox(pin);
+    expect(pinBox.x).toBeCloseTo(-6, 1);
+    expect(pinBox.y).toBeCloseTo(6, 1);
+  }
+
+  await page.setViewportSize({ height: 900, width: 1366 });
 
   await expect(
     page.locator('[data-stylex-owner="global-gnb-nav"] > li').nth(1).locator("a"),
@@ -389,7 +416,7 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await assertOwnedShellHasNoPluginHooks(page);
 
   const sidebar = page.locator("#mySidenav");
-  const userMenuButton = page.locator("#sidebar-open-btn button.gnb-dropdown-toggle");
+  const userMenuButton = page.locator('#sidebar-open-btn button');
   await userMenuButton.click();
   await expect(sidebar).toHaveClass(/sidenav-open/);
   await expect(sidebar).toHaveCSS("width", "360px");
