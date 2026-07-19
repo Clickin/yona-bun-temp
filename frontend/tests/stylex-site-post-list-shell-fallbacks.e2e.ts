@@ -152,7 +152,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
       expect(appCss).not.toContain(deadBridgeSelector);
     }
     expect(appCss).toContain(".post-list-wrap {");
-    expect(appCss).toContain(".site-admin-page .user-list-wrap {");
+    expect(appCss).not.toContain(".site-admin-page");
     expect(override).toContain(".title_area {\n    .nav {");
     expect(override).toContain("ul {\n        li {");
     expect(bootstrap).toContain(".pull-left {\n  float: left;");

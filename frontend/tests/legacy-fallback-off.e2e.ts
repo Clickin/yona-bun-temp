@@ -16,20 +16,9 @@ async function expectClassFreeSiteLayout(
   }
 }
 
-test("site-admin layout fallback bridge has no React emitter", () => {
+test("site-admin fallback bridge has no React emitter", () => {
   const appCss = readFileSync("src/app.css", "utf8");
-  for (const selector of [
-    ".site-admin-page .row-fluid",
-    ".site-admin-page .span2",
-    ".site-admin-page .span1",
-    ".site-admin-page .span3",
-    ".site-admin-page .span4",
-    ".site-admin-page .span5",
-    ".site-admin-page .span10",
-    ".site-admin-page .page-wrap-outer",
-    ".site-admin-page .site-setting-wrap",
-  ])
-    expect(appCss).not.toContain(selector);
+  expect(appCss).not.toContain(".site-admin-page");
 
   for (const [route, owners] of [
     [

@@ -32,6 +32,5 @@ test("site mail send action wrapper owns legacy centering in StyleX", async () =
     'className={`span12 mail-btn-wrap ${stylex.props(styles.sendActionWrap).className ?? ""}`.trim()}',
   );
   expect(css).not.toContain(".site-setting-wrap .mail-btn-wrap");
-  expect(css).toContain(".mail-btn-wrap");
-  expect(css).toContain(".site-admin-page .mail-btn-wrap");
+  expect(css).not.toContain(".site-admin-page");
 });
