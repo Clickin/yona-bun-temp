@@ -2824,9 +2824,13 @@ function ProjectHeaderContent({
                 </li>
               ) : null}
               {canWatchProject ? (
-                <li className={projectUtilDropdown === "watch" ? "open" : undefined}>
+                <li
+                  className={`${stylex.props(projectHomeStyles.projectUtilItem).className}${projectUtilDropdown === "watch" ? " open" : ""}`}
+                  data-stylex-owner="project-header-watcher-item"
+                >
                   <div
-                    className={`btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
+                    className={`${stylex.props(projectHomeStyles.watchButtonGroup).className} btn-group dropdown watch-btn${projectUtilDropdown === "watch" ? " open" : ""}`}
+                    data-stylex-owner="project-header-watch-button-group"
                   >
                     <Link
                       className={`${stylex.props(projectHomeStyles.watcherCount, watchState.isWatching ? projectHomeStyles.watcherOn : undefined).className} btn watcher-count no-border${watchState.isWatching ? " watch-on" : ""}`}

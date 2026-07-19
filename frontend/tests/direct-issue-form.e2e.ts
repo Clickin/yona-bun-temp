@@ -56,6 +56,10 @@ test("direct issue create migrates the fallback-off project header geometry from
     '[data-stylex-owner="project-header-avatar"]',
     '[data-stylex-owner="project-header-avatar-image"]',
     '[data-stylex-owner="project-header-breadcrumb-wrap"]',
+    '[data-stylex-owner="project-header-util-wrap"]',
+    '[data-stylex-owner="project-header-watcher-item"]',
+    '[data-stylex-owner="project-header-watch-button-group"]',
+    '[data-stylex-owner="project-header-watch-button"]',
   ]) {
     await expect(page.locator(selector)).toHaveCount(1);
   }
@@ -75,7 +79,8 @@ test("direct issue create migrates the fallback-off project header geometry from
     const avatar = required('[data-stylex-owner="project-header-avatar"]');
     const avatarImage = required('[data-stylex-owner="project-header-avatar-image"]');
     const breadcrumb = required('[data-stylex-owner="project-header-breadcrumb-wrap"]');
-    const util = required(".project-util-wrap");
+    const util = required('[data-stylex-owner="project-header-util-wrap"]');
+    const watcherItem = required('[data-stylex-owner="project-header-watcher-item"]');
     const watcher = required(".watcher-count");
     const watchAction = required(".down-arrow");
     return {
@@ -98,7 +103,17 @@ test("direct issue create migrates the fallback-off project header geometry from
         backgroundSize: style('[data-project-header-owner="outer"]').backgroundSize,
       },
       util,
+      utilStyle: {
+        bottom: style('[data-stylex-owner="project-header-util-wrap"]').bottom,
+        position: style('[data-stylex-owner="project-header-util-wrap"]').position,
+      },
       watchAction,
+      watcherItem,
+      watcherItemStyle: {
+        float: style('[data-stylex-owner="project-header-watcher-item"]').float,
+        marginLeft: style('[data-stylex-owner="project-header-watcher-item"]').marginLeft,
+        position: style('[data-stylex-owner="project-header-watcher-item"]').position,
+      },
       watcher,
       wrap,
       wrapStyle: { position: style('[data-stylex-owner="project-header-wrap"]').position },
@@ -126,9 +141,15 @@ test("direct issue create migrates the fallback-off project header geometry from
     expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
     expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
   }
+  expect(desktop.utilStyle.position).toBe("absolute");
+  expect(desktop.utilStyle.bottom).toBe("20px");
+  expect(desktop.util.right).toBeCloseTo(1345.5, 0);
+  expect(desktop.watcherItemStyle.float).toBe("left");
+  expect(desktop.watcherItemStyle.marginLeft).toBe("15px");
+  expect(desktop.watcherItemStyle.position).toBe("relative");
+  expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
+  // Button-box alignment still depends on the shared Bootstrap button fallback.
   if (!fallbackOff) {
-    expect(desktop.util.right).toBeCloseTo(1345.5, 0);
-    expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
     expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
     expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
   }
@@ -156,7 +177,9 @@ test("direct issue create migrates the fallback-off project header geometry from
       documentWidth: document.documentElement.scrollWidth,
       header: required('[data-project-header-owner="outer"]'),
       wrap: required('[data-stylex-owner="project-header-wrap"]'),
-      watchVisible: getComputedStyle(document.querySelector(".watch-btn")!).display,
+      watchVisible: getComputedStyle(
+        document.querySelector('[data-stylex-owner="project-header-watch-button-group"]')!,
+      ).display,
     };
   });
   if (!fallbackOff) {
@@ -173,9 +196,7 @@ test("direct issue create migrates the fallback-off project header geometry from
   expect(mobile.breadcrumb.style.left).toBe("52px");
   expect(mobile.breadcrumb.box.left).toBeCloseTo(mobile.wrap.box.left + 52, 0);
   expect(mobile.breadcrumb.box.right).toBeLessThanOrEqual(mobile.header.box.right);
-  if (!fallbackOff) {
-    expect(mobile.watchVisible).toBe("none");
-  }
+  expect(mobile.watchVisible).toBe("none");
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {

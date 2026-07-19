@@ -12,6 +12,9 @@ export const styles = stylex.create({
   projectUtilIcons: { margin: "10px 0px 10px 25px" },
   watcherCount: { border: "0px", opacity: 0.9, textShadow: "none" },
   watcherOn: { backgroundColor: "#b6da54", backgroundImage: "none" },
+  watchButtonGroup: {
+    "@media all and (max-width: 720px)": { display: "none" },
+  },
   watchButton: { padding: "4px 10px" },
   menuCount: {
     backgroundColor: "#ff7332",
