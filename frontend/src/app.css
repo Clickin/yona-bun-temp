@@ -5979,25 +5979,9 @@ div.markdown-preview {
   position: relative;
 }
 
-.issue-form-page-wrap .issue-markdown-editor {
-  position: relative;
-}
-
-.issue-form-page-wrap .issue-markdown-editor > .nav-tabs {
-  margin-bottom: 0;
-}
-
 .issue-form-page-wrap .issue-editor-tab-content {
   position: relative;
   overflow: visible;
-}
-
-.issue-form-page-wrap #preview-body .markdown-preview {
-  min-height: 280px;
-}
-
-.issue-form-page-wrap #preview-body video {
-  max-width: 100%;
 }
 
 .issue-form-page-wrap .right-menu {
@@ -6078,40 +6062,6 @@ div.markdown-preview {
 
 .issue-form-page-wrap .title-head-options > button small {
   margin-left: 0;
-}
-
-.issue-form-page-wrap .editor-mention-options {
-  right: auto;
-  width: min(420px, calc(100% - 16px));
-}
-
-.issue-form-page-wrap .editor-mention-mirror {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  left: 1px;
-  box-sizing: border-box;
-  min-height: 310px;
-  padding: 4px 6px;
-  overflow-wrap: break-word;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
-  font-size: 1em;
-  line-height: normal;
-  white-space: pre-wrap;
-  pointer-events: none;
-  visibility: hidden;
-}
-
-@media (max-width: 720px) {
-  .issue-form-page-wrap .editor-mention-mirror {
-    font-size: 16px;
-  }
-}
-
-.issue-form-page-wrap .editor-mention-marker {
-  display: inline-block;
-  width: 1px;
-  height: 1em;
 }
 
 .issue-form-page-wrap .issue-assignee-selection {

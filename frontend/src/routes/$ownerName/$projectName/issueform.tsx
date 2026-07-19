@@ -1822,6 +1822,17 @@ function IssueMarkdownEditor({
   const markdownComponents = useMemo<Components>(
     () => ({
       a: (props) => <IssueMarkdownLink {...props} basePath={runtimeConfig.basePath} />,
+      video: ({ className, node: _node, ...props }) => {
+        const videoStyleProps = stylex.props(issueFormStyles.markdownPreviewVideo);
+        return (
+          <video
+            {...props}
+            {...videoStyleProps}
+            className={`${className ?? ""} ${videoStyleProps.className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-markdown-preview-video"
+          />
+        );
+      },
     }),
     [runtimeConfig.basePath],
   );
@@ -1944,8 +1955,16 @@ function IssueMarkdownEditor({
   };
 
   return (
-    <div className="mt10 issue-markdown-editor">
-      <ul className="nav nav-tabs nm small">
+    <div
+      {...stylex.props(issueFormStyles.issueMarkdownEditor)}
+      className={`mt10 issue-markdown-editor ${stylex.props(issueFormStyles.issueMarkdownEditor).className ?? ""}`.trim()}
+      data-stylex-owner="project-issue-form-markdown-editor"
+    >
+      <ul
+        {...stylex.props(issueFormStyles.issueMarkdownEditorTabs)}
+        className={`nav nav-tabs nm small ${stylex.props(issueFormStyles.issueMarkdownEditorTabs).className ?? ""}`.trim()}
+        data-stylex-owner="project-issue-form-markdown-editor-tabs"
+      >
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button
             type="button"
@@ -2127,15 +2146,26 @@ function IssueMarkdownEditor({
             />
             {mention ? (
               <div
-                className="editor-mention-mirror"
                 aria-hidden="true"
                 {...stylex.props(
+                  issueFormStyles.editorMentionMirror,
                   issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
                 )}
+                className={`editor-mention-mirror ${
+                  stylex.props(
+                    issueFormStyles.editorMentionMirror,
+                    issueFormStyles.mentionMirrorTransform(`translateY(-${textareaScrollTop}px)`),
+                  ).className ?? ""
+                }`.trim()}
                 data-stylex-owner="project-issue-form-mention-mirror"
               >
                 {bodyMarkdown.slice(0, caretPosition)}
-                <span ref={mentionMarkerRef} className="editor-mention-marker">
+                <span
+                  ref={mentionMarkerRef}
+                  {...stylex.props(issueFormStyles.editorMentionMarker)}
+                  className={`editor-mention-marker ${stylex.props(issueFormStyles.editorMentionMarker).className ?? ""}`.trim()}
+                  data-stylex-owner="project-issue-form-editor-mention-marker"
+                >
                   {"\u200b"}
                 </span>
               </div>
@@ -2144,14 +2174,24 @@ function IssueMarkdownEditor({
               <div
                 ref={mentionPopupRef}
                 id="editor-mention-options"
-                className="issue-combobox-options editor-mention-options"
                 role="listbox"
                 {...stylex.props(
+                  issueFormStyles.editorMentionOptions,
                   issueFormStyles.mentionPopupPosition(
                     mentionPopupPosition.left,
                     mentionPopupPosition.top,
                   ),
                 )}
+                className={`issue-combobox-options editor-mention-options ${
+                  stylex.props(
+                    issueFormStyles.editorMentionOptions,
+                    issueFormStyles.mentionPopupPosition(
+                      mentionPopupPosition.left,
+                      mentionPopupPosition.top,
+                    ),
+                  ).className ?? ""
+                }`.trim()}
+                data-stylex-owner="project-issue-form-editor-mention-options"
               >
                 {mentionSuggestions.map((suggestion, index) => (
                   <button
@@ -2177,7 +2217,11 @@ function IssueMarkdownEditor({
           </div>
         </div>
         <div id="preview-body" className={`tab-pane${activeTab === "preview" ? " active" : ""}`}>
-          <div className="markdown-preview markdown-wrap content-body">
+          <div
+            {...stylex.props(issueFormStyles.markdownPreview)}
+            className={`markdown-preview markdown-wrap content-body ${stylex.props(issueFormStyles.markdownPreview).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-markdown-preview"
+          >
             <ReactMarkdown
               components={markdownComponents}
               rehypePlugins={[
