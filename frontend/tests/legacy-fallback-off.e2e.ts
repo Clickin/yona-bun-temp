@@ -244,6 +244,84 @@ async function mockPostListSession(page: Page) {
   );
 }
 
+async function mockProjectPostsSession(page: Page) {
+  await page.route("**/api/v1/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { actorId: 1, isAnonymous: false, loginId: "admin" },
+    }),
+  );
+  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        id: 7,
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        ownerName: "admin",
+        projectName: "sample",
+        projectScope: "PUBLIC",
+        showBoard: true,
+        vcs: "GIT",
+        viewerCanUpdate: true,
+      },
+    }),
+  );
+  await page.route("**/api/v1/projects/admin/sample/posts**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        items: [
+          {
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorLabel: "Dev Member",
+            authorLoginId: "dev",
+            commentCount: 2,
+            createdLabel: "Jul 2, 2026",
+            labels: [],
+            notice: false,
+            ownerName: "admin",
+            postNumber: "3",
+            projectName: "sample",
+            readme: false,
+            title: "Release note",
+          },
+        ],
+        notices: [],
+        openIssueCount: 0,
+        closedIssueCount: 0,
+        pageNum: 1,
+        pageSize: 20,
+        totalCount: 1,
+        totalPages: 1,
+      },
+    }),
+  );
+  await page.route("**/api/v1/projects/admin/sample/posts/form-options**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        canAttachFiles: false,
+        canMarkNotice: true,
+        canMarkReadme: false,
+        defaultPermissions: {
+          canAttachFiles: false,
+          canCreate: true,
+          canMarkNotice: true,
+          canMarkReadme: false,
+        },
+        labels: [],
+      },
+    }),
+  );
+}
+
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
   test.skip(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1",
@@ -413,4 +491,22 @@ test("post-list output retains the runtime fallback boundary without its dead br
     "site-post-list-setting-sidebar-column",
     "site-post-list-setting-content-column",
   ]);
+});
+
+test("project posts output retains the runtime fallback boundary without its dead board bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockProjectPostsSession(page);
+  await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="project-posts-page"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-posts-item"]')).toHaveCount(1);
 });

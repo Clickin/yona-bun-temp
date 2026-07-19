@@ -1,8 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
+const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
+
 test("project posts preserves legacy populated-list owners and sort geometry", async ({ page }) => {
-  const [route, styles, legacy, partial, less] = await Promise.all([
+  const [appCss, route, styles, legacy, partial, less] = await Promise.all([
+    readFile(new URL("../src/app.css", import.meta.url), "utf8"),
     readFile(new URL("../src/routes/$ownerName/$projectName/posts.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../src/routes/$ownerName/$projectName/-posts.stylex.ts", import.meta.url),
@@ -28,6 +31,8 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   expect(partial).toContain('<div class="infos">');
   expect(less).toContain(".post-list-wrap {");
   expect(less).toContain(".post-item {");
+  expect(appCss).not.toContain(".app-shell.board-page");
+  expect(appCss).not.toContain(".board-page");
   expect(route).toContain('data-stylex-owner="project-posts-avatar"');
   expect(route).toContain('data-stylex-owner="project-posts-title-wrap"');
   expect(route).toContain('data-stylex-owner="project-posts-infos"');
@@ -128,6 +133,10 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   );
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
   await expect(page.locator('[data-stylex-owner="project-posts-page"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-posts-search"]')).toBeVisible();
   const notice = page.locator('[data-stylex-owner="project-posts-notices"]');

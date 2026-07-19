@@ -2845,10 +2845,6 @@ h1 {
   }
 }
 
-.board-page {
-  color: #333;
-}
-
 .board-toolbar {
   display: flex;
   flex-wrap: wrap;
