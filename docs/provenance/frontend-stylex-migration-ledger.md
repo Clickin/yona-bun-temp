@@ -1419,3 +1419,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 - AUTH-01: four standalone-login residual owners cover the highlighted title and OAuth row, separator title, and provider button while preserving React/TanStack behavior.
 - AUTH-02: the signup shell, field, action, and validation owners now cover confirmation-password capability output; one route-local owner covers the social-only notice. No geometry was promoted into theme variables.
 - The next fixed batch is AUTH-03, AUTH-04, and AUTH-05 from the canonical checklist; no full route rescan is required.
+
+## Batch 526
+
+- AUTH-03: five logical owner groups cover lost-password header/title, form shell, fields, actions, and conditional alerts across anonymous, authenticated-prefill, requested, and error states.
+- AUTH-04: reset-password owns its remaining title margin/highlight, tagline spacing, and input box-model declarations. Static validation surface and Dynamic StyleX position now compose in one `stylex.props` call.
+- AUTH-05: the secret setup form shell, fields/focus, and action row join the existing restricted and restart owners. Frozen mobile form/input widths and 16px `!important` input rule remain fallback-owned.
+- Dynamic-port assembled browser verification is the canonical batch path; fixed-port direct Playwright is no longer used for this workflow. The next fixed batch is USER-02, USER-03, and USER-04.

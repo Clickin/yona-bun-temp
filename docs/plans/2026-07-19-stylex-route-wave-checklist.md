@@ -25,8 +25,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | AUTH-03, AUTH-04, AUTH-05 | standalone auth screens | 독립 3-worker batch |
-| 2 | USER-02, USER-03, USER-04 | user settings screens | 독립 3-worker batch |
+| 1 | USER-02, USER-03, USER-04 | user settings screens | 독립 3-worker batch |
+| 2 | USER-01, USER-05, ORG-01 | independent profile/list/create screens | 독립 3-worker batch |
 | 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
 | 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
 | 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
@@ -58,9 +58,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 | MIG-01 | `/migration`: disabled/forbidden plus reachable source/destination/progress states | `migration/home.scala.html`, `migrationPageLayout.scala.html` | DEFERRED | L----- |
 | AUTH-01 | `/users/loginform`: login/error/OAuth/already-authenticated redirect | `user/login.scala.html`, `common/loginDialog.scala.html` | DEPENDENCY | LOE--- |
 | AUTH-02 | `/users/signupform`: validation/OAuth/restricted/success/error | `user/signup.scala.html` | DEPENDENCY | LOE--- |
-| AUTH-03 | `/lostPassword`: anonymous/authenticated/requested/error | `site/lostPassword.scala.html` | READY | L----- |
-| AUTH-04 | `/resetPassword`: valid form/validation/invalid token | `user/resetPassword.scala.html` | READY | L----- |
-| AUTH-05 | `/restricted`, `/secret`, `/restart`: standalone restricted/setup/result states | `restricted.scala.html`, `welcome/secret.scala.html`, `welcome/restart.scala.html` | READY | L----- |
+| AUTH-03 | `/lostPassword`: anonymous/authenticated/requested/error | `site/lostPassword.scala.html` | DEPENDENCY | LOE--- |
+| AUTH-04 | `/resetPassword`: valid form/validation/invalid token | `user/resetPassword.scala.html` | DEPENDENCY | LOE--- |
+| AUTH-05 | `/restricted`, `/secret`, `/restart`: standalone restricted/setup/result states | `restricted.scala.html`, `welcome/secret.scala.html`, `welcome/restart.scala.html` | DEPENDENCY | LOE--- |
 | UIKIT-01 | `/_UIKit`: controls, tabs/switches, labels/message demo states | `help/UIKit.scala.html` | DEFERRED | L----- |
 
 ### User and organization
@@ -170,6 +170,7 @@ shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
 - HELP-01 FAQ owner family, including corrected static → dynamic → conditional sprite composition
 - HELP-02 markdown navigation and HELP-03 pane/content owners; frozen responsive important rules remain a shared dependency
 - AUTH-01 standalone login residuals and AUTH-02 signup capability-state owners; shared form/login fallback remains a dependency
+- AUTH-03 lost-password state family, AUTH-04 reset valid/validation/invalid-token family, and AUTH-05 restricted/secret/restart family owners; shared auth and frozen mobile important fallback remain dependencies
 - B2 requested PR selectors: `INVALID`; cited LESS was unrelated posting-history diff CSS and must not count as completion
 
 ## Dead residual cleanup
