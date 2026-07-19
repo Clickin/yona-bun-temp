@@ -644,13 +644,11 @@ function RootLoginDialog({
     visible && styles.rootLoginDialogVisible,
   );
 
-  // The existing root form owner still needs the scoped `.loginDialog .login-form-wrap`
-  // fallback until its `!important` margin rule can retire independently.
   return (
     <div
       id="loginDialog"
       {...rootLoginDialogProps}
-      className={["loginDialog", rootLoginDialogProps.className].filter(Boolean).join(" ")}
+      className={rootLoginDialogProps.className}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}

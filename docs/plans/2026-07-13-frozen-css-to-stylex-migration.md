@@ -3986,3 +3986,15 @@ form owner migrates the declaration. Existing form, input, button, backdrop, foc
 and backdrop-dismiss owners remain deliberately outside this two-owner wave. Focused normal E2E pins
 desktop and Korean-390 geometry, interaction, and class-free stable owner contracts; fallback-off
 intentionally exposes the unresolved form-margin owner as a 398px (+20px) frame.
+
+Batch 544 completes that root anonymous dialog's isolated form-margin owner. The existing
+`rootLoginDialogForm` StyleX declaration is the exact frozen `_page.less:6561`
+`margin:20px auto !important` value; after removing the parent compatibility class it is no
+longer overridden by an unrelated important selector. The form keeps its legacy
+`frm-wrap login-form-wrap` identity for independent shared consumers, while the React-owned frame
+now emits no `loginDialog`, `modal`, `hide`, `in`, or `modal-body` compatibility class. The
+responsive `width:inherit` and input width remain existing StyleX owners from
+`_responsive.less:210-222`; form mutation, focus, close, Escape, backdrop dismissal, DOM order,
+and copy are unchanged. Focused normal and fallback-off desktop/Korean-390 E2E pin the class-free
+frame, exact `20px 0px` computed margin, and legacy dialog geometry. Frozen sources and `app.css`
+remain unchanged.

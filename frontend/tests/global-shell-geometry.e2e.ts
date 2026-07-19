@@ -227,15 +227,16 @@ test("root login dialog frame and body have independent StyleX ownership", async
 
   const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
   const body = page.locator('[data-stylex-owner="root-login-dialog-body"]');
+  const form = page.locator('[data-stylex-part="login-dialog-form"]');
   await expect(dialog).toBeVisible();
   await expect(body).toBeVisible();
-  await expect(dialog).toHaveClass(/\bloginDialog\b/);
-  await expect(dialog).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/);
+  await expect(dialog).not.toHaveClass(/\bloginDialog\b|\bmodal\b|\bhide\b|\bin\b/);
   await expect(body).not.toHaveClass(/\bmodal-body\b/);
   const computed = await page.evaluate(() => {
     const frame = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-frame"]');
     const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
-    if (!frame || !modalBody) {
+    const loginForm = document.querySelector<HTMLElement>('[data-stylex-part="login-dialog-form"]');
+    if (!frame || !modalBody || !loginForm) {
       throw new Error("Missing root login dialog StyleX owners.");
     }
     const frameStyle = getComputedStyle(frame);
@@ -247,6 +248,7 @@ test("root login dialog frame and body have independent StyleX ownership", async
       frameBackground: frameStyle.backgroundColor,
       framePosition: frameStyle.position,
       frameZIndex: frameStyle.zIndex,
+      formMargin: getComputedStyle(loginForm).margin,
     };
   });
   expect(computed.framePosition).toBe("fixed");
@@ -255,6 +257,8 @@ test("root login dialog frame and body have independent StyleX ownership", async
   expect(computed.bodyPosition).toBe("relative");
   expect(computed.bodyPadding).toBe("15px");
   expect(computed.bodyOverflowY).toBe("auto");
+  await expect(form).toHaveCSS("margin", "20px 0px");
+  expect(computed.formMargin).toBe("20px 0px");
 });
 
 test("anonymous mobile home login dialog keeps legacy Korean geometry without overflow", async ({
