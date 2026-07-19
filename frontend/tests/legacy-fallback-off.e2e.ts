@@ -55,6 +55,47 @@ async function mockProjectListSession(page: Page) {
   );
 }
 
+async function mockPostListSession(page: Page) {
+  const fulfill = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-post-list" },
+      json: { isAnonymous: false, isConfirmed: true, isSiteAdmin: true, loginId: "siteboss" },
+    });
+  };
+  await page.route("**/api/v1/session", fulfill);
+  await page.route("**/api/auth/session", fulfill);
+  await page.route("**/api/v1/auth/session", fulfill);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/site/posts?*", (route) =>
+    route.fulfill({
+      json: {
+        page: 1,
+        pageSize: 20,
+        posts: [
+          {
+            authorAvatarUrl: "/assets/images/default-avatar-128.png",
+            authorLabel: "Alice",
+            authorLoginId: "alice",
+            authorName: "Alice Example",
+            commentCount: 3,
+            createdLabel: "1 day ago",
+            createdTitle: "2026-06-29 14:30",
+            ownerName: "acme",
+            postNumber: "7",
+            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectName: "roadmap",
+            title: "Release checklist",
+          },
+        ],
+        total: 1,
+        totalPages: 1,
+      },
+    }),
+  );
+}
+
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
   test.skip(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1",
@@ -157,4 +198,23 @@ test("project-list output retains the runtime fallback boundary without its dead
     "acme/roadmap",
   );
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
+});
+
+test("post-list output retains the runtime fallback boundary without its dead bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockPostListSession(page);
+  await page.goto(`${basePath}/sites/postList`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const container = page.locator('[data-stylex-owner="site-post-list-container"]');
+  await expect(container).toBeVisible();
+  await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
+  await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
 });

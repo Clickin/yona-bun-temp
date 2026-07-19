@@ -4412,7 +4412,6 @@ div.markdown-preview {
   min-width: 0;
 }
 
-.site-admin-page .post-list-wrap,
 .site-admin-page .user-list-wrap {
   padding: 0;
   margin: 0;
@@ -4421,11 +4420,6 @@ div.markdown-preview {
   border-top: 0;
 }
 
-.site-admin-page .post-list-wrap .listitem {
-  box-sizing: border-box;
-}
-
-.site-admin-page .post-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
   align-items: center;
   gap: 16px;
@@ -4433,7 +4427,6 @@ div.markdown-preview {
   border-bottom: 1px solid #eee;
 }
 
-.site-admin-page .post-list-wrap .listitem:last-child,
 .site-admin-page .user-list-wrap .listitem:last-child {
   border-bottom: 0;
 }

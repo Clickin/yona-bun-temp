@@ -144,8 +144,15 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     ]) {
       expect(appCss).not.toContain(`${retiredSelector} {`);
     }
+    for (const deadBridgeSelector of [
+      ".site-admin-page .post-list-wrap",
+      ".site-admin-page .post-list-wrap .listitem",
+      ".site-admin-page .post-list-wrap .listitem:last-child",
+    ]) {
+      expect(appCss).not.toContain(deadBridgeSelector);
+    }
     expect(appCss).toContain(".post-list-wrap {");
-    expect(appCss).toContain(".site-setting-wrap .project-list-wrap {");
+    expect(appCss).toContain(".site-admin-page .user-list-wrap {");
     expect(override).toContain(".title_area {\n    .nav {");
     expect(override).toContain("ul {\n        li {");
     expect(bootstrap).toContain(".pull-left {\n  float: left;");
