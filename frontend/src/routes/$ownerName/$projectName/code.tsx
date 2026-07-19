@@ -133,20 +133,22 @@ function ProjectCodeNoHead({
   const codeUrl = isSvn
     ? svnCheckoutUrl(repositoryUrl, runtimeConfig.basePath, ownerName, projectName)
     : repositoryUrl;
+  const noHeadPageProps = stylex.props(styles.noHeadPage);
+  const noHeadColumnProps = stylex.props(styles.noHeadColumn);
 
   return (
     <>
       <title>{browserTitle}</title>
       <div
-        {...stylex.props(styles.noHeadPage)}
-        className="page-wrap-outer"
+        {...noHeadPageProps}
+        className={`page-wrap-outer ${noHeadPageProps.className ?? ""}`.trim()}
         data-stylex-owner="project-code-nohead-page"
       >
         <div className="project-page-wrap" data-stylex-owner="project-code-nohead-shell">
           <div className="row-fluid">
             <div
-              {...stylex.props(styles.noHeadColumn)}
-              className="span12"
+              {...noHeadColumnProps}
+              className={`span12 ${noHeadColumnProps.className ?? ""}`.trim()}
               data-stylex-owner="project-code-nohead-column"
             >
               <NoHeadAlert message={t("code.nohead")} />
@@ -229,16 +231,16 @@ function svnCheckoutUrl(
 
 function NoHeadAlert({ message }: { message: string }) {
   const heading = /<h4>([\s\S]*)<\/h4>/u.exec(message)?.[1] ?? message;
+  const noHeadAlertProps = stylex.props(styles.noHeadAlert);
 
   return (
     <div
-      {...stylex.props(styles.noHeadAlert)}
-      className="alert alert-block"
+      {...noHeadAlertProps}
+      className={`alert alert-block ${noHeadAlertProps.className ?? ""}`.trim()}
       data-stylex-owner="project-code-nohead-alert"
     >
       <h4
         {...stylex.props(styles.noHeadHeading)}
-        className=""
         data-stylex-owner="project-code-nohead-heading"
       >
         {heading}

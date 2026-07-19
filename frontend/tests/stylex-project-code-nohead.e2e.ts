@@ -19,6 +19,44 @@ test("project no-head code preserves runtime owners", async ({ page }) => {
     route.fulfill({ contentType: "application/json", json: { noHead: true } }),
   );
   await page.goto(`${basePath}/admin/sample/code`, { waitUntil: "commit" });
-  await expect(page.locator('[data-stylex-owner="project-code-nohead-page"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-code-nohead-alert"]')).toBeVisible();
+  const pageShell = page.locator('[data-stylex-owner="project-code-nohead-page"]');
+  const column = page.locator('[data-stylex-owner="project-code-nohead-column"]');
+  const alert = page.locator('[data-stylex-owner="project-code-nohead-alert"]');
+  await expect(pageShell).toBeVisible();
+  await expect(alert).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const shell = document.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-code-nohead-page"]',
+        );
+        const noHeadColumn = document.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-code-nohead-column"]',
+        );
+        const noHeadAlert = document.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-code-nohead-alert"]',
+        );
+        if (!shell || !noHeadColumn || !noHeadAlert) return null;
+        const shellStyle = getComputedStyle(shell);
+        const columnStyle = getComputedStyle(noHeadColumn);
+        const alertStyle = getComputedStyle(noHeadAlert);
+        return {
+          alertBackground: alertStyle.backgroundColor,
+          alertBorderTopColor: alertStyle.borderTopColor,
+          alertColor: alertStyle.color,
+          columnPaddingLeft: columnStyle.paddingLeft,
+          columnPaddingRight: columnStyle.paddingRight,
+          pageMarginTop: shellStyle.marginTop,
+        };
+      }),
+    )
+    .toEqual({
+      alertBackground: "rgb(252, 248, 227)",
+      alertBorderTopColor: "rgb(251, 238, 213)",
+      alertColor: "rgb(192, 152, 83)",
+      columnPaddingLeft: "10px",
+      columnPaddingRight: "10px",
+      pageMarginTop: "20px",
+    });
 });
