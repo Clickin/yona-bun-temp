@@ -2233,8 +2233,10 @@ function IssuePostFileUploader({
 
   return (
     <div
+      {...stylex.props(issueFormStyles.uploadShell)}
       id="upload"
-      className={`upload-wrap content-footer${isDragging ? " dragover" : ""}`}
+      className={`upload-wrap content-footer ${stylex.props(issueFormStyles.uploadShell).className ?? ""}${isDragging ? " dragover" : ""}`.trim()}
+      data-stylex-owner="project-issue-form-upload-shell"
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}

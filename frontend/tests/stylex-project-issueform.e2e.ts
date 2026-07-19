@@ -16,6 +16,16 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page.locator('[data-stylex-owner="project-issue-form"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-issue-form-title-row"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-issue-form-editor"]')).toBeVisible();
+  const uploadShell = page.locator('[data-stylex-owner="project-issue-form-upload-shell"]');
+  await expect(uploadShell).toBeVisible();
+  await expect(uploadShell).toHaveCSS("position", "relative");
+  await expect(uploadShell).toHaveCSS("box-sizing", "border-box");
+  await expect(uploadShell).toHaveCSS("width", /\d+(?:\.\d+)?px/u);
+  expect(
+    await uploadShell.evaluate((element) => element.getBoundingClientRect().width),
+  ).toBeGreaterThan(0);
+  await expect(uploadShell).toHaveCSS("min-height", "70px");
+  await expect(uploadShell).toHaveCSS("padding", "10px");
   const editorTextarea = page.locator('[data-stylex-owner="project-issue-form-editor-textarea"]');
   await expect(editorTextarea).toHaveCSS("height", /\d+px/u);
   await expect(editorTextarea).toHaveCSS("overflow", "hidden");
@@ -51,6 +61,9 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   expect(SOURCE).not.toContain("$yobi.loadModule");
   expect(SOURCE).not.toContain('data-toggle="select2"');
   expect(SOURCE).not.toMatch(/href="javascript:/u);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(uploadShell).toHaveCSS("min-height", "100px");
 });
 
 test("issue form upload progress uses a dynamic route-local StyleX width", async ({ page }) => {
@@ -68,7 +81,8 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   expect(SOURCE).toContain('data-stylex-owner="project-issue-form-upload-progress"');
   expect(SOURCE).toContain("issueFormStyles.uploadProgressBar(`${row.progress}%`)");
   expect(SOURCE).not.toContain("style={{ width: `${row.progress}%` }}");
-  expect(styles).toContain("uploadProgressBar: (width: string) => ({ width })");
+  expect(styles).toContain("uploadProgressBar: (width: string) => ({");
+  expect(styles).toContain("    width,");
 
   let releaseUpload: (() => void) | undefined;
   const uploadPaused = new Promise<void>((resolve) => {

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../../../theme.stylex";
 
 // Paint-only owners for the frozen issue/create cascade. Layout, editor
 // geometry, and type remain in the route and contextual legacy classes.
@@ -10,6 +11,16 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  uploadShell: {
+    position: "relative",
+    boxSizing: "border-box",
+    width: "100%",
+    minHeight: {
+      default: "70px",
+      [globalBreakpoints.mobile]: "100px",
+    },
+    padding: "10px",
+  },
   subtaskMessage: {
     position: "relative",
     zIndex: 1,

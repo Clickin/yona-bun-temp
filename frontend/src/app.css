@@ -6000,14 +6000,6 @@ div.markdown-preview {
   max-width: 100%;
 }
 
-.issue-form-page-wrap #upload {
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 70px;
-  padding: 10px !important;
-}
-
 .issue-form-page-wrap .attached-file-main:disabled {
   cursor: default;
   opacity: 0.65;
@@ -6328,10 +6320,6 @@ div.markdown-preview {
     min-width: 0 !important;
     margin-top: 10px;
     margin-left: 2.127659574468085% !important;
-  }
-
-  .issue-form-page-wrap #upload {
-    min-height: 100px;
   }
 
   .issue-form-page-wrap .upload-wrap .attach-wrap {
