@@ -58,6 +58,8 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
     "attachedFilesVisible",
     "attachedFile",
     "attachedFileMain",
+    "attachedFileMainDisabled",
+    "attachedFileMainIcon",
     "attachedFileName",
     "uploadError",
     "attachedFileDelete",
@@ -73,6 +75,7 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
     "project-issue-form-attached-files",
     "project-issue-form-attached-file",
     "project-issue-form-attached-file-main",
+    "project-issue-form-attached-file-main-icon",
     "project-issue-form-attached-file-name",
     "project-issue-form-upload-error",
     "project-issue-form-attached-file-delete",
@@ -88,6 +91,8 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
   expect(css).not.toContain(".issue-form-page-wrap .attached-files.has-files");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file-main {");
+  expect(css).not.toContain(".issue-form-page-wrap .attached-file-main:disabled {");
+  expect(css).not.toContain(".issue-form-page-wrap .attached-file-main > i {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file-main .name {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file .upload-error {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file .btn-delete {");
@@ -103,4 +108,11 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
   // Generic upload/fake-file and legacy `.attached-file` rules remain intentionally frozen.
   expect(css).toContain(".attached-file {");
   expect(css).toContain(".write-comment-box .upload-wrap .help-pastable");
+  expect(style).toContain('cursor: "default"');
+  expect(style).toContain("opacity: 0.65");
+  expect(style).toContain('display: "inline-block"');
+  expect(style).toContain('width: "auto"');
+  expect(style).toContain('margin: "0 3px 0 0"');
+  expect(route).toContain('disabled={!row.attachment || row.status !== "ready"}');
+  expect(route).toContain('row.status !== "ready" && issueFormStyles.attachedFileMainDisabled');
 });

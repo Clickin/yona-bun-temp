@@ -105,6 +105,15 @@ export const issueFormStyles = stylex.create({
     backgroundColor: "transparent",
     border: "0",
   },
+  attachedFileMainDisabled: {
+    cursor: "default",
+    opacity: 0.65,
+  },
+  attachedFileMainIcon: {
+    display: "inline-block",
+    width: "auto",
+    margin: "0 3px 0 0",
+  },
   attachedFileName: { minWidth: 0 },
   uploadError: {
     display: "inline-block",

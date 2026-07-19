@@ -1358,3 +1358,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 509
 
 - Authenticated `/$ownerName/$projectName/issueform` upload shell: `IssuePostFileUploader` applies the `uploadShell` StyleX owner to the existing `#upload` wrapper, preserving upload-wrap classes, drag/drop events, and generic attach-wrap fallback while retiring only the exact route-scoped shell blocks. `yona-original/app/views/common/uploadForm.scala.html:25-40`, the issue create `@common.fileUploader` caller, frozen `_page.less:3606-3642`, `_responsive.less`, and `yobi.less` import order establish the output and responsive contract. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. Focused issueform contracts verify source evidence, stable owner, desktop/mobile geometry, upload interaction, and exact fallback absence.
+
+## Batch 510
+
+- Authenticated `/$ownerName/$projectName/issueform` attached-file disabled/icon auxiliary state: `attachedFileMainDisabled` conditionally composes on uploading/unavailable rows and `attachedFileMainIcon` owns the support icon's inline geometry. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. The exact `.attached-file-main:disabled` and `.attached-file-main > i` route-scoped app.css blocks are retired; generic `.attached-file` remains. Focused attachment contract verifies legacy uploader/uploadForm/create sources, owners, conditional disabled behavior, icon declarations, and exact fallback absence.

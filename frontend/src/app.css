@@ -6000,17 +6000,6 @@ div.markdown-preview {
   max-width: 100%;
 }
 
-.issue-form-page-wrap .attached-file-main:disabled {
-  cursor: default;
-  opacity: 0.65;
-}
-
-.issue-form-page-wrap .attached-file-main > i {
-  display: inline-block;
-  width: auto;
-  margin: 0 3px 0 0;
-}
-
 .issue-form-page-wrap .right-menu {
   position: relative;
   overflow: visible;

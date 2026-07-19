@@ -2291,13 +2291,20 @@ function IssuePostFileUploader({
               <button
                 type="button"
                 {...stylex.props(issueFormStyles.attachedFileMain)}
-                className={`attached-file-main ${stylex.props(issueFormStyles.attachedFileMain).className ?? ""}`.trim()}
+                {...stylex.props(
+                  row.status !== "ready" && issueFormStyles.attachedFileMainDisabled,
+                )}
+                className={`attached-file-main ${stylex.props(issueFormStyles.attachedFileMain).className ?? ""} ${stylex.props(row.status !== "ready" && issueFormStyles.attachedFileMainDisabled).className ?? ""}`.trim()}
                 data-stylex-owner="project-issue-form-attached-file-main"
                 aria-label={`${t("common.attach.clickToPost")} ${row.name}`}
                 disabled={!row.attachment || row.status !== "ready"}
                 onClick={() => row.attachment && onInsert(row.attachment)}
               >
-                <i className="yobicon-supportrequest" />
+                <i
+                  {...stylex.props(issueFormStyles.attachedFileMainIcon)}
+                  className={`yobicon-supportrequest ${stylex.props(issueFormStyles.attachedFileMainIcon).className ?? ""}`.trim()}
+                  data-stylex-owner="project-issue-form-attached-file-main-icon"
+                />
                 <strong
                   {...stylex.props(issueFormStyles.attachedFileName)}
                   className={`name ${stylex.props(issueFormStyles.attachedFileName).className ?? ""}`.trim()}
