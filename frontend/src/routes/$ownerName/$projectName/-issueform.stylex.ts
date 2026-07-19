@@ -53,6 +53,25 @@ export const issueFormStyles = stylex.create({
     border: "0",
   },
   cancelButton: { marginLeft: "0px" },
+  uploadHelpPastable: { display: "block" },
+  uploadFakeFile: {
+    display: "block",
+    padding: "6px 20px",
+    marginBottom: "0px",
+  },
+  uploadFileInput: {
+    boxSizing: "content-box",
+    padding: "0px",
+    border: "0px",
+    opacity: 0,
+  },
+  uploadAttachSaveHelp: { display: "block" },
+  attachedFileInsertCopy: {
+    marginLeft: "8px",
+    color: "#666",
+    fontSize: "11px",
+    whiteSpace: "nowrap",
+  },
   attachedFilesVisible: { display: "block" },
   attachedFile: {
     boxSizing: "border-box",

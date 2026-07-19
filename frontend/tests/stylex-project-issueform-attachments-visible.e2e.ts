@@ -10,27 +10,49 @@ const legacyUploader = new URL(
   "../../yona-original/app/views/common/fileUploader.scala.html",
   import.meta.url,
 );
+const legacyUploadForm = new URL(
+  "../../yona-original/app/views/common/uploadForm.scala.html",
+  import.meta.url,
+);
+const legacyCreate = new URL(
+  "../../yona-original/app/views/issue/create.scala.html",
+  import.meta.url,
+);
 const legacyStyles = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
+  import.meta.url,
+);
+const legacyUiStyles = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
 );
 const appStyles = new URL("../src/app.css", import.meta.url);
 
 test("issueform attachment rows own active React-matched StyleX geometry", async () => {
-  const [route, style, uploader, less, css] = await Promise.all([
+  const [route, style, uploader, uploadForm, create, less, uiLess, css] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacyUploader, "utf8"),
+    readFile(legacyUploadForm, "utf8"),
+    readFile(legacyCreate, "utf8"),
     readFile(legacyStyles, "utf8"),
+    readFile(legacyUiStyles, "utf8"),
     readFile(appStyles, "utf8"),
   ]);
 
+  expect(create).toContain("@common.fileUploader(ResourceType.ISSUE_POST, null)");
   expect(uploader).toContain('<li class="attached-file"');
   expect(uploader).toContain('class="name"');
   expect(uploader).toContain('class="btn-transparent btn-delete pull-right"');
+  expect(uploadForm).toContain('class="help help-pastable"');
+  expect(uploadForm).toContain('class="nbtn medium white fake-file-wrap"');
+  expect(uploadForm).toContain('class="file"');
+  expect(less).toContain(".upload-wrap {");
   expect(less).toContain(".attached-files {");
   expect(less).toContain(".attached-file {");
   expect(less).toContain(".btn-delete {");
+  expect(uiLess).toContain(".fake-file-wrap {");
+  expect(uiLess).toContain(".file {");
 
   for (const owner of [
     "attachedFilesVisible",
@@ -39,6 +61,11 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
     "attachedFileName",
     "uploadError",
     "attachedFileDelete",
+    "uploadHelpPastable",
+    "uploadFakeFile",
+    "uploadFileInput",
+    "uploadAttachSaveHelp",
+    "attachedFileInsertCopy",
   ]) {
     expect(style).toContain(owner);
   }
@@ -49,6 +76,11 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
     "project-issue-form-attached-file-name",
     "project-issue-form-upload-error",
     "project-issue-form-attached-file-delete",
+    "project-issue-form-upload-help-pastable",
+    "project-issue-form-upload-fake-file",
+    "project-issue-form-upload-file-input",
+    "project-issue-form-upload-attach-save-help",
+    "project-issue-form-attached-file-insert-copy",
   ]) {
     expect(route).toContain(owner);
   }
@@ -59,6 +91,16 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
   expect(css).not.toContain(".issue-form-page-wrap .attached-file-main .name {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file .upload-error {");
   expect(css).not.toContain(".issue-form-page-wrap .attached-file .btn-delete {");
+  for (const retiredSelector of [
+    ".issue-form-page-wrap #upload .help-pastable",
+    ".issue-form-page-wrap #upload .fake-file-wrap.nbtn.medium",
+    ".issue-form-page-wrap #upload .fake-file-wrap .file",
+    ".issue-form-page-wrap #upload > .attach-save-help",
+    ".issue-form-page-wrap .attached-file .btn-insert-copy",
+  ]) {
+    expect(css).not.toContain(`${retiredSelector} {`);
+  }
   // Generic upload/fake-file and legacy `.attached-file` rules remain intentionally frozen.
   expect(css).toContain(".attached-file {");
+  expect(css).toContain(".write-comment-box .upload-wrap .help-pastable");
 });

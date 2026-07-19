@@ -2243,11 +2243,17 @@ function IssuePostFileUploader({
       <div className="attach-wrap">
         <span className="help help-droppable">{t("common.attach.drophere")}</span>{" "}
         <div className="btn-wrap">
-          <label className="nbtn medium white fake-file-wrap">
+          <label
+            {...stylex.props(issueFormStyles.uploadFakeFile)}
+            className={`nbtn medium white fake-file-wrap ${stylex.props(issueFormStyles.uploadFakeFile).className ?? ""}`.trim()}
+            data-stylex-owner="project-issue-form-upload-fake-file"
+          >
             <i className="yobicon-upload" /> {t("button.upload")}
             <input
               type="file"
-              className="file"
+              {...stylex.props(issueFormStyles.uploadFileInput)}
+              className={`file ${stylex.props(issueFormStyles.uploadFileInput).className ?? ""}`.trim()}
+              data-stylex-owner="project-issue-form-upload-file-input"
               name="filePath"
               multiple
               onChange={(event) => {
@@ -2258,7 +2264,13 @@ function IssuePostFileUploader({
           </label>
         </div>{" "}
         <span className="plain">{t("common.attach.clickbutton")}</span>{" "}
-        <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+        <span
+          {...stylex.props(issueFormStyles.uploadHelpPastable)}
+          className={`help help-pastable ${stylex.props(issueFormStyles.uploadHelpPastable).className ?? ""}`.trim()}
+          data-stylex-owner="project-issue-form-upload-help-pastable"
+        >
+          {t("common.attach.pastehere")}
+        </span>
       </div>
       <ul
         {...stylex.props(rows.length > 0 && issueFormStyles.attachedFilesVisible)}
@@ -2306,7 +2318,13 @@ function IssuePostFileUploader({
                   </span>
                 ) : null}
                 {row.attachment && row.status === "ready" ? (
-                  <span className="btn-insert-copy">{t("common.attach.clickToPost")}</span>
+                  <span
+                    {...stylex.props(issueFormStyles.attachedFileInsertCopy)}
+                    className={`btn-insert-copy ${stylex.props(issueFormStyles.attachedFileInsertCopy).className ?? ""}`.trim()}
+                    data-stylex-owner="project-issue-form-attached-file-insert-copy"
+                  >
+                    {t("common.attach.clickToPost")}
+                  </span>
                 ) : null}
               </button>
               {row.error ? (
@@ -2334,7 +2352,11 @@ function IssuePostFileUploader({
         })}
       </ul>
       {rows.length > 0 ? (
-        <p className="right-txt help attach-save-help">
+        <p
+          {...stylex.props(issueFormStyles.uploadAttachSaveHelp)}
+          className={`right-txt help attach-save-help ${stylex.props(issueFormStyles.uploadAttachSaveHelp).className ?? ""}`.trim()}
+          data-stylex-owner="project-issue-form-upload-attach-save-help"
+        >
           <i className="yobicon-supportrequest" /> {t("common.attach.attachIfYouSave")}
         </p>
       ) : null}
