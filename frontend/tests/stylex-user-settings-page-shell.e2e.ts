@@ -5,7 +5,13 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const screenshotDirectory = resolve("../output/playwright");
 const owners = {
+  avatarForm: "user-settings-avatar-form",
+  avatarProgress: "user-settings-avatar-progress",
+  avatarUpload: "user-settings-avatar-upload",
   outer: "user-settings-page-wrap-outer",
+  profileField: "user-settings-profile-field",
+  profileForm: "user-settings-profile-form",
+  resetVisited: "user-settings-reset-visited",
   wrap: "user-settings-page-wrap",
 } as const;
 const owner = (root: Page | Locator, name: string) => root.locator(`[data-stylex-owner="${name}"]`);
@@ -109,7 +115,7 @@ async function openNotifications(page: Page) {
   await expect(owner(page, owners.outer)).toBeVisible({ timeout: 2_000 });
 }
 
-test("records the two-owner legacy source, theme, class-retirement, and fallback contract", () => {
+test("records the legacy profile and avatar owner, theme, class-retirement, and fallback contract", () => {
   const route = readFileSync("src/routes/user/editform.tsx", "utf8");
   const theme = readFileSync("src/routes/user/-editform.stylex.ts", "utf8");
   const appCss = readFileSync("src/app.css", "utf8");
@@ -172,6 +178,9 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
     ".page-wrap-outer {\n    padding: 0 10px;\n    width: 100%;\n    box-sizing: border-box;\n  }",
   );
   expect(settingJs).toContain("_showNotificationTab();");
+  expect(settingJs).toContain("_onAvatarBeforeUpload");
+  expect(settingJs).toContain("_showJcrop(oRes)");
+  expect(settingJs).toContain("_onClickBtnSubmitCrop");
   for (const key of [
     "userinfo.accountSetting = 사용자 설정",
     "userinfo.changeNotifications = 알림 설정",
@@ -201,6 +210,17 @@ test("records the two-owner legacy source, theme, class-retirement, and fallback
   expect(route).not.toContain('style={{ maxWidth: "500px" }}');
   expect(theme).toContain('width: "128px"');
   expect(theme).toContain('maxWidth: "500px"');
+  expect(theme).toContain('float: "left"');
+  expect(theme).toContain('width: "206px"');
+  expect(theme).toContain('margin: "0px 0px 2px 50px"');
+  expect(theme).toContain('borderRadius: "5px"');
+  expect(theme).toContain('clear: "both"');
+  expect(route).not.toContain(
+    'className={stylex.props(styles.profileForm).className + " pull-left"}',
+  );
+  expect(route).not.toContain(
+    'className={stylex.props(styles.avatarForm).className + " pull-left"}',
+  );
   expect(route).not.toContain("!important");
   const pageTheme = theme.match(
     /export const userSettingsPageColors = stylex\.defineVars\(\{[\s\S]*?\n\}\);/u,
@@ -222,6 +242,12 @@ for (const viewport of [
     await expect(owner(page, owners.outer)).toBeVisible({ timeout: 2_000 });
 
     const avatar = owner(page, "user-settings-avatar-image");
+    const profileForm = owner(page, owners.profileForm);
+    const profileFields = owner(profileForm, owners.profileField);
+    const avatarForm = owner(page, owners.avatarForm);
+    const avatarProgress = owner(avatarForm, owners.avatarProgress);
+    const avatarUpload = owner(avatarForm, owners.avatarUpload);
+    const resetVisited = owner(page, owners.resetVisited);
     const cropImage = owner(page, "user-settings-avatar-crop-image");
     const cropPreview = owner(page, "user-settings-avatar-crop-preview");
     await expect(avatar).toHaveCSS("width", "128px");
@@ -230,6 +256,24 @@ for (const viewport of [
     await expect(cropImage).toHaveCSS("width", "128px");
     await expect(cropImage).toHaveCSS("max-width", "none");
     await expect(cropPreview).toHaveCSS("max-width", "500px");
+    await expect(profileForm).toHaveCSS("float", "left");
+    await expect(profileForm).toHaveCSS("margin", "0px 0px 2px");
+    await expect(profileFields).toHaveCount(3);
+    await expect(profileFields.first()).toHaveCSS("width", "206px");
+    await expect(profileFields.first()).toHaveCSS("height", "20px");
+    await expect(profileFields.first()).toHaveCSS("padding", "4px 6px");
+    await expect(avatarForm).toHaveCSS("float", "left");
+    await expect(avatarForm).toHaveCSS("margin-left", "50px");
+    await expect(avatarForm).toHaveCSS("padding-left", "50px");
+    await expect(avatarProgress).toHaveCSS("height", "5px");
+    await expect(avatarProgress).toHaveCSS("border-radius", "5px");
+    await expect(avatarUpload).toHaveCSS("position", "relative");
+    await expect(owner(avatarUpload, "user-settings-avatar-upload-input")).toHaveCSS(
+      "opacity",
+      "0",
+    );
+    await expect(resetVisited).toHaveCSS("clear", "both");
+    await expect(resetVisited).toHaveCSS("padding-top", "5px");
 
     const initial = await page.evaluate(() => {
       const image = document.querySelector<HTMLElement>(

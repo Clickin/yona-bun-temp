@@ -17,6 +17,7 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import {
   userSettingsPageColors,
   userSettingsProfileColors,
+  userSettingsProfileStyles,
   userSettingsTabColors,
   userSettingsAvatarStyles,
 } from "./-editform.stylex";
@@ -169,32 +170,7 @@ const styles = stylex.create({
     backgroundColor: userSettingsPageColors.pageSurface,
     margin: "0px auto",
   },
-  profileForm: {
-    color: userSettingsProfileColors.rootText,
-  },
-  profileField: {
-    color: userSettingsProfileColors.rootText,
-  },
   profileAction: {
-    color: userSettingsProfileColors.rootText,
-  },
-  avatarForm: {
-    borderLeftColor: userSettingsProfileColors.divider,
-    borderLeftStyle: "solid",
-    borderLeftWidth: "1px",
-    marginLeft: "50px",
-    paddingLeft: "50px",
-  },
-  avatarProgress: {
-    backgroundColor: userSettingsProfileColors.progressSurface,
-  },
-  avatarProgressBar: {
-    backgroundColor: userSettingsProfileColors.progressBar,
-  },
-  avatarUpload: {
-    color: userSettingsProfileColors.rootText,
-  },
-  resetVisited: {
     color: userSettingsProfileColors.rootText,
   },
   avatarCrop: {
@@ -398,7 +374,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         id="frmBasic"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        className={stylex.props(styles.profileForm).className + " pull-left"}
+        {...stylex.props(userSettingsProfileStyles.form)}
         data-stylex-owner="user-settings-profile-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -416,7 +392,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           <dd className="mt10">
             <input
               type="text"
-              className={`text ${stylex.props(styles.profileField).className}`}
+              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
               data-stylex-owner="user-settings-profile-field"
               value={loginId}
               readOnly
@@ -428,7 +404,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               key={`name-${displayName}`}
               type="text"
               name="name"
-              className={`text ${stylex.props(styles.profileField).className}`}
+              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
               data-stylex-owner="user-settings-profile-field"
               defaultValue={displayName}
             />
@@ -439,7 +415,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               key={`email-${email}`}
               type="email"
               name="email"
-              className={`text ${stylex.props(styles.profileField).className}`}
+              className={`text ${stylex.props(userSettingsProfileStyles.field).className}`}
               data-stylex-owner="user-settings-profile-field"
               defaultValue={email}
             />
@@ -460,7 +436,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         id="frmAvatar"
         method="post"
         action={prefixBasePath(runtimeConfig.basePath, "/user/edit")}
-        className={stylex.props(styles.avatarForm).className + " pull-left"}
+        {...stylex.props(userSettingsAvatarStyles.form)}
         data-stylex-owner="user-settings-avatar-form"
         onSubmit={(event) => {
           event.preventDefault();
@@ -484,11 +460,11 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </div>
           <div
             {...avatarProgressHiddenProps}
-            className={`upload-progress avatar ${stylex.props(styles.avatarProgress).className} ${avatarProgressHiddenProps?.className ?? ""}`.trim()}
+            className={`upload-progress avatar ${stylex.props(userSettingsAvatarStyles.progress).className} ${avatarProgressHiddenProps?.className ?? ""}`.trim()}
             data-stylex-owner="user-settings-avatar-progress"
           >
             <div
-              className={`bar orange ${stylex.props(styles.avatarProgressBar).className} ${
+              className={`bar orange ${stylex.props(userSettingsAvatarStyles.progressBar).className} ${
                 avatarProgressFullProps?.className ?? ""
               }`.trim()}
               data-stylex-owner="user-settings-avatar-progress-bar"
@@ -496,7 +472,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </div>
           <div className="btn-wrap mt10 center-txt">
             <div
-              className={`ybtn ybtn-small fake-file-wrap btnUploadAvatar ${stylex.props(styles.avatarUpload).className}`}
+              className={`ybtn ybtn-small fake-file-wrap btnUploadAvatar ${stylex.props(userSettingsAvatarStyles.upload).className}`}
               data-stylex-owner="user-settings-avatar-upload"
             >
               {t("userinfo.changeAvatar")}
@@ -504,7 +480,8 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
                 key={avatarFileInputKey}
                 id="avatarFile"
                 type="file"
-                className="file"
+                className={`file ${stylex.props(userSettingsAvatarStyles.uploadInput).className}`}
+                data-stylex-owner="user-settings-avatar-upload-input"
                 name="filePath"
                 accept="image/*"
                 onChange={handleAvatarFileChange}
@@ -515,7 +492,7 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
       </form>
 
       <div
-        className={`reset-user-visited-list ${stylex.props(styles.resetVisited).className}`}
+        className={`reset-user-visited-list ${stylex.props(userSettingsProfileStyles.resetVisited).className}`}
         data-stylex-owner="user-settings-reset-visited"
       >
         <hr />
