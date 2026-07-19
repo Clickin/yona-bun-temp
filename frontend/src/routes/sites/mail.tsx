@@ -160,6 +160,42 @@ const styles = stylex.create({
     borderRadius: "4px",
     color: siteMailColors.errorText,
   },
+  form: { margin: "0px 0px 20px" },
+  controlGroup: {
+    marginBottom: "20px",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  wideControlGroup: { marginRight: "10px" },
+  controlLabel: {
+    display: "block",
+    float: "left",
+    paddingTop: "5px",
+    textAlign: "right",
+    width: "160px",
+    "@media (max-width: 480px)": {
+      float: "none",
+      paddingTop: "0px",
+      textAlign: "left",
+      width: "auto",
+    },
+  },
+  controls: {
+    marginLeft: "180px",
+    "@media (max-width: 480px)": { marginLeft: "0px" },
+  },
+  formField: {
+    display: "inline-block",
+    marginBottom: "0px",
+    verticalAlign: "middle",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      minHeight: "30px",
+    },
+  },
+  shortField: { width: { default: "286px", "@media (max-width: 767px)": "100%" } },
+  wideField: { width: { default: "926px", "@media (max-width: 767px)": "100%" } },
 });
 
 interface SiteMailRouteSearch {
@@ -382,6 +418,13 @@ function MailBody({
   const errorAlertStyleProps = stylex.props(styles.errorAlert);
   const successAlertStyleProps = stylex.props(styles.successAlert);
   const notConfiguredAlertStyleProps = stylex.props(styles.notConfiguredAlert);
+  const formStyleProps = stylex.props(styles.form);
+  const controlGroupStyleProps = stylex.props(styles.controlGroup);
+  const wideControlGroupStyleProps = stylex.props(styles.controlGroup, styles.wideControlGroup);
+  const controlLabelStyleProps = stylex.props(styles.controlLabel);
+  const controlsStyleProps = stylex.props(styles.controls);
+  const shortFieldStyleProps = stylex.props(styles.formField, styles.shortField);
+  const wideFieldStyleProps = stylex.props(styles.formField, styles.wideField);
 
   const mutation = useMutation({
     mutationFn: async (input: { body: string; from: string; subject: string; to: string }) => {
@@ -452,7 +495,8 @@ function MailBody({
           id="mailForm"
           method="post"
           action={prefixBasePath(runtimeConfig.basePath, "/sites/mail")}
-          className="form-horizontal"
+          {...formStyleProps}
+          data-stylex-owner="site-mail-form"
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
@@ -464,30 +508,32 @@ function MailBody({
             });
           }}
         >
-          <div className="control-group">
-            <label {...{ name: "from" }} className="control-label span3">
+          <div {...controlGroupStyleProps} data-stylex-owner="site-mail-form-group">
+            <label {...{ name: "from" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
               {t("site.mail.from")}
             </label>
-            <div className="controls">
+            <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
               <input
+                {...shortFieldStyleProps}
+                data-stylex-owner="site-mail-form-field"
                 type="text"
                 name="from"
                 defaultValue={response.sender}
                 required
                 placeholder={t("site.mail.fromPlaceholder")}
-                className="span4"
               />
             </div>
           </div>
 
-          <div className="control-group">
-            <label {...{ name: "to" }} className="control-label">
+          <div {...controlGroupStyleProps} data-stylex-owner="site-mail-form-group">
+            <label {...{ name: "to" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
               {t("site.mail.to")}
             </label>
-            <div className="controls">
+            <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
               <input
+                {...shortFieldStyleProps}
+                data-stylex-owner="site-mail-form-field"
                 type="text"
-                className="span4"
                 name="to"
                 required
                 placeholder={t("site.mail.toPlaceholder")}
@@ -495,21 +541,27 @@ function MailBody({
             </div>
           </div>
 
-          <div className="control-group mr10">
-            <label {...{ name: "subject" }} className="control-label">
+          <div {...wideControlGroupStyleProps} data-stylex-owner="site-mail-form-group" data-variant="wide">
+            <label {...{ name: "subject" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
               {t("site.mail.subject")}
             </label>
-            <div className="controls">
-              <input type="text" name="subject" className="span12" />
+            <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
+              <input {...wideFieldStyleProps} data-stylex-owner="site-mail-form-field" type="text" name="subject" />
             </div>
           </div>
 
-          <div className="control-group mr10">
-            <label {...{ name: "body" }} className="control-label">
+          <div {...wideControlGroupStyleProps} data-stylex-owner="site-mail-form-group" data-variant="wide">
+            <label {...{ name: "body" }} {...controlLabelStyleProps} data-stylex-owner="site-mail-form-label">
               {t("site.mail.body")}
             </label>
-            <div className="controls">
-              <textarea id="body" name="body" rows={16} className="span12 input-xlarge textbody" />
+            <div {...controlsStyleProps} data-stylex-owner="site-mail-form-controls">
+              <textarea
+                {...wideFieldStyleProps}
+                data-stylex-owner="site-mail-form-field"
+                id="body"
+                name="body"
+                rows={16}
+              />
             </div>
           </div>
 

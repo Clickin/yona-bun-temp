@@ -108,29 +108,29 @@ const EXPECTED_MAIL_NOT_CONFIGURED_SCREEN = `
             <li>smtp.password</li>
           </ul>
         </div>
-        <form id="mailForm" method="post" action="__BASE_PATH__/sites/mail" class="form-horizontal">
-          <div class="control-group">
-            <label name="from" class="control-label span3">From</label>
-            <div class="controls">
-              <input type="text" name="from" value="noreply@example.com" required="" placeholder="sender@mail.com" class="span4">
+        <form id="mailForm" method="post" action="__BASE_PATH__/sites/mail">
+          <div>
+            <label name="from">From</label>
+            <div>
+              <input type="text" name="from" value="noreply@example.com" required="" placeholder="sender@mail.com">
             </div>
           </div>
-          <div class="control-group">
-            <label name="to" class="control-label">To</label>
-            <div class="controls">
-              <input type="text" class="span4" name="to" required="" placeholder="receipient@mail.com">
+          <div>
+            <label name="to">To</label>
+            <div>
+              <input type="text" name="to" required="" placeholder="receipient@mail.com">
             </div>
           </div>
-          <div class="control-group mr10">
-            <label name="subject" class="control-label">Subject</label>
-            <div class="controls">
-              <input type="text" name="subject" class="span12">
+          <div data-variant="wide">
+            <label name="subject">Subject</label>
+            <div>
+              <input type="text" name="subject">
             </div>
           </div>
-          <div class="control-group mr10">
-            <label name="body" class="control-label">Body</label>
-            <div class="controls">
-              <textarea id="body" name="body" rows="16" class="span12 input-xlarge textbody"></textarea>
+          <div data-variant="wide">
+            <label name="body">Body</label>
+            <div>
+              <textarea id="body" name="body" rows="16"></textarea>
             </div>
           </div>
           <div class="span12 mail-btn-wrap">
@@ -214,6 +214,22 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     "700",
   );
   await expect(page.locator("#mailForm")).toHaveAttribute("action", `${basePath}/sites/mail`);
+  await expect(page.locator('[data-stylex-owner="site-mail-form"]')).not.toHaveClass(
+    /form-horizontal/,
+  );
+  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]')).toHaveCount(4);
+  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]')).toHaveCount(4);
+  await expect(page.locator('[data-stylex-owner="site-mail-form-controls"]')).toHaveCount(4);
+  await expect(page.locator('[data-stylex-owner="site-mail-form-field"]')).toHaveCount(4);
+  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]').first()).not.toHaveClass(
+    /control-group/,
+  );
+  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]').first()).not.toHaveClass(
+    /control-label|span3/,
+  );
+  await expect(page.locator('input[name="from"]')).not.toHaveClass(/span4/);
+  await expect(page.locator('input[name="subject"]')).not.toHaveClass(/span12/);
+  await expect(page.locator("#body")).not.toHaveClass(/span12|input-xlarge|textbody/);
   await expect(page.locator('input[name="from"]')).toHaveValue("noreply@example.com");
   const massMailLink = page.locator('[data-stylex-owner="site-mail-sidebar-link"]', {
     hasText: "Send mass emails",
@@ -260,6 +276,31 @@ test("site admin mail matches legacy site/mail.scala.html not-configured DOM", a
     titleAreaPaddingBottom: 8,
     titleLineHeight: 30,
   });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('[data-stylex-owner="site-mail-form"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-mail-form-group"]')).toHaveCount(4);
+  expect(
+    await page.locator('[data-stylex-owner="site-mail-form-field"]').evaluateAll((fields) =>
+      fields.every((field) => {
+        const fieldBox = field.getBoundingClientRect();
+        const controlsBox = field.parentElement?.getBoundingClientRect();
+        return Boolean(
+          controlsBox &&
+            Math.abs(fieldBox.left - controlsBox.left) <= 1 &&
+            Math.abs(fieldBox.right - controlsBox.right) <= 1,
+        );
+      }),
+    ),
+  ).toBe(true);
+  await expect(page.locator('[data-stylex-owner="site-mail-form-label"]').first()).toHaveCSS(
+    "text-align",
+    "left",
+  );
+  await expect(page.locator('[data-stylex-owner="site-mail-form-controls"]').first()).toHaveCSS(
+    "margin-left",
+    "0px",
+  );
 
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "site-mail-sidebar";
@@ -588,10 +629,12 @@ async function mailFormMetrics(page: Page) {
     const titleArea = requireElement(".site-setting-wrap .title_area");
     const title = requireElement(".site-setting-wrap .title_area h2");
     const alert = requireElement(".site-setting-wrap .alert-error");
-    const firstControlGroup = requireElement("#mailForm .control-group");
-    const secondControlGroup = requireElement("#mailForm .control-group:nth-of-type(2)");
-    const firstControlLabel = requireElement("#mailForm .control-label");
-    const firstControls = requireElement("#mailForm .controls");
+    const firstControlGroup = requireElement('[data-stylex-owner="site-mail-form-group"]');
+    const secondControlGroup = requireElement(
+      '[data-stylex-owner="site-mail-form-group"]:nth-of-type(2)',
+    );
+    const firstControlLabel = requireElement('[data-stylex-owner="site-mail-form-label"]');
+    const firstControls = requireElement('[data-stylex-owner="site-mail-form-controls"]');
     const fromInput = requireElement('#mailForm input[name="from"]');
     const subjectInput = requireElement('#mailForm input[name="subject"]');
     const bodyTextarea = requireElement("#body");
