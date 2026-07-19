@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
   Fragment,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  useEffect,
+  useRef,
   useState,
 } from "react";
 import ReactMarkdown from "react-markdown";
@@ -32,7 +34,6 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
-import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { styles } from "./-post-detail.stylex";
 
 const sx = {
@@ -78,7 +79,11 @@ export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber"
 });
 
 function ProjectPostDetailRoute() {
-  return <LastOutletTransition routeId={Route.id} />;
+  // This leaf may be reached directly from the home notification stream, whose
+  // independently owned SiteLayoutShell is replaced by the project shell. A
+  // mode="wait" outlet transition here leaves that cross-shell boundary blank;
+  // keep the legacy immediate document handoff instead.
+  return <Outlet />;
 }
 
 export function ProjectPostDetailIndexScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
@@ -1266,6 +1271,8 @@ function PostCommentRow({
 }) {
   const { language, t } = useLegacyMessages();
   const commentId = stringField(comment.id);
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const commentRef = useRef<HTMLLIElement>(null);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
   const avatarUrl = prefixBasePath(basePath, "/legacy-assets/images/default-avatar-128.png");
@@ -1274,8 +1281,19 @@ function PostCommentRow({
   const hasRouteOwnedOriginalMessage =
     viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
 
+  useEffect(() => {
+    if (hash !== `comment-${commentId}`) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      commentRef.current?.scrollIntoView({ block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [commentId, hash]);
+
   return (
-    <li className="comment" id={`comment-${commentId}`}>
+    <li className="comment" id={`comment-${commentId}`} ref={commentRef}>
       {childComments.map((childComment) => (
         <div
           id={`comment-${stringField(childComment.id)}`}
