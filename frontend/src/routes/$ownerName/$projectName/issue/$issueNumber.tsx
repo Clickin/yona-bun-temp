@@ -1105,8 +1105,10 @@ function IssueDetailBody({
             data-stylex-owner="project-issue-detail-sidebar"
           >
             <div
-              className={`${stylex.props(styles.sidebarMeta).className} issue-info`}
+              {...stylex.props(styles.sidebarMeta, styles.issueInfo)}
+              className={`${stylex.props(styles.sidebarMeta, styles.issueInfo).className} issue-info`}
               data-stylex-owner="project-issue-detail-sidebar-meta"
+              data-stylex-owner-issue-info="project-issue-detail-issue-info"
             >
               <form
                 id="issueUpdateForm"
@@ -1342,7 +1344,11 @@ function IssueDetailBody({
           <input type="hidden" id="numOfComments" value={String(issue.commentCount ?? 0)} />
           <input type="hidden" id="issueUpdateDate" value={issueUpdateMillis} />
         </div>
-        <div className="board-footer">
+        <div
+          {...stylex.props(styles.boardFooter)}
+          className={`${stylex.props(styles.boardFooter).className} board-footer`}
+          data-stylex-owner="project-issue-detail-board-footer"
+        >
           <IssueDetailKeymap project={project} />
         </div>
       </div>

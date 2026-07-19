@@ -3888,17 +3888,6 @@ div.markdown-preview {
   margin-top: 10px;
 }
 
-.issue-detail-page .board-body .author-info {
-  display: block;
-  margin: 10px 20px;
-}
-
-.issue-detail-page .board-body .content {
-  min-height: 150px;
-  padding: 0 20px;
-  margin-bottom: 20px;
-}
-
 .board-body .author-info {
   display: block;
   margin: 10px 20px;
@@ -3915,22 +3904,16 @@ div.markdown-preview {
   padding: 6px;
 }
 
-.board-actrow,
-.issue-detail-page .board-actrow {
+.board-actrow {
   padding-right: 15px;
   margin: 20px 0;
   overflow: auto;
 }
 
-.board-footer,
-.issue-detail-page .board-footer {
+.board-footer {
   margin-top: 20px;
   font-size: 0;
   text-align: right;
-}
-
-.issue-detail-page .issue-info {
-  padding: 15px 0 0 10px;
 }
 
 .issue-detail-page .issue-info p {

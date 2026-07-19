@@ -156,6 +156,9 @@ export const styles = stylex.create({
   },
   content: {
     minWidth: 0,
+    minHeight: "150px",
+    padding: "0 20px",
+    marginBottom: "20px",
   },
   actions: {
     display: "flex",
@@ -163,6 +166,9 @@ export const styles = stylex.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: "8px",
+    paddingRight: "15px",
+    margin: "20px 0",
+    overflow: "auto",
   },
   sidebar: {
     minWidth: 0,
@@ -172,6 +178,14 @@ export const styles = stylex.create({
   },
   author: {
     color: issueDetailColors.accentText,
+    display: "block",
+    margin: "10px 20px",
+  },
+  issueInfo: { padding: "15px 0 0 10px" },
+  boardFooter: {
+    marginTop: "20px",
+    fontSize: "0",
+    textAlign: "right",
   },
   timelineEvent: {
     padding: "2px 0 2px 55px",
