@@ -25,6 +25,11 @@ const styles = stylex.create({
     },
   },
   content: { margin: "0px auto" },
+  grid: {
+    width: "100%",
+    "::before": { content: '\"\"', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '\"\"', display: "table", lineHeight: "0px" },
+  },
   sidebarColumn: {
     boxSizing: "border-box",
     display: "block",
@@ -38,6 +43,23 @@ const styles = stylex.create({
       "@media (max-width: 767px)": "100%",
     },
     "@media (max-width: 767px)": { float: "none" },
+  },
+  contentColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "82.97872340425532%",
+    "@media (min-width: 1200px)": {
+      marginLeft: "2.564102564102564%",
+      width: "82.90598290598291%",
+    },
+    "@media (min-width: 768px) and (max-width: 979px)": {
+      marginLeft: "2.7624309392265194%",
+      width: "82.87292817679558%",
+    },
+    "@media (max-width: 767px)": { float: "none", marginLeft: "0px", width: "100%" },
   },
   sidebar: {
     margin: "0px",
@@ -207,11 +229,14 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </div>
       <div {...stylex.props(styles.page)} data-stylex-owner="site-update-page">
         <div {...stylex.props(styles.content)} data-stylex-owner="site-update-content">
-          <div className="row-fluid">
+          <div {...stylex.props(styles.grid)} data-stylex-owner="site-update-setting-grid">
             <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-update-sidebar-column">
               <SiteAdminSidebar showUpdateBadge={Boolean(query.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.contentColumn)}
+              data-stylex-owner="site-update-setting-content-column"
+            >
               <div {...titleAreaStyleProps} data-stylex-owner="site-update-title-strip">
                 <h2 {...titleStyleProps} data-stylex-owner="site-update-title-heading">
                   <LegacyMessage messageKey="site.sidebar.update" />
