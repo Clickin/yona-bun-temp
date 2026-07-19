@@ -213,7 +213,9 @@ function OrganizationSettingsBody({
                         </span>
                       </li>
                       <li
+                        {...descsItemStyleProps}
                         {...descsLastStyleProps}
+                        className={`${descsItemStyleProps.className} ${descsLastStyleProps.className}`}
                         data-stylex-owner="organization-setting-descs-last"
                       >
                         <div className="btn-wrap">

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../../../theme.stylex";
 
 export const organizationSettingColors = stylex.defineVars({
   bubbleSurface: "#f7f7f7",
@@ -8,6 +9,8 @@ export const organizationSettingColors = stylex.defineVars({
   saveSurface: "#ff7332",
   saveText: "#ffffff",
   warningText: "#f36c22",
+  leftBorder: "#ffffff",
+  rightBorder: "#d4d4d4",
 });
 
 export const organizationSettingStyles = stylex.create({
@@ -18,12 +21,22 @@ export const organizationSettingStyles = stylex.create({
     backgroundSize: "cover",
     borderRadius: "10px",
     display: "inline-block",
-    width: "260px",
-    height: "188px",
+    width: { default: "260px", [globalBreakpoints.mobile]: "100px" },
+    height: { default: "188px", [globalBreakpoints.mobile]: "100px" },
   }),
   settingBox: { float: "left", width: "399px" },
-  settingBoxLeft: { paddingRight: "20px", borderRight: "1px solid #ffffff" },
-  settingBoxRight: { paddingLeft: "20px", borderLeft: "1px solid #d4d4d4" },
+  settingBoxLeft: {
+    paddingRight: "20px",
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
+    borderRightColor: organizationSettingColors.leftBorder,
+  },
+  settingBoxRight: {
+    paddingLeft: { default: "20px", [globalBreakpoints.mobile]: "0px" },
+    borderLeftStyle: { default: "solid", [globalBreakpoints.mobile]: "none" },
+    borderLeftWidth: { default: "1px", [globalBreakpoints.mobile]: "0px" },
+    borderLeftColor: organizationSettingColors.rightBorder,
+  },
   logoDesc: {
     display: "inline-block",
     width: "120px",
@@ -41,6 +54,11 @@ export const organizationSettingStyles = stylex.create({
   descsItem: { marginTop: "10px" },
   descsLast: { marginTop: "25px" },
   fieldGeometry: { width: "380px" },
-  textareaGeometry: { width: "380px", height: "80px", marginBottom: "0px", resize: "vertical" },
+  textareaGeometry: {
+    width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
+    height: "80px",
+    marginBottom: "0px",
+    resize: "vertical",
+  },
   topBox: { paddingTop: "20px" },
 });

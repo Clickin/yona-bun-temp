@@ -291,6 +291,38 @@ test("organization settings form keeps legacy setting.scala.html layout metrics"
   expect(metrics.saveButton.height).toBeGreaterThanOrEqual(30);
 });
 
+test("organization settings top-box preserves frozen mobile resets", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockOrganizationSettings(page);
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto(`${basePath}/organizations/weblabs/settingform`);
+  await expect(page.locator("#saveSetting")).toBeVisible();
+  const metrics = await page.evaluate(() => {
+    const logo = document.querySelector<HTMLElement>("#saveSetting .logo-wrap");
+    const right = document.querySelector<HTMLElement>("#saveSetting .setting-box.right");
+    const textarea = document.querySelector<HTMLTextAreaElement>("#project-desc");
+    if (!logo || !right || !textarea) throw new Error("Missing mobile setting controls");
+    const rightStyle = getComputedStyle(right);
+    return {
+      logoWidth: logo.getBoundingClientRect().width,
+      logoHeight: logo.getBoundingClientRect().height,
+      borderLeft: rightStyle.borderLeftStyle,
+      paddingLeft: rightStyle.paddingLeft,
+      textareaWidth: textarea.getBoundingClientRect().width,
+    };
+  });
+  expect(metrics.logoWidth).toBe(100);
+  expect(metrics.logoHeight).toBe(100);
+  expect(metrics.borderLeft).toBe("none");
+  expect(metrics.paddingLeft).toBe("0px");
+  expect(metrics.textareaWidth).toBeLessThan(390);
+  const containment = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    viewport: window.innerWidth,
+  }));
+  expect(containment.scrollWidth).toBe(containment.viewport);
+});
+
 test("organization settings logo input validates image files and auto-submits like legacy", async ({
   page,
 }) => {
