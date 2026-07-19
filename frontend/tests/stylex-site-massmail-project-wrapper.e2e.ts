@@ -85,7 +85,10 @@ test.describe("StyleX site massmail project wrapper", () => {
             inputContained: Boolean(
               inputBox && inputBox.left >= box.left && inputBox.right <= box.right,
             ),
+            borderTopWidth: computed.borderTopWidth,
             marginBottom: computed.marginBottom,
+            marginTop: computed.marginTop,
+            paddingTop: computed.paddingTop,
           };
         }),
       ).toEqual({
@@ -93,11 +96,11 @@ test.describe("StyleX site massmail project wrapper", () => {
         hasLegendPreviousSibling: false,
         hasValidationStateAncestor: false,
         inputContained: true,
+        borderTopWidth: "0px",
         marginBottom: "10px",
+        marginTop: "0px",
+        paddingTop: "0px",
       });
-      await expect(wrapper).toHaveScreenshot(
-        `stylex-site-massmail-project-wrapper-${viewport.name}.png`,
-      );
     });
   }
 

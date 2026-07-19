@@ -193,14 +193,6 @@ const styles = stylex.create({
   projectWrapper: {
     marginBottom: "10px",
   },
-  projectWrapperPanel: {
-    borderColor: "#dddddd",
-    borderRadius: "3px",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    marginTop: "10px",
-    padding: "12px",
-  },
   projectWrapperVisible: {
     display: "block",
   },
@@ -217,7 +209,7 @@ const styles = stylex.create({
   },
   selectedProjectTag: {
     backgroundColor: siteMassMailColors.tagSurface,
-    borderRadius: "3px",
+    borderRadius: "1px",
     color: siteMassMailColors.whitePaint,
     display: "inline-block",
     fontSize: "11.844px",
@@ -228,13 +220,6 @@ const styles = stylex.create({
     textShadow: siteMassMailColors.tagShadow,
     verticalAlign: "baseline",
     whiteSpace: "nowrap",
-  },
-  selectedProjects: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "6px",
-    marginTop: "10px",
-    minHeight: "24px",
   },
   selectedProjectRemove: {
     backgroundColor: "transparent",
@@ -427,7 +412,6 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const projectWrapperStateStyleProps = stylex.props(
     styles.projectWrapper,
-    styles.projectWrapperPanel,
     mailingType === "projects" && styles.projectWrapperVisible,
   );
   const projectInputRef = useRef<HTMLInputElement>(null);
@@ -537,7 +521,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
       </label>
       <div
         {...projectWrapperStateStyleProps}
-        className={`hide ${projectWrapperStateStyleProps.className ?? ""} ${stylex.props(styles.projectWrapperPanel).className ?? ""}`.trim()}
+        className={`hide ${projectWrapperStateStyleProps.className ?? ""}`.trim()}
         data-stylex-owner="site-massmail-project-wrapper"
         id="project-list-wrap"
       >
@@ -609,11 +593,7 @@ function MassMailBody({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </ul>
           ) : null}
         </div>
-        <div
-          {...stylex.props(styles.selectedProjects)}
-          data-stylex-owner="site-massmail-selected-projects"
-          id="selected-projects"
-        >
+        <div data-stylex-owner="site-massmail-selected-projects" id="selected-projects">
           {selectedProjects.map((project) => (
             <span
               {...stylex.props(styles.selectedProjectTag)}
