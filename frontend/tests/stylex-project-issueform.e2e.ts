@@ -17,10 +17,6 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page.locator('[data-stylex-owner="project-issue-form-title-row"]')).toBeVisible();
   const editorCell = page.locator('[data-stylex-owner="project-issue-form-editor"]');
   await expect(editorCell).toBeVisible();
-  await expect(editorCell).toHaveAttribute(
-    "data-stylex-owner-editor-cell",
-    "project-issue-form-editor-cell",
-  );
   await expect(editorCell).toHaveCSS("position", "relative");
   const editorTabContent = page.locator(
     '[data-stylex-owner="project-issue-form-editor-tab-content"]',
@@ -147,6 +143,16 @@ async function mockIssueForm(page: Page) {
     });
   });
   await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-issue-form" },
+      body: JSON.stringify({
+        isAuthenticated: true,
+        user: { loginId: "admin", name: "Site Admin" },
+      }),
+    });
+  });
+  await page.route("**/api/v1/auth/session", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       headers: { "x-csrf-token": "csrf-issue-form" },

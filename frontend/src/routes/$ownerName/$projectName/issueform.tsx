@@ -1158,7 +1158,6 @@ function ProjectIssueFormBody({
                       {...stylex.props(issueFormStyles.editorCell)}
                       className={`${stylex.props(issueFormStyles.editorCell).className} issue-editor-cell`}
                       data-stylex-owner="project-issue-form-editor"
-                      data-stylex-owner-editor-cell="project-issue-form-editor-cell"
                     >
                       <IssueMarkdownEditor
                         bodyMarkdown={bodyMarkdown}
