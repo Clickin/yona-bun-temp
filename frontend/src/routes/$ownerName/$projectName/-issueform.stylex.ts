@@ -11,6 +11,30 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  issueTitleField: { position: "relative" },
+  titleHeadOptions: { top: "calc(100% - 13px)" },
+  titleHeadOptionsButtonSmall: { marginLeft: "0" },
+  assigneeDropdownSearch: {
+    width: "calc(100% - 8px)",
+    height: "30px",
+    margin: "0 4px 4px",
+  },
+  issueLabelToken: {
+    display: "inline-flex",
+    gap: "4px",
+    alignItems: "center",
+    boxSizing: "border-box",
+    height: "24px",
+    minHeight: "24px",
+    padding: "1px 3px 1px 6px",
+    backgroundColor: "#fafafa",
+    border: "1px solid #ccc",
+    borderRadius: "3px",
+  },
+  issueLabelTokenClose: {
+    minHeight: "20px",
+    padding: "0 3px",
+  },
   uploadShell: {
     position: "relative",
     boxSizing: "border-box",

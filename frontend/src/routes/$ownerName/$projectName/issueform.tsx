@@ -1080,7 +1080,11 @@ function ProjectIssueFormBody({
                       className={`${stylex.props(styles.titleRow).className} span12 issue-title-row`}
                       data-stylex-owner="project-issue-form-title-row"
                     >
-                      <div className="span11 issue-title-field">
+                      <div
+                        {...stylex.props(issueFormStyles.issueTitleField)}
+                        className={`span11 issue-title-field ${stylex.props(issueFormStyles.issueTitleField).className ?? ""}`.trim()}
+                        data-stylex-owner="project-issue-form-title-field"
+                      >
                         <TitleInput
                           ownerName={ownerName}
                           projectName={projectName}
@@ -1407,7 +1411,9 @@ function TitleInput({
       {suggestions.length > 0 ? (
         <div
           id="title-head-options"
-          className="issue-combobox-options title-head-options"
+          {...stylex.props(issueFormStyles.titleHeadOptions)}
+          className={`issue-combobox-options title-head-options ${stylex.props(issueFormStyles.titleHeadOptions).className ?? ""}`.trim()}
+          data-stylex-owner="project-issue-form-title-head-options"
           role="listbox"
         >
           {suggestions.map((suggestion, index) => (
@@ -1423,6 +1429,7 @@ function TitleInput({
             >
               <small
                 {...stylex.props(
+                  issueFormStyles.titleHeadOptionsButtonSmall,
                   issueFormStyles.labelBackground(normalizedColor(suggestion.labelColor ?? "")),
                 )}
                 data-stylex-owner="project-issueform-title-suggestion-category"
@@ -2520,7 +2527,9 @@ function IssueAssigneeSelect({
               <input
                 ref={searchInputRef}
                 type="text"
-                className="select2-input issue-assignee-dropdown-search"
+                {...stylex.props(issueFormStyles.assigneeDropdownSearch)}
+                className={`select2-input issue-assignee-dropdown-search ${stylex.props(issueFormStyles.assigneeDropdownSearch).className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-assignee-dropdown-search"
                 value={query}
                 aria-label={t("issue.assignee")}
                 aria-autocomplete="list"
@@ -2852,7 +2861,12 @@ function IssueLabelSelect({
                 issueFormStyles.labelBackground(normalizedColor(label.color)),
               );
               return (
-                <li key={label.id} className="select2-search-choice issue-label-token">
+                <li
+                  key={label.id}
+                  {...stylex.props(issueFormStyles.issueLabelToken)}
+                  className={`select2-search-choice issue-label-token ${stylex.props(issueFormStyles.issueLabelToken).className ?? ""}`.trim()}
+                  data-stylex-owner="project-issue-form-label-token"
+                >
                   <div>
                     <strong
                       {...labelBackground}
@@ -2864,7 +2878,9 @@ function IssueLabelSelect({
                   </div>
                   <button
                     type="button"
-                    className="select2-search-choice-close btn-transparent"
+                    {...stylex.props(issueFormStyles.issueLabelTokenClose)}
+                    className={`select2-search-choice-close btn-transparent ${stylex.props(issueFormStyles.issueLabelTokenClose).className ?? ""}`.trim()}
+                    data-stylex-owner="project-issue-form-label-token-close"
                     aria-label={`${t("button.delete")} ${label.name}`}
                     onClick={() => onRemove(label.id)}
                   ></button>

@@ -5964,10 +5964,6 @@ div.markdown-preview {
   vertical-align: baseline;
 }
 
-.issue-form-page-wrap .issue-title-field {
-  position: relative;
-}
-
 .issue-form-page-wrap .subtask-wrap select,
 .issue-form-page-wrap .right-menu select,
 .issue-form-page-wrap .issue-combobox > input,
@@ -6056,14 +6052,6 @@ div.markdown-preview {
   color: #fff;
 }
 
-.issue-form-page-wrap .title-head-options {
-  top: calc(100% - 13px);
-}
-
-.issue-form-page-wrap .title-head-options > button small {
-  margin-left: 0;
-}
-
 .issue-form-page-wrap .issue-assignee-selection {
   display: flex;
   gap: 5px;
@@ -6138,13 +6126,6 @@ div.markdown-preview {
   border-bottom: 5px solid #333;
 }
 
-.issue-form-page-wrap .issue-assignee-dropdown-search {
-  box-sizing: border-box;
-  width: calc(100% - 8px);
-  height: 30px;
-  margin: 0 4px 4px;
-}
-
 .issue-form-page-wrap .issue-label-selection {
   display: flex;
   flex-wrap: wrap;
@@ -6158,24 +6139,6 @@ div.markdown-preview {
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 3px;
-}
-
-.issue-form-page-wrap .issue-label-token {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  box-sizing: border-box;
-  height: 24px;
-  min-height: 24px;
-  padding: 1px 3px 1px 6px;
-  background: #fafafa;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-}
-
-.issue-form-page-wrap .issue-label-token .btn-transparent {
-  min-height: 20px;
-  padding: 0 3px;
 }
 
 .issue-form-page-wrap .issue-label-color {
