@@ -25,8 +25,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | USER-01, USER-05, ORG-01 | independent profile/list/create screens | 독립 3-worker batch |
-| 2 | ORG-02, PROJECT-06, MILE-01 | independent layout/statistics/list screens | 독립 3-worker batch |
+| 1 | ORG-02, PROJECT-06, MILE-01 | independent layout/statistics/list screens | 독립 3-worker batch |
+| 2 | BOARD-01, BOARD-03, CODE-01 | independent board/code list/detail screens | 독립 3-worker batch |
 | 3 | USER-01..05, ORG-01..03 | settings shell을 먼저 확정한 뒤 child routes 병렬 | shared tab/menu |
 | 4 | ISSUE/BOARD/MILESTONE lanes | list/form/detail의 shared editor/list owner 순서 | 아래 dependency graph |
 | 5 | CODE/PR lanes | code tree/diff owner 후 PR changes/reviews | shared diff/tree plugins |
@@ -67,13 +67,13 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116, legacy Scala template
 
 | ID | Route / visible states | Legacy root and principal partials | Status | Gates |
 | --- | --- | --- | --- | --- |
-| USER-01 | `/$user`: profile plus issues/PR/projects populated/empty/not-found | `user/view.scala.html`, `partial_issues`, `partial_pullRequests`, `partial_projectlist` | DEPENDENCY | L----- |
+| USER-01 | `/$user`: profile plus issues/PR/projects populated/empty/not-found | `user/view.scala.html`, `partial_issues`, `partial_pullRequests`, `partial_projectlist` | DEPENDENCY | LOE--- |
 | USER-02 | `/user/editform`: settings shell/profile/avatar upload-crop | `user/edit.scala.html`, `partial_edit_tabmenu` | DEPENDENCY | LOE--- |
 | USER-03 | editform emails/password/notifications/token state matrices | `user/edit_{emails,password,notifications,token}.scala.html`, tab menu | DEPENDENCY | LOE--- |
 | USER-04 | `/user/files`: empty/populated/search/actions/pagination | `user/userFiles.scala.html`, `common/mySeriesMenuTab.scala.html` | DEPENDENCY | LOE--- |
-| USER-05 | `/user/issues`: open/closed/filter/quick-search/subtasks/pagination | `issue/my_list.scala.html`, `my_partial_*` | READY | L----- |
+| USER-05 | `/user/issues`: open/closed/filter/quick-search/subtasks/pagination | `issue/my_list.scala.html`, `my_partial_*` | DEPENDENCY | LOE--- |
 | USER-06 | direct issue form new/mine/comment-derived states | `issue/create.scala.html` | DEPENDENCY | L----- |
-| ORG-01 | `/organizations/new`: form/validation/success/error | `organization/create.scala.html` | READY | L----- |
+| ORG-01 | `/organizations/new`: form/validation/success/error | `organization/create.scala.html` | DEPENDENCY | LOE--- |
 | ORG-02 | organization layout/home: header/menu/project/member/filter states | `organizationLayout`, `header`, `menu`, `view.scala.html` | READY | L----- |
 | ORG-03 | settingform/members/delete: logo, enrollment, roles, modals | `organization/{setting,members,deleteForm}.scala.html`, `partial_settingmenu` | DEPENDENCY | LOE--- |
 | ORG-04 | boards/issues/pullrequests open/closed/populated/empty/pagination | `group_{board,issue,pullrequest}_list*.scala.html` | DEPENDENCY | L----- |
@@ -172,6 +172,7 @@ shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
 - AUTH-01 standalone login residuals and AUTH-02 signup capability-state owners; shared form/login fallback remains a dependency
 - AUTH-03 lost-password state family, AUTH-04 reset valid/validation/invalid-token family, and AUTH-05 restricted/secret/restart family owners; shared auth and frozen mobile important fallback remain dependencies
 - USER-02 profile/avatar/upload/crop owners, USER-03 email valid/pending row completion with existing sibling-route owners, and USER-04 files empty/populated/search/action/pagination owners; shared form and current bridge fallback remain dependencies
+- USER-01 public profile root, USER-05 current-user issue controls, and ORG-01 create duplicate-name validation ownership; shared tabs/forms/pagination/generated fallback remain dependencies
 - B2 requested PR selectors: `INVALID`; cited LESS was unrelated posting-history diff CSS and must not count as completion
 
 ## Dead residual cleanup

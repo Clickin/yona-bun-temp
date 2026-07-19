@@ -1433,3 +1433,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 - USER-03: the email route applies shared avatar/address/delete owners to valid and pending secondary rows and composes set-main width conditionally. Password, notification, and token roots retain their previously recorded owners and remain separate legacy-root audit units.
 - USER-04: six owner groups cover list paint, header/cells, conditional row hover, preview/image, filename/icon, and metadata/action/location across empty, populated, search, and pagination states. The Scala search wrapper/input/button classes are restored.
 - Shared form/button/avatar fallback and the user-files search/grid/responsive bridge remain. The next fixed batch is USER-01, USER-05, and ORG-01.
+
+## Batch 528
+
+- USER-01: five owners cover public profile root, identity column, stream column, issue row, and title wrapper across populated/empty/missing-user states.
+- USER-05: six owners cover current-user issue subtasks offset, shared controls, conditional hover/selected paint, and static popover variants while preserving TanStack filtering and pagination.
+- ORG-01: the existing organization-create validation owner now renders a duplicate-name REST error at the legacy validation position while retaining values and navigation behavior.
+- Shared tabs/forms/pagination and generated compatibility fallback remain. The next fixed batch is ORG-02, PROJECT-06, and MILE-01.
