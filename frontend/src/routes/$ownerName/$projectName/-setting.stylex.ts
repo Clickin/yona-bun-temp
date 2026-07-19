@@ -1,11 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../../../theme.stylex";
 
 export const projectSettingColors = stylex.defineVars({
   action: "#51a351",
   inputBorder: "#cccccc",
   inputText: "#555555",
   logoSurface: "#eeeeee",
-  noteText: "#999999",
+  pointText: "#51aacc",
 });
 
 export const styles = stylex.create({
@@ -14,20 +15,49 @@ export const styles = stylex.create({
   form: { margin: "0px" },
   frame: { overflow: "visible" },
   topBox: { paddingTop: "20px" },
+  settingBox: { float: "left", width: "399px" },
+  settingBoxLeft: { borderRight: "1px solid #ffffff", paddingRight: "20px" },
+  settingBoxRight: {
+    borderLeft: {
+      default: "1px solid #d4d4d4",
+      [globalBreakpoints.mobile]: "none",
+    },
+    margin: "0px",
+    paddingLeft: { default: "20px", [globalBreakpoints.mobile]: "0px" },
+  },
   logo: {
     backgroundColor: projectSettingColors.logoSurface,
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
-    backgroundSize: "contain",
-    height: "140px",
-    width: "140px",
+    backgroundSize: "cover",
+    borderRadius: "10px",
+    display: "inline-block",
+    height: { default: "188px", [globalBreakpoints.mobile]: "100px" },
+    width: { default: "260px", [globalBreakpoints.mobile]: "100px" },
   },
+  logoDesc: {
+    display: "inline-block",
+    fontSize: "12px",
+    marginLeft: "10px",
+    verticalAlign: "top",
+    width: "120px",
+  },
+  point: {
+    clear: "both",
+    color: projectSettingColors.pointText,
+    display: "block",
+    fontWeight: "bold",
+    textTransform: "uppercase",
+  },
+  descsItem: { marginTop: "10px" },
+  descsLast: { marginTop: "25px" },
   input: {
     borderColor: projectSettingColors.inputBorder,
     borderStyle: "solid",
     borderWidth: "1px",
     color: projectSettingColors.inputText,
     padding: "4px",
+    width: "380px",
   },
   nameField: { position: "relative" },
   namePopover: {
@@ -42,6 +72,9 @@ export const styles = stylex.create({
     borderWidth: "1px",
     color: projectSettingColors.inputText,
     padding: "4px",
+    marginBottom: "0px",
+    resize: "vertical",
+    width: { default: "380px", [globalBreakpoints.mobile]: "inherit" },
   },
   textareaHeight: (height: string) => ({ height }),
   oldPlace: { color: "red" },

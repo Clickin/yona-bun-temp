@@ -28,7 +28,13 @@ const sx = {
   form: stylex.props(styles.form),
   frame: stylex.props(styles.frame),
   topBox: stylex.props(styles.topBox),
+  settingBox: stylex.props(styles.settingBox),
+  settingBoxLeft: stylex.props(styles.settingBoxLeft),
+  settingBoxRight: stylex.props(styles.settingBoxRight),
   logo: stylex.props(styles.logo),
+  logoDesc: stylex.props(styles.logoDesc),
+  descsItem: stylex.props(styles.descsItem),
+  descsLast: stylex.props(styles.descsLast),
   input: stylex.props(styles.input),
   nameField: stylex.props(styles.nameField),
   namePopover: stylex.props(styles.namePopover),
@@ -402,7 +408,10 @@ function ProjectSettingBody({
               value={numberField(recordField(project).watchCount)}
             />
             <div {...sx.topBox} data-stylex-owner="project-setting-top-box">
-              <div className="setting-box left">
+              <div
+                className={`${sx.settingBox.className} ${sx.settingBoxLeft.className} setting-box left`}
+                data-stylex-owner="project-setting-setting-box-left"
+              >
                 <div
                   {...sx.logo}
                   {...stylex.props(
@@ -413,18 +422,47 @@ function ProjectSettingBody({
                   className={`${sx.logo.className} ${stylex.props(styles.logoBackground(`url('${projectLogoUrl(project, runtimeConfig.basePath)}')`)).className ?? ""}`.trim()}
                   data-stylex-owner="project-setting-logo"
                 ></div>
-                <div className="logo-desc">
-                  <ul className="unstyled descs">
-                    <li>
+                <div
+                  className={`${sx.logoDesc.className} logo-desc`}
+                  data-stylex-owner="project-setting-logo-desc"
+                >
+                  <ul className="unstyled descs" data-stylex-owner="project-setting-descs">
+                    <li
+                      className={sx.descsItem.className}
+                      data-stylex-owner="project-setting-descs-item"
+                    >
                       <strong>{t("project.logo")}</strong>
                     </li>
-                    <li>
-                      {t("project.logo.type")} <span className="point">bmp, jpg, gif, png</span>
+                    <li
+                      className={sx.descsItem.className}
+                      data-stylex-owner="project-setting-descs-item"
+                    >
+                      {t("project.logo.type")}{" "}
+                      <span
+                        {...stylex.props(styles.point)}
+                        className={`${stylex.props(styles.point).className} point`}
+                        data-stylex-owner="project-setting-point"
+                      >
+                        bmp, jpg, gif, png
+                      </span>
                     </li>
-                    <li>
-                      {t("project.logo.maxFileSize")} <span className="point">5MB</span>
+                    <li
+                      className={sx.descsItem.className}
+                      data-stylex-owner="project-setting-descs-item"
+                    >
+                      {t("project.logo.maxFileSize")}{" "}
+                      <span
+                        {...stylex.props(styles.point)}
+                        className={`${stylex.props(styles.point).className} point`}
+                        data-stylex-owner="project-setting-point"
+                      >
+                        5MB
+                      </span>
                     </li>
-                    <li>
+                    <li
+                      className={sx.descsLast.className}
+                      data-stylex-owner="project-setting-descs-last"
+                    >
                       <div className="btn-wrap">
                         <div className="nbtn medium white fake-file-wrap">
                           <i className="yobicon-upload"></i> {t("button.upload")}
@@ -443,7 +481,10 @@ function ProjectSettingBody({
                   </ul>
                 </div>
               </div>
-              <dl className="setting-box right">
+              <dl
+                className={`${sx.settingBox.className} ${sx.settingBoxRight.className} setting-box right`}
+                data-stylex-owner="project-setting-setting-box-right"
+              >
                 <dt>
                   <label htmlFor="project-name">{t("project.name.placeholder")}</label>
                 </dt>

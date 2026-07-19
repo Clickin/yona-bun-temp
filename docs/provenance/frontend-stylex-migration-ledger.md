@@ -1382,3 +1382,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 517
 
 - Populated `/$ownerName/$projectName/issues` list: route-local StyleX owns row display/spacing/border and active surface, title truncation, post-id typography, finite complete/open subtask progress variants, and conditional child-date visibility. Legacy issue list, draft, subtask, and child partials plus frozen `_page.less:3312-3559` establish the output. Exact issue-list scoped blocks are retired; remaining title, label, avatar, and list fallbacks stay for their active consumers.
+
+## Batch 518
+
+- Authenticated `/$ownerName/$projectName/setting` top boxes: route-local StyleX owns the frozen 399px floated columns, responsive right border/padding reset, desktop 260x188/mobile 100x100 logo, logo descriptions/point typography, list spacing, desktop 380px/mobile inherited field width, and textarea margin/resize. Existing Dynamic StyleX remains the effective runtime textarea-height owner. `yona-original/app/views/project/setting.scala.html`, frozen `_page.less:2213-2270`, and `_responsive.less:126-142` establish the output. Mobile document width remains the frozen 429px geometry rather than adding an ungrounded percentage-width compensation. Exact `.box-wrap .setting-box` blocks are retired; generic box/note/file-control fallback remains.

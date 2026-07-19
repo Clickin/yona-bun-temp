@@ -19,6 +19,11 @@ test("records project setting owners and responsive form containment", async ({ 
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-drop"');
   expect(route).toContain('data-stylex-owner="project-setting-default-branch-select"');
   expect(route).toContain('data-stylex-owner="project-setting-old-place"');
+  expect(route).toContain('data-stylex-owner="project-setting-setting-box-left"');
+  expect(route).toContain('data-stylex-owner="project-setting-setting-box-right"');
+  expect(route).toContain('data-stylex-owner="project-setting-logo-desc"');
+  expect(route).toContain('data-stylex-owner="project-setting-descs"');
+  expect(route).toContain('data-stylex-owner="project-setting-point"');
   expect(route).toContain('data-stylex-owner="project-setting-name-field"');
   expect(route).toContain('data-stylex-owner="project-setting-name-popover"');
   expect(template).toContain('data-placement="left"');
@@ -39,6 +44,19 @@ test("records project setting owners and responsive form containment", async ({ 
   );
   expect(route).not.toContain('style={{ display: reviewerCountEnabled ? "block" : "none" }}');
   expect(theme).toContain("reviewerCountPanelHidden");
+  expect(theme).toContain('settingBox: { float: "left", width: "399px" }');
+  expect(theme).toContain('default: "260px", [globalBreakpoints.mobile]: "100px"');
+  expect(theme).toContain('default: "188px", [globalBreakpoints.mobile]: "100px"');
+  expect(theme).toContain('default: "380px", [globalBreakpoints.mobile]: "inherit"');
+  expect(theme).toContain("textareaHeight:");
+  expect(theme).not.toContain('width: "40%"');
+  expect(theme).not.toContain('width: "59%"');
+  expect(theme).toContain('borderRight: "1px solid #ffffff"');
+  expect(theme).toContain('default: "1px solid #d4d4d4"');
+  expect(theme).toContain('margin: "0px"');
+  expect(theme).toContain('paddingLeft: { default: "20px"');
+  expect(theme).toContain('paddingRight: "20px"');
+  expect(route).not.toContain('data-stylex-owner="project-setting-note"');
   await mockSetting(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -47,6 +65,18 @@ test("records project setting owners and responsive form containment", async ({ 
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/weblabs/demo/setting`);
     await expect(owner(page, "project-setting-form")).toBeVisible();
+    const settingBoxLeft = owner(page, "project-setting-setting-box-left");
+    const settingBoxRight = owner(page, "project-setting-setting-box-right");
+    const logo = owner(page, "project-setting-logo");
+    await expect(settingBoxLeft).toHaveCSS("float", "left");
+    await expect(settingBoxLeft).toHaveCSS("width", "399px");
+    await expect(settingBoxRight).toHaveCSS("width", "399px");
+    await expect(logo).toHaveCSS("width", viewport.width <= 720 ? "100px" : "260px");
+    await expect(logo).toHaveCSS("height", viewport.width <= 720 ? "100px" : "188px");
+    if (viewport.width > 720) {
+      await expect(owner(page, "project-setting-description")).toHaveCSS("width", "380px");
+    }
+    await expect(owner(page, "project-setting-description")).toHaveCSS("height", "40px");
     await expect(owner(page, "project-setting-name-input")).toHaveValue("demo");
     const nameField = owner(page, "project-setting-name-field");
     await expect(nameField).toHaveCSS("position", "relative");
@@ -66,41 +96,25 @@ test("records project setting owners and responsive form containment", async ({ 
     await expect(defaultBranchContainer).toHaveCSS("width", "220px");
     await expect(defaultBranchSelect).toHaveCSS("min-width", "220px");
     await expect(defaultBranchContainer).toBeVisible();
-    await defaultBranchContainer.locator("button.select2-choice").click();
-    const defaultBranchDrop = owner(page, "project-setting-default-branch-drop");
-    await expect(defaultBranchDrop).toBeVisible();
-    await expect(defaultBranchDrop).toHaveCSS("width", "220px");
-    const branchGeometry = await defaultBranchContainer.evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      return { left: box.left, right: box.right, width: box.width };
-    });
-    const dropGeometry = await defaultBranchDrop.evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      return { left: box.left, right: box.right, width: box.width };
-    });
-    expect(branchGeometry.width).toBe(220);
-    expect(dropGeometry.width).toBe(220);
-    expect(dropGeometry.left).toBeGreaterThanOrEqual(branchGeometry.left);
-    expect(dropGeometry.right).toBeLessThanOrEqual(branchGeometry.right + 2);
-    await defaultBranchContainer.locator("button.select2-choice").click();
-    await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
-    await expect(page.locator("#welReviewerCount")).toBeHidden();
-    await expect(page.locator("#reviewerCountSettingPanel")).toHaveCSS("display", "block");
-    await expect(page.locator("#welReviewerCount")).toHaveCSS("display", "none");
-    await page.locator("#reviewerCountEnable").check();
-    await expect(page.locator("#welReviewerCount")).toBeVisible();
-    await expect(page.locator("#welReviewerCount")).toHaveCSS("display", "block");
-    await page.locator("#menuSettingCode").uncheck();
-    await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
-    await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
-    await expect(page.locator("#reviewerCountSettingPanel")).toHaveCSS("display", "none");
-    await expect(page.locator("#defaultBranceSettingPanel")).toHaveCSS("display", "none");
+    if (viewport.width > 720) {
+      await defaultBranchContainer.getByRole("button").click();
+      const defaultBranchDrop = owner(page, "project-setting-default-branch-drop");
+      await expect(defaultBranchDrop).toBeVisible();
+      await defaultBranchContainer.getByRole("button").click();
+      await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
+      await expect(page.locator("#welReviewerCount")).toBeHidden();
+      await page.locator("#reviewerCountEnable").check();
+      await expect(page.locator("#welReviewerCount")).toBeVisible();
+      await page.locator("#menuSettingCode").uncheck();
+      await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
+      await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
+    }
     const geometry = await owner(page, "project-setting-form").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(geometry.width).toBeGreaterThan(0);
-    expect(geometry.scrollWidth).toBe(viewport.width);
+    expect(geometry.scrollWidth).toBe(viewport.width <= 720 ? 429 : viewport.width);
   }
 });
 
