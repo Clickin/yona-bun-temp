@@ -109,6 +109,11 @@ test("app-shell fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".app-shell");
 });
 
+test("runtime-error-banner fallback bridge has no remaining selector", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".runtime-error-banner");
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
