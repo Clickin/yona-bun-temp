@@ -4710,110 +4710,12 @@ div.markdown-preview {
   min-width: 0;
 }
 
-.diff-file {
-  margin-bottom: 12px;
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.diff-file h2 {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0;
-  padding: 8px 10px;
-  font-size: 13px;
-  background: #f7f7f7;
-  border-bottom: 1px solid #ddd;
-}
-
-.diff-file h2 .filename {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.diff-stats {
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 6px;
-  align-items: center;
-  font-size: 12px;
-  font-weight: normal;
-}
-
-.diff-stats .num-added {
-  color: #287d3c;
-}
-
-.diff-stats .num-deleted {
-  color: #b73a2d;
-}
-
-.diff-code {
-  margin: 0;
-  overflow: auto;
-  padding: 10px;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
-  font-size: 12px;
-  line-height: 18px;
-  white-space: pre;
-}
-
-.diff-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.diff-table .linenum {
-  width: 54px;
-  padding: 0 6px;
-  color: #777;
-  text-align: right;
-  vertical-align: top;
-  background: #f7f7f7;
-  border-right: 1px solid #e4e4e4;
-  user-select: none;
-}
-
-.diff-table .code,
-.diff-table .hunk {
-  padding: 0 8px;
-  vertical-align: top;
-}
-
-.diff-table .hunk {
-  color: #666;
-  background: #f0f4f8;
-}
-
-.diff-table .add .code {
-  background: #eef8ef;
-}
-
-.diff-table .remove .code {
-  background: #fbe9e7;
-}
-
 .diff-partial-codeline {
   margin: 0;
   overflow: visible;
   font: inherit;
   line-height: inherit;
   white-space: pre;
-}
-
-.line-comment-trigger {
-  float: left;
-  width: 18px;
-  overflow: hidden;
-  color: #777;
-  text-align: center;
-}
-
-.line-comment-trigger::before {
-  content: "+";
 }
 
 .diff-container tr.comments {
@@ -4885,29 +4787,6 @@ div.markdown-preview {
   right: 10px;
 }
 
-.inline-comment-form-row td {
-  padding: 12px;
-  background: #fafafa;
-  border-top: 1px solid #e4e4e4;
-  border-bottom: 1px solid #e4e4e4;
-}
-
-.code-review-form {
-  display: block;
-}
-
-.code-review-form textarea {
-  min-height: 110px;
-}
-
-.code-review-form .author-info-wrap {
-  width: 42px;
-}
-
-.code-review-form .write-comment-box {
-  margin-left: 52px;
-}
-
 .review-wrap {
   min-width: 0;
 }
@@ -4920,24 +4799,6 @@ div.markdown-preview {
   margin-top: 20px;
 }
 
-.code-syntax-wrap {
-  display: grid;
-  padding: 0;
-  color: #333;
-  border: 1px solid #ddd;
-  border-top: 0;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
-  font-size: 12px;
-  line-height: 18px;
-  tab-size: 4;
-}
-
-.code-line-wrap {
-  display: grid;
-  grid-template-columns: minmax(44px, auto) minmax(0, 1fr);
-  min-width: max-content;
-}
-
 .line-number {
   padding: 0 10px;
   color: #999;
@@ -4945,12 +4806,6 @@ div.markdown-preview {
   user-select: none;
   background: #f7f7f7;
   border-right: 1px solid #e5e5e5;
-}
-
-.line-code {
-  display: block;
-  padding: 0 12px;
-  white-space: pre;
 }
 
 .hljs-comment,

@@ -4049,3 +4049,13 @@ responsive `width:inherit` and input width remain existing StyleX owners from
 and copy are unchanged. Focused normal and fallback-off desktop/Korean-390 E2E pin the class-free
 frame, exact `20px 0px` computed margin, and legacy dialog geometry. Frozen sources and `app.css`
 remain unchanged.
+
+Batch 556 retires only the later-proven source-less code/diff bridge groups in `app.css`:
+`.diff-file`, `.diff-stats`, `.diff-code`, `.diff-table`, `.line-comment-trigger`,
+`.inline-comment-form-row`, `.code-review-form`, `.code-syntax-wrap`, `.code-line-wrap`, and
+`.line-code`. No current React route emits them and no frozen legacy view/LESS source provides
+them as output evidence. Active adjacent diff/review/syntax selectors remain deliberately
+untouched. A static contract records observed RED then exact absence GREEN; the stable populated
+project-post fixture is run normal and fallback-off only to prove the generated-asset boundary.
+This is neither global fallback discovery nor a generated-fallback unlinking or live-legacy
+visual-parity claim.

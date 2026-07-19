@@ -114,6 +114,35 @@ test("runtime-error-banner fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".runtime-error-banner");
 });
 
+test("code and diff fallback bridges have no remaining selectors", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".diff-file",
+    ".diff-stats",
+    ".diff-code",
+    ".diff-table",
+    ".line-comment-trigger",
+    ".inline-comment-form-row",
+    ".code-review-form",
+    ".code-syntax-wrap",
+    ".code-line-wrap",
+    ".line-code",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+
+  for (const retainedSelector of [
+    ".diff-body",
+    ".diff-partial-codeline",
+    ".diff-container tr.comments",
+    ".review-wrap",
+    ".line-number",
+    ".hljs-comment",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
