@@ -38,10 +38,21 @@ const sx = {
   searchCategory: stylex.props(styles.searchCategory),
   searchCategoryEmpty: stylex.props(styles.searchCategoryEmpty),
   searchBox: stylex.props(styles.searchBox),
+  searchInput: stylex.props(styles.searchInput),
   searchResultTitle: stylex.props(styles.searchResultTitle),
   searchList: stylex.props(styles.searchList),
   searchListItem: stylex.props(styles.searchListItem),
   searchListProjectItem: stylex.props(styles.searchListProjectItem),
+  avatar: stylex.props(styles.avatar),
+  avatarImage: stylex.props(styles.avatarImage),
+  titleWrap: stylex.props(styles.titleWrap),
+  postId: stylex.props(styles.postId),
+  title: stylex.props(styles.title),
+  content: stylex.props(styles.content),
+  contentBody: stylex.props(styles.contentBody),
+  meta: stylex.props(styles.meta),
+  metaItem: stylex.props(styles.metaItem),
+  keyword: stylex.props(styles.keyword),
   emptyResult: stylex.props(styles.emptyResult),
 } as const;
 
@@ -436,7 +447,8 @@ function ProjectSearchSuccessBody({
                       type="text"
                       id="searchKeyword"
                       name="keyword"
-                      className="span11"
+                      className={`${sx.searchInput.className} span11`}
+                      data-stylex-owner="project-search-input"
                       value={keywordValue}
                       onChange={(event) => {
                         setKeywordValue(event.currentTarget.value);
@@ -519,21 +531,31 @@ function ProjectSearchResultList({
                 <RouterLink
                   to={userLink.to}
                   hash={userLink.hash || undefined}
-                  className="avatar-wrap"
+                  className={`${sx.avatar.className} avatar-wrap`}
+                  data-stylex-owner="project-search-avatar"
                   title={item.authorLoginId}
                 >
                   {isDefaultProjectSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img src={item.avatarUrl} />
+                    <img {...sx.avatarImage} src={item.avatarUrl} />
                   ) : (
-                    <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                    <img
+                      {...sx.avatarImage}
+                      src={item.avatarUrl || ""}
+                      alt={item.authorLabel}
+                      width="32"
+                      height="32"
+                    />
                   )}
                 </RouterLink>
-                <div className="title-wrap">
+                <div
+                  className={`${sx.titleWrap.className} title-wrap`}
+                  data-stylex-owner="project-search-title"
+                >
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
-                    className="title user-link"
+                    className={`${stylex.props(styles.title, styles.userLink).className} title user-link`}
                   >
                     <HighlightedProjectSearchText
                       text={`${item.authorLabel} (@${item.authorLoginId})`}
@@ -591,7 +613,7 @@ function ProjectSearchResultList({
               normalizedType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
-                className="search-content-body"
+                className={`${sx.contentBody.className} search-content-body`}
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <HighlightedProjectSearchText text={snippet.text} keyword={result.keyword} />
@@ -608,12 +630,17 @@ function ProjectSearchResultList({
                 key={item.id}
               >
                 {reviewThreadOnPullRequest ? (
-                  <div className="title-wrap">
-                    <span className="post-id">#{item.number}</span>
+                  <div
+                    className={`${sx.titleWrap.className} title-wrap`}
+                    data-stylex-owner="project-search-title"
+                  >
+                    <span className={`${sx.postId.className} post-id`}>#{item.number}</span>
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
-                      className={titleClassName}
+                      className={
+                        titleClassName ? `${sx.title.className} ${titleClassName}` : undefined
+                      }
                     >
                       {titleClassName ? (
                         <HighlightedProjectSearchText text={item.title} keyword={result.keyword} />
@@ -623,7 +650,10 @@ function ProjectSearchResultList({
                     </Link>
                   </div>
                 ) : null}
-                <div className="search-content">
+                <div
+                  className={`${sx.content.className} search-content`}
+                  data-stylex-owner="project-search-content"
+                >
                   {reviewThreadOnPullRequest ? (
                     snippets
                   ) : (
@@ -632,22 +662,25 @@ function ProjectSearchResultList({
                     </Link>
                   )}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`${sx.meta.className} search-meta-info`}
+                  data-stylex-owner="project-search-meta"
+                >
                   {item.authorLabel ? (
                     <RouterLink
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
-                      className="meta-item"
+                      className={`${sx.metaItem.className} meta-item`}
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
                     </RouterLink>
                   ) : (
-                    <span className="meta-item">
+                    <span className={`${sx.metaItem.className} meta-item`}>
                       {t(normalizedType === "post_comment" ? "posting.noAuthor" : "issue.noAuthor")}
                     </span>
                   )}
-                  <span className="meta-item" title={item.createdLabel}>
+                  <span className={`${sx.metaItem.className} meta-item`} title={item.createdLabel}>
                     {item.createdLabel}
                   </span>
                 </div>
@@ -682,15 +715,25 @@ function ProjectSearchResultList({
                 data-stylex-owner="project-search-result-item"
                 key={item.id}
               >
-                <div className="title-wrap">
-                  <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
+                <div
+                  className={`${sx.titleWrap.className} title-wrap`}
+                  data-stylex-owner="project-search-title"
+                >
+                  <Link
+                    to={itemLink.to}
+                    hash={itemLink.hash || undefined}
+                    className={`${sx.title.className} title`}
+                  >
                     <HighlightedProjectSearchText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
-                <div className="search-content">
+                <div
+                  className={`${sx.content.className} search-content`}
+                  data-stylex-owner="project-search-content"
+                >
                   {item.snippets.map((snippet) => (
                     <p
-                      className="search-content-body"
+                      className={`${sx.contentBody.className} search-content-body`}
                       key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                     >
                       <HighlightedProjectSearchText text={snippet.text} keyword={result.keyword} />
@@ -698,9 +741,12 @@ function ProjectSearchResultList({
                     </p>
                   ))}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`${sx.meta.className} search-meta-info`}
+                  data-stylex-owner="project-search-meta"
+                >
                   {item.updatedLabel ? (
-                    <span className="due-date meta-item">
+                    <span className={`${sx.metaItem.className} due-date meta-item`}>
                       {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
                       {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
                     </span>
@@ -877,7 +923,7 @@ function renderProjectSearchResultTitle(message: string): ReactNode {
   return (
     <>
       {match[1]}
-      <strong>{match[2]}</strong>
+      <strong {...stylex.props(styles.searchResultTitleStrong)}>{match[2]}</strong>
       {match[3]}
     </>
   );
@@ -929,7 +975,11 @@ function HighlightedProjectSearchText({ keyword, text }: { keyword: string; text
       nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
     }
     nodes.push(
-      <strong className="keyword" key={`keyword-${start}`}>
+      <strong
+        className={`${sx.keyword.className} keyword`}
+        data-stylex-owner="project-search-keyword"
+        key={`keyword-${start}`}
+      >
         {matchText}
       </strong>,
     );

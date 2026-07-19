@@ -45,6 +45,12 @@ test("project search StyleX owners preserve populated and empty result contracts
     "project-search-list",
     "project-search-result-item",
     "project-search-empty-result",
+    "project-search-input",
+    "project-search-avatar",
+    "project-search-title",
+    "project-search-content",
+    "project-search-meta",
+    "project-search-keyword",
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(style).toContain("searchBox: {");
@@ -52,6 +58,16 @@ test("project search StyleX owners preserve populated and empty result contracts
   expect(style).toContain("searchResultTitle: {");
   expect(style).toContain("searchListItem: {");
   expect(style).toContain("emptyResult: {");
+  for (const residual of [
+    "searchInput",
+    "avatarImage",
+    "titleWrap",
+    "contentBody",
+    "metaItem",
+    "keyword",
+  ]) {
+    expect(style).toContain(`${residual}:`);
+  }
 });
 
 test("project search populated and empty states keep responsive bounds and links", async ({
@@ -71,6 +87,26 @@ test("project search populated and empty states keep responsive bounds and links
     await expect(
       page.locator('[data-stylex-owner="project-search-result-item"] a.title'),
     ).toHaveAttribute("href", /issue\/42/);
+    await expect(page.locator('[data-stylex-owner="project-search-input"]')).toHaveCSS(
+      "margin-bottom",
+      "0px",
+    );
+    await expect(page.locator('[data-stylex-owner="project-search-title"]')).toHaveCSS(
+      "line-height",
+      "30px",
+    );
+    await expect(page.locator('[data-stylex-owner="project-search-content"]')).toHaveCSS(
+      "padding-left",
+      "20px",
+    );
+    await expect(page.locator('[data-stylex-owner="project-search-meta"]')).toHaveCSS(
+      "font-size",
+      "13px",
+    );
+    await expect(page.locator('[data-stylex-owner="project-search-keyword"]')).toHaveCSS(
+      "background-color",
+      "rgb(107, 196, 233)",
+    );
     const bounds = await page
       .locator('[data-stylex-owner="project-search-results"]')
       .evaluate((element) => ({
@@ -80,6 +116,16 @@ test("project search populated and empty states keep responsive bounds and links
     expect(bounds.width).toBeGreaterThan(0);
     expect(bounds.scrollWidth).toBe(viewport.width);
   }
+  await page.goto(`${basePath}/weblabs/demo/search?keyword=bug&searchType=issue`);
+  await page.locator('[data-stylex-owner="project-search-result-item"] a.title').click();
+  await expect(page).toHaveURL(/\/weblabs\/demo\/issue\/42$/u);
+
+  await page.goto(`${basePath}/weblabs/demo/search?keyword=member&searchType=user`);
+  const avatar = page.locator('[data-stylex-owner="project-search-avatar"]');
+  await expect(avatar).toHaveCSS("width", "40px");
+  await expect(avatar).toHaveCSS("height", "40px");
+  await expect(avatar).toHaveAttribute("href", `${basePath}/alice`);
+  await expect(avatar.locator("img")).toHaveCSS("vertical-align", "top");
   await page.unroute("**/api/v1/projects/**/**/search?**");
   await page.route("**/api/v1/projects/**/**/search?**", (route) =>
     route.fulfill({ contentType: "application/json", json: emptyResponse() }),
@@ -127,9 +173,13 @@ async function mockProjectSearch(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/projects/**/**/search?**", (route) =>
-    route.fulfill({ contentType: "application/json", json: populatedResponse() }),
-  );
+  await page.route("**/api/v1/projects/**/**/search?**", (route) => {
+    const searchType = new URL(route.request().url()).searchParams.get("searchType");
+    return route.fulfill({
+      contentType: "application/json",
+      json: searchType === "user" ? populatedUserResponse() : populatedResponse(),
+    });
+  });
 }
 
 function emptyResponse() {
@@ -175,6 +225,35 @@ function populatedResponse() {
         state: "OPEN",
         ownerName: "weblabs",
         projectName: "demo",
+      },
+    ],
+    totalCount: 1,
+  };
+}
+
+function populatedUserResponse() {
+  return {
+    ...emptyResponse(),
+    keyword: "member",
+    searchType: "user",
+    requestedSearchType: "user",
+    counts: { ...emptyResponse().counts, users: 1 },
+    items: [
+      {
+        id: "7",
+        type: "user",
+        title: "Alice",
+        href: "/yona/alice",
+        number: "",
+        snippets: [],
+        authorLabel: "Alice",
+        authorLoginId: "alice",
+        avatarUrl: "/yona/files/7",
+        createdLabel: "Jun 30, 2026",
+        updatedLabel: "",
+        state: "active",
+        ownerName: "",
+        projectName: "",
       },
     ],
     totalCount: 1,
