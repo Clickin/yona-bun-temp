@@ -15,7 +15,18 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await expect(page).toHaveTitle("New issue - admin/sample");
   await expect(page.locator('[data-stylex-owner="project-issue-form"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-issue-form-title-row"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-issue-form-editor"]')).toBeVisible();
+  const editorCell = page.locator('[data-stylex-owner="project-issue-form-editor"]');
+  await expect(editorCell).toBeVisible();
+  await expect(editorCell).toHaveAttribute(
+    "data-stylex-owner-editor-cell",
+    "project-issue-form-editor-cell",
+  );
+  await expect(editorCell).toHaveCSS("position", "relative");
+  const editorTabContent = page.locator(
+    '[data-stylex-owner="project-issue-form-editor-tab-content"]',
+  );
+  await expect(editorTabContent).toHaveCSS("position", "relative");
+  await expect(editorTabContent).toHaveCSS("overflow", "visible");
   const uploadShell = page.locator('[data-stylex-owner="project-issue-form-upload-shell"]');
   await expect(uploadShell).toBeVisible();
   await expect(uploadShell).toHaveCSS("position", "relative");

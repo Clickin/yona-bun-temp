@@ -30,7 +30,8 @@ test("issueform editor shell keeps only exact legacy geometry owners", async () 
   expect(issue).toContain('<dd style="position: relative;">');
   expect(style).toContain('editorCell: { position: "relative" }');
   expect(style).toContain('editorTabContent: { position: "relative", overflow: "visible" }');
-  expect(route).toContain('data-stylex-owner="project-issue-form-editor-cell"');
+  expect(route).toContain('data-stylex-owner="project-issue-form-editor"');
+  expect(route).toContain('data-stylex-owner-editor-cell="project-issue-form-editor-cell"');
   expect(route).toContain('data-stylex-owner="project-issue-form-editor-tab-content"');
 
   expect(css).not.toContain(".issue-form-page-wrap .issue-editor-cell {\n  position: relative;");
