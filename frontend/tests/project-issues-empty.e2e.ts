@@ -1010,6 +1010,22 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/issues?filter=empty&labelIds=8`);
 
+  const advancedSearch = page.locator('[data-stylex-owner="project-issues-search-advanced"]');
+  await expect(advancedSearch).toHaveCount(1);
+  await expect(advancedSearch).toHaveCSS("margin-top", "10px");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="project-issues-search-advanced"',
+  );
+  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('searchAdvanced: { marginTop: "10px" }');
+  expect(PROJECT_ISSUES_APP_CSS_SOURCE).not.toContain(
+    ".issue-list-page .left-menu .srch-advanced {",
+  );
+  expect(LEGACY_ISSUE_SEARCH_SOURCE).toContain(
+    '<div id="advanced-search-form" class="srch-advanced hide-in-mobile">',
+  );
+  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain(".srch-advanced {");
+  expect(LEGACY_ISSUE_PAGE_LESS_SOURCE).toContain("margin-top:10px;");
+
   const labelsWrap = page.locator(".labels-wrap");
   const labelsOwner = page.locator('[data-stylex-owner="project-issues-labels-wrap"]');
   await expect(labelsOwner).toHaveCount(1);
@@ -1082,6 +1098,8 @@ test("project issue label search recreates legacy Select2 visible DOM and geomet
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".labels-wrap")).toBeHidden();
   await expect(labelsOwner).toHaveCSS("position", "relative");
+  await expect(advancedSearch).toBeHidden();
+  await expect(advancedSearch).toHaveCSS("margin-top", "10px");
 });
 
 test("project issue list preserves legacy selected-label Select2 DOM", async ({ page }) => {

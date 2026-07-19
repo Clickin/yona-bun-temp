@@ -13,6 +13,7 @@ export const styles = stylex.create({
   progressBar: (width: string) => ({ width }),
   relativeAnchor: { position: "relative" },
   labelsWrap: { position: "relative" },
+  searchAdvanced: { marginTop: "10px" },
   results: { backgroundColor: issuesTheme.resultsSurface },
   massUpdateOptionButton: {
     background: "transparent",

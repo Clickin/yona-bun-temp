@@ -2442,7 +2442,11 @@ function IssueSearchForm({
         </div>
       </div>
 
-      <div id="advanced-search-form" className="srch-advanced hide-in-mobile">
+      <div
+        id="advanced-search-form"
+        className={`${stylex.props(styles.searchAdvanced).className} srch-advanced hide-in-mobile`}
+        data-stylex-owner="project-issues-search-advanced"
+      >
         <dl className="issue-option">
           <dt>{t("issue.author")}</dt>
           <dd>
