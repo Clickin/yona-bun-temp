@@ -5781,15 +5781,6 @@ div.markdown-preview {
   width: 100%;
 }
 
-.issue-form-page-wrap .issue-editor-cell {
-  position: relative;
-}
-
-.issue-form-page-wrap .issue-editor-tab-content {
-  position: relative;
-  overflow: visible;
-}
-
 .issue-form-page-wrap .right-menu {
   position: relative;
   overflow: visible;

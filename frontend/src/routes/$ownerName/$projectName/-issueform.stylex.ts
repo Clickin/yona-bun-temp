@@ -11,6 +11,7 @@ export const projectIssueFormTheme = stylex.defineVars({
 });
 
 export const issueFormStyles = stylex.create({
+  editorCell: { position: "relative" },
   issueTitleField: { position: "relative" },
   titleHeadOptions: { top: "calc(100% - 13px)" },
   issueComboboxOptionButton: {

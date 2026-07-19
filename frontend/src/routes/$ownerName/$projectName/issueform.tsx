@@ -1155,8 +1155,9 @@ function ProjectIssueFormBody({
                 <div className="span9 span-left-pane">
                   <dl>
                     <dd
-                      className={`${stylex.props(styles.editorCell).className} issue-editor-cell`}
-                      data-stylex-owner="project-issue-form-editor"
+                      {...stylex.props(issueFormStyles.editorCell)}
+                      className={`${stylex.props(issueFormStyles.editorCell).className} issue-editor-cell`}
+                      data-stylex-owner="project-issue-form-editor-cell"
                     >
                       <IssueMarkdownEditor
                         bodyMarkdown={bodyMarkdown}
@@ -3845,7 +3846,6 @@ const styles = stylex.create({
     marginTop: "10px",
   },
   columns: { display: "block" },
-  editorCell: { position: "relative" },
   actions: { textAlign: "right" },
   rightMenu: { display: "block" },
 });
