@@ -1,6 +1,118 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
+
+async function expectClassFreeSiteLayout(
+  page: Page,
+  owners: readonly string[],
+) {
+  for (const owner of owners) {
+    const locator = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(locator).toBeVisible();
+    await expect(locator).not.toHaveClass(
+      /(?:site-admin-page|page-wrap-outer|site-setting-wrap|row-fluid|span(?:1|2|3|4|5|10))/u,
+    );
+  }
+}
+
+test("site-admin layout fallback bridge has no React emitter", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".site-admin-page .row-fluid",
+    ".site-admin-page .span2",
+    ".site-admin-page .span1",
+    ".site-admin-page .span3",
+    ".site-admin-page .span4",
+    ".site-admin-page .span5",
+    ".site-admin-page .span10",
+    ".site-admin-page .page-wrap-outer",
+    ".site-admin-page .site-setting-wrap",
+  ])
+    expect(appCss).not.toContain(selector);
+
+  for (const [route, owners] of [
+    [
+      "src/routes/sites/userList.tsx",
+      [
+        "site-user-list-page-wrap-outer",
+        "site-user-list-setting-wrap",
+        "site-user-list-setting-grid",
+        "site-user-list-setting-sidebar-column",
+        "site-user-list-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/postList.tsx",
+      [
+        "site-post-list-page-wrap-outer",
+        "site-post-list-setting-wrap",
+        "site-post-list-setting-grid",
+        "site-post-list-setting-sidebar-column",
+        "site-post-list-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/projectList.tsx",
+      [
+        "site-project-list-page-wrap-outer",
+        "site-project-list-setting-wrap",
+        "site-project-list-setting-grid",
+        "site-project-list-setting-sidebar-column",
+        "site-project-list-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/mail.tsx",
+      [
+        "site-mail-page",
+        "site-mail-setting-grid",
+        "site-mail-sidebar-column",
+        "site-mail-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/massmail.tsx",
+      [
+        "site-massmail-page",
+        "site-massmail-setting-grid",
+        "site-massmail-sidebar-column",
+        "site-massmail-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/update.tsx",
+      [
+        "site-update-page",
+        "site-update-setting-grid",
+        "site-update-sidebar-column",
+        "site-update-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/diagnostic.tsx",
+      [
+        "site-diagnostic-page",
+        "site-diagnostic-setting-grid",
+        "site-diagnostic-sidebar-column",
+        "site-diagnostic-setting-content-column",
+      ],
+    ],
+    [
+      "src/routes/sites/data.tsx",
+      [
+        "site-data-page",
+        "site-data-setting-grid",
+        "site-data-sidebar-column",
+        "site-data-setting-content-column",
+      ],
+    ],
+  ] as const) {
+    const source = readFileSync(route, "utf8");
+    expect(source).not.toContain("site-admin-page");
+    for (const owner of owners) expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+  }
+});
 
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
@@ -212,6 +324,12 @@ test("massmail default and selected-project output retain the runtime fallback b
   await expect(page.locator("#mailtoAll")).toBeChecked();
   await expect(page.locator("#project-list-wrap")).toBeHidden();
   await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
+  await expectClassFreeSiteLayout(page, [
+    "site-massmail-page",
+    "site-massmail-setting-grid",
+    "site-massmail-sidebar-column",
+    "site-massmail-setting-content-column",
+  ]);
 
   await page.locator("#mailtoPrj").check();
   await page.locator("#input-project").fill("admin/projectYobi");
@@ -239,6 +357,13 @@ test("project-list output retains the runtime fallback boundary without its dead
     "acme/roadmap",
   );
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
+  await expectClassFreeSiteLayout(page, [
+    "site-project-list-page-wrap-outer",
+    "site-project-list-setting-wrap",
+    "site-project-list-setting-grid",
+    "site-project-list-setting-sidebar-column",
+    "site-project-list-setting-content-column",
+  ]);
 });
 
 test("user-list output retains the runtime fallback boundary without its dead bridge", async ({
@@ -260,6 +385,13 @@ test("user-list output retains the runtime fallback boundary without its dead br
     "Alice",
   );
   await expect(page.locator(".site-admin-page, .user-list-wrap")).toHaveCount(0);
+  await expectClassFreeSiteLayout(page, [
+    "site-user-list-page-wrap-outer",
+    "site-user-list-setting-wrap",
+    "site-user-list-setting-grid",
+    "site-user-list-setting-sidebar-column",
+    "site-user-list-setting-content-column",
+  ]);
 });
 
 test("post-list output retains the runtime fallback boundary without its dead bridge", async ({
@@ -279,4 +411,11 @@ test("post-list output retains the runtime fallback boundary without its dead br
   await expect(container).toBeVisible();
   await expect(container.locator('[data-stylex-owner="site-post-list-row"]')).toHaveCount(1);
   await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
+  await expectClassFreeSiteLayout(page, [
+    "site-post-list-page-wrap-outer",
+    "site-post-list-setting-wrap",
+    "site-post-list-setting-grid",
+    "site-post-list-setting-sidebar-column",
+    "site-post-list-setting-content-column",
+  ]);
 });

@@ -4300,52 +4300,6 @@ div.markdown-preview {
   line-height: 30px;
 }
 
-.site-admin-page .row-fluid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  width: 100%;
-}
-
-.site-admin-page .row-fluid::before,
-.site-admin-page .row-fluid::after {
-  display: none;
-  content: none;
-}
-
-.site-admin-page .span2 {
-  flex: 0 0 180px;
-}
-
-.site-admin-page .span1 {
-  flex: 0 0 90px;
-}
-
-.site-admin-page .span3 {
-  flex: 1 1 180px;
-}
-
-.site-admin-page .span4 {
-  flex: 1.4 1 240px;
-}
-
-.site-admin-page .span5 {
-  flex: 1.8 1 320px;
-}
-
-.site-admin-page .span10 {
-  flex: 1 1 640px;
-  min-width: 0;
-}
-
-.site-admin-page .page-wrap-outer {
-  padding-top: 18px;
-}
-
-.site-admin-page .site-setting-wrap {
-  width: 100%;
-}
-
 .site-admin-page .site-setting-nav {
   padding: 0;
   margin: 0;
