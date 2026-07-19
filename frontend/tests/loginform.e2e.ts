@@ -588,9 +588,10 @@ test("root login dialog uses Link semantics for reset signup and OAuth anchors",
 
   await expect(page.locator("#loginDialog")).toHaveAttribute(
     "data-stylex-owner",
-    "root-login-dialog",
+    "root-login-dialog-frame",
   );
-  await expect(page.locator("#loginDialog")).toHaveClass(/loginDialog/u);
+  await expect(page.locator("#loginDialog")).toHaveClass(/\bloginDialog\b/u);
+  await expect(page.locator("#loginDialog")).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/u);
   await expect(page.locator(`#loginDialog a[href="${basePath}/lostPassword"]`)).toHaveText(
     "Reset password",
   );
@@ -653,10 +654,11 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   await rootLoginLink.click();
 
   await expect(page.locator("#loginDialog")).toBeVisible();
-  await expect(page.locator("#loginDialog")).toHaveClass("modal hide loginDialog in");
+  await expect(page.locator("#loginDialog")).toHaveClass(/\bloginDialog\b/u);
+  await expect(page.locator("#loginDialog")).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/u);
   await expect(page.locator("#loginDialog")).toHaveAttribute(
     "data-stylex-owner",
-    "root-login-dialog",
+    "root-login-dialog-frame",
   );
   await expect(page.locator("#loginDialog")).toHaveAttribute("aria-hidden", "false");
   await expect(page).toHaveURL(new RegExp(`${basePath}/users/login\\?from=legacy$`, "u"));
@@ -664,9 +666,9 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   await expect(page.locator("#loginDialog .error")).toBeHidden();
   await expect(page.locator(".modal-backdrop.in")).toHaveCount(1);
   await assertOAuthProviderLinks(page, basePath);
-  await expect(page.locator("#loginDialog > .modal-body > .pull-right + form")).toHaveClass(
-    "frm-wrap login-form-wrap",
-  );
+  await expect(
+    page.locator('#loginDialog > [data-stylex-owner="root-login-dialog-body"] > .pull-right + form'),
+  ).toHaveClass(/\bfrm-wrap\b.*\blogin-form-wrap\b/u);
 
   const actual = await canonicalizeLoginDialogRoot(page);
   const expected = await canonicalizeLoginDialogHtml(
@@ -742,10 +744,11 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
     source.indexOf("function LegacySelect2Assets"),
   );
   expect(rootLoginDialogSource).toContain(
-    'className={[visible ? "modal hide loginDialog in" : "modal hide loginDialog", rootLoginDialogClassName]}',
+    "stylex.props(styles.rootLoginDialog, visible && styles.rootLoginDialogVisible)",
   );
-  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog"');
-  expect(rootLoginDialogSource).toContain('style={visible ? { display: "block" } : undefined}');
+  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-frame"');
+  expect(rootLoginDialogSource).toContain('data-stylex-owner="root-login-dialog-body"');
+  expect(rootLoginDialogSource).not.toContain('modal hide loginDialog');
   expect(rootLoginDialogSource).toContain("tabIndex={-1}");
   expect(rootLoginDialogSource).toContain('role="dialog"');
   expect(rootLoginDialogSource).toContain("aria-hidden={visible ? false : true}");
@@ -1000,8 +1003,8 @@ function expectedLoginScreen(
 
 function expectedRootLoginDialog(basePath: string, formBody: string) {
   return `
-<div id="loginDialog" class="modal hide loginDialog in" style="display: block;" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog">
-  <div class="modal-body">
+<div id="loginDialog" class="loginDialog" tabindex="-1" role="dialog" aria-hidden="false" data-stylex-owner="root-login-dialog-frame">
+  <div data-stylex-owner="root-login-dialog-body">
     <div class="pull-right">
       <button type="button" class="close" aria-hidden="true">×</button>
     </div>
@@ -1359,6 +1362,13 @@ async function canonicalizeLoginDialogRoot(page: Page) {
     }
 
     function normalizeAttribute(current: Element, name: string) {
+      if (
+        name === "class" &&
+        (current.id === "loginDialog" ||
+          current.getAttribute("data-stylex-owner") === "root-login-dialog-body")
+      ) {
+        return "";
+      }
       return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
     }
   });
@@ -1400,7 +1410,8 @@ async function canonicalizeLoginDialogHtml(page: Page, html: string) {
         ];
         const attrs = stableAttributes
           .filter((name) => current.hasAttribute(name))
-          .map((name) => `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`)
+          .map((name) => normalizeAttribute(current, name))
+          .filter(Boolean)
           .join(" ");
         const open = attrs
           ? `<${current.tagName.toLowerCase()} ${attrs}>`
@@ -1419,6 +1430,17 @@ async function canonicalizeLoginDialogHtml(page: Page, html: string) {
           .join("");
 
         return `${open}${children}</${current.tagName.toLowerCase()}>`;
+      }
+
+      function normalizeAttribute(current: Element, name: string) {
+        if (
+          name === "class" &&
+          (current.id === "loginDialog" ||
+            current.getAttribute("data-stylex-owner") === "root-login-dialog-body")
+        ) {
+          return "";
+        }
+        return `${name}=${JSON.stringify(current.getAttribute(name) ?? "")}`;
       }
     },
     { markup: html },
@@ -1537,7 +1559,7 @@ async function readSocialLoginMetrics(page: Page) {
 async function readRootLoginDialogMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
     const loginInput = document.querySelector<HTMLElement>("#loginDialog #loginIdOrEmailD");
     const passwordInput = document.querySelector<HTMLElement>("#loginDialog #passwordD");
@@ -1608,7 +1630,7 @@ async function readRootLoginDialogMetrics(page: Page) {
 async function readRootLoginDialogLayout(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
     const closeRow = document.querySelector<HTMLElement>("#loginDialog .pull-right");
     const closeButton = document.querySelector<HTMLElement>("#loginDialog .close");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");

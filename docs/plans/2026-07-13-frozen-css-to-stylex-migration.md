@@ -3967,3 +3967,15 @@ max-720 conditional hidden behavior from `_responsive.less:269-271`, so it no lo
 a global glyph primitive, and unrelated standalone/page/footer fallback remains outside this
 single-route state. Focused normal and fallback-off desktop/mobile checks preserve structural DOM,
 40px navbar containment, visual owner screenshots, and the hidden Korean-390 form state.
+
+Batch 542 retires the root anonymous `RootLoginDialog` frame and body fallback consumers as one
+visible-state wave. The frame owns the frozen Bootstrap fixed/modal surface declarations and the
+frozen Yobi 460px/100% responsive geometry; its route-local `rootColors` variables contain only
+surface, border, and semantic shadow paint. The body owns Bootstrap relative/max-height/padding/
+overflow declarations. The React dialog no longer emits `modal`, `hide`, `in`, or `modal-body`.
+It retains only `loginDialog` because the existing form still consumes frozen
+`.loginDialog .login-form-wrap { margin:20px auto !important; }`; retire that class only when the
+form owner migrates the declaration. Existing form, input, button, backdrop, focus, Escape, close,
+and backdrop-dismiss owners remain deliberately outside this two-owner wave. Focused normal E2E pins
+desktop and Korean-390 geometry, interaction, and class-free stable owner contracts; fallback-off
+intentionally exposes the unresolved form-margin owner as a 398px (+20px) frame.

@@ -44,15 +44,11 @@ const SELECT2_TEMPLATE_IDS = [
 ];
 
 async function expectRootLoginDialogState(dialog: Locator, visible: boolean) {
-  await expect(dialog).toHaveAttribute("data-stylex-owner", "root-login-dialog");
-  await expect(dialog).toHaveClass(/(?:^|\s)modal(?:\s|$)/);
-  await expect(dialog).toHaveClass(/(?:^|\s)hide(?:\s|$)/);
+  await expect(dialog).toHaveAttribute("data-stylex-owner", "root-login-dialog-frame");
+  await expect(dialog.locator('[data-stylex-owner="root-login-dialog-body"]')).toHaveCount(1);
   await expect(dialog).toHaveClass(/(?:^|\s)loginDialog(?:\s|$)/);
-  if (visible) {
-    await expect(dialog).toHaveClass(/(?:^|\s)in(?:\s|$)/);
-  } else {
-    await expect(dialog).not.toHaveClass(/(?:^|\s)in(?:\s|$)/);
-  }
+  await expect(dialog).not.toHaveClass(/(?:^|\s)(?:modal|hide|in)(?:\s|$)/);
+  await expect(dialog).toHaveAttribute("aria-hidden", visible ? "false" : "true");
 }
 
 test("standalone UI kit matches legacy help/UIKit.scala.html body DOM", async ({ page }) => {
@@ -422,8 +418,6 @@ test("standalone UI kit root shell mounts legacy anonymous login dialog", async 
 
   await page.goto(`${basePath}/_UIKit`);
   const dialog = page.locator("#loginDialog");
-  await expect(dialog).toHaveClass(/modal/);
-  await expect(dialog).toHaveClass(/hide/);
   await expectRootLoginDialogState(dialog, false);
   await expect(dialog.locator("form.frm-wrap.login-form-wrap")).toHaveAttribute(
     "action",
@@ -926,7 +920,7 @@ async function readRenderedLegacyHrefControls(page: Page) {
 async function readLoginDialogOpenMetrics(page: Page) {
   return page.evaluate(() => {
     const dialog = document.querySelector<HTMLElement>("#loginDialog");
-    const modalBody = document.querySelector<HTMLElement>("#loginDialog .modal-body");
+    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
     const close = document.querySelector<HTMLElement>("#loginDialog .close");
     const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
     const input = document.querySelector<HTMLElement>("#loginIdOrEmailD");

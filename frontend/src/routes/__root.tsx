@@ -133,8 +133,17 @@ const styles = stylex.create({
     wordBreak: "break-all",
     overflowWrap: "break-word",
   },
-  // common/loginDialog.scala.html + _page.less: root login dialog only
+  // common/loginDialog.scala.html + frozen Bootstrap modal/_page.less/_responsive.less.
   rootLoginDialog: {
+    display: "none",
+    position: "fixed",
+    top: "10%",
+    left: {
+      default: "50%",
+      // _responsive.less:205-212 resolves the root dialog to the viewport's left edge.
+      "@media (max-width: 720px)": "0px",
+    },
+    zIndex: "1050",
     width: {
       default: "460px",
       "@media (max-width: 767px)": "100%",
@@ -143,8 +152,23 @@ const styles = stylex.create({
       default: "-230px",
       "@media (max-width: 767px)": "0px",
     },
+    backgroundColor: rootColors.loginDialogSurface,
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: rootColors.loginDialogBorder,
+    borderRadius: "6px",
+    outline: "none",
+    boxShadow: rootColors.loginDialogShadow,
+    backgroundClip: "padding-box",
   },
   rootLoginDialogVisible: { display: "block" },
+  // frozen Bootstrap bootstrap.css:5196-5200.
+  rootLoginDialogBody: {
+    position: "relative",
+    maxHeight: "400px",
+    padding: "15px",
+    overflowY: "auto",
+  },
   rootLoginDialogErrorVisible: { display: "block" },
   rootLoginDialogForm: {
     margin: "20px auto",
@@ -196,7 +220,6 @@ const styles = stylex.create({
     opacity: "0.5",
   },
 });
-const rootLoginDialogClassName = stylex.props(styles.rootLoginDialog).className;
 const rootLoginDialogFormClassName = stylex.props(styles.rootLoginDialogForm).className;
 const rootLoginDialogInputClassName = stylex.props(styles.rootLoginDialogInput).className;
 const rootLoginDialogTextInputClassName = stylex.props(styles.rootLoginDialogTextInput).className;
@@ -616,23 +639,24 @@ function RootLoginDialog({
   const socialProviders = Array.isArray(capabilities?.enabledSocialProviders)
     ? capabilities.enabledSocialProviders
     : [];
+  const rootLoginDialogProps = stylex.props(
+    styles.rootLoginDialog,
+    visible && styles.rootLoginDialogVisible,
+  );
 
+  // The existing root form owner still needs the scoped `.loginDialog .login-form-wrap`
+  // fallback until its `!important` margin rule can retire independently.
   return (
     <div
       id="loginDialog"
-      className={[
-        visible ? "modal hide loginDialog in" : "modal hide loginDialog",
-        rootLoginDialogClassName,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      {...(visible ? stylex.props(styles.rootLoginDialogVisible) : {})}
+      {...rootLoginDialogProps}
+      className={["loginDialog", rootLoginDialogProps.className].filter(Boolean).join(" ")}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
-      data-stylex-owner="root-login-dialog"
+      data-stylex-owner="root-login-dialog-frame"
     >
-      <div className="modal-body">
+      <div {...stylex.props(styles.rootLoginDialogBody)} data-stylex-owner="root-login-dialog-body">
         <div className="pull-right">
           {/* oxlint-disable jsx-a11y/no-aria-hidden-on-focusable -- legacy common/loginDialog.scala.html renders aria-hidden on the focusable close button. */}
           <button

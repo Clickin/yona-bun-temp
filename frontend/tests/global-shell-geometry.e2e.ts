@@ -183,6 +183,46 @@ test("anonymous home login Link opens and dismisses the legacy root dialog", asy
   await expect(page).toHaveURL(initialUrl);
 });
 
+test("root login dialog frame and body have independent StyleX ownership", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: true });
+  await mockRootLoginCapabilities(page);
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.locator("#required-logged-in > a.user-item-btn").click();
+
+  const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
+  const body = page.locator('[data-stylex-owner="root-login-dialog-body"]');
+  await expect(dialog).toBeVisible();
+  await expect(body).toBeVisible();
+  await expect(dialog).toHaveClass(/\bloginDialog\b/);
+  await expect(dialog).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/);
+  await expect(body).not.toHaveClass(/\bmodal-body\b/);
+  const computed = await page.evaluate(() => {
+    const frame = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-frame"]');
+    const modalBody = document.querySelector<HTMLElement>('[data-stylex-owner="root-login-dialog-body"]');
+    if (!frame || !modalBody) {
+      throw new Error("Missing root login dialog StyleX owners.");
+    }
+    const frameStyle = getComputedStyle(frame);
+    const bodyStyle = getComputedStyle(modalBody);
+    return {
+      bodyOverflowY: bodyStyle.overflowY,
+      bodyPadding: bodyStyle.padding,
+      bodyPosition: bodyStyle.position,
+      frameBackground: frameStyle.backgroundColor,
+      framePosition: frameStyle.position,
+      frameZIndex: frameStyle.zIndex,
+    };
+  });
+  expect(computed.framePosition).toBe("fixed");
+  expect(computed.frameZIndex).toBe("1050");
+  expect(computed.frameBackground).toBe("rgb(255, 255, 255)");
+  expect(computed.bodyPosition).toBe("relative");
+  expect(computed.bodyPadding).toBe("15px");
+  expect(computed.bodyOverflowY).toBe("auto");
+});
+
 test("anonymous mobile home login dialog keeps legacy Korean geometry without overflow", async ({
   page,
 }) => {
@@ -542,7 +582,7 @@ async function readLoginDialogMetrics(page: Page) {
       backdrop: elementBox(".modal-backdrop.in"),
       backdropOpacity: getComputedStyle(backdrop).opacity,
       backdropZIndex: getComputedStyle(backdrop).zIndex,
-      body: elementBox("#loginDialog .modal-body"),
+      body: elementBox('[data-stylex-owner="root-login-dialog-body"]'),
       dialog: elementBox("#loginDialog"),
       dialogZIndex: getComputedStyle(dialog).zIndex,
       documentScrollWidth: document.documentElement.scrollWidth,

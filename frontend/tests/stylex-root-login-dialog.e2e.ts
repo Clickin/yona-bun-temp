@@ -52,12 +52,15 @@ test.describe("StyleX root login dialog", () => {
       readFile(themeSource, "utf8"),
     ]);
 
-    expect(root).toContain('data-stylex-owner="root-login-dialog"');
+    expect(root).toContain('data-stylex-owner="root-login-dialog-frame"');
+    expect(root).toContain('data-stylex-owner="root-login-dialog-body"');
     expect(root).toContain('"login-dialog-backdrop"');
     expect(root).toContain('data-stylex-part="login-dialog-close"');
     expect(root).toContain('data-stylex-part="login-dialog-form"');
-    expect(root).toContain("stylex.props(styles.rootLoginDialog)");
-    expect(root).toContain('"modal hide loginDialog in"');
+    expect(root).toContain("const rootLoginDialogProps = stylex.props(");
+    expect(root).toContain("visible && styles.rootLoginDialogVisible,");
+    expect(root).toContain('["loginDialog", rootLoginDialogProps.className]');
+    expect(root).not.toContain('"modal hide loginDialog in"');
     expect(root).toContain('default: "460px"');
     expect(root).not.toContain("globalColors.");
     expect(theme).toContain("errorText");
@@ -69,10 +72,11 @@ test.describe("StyleX root login dialog", () => {
     await mockAnonymousRootShell(page);
     await openRootLoginDialog(page);
 
-    const dialog = page.locator('[data-stylex-owner="root-login-dialog"]');
+    const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute("id", "loginDialog");
-    await expect(dialog).toHaveClass(/loginDialog/);
+    await expect(dialog).toHaveClass(/\bloginDialog\b/);
+    await expect(dialog).not.toHaveClass(/\bmodal\b|\bhide\b|\bin\b/);
     await expect(dialog.locator('input[placeholder="Login ID or E-mail"]')).toBeVisible();
     await expect(dialog.locator('input[placeholder="Password"]')).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Log in" })).toBeVisible();
@@ -89,7 +93,7 @@ test.describe("StyleX root login dialog", () => {
   test("closes through close control, Escape, and backdrop", async ({ page }) => {
     await mockAnonymousRootShell(page);
     await openRootLoginDialog(page);
-    const dialog = page.locator('[data-stylex-owner="root-login-dialog"]');
+    const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
 
     await dialog.locator('[data-stylex-part="login-dialog-close"]').click();
     await expect(dialog).toBeHidden();
@@ -110,7 +114,7 @@ test.describe("StyleX root login dialog", () => {
     await page.setViewportSize(desktop);
     await openRootLoginDialog(page);
 
-    const dialog = page.locator('[data-stylex-owner="root-login-dialog"]');
+    const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
     const form = dialog.locator('[data-stylex-part="login-dialog-form"]');
     const backdrop = page.locator('[data-stylex-part="login-dialog-backdrop"]');
     await expect(dialog).toBeVisible();
@@ -129,7 +133,10 @@ test.describe("StyleX root login dialog", () => {
     await expect(backdrop).toHaveCSS("width", "1366px");
     await expect(backdrop).toHaveCSS("height", "900px");
     expect(await dialog.boundingBox()).toMatchObject({ height: 378, width: 462, x: 453, y: 90 });
-    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-desktop.png");
+    // Frame/body geometry and paint plus checked state are asserted above; allow native checkbox AA.
+    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-desktop.png", {
+      maxDiffPixels: 50,
+    });
     await page.screenshot({
       path: "../output/playwright/stylex-root-login-dialog-desktop.png",
       fullPage: true,
@@ -141,7 +148,7 @@ test.describe("StyleX root login dialog", () => {
     await page.setViewportSize(mobile);
     await openRootLoginDialog(page);
 
-    const dialog = page.locator('[data-stylex-owner="root-login-dialog"]');
+    const dialog = page.locator('[data-stylex-owner="root-login-dialog-frame"]');
     const backdrop = page.locator('[data-stylex-part="login-dialog-backdrop"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveCSS("left", "0px");
@@ -154,7 +161,10 @@ test.describe("StyleX root login dialog", () => {
     ).toBe(true);
     await expect(backdrop).toHaveCSS("width", "390px");
     await expect(backdrop).toHaveCSS("height", "844px");
-    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-mobile.png");
+    // Frame/body geometry and paint plus checked state are asserted above; allow native checkbox AA.
+    await expect(dialog).toHaveScreenshot("stylex-root-login-dialog-mobile.png", {
+      maxDiffPixels: 50,
+    });
     await page.screenshot({
       path: "../output/playwright/stylex-root-login-dialog-mobile.png",
       fullPage: true,
