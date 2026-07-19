@@ -3718,16 +3718,14 @@ h1 {
   font-size: 1.2em;
 }
 
-.board-header,
-.issue-detail-page .board-header {
+.board-header {
   display: block;
   clear: both;
   margin: 15px 0;
   border: none;
 }
 
-.board-header .title,
-.issue-detail-page .board-header .title {
+.board-header .title {
   padding: 10px 20px;
   color: #000;
   word-break: break-all;
@@ -3737,22 +3735,13 @@ h1 {
   line-height: 30px;
 }
 
-.issue-detail-page .board-header h1 {
-  display: inline;
-  margin: 0;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.board-id,
-.issue-detail-page .board-id {
+.board-id {
   color: #939393;
   font-size: 14px;
   padding-right: 10px;
 }
 
-.board-header .date,
-.issue-detail-page .board-header .date {
+.board-header .date {
   display: inline-block;
   margin-right: 20px;
   color: #999;

@@ -19,6 +19,10 @@ test("issue detail keeps direct StyleX owners and paint-only theme", () => {
   for (const owner of [
     "project-issue-detail-page",
     "project-issue-detail-header",
+    "project-issue-detail-title",
+    "project-issue-detail-board-id",
+    "project-issue-detail-date",
+    "project-issue-detail-state-badge",
     "project-issue-detail-body",
     "project-issue-detail-content",
     "project-issue-detail-actions",
@@ -35,6 +39,44 @@ test("issue detail keeps direct StyleX owners and paint-only theme", () => {
     expect(themeBlock).not.toContain(geometry);
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("issue detail header owns the populated title metadata state", () => {
+  const appCss = readFileSync(fileURLToPath(new URL("../src/app.css", import.meta.url)), "utf8");
+  const legacy = readFileSync(
+    fileURLToPath(new URL("../../yona-original/app/views/issue/view.scala.html", import.meta.url)),
+    "utf8",
+  );
+  const less = readFileSync(
+    fileURLToPath(
+      new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+    ),
+    "utf8",
+  );
+  expect(legacy).toContain('<div class="board-header issue">');
+  expect(legacy).toContain('class="board-id"');
+  expect(legacy).toContain("badge badge-issue-@issue.state.state.toLowerCase");
+  for (const declaration of [
+    'padding: "10px 20px"',
+    'wordBreak: "break-all"',
+    'fontSize: "18px"',
+    'lineHeight: "30px"',
+    'paddingRight: "10px"',
+    'marginRight: "20px"',
+    'verticalAlign: "top"',
+    'padding: "5px 15px"',
+  ])
+    expect(styleSource).toContain(declaration);
+  expect(less).toContain(".board-header {");
+  expect(less).toContain(".board-id {");
+  expect(less).toContain(".date {");
+  expect(less).toContain("&.badge-issue-open");
+  expect(appCss).not.toContain(".issue-detail-page .board-header {");
+  expect(appCss).not.toContain(".issue-detail-page .board-header .title {");
+  expect(appCss).not.toContain(".issue-detail-page .board-id {");
+  expect(appCss).not.toContain(".issue-detail-page .board-header .date {");
+  expect(appCss).toContain(".board-header .title {");
+  expect(appCss).toContain(".badge.badge-issue-open {");
 });
 
 test("issue detail renders legacy header, markdown body, and action owners", async ({ page }) => {
@@ -96,6 +138,21 @@ test("issue detail renders legacy header, markdown body, and action owners", asy
   );
   await page.goto("/yona/admin/sample/issue/11");
   await expect(page.locator('[data-stylex-owner="project-issue-detail-header"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-issue-detail-title"]')).toHaveCSS(
+    "font-size",
+    "18px",
+  );
+  await expect(page.locator('[data-stylex-owner="project-issue-detail-board-id"]')).toHaveCSS(
+    "padding-right",
+    "10px",
+  );
+  await expect(page.locator('[data-stylex-owner="project-issue-detail-date"]').first()).toHaveCSS(
+    "line-height",
+    "29px",
+  );
+  await expect(
+    page.locator('[data-stylex-owner="project-issue-detail-state-badge"]').first(),
+  ).toHaveCSS("background-color", "rgb(182, 218, 84)");
   await expect(page.locator('[data-stylex-owner="project-issue-detail-content"]')).toContainText(
     "Body markdown",
   );

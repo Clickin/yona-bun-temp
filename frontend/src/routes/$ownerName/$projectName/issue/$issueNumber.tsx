@@ -791,6 +791,22 @@ function IssueDetailBody({
     setDeleteModalOpen(true);
   };
 
+  const issueBadgeVariant =
+    issueState === "open"
+      ? styles.badgeOpen
+      : issueState === "closed"
+        ? styles.badgeClosed
+        : issueState === "rejected"
+          ? styles.badgeRejected
+          : issueState === "merged"
+            ? styles.badgeMerged
+            : issueState === "conflict"
+              ? styles.badgeConflict
+              : null;
+  const issueBadgeProps = issueBadgeVariant
+    ? stylex.props(styles.badge, issueBadgeVariant)
+    : stylex.props(styles.badge);
+
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap board-view issue-detail-page">
@@ -799,14 +815,33 @@ function IssueDetailBody({
           data-stylex-owner="project-issue-detail-header"
         >
           <div className="pull-right mr10 mt10 hide-in-mobile">
-            <div className="date" title={createdLabel}>
+            <div
+              {...stylex.props(styles.date)}
+              className={`${stylex.props(styles.date).className} date`}
+              data-stylex-owner="project-issue-detail-date"
+              title={createdLabel}
+            >
               {createdDisplayLabel}
             </div>
-            <span className={`badge badge-issue-${issueState}`}>{stateLabel}</span>
+            <span
+              {...issueBadgeProps}
+              className={`${issueBadgeProps.className} badge badge-issue-${issueState}`}
+              data-stylex-owner="project-issue-detail-state-badge"
+            >
+              {stateLabel}
+            </span>
           </div>
-          <div className="title">
+          <div
+            {...stylex.props(styles.title)}
+            className={`${stylex.props(styles.title).className} title`}
+            data-stylex-owner="project-issue-detail-title"
+          >
             {issue.parentIssueId ? <span className="subtask-mark">subtask</span> : null}
-            <strong className="board-id">
+            <strong
+              {...stylex.props(styles.boardId)}
+              className={`${stylex.props(styles.boardId).className} board-id`}
+              data-stylex-owner="project-issue-detail-board-id"
+            >
               {isDraft ? <span className="draft-number">#Draft</span> : issueNumber}
             </strong>
             {issue.title}
@@ -828,10 +863,21 @@ function IssueDetailBody({
               className={`${stylex.props(styles.mobileMetadata).className} pull-right hide show-in-mobile`}
               data-stylex-owner="project-issue-detail-mobile-metadata"
             >
-              <span className="date" title={createdLabel}>
+              <span
+                {...stylex.props(styles.date)}
+                className={`${stylex.props(styles.date).className} date`}
+                data-stylex-owner="project-issue-detail-date"
+                title={createdLabel}
+              >
                 {createdDisplayLabel}
               </span>
-              <span className={`badge badge-small badge-issue-${issueState}`}>{stateLabel}</span>
+              <span
+                {...issueBadgeProps}
+                className={`${issueBadgeProps.className} badge badge-small badge-issue-${issueState}`}
+                data-stylex-owner="project-issue-detail-state-badge"
+              >
+                {stateLabel}
+              </span>
             </div>
           </div>
           {isDraft ? (
