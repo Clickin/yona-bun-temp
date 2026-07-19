@@ -360,8 +360,37 @@ async function mockProjectPostsSession(page: Page) {
             readme: false,
             title: "Release note",
           },
+          {
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorLabel: "Dev Member",
+            authorLoginId: "dev",
+            commentCount: 0,
+            createdLabel: "Jul 3, 2026",
+            labels: [],
+            notice: false,
+            ownerName: "admin",
+            postNumber: "4",
+            projectName: "sample",
+            readme: true,
+            title: "README",
+          },
         ],
-        notices: [],
+        notices: [
+          {
+            authorAvatarUrl: "/assets/images/default-avatar-32.png",
+            authorLabel: "Site Admin",
+            authorLoginId: "admin",
+            commentCount: 0,
+            createdLabel: "Jul 1, 2026",
+            labels: [],
+            notice: true,
+            ownerName: "admin",
+            postNumber: "1",
+            projectName: "sample",
+            readme: false,
+            title: "Notice",
+          },
+        ],
         openIssueCount: 0,
         closedIssueCount: 0,
         pageNum: 1,
@@ -561,7 +590,7 @@ test("post-list output retains the runtime fallback boundary without its dead br
   ]);
 });
 
-test("project posts output retains the runtime fallback boundary without its dead board bridge", async ({
+test("project posts retains legacy label output without the dead board-badge bridge", async ({
   page,
 }) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -576,7 +605,10 @@ test("project posts output retains the runtime fallback boundary without its dea
   );
   await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
   await expect(page.locator('[data-stylex-owner="project-posts-page"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="project-posts-item"]')).toHaveCount(1);
+  await expect(page.locator('[data-stylex-owner="project-posts-item"]')).toHaveCount(3);
+  await expect(page.locator(".post-list-wrap .label.label-notice")).toHaveText("Notice");
+  await expect(page.locator(".post-list-wrap .label.label-important")).toHaveText("README");
+  await expect(page.locator(".board-badges, .board-badge, .board-label")).toHaveCount(0);
 });
 
 test("notifications output retains the runtime fallback boundary without its dead page bridge", async ({

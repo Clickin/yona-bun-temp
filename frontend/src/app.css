@@ -3236,37 +3236,6 @@ h1 {
   font-size: 12px;
 }
 
-.board-badges {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.board-badge,
-.board-label {
-  display: inline-block;
-  padding: 1px 6px;
-  color: #555;
-  font-size: 12px;
-  line-height: 18px;
-  background: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-}
-
-.board-badge.notice {
-  color: #9a4a00;
-  background: #fff7eb;
-  border-color: #f2c078;
-}
-
-.board-badge.readme {
-  color: #275c9c;
-  background: #eef6ff;
-  border-color: #a9c7e8;
-}
-
 .readme .readme-wrap {
   overflow: hidden;
   background-color: #fff;
