@@ -1716,7 +1716,7 @@ function ProjectHomeMilestoneStatus({
 
       <div
         {...stylex.props(projectHomeStyles.milestoneProgressWrap)}
-        className="progress-wrap"
+        className={`${stylex.props(projectHomeStyles.milestoneProgressWrap).className} progress-wrap`}
         data-stylex-owner="project-home-milestone-progress-wrap"
       >
         <div
@@ -2640,19 +2640,24 @@ function ProjectHeaderContent({
         projectHeaderStyles.outer,
         projectHeaderStyles.background(`url('${backgroundImageUrl}')`),
       )}
-      className="project-header-outer"
+      className={`${
+        stylex.props(
+          projectHeaderStyles.outer,
+          projectHeaderStyles.background(`url('${backgroundImageUrl}')`),
+        ).className
+      } project-header-outer`}
       data-stylex-owner="project-home-header-background"
       data-project-header-owner="outer"
     >
       <div className="project-header-inner">
         <div
           {...stylex.props(projectHeaderStyles.wrap)}
-          className="project-header-wrap"
+          className={`${stylex.props(projectHeaderStyles.wrap).className} project-header-wrap`}
           data-stylex-owner="project-header-wrap"
         >
           <div
             {...stylex.props(projectHeaderStyles.avatar)}
-            className="project-header-avatar"
+            className={`${stylex.props(projectHeaderStyles.avatar).className} project-header-avatar`}
             data-stylex-owner="project-header-avatar"
           >
             <img
@@ -2664,7 +2669,7 @@ function ProjectHeaderContent({
           </div>
           <div
             {...stylex.props(projectHeaderStyles.breadcrumbWrap)}
-            className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}
+            className={`${stylex.props(projectHeaderStyles.breadcrumbWrap).className} project-breadcrumb-wrap${isForked ? " fork" : ""}`}
             data-stylex-owner="project-header-breadcrumb-wrap"
           >
             <div

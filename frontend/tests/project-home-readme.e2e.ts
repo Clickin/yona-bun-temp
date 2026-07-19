@@ -45,6 +45,83 @@ test("project home README tab matches legacy project/home.scala.html DOM", async
   );
 });
 
+test("project home header and milestone StyleX owners retain legacy geometry without fallback", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await mockProjectHome(page);
+
+  await page.goto(`${basePath}/admin/sample`);
+  await expect(
+    page.locator("[data-stylex-owner=project-home-header-background]"),
+  ).toBeVisible();
+  await expect(
+    page.locator("[data-stylex-owner=project-home-milestone-progress-wrap]"),
+  ).toBeVisible();
+
+  const styles = await page.evaluate(() => {
+    const style = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return getComputedStyle(element);
+    };
+    const outer = style("[data-stylex-owner=project-home-header-background]");
+    const wrap = style("[data-stylex-owner=project-header-wrap]");
+    const avatar = style("[data-stylex-owner=project-header-avatar]");
+    const breadcrumb = style("[data-stylex-owner=project-header-breadcrumb-wrap]");
+    const progress = style("[data-stylex-owner=project-home-milestone-progress-wrap]");
+    const wrapElement = document.querySelector<HTMLElement>("[data-stylex-owner=project-header-wrap]");
+    const outerElement = document.querySelector<HTMLElement>(
+      "[data-stylex-owner=project-home-header-background]",
+    );
+    if (!wrapElement || !outerElement) throw new Error("Missing project header geometry");
+    return {
+      avatar: { bottom: avatar.bottom, height: avatar.height, width: avatar.width },
+      breadcrumb: { bottom: breadcrumb.bottom, left: breadcrumb.left, position: breadcrumb.position },
+      outer: { height: outer.height },
+      progress: {
+        color: progress.color,
+        fontSize: progress.fontSize,
+        marginLeft: progress.marginLeft,
+        marginRight: progress.marginRight,
+        overflow: progress.overflow,
+      },
+      wrap: {
+        position: wrap.position,
+        widthRatio:
+          wrapElement.getBoundingClientRect().width / outerElement.getBoundingClientRect().width,
+      },
+    };
+  });
+  expect(styles).toMatchObject({
+    avatar: { bottom: "-30px", height: "80px", width: "80px" },
+    breadcrumb: { bottom: "18px", left: "90px", position: "absolute" },
+    outer: { height: "120px" },
+    progress: {
+      color: "rgb(153, 153, 153)",
+      fontSize: "11px",
+      marginLeft: "5px",
+      marginRight: "5px",
+      overflow: "hidden",
+    },
+    wrap: { position: "relative" },
+  });
+  expect(styles.wrap.widthRatio).toBeCloseTo(0.97, 2);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS("height", "50px");
+  await expect(page.locator("[data-stylex-owner=project-header-avatar]")).toHaveCSS("width", "50px");
+  await expect(page.locator("[data-stylex-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
+    "bottom",
+    "5px",
+  );
+  await expect(page.locator("[data-stylex-owner=project-header-breadcrumb-wrap]")).toHaveCSS(
+    "left",
+    "52px",
+  );
+});
+
 test("protected org-owned project home restores the legacy browser title", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectHome(page, {
