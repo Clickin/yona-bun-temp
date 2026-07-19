@@ -4091,3 +4091,14 @@ records RED then absence GREEN while requiring the adjacent `h1` and generic act
 fallback boundaries to remain. The stable populated project-post fixture runs in normal and
 fallback-off modes solely to prove the generated-asset boundary; global discovery remains
 incomplete/non-green, so this is not an unlinking or live-legacy visual-parity claim.
+
+Batch 560 retires only the source-less temporary `.runtime-grid` bridge: the four standalone
+`app.css` blocks for the root, direct `div`, `dt`, and `dd` selectors. Frozen
+`project/home.scala.html:95-120` establishes the actual right rail as
+`.span3.span-right-pane > .bubble-wrap.gray.project-home`, optional milestone, and
+`.inner.member-info`; complete frozen view/LESS/CSS/JS and production TS/TSX inventories have
+no `runtime-grid` emitter. There is therefore no remaining StyleX owner to receive the 13
+declarations. The static contract records observed RED then exact absence GREEN; a populated
+project-home fixture retains the real right rail/member-info structure in normal and fallback-off
+modes, proving only the generated-asset boundary. Global discovery remains incomplete/non-green;
+this is not an unlinking or live-legacy visual-parity claim.

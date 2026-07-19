@@ -1638,31 +1638,6 @@ h1 {
   border-bottom: 0 none;
 }
 
-.runtime-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.runtime-grid div {
-  padding: 12px 14px;
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 3px;
-}
-
-.runtime-grid dt {
-  margin-bottom: 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  color: #878787;
-}
-
-.runtime-grid dd {
-  margin: 0;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
-}
-
 .nav-tabs {
   zoom: 1;
   padding-left: 0;

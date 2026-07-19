@@ -114,6 +114,18 @@ test("runtime-error-banner fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".runtime-error-banner");
 });
 
+test("runtime-grid fallback bridge has no remaining selectors", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".runtime-grid {",
+    ".runtime-grid div {",
+    ".runtime-grid dt {",
+    ".runtime-grid dd {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+});
+
 test("dead temporary typography bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".eyebrow {");
@@ -497,6 +509,85 @@ async function mockProjectPostsSession(page: Page) {
   );
 }
 
+async function mockRuntimeGridProjectHome(page: Page) {
+  const session = {
+    actorId: 1,
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    isAnonymous: false,
+    isConfirmed: true,
+    isSiteAdmin: true,
+    loginId: "admin",
+    userLabel: "Site Admin",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"]) {
+    await page.route(url, (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        headers: { "x-csrf-token": "csrf-runtime-grid" },
+        json: session,
+      }),
+    );
+  }
+  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        backgroundImageUrl: "/assets/images/bg-default-project.png",
+        cloneUrl: "https://example.com/admin/sample.git",
+        currentMilestone: {
+          closedIssueCount: 1,
+          completionPercent: 50,
+          dueDateLabel: "Jul 5, 2026",
+          dueDateOverdue: false,
+          id: 5,
+          openIssueCount: 1,
+          state: "open",
+          title: "v1.0",
+          untilLabel: "4 days left",
+        },
+        dashboard: {
+          assignees: [],
+          labels: [],
+          milestones: [],
+          noMilestoneOpenIssueCount: 0,
+          pullRequests: [],
+          unassignedOpenIssueCount: 0,
+        },
+        id: 7,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        members: [
+          {
+            avatarUrl: "/assets/images/default-avatar-32.png",
+            loginId: "admin",
+            userId: 1,
+            userLabel: "Site Admin",
+          },
+        ],
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        overview: "Sample overview",
+        ownerName: "admin",
+        projectName: "sample",
+        readmeFile: null,
+        vcs: "GIT",
+        viewerCanCreateCommitResource: true,
+        viewerCanLeave: true,
+        viewerCanUpdate: true,
+      },
+    }),
+  );
+}
+
 async function mockGlobalSearchSession(page: Page) {
   const session = {
     avatarUrl: "/assets/images/default-avatar-32.png",
@@ -743,6 +834,29 @@ test("project posts retains legacy label output without the dead board-badge bri
   await expect(page.locator(".post-list-wrap .label.label-notice")).toHaveText("Notice");
   await expect(page.locator(".post-list-wrap .label.label-important")).toHaveText("README");
   await expect(page.locator(".board-badges, .board-badge, .board-label")).toHaveCount(0);
+});
+
+test("project home retains the legacy right rail without the dead runtime-grid bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockRuntimeGridProjectHome(page);
+  await page.goto(`${basePath}/admin/sample`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const rail = page.locator(".span-right-pane");
+  await expect(rail).toBeVisible();
+  await expect(rail.locator('[data-stylex-owner="project-home-side-panel"]')).toBeVisible();
+  await expect(rail.locator('[data-stylex-owner="project-home-member-inner"]')).toBeVisible();
+  await expect(rail.locator(".project-btn-wrap + .milestone-info + .inner.member-info")).toHaveCount(
+    1,
+  );
+  await expect(page.locator(".runtime-grid")).toHaveCount(0);
 });
 
 test("notifications output retains the runtime fallback boundary without its dead page bridge", async ({
