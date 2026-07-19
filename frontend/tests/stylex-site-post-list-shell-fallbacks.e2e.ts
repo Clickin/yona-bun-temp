@@ -21,6 +21,7 @@ const responsiveLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_responsive.less",
   import.meta.url,
 );
+const appCssSource = new URL("../src/app.css", import.meta.url);
 const overrideLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_override.less",
   import.meta.url,
@@ -94,18 +95,29 @@ async function openPostList(page: Page) {
 
 test.describe("StyleX site post-list shell fallback retirement", () => {
   test("pins the frozen shell cascade and three post-list owner/theme boundaries", async () => {
-    const [route, theme, template, layout, yobi, pageLess, responsive, override, bootstrap] =
-      await Promise.all([
-        readFile(routeSource, "utf8"),
-        readFile(themeSource, "utf8"),
-        readFile(templateSource, "utf8"),
-        readFile(layoutSource, "utf8"),
-        readFile(yobiSource, "utf8"),
-        readFile(pageLessSource, "utf8"),
-        readFile(responsiveLessSource, "utf8"),
-        readFile(overrideLessSource, "utf8"),
-        readFile(bootstrapSource, "utf8"),
-      ]);
+    const [
+      route,
+      theme,
+      template,
+      layout,
+      yobi,
+      pageLess,
+      responsive,
+      appCss,
+      override,
+      bootstrap,
+    ] = await Promise.all([
+      readFile(routeSource, "utf8"),
+      readFile(themeSource, "utf8"),
+      readFile(templateSource, "utf8"),
+      readFile(layoutSource, "utf8"),
+      readFile(yobiSource, "utf8"),
+      readFile(pageLessSource, "utf8"),
+      readFile(responsiveLessSource, "utf8"),
+      readFile(appCssSource, "utf8"),
+      readFile(overrideLessSource, "utf8"),
+      readFile(bootstrapSource, "utf8"),
+    ]);
 
     expect(template).toContain('<div class="title_area">');
     expect(template).toContain('<h2 class="pull-left">');
@@ -119,12 +131,28 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     expect(pageLess).toContain(".title_area {\n      overflow:hidden;");
     expect(pageLess).toContain(".post-list-wrap {\n        list-style: none;");
     expect(responsive).toContain(".post-list-wrap {\n    margin-left: 10px;");
+    for (const retiredSelector of [
+      ".site-setting-wrap .post-list-wrap",
+      ".site-setting-wrap .post-list-wrap .listitem",
+      ".site-setting-wrap .post-list-wrap .post-info-wrap",
+      ".site-setting-wrap .post-list-wrap .post-project",
+      ".site-setting-wrap .post-list-wrap .post-info-separator",
+      ".site-setting-wrap .post-list-wrap .post-title",
+      ".site-setting-wrap .post-list-wrap .post-meta-wrap",
+      ".site-setting-wrap .post-list-wrap .post-meta-item",
+      ".site-setting-wrap .post-list-wrap .post-comments i",
+    ]) {
+      expect(appCss).not.toContain(`${retiredSelector} {`);
+    }
+    expect(appCss).toContain(".post-list-wrap {");
+    expect(appCss).toContain(".site-setting-wrap .project-list-wrap {");
     expect(override).toContain(".title_area {\n    .nav {");
     expect(override).toContain("ul {\n        li {");
     expect(bootstrap).toContain(".pull-left {\n  float: left;");
 
     for (const explicitOwner of [owners.title, owners.heading, owners.container])
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
+    expect(route).toContain('data-stylex-owner-page="site-post-list-page"');
     for (const canonicalToken of [
       "siteDiagnosticNoErrorTitleOverflow",
       "siteDiagnosticNoErrorTitleMarginBottom",
@@ -177,6 +205,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
     await expect(heading).not.toHaveClass(/\bpull-left\b/u);
     await expect(container).not.toHaveClass(/\bpost-list-wrap\b/u);
     const settingWrap = page.locator('[data-stylex-owner="site-post-list-setting-wrap"]');
+    await expect(settingWrap).toHaveAttribute("data-stylex-owner-page", "site-post-list-page");
     const settingGrid = page.locator('[data-stylex-owner="site-post-list-setting-grid"]');
     const sidebarColumn = page.locator(
       '[data-stylex-owner="site-post-list-setting-sidebar-column"]',
@@ -215,6 +244,7 @@ test.describe("StyleX site post-list shell fallback retirement", () => {
         "site-post-list-pagination-input",
         "site-post-list-pagination-label",
         "site-post-list-pagination-icon",
+        "site-post-list-pagination-dynamic-sprite",
       ]);
       return Array.from(
         document.querySelectorAll('[data-stylex-owner="site-post-list-setting-content-column"] *'),

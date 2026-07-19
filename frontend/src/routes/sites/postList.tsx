@@ -422,7 +422,11 @@ function SitePostListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
         {...stylex.props(styles.pageWrapOuter)}
         data-stylex-owner="site-post-list-page-wrap-outer"
       >
-        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-post-list-setting-wrap">
+        <div
+          {...stylex.props(styles.settingWrap)}
+          data-stylex-owner="site-post-list-setting-wrap"
+          data-stylex-owner-page="site-post-list-page"
+        >
           <div
             {...stylex.props(styles.settingGrid)}
             data-stylex-owner="site-post-list-setting-grid"
