@@ -243,7 +243,9 @@ function ProjectPostDetailBody({
   const canUpdate = booleanField(post.permissions.canUpdate);
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
-  const canCreate = booleanField(post.permissions.canCreate);
+  // board/view.scala.html keys this rail entry off the enabled board menu;
+  // creation authorization is enforced after navigation, not by hiding it.
+  const boardMenuEnabled = projectMenuEnabled(project, "board");
   const formOptionsQuery = useQuery({
     ...readProjectPostFormOptionsQueryOptions(runtimeConfig, { ownerName, projectName }),
     enabled: canUpdate,
@@ -520,7 +522,7 @@ function ProjectPostDetailBody({
               data-stylex-owner="post-detail-sidebar"
             >
               <dl>
-                {canCreate ? (
+                {boardMenuEnabled ? (
                   <dd className="project-btn-item">
                     <Link
                       to="/$ownerName/$projectName/postform"
@@ -2104,4 +2106,11 @@ function stringField(value: unknown, fallback = "") {
 
 function booleanField(value: unknown) {
   return value === true;
+}
+
+function projectMenuEnabled(project: ProjectContainer, key: string) {
+  const menuSetting = (project as Record<string, unknown>).menuSetting;
+  return !menuSetting || typeof menuSetting !== "object"
+    ? true
+    : (menuSetting as Record<string, unknown>)[key] !== false;
 }

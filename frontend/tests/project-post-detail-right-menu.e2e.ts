@@ -16,6 +16,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(template).toContain('class="content markdown-wrap"');
   expect(template).toContain('class="board-actrow right-txt"');
   expect(template).toContain('class="span3 span-right-pane mb20"');
+  expect(template).toContain('@if(project.menuSetting.board)');
   expect(template).toContain('@Messages("post.write")');
   expect(template).toContain('class="right-menu-icons"');
 
@@ -27,7 +28,9 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(route).toContain('content markdown-wrap');
   expect(route).toContain('board-actrow right-txt');
 
-  await mockPost(page);
+  // The legacy template keys this link to the enabled board menu, rather than
+  // post.permissions.canCreate. The destination performs its own authorization.
+  await mockPost(page, { canCreate: false });
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/post/1#comment-1`);
 
@@ -89,7 +92,7 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(mobile.targetTop).toBeGreaterThanOrEqual(0);
 });
 
-async function mockPost(page: Page) {
+async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean } = {}) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -165,7 +168,7 @@ async function mockPost(page: Page) {
         readme: false,
         commentCount: 1,
         labels: [{ categoryId: "category-1", categoryIsExclusive: false, categoryName: "Type", color: "#51aacc", id: "label-1", name: "parity" }],
-        permissions: { canComment: true, canCreate: true, canDelete: true, canRead: true, canSetNotice: true, canUpdate: true, canWatch: true },
+        permissions: { canComment: true, canCreate, canDelete: true, canRead: true, canSetNotice: true, canUpdate: true, canWatch: true },
       },
     }),
   );
