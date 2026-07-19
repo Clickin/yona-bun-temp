@@ -66,10 +66,10 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             title="Sidebar"
           >
             <i
-              className={`yobicon-arrow-left ${stylex.props(restrictedSidebarPinStyles.icon).className}`}
+              className={`yobicon-arrow-left ${stylex.props(restrictedSidebarPinStyles.icon, restrictedSidebarPinStyles.leftIcon).className}`}
             />
             <i
-              className={`yobicon-arrow-right ${stylex.props(restrictedSidebarPinStyles.icon, restrictedSidebarPinStyles.visibleIcon).className}`}
+              className={`yobicon-arrow-right ${stylex.props(restrictedSidebarPinStyles.icon, restrictedSidebarPinStyles.rightIcon, restrictedSidebarPinStyles.visibleIcon).className}`}
             />
           </div>
           <ul {...stylex.props(restrictedGnbStyles.nav)} data-stylex-owner="restricted-gnb-nav">
@@ -194,8 +194,25 @@ const restrictedSidebarPinStyles = stylex.create({
       ":hover": "pointer",
     },
     display: "none",
+    fontFamily: "yobicon",
     fontSize: "18px",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "400",
+    lineHeight: "1",
     padding: "4px 0 4px 5px",
+    textDecoration: "none",
+    verticalAlign: "baseline",
+  },
+  leftIcon: {
+    "::before": {
+      content: '"\\e031"',
+    },
+  },
+  rightIcon: {
+    "::before": {
+      content: '"\\e030"',
+    },
   },
   visibleIcon: {
     display: "block",

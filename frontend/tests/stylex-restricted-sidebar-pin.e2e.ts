@@ -22,6 +22,10 @@ test("restricted sidebar pin has route-paint and inline-geometry StyleX ownershi
   expect(owner).toContain("backgroundColor: restrictedTheme.sidebarPinSurface");
   expect(owner).toContain('left: "-6px"');
   expect(owner).toContain('fontSize: "18px"');
+  expect(owner).toContain('fontFamily: "yobicon"');
+  expect(owner).toContain('lineHeight: "1"');
+  expect(owner).toContain('content: \'"\\\\e031"\'');
+  expect(owner).toContain('content: \'"\\\\e030"\'');
   expect(owner).not.toContain("globalColors.");
   expect(routeTheme).toContain('sidebarPinSurface: "#03a9f4"');
   expect(route).toContain('data-stylex-owner="restricted-sidebar-pin"');
