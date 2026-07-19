@@ -11,31 +11,9 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
-import { userFilesSearchColors } from "./-files.stylex";
+import { userFilesSearchColors, userFilesStyles } from "./-files.stylex";
 
 const styles = stylex.create({
-  fileHeader: {
-    backgroundColor: "#f1f1f1",
-    borderRadius: "5px",
-    color: "gray",
-    fontSize: "16px",
-    fontWeight: "bold",
-    marginBottom: "10px",
-    padding: "10px 5px",
-    textAlign: "center",
-  },
-  fileRow: {
-    borderBottomColor: "#eee",
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderColor: "#fff",
-    borderStyle: "solid",
-    borderWidth: "1px",
-    color: "gray",
-    fontFamily: "monospace",
-    lineHeight: "30px",
-    padding: "5px",
-  },
   searchRoot: {
     backgroundColor: userFilesSearchColors.rootSurface,
     borderColor: userFilesSearchColors.rootBorder,
@@ -244,9 +222,14 @@ function UserFilesScreen({
               searchNavigationMutation.mutate(String(formData.get("filter") ?? ""));
             }}
           >
-            <div {...searchStyleProps} data-stylex-owner="user-files-search">
+            <div
+              {...searchStyleProps}
+              className={`${searchStyleProps.className} user-file-search search search-bar`}
+              data-stylex-owner="user-files-search"
+            >
               <input
                 {...searchInputStyleProps}
+                className={`${searchInputStyleProps.className} textbox`}
                 key={`${filter}:${pageNum}`}
                 name="filter"
                 type="text"
@@ -256,6 +239,7 @@ function UserFilesScreen({
               />
               <button
                 {...searchActionStyleProps}
+                className={`${searchActionStyleProps.className} search-btn`}
                 type="submit"
                 data-stylex-owner="user-files-search-action"
               >
@@ -263,17 +247,41 @@ function UserFilesScreen({
               </button>
             </div>
           </form>
-          <div className="attachment-files" data-stylex-owner="user-files-files">
+          <div
+            {...stylex.props(userFilesStyles.files)}
+            className={`${stylex.props(userFilesStyles.files).className} attachment-files`}
+            data-stylex-owner="user-files-files"
+          >
             <div
-              className={`${stylex.props(styles.fileHeader).className} attachment-files-header row`}
+              className={`${stylex.props(userFilesStyles.header).className} attachment-files-header row`}
               data-stylex-owner="user-files-header"
             >
-              <div className="span1 header-preview">Preview</div>
-              <div className="span5 header-file-name">Filename</div>
-              <div className="span1 header-size">Size</div>
+              <div
+                {...stylex.props(userFilesStyles.headerPreview)}
+                className={`${stylex.props(userFilesStyles.headerPreview).className} span1 header-preview`}
+              >
+                Preview
+              </div>
+              <div
+                {...stylex.props(userFilesStyles.headerFileName)}
+                className={`${stylex.props(userFilesStyles.headerFileName).className} span5 header-file-name`}
+              >
+                Filename
+              </div>
+              <div
+                {...stylex.props(userFilesStyles.headerSize)}
+                className={`${stylex.props(userFilesStyles.headerSize).className} span1 header-size`}
+              >
+                Size
+              </div>
               <div className="span1">Download</div>
               <div className="span2 file-date">Date</div>
-              <div className="span4 header-location">Location</div>
+              <div
+                {...stylex.props(userFilesStyles.headerLocation)}
+                className={`${stylex.props(userFilesStyles.headerLocation).className} span4 header-location`}
+              >
+                Location
+              </div>
             </div>
             {files.files.map((attachment) => (
               <UserFileRow key={attachment.id} attachment={attachment} basePath={basePath} />
@@ -307,32 +315,59 @@ function UserFileRow({
 
   return (
     <div
-      className={`${stylex.props(styles.fileRow).className} attachment-file-detail row${isHovered ? " hover" : ""}`}
+      className={`${stylex.props(userFilesStyles.row, isHovered && userFilesStyles.rowHovered).className} attachment-file-detail row${isHovered ? " hover" : ""}`}
       data-stylex-owner="user-files-row"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="file-preview span1">
+      <div
+        {...stylex.props(userFilesStyles.preview)}
+        className={`${stylex.props(userFilesStyles.preview).className} file-preview span1`}
+      >
         <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
-          {attachment.mimeType.startsWith("image/") ? <img src={previewUrl} alt="" /> : null}
+          {attachment.mimeType.startsWith("image/") ? (
+            <img {...stylex.props(userFilesStyles.previewImage)} src={previewUrl} alt="" />
+          ) : null}
         </Link>
       </div>
-      <div className="span5 file-name">
+      <div
+        {...stylex.props(userFilesStyles.fileName)}
+        className={`${stylex.props(userFilesStyles.fileName).className} span5 file-name`}
+      >
         <Link href={fileHref} reloadDocument target="_blank" to={fileTo}>
-          <i className={`icon ${fileIconClass(attachment.name)}`}></i>
+          <i
+            {...stylex.props(userFilesStyles.fileIcon)}
+            className={`${stylex.props(userFilesStyles.fileIcon).className} icon ${fileIconClass(attachment.name)}`}
+          ></i>
           {attachment.name}
         </Link>
       </div>
-      <div className="span1 file-size">{attachment.sizeLabel}</div>
-      <div className="span1 file-download">
+      <div
+        {...stylex.props(userFilesStyles.fileSize)}
+        className={`${stylex.props(userFilesStyles.fileSize).className} span1 file-size`}
+      >
+        {attachment.sizeLabel}
+      </div>
+      <div
+        {...stylex.props(userFilesStyles.fileDownload)}
+        className={`${stylex.props(userFilesStyles.fileDownload).className} span1 file-download`}
+      >
         <Link href={downloadHref} reloadDocument to={downloadTo}>
           <button type="button" className="ybtn">
             <i className="yobicon-cloud-download"></i>
           </button>
         </Link>
       </div>
-      <div className="span2 file-date">{attachment.createdLabel}</div>
-      <div className="span4 file-location">
+      <div
+        {...stylex.props(userFilesStyles.fileDate)}
+        className={`${stylex.props(userFilesStyles.fileDate).className} span2 file-date`}
+      >
+        {attachment.createdLabel}
+      </div>
+      <div
+        {...stylex.props(userFilesStyles.fileLocation)}
+        className={`${stylex.props(userFilesStyles.fileLocation).className} span4 file-location`}
+      >
         {locationHref ? (
           <Link href={locationHref} reloadDocument target="_blank" to={locationTo}>
             {locationLabel}
