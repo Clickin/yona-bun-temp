@@ -33,13 +33,14 @@ function SiteAdminForbiddenBoundary() {
 function SiteAdminForbiddenScreen() {
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
+  const messageKey = "error.auth.unauthorized.waringMessage";
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
-      <title>{t("error.forbidden")}</title>
+      <title>{t(messageKey)}</title>
       <DefaultSearchErrorBody
         iconClassName="ico ico-err2"
-        messageKey="error.forbidden"
+        messageKey={messageKey}
         runtimeConfig={runtimeConfig}
       />
     </SiteLayoutShell>
