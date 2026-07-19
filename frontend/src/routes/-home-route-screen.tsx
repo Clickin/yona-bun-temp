@@ -587,9 +587,12 @@ function HomeScreen({
         data-stylex-owner="anonymous-home-intro-outer"
       >
         <div
-          {...stylex.props(anonymousHomeIntroBackgroundTheme, anonymousHomeIntroStyles.hero)}
+          {...stylex.props(
+            anonymousHomeIntroBackgroundTheme,
+            anonymousHomeIntroStyles.hero,
+            anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl),
+          )}
           data-stylex-owner="anonymous-home-intro"
-          {...stylex.props(anonymousHomeIntroDynamicStyles.background(siteIntroBackgroundUrl))}
         >
           <div
             {...stylex.props(anonymousHomeIntroStyles.cover)}
