@@ -34,6 +34,7 @@ test("generated fallback excludes only proven dead Yobi selectors", async ({ pag
     ".profile-frmwrap .avatar-frm .avatar-wrap .progress.loading",
     ".profile-frmwrap .avatar-frm .btn-wrap",
     ".profile-frmwrap .avatar-frm .btn-wrap .nbtn i",
+    ".milestones .milestone .infos .desc",
   ]) {
     expect(fallbackCss).not.toContain(`${selector} {`);
   }
@@ -41,6 +42,9 @@ test("generated fallback excludes only proven dead Yobi selectors", async ({ pag
   expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members {");
   expect(fallbackCss).toContain(".profile-frmwrap dl {");
   expect(fallbackCss).toContain(".profile-frmwrap form {");
+  expect(fallbackCss).toContain(".milestones .milestone .infos .progress-wrap {");
+  expect(fallbackCss).toContain(".milestones .milestone .infos .actrow {");
+  expect(fallbackCss).toContain(".milestones .milestone .completion-rate {");
 });
 
 test("fallback-off discovery mode removes the generated legacy stylesheet", async ({ page }) => {

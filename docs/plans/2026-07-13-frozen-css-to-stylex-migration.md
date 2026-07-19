@@ -23,9 +23,11 @@ their complete consumer boundaries can be migrated together.
 Batch 537 performs the first formal dead-selector retirement inside the generated runtime asset.
 The frozen Yobi LESS stays byte-identical: the build applies a deterministic post-render exclusion
 only to ten separately proven consumer-free project-list and profile-avatar selectors. The duplicate
-project-list selectors and dead `.milestones .desc` replica are removed from React `app.css`; the
-generated milestone rule remains because Yobi is still a live whole-module fallback. The normal-mode
-runtime contract proves the exact ten exclusions and nearby live selectors, while fallback-off
+project-list selectors, `.stats-wrap .like` variants, and dead `.milestones .desc` replica are
+retired by that batch. Batch 538 extends the deterministic post-render exclusion only with the
+separately proven consumer-free `.milestones .milestone .infos .desc` rule, and removes the dead
+React-only `#notification-projects li button` reset/hover/active branches. The normal-mode runtime
+contract proves exact exclusions and neighboring milestone selectors remain live, while fallback-off
 continues to prove that the runtime link is removed. This removes no active selector module and is
 not permanent fallback unlinking.
 

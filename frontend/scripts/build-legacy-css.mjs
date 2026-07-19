@@ -88,6 +88,7 @@ const deadYobiFallbackSelectors = [
   ".profile-frmwrap .avatar-frm .avatar-wrap .progress.loading",
   ".profile-frmwrap .avatar-frm .btn-wrap",
   ".profile-frmwrap .avatar-frm .btn-wrap .nbtn i",
+  ".milestones .milestone .infos .desc",
 ];
 
 const renderedSources = [];

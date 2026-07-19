@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "artifact": "legacy-assets/stylesheets/legacy-fallback.css",
-  "artifactSha256": "41d4114247b3dfaad89f947a9e54dfdcc500dd06da82ea8c59d004bc1fbf30c1",
+  "artifactSha256": "8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6",
   "layer": "legacy",
   "activeFrozen": [
     "bootstrap",
@@ -25,7 +25,7 @@
       "sourceFiles": [
         {
           "path": "frontend/src/app.css",
-          "sha256": "77b7f413177b80f6aff4af7c01b963e58df0d8456d8a256af00fd10f9b8bfbcd"
+          "sha256": "4eba04366e0b9e5ed6f19151cbe7c2978af25eeaafee732f593ccb7959001f67"
         }
       ]
     },

@@ -36,5 +36,5 @@ test("project milestones progress owns static geometry", async () => {
   expect(appCss).not.toContain(".milestones .bar {");
   expect(appCss).not.toContain(".milestones .infos {");
   expect(appCss).not.toContain(".milestones .milestone:last-of-type {");
-  expect(appCss).toContain(".milestones .desc {");
+  expect(appCss).not.toContain(".milestones .desc {");
 });

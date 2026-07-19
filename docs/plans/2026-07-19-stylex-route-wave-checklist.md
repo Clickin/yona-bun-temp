@@ -269,11 +269,11 @@ shared navbar/usermenu/layout/Bootstrap/plugin fallback retirement
 
 Deletion-only candidates. Each requires declaration-level exact source/DOM proof; broad subtree deletion is forbidden.
 
-- [ ] `.milestones .desc`
-- [ ] `#notification-projects li button` base/hover/active
+- [x] `.milestones .desc` — Batch 538: the current React milestone list emits no `.desc`; only the exact rendered Yobi descendant rule is excluded while progress-wrap, actrow, and completion-rate remain.
+- [x] `#notification-projects li button` base/hover/active — Batch 538: legacy and React notification tabs emit anchors/Links, and the React owner owns the corresponding list/link states.
 - [ ] `.profile-frmwrap .avatar-frm` with absent ancestor proof
 - [ ] `.all-projects .project .forked`
-- [ ] `.stats-wrap .like` variants
+- [x] `.stats-wrap .like` variants — Batch 537: duplicate/consumer-free rendered Yobi selectors retired; no active module was unlinked.
 - [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item)
 
 ## Refresh trigger
