@@ -9,8 +9,17 @@ const SOURCE = readFileSync(
 test("post edit form preserves legacy editor and action owners with StyleX", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockPostEdit(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/post/12/editform`, { waitUntil: "commit" });
   await expect(page.locator('[data-stylex-owner="post-edit-form"]')).toHaveCount(1);
+  const form = page.locator('[data-stylex-owner="post-edit-form"]');
+  await expect(form).toHaveCSS("position", "relative");
+  expect(
+    await form.evaluate((node) => ({
+      hasLegacyNoMarginClass: node.classList.contains("nm"),
+      hasStyleXClass: Array.from(node.classList).some((name) => name.startsWith("x")),
+    })),
+  ).toEqual({ hasLegacyNoMarginClass: true, hasStyleXClass: true });
   await expect(page.locator('[data-stylex-owner="post-edit-form-title"] input')).toHaveValue(
     "Release notes",
   );
@@ -19,6 +28,26 @@ test("post edit form preserves legacy editor and action owners with StyleX", asy
   await expect(page.locator('[data-stylex-owner="post-edit-form-actions"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="post-edit-form-uploader"]')).toBeVisible();
   await expect(page.locator("#notice")).toBeChecked();
+  const desktopFormBox = await form.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return { left: box.left, right: box.right, width: box.width };
+  });
+  expect(desktopFormBox.left).toBeGreaterThanOrEqual(0);
+  expect(desktopFormBox.right).toBeLessThanOrEqual(1366);
+  expect(desktopFormBox.width).toBeGreaterThan(0);
+  await page.getByRole("link", { exact: true, name: "Preview" }).click();
+  await expect(page.locator("#preview-body")).toHaveClass(/(?:^|\s)active(?:\s|$)/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true);
+  const mobileFormBox = await form.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return { left: box.left, right: box.right, width: box.width };
+  });
+  expect(mobileFormBox.left).toBeGreaterThanOrEqual(0);
+  expect(mobileFormBox.right).toBeLessThanOrEqual(390);
+  expect(mobileFormBox.width).toBeGreaterThan(0);
   await expect(page.locator("[data-toggle], [data-dismiss], [data-request-method]")).toHaveCount(0);
   expect(SOURCE).toContain('id="button-clear-temporary"');
   expect(SOURCE).toContain("BoardPostFileUploader");

@@ -14,6 +14,8 @@ import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { postEditFormTheme, styles } from "./-post-editform.stylex";
 
+const formStyleProps = stylex.props(styles.form);
+
 export const Route = createFileRoute("/$ownerName/$projectName/post/$postNumber/editform")({
   component: ProjectBoardEditFormRoute,
 });
@@ -92,7 +94,7 @@ function ProjectBoardEditFormBody({
       <div className="page-wrap-outer" data-stylex-owner="post-edit-form-page">
         <div className="project-page-wrap">
           <form
-            {...stylex.props(styles.form)}
+            {...formStyleProps}
             data-stylex-owner="post-edit-form"
             action={prefixBasePath(
               runtimeConfig.basePath,
@@ -100,7 +102,7 @@ function ProjectBoardEditFormBody({
             )}
             method="post"
             encType="multipart/form-data"
-            className="nm"
+            className={`${formStyleProps.className} nm`}
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);

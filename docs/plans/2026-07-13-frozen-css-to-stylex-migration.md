@@ -1,6 +1,6 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
-Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete
+Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: organization board list owner composition and project board post-edit form ownership (2026-07-20).
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
