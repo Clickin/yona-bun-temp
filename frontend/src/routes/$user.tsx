@@ -632,7 +632,11 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
   } satisfies LegacyIssueRowAttributes;
 
   return (
-    <li {...legacyIssueRowAttrs}>
+    <li
+      {...legacyIssueRowAttrs}
+      {...stylex.props(styles.issueRow)}
+      data-stylex-owner="user-profile-issue-row"
+    >
       <div className="span12 span-hard-wrap">
         <div className="span2 project-name-in-my-issues fixed-height-my-issues-list">
           <span className="infos-item project-name">
@@ -647,7 +651,10 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
           </span>
           <span className="infos-item post-id">#{issueNumber}</span>
         </div>
-        <div className="title-wrap span5">
+        <div
+          className={`${stylex.props(styles.issueTitleWrap).className} title-wrap span5`}
+          data-stylex-owner="user-profile-issue-title-wrap"
+        >
           <span className="title-cell">
             <Link {...LEGACY_LINK_PROPS} to={issuePath} className="title">
               {stringField(issue, "title")}

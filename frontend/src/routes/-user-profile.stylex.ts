@@ -9,9 +9,20 @@ export const userProfileColors = stylex.defineVars({
 export const styles = stylex.create({
   // Legacy user/view.scala.html renders the API-provided avatar as a background image.
   avatarBackground: (backgroundImage: string) => ({ backgroundImage }),
-  profile: { color: userProfileColors.mutedText },
-  info: { color: userProfileColors.accentText },
-  stream: { minWidth: 0 },
+  // Legacy less/_page.less .user-box.
+  profile: {
+    color: userProfileColors.mutedText,
+    margin: "15px 0px 0px",
+    overflow: "hidden",
+  },
+  // Legacy less/_page.less .user-info-box.
+  info: {
+    color: userProfileColors.accentText,
+    float: "left",
+    width: "200px",
+  },
+  // Legacy less/_page.less .user-stream-box.
+  stream: { minWidth: 0, overflow: "hidden", paddingLeft: "20px" },
   tabs: { color: userProfileColors.accentText },
   // Legacy user/view.scala.html daysAgoBtn inline declaration.
   daysAgoInput: {
@@ -57,4 +68,13 @@ export const styles = stylex.create({
   // Legacy common/twoColumnModeCheckboxArea.scala.html and showSubtasksCheckbox.scala.html
   // require a positioned anchor for the React-owned popover.
   popoverAnchor: { position: "relative" },
+  // Legacy less/_page.less .my-issues .post-item.
+  issueRow: { color: "#999999", padding: "0px 10px" },
+  // Legacy less/_page.less .my-issues .post-item .title-wrap.
+  issueTitleWrap: {
+    display: "table",
+    marginTop: "2px",
+    overflow: "auto",
+    whiteSpace: "normal",
+  },
 });
