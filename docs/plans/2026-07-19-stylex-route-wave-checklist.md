@@ -26,6 +26,7 @@ Snapshot: 2026-07-19, `frontend/src/routes/**/*.tsx` 116 files
 | [x] | B2 | `/$ownerName/$projectName/pullRequest/$pullRequestNumber` overview branches/actions | **DEAD/INVALID** — requested selectors are absent from legacy; cited `_page.less:4296-4314` is posting-history diff CSS | no safe owner; implementation intentionally stopped | `git/view.scala.html`/`git/partial_state.scala.html` only expose `.pullRequest-branchInfo`/`.pullRequest-stateInfo`; `_page.less:4296-4314` is unrelated |
 | [x] | B3 | `/$ownerName/$projectName/search` populated/empty project search | `searchCategory`, `searchBox`, `searchResultTitle`, `searchListItem`, `emptyResult` | shared `.search-category-wrap`, `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` retained for global/organization consumers | `search/partial_search.scala.html` and result partials; `_page.less:6375-6415` |
 | [x] | D1 | `/organizations/$organizationName/settingform` populated settings top-box | `settingBox`, `logo`, `logoDesc`, `descs`, `point`, `textarea` | shared `.box-wrap .setting-box*` fallback retained; project setting is the existing owned consumer and app.css duplicate was retired in A3 | `organization/setting.scala.html:36-72`, `partial_settingmenu.scala.html`; `_page.less:2081-2120`, `_responsive.less:126-142` |
+| [ ] | E2 | `/organizations/$organizationName/search` populated result rows | category item, result title, list item/project inset, title wrap/post id, content/meta, empty result | generic search fallback remains until the dead `LegacySearchBody` consumer is removed and global/project/organization owners are all verified | `search/partial_search.scala.html`, organization result partials; `_page.less:6375-6491` |
 | [x] | C1 | `/search` populated/empty global search family | category shell, result heading/list/item, empty result | `.search-category-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` | `search/result.scala.html`, `search/partial_search.scala.html`, result partials; `_page.less:6375-6491` |
 
 `C1` is completed for the top-level `/search` route only. `-search-screen.tsx` and project/organization search remain out of scope; shared app.css selectors remain fallback-owned by those consumers.
@@ -33,6 +34,14 @@ Snapshot: 2026-07-19, `frontend/src/routes/**/*.tsx` 116 files
 ## Current wave
 
 - [x] Batch 515: issueform assignee control, hidden focus-input display, and selected-value ellipsis owners. The hidden input remains 1px under frozen `.select2-offscreen`; shared Select2/combobox fallback remains.
+
+## Shared-search dependency queue
+
+- [ ] E1: remove the unreferenced `LegacySearchBody` subtree in `frontend/src/routes/-search-screen.tsx`. Only `DefaultSearchErrorBody`, `RequestTextTooLargeErrorBody`, error predicates, and `emptySearchResult` have runtime importers. This is dead-consumer removal, not a StyleX owner wave.
+- [ ] E2: migrate the organization-search populated/empty result owners listed above in one route/state wave.
+- [ ] E3: rerun exact consumer search for the generic search blocks and retire only declarations whose global/project/organization owners are complete. Do not remove shared error/empty fallback without a remaining-consumer proof.
+
+Refresh snapshot: 2026-07-19 after Batch D1. Project and top-level/auth/user/verify families have no additional route-safe frozen-backed owner candidate. Do not repeat the 116-route inventory until E1–E3 complete or another documented refresh trigger fires.
 
 ## Coverage ledger
 
@@ -54,10 +63,10 @@ The inventory was produced in one O(n) pass over the 116 route TSX files and che
 
 ### Organization, site-admin, redirect-only — 22 files
 
-- `NEXT` 0.
+- `NEXT` 1: organization search E2.
 - `DEAD` 3: leave redirect, organization closed-PR delegate, site pagination helper.
-- `DONE` 3: organization delete form, organization index alias, new organization form.
-- `BLOCKED` 16: organization home/boards/issues/members/PR/search/settings and nine site-admin screens. Their remaining selectors are shared across sibling routes.
+- `DONE` 4: the previous three routes plus organization settingform D1.
+- `BLOCKED` 14: organization home/boards/issues/members/PR and nine site-admin screens. Their remaining selectors are shared across sibling routes.
 
 ## Dead residual cleanup queue
 
