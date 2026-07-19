@@ -591,7 +591,10 @@ export function OrganizationHeader({
   const queryClient = useQueryClient();
   const [enrollmentRequested, setEnrollmentRequested] = useState(initialEnrollmentRequested);
   const [enrollmentDropdownOpen, setEnrollmentDropdownOpen] = useState(false);
-  const headerBackgroundStyle = stylex.props(styles.headerBackground(`url('${logoUrl}')`));
+  const headerStyleProps = stylex.props(
+    styles.headerShell,
+    styles.headerBackground(`url('${logoUrl}')`),
+  );
   const enrollmentMutation = useMutation({
     mutationFn: async (nextRequested: boolean) => {
       const { csrfToken } = await readSessionBootstrap(runtimeConfig);
@@ -611,16 +614,28 @@ export function OrganizationHeader({
 
   return (
     <div
-      {...headerBackgroundStyle}
-      className={`project-header-outer ${headerBackgroundStyle.className ?? ""}`.trim()}
+      {...headerStyleProps}
+      className={`project-header-outer ${headerStyleProps.className ?? ""}`.trim()}
       data-stylex-owner="organization-profile-header-background"
     >
-      <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
+      <div
+        className={`${stylex.props(styles.headerInner).className} project-header-inner`}
+        data-stylex-owner="organization-header-inner"
+      >
+        <div
+          className={`${stylex.props(styles.headerWrap).className} project-header-wrap`}
+          data-stylex-owner="organization-header-wrap"
+        >
+          <div
+            className={`${stylex.props(styles.headerAvatar).className} project-header-avatar`}
+            data-stylex-owner="organization-header-avatar"
+          >
             <img src={logoUrl} alt="" />
           </div>
-          <div className="project-breadcrumb-wrap">
+          <div
+            className={`${stylex.props(styles.headerBreadcrumb).className} project-breadcrumb-wrap`}
+            data-stylex-owner="organization-header-breadcrumb"
+          >
             <div className="project-breadcrumb">
               <span className="project-author">
                 <span className="group-title-head">group</span>
@@ -731,7 +746,10 @@ export function OrganizationMenu({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="project-menu-outer">
+    <div
+      className={`${stylex.props(styles.menuShell).className} project-menu-outer`}
+      data-stylex-owner="organization-menu-shell"
+    >
       <div className="project-menu-inner">
         <ul
           className={`${stylex.props(styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
