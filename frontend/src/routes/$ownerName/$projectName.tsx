@@ -50,6 +50,49 @@ const projectHistoryStyles = stylex.create({
 
 const projectHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
+  outer: {
+    backgroundColor: "#565656",
+    backgroundPosition: "center bottom",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    height: "120px",
+    "@media all and (max-width: 720px)": {
+      minWidth: "10px",
+    },
+  },
+  wrap: { height: "inherit", margin: "0 auto", position: "relative", width: "97%" },
+  avatar: {
+    background: "#fff",
+    border: "5px solid #f9f9f9",
+    borderRadius: "3px",
+    bottom: "-30px",
+    height: "80px",
+    left: "0px",
+    position: "absolute",
+    width: "80px",
+    "@media all and (max-width: 720px)": {
+      border: "1px solid #f9f9f9",
+      bottom: "-6px",
+      height: "50px",
+      left: "0px",
+      width: "50px",
+    },
+  },
+  avatarImage: { height: "100%", verticalAlign: "top", width: "100%" },
+  breadcrumbWrap: {
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: "0 3px 3px 0",
+    bottom: "18px",
+    display: "inline-block",
+    fontWeight: "bold",
+    left: "90px",
+    padding: "2px 10px",
+    position: "absolute",
+    "@media all and (max-width: 720px)": {
+      bottom: "5px",
+      left: "52px",
+    },
+  },
   leaveModalOpen: { display: "block" },
   leaveModalClosed: { display: "none" },
 });
@@ -2571,16 +2614,37 @@ function ProjectHeaderContent({
 
   return (
     <div
-      {...stylex.props(projectHeaderStyles.background(`url('${backgroundImageUrl}')`))}
+      {...stylex.props(
+        projectHeaderStyles.outer,
+        projectHeaderStyles.background(`url('${backgroundImageUrl}')`),
+      )}
       className="project-header-outer"
       data-stylex-owner="project-home-header-background"
+      data-project-header-owner="outer"
     >
       <div className="project-header-inner">
-        <div className="project-header-wrap">
-          <div className="project-header-avatar">
-            <img src={logoUrl} alt="" />
+        <div
+          {...stylex.props(projectHeaderStyles.wrap)}
+          className="project-header-wrap"
+          data-stylex-owner="project-header-wrap"
+        >
+          <div
+            {...stylex.props(projectHeaderStyles.avatar)}
+            className="project-header-avatar"
+            data-stylex-owner="project-header-avatar"
+          >
+            <img
+              {...stylex.props(projectHeaderStyles.avatarImage)}
+              src={logoUrl}
+              alt=""
+              data-stylex-owner="project-header-avatar-image"
+            />
           </div>
-          <div className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}>
+          <div
+            {...stylex.props(projectHeaderStyles.breadcrumbWrap)}
+            className={`project-breadcrumb-wrap${isForked ? " fork" : ""}`}
+            data-stylex-owner="project-header-breadcrumb-wrap"
+          >
             <div className="project-breadcrumb">
               <span className="project-author hide-in-mobile">
                 <Link

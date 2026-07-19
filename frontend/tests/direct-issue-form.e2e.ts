@@ -39,44 +39,143 @@ test("direct mine issue create route renders the legacy New issue title for the 
   );
 });
 
-test("direct issue create preserves project header inline spacing from legacy project/header.scala.html", async ({
+test("direct issue create migrates the fallback-off project header geometry from legacy project/header.scala.html", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockDirectIssueForm(page, { ownerName: "weblabs", projectName: "portal" });
   await page.setViewportSize({ width: 1366, height: 900 });
 
   await page.goto(`${basePath}/user/issues/new`);
 
   await expect(page.locator(".project-breadcrumb")).toHaveText("weblabs / portal starG");
+  for (const selector of [
+    '[data-project-header-owner="outer"]',
+    '[data-stylex-owner="project-header-wrap"]',
+    '[data-stylex-owner="project-header-avatar"]',
+    '[data-stylex-owner="project-header-avatar-image"]',
+    '[data-stylex-owner="project-header-breadcrumb-wrap"]',
+  ]) {
+    await expect(page.locator(selector)).toHaveCount(1);
+  }
   const desktop = await page.evaluate(() => {
     const required = (selector: string) => {
       const element = document.querySelector<HTMLElement>(selector);
       if (!element) throw new Error(`Missing ${selector}`);
       return element.getBoundingClientRect();
     };
-    const breadcrumb = required(".project-breadcrumb-wrap");
+    const style = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      return getComputedStyle(element);
+    };
+    const header = required('[data-project-header-owner="outer"]');
+    const wrap = required('[data-stylex-owner="project-header-wrap"]');
+    const avatar = required('[data-stylex-owner="project-header-avatar"]');
+    const avatarImage = required('[data-stylex-owner="project-header-avatar-image"]');
+    const breadcrumb = required('[data-stylex-owner="project-header-breadcrumb-wrap"]');
     const util = required(".project-util-wrap");
     const watcher = required(".watcher-count");
     const watchAction = required(".down-arrow");
-    return { breadcrumb, util, watchAction, watcher };
+    return {
+      avatar,
+      avatarImage,
+      avatarStyle: {
+        height: style('[data-stylex-owner="project-header-avatar"]').height,
+        position: style('[data-stylex-owner="project-header-avatar"]').position,
+        width: style('[data-stylex-owner="project-header-avatar"]').width,
+      },
+      breadcrumb,
+      breadcrumbStyle: {
+        padding: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').padding,
+        position: style('[data-stylex-owner="project-header-breadcrumb-wrap"]').position,
+      },
+      header,
+      headerStyle: {
+        backgroundPosition: style('[data-project-header-owner="outer"]').backgroundPosition,
+        backgroundRepeat: style('[data-project-header-owner="outer"]').backgroundRepeat,
+        backgroundSize: style('[data-project-header-owner="outer"]').backgroundSize,
+      },
+      util,
+      watchAction,
+      watcher,
+      wrap,
+      wrapStyle: { position: style('[data-stylex-owner="project-header-wrap"]').position },
+    };
   });
-  expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
-  expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
-  expect(desktop.util.right).toBeCloseTo(1345.5, 0);
-  expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
-  expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
-  expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
+  expect(desktop.header.height).toBeCloseTo(120, 0);
+  expect(desktop.headerStyle.backgroundPosition).toBe("50% 100%");
+  expect(desktop.headerStyle.backgroundRepeat).toBe("no-repeat");
+  expect(desktop.headerStyle.backgroundSize).toBe("cover");
+  expect(desktop.wrap.width).toBeCloseTo(desktop.header.width * 0.97, 0);
+  expect(desktop.wrapStyle.position).toBe("relative");
+  expect(desktop.avatarStyle.position).toBe("absolute");
+  expect(desktop.avatarStyle.width).toBe("80px");
+  expect(desktop.avatarStyle.height).toBe("80px");
+  expect(desktop.avatar.left).toBeCloseTo(desktop.wrap.left, 0);
+  expect(desktop.avatar.bottom).toBeCloseTo(desktop.header.bottom + 30, 0);
+  expect(desktop.avatarImage.width).toBeCloseTo(80, 0);
+  expect(desktop.avatarImage.height).toBeCloseTo(80, 0);
+  expect(desktop.breadcrumbStyle.position).toBe("absolute");
+  expect(desktop.breadcrumbStyle.padding).toBe("2px 10px");
+  expect(desktop.breadcrumb.left).toBeCloseTo(desktop.wrap.left + 90, 0);
+  expect(desktop.breadcrumb.bottom).toBeCloseTo(desktop.header.bottom - 18, 0);
+  // Breadcrumb descendant typography remains shared fallback ownership.
+  if (!fallbackOff) {
+    expect(desktop.breadcrumb.right).toBeCloseTo(335.5, 0);
+    expect(desktop.breadcrumb.width).toBeCloseTo(225, 0);
+  }
+  if (!fallbackOff) {
+    expect(desktop.util.right).toBeCloseTo(1345.5, 0);
+    expect(desktop.watcher.x).toBeCloseTo(desktop.util.x + 15, 0);
+    expect(desktop.watchAction.x).toBeCloseTo(desktop.watcher.right, 0);
+    expect(desktop.watchAction.right).toBeCloseTo(desktop.util.right, 0);
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobile = await page.evaluate(() => ({
-    documentWidth: document.documentElement.scrollWidth,
-    header: document.querySelector(".project-header-outer")?.getBoundingClientRect(),
-    watchVisible: getComputedStyle(document.querySelector(".watch-btn")!).display,
-  }));
-  expect(mobile.documentWidth).toBe(390);
-  expect(mobile.header?.right).toBeLessThanOrEqual(390);
-  expect(mobile.watchVisible).toBe("none");
+  const mobile = await page.evaluate(() => {
+    const required = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const style = getComputedStyle(element);
+      return {
+        box: element.getBoundingClientRect(),
+        style: {
+          bottom: style.bottom,
+          height: style.height,
+          left: style.left,
+          minWidth: style.minWidth,
+          width: style.width,
+        },
+      };
+    };
+    return {
+      avatar: required('[data-stylex-owner="project-header-avatar"]'),
+      breadcrumb: required('[data-stylex-owner="project-header-breadcrumb-wrap"]'),
+      documentWidth: document.documentElement.scrollWidth,
+      header: required('[data-project-header-owner="outer"]'),
+      wrap: required('[data-stylex-owner="project-header-wrap"]'),
+      watchVisible: getComputedStyle(document.querySelector(".watch-btn")!).display,
+    };
+  });
+  if (!fallbackOff) {
+    expect(mobile.documentWidth).toBe(390);
+  }
+  expect(mobile.header.box.right).toBeLessThanOrEqual(390);
+  expect(mobile.header.style.minWidth).toBe("10px");
+  expect(mobile.avatar.style.bottom).toBe("-6px");
+  expect(mobile.avatar.style.width).toBe("50px");
+  expect(mobile.avatar.style.height).toBe("50px");
+  expect(mobile.avatar.box.left).toBeCloseTo(mobile.wrap.box.left, 0);
+  expect(mobile.avatar.box.bottom).toBeCloseTo(mobile.header.box.bottom + 6, 0);
+  expect(mobile.breadcrumb.style.bottom).toBe("5px");
+  expect(mobile.breadcrumb.style.left).toBe("52px");
+  expect(mobile.breadcrumb.box.left).toBeCloseTo(mobile.wrap.box.left + 52, 0);
+  expect(mobile.breadcrumb.box.right).toBeLessThanOrEqual(mobile.header.box.right);
+  if (!fallbackOff) {
+    expect(mobile.watchVisible).toBe("none");
+  }
 });
 
 test("direct issue title implementation follows legacy IssueApp.create title path without DOM mutation", () => {
