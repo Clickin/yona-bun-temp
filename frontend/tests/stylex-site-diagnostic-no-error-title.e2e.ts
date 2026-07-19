@@ -48,22 +48,25 @@ test.describe("StyleX site diagnostic no-error title", () => {
 
     expect(route).toContain('"site-diagnostic-no-error-title"');
     expect(route).toContain("styles.noErrorTitleArea");
+    expect(route).toContain('noErrorHeading: {\n    float: "left",');
     expect(route).toContain("siteDiagnosticColors.titleBorder");
     expect(route).toContain("siteDiagnosticColors.titleText");
     expect(theme).toContain("titleBorder");
     expect(theme).toContain("titleText");
     expect(route).not.toContain("globalColors.");
+    expect(route).not.toContain('className="pull-left"');
+    expect(route).not.toContain('className="title_area"');
   });
 
   test("preserves the legacy diagnostics heading and no-error paragraph order", async ({
     page,
   }) => {
     const owner = await openNoErrorDiagnostic(page);
-    await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Diagnostics");
+    await expect(owner.locator(":scope > h2")).toHaveText("Diagnostics");
     await expect(owner.locator("+ p")).toHaveText("No errors were found");
     expect(
       await page
-        .locator(".site-setting-wrap .span10 > *")
+        .locator('[data-stylex-owner="site-diagnostic-setting-content-column"] > *')
         .evaluateAll((nodes) => nodes.map((node) => node.tagName)),
     ).toEqual(["DIV", "P"]);
   });
@@ -75,7 +78,7 @@ test.describe("StyleX site diagnostic no-error title", () => {
     test(`matches ${viewport.name} title-strip geometry and paint`, async ({ page }) => {
       await page.setViewportSize(viewport);
       const owner = await openNoErrorDiagnostic(page);
-      const heading = owner.locator("h2.pull-left");
+      const heading = owner.locator("h2");
 
       await expect(owner).toHaveCSS("overflow", "hidden");
       await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -84,11 +87,12 @@ test.describe("StyleX site diagnostic no-error title", () => {
       await expect(heading).toHaveCSS("color", "rgb(76, 76, 76)");
       await expect(heading).toHaveCSS("font-size", "19.5px");
       await expect(heading).toHaveCSS("line-height", "30px");
+      await expect(heading).toHaveCSS("float", "left");
       const boxes = await page.evaluate(() => {
         const owner = document.querySelector<HTMLElement>(
           '[data-stylex-owner="site-diagnostic-no-error-title"]',
         );
-        const heading = owner?.querySelector<HTMLElement>("h2.pull-left");
+        const heading = owner?.querySelector<HTMLElement>("h2");
         const content = owner?.parentElement;
         if (!owner || !heading || !content) return null;
         return {
@@ -121,7 +125,9 @@ test.describe("StyleX site diagnostic no-error title", () => {
     await expect(page.locator('[data-stylex-owner="site-diagnostic-no-error-title"]')).toHaveCount(
       0,
     );
-    await expect(page.locator(".title_area h2")).toHaveText("Diagnostics");
+    await expect(page.locator('[data-stylex-owner="site-diagnostic-error-title"] > h2')).toHaveText(
+      "Diagnostics",
+    );
     await expect(page.locator("pre")).toHaveText("database probe failed");
   });
 });

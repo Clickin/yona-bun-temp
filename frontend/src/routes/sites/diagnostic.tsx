@@ -6,10 +6,55 @@ import type { SiteDiagnosticsResponse } from "../../api/site-admin";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import type { RuntimeConfig } from "../../runtime-config";
+import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { siteDiagnosticColors } from "./-diagnostic.stylex";
 
 const styles = stylex.create({
+  page: {
+    boxSizing: "border-box",
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: {
+      [globalBreakpoints.mobile]: "10px",
+    },
+    padding: {
+      default: "0px 10px",
+      [globalBreakpoints.mobile]: "0px",
+    },
+    width: "100%",
+  },
+  settingWrap: {
+    margin: "0px auto",
+  },
+  settingGrid: {
+    width: "100%",
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: "0px",
+    },
+  },
+  settingColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    minHeight: "30px",
+  },
+  settingSidebarColumn: {
+    marginLeft: "0px",
+    width: "14.893617021276595%",
+  },
+  settingContentColumn: {
+    marginLeft: "2.127659574468085%",
+    width: "82.97872340425532%",
+  },
   sidebar: {
     margin: "0px",
     padding: "0px",
@@ -68,6 +113,7 @@ const styles = stylex.create({
     borderBottomColor: siteDiagnosticColors.titleBorder,
   },
   noErrorHeading: {
+    float: "left",
     margin: "0px",
     fontSize: "1.5em",
     color: siteDiagnosticColors.titleText,
@@ -82,6 +128,7 @@ const styles = stylex.create({
     borderBottomColor: siteDiagnosticColors.titleBorder,
   },
   errorHeading: {
+    float: "left",
     margin: "0px",
     fontSize: "1.5em",
     color: siteDiagnosticColors.titleText,
@@ -147,18 +194,26 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer" data-stylex-owner="site-diagnostic-page">
-        <div className="site-setting-wrap" data-stylex-owner="site-diagnostic-content">
-          <div className="row-fluid">
-            <div className="span2" data-stylex-owner="site-diagnostic-sidebar-column">
+      <div {...stylex.props(styles.page)} data-stylex-owner="site-diagnostic-page">
+        <div {...stylex.props(styles.settingWrap)} data-stylex-owner="site-diagnostic-content">
+          <div
+            {...stylex.props(styles.settingGrid)}
+            data-stylex-owner="site-diagnostic-setting-grid"
+          >
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingSidebarColumn)}
+              data-stylex-owner="site-diagnostic-sidebar-column"
+            >
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.settingColumn, styles.settingContentColumn)}
+              data-stylex-owner="site-diagnostic-setting-content-column"
+            >
               <div
                 {...(hasNoDiagnosticErrors
                   ? stylex.props(styles.noErrorTitleArea)
                   : stylex.props(styles.errorTitleArea))}
-                className="title_area"
                 data-stylex-owner={
                   hasNoDiagnosticErrors
                     ? "site-diagnostic-no-error-title"
@@ -169,7 +224,6 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
                   {...(hasNoDiagnosticErrors
                     ? stylex.props(styles.noErrorHeading)
                     : stylex.props(styles.errorHeading))}
-                  className="pull-left"
                 >
                   <LegacyMessage messageKey="site.sidebar.diagnostics" />
                 </h2>

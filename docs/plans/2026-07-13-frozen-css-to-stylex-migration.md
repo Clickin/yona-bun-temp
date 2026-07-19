@@ -1979,6 +1979,17 @@ variables; the title strip, error message/list geometry, no-error state, and sha
 shell remain fallback. Focused desktop/mobile screenshots and the existing diagnostics regression
 retain legacy copy, order, and geometry. This is not Wave 1 completion.
 
+The diagnostic page/grid/column shell now has five route-local StyleX owners for the frozen
+page wrapper, setting wrapper, fluid-grid clearfix, and Bootstrap sidebar/content columns across
+both healthy and error states. The matching presentation classes are retired only on
+`/sites/diagnostic`. A follow-up two-owner correction also migrates the frozen Bootstrap
+`.pull-left { float:left }` declaration into the healthy/error title headings and retires the
+fully-owned `title_area` fallback class, preventing a zero-height title wrapper with fallback
+disabled. Shared site-admin shell, breadcrumb, sidebar,
+and diagnostic bodies remain separate owners. Focused normal and fallback-off desktop/mobile
+checks cover the source-equivalent grid ratios, title visibility, and containment. This is not
+Wave 1 completion.
+
 The ninety-first slice migrates the warning surface of `/sites/data` from
 `site/data.scala.html`, `_page.less`, and `_mixins.less`. StyleX owns only the exact inline-block
 warning wrapper and notice text color through global theme variables; title, export/import

@@ -26,12 +26,12 @@ async function openErrorDiagnostic(page: Page) {
 test("error title uses the distinct owner and preserves legacy error order", async ({ page }) => {
   const owner = await openErrorDiagnostic(page);
 
-  await expect(owner.locator(":scope > h2.pull-left")).toHaveText("Diagnostics");
+  await expect(owner.locator(":scope > h2")).toHaveText("Diagnostics");
   await expect(owner.locator("+ p")).toHaveText("1 errors were found");
   await expect(owner.locator("+ p + ul pre")).toHaveText("database probe failed");
   expect(
     await page
-      .locator(".site-setting-wrap .span10 > *")
+      .locator('[data-stylex-owner="site-diagnostic-setting-content-column"] > *')
       .evaluateAll((nodes) => nodes.map((node) => node.tagName)),
   ).toEqual(["DIV", "P", "UL"]);
 });
@@ -43,7 +43,7 @@ for (const viewport of [
   test(`${viewport.name} error title matches legacy paint and geometry`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const owner = await openErrorDiagnostic(page);
-    const heading = owner.locator("h2.pull-left");
+    const heading = owner.locator("h2");
 
     await expect(owner).toHaveCSS("overflow", "hidden");
     await expect(owner).toHaveCSS("margin-bottom", "29px");
@@ -51,6 +51,7 @@ for (const viewport of [
     await expect(owner).toHaveCSS("border-bottom-color", "rgb(221, 221, 221)");
     await expect(heading).toHaveCSS("color", "rgb(76, 76, 76)");
     await expect(heading).toHaveCSS("font-size", "19.5px");
+    await expect(heading).toHaveCSS("float", "left");
     const boxes = await owner.evaluate((element) => {
       const owner = element.getBoundingClientRect();
       const content = element.parentElement?.getBoundingClientRect();
@@ -89,6 +90,9 @@ test("error title has no generated selector contract", async () => {
   expect(route).toContain('"site-diagnostic-error-title"');
   expect(route).toContain("styles.errorTitleArea");
   expect(route).toContain("styles.errorHeading");
+  expect(route).toContain('errorHeading: {\n    float: "left",');
+  expect(route).not.toContain('className="pull-left"');
+  expect(route).not.toContain('className="title_area"');
   expect(route).not.toContain("hasNoDiagnosticErrors || hasDiagnosticErrors");
   expect(route).not.toMatch(/siteDiagnosticErrorTitle[^\n]*#[0-9a-f]/iu);
 });
