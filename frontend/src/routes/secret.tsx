@@ -40,10 +40,44 @@ const styles = stylex.create({
     ":hover": { color: secretTheme.logoText },
   },
   box: { width: "50%", margin: "20px auto" },
+  formWrap: {
+    margin: "14px auto 0",
+    position: "relative",
+    width: "400px",
+  },
+  field: {
+    borderBottomColor: {
+      default: secretTheme.fieldBorder,
+      ":focus": secretTheme.fieldFocusBorder,
+    },
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    borderLeftStyle: "none",
+    borderRightStyle: "none",
+    borderTopStyle: "none",
+    borderRadius: "0",
+    boxShadow: { default: "none", ":focus": "none" },
+    fontSize: "12px",
+    fontWeight: "bold",
+    height: "27px",
+    marginBottom: "15px",
+    outline: { default: "none", ":focus": "none" },
+    // Frozen mobile width/font rules are !important, so they intentionally remain
+    // effective fallback instead of being shadowed by an ineffective StyleX variant.
+    width: "386px",
+  },
+  actionRow: {
+    display: "block",
+    margin: "0 auto 20px",
+    textAlign: "center",
+  },
 });
 const secretWrapClassName = stylex.props(styles.wrap).className;
 const secretLogoClassName = stylex.props(styles.logo).className;
 const secretBoxClassName = stylex.props(styles.box).className;
+const secretFormWrapClassName = stylex.props(styles.formWrap).className;
+const secretFieldClassName = stylex.props(styles.field).className;
+const secretActionRowClassName = stylex.props(styles.actionRow).className;
 
 export const Route = createFileRoute("/secret")({
   component: SecretSetupRoute,
@@ -154,7 +188,10 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
               </div>
             </div>
 
-            <div className="signup-form-wrap frm-wrap">
+            <div
+              className={`signup-form-wrap frm-wrap ${secretFormWrapClassName}`}
+              data-stylex-owner="secret-setup-form"
+            >
               <form
                 action={contextRoot}
                 method="post"
@@ -171,7 +208,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="loginId"
                       type="text"
                       name="loginId"
-                      className="text password"
+                      className={`text password ${secretFieldClassName}`}
                       placeholder=""
                       autoComplete="off"
                       readOnly
@@ -187,7 +224,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="uname"
                       type="text"
                       name="name"
-                      className="text password"
+                      className={`text password ${secretFieldClassName}`}
                       placeholder=""
                       autoComplete="off"
                       defaultValue=""
@@ -203,7 +240,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="email"
                       type="text"
                       name="email"
-                      className="text password"
+                      className={`text password ${secretFieldClassName}`}
                       placeholder=""
                       autoComplete="off"
                       defaultValue=""
@@ -219,7 +256,7 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="password"
                       type="password"
                       name="password"
-                      className="text password"
+                      className={`text password ${secretFieldClassName}`}
                       placeholder=""
                       autoComplete="off"
                     />
@@ -234,13 +271,16 @@ function SecretSetupScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
                       id="retypedPassword"
                       type="password"
                       name="retypedPassword"
-                      className="text password"
+                      className={`text password ${secretFieldClassName}`}
                       placeholder=""
                       autoComplete="off"
                     />
                   </dd>
                 </dl>
-                <div className="btns-row">
+                <div
+                  className={`btns-row ${secretActionRowClassName}`}
+                  data-stylex-part="secret-setup-action-row"
+                >
                   <button type="submit" className="ybtn ybtn-success">
                     {t("app.welcome.submit")}
                   </button>
