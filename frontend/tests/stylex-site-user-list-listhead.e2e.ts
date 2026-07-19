@@ -20,7 +20,7 @@ test("listhead owns only the direct row and four repeated columns", () => {
   expect(bootstrap).toContain('.row-fluid [class*="span"] {');
   expect(pageLess).toContain(".listhead {\n        background:#f7f7f7;");
   expect(pageLess).toContain(".listhead-title{\n            padding:0 20px;");
-  expect(appCss).toContain(".site-setting-wrap .listhead {");
+  expect(appCss).not.toContain(".site-setting-wrap .listhead {");
   expect(route).toContain('data-stylex-owner="site-user-list-listhead"');
   expect(route).toContain('data-stylex-owner="site-user-list-listhead-column"');
   for (const retired of [

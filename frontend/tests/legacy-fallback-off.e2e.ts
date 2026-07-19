@@ -19,6 +19,7 @@ async function expectClassFreeSiteLayout(
 test("site-admin fallback bridge has no React emitter", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".site-admin-page");
+  expect(appCss).not.toContain(".site-setting-wrap");
 
   for (const [route, owners] of [
     [

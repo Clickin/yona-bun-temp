@@ -141,9 +141,7 @@ test.describe("StyleX site post-list row and project avatar", () => {
                 margin-right: 10px;
                 margin-top:3px;
                 float:left;`);
-    expect(appCss).toContain(`.site-setting-wrap .listitem .avatar-wrap.list-avatar img {
-  width: 32px;
-  height: 32px;`);
+    expect(appCss).not.toContain(".site-setting-wrap .listitem .avatar-wrap.list-avatar img {");
 
     for (const explicitOwner of [owners.row, owners.avatar, owners.avatarImage]) {
       expect(route).toContain(`data-stylex-owner="${explicitOwner}"`);
