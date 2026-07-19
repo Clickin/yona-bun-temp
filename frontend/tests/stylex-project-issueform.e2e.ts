@@ -118,12 +118,36 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
     buffer: Buffer.from("x"),
   });
   const progress = page.locator('[data-stylex-owner="project-issue-form-upload-progress"]');
+  const progressShell = page.locator(
+    '[data-stylex-owner="project-issue-form-upload-progress-shell"]',
+  );
   await expect(progress).toBeVisible();
+  await expect(progressShell).toBeVisible();
+  await expect(progressShell).toHaveCSS("display", "inline-block");
+  await expect(progressShell).toHaveCSS("width", "100px");
+  await expect(progressShell).toHaveCSS("height", "7px");
+  await expect(progressShell).toHaveCSS("margin-top", "0px");
+  await expect(progressShell).toHaveCSS("margin-bottom", "0px");
+  await expect(progressShell).toHaveCSS("overflow", "hidden");
+  await expect(progressShell).toHaveCSS("vertical-align", "middle");
+  await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
+  await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
   await expect(progress).toHaveAttribute("style", /--x-width:\s*1%/u);
   await expect(progress).not.toHaveAttribute("style", /(?:^|;)\s*width\s*:/u);
   const progressWidth = await progress.evaluate((element) => element.getBoundingClientRect().width);
   expect(progressWidth).toBeGreaterThan(0);
   expect(progressWidth).toBeLessThan(2);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(progressShell).toHaveCSS("display", "inline-block");
+  await expect(progressShell).toHaveCSS("width", "100px");
+  await expect(progressShell).toHaveCSS("height", "7px");
+  await expect(progressShell).toHaveCSS("margin-top", "0px");
+  await expect(progressShell).toHaveCSS("margin-bottom", "0px");
+  await expect(progressShell).toHaveCSS("overflow", "hidden");
+  await expect(progressShell).toHaveCSS("vertical-align", "middle");
+  await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
+  await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
 
   releaseUpload?.();
   await expect(progress).toHaveCount(0);

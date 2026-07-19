@@ -2397,7 +2397,7 @@ function IssuePostFileUploader({
                 {row.status === "uploading" ? (
                   <span
                     {...stylex.props(issueFormStyles.uploadProgress)}
-                    className="progress upload-progress"
+                    className={`progress upload-progress ${stylex.props(issueFormStyles.uploadProgress).className ?? ""}`.trim()}
                     data-stylex-owner="project-issue-form-upload-progress-shell"
                   >
                     <span
