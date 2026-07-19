@@ -4124,6 +4124,19 @@ post create/edit forms deliberately preserve that absence. The focused contract 
 fallback-off managed runs at desktop and 390px. Global fallback discovery remains
 incomplete/non-green, so this is not generated-fallback unlinking or live-legacy visual parity.
 
+Batch 564 retires only the source-less `.board-actions` bridge block. Frozen
+`board/create.scala.html:41-111` and `board/edit.scala.html:15-71` establish
+`form.nm > .content-wrap.frm-wrap`, `.checkbox` options, and `.actions`
+submit/cancel output; neither emits `.board-actions`. Current post create/edit
+routes use existing `project-postform-actions` and `post-edit-form-actions`
+StyleX owners with no bridge-class emitter. Delete only the isolated five
+declarations, retaining `.actions`, `.checkbox`, `.board-form`, `.board-check`,
+every board-comment selector, and all other fallback. Static evidence records
+RED then exact absence GREEN; managed normal/fallback-off checks cover real post
+create/edit action ownership/order and desktop/390px containment. Global
+discovery remains incomplete/non-green, so this is neither generated-fallback
+unlinking nor live-legacy visual-parity proof.
+
 Batch 563 retires only the source-less `.pull-request-actions` and `.pull-request-branches`
 arms from the shared fallback flex group, plus the two coupled branch label/select blocks.
 Frozen `git/create.scala.html:30-106` and `git/edit.scala.html` establish the actual

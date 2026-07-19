@@ -170,6 +170,25 @@ test("board label-picker fallback bridge has no remaining selector arm", () => {
   }
 });
 
+test("board-actions fallback bridge has no remaining selector", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".board-actions {");
+  expect(appCss).toContain(".actions {");
+  expect(appCss).toContain(".checkbox {");
+
+  for (const [route, owner] of [
+    ["src/routes/$ownerName/$projectName/postform.tsx", "project-postform-actions"],
+    [
+      "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
+      "post-edit-form-actions",
+    ],
+  ]) {
+    const source = readFileSync(route, "utf8");
+    expect(source).not.toContain("board-actions");
+    expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+  }
+});
+
 test("pull-request action and branch fallback bridges have no remaining selector arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".pull-request-actions");
@@ -1128,7 +1147,7 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   await expect(page.locator(".post-row, .post-row-main, .post-row-meta")).toHaveCount(0);
 });
 
-test("board edit form retains legacy form controls without the dead label-picker bridge", async ({
+test("board edit form retains legacy form controls without dead board bridges", async ({
   page,
 }) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1145,8 +1164,10 @@ test("board edit form retains legacy form controls without the dead label-picker
   await expect(form).toBeVisible();
   await expect(form.locator(".content-wrap.frm-wrap")).toHaveCount(1);
   await expect(form.locator(".actions")).toHaveCount(1);
+  await expect(form.locator('[data-stylex-owner="post-edit-form-actions"]')).toHaveCount(1);
   await expect(form.locator("label.checkbox")).toHaveCount(3);
   await expect(form.locator(".board-label-picker")).toHaveCount(0);
+  await expect(form.locator(".board-actions")).toHaveCount(0);
   await expect(form.locator(".board-check")).toHaveCount(0);
   const desktop = await form.evaluate((element) => {
     const formBox = element.getBoundingClientRect();
