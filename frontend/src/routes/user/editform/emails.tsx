@@ -266,7 +266,10 @@ const secondaryVerificationActionStyleProps = stylex.props(
   styles.secondaryAction,
   styles.secondaryVerificationAction,
 );
-const primaryEmailActionStyleProps = stylex.props(styles.primaryEmailAction);
+const primaryEmailActionStyleProps = stylex.props(
+  styles.secondaryAction,
+  styles.primaryEmailAction,
+);
 const secondaryWarningIconStyleProps = stylex.props(styles.secondaryWarningIcon);
 const emailTableStyleProps = stylex.props(styles.emailTable);
 const emailTableIdentityCellStyleProps = stylex.props(styles.emailTableCell);
@@ -419,16 +422,15 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                 >
                   {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy edit_emails.scala.html renders email avatars without alt attributes. */}
                   <img
-                    {...(!valid ? secondaryAvatarStyleProps : {})}
+                    {...secondaryAvatarStyleProps}
                     src={avatarSrc(row.avatarUrl)}
                     width="40"
                     height="40"
-                    data-stylex-owner={valid ? undefined : "user-email-secondary-avatar"}
+                    data-stylex-owner="user-email-secondary-avatar"
                   />{" "}
                   <span
-                    className={valid ? "ml10" : undefined}
-                    {...(!valid ? secondaryAddressStyleProps : {})}
-                    data-stylex-owner={valid ? undefined : "user-email-secondary-address"}
+                    {...secondaryAddressStyleProps}
+                    data-stylex-owner="user-email-secondary-address"
                   >
                     {stringValue(row.emailAddress)}
                   </span>
@@ -438,10 +440,9 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                   data-stylex-owner="user-email-table-action-cell"
                 >
                   <button
+                    {...secondaryDeleteActionStyleProps}
                     type="button"
-                    className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}
-                    {...(!valid ? secondaryDeleteActionStyleProps : {})}
-                    data-stylex-owner={valid ? undefined : "user-email-secondary-delete-action"}
+                    data-stylex-owner="user-email-secondary-delete-action"
                     onClick={() => deleteMutation.mutate(id)}
                   >
                     {t("button.delete")}
@@ -450,7 +451,6 @@ function UserEmailSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
                     <button
                       type="button"
                       {...primaryEmailActionStyleProps}
-                      className={`${primaryEmailActionStyleProps.className ?? ""} ybtn ybtn-small`.trim()}
                       data-stylex-owner="user-email-primary-action"
                       onClick={() => setMainMutation.mutate(id)}
                     >

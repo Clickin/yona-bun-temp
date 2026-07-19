@@ -5,6 +5,7 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const screenshotDirectory = resolve("../output/playwright/visual-sweep");
 const pendingEmail = "pending225@example.com";
+const validEmail = "valid527@example.com";
 const owners = {
   address: "user-email-secondary-address",
   avatar: "user-email-secondary-avatar",
@@ -16,7 +17,7 @@ const owner = (page: Page, name: string) => page.locator(`[data-stylex-owner="${
 
 test.use({ locale: "ko-KR" });
 
-test("records pending secondary-email source evidence and the exact five-owner boundary", () => {
+test("records secondary-email state-family evidence and the shared owner boundary", () => {
   const route = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
   const theme = readFileSync("src/routes/user/editform/-emails.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/user/edit_emails.scala.html", "utf8");
@@ -59,16 +60,13 @@ test("records pending secondary-email source evidence and the exact five-owner b
 
   // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
   for (const name of [owners.avatar, owners.address, owners.deleteAction]) {
-    expect(
-      route.match(new RegExp(`data-stylex-owner=\\{valid \\? undefined : "${name}"\\}`, "gu")) ??
-        [],
-    ).toHaveLength(1);
+    expect(route).toContain(`data-stylex-owner="${name}"`);
   }
   expect(route).toContain('data-stylex-owner="user-email-secondary-verification-action"');
   expect(route).toContain('data-stylex-owner="user-email-secondary-warning-icon"');
-  expect(route).toContain('className={valid ? "ml10" : undefined}');
-  expect(route).toContain('className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}');
-  expect(route).toContain("ybtn ybtn-small");
+  expect(route).not.toContain('className={valid ? "ml10" : undefined}');
+  expect(route).not.toContain('className={valid ? "ybtn ybtn-small ybtn-danger" : undefined}');
+  expect(route).not.toContain("ybtn ybtn-small");
   expect(route).toContain('data-stylex-owner="user-email-primary-action"');
   expect(route).not.toContain('className="yobicon-error2 orange-txt mr5"');
 
@@ -94,6 +92,55 @@ test("records pending secondary-email source evidence and the exact five-owner b
   );
   expect(route).toContain("deleteWorkspaceEmailRest(runtimeConfig, csrfToken, id)");
   expect(route).toContain("sendWorkspaceEmailValidationRest(runtimeConfig, csrfToken, id)");
+});
+
+test("owns the valid secondary-email row with the shared conditional state family", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  await mockEmailSettings(page, requests, true);
+  await page.setViewportSize({ height: 900, width: 1366 });
+  await page.goto(`${basePath}/user/editform/emails`);
+
+  const row = owner(page, "user-email-table").locator("tr", { hasText: validEmail });
+  const avatar = row.locator(`[data-stylex-owner="${owners.avatar}"]`);
+  const address = row.locator(`[data-stylex-owner="${owners.address}"]`);
+  const deleteAction = row.locator(`[data-stylex-owner="${owners.deleteAction}"]`);
+  const setMainAction = row.locator('[data-stylex-owner="user-email-primary-action"]');
+
+  await expect(row).toBeVisible();
+  await expect(address).toHaveText(validEmail);
+  await expect(avatar).toHaveCSS("max-width", "100%");
+  await expect(address).toHaveCSS("margin-left", "10px");
+  await expect(deleteAction).not.toHaveClass(/\b(?:ybtn|ybtn-small|ybtn-danger)\b/u);
+  await expect(setMainAction).not.toHaveClass(/\b(?:ybtn|ybtn-small)\b/u);
+  await expectButtonBase(deleteAction, "0px", "44.5px");
+  await expectButtonBase(setMainAction, "0px 0px 0px 3.9px", "150px");
+
+  const geometry = await row.evaluate((element) => {
+    const avatarRect = element
+      .querySelector<HTMLElement>('[data-stylex-owner="user-email-secondary-avatar"]')!
+      .getBoundingClientRect();
+    const actionsRect = element.cells[1]!.getBoundingClientRect();
+    const setMainRect = element
+      .querySelector<HTMLElement>('[data-stylex-owner="user-email-primary-action"]')!
+      .getBoundingClientRect();
+    return {
+      avatarHeight: avatarRect.height,
+      contained: setMainRect.right <= actionsRect.right && setMainRect.left >= actionsRect.left,
+      documentWidth: document.documentElement.scrollWidth,
+      rowHeight: element.getBoundingClientRect().height,
+    };
+  });
+  expect(geometry).toEqual({
+    avatarHeight: 40,
+    contained: true,
+    documentWidth: 1366,
+    rowHeight: 56.5,
+  });
+
+  await setMainAction.click();
+  await expect.poll(() => requests).toContain("POST /yona/api/v1/workspace/emails/13/main");
 });
 
 test("pins pending secondary row desktop/mobile output and React mutation boundaries", async ({
@@ -135,11 +182,11 @@ test("pins pending secondary row desktop/mobile output and React mutation bounda
 
     const table = owner(page, "user-email-table");
     const row = table.locator("tr", { hasText: pendingEmail });
-    const avatar = owner(page, owners.avatar);
-    const address = owner(page, owners.address);
-    const deleteAction = owner(page, owners.deleteAction);
-    const verificationAction = owner(page, owners.verificationAction);
-    const warningIcon = owner(page, owners.warningIcon);
+    const avatar = row.locator(`[data-stylex-owner="${owners.avatar}"]`);
+    const address = row.locator(`[data-stylex-owner="${owners.address}"]`);
+    const deleteAction = row.locator(`[data-stylex-owner="${owners.deleteAction}"]`);
+    const verificationAction = row.locator(`[data-stylex-owner="${owners.verificationAction}"]`);
+    const warningIcon = row.locator(`[data-stylex-owner="${owners.warningIcon}"]`);
     await expect(row).toBeVisible();
     await expect(avatar).toHaveAttribute("width", "40");
     await expect(avatar).toHaveAttribute("height", "40");
@@ -239,8 +286,9 @@ test("pins pending secondary row desktop/mobile output and React mutation bounda
     await verificationAction.evaluate((element) => element.blur());
   }
 
-  await owner(page, owners.deleteAction).click();
-  await owner(page, owners.verificationAction).click();
+  const pendingRow = owner(page, "user-email-table").locator("tr", { hasText: pendingEmail });
+  await pendingRow.locator(`[data-stylex-owner="${owners.deleteAction}"]`).click();
+  await pendingRow.locator(`[data-stylex-owner="${owners.verificationAction}"]`).click();
   await expect
     .poll(() => requests)
     .toEqual([
@@ -409,7 +457,7 @@ async function sameAncestryFallbackEvidence(table: Locator) {
   });
 }
 
-async function mockEmailSettings(page: Page, requests: string[]) {
+async function mockEmailSettings(page: Page, requests: string[], includeValid = false) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -435,18 +483,21 @@ async function mockEmailSettings(page: Page, requests: string[]) {
     await page.route(url, fulfillSession);
   }
   await page.route("**/api/v1/workspace", (route) =>
-    route.fulfill({ contentType: "application/json", json: workspaceBody() }),
+    route.fulfill({ contentType: "application/json", json: workspaceBody(includeValid) }),
   );
   await page.route("**/api/v1/workspace/emails/**", async (route) => {
     expect(route.request().headers()["x-csrf-token"]).toBe("csrf-token");
     requests.push(`${route.request().method()} ${new URL(route.request().url()).pathname}`);
-    await route.fulfill({ contentType: "application/json", json: workspaceBody() });
+    await route.fulfill({ contentType: "application/json", json: workspaceBody(includeValid) });
   });
 }
 
-function workspaceBody() {
+function workspaceBody(includeValid: boolean) {
   return {
-    emails: [{ avatarUrl: "", emailAddress: pendingEmail, id: "12", valid: false }],
+    emails: [
+      { avatarUrl: "", emailAddress: pendingEmail, id: "12", valid: false },
+      ...(includeValid ? [{ avatarUrl: "", emailAddress: validEmail, id: "13", valid: true }] : []),
+    ],
     favoriteProjects: [],
     issueItems: [],
     memberProjects: [],
