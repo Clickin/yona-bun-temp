@@ -1442,7 +1442,7 @@ const globalGnbOuterStyles = stylex.create({
 
 const globalGnbInnerStyles = stylex.create({
   root: {
-    boxSizing: "content-box",
+    boxSizing: "border-box",
     color: homeColors.globalGnbInnerText,
     height: "40px",
     margin: "0px auto",

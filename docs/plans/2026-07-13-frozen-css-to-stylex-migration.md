@@ -37,6 +37,13 @@ Yobi `_override.less` 0.5 opacity. The dialog frame/body/form/navbar remain sepa
 fallback work; this narrow owner is verified at the Korean 390px root state in normal and
 fallback-off modes without changing frozen CSS/LESS.
 
+Batch 543 completes the shared `SiteLayoutShell` GNB outer/inner box-model bridge. Frozen
+`_page.less` establishes the 40px outer/98%-inner skeleton, while the existing React `app.css`
+parity bridge supplies the outer border-box and 10px inline padding; the inner owner now carries
+its matching border-box declaration. The broad `app.css` `.gnb-outer` and
+`.gnb-inner` rules remain because `/secret`, root login, user profile, and UIKit still use those
+legacy classes. This is a two-owner fallback-off geometry wave, not a shared-selector deletion.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused

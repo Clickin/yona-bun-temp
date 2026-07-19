@@ -127,6 +127,40 @@ test("site layout search owner keeps legacy responsive visibility without fallba
   await expect(searchForm).toHaveCSS("display", "none");
 });
 
+test("site layout GNB outer and inner keep the frozen border-box bridge without fallback classes", async ({
+  page,
+}) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: true });
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  const outer = page.locator('[data-stylex-owner="global-gnb-outer"]');
+  const inner = page.locator('[data-stylex-owner="global-gnb-inner"]');
+  await expect(outer).not.toHaveClass(/\bgnb-outer\b/);
+  await expect(inner).not.toHaveClass(/\bgnb-inner\b/);
+  await expect(outer).toHaveCSS("box-sizing", "border-box");
+  await expect(outer).toHaveCSS("padding-left", "10px");
+  await expect(outer).toHaveCSS("padding-right", "10px");
+  await expect(inner).toHaveCSS("box-sizing", "border-box");
+
+  const { innerBox, outerBox } = await page.evaluate(() => {
+    const readBox = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing GNB box target: ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { height: box.height, width: box.width, x: box.x, y: box.y };
+    };
+    return {
+      innerBox: readBox('[data-stylex-owner="global-gnb-inner"]'),
+      outerBox: readBox('[data-stylex-owner="global-gnb-outer"]'),
+    };
+  });
+  expectBox(outerBox, { height: 40, width: 1366, x: 0, y: 0 });
+  expectBox(innerBox, { height: 40, width: 1319.08, x: 23.45, y: 0 });
+});
+
 test("anonymous home login Link opens and dismisses the legacy root dialog", async ({ page }) => {
   await installRuntimeConfig(page);
   await mockSession(page, { isAnonymous: true });
