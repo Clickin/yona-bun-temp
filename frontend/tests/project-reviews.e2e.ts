@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
+const paginationRouteSource = readFileSync(
+  new URL("../src/routes/sites/-pagination.tsx", import.meta.url),
+  "utf8",
+);
+const paginationStylexSource = readFileSync(
+  new URL("../src/routes/sites/-pagination.stylex.ts", import.meta.url),
+  "utf8",
+);
+
 const PROJECT_OWNER_NAME = "weblabs";
 const PROJECT_NAME = "portal";
 const PROJECT_ROUTE = `/${PROJECT_OWNER_NAME}/${PROJECT_NAME}`;
@@ -351,6 +360,53 @@ test("project reviews list matches legacy reviewthread/list.scala.html shell", a
   expect(requests.some((url) => url.searchParams.get("filter") === "comment")).toBe(true);
 });
 
+test("review pagination preserves the legacy two-page SPA controls", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const projectReviewsPath = `${basePath}${PROJECT_REVIEWS_ROUTE}`;
+  await mockProjectReviews(page, { pagination: true });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${projectReviewsPath}?filter=comment&pageNum=1`);
+
+  const pagination = page.locator("[data-stylex-owner=site-pagination-root]");
+  await expect(pagination).toBeVisible();
+  await expect(pagination.locator("li")).toHaveCount(5);
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveAttribute("max", "2");
+  await expect(pagination.locator("ul")).toHaveCSS("margin-left", "-120px");
+  await expect(pagination.locator("i").first()).toHaveCSS("background-position", "-164px -2px");
+  await expect(pagination.locator("a").filter({ hasText: "Next page" })).toHaveAttribute(
+    "href",
+    `${projectReviewsPath}?filter=comment&pageNum=2`,
+  );
+
+  const pageNumInput = pagination.locator('input[name="pageNum"]');
+  await pageNumInput.fill("1.5");
+  await pageNumInput.press("Enter");
+  await expect(pageNumInput).toHaveValue("1");
+  await expect(page).toHaveURL(`${projectReviewsPath}?filter=comment&pageNum=1`);
+
+  const marker = "review-pagination-spa";
+  await page.evaluate((value) => {
+    (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker = value;
+  }, marker);
+  await pagination.locator("a").filter({ hasText: "Next page" }).click();
+  await expect(page).toHaveURL(`${projectReviewsPath}?filter=comment&pageNum=2`);
+  await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
+  await expect(page.evaluate(() => (window as Window & { __projectReviewsSpaMarker?: string }).__projectReviewsSpaMarker)).resolves.toBe(marker);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(pagination.locator("ul")).toHaveCSS("margin-left", "0px");
+  await expect(pagination.locator("i").last()).toHaveCSS("background-position", "-23px -13px");
+});
+
+test("shared pagination keeps colors in its route-local StyleX variable boundary", () => {
+  expect(paginationRouteSource).toContain('import { paginationColors } from "./-pagination.stylex"');
+  expect(paginationRouteSource).not.toContain('accent: "#4489A4"');
+  expect(paginationStylexSource).toContain("stylex.defineVars");
+  expect(paginationStylexSource).toContain('accent: "#4489A4"');
+});
+
 test("project reviews tooltip markers are not React-owned DOM", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const projectBasePath = `${basePath}${PROJECT_ROUTE}`;
@@ -462,7 +518,13 @@ async function emptyReviewGeometry(page: Page) {
 
 async function mockProjectReviews(
   page: Page,
-  options: { empty?: boolean; ownerName?: string; projectName?: string; vcs?: string } = {},
+  options: {
+    empty?: boolean;
+    ownerName?: string;
+    pagination?: boolean;
+    projectName?: string;
+    vcs?: string;
+  } = {},
 ) {
   const ownerName = options.ownerName ?? PROJECT_OWNER_NAME;
   const projectName = options.projectName ?? PROJECT_NAME;
@@ -517,7 +579,11 @@ async function mockProjectReviews(
   await page.route(
     `**/api/v1/owners/${ownerName}/projects/${projectName}/reviews**`,
     async (route) => {
-      requests.push(new URL(route.request().url()));
+      const requestUrl = new URL(route.request().url());
+      requests.push(requestUrl);
+      const pageNum = options.pagination
+        ? Math.min(Math.max(Number(requestUrl.searchParams.get("pageNum")) || 1, 1), 2)
+        : 1;
       await route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({
@@ -599,8 +665,8 @@ async function mockProjectReviews(
                 },
               ],
           openCount: options.empty ? 0 : 2,
-          pageNum: 1,
-          pageSize: 15,
+          pageNum,
+          pageSize: options.pagination ? 1 : 15,
           participantCount: options.empty ? 0 : 1,
           state: "open",
           totalCount: 2,

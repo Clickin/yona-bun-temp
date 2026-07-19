@@ -1,5 +1,87 @@
 import { Link, useRouter } from "@tanstack/react-router";
+import * as stylex from "@stylexjs/stylex";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../i18n";
+import { globalBreakpoints } from "../../theme.stylex";
+import { paginationColors } from "./-pagination.stylex";
+
+const paginationDynamicStyles = stylex.create({
+  sprite: (spriteUrl: string) => ({
+    "--site-pagination-sprite": `url(${spriteUrl})`,
+  }),
+});
+
+const paginationStyles = stylex.create({
+  root: {
+    clear: "both",
+    margin: "20px 0px",
+    textAlign: "center",
+    width: "100%",
+  },
+  list: {
+    display: "inline-block",
+    fontSize: "0px",
+    listStyle: "none",
+    margin: {
+      default: "0px 0px 0px -120px",
+      [globalBreakpoints.mobile]: "0px",
+    },
+    padding: "0px",
+  },
+  item: {
+    color: paginationColors.text,
+    display: "inline-block",
+    fontSize: "12px",
+    padding: "0px 10px",
+  },
+  iconItem: { padding: "0px 5px" },
+  delimiter: {
+    color: paginationColors.delimiter,
+    padding: "0px 5px",
+  },
+  link: { fontSize: "12px" },
+  input: {
+    appearance: "textfield",
+    borderColor: {
+      default: paginationColors.inputBorder,
+      ":focus": paginationColors.accent,
+      ":hover": paginationColors.accent,
+    },
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: {
+      default: "none",
+      ":focus": paginationColors.inputFocusShadow,
+      ":hover": paginationColors.inputFocusShadow,
+    },
+    color: {
+      default: null,
+      ":focus": paginationColors.accent,
+      ":hover": paginationColors.accent,
+    },
+    fontWeight: "700",
+    margin: "0px",
+    textAlign: "center",
+    width: "30px",
+  },
+  icon: {
+    backgroundImage: "var(--site-pagination-sprite)",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "9px",
+    verticalAlign: "middle",
+    width: "6px",
+  },
+  prevIcon: { backgroundPosition: "-136px -139px", marginRight: "10px" },
+  prevIconDisabled: { backgroundPosition: "-164px -2px" },
+  nextIcon: { backgroundPosition: "-146px -139px", marginLeft: "10px" },
+  nextIconDisabled: { backgroundPosition: "-23px -13px" },
+  label: {
+    color: paginationColors.accent,
+    fontSize: "11px",
+  },
+  labelDisabled: { color: paginationColors.text },
+});
 
 export function SitePagination({
   basePath,
@@ -25,24 +107,39 @@ export function SitePagination({
   const hasNext = currentPage < totalPages;
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...stylex.props(paginationStyles.root, paginationDynamicStyles.sprite(legacySpriteUrl))}
+      data-stylex-owner="site-pagination-root"
+      id="pagination"
+    >
+      <ul {...stylex.props(paginationStyles.list)} data-stylex-owner="site-pagination-list">
+        <li {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}>
           {hasPrev ? (
-            <Link to={stripBasePath(basePath, pageHref(currentPage - 1))}>
-              <i className="ico btn-pg-prev"></i>
-              <span>{prevPageLabel}</span>
+            <Link
+              {...stylex.props(paginationStyles.link)}
+              to={stripBasePath(basePath, pageHref(currentPage - 1))}
+            >
+              <i {...stylex.props(paginationStyles.icon, paginationStyles.prevIcon)}></i>
+              <span {...stylex.props(paginationStyles.label)}>{prevPageLabel}</span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{prevPageLabel}</span>
+              <i
+                {...stylex.props(
+                  paginationStyles.icon,
+                  paginationStyles.prevIcon,
+                  paginationStyles.prevIconDisabled,
+                )}
+              ></i>
+              <span {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}>
+                {prevPageLabel}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li {...stylex.props(paginationStyles.item)}>
           <input
-            className="input-mini nospinner"
+            {...stylex.props(paginationStyles.input)}
             defaultValue={currentPage}
             key={`${currentPage}-${totalPages}`}
             max={totalPages}
@@ -68,18 +165,29 @@ export function SitePagination({
             type="number"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li {...stylex.props(paginationStyles.item, paginationStyles.delimiter)}>/</li>
+        <li {...stylex.props(paginationStyles.item)}>{totalPages}</li>
+        <li {...stylex.props(paginationStyles.item, paginationStyles.iconItem)}>
           {hasNext ? (
-            <Link to={stripBasePath(basePath, pageHref(currentPage + 1))}>
-              <span>{nextPageLabel}</span>
-              <i className="ico btn-pg-next"></i>
+            <Link
+              {...stylex.props(paginationStyles.link)}
+              to={stripBasePath(basePath, pageHref(currentPage + 1))}
+            >
+              <span {...stylex.props(paginationStyles.label)}>{nextPageLabel}</span>
+              <i {...stylex.props(paginationStyles.icon, paginationStyles.nextIcon)}></i>
             </Link>
           ) : (
             <>
-              <span className="off">{nextPageLabel}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span {...stylex.props(paginationStyles.label, paginationStyles.labelDisabled)}>
+                {nextPageLabel}
+              </span>
+              <i
+                {...stylex.props(
+                  paginationStyles.icon,
+                  paginationStyles.nextIcon,
+                  paginationStyles.nextIconDisabled,
+                )}
+              ></i>
             </>
           )}
         </li>

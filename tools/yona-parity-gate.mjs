@@ -489,6 +489,7 @@ const DOMAIN_BUCKETS = [
     status: "parity",
     implementationPatterns: [
       /^frontend\/.*(pulls|pull-requests?|pullrequests?|pull-request|reviews?)/i,
+      /^frontend\/src\/routes\/sites\/-pagination\.stylex\.ts$/i,
       /^frontend\/public\/images\/fork-pull\/fork\.jpg$/i,
       /^crates\/(?:domain|server)\/.*(pull-requests?|pull_request|review)/i,
     ],
