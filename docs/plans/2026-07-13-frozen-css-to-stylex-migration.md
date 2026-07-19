@@ -4059,3 +4059,14 @@ untouched. A static contract records observed RED then exact absence GREEN; the 
 project-post fixture is run normal and fallback-off only to prove the generated-asset boundary.
 This is neither global fallback discovery nor a generated-fallback unlinking or live-legacy
 visual-parity claim.
+
+Batch 557 retires only the later-proven source-less `.search-layout` desktop and max-640
+responsive bridge blocks in `app.css`. Frozen `search/partial_search.scala.html` uses the
+legacy Bootstrap `row-fluid > span2/span10` skeleton, and `_page.less` contains no
+`.search-layout` selector; current global, project, and organization React search routes retain
+that same skeleton without a static or dynamic emitter. Preserve active
+`.search-category-wrap`, `#searchInnerForm`, `#searchKeyword`, search-box, result, and list
+fallback. The focused global-search contract records observed RED then exact absence GREEN;
+normal/fallback-off visible global-search output proves only the generated-asset boundary.
+Global fallback discovery remains incomplete/non-green, so this is not a generated-fallback
+unlinking or live-legacy visual-parity claim.

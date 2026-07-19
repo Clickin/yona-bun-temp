@@ -9,8 +9,12 @@ test.use({ locale: "ko-KR" });
 test("records global search owners and responsive containment", async ({ page }) => {
   const route = readFileSync("src/routes/search.tsx", "utf8");
   const theme = readFileSync("src/routes/-search.stylex.ts", "utf8");
+  const appCss = readFileSync("src/app.css", "utf8");
   const template = readFileSync("../yona-original/app/views/search/result.scala.html", "utf8");
   expect(template).toContain("partial_search");
+  expect(appCss).not.toContain(".search-layout");
+  expect(appCss).toContain(".search-category-wrap {");
+  expect(appCss).toContain("#searchInnerForm {");
   expect(route).toContain('data-stylex-owner="global-search-input"');
   expect(route).toContain('data-stylex-owner="global-search-result-wrap"');
   expect(theme).toContain("searchColors");

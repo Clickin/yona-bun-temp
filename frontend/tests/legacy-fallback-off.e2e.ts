@@ -143,6 +143,13 @@ test("code and diff fallback bridges have no remaining selectors", () => {
   }
 });
 
+test("search-layout fallback bridge has no remaining selector", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".search-layout");
+  expect(appCss).toContain(".search-category-wrap {");
+  expect(appCss).toContain("#searchInnerForm {");
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
@@ -453,6 +460,62 @@ async function mockProjectPostsSession(page: Page) {
   );
 }
 
+async function mockGlobalSearchSession(page: Page) {
+  const session = {
+    avatarUrl: "/assets/images/default-avatar-32.png",
+    isAnonymous: false,
+    isConfirmed: true,
+    isGuest: false,
+    isSiteAdmin: true,
+    loginId: "admin",
+    preferredLanguage: "en",
+  };
+  for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
+    await page.route(url, (route) => route.fulfill({ contentType: "application/json", json: session }));
+  await page.route("**/api/v1/search**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        keyword: "bug",
+        searchType: "issue",
+        counts: {
+          issues: 1,
+          users: 0,
+          projects: 0,
+          posts: 0,
+          milestones: 0,
+          issueComments: 0,
+          postComments: 0,
+          reviews: 0,
+        },
+        items: [
+          {
+            id: "1",
+            href: "/yona/weblabs/demo/issue/1",
+            type: "issue",
+            title: "Bug issue",
+            projectName: "demo",
+            ownerName: "weblabs",
+            authorLabel: "admin",
+            authorLoginId: "admin",
+            createdLabel: "today",
+            updatedLabel: "today",
+            number: "1",
+            state: "open",
+            snippets: [{ text: "Bug issue", highlights: [] }],
+          },
+        ],
+        totalCount: 1,
+        pageNum: 1,
+        pageSize: 20,
+        requestedSearchType: "issue",
+        scope: "global",
+        context: { organizationName: "", ownerName: "", projectName: "" },
+      },
+    }),
+  );
+}
+
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
   test.skip(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1",
@@ -664,4 +727,23 @@ test("notifications output retains the runtime fallback boundary without its dea
     list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
   ).toHaveCount(1);
   await expect(page.locator(".notification-page, .activity-streams")).toHaveCount(0);
+});
+
+test("global search output retains the runtime fallback boundary without the dead search-layout bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockGlobalSearchSession(page);
+  await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  await expect(page.locator('[data-stylex-owner="global-search-input"]')).toHaveValue("bug");
+  await expect(page.locator('[data-stylex-owner="global-search-result-wrap"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="global-search-result-item"]')).toHaveCount(1);
+  await expect(page.locator(".search-layout")).toHaveCount(0);
 });
