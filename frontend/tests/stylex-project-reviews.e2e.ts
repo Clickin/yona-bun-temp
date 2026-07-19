@@ -34,8 +34,12 @@ test("reviews route exposes direct StyleX owners for sidebar, filters, and revie
 });
 
 test("reviews route keeps geometry in route declarations and theme variables paint-only", () => {
+  const themeSource = styleSource.slice(
+    styleSource.indexOf("stylex.defineVars({"),
+    styleSource.indexOf("export const reviewsLayout"),
+  );
   for (const geometryProperty of ["margin:", "padding:", "width:", "height:", "top:", "left:"]) {
-    expect(styleSource).not.toContain(geometryProperty);
+    expect(themeSource).not.toContain(geometryProperty);
   }
   expect(routeSource).toContain('padding: "4px 6px"');
   expect(routeSource).toContain("pushReviews");
@@ -72,6 +76,7 @@ test("reviews list renders populated row and preserves filter/sort interaction",
         },
         ownerName: "admin",
         projectName: "sample",
+        vcs: "GIT",
         viewerUserId: 1,
         viewerCanUpdate: true,
       }),
@@ -111,6 +116,17 @@ test("reviews list renders populated row and preserves filter/sort interaction",
     });
   });
   await page.goto(`${basePath}/admin/sample/reviews`);
+  const ownerSelectors = [
+    "project-reviews-sidebar",
+    "project-reviews-search-input",
+    "project-reviews-tabs",
+    "project-reviews-list",
+  ] as const;
+  for (const owner of ownerSelectors) {
+    const locator = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(locator).toBeVisible();
+    expect(await locator.getAttribute("class")).toMatch(/\bx[\w-]+\b/u);
+  }
   await expect(page.locator('[data-stylex-owner="project-reviews-list"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-reviews-row"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-reviews-title"]')).toHaveText(
@@ -129,4 +145,39 @@ test("reviews list renders populated row and preserves filter/sort interaction",
     });
   expect(geometry.left).toBeGreaterThanOrEqual(0);
   expect(geometry.width).toBeGreaterThan(0);
+
+  const styleSnapshot = await page.evaluate(() => {
+    const owner = (name: string) => {
+      const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`);
+      if (!element) throw new Error(`Missing ${name}`);
+      return getComputedStyle(element);
+    };
+    const sidebar = owner("project-reviews-sidebar");
+    const input = owner("project-reviews-search-input");
+    const tabs = owner("project-reviews-tabs");
+    const list = owner("project-reviews-list");
+    return {
+      inputBorderTopWidth: input.borderTopWidth,
+      inputPaddingLeft: input.paddingLeft,
+      listStyleType: list.listStyleType,
+      sidebarBorderTopStyle: sidebar.borderTopStyle,
+      sidebarBorderTopWidth: sidebar.borderTopWidth,
+      tabsBorderBottomStyle: tabs.borderBottomStyle,
+      tabsBorderBottomWidth: tabs.borderBottomWidth,
+    };
+  });
+  expect(styleSnapshot.sidebarBorderTopStyle).toBe("solid");
+  expect(styleSnapshot.sidebarBorderTopWidth).toBe("1px");
+  expect(styleSnapshot.inputBorderTopWidth).toBe("1px");
+  expect(styleSnapshot.inputPaddingLeft).toBe("6px");
+  expect(styleSnapshot.tabsBorderBottomStyle).toBe("solid");
+  expect(styleSnapshot.tabsBorderBottomWidth).toBe("1px");
+  expect(styleSnapshot.listStyleType).toBe("none");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const owner of ownerSelectors) {
+    const locator = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(locator).toBeVisible();
+    expect(await locator.getAttribute("class")).toMatch(/\bx[\w-]+\b/u);
+  }
 });

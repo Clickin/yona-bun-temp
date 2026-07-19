@@ -169,6 +169,9 @@ function ProjectReviewsBody({
   const activeOrderDir = effectiveOrderDir(search);
   const nextCreatedDateOrderDir =
     activeOrderBy === "createdDate" ? (activeOrderDir === "asc" ? "desc" : "asc") : "desc";
+  const sidebarProps = stylex.props(styles.sidebar);
+  const searchInputProps = stylex.props(styles.searchInput);
+  const tabsProps = stylex.props(styles.tabs);
 
   function pushReviews(next: Partial<ProjectReviewsSearch>) {
     router.history.push(
@@ -195,8 +198,8 @@ function ProjectReviewsBody({
     <div className="project-page-wrap">
       <div className="row-fluid issue-list-wrap">
         <div
-          {...stylex.props(styles.sidebar)}
-          className="span2 search-wrap span-hard-wrap"
+          {...sidebarProps}
+          className={`span2 search-wrap span-hard-wrap ${sidebarProps.className ?? ""}`.trim()}
           data-stylex-owner="project-reviews-sidebar"
         >
           <div className="inner advanced">
@@ -230,8 +233,8 @@ function ProjectReviewsBody({
               <div className="search-bar span-hard-wrap">
                 <input
                   name="filter"
-                  {...stylex.props(styles.searchInput)}
-                  className="textbox full"
+                  {...searchInputProps}
+                  className={`textbox full ${searchInputProps.className ?? ""}`.trim()}
                   data-stylex-owner="project-reviews-search-input"
                   type="text"
                   defaultValue={search.filter}
@@ -266,8 +269,8 @@ function ProjectReviewsBody({
             </button>
           </div>
           <ul
-            {...stylex.props(styles.tabs)}
-            className="nav nav-tabs nm"
+            {...tabsProps}
+            className={`nav nav-tabs nm ${tabsProps.className ?? ""}`.trim()}
             data-stylex-owner="project-reviews-tabs"
           >
             <li className={activeState === "open" ? "active" : ""}>
@@ -339,6 +342,7 @@ function ProjectReviewRows({
   reviews: ReviewThreadListResponse;
 }) {
   const { t } = useLegacyMessages();
+  const listProps = stylex.props(styles.list);
   if (reviews.items.length === 0) {
     return (
       <div className="error-wrap">
@@ -350,8 +354,8 @@ function ProjectReviewRows({
 
   return (
     <ul
-      {...stylex.props(styles.list)}
-      className="post-list-wrap"
+      {...listProps}
+      className={`post-list-wrap ${listProps.className ?? ""}`.trim()}
       data-stylex-owner="project-reviews-list"
     >
       {reviews.items.map((thread) => (
