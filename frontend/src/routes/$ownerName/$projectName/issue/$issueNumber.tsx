@@ -1110,8 +1110,8 @@ function IssueDetailBody({
             data-stylex-owner="project-issue-detail-sidebar"
           >
             <div
-              {...stylex.props(styles.sidebarMeta, styles.issueInfo)}
-              className={`${stylex.props(styles.sidebarMeta, styles.issueInfo).className} issue-info`}
+              {...stylex.props(styles.issueInfo)}
+              className={`${stylex.props(styles.issueInfo).className} issue-info`}
               data-stylex-owner="project-issue-detail-sidebar-meta"
               data-stylex-owner-issue-info="project-issue-detail-issue-info"
             >

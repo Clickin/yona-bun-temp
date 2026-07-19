@@ -101,7 +101,9 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   await expect(actions).toHaveCSS("overflow", "auto");
   await expect(footer).toHaveCSS("text-align", "right");
   await expect(sidebar).toHaveCSS("padding-top", "15px");
-  await expect(sidebar).toHaveCSS("padding-left", "10px");
+  // `_page.less` uses the 52px desktop metadata gutter; `_responsive.less`
+  // narrows it only at the frozen 720px breakpoint.
+  await expect(sidebar).toHaveCSS("padding-left", "52px");
   const desktop = await page.evaluate(() => {
     const get = (selector: string) => {
       const element = document.querySelector<HTMLElement>(selector);
@@ -122,6 +124,7 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   expect(desktop.sidebar.width).toBeGreaterThan(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(sidebar).toHaveCSS("padding-left", "10px");
   const mobile = await page.evaluate(() => {
     const body = document.querySelector<HTMLElement>(".board-body");
     const content = document.querySelector<HTMLElement>(

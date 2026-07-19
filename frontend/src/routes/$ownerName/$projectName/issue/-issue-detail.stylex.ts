@@ -233,9 +233,6 @@ export const styles = stylex.create({
     padding: "0 0 15px 54px",
     fontFamily: "inherit",
   },
-  sidebarMeta: {
-    padding: "15px 0 0 52px",
-  },
   sidebarMetaDl: { marginBottom: "20px" },
   sidebarMetaDd: { padding: "5px 0px" },
   sidebarMetaAssigneeName: { fontSize: "11px" },

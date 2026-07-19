@@ -28,8 +28,9 @@ test("issue detail sidebar metadata uses route-local StyleX ownership", async ()
   expect(routeSource.match(/data-stylex-owner="issue-detail-sidebar-dl"/g)).toHaveLength(3);
   expect(routeSource.match(/data-stylex-owner="issue-detail-sidebar-dd"/g)).toHaveLength(4);
   expect(routeSource).toContain('data-stylex-owner="issue-detail-sidebar-assignee-name"');
-  expect(styleSource).toContain("sidebarMeta: {");
+  expect(styleSource).toContain("issueInfo: {");
   expect(styleSource).toContain('padding: "15px 0 0 52px"');
+  expect(styleSource).toContain('padding: "15px 0 0 10px"');
   expect(styleSource).toContain('sidebarMetaDl: { marginBottom: "20px" }');
   expect(styleSource).toContain('sidebarMetaDd: { padding: "5px 0px" }');
   expect(styleSource).toContain('sidebarMetaAssigneeName: { fontSize: "11px" }');
