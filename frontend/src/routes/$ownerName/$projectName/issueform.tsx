@@ -1416,29 +1416,39 @@ function TitleInput({
           data-stylex-owner="project-issue-form-title-head-options"
           role="listbox"
         >
-          {suggestions.map((suggestion, index) => (
-            <button
-              type="button"
-              id={`title-head-${index}`}
-              key={`${suggestion.category}-${suggestion.id ?? suggestion.name}`}
-              className={index === activeIndex ? "active" : undefined}
-              role="option"
-              aria-selected={index === activeIndex}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => chooseSuggestion(suggestion)}
-            >
-              <small
-                {...stylex.props(
-                  issueFormStyles.titleHeadOptionsButtonSmall,
-                  issueFormStyles.labelBackground(normalizedColor(suggestion.labelColor ?? "")),
-                )}
-                data-stylex-owner="project-issueform-title-suggestion-category"
+          {suggestions.map((suggestion, index) => {
+            const optionStyle = stylex.props(
+              issueFormStyles.issueComboboxOptionButton,
+              index === activeIndex && issueFormStyles.issueComboboxOptionButtonActive,
+            );
+            return (
+              <button
+                type="button"
+                id={`title-head-${index}`}
+                key={`${suggestion.category}-${suggestion.id ?? suggestion.name}`}
+                {...optionStyle}
+                className={`title-head-option ${index === activeIndex ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
+                data-stylex-owner="project-issue-form-title-suggestion-option"
+                role="option"
+                aria-selected={index === activeIndex}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => chooseSuggestion(suggestion)}
               >
-                {suggestion.category}
-              </small>{" "}
-              {suggestion.name}
-            </button>
-          ))}
+                <small
+                  {...stylex.props(
+                    issueFormStyles.issueComboboxOptionSmall,
+                    index === activeIndex && issueFormStyles.issueComboboxOptionSmallActive,
+                    issueFormStyles.titleHeadOptionsButtonSmall,
+                    issueFormStyles.labelBackground(normalizedColor(suggestion.labelColor ?? "")),
+                  )}
+                  data-stylex-owner="project-issue-form-title-suggestion-category"
+                >
+                  {suggestion.category}
+                </small>{" "}
+                {suggestion.name}
+              </button>
+            );
+          })}
         </div>
       ) : null}
     </div>
@@ -2200,25 +2210,44 @@ function IssueMarkdownEditor({
                 }`.trim()}
                 data-stylex-owner="project-issue-form-editor-mention-options"
               >
-                {mentionSuggestions.map((suggestion, index) => (
-                  <button
-                    type="button"
-                    id={`editor-mention-option-${index}`}
-                    key={suggestion.key}
-                    className={index === activeSuggestion ? "active" : undefined}
-                    role="option"
-                    aria-selected={index === activeSuggestion}
-                    aria-label={suggestion.accessibleLabel}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => chooseMention(suggestion)}
-                  >
-                    {suggestion.imageUrl ? (
-                      <img src={suggestion.imageUrl} alt="" width="20" height="20" />
-                    ) : null}
-                    <span>{suggestion.label}</span>
-                    {suggestion.detail ? <small>{suggestion.detail}</small> : null}
-                  </button>
-                ))}
+                {mentionSuggestions.map((suggestion, index) => {
+                  const optionStyle = stylex.props(
+                    issueFormStyles.issueComboboxOptionButton,
+                    index === activeSuggestion && issueFormStyles.issueComboboxOptionButtonActive,
+                  );
+                  return (
+                    <button
+                      type="button"
+                      id={`editor-mention-option-${index}`}
+                      key={suggestion.key}
+                      {...optionStyle}
+                      className={`${index === activeSuggestion ? "active" : ""} ${optionStyle.className ?? ""}`.trim()}
+                      data-stylex-owner="project-issue-form-editor-mention-option"
+                      role="option"
+                      aria-selected={index === activeSuggestion}
+                      aria-label={suggestion.accessibleLabel}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => chooseMention(suggestion)}
+                    >
+                      {suggestion.imageUrl ? (
+                        <img src={suggestion.imageUrl} alt="" width="20" height="20" />
+                      ) : null}
+                      <span>{suggestion.label}</span>
+                      {suggestion.detail ? (
+                        <small
+                          {...stylex.props(
+                            issueFormStyles.issueComboboxOptionSmall,
+                            index === activeSuggestion &&
+                              issueFormStyles.issueComboboxOptionSmallActive,
+                          )}
+                          data-stylex-owner="project-issue-form-editor-mention-option-detail"
+                        >
+                          {suggestion.detail}
+                        </small>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             ) : null}
           </div>

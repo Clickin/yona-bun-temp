@@ -5985,44 +5985,6 @@ div.markdown-preview {
   box-shadow: 0 3px 8px rgb(0 0 0 / 18%);
 }
 
-.issue-form-page-wrap .issue-combobox-options > button {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 30px;
-  padding: 5px 8px;
-  color: #333;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  appearance: none;
-  background: #fff;
-  border: 0;
-  border-radius: 0;
-}
-
-.issue-form-page-wrap .issue-combobox-options > button:hover,
-.issue-form-page-wrap .issue-combobox-options > button:focus,
-.issue-form-page-wrap .issue-combobox-options > button.active {
-  color: #fff;
-  background: #51aacc;
-  outline: 0;
-}
-
-.issue-form-page-wrap .issue-combobox-options > button small {
-  margin-left: auto;
-  color: #888;
-  font-size: 11px;
-}
-
-.issue-form-page-wrap .issue-combobox-options > button:hover small,
-.issue-form-page-wrap .issue-combobox-options > button:focus small,
-.issue-form-page-wrap .issue-combobox-options > button.active small {
-  color: #fff;
-}
-
 .issue-form-page-wrap .issue-assignee-selection {
   display: flex;
   gap: 5px;
