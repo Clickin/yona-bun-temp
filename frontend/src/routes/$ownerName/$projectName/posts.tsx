@@ -209,7 +209,11 @@ function ProjectPostsBody({
               <BoardFilters ownerName={ownerName} projectName={projectName} search={search} />
             ) : null}
             {posts.notices.length > 0 ? (
-              <ul className="post-list-wrap notice-wrap" data-stylex-owner="project-posts-notices">
+              <ul
+                {...stylex.props(styles.postListWrap, styles.postNoticeWrap)}
+                className={`${stylex.props(styles.postListWrap, styles.postNoticeWrap).className ?? ""} post-list-wrap notice-wrap`.trim()}
+                data-stylex-owner="project-posts-notices"
+              >
                 {posts.notices.map((post) => (
                   <ProjectBoardPost
                     basePath={runtimeConfig.basePath}
@@ -222,7 +226,11 @@ function ProjectPostsBody({
                 ))}
               </ul>
             ) : null}
-            <ul className="post-list-wrap" data-stylex-owner="project-posts-items">
+            <ul
+              {...stylex.props(styles.postListWrap)}
+              className={`${stylex.props(styles.postListWrap).className ?? ""} post-list-wrap`.trim()}
+              data-stylex-owner="project-posts-items"
+            >
               {posts.items.map((post) => (
                 <ProjectBoardPost
                   basePath={runtimeConfig.basePath}
@@ -526,12 +534,20 @@ function ProjectBoardPost({
     href: postHref,
   } satisfies LegacyPostItemAttrs;
 
+  const postItemStyleProps = stylex.props(styles.postItem);
   return (
-    <li {...legacyPostItemAttrs} data-stylex-owner="project-posts-item">
+    <li
+      {...legacyPostItemAttrs}
+      {...postItemStyleProps}
+      className={`${postItemStyleProps.className ?? ""} ${legacyPostItemAttrs.className}`.trim()}
+      data-stylex-owner="project-posts-item"
+    >
       <Link
         to={authorRoutePath}
         activeProps={legacyRouteLocalActiveProps}
-        className="avatar-wrap mlarge hide-in-mobile"
+        {...stylex.props(styles.postAvatar)}
+        className={`${stylex.props(styles.postAvatar).className ?? ""} avatar-wrap mlarge hide-in-mobile`.trim()}
+        data-stylex-owner="project-posts-avatar"
         title={post.authorLoginId}
       >
         <img
@@ -543,7 +559,11 @@ function ProjectBoardPost({
           height="32"
         />
       </Link>
-      <div className="title-wrap">
+      <div
+        {...stylex.props(styles.postTitleWrap)}
+        className={`${stylex.props(styles.postTitleWrap).className ?? ""} title-wrap`.trim()}
+        data-stylex-owner="project-posts-title-wrap"
+      >
         {post.notice ? (
           <>
             <span className="label label-notice">{t("post.notice")}</span>{" "}
@@ -565,7 +585,11 @@ function ProjectBoardPost({
           {titleParts.title}
         </Link>
       </div>
-      <div className="infos">
+      <div
+        {...stylex.props(styles.postInfos)}
+        className={`${stylex.props(styles.postInfos).className ?? ""} infos`.trim()}
+        data-stylex-owner="project-posts-infos"
+      >
         {post.authorLabel ? (
           <Link
             to={authorRoutePath}
