@@ -513,7 +513,7 @@ function ProjectSearchResultList({
               <li
                 {...sx.searchListItem}
                 className={`${sx.searchListItem.className} ${sx.searchListProjectItem.className} search-list-item project`}
-                data-stylex-owner="project-search-list-item"
+                data-stylex-owner="project-search-result-item"
                 key={item.id}
               >
                 <RouterLink
@@ -604,7 +604,7 @@ function ProjectSearchResultList({
               <li
                 {...sx.searchListItem}
                 className={`${sx.searchListItem.className} search-list-item`}
-                data-stylex-owner="project-search-list-item"
+                data-stylex-owner="project-search-result-item"
                 key={item.id}
               >
                 {reviewThreadOnPullRequest ? (
@@ -679,7 +679,7 @@ function ProjectSearchResultList({
               <li
                 {...sx.searchListItem}
                 className={`${sx.searchListItem.className} search-list-item`}
-                data-stylex-owner="project-search-list-item"
+                data-stylex-owner="project-search-result-item"
                 key={item.id}
               >
                 <div className="title-wrap">

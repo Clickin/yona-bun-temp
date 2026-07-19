@@ -43,7 +43,7 @@ test("project search StyleX owners preserve populated and empty result contracts
     "project-search-box",
     "project-search-result-title",
     "project-search-list",
-    "project-search-list-item",
+    "project-search-result-item",
     "project-search-empty-result",
   ])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
@@ -67,9 +67,9 @@ test("project search populated and empty states keep responsive bounds and links
     const categoryItems = page.locator('[data-stylex-owner="project-search-category-item"]');
     await expect(categoryItems).toHaveCount(7);
     await expect(categoryItems.first()).toBeVisible();
-    await expect(page.locator('[data-stylex-owner="project-search-list-item"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="project-search-result-item"]')).toBeVisible();
     await expect(
-      page.locator('[data-stylex-owner="project-search-list-item"] a.title'),
+      page.locator('[data-stylex-owner="project-search-result-item"] a.title'),
     ).toHaveAttribute("href", /issue\/42/);
     const bounds = await page
       .locator('[data-stylex-owner="project-search-results"]')
@@ -80,8 +80,8 @@ test("project search populated and empty states keep responsive bounds and links
     expect(bounds.width).toBeGreaterThan(0);
     expect(bounds.scrollWidth).toBe(viewport.width);
   }
-  await page.unroute("**/api/v1/owners/**/projects/**/search?**");
-  await page.route("**/api/v1/owners/**/projects/**/search?**", (route) =>
+  await page.unroute("**/api/v1/projects/**/**/search?**");
+  await page.route("**/api/v1/projects/**/**/search?**", (route) =>
     route.fulfill({ contentType: "application/json", json: emptyResponse() }),
   );
   await page.goto(`${basePath}/weblabs/demo/search?keyword=none&searchType=issue`);
@@ -127,7 +127,7 @@ async function mockProjectSearch(page: Page) {
       },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/search?**", (route) =>
+  await page.route("**/api/v1/projects/**/**/search?**", (route) =>
     route.fulfill({ contentType: "application/json", json: populatedResponse() }),
   );
 }
