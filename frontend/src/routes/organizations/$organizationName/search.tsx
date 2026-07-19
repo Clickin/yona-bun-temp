@@ -229,19 +229,37 @@ function OrganizationSearchBody({
                     const count = result.counts[category.countKey];
                     return (
                       <li
-                        className={`${category.type === activeType ? "active" : ""} ${
+                        className={`${
+                          stylex.props(
+                            styles.categoryItem,
+                            category.type === activeType && styles.categoryItemActive,
+                          ).className
+                        } ${category.type === activeType ? "active" : ""} ${
                           count === 0 ? "empty" : ""
                         }`}
+                        data-stylex-owner="organization-search-category-item"
                         key={category.type}
                       >
                         <button
+                          {...stylex.props(
+                            styles.categoryAction,
+                            count === 0 && styles.categoryActionEmpty,
+                          )}
                           type="button"
                           onClick={() => {
                             submitSearch(category.type, keywordValue);
                           }}
                         >
                           {t(category.labelKey)}{" "}
-                          <span className="num-badge pull-right">{count}</span>
+                          <span
+                            className={`${
+                              stylex.props(
+                                category.type === activeType && styles.categoryBadgeActive,
+                              ).className ?? ""
+                            } num-badge pull-right`}
+                          >
+                            {count}
+                          </span>
                         </button>
                       </li>
                     );
@@ -278,7 +296,12 @@ function OrganizationSearchBody({
                     </button>
                   </form>
 
-                  <h3 className="search-result-title">{resultTitle}</h3>
+                  <h3
+                    className={`${stylex.props(styles.resultTitle).className} search-result-title`}
+                    data-stylex-owner="organization-search-result-title"
+                  >
+                    {resultTitle}
+                  </h3>
                 </div>
                 <div
                   className={`${stylex.props(styles.result).className} search-result-wrap`}
@@ -340,21 +363,28 @@ function OrganizationSearchResultList({
               : null;
 
           return (
-            <li className="search-list-item project" key={item.id}>
+            <li
+              className={`${stylex.props(styles.resultItem, styles.resultItemProject).className} search-list-item project`}
+              data-stylex-owner="organization-search-result-item"
+              key={item.id}
+            >
               <Link
                 to={projectLink.to}
                 hash={projectLink.hash || undefined}
-                className="avatar-wrap"
+                className={`${stylex.props(styles.avatar).className} avatar-wrap`}
               >
                 <LegacyProjectLogoImage
                   src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
                 />
               </Link>
-              <div className="title-wrap">
+              <div
+                className={`${stylex.props(styles.titleWrap).className} title-wrap`}
+                data-stylex-owner="organization-search-title-wrap"
+              >
                 <Link
                   to={projectLink.to}
                   hash={projectLink.hash || undefined}
-                  className="title project-link"
+                  className={`${stylex.props(styles.title, styles.projectLink).className} title project-link`}
                 >
                   <HighlightedText
                     text={`${item.ownerName}/${item.projectName}`}
@@ -363,7 +393,10 @@ function OrganizationSearchResultList({
                 </Link>
               </div>
               {originProjectLink ? (
-                <div className="search-meta-info nm np">
+                <div
+                  className={`${stylex.props(styles.meta, styles.metaNoPadding).className} search-meta-info nm np`}
+                  data-stylex-owner="organization-search-content-meta"
+                >
                   <span>
                     <i className="yobicon-split yobicon-white vmiddle"></i>
                     {t("fork.original")}
@@ -372,19 +405,25 @@ function OrganizationSearchResultList({
                     <Link
                       to={originProjectLink.to}
                       hash={originProjectLink.hash || undefined}
-                      className="project-link"
+                      className={`${stylex.props(styles.projectLink).className} project-link`}
                     >
                       {item.originOwnerName}/{item.originProjectName}
                     </Link>
                   </span>
                 </div>
               ) : null}
-              <div className="search-content np">
-                <p className="search-content-body">
+              <div
+                className={`${stylex.props(styles.content, styles.contentNoPadding).className} search-content np`}
+                data-stylex-owner="organization-search-content-meta"
+              >
+                <p className={`${stylex.props(styles.contentBody).className} search-content-body`}>
                   <HighlightedText text={item.snippets[0]?.text ?? ""} keyword={result.keyword} />
                 </p>
               </div>
-              <div className="search-meta-info np">
+              <div
+                className={`${stylex.props(styles.meta, styles.metaNoPadding).className} search-meta-info np`}
+                data-stylex-owner="organization-search-content-meta"
+              >
                 <span className="meta-info">
                   {t("project.create")}{" "}
                   <strong title={item.createdLabel}>{item.createdLabel}</strong>
@@ -414,25 +453,38 @@ function OrganizationSearchResultList({
             const userLink = internalLinkTarget(item.href, runtimeConfig);
 
             return (
-              <li className="search-list-item project" key={item.id}>
+              <li
+                className={`${stylex.props(styles.resultItem, styles.resultItemProject).className} search-list-item project`}
+                data-stylex-owner="organization-search-result-item"
+                key={item.id}
+              >
                 <Link
                   to={userLink.to}
                   hash={userLink.hash || undefined}
-                  className="avatar-wrap"
+                  className={`${stylex.props(styles.avatar).className} avatar-wrap`}
                   title={item.authorLoginId}
                 >
                   {isDefaultUserSearchAvatar(item.avatarUrl) ? (
                     /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default avatar branch renders no alt/size attributes. */
-                    <img src={item.avatarUrl} />
+                    <img {...stylex.props(styles.avatarImage)} src={item.avatarUrl} />
                   ) : (
-                    <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
+                    <img
+                      {...stylex.props(styles.avatarImage)}
+                      src={item.avatarUrl || ""}
+                      alt={item.authorLabel}
+                      width="32"
+                      height="32"
+                    />
                   )}
                 </Link>
-                <div className="title-wrap">
+                <div
+                  className={`${stylex.props(styles.titleWrap).className} title-wrap`}
+                  data-stylex-owner="organization-search-title-wrap"
+                >
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
-                    className="title user-link"
+                    className={`${stylex.props(styles.title, styles.userLink).className} title user-link`}
                   >
                     <HighlightedText
                       text={`${item.authorLabel} (@${item.authorLoginId})`}
@@ -440,7 +492,7 @@ function OrganizationSearchResultList({
                     />
                   </Link>
                 </div>
-                <div className="infos nm">
+                <div className="infos nm" data-stylex-owner="organization-search-content-meta">
                   <span className="infos-item">{`${t("userinfo.since")} ${item.createdLabel}`}</span>
                 </div>
               </li>
@@ -484,7 +536,7 @@ function OrganizationSearchResultList({
               searchType !== "review" || item.reviewThreadOnPullRequest === true;
             const snippets = item.snippets.map((snippet) => (
               <p
-                className="search-content-body"
+                className={`${stylex.props(styles.contentBody).className} search-content-body`}
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <HighlightedText text={snippet.text} keyword={result.keyword} />
@@ -493,14 +545,27 @@ function OrganizationSearchResultList({
             ));
 
             return (
-              <li className="search-list-item" key={item.id}>
+              <li
+                className={`${stylex.props(styles.resultItem).className} search-list-item`}
+                data-stylex-owner="organization-search-result-item"
+                key={item.id}
+              >
                 {reviewThreadOnPullRequest ? (
-                  <div className="title-wrap">
-                    <span className="post-id">#{item.number}</span>
+                  <div
+                    className={`${stylex.props(styles.titleWrap).className} title-wrap`}
+                    data-stylex-owner="organization-search-title-wrap"
+                  >
+                    <span className={`${stylex.props(styles.postId).className} post-id`}>
+                      #{item.number}
+                    </span>
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
-                      className={titleClassName}
+                      className={
+                        titleClassName
+                          ? `${stylex.props(styles.title).className} ${titleClassName}`
+                          : undefined
+                      }
                     >
                       {titleClassName ? (
                         <HighlightedText text={item.title} keyword={result.keyword} />
@@ -510,7 +575,10 @@ function OrganizationSearchResultList({
                     </Link>
                   </div>
                 ) : null}
-                <div className="search-content">
+                <div
+                  className={`${stylex.props(styles.content).className} search-content`}
+                  data-stylex-owner="organization-search-content-meta"
+                >
                   {reviewThreadOnPullRequest ? (
                     snippets
                   ) : (
@@ -519,11 +587,14 @@ function OrganizationSearchResultList({
                     </Link>
                   )}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`${stylex.props(styles.meta).className} search-meta-info`}
+                  data-stylex-owner="organization-search-content-meta"
+                >
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className="project-link meta-item"
+                    className={`${stylex.props(styles.projectLink, styles.metaItem).className} project-link meta-item`}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
@@ -531,15 +602,20 @@ function OrganizationSearchResultList({
                     <Link
                       to={authorLink.to}
                       hash={authorLink.hash || undefined}
-                      className="meta-item"
+                      className={`${stylex.props(styles.metaItem).className} meta-item`}
                       title={item.authorLoginId}
                     >
                       {item.authorLabel}
                     </Link>
                   ) : (
-                    <span className="meta-item">{t(noAuthorMessageKey(searchType))}</span>
+                    <span className={`${stylex.props(styles.metaItem).className} meta-item`}>
+                      {t(noAuthorMessageKey(searchType))}
+                    </span>
                   )}
-                  <span className="meta-item" title={item.createdLabel}>
+                  <span
+                    className={`${stylex.props(styles.metaItem).className} meta-item`}
+                    title={item.createdLabel}
+                  >
                     {item.createdLabel}
                   </span>
                 </div>
@@ -567,16 +643,30 @@ function OrganizationSearchResultList({
             );
 
             return (
-              <li className="search-list-item" key={item.id}>
-                <div className="title-wrap">
-                  <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
+              <li
+                className={`${stylex.props(styles.resultItem).className} search-list-item`}
+                data-stylex-owner="organization-search-result-item"
+                key={item.id}
+              >
+                <div
+                  className={`${stylex.props(styles.titleWrap).className} title-wrap`}
+                  data-stylex-owner="organization-search-title-wrap"
+                >
+                  <Link
+                    to={itemLink.to}
+                    hash={itemLink.hash || undefined}
+                    className={`${stylex.props(styles.title).className} title`}
+                  >
                     <HighlightedText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
-                <div className="search-content">
+                <div
+                  className={`${stylex.props(styles.content).className} search-content`}
+                  data-stylex-owner="organization-search-content-meta"
+                >
                   {item.snippets.map((snippet) => (
                     <p
-                      className="search-content-body"
+                      className={`${stylex.props(styles.contentBody).className} search-content-body`}
                       key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
                     >
                       <HighlightedText text={snippet.text} keyword={result.keyword} />
@@ -584,16 +674,21 @@ function OrganizationSearchResultList({
                     </p>
                   ))}
                 </div>
-                <div className="search-meta-info">
+                <div
+                  className={`${stylex.props(styles.meta).className} search-meta-info`}
+                  data-stylex-owner="organization-search-content-meta"
+                >
                   <Link
                     to={projectLink.to}
                     hash={projectLink.hash || undefined}
-                    className="project-link meta-item"
+                    className={`${stylex.props(styles.projectLink, styles.metaItem).className} project-link meta-item`}
                   >
                     {item.ownerName}/{item.projectName}
                   </Link>
                   {item.updatedLabel ? (
-                    <span className="due-date meta-item">
+                    <span
+                      className={`${stylex.props(styles.metaItem).className} due-date meta-item`}
+                    >
                       {t("label.dueDate")} <strong>{item.updatedLabel}</strong>{" "}
                       {item.dueDateUntilLabel ? `(${item.dueDateUntilLabel})` : null}
                     </span>
@@ -608,7 +703,12 @@ function OrganizationSearchResultList({
     );
   }
 
-  return <div className="empty-result"></div>;
+  return (
+    <div
+      className={`${stylex.props(styles.empty).className} empty-result`}
+      data-stylex-owner="organization-search-empty"
+    ></div>
+  );
 }
 
 function OrganizationSearchPagination({
@@ -770,7 +870,7 @@ function renderLegacySearchResultTitle(message: string): ReactNode {
   return (
     <>
       {match[1]}
-      <strong>{match[2]}</strong>
+      <strong {...stylex.props(styles.resultTitleStrong)}>{match[2]}</strong>
       {match[3]}
     </>
   );
@@ -797,7 +897,10 @@ function HighlightedText({ keyword, text }: { keyword: string; text: string }) {
       nodes.push(<Fragment key={`text-${cursor}`}>{text.slice(cursor, start)}</Fragment>);
     }
     nodes.push(
-      <strong className="keyword" key={`keyword-${start}`}>
+      <strong
+        className={`${stylex.props(styles.keyword).className} keyword`}
+        key={`keyword-${start}`}
+      >
         {matchText}
       </strong>,
     );
@@ -843,7 +946,7 @@ function internalLinkTarget(href: string, runtimeConfig: RuntimeConfig) {
 
 function LegacyProjectLogoImage({ src }: { src: string }) {
   /* oxlint-disable-next-line jsx-a11y/alt-text -- legacy default project logo branch renders no alt attribute. */
-  return <img src={src} />;
+  return <img {...stylex.props(styles.avatarImage)} src={src} />;
 }
 
 function isDefaultUserSearchAvatar(avatarUrl: string | undefined) {
