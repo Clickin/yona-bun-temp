@@ -5,6 +5,15 @@ Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
 
+Batch 532 changes shared-fallback retirement from a consumer-by-consumer guess into a controlled
+destructive discovery gate. `yona-original/**/*.css` and `yona-original/**/*.less` are immutable
+evidence. The normal application continues to load the generated fallback, while
+`VITE_DISABLE_LEGACY_FALLBACK=1` removes that link from Vite's served HTML only. Run the global
+E2E suite in this mode to inventory every UI surface that still needs a React-owned StyleX owner,
+or the narrow reviewed global bridge allowed below. A red discovery run is evidence, not a parity
+claim; permanent unlinking remains blocked until the complete fallback-off suite is green and the
+ledger proves each retired source consumer is gone.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused
@@ -160,6 +169,32 @@ the six plugin sheets as passthrough rather than migrated ownership. This avoids
 interleaving change that replacing three separated links at one position would cause. Asset URLs
 are rewritten relative to the generated artifact; `bootstrap-responsive.css` is hashed as
 inactive reference-only evidence. Standard `predev` and `prebuild` hooks regenerate the artifact.
+
+### 3.2.1 Fallback-off retirement discovery
+
+The generated fallback is disabled only through the React/Vite runtime asset boundary:
+
+```sh
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store --dir frontend test:e2e:fallback-off
+```
+
+`frontend/index.html` retains the default link. `frontend/vite.config.ts` removes only that link
+when `VITE_DISABLE_LEGACY_FALLBACK=1`; frozen Yona CSS/LESS is never modified, copied, or used as
+an editable input. The fallback-off E2E suite is intentionally global. Its failures form the
+retirement queue and must be classified before a fix:
+
+1. a React-owned element can express the rule: migrate the exact frozen declaration into its
+   colocated StyleX owner;
+2. the rule is a genuine global/font/asset boundary that StyleX cannot attach to a React element:
+   add the smallest cited declaration to the reviewed Vite-managed bridge described in 4.3;
+3. the failure is DOM, behavior, or data parity: repair that parity defect first, not with CSS.
+
+No new catch-all stylesheet is permitted. A permanent fallback unlink requires a green global
+fallback-off run, declaration/consumer retirement proof in the ledger, and normal fallback-on
+regression gates. A formal fallback-retirement batch may contain CSS/E2E evidence without a
+fabricated route TSX edit only when it changes the runtime asset, this plan, the StyleX ledger, and
+`frontend/tests/legacy-fallback-off.e2e.ts`; the Scala-HTML guard enforces that shape and rejects
+every `yona-original/**/*.css` or `yona-original/**/*.less` mutation.
 
 ### 3.3 Precedence proof
 

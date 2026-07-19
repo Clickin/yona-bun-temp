@@ -413,6 +413,7 @@ test("accepts template-first P0 report as global shell implementation evidence",
     "frontend/index.html",
     "frontend/scripts/build-legacy-css.mjs",
     "frontend/src/main.tsx",
+    "frontend/src/legacy-fallback-mode.ts",
     "frontend/src/routes/__root.tsx",
     "frontend/src/routes/-auth-views.tsx",
     "frontend/src/auth-workspace-shell.spec.tsx",
@@ -886,6 +887,10 @@ test("treats wave-0 route-foundation files as mapped canonical work", () => {
   );
   assert.equal(result.unmappedImplementationFiles.includes("frontend/src/router.tsx"), false);
   assert.equal(result.unmappedImplementationFiles.includes("frontend/src/main.tsx"), false);
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/legacy-fallback-mode.ts"),
+    false,
+  );
   assert.equal(
     result.unmappedImplementationFiles.includes("frontend/src/routes/__root.tsx"),
     false,

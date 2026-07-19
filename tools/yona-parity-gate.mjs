@@ -65,6 +65,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "frontend/package.json",
   "frontend/playwright.config.ts",
   "frontend/pnpm-lock.yaml",
+  "frontend/src/legacy-fallback-mode.ts",
   "frontend/tsconfig.json",
   "frontend/vite.config.ts",
 ]);

@@ -31,6 +31,36 @@ test("blocks CSS-only layout restoration without a TSX route implementation", ()
   assert.equal(result.blocked, true);
 });
 
+test("allows a documented fallback-off retirement batch without a fabricated route change", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/app.css",
+      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "docs/provenance/frontend-stylex-migration-ledger.md",
+      "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
+    ],
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
+  });
+
+  assert.equal(result.blocked, false);
+});
+
+test("blocks a fallback-off retirement batch that mutates frozen legacy CSS or LESS", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/src/app.css",
+      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "docs/provenance/frontend-stylex-migration-ledger.md",
+      "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
+      "yona-original/app/assets/stylesheets/less/_page.less",
+    ],
+    env: { YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1" },
+  });
+
+  assert.equal(result.blocked, true);
+  assert.match(result.message, /frozen legacy style mutation/u);
+});
+
 test("passes frontend evidence when a route TSX implementation changes too", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

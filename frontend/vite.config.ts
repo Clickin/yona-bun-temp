@@ -5,6 +5,7 @@ import type { IncomingMessage } from "node:http";
 import { fileURLToPath, URL } from "node:url";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
+import { legacyFallbackEnabled, transformLegacyFallbackLink } from "./src/legacy-fallback-mode";
 
 function normalizeBasePath(input: string | undefined): string {
   const trimmed = (input ?? "").trim();
@@ -76,6 +77,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const basePath = normalizeBasePath(env.VITE_YONA_BASE_PATH);
   const backendTarget = env.YONA_DEV_BACKEND_TARGET || "http://127.0.0.1:8089";
+  const includeLegacyFallback = legacyFallbackEnabled(
+    env.VITE_DISABLE_LEGACY_FALLBACK ?? process.env.VITE_DISABLE_LEGACY_FALLBACK,
+  );
 
   return {
     base: mode === "production" ? "./" : basePath === "/" ? "/" : `${basePath}/`,
@@ -94,6 +98,15 @@ export default defineConfig(({ mode }) => {
       }),
       react(),
       babel({ presets: [reactCompilerPreset()] }),
+      {
+        name: "yoram-legacy-fallback-mode",
+        transformIndexHtml: {
+          order: "pre",
+          handler(html) {
+            return transformLegacyFallbackLink(html, includeLegacyFallback);
+          },
+        },
+      },
     ],
     server: {
       host: "127.0.0.1",

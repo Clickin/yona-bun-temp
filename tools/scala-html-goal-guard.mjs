@@ -8,6 +8,10 @@ const FRONTEND_SUPPORT_PATTERN =
   /^frontend\/src\/(api|auth-workspace-client|i18n|query-client|runtime-config|routeTree\.gen)\b/u;
 const UI_PARITY_REPORT_PATTERN = /^docs\/provenance\/ui-parity-reports\/.+\.md$/u;
 const SCALA_HTML_AUDIT_FILE = "docs/provenance/frontend-scala-html-goal-violation-audit.md";
+const STYLEX_LEDGER_FILE = "docs/provenance/frontend-stylex-migration-ledger.md";
+const STYLEX_PLAN_FILE = "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md";
+const FALLBACK_OFF_E2E_FILE = "frontend/tests/legacy-fallback-off.e2e.ts";
+const FROZEN_LEGACY_STYLE_PATTERN = /^yona-original\/.*\.(?:css|less)$/u;
 const ADDED_SCALA_HTML_SOURCE_PATTERN = /^\+(?!\+\+).*\.scala\.html\b/mu;
 const ADDED_AUDIT_ROW_PATTERN = /^\+\|(?! --- )(.*)$/gmu;
 const REMOVED_AUDIT_ROW_PATTERN = /^-\|(?! --- )(.*)$/gmu;
@@ -55,6 +59,22 @@ function isFrontendEvidence(file) {
 
 function isFrontendRouteImplementation(file) {
   return FRONTEND_ROUTE_PATTERN.test(file);
+}
+
+function isFormalFallbackRetirementBatch(changedFiles, frontendE2EFiles) {
+  const requiredFiles = [STYLEX_LEDGER_FILE, STYLEX_PLAN_FILE, FALLBACK_OFF_E2E_FILE];
+  const changesRuntimeAsset = changedFiles.some(
+    (file) =>
+      file === "frontend/src/app.css" ||
+      file === "frontend/index.html" ||
+      file === "frontend/vite.config.ts" ||
+      file === "frontend/src/legacy-fallback-mode.ts",
+  );
+  return (
+    changesRuntimeAsset &&
+    requiredFiles.every((file) => changedFiles.includes(file)) &&
+    frontendE2EFiles.includes(FALLBACK_OFF_E2E_FILE)
+  );
 }
 
 function auditPatchAddsScalaHtmlSource(auditPatch) {
@@ -167,6 +187,7 @@ export function evaluateScalaHtmlGoalGuard({
     isFrontendRouteImplementation,
   );
   const frontendE2EFiles = frontendEvidenceFiles.filter((file) => FRONTEND_E2E_PATTERN.test(file));
+  const frozenLegacyStyleFiles = changedFiles.filter((file) => FROZEN_LEGACY_STYLE_PATTERN.test(file));
 
   const evidenceTouchesRuntime =
     frontendEvidenceFiles.some((file) => FRONTEND_E2E_PATTERN.test(file)) ||
@@ -179,6 +200,19 @@ export function evaluateScalaHtmlGoalGuard({
   const allowReactDomEscape = env.YONA_ALLOW_REACT_DOM_ESCAPE === "1";
   const enforceSingleAuditRow = env.YONA_ENFORCE_SCALA_HTML_SINGLE_ROW === "1";
   const auditRows = auditPatch === null ? [] : addedAuditRows(auditPatch);
+  const formalFallbackRetirementBatch = isFormalFallbackRetirementBatch(
+    nonDeletedChangedFiles,
+    frontendE2EFiles,
+  );
+
+  if (frozenLegacyStyleFiles.length > 0) {
+    return {
+      blocked: true,
+      frontendEvidenceFiles,
+      frontendImplementationFiles,
+      message: `Scala HTML goal guard blocked frozen legacy style mutation. yona-original CSS/LESS is immutable evidence; change React runtime assets only. Offending files: ${frozenLegacyStyleFiles.join(", ")}.`,
+    };
+  }
 
   if (implementationTouchesRuntime && !allowReactDomEscape) {
     const routeFilesWithCreateElementCalls = routeFilesWithCreateElement(routePatches);
@@ -259,6 +293,7 @@ export function evaluateScalaHtmlGoalGuard({
     frontendEvidenceFiles.length > 0 &&
     evidenceTouchesRuntime &&
     !implementationTouchesRuntime &&
+    !formalFallbackRetirementBatch &&
     !allowEvidenceOnly
   ) {
     return {
@@ -266,7 +301,7 @@ export function evaluateScalaHtmlGoalGuard({
       frontendEvidenceFiles,
       frontendImplementationFiles,
       message:
-        "Scala HTML goal guard blocked evidence-only frontend work. Frontend E2E/CSS/UI parity evidence changed without a TSX route implementation change. Rebuild the target screen from yona-original Scala HTML in the same change, or set YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY=1 for an explicitly intentional audit-only commit.",
+        "Scala HTML goal guard blocked evidence-only frontend work. Frontend E2E/CSS/UI parity evidence changed without a TSX route implementation change. Rebuild the target screen from yona-original Scala HTML in the same change, or use the formal fallback-retirement batch (legacy-fallback-off E2E plus StyleX ledger and plan) for React-asset-only cleanup.",
     };
   }
 

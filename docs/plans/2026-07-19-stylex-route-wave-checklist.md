@@ -25,9 +25,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | ORG-02, BOARD-01 | parent organization home header/menu; populated post rows | Batch 530 integrated; shared/mobile fallback retained |
-| 2 | none | route-owner preflight exhausted by Batch 531 full refresh | do not create duplicate TSX/E2E/audit slices |
-| 3 | C/R selector families | schedule only after exact multi-route consumer graph is documented | shared fallback retirement, not new screen ownership |
+| 1 | FALLBACK-OFF-01 | run one global fallback-off E2E discovery batch and classify all visible failures | Batch 532 runtime toggle; default fallback stays enabled |
+| 2 | StyleX owner / global bridge / parity defect | repair the classified failure in the owning lane | frozen `yona-original` CSS/LESS stays immutable |
+| 3 | C/R selector families | retire only after fallback-off + exact multi-route consumer proof | shared fallback retirement, not new screen ownership |
 | 4 | SITE-04 / ROOT-01 / PROJECT-01 | last-consumer lanes after all shared-family proof | no isolated route owner remains |
 
 ## Canonical screen checklist
