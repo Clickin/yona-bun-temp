@@ -1376,7 +1376,9 @@ function CodeCommentUpdateForm({
     <div
       id={`comment-editform-${commentId}`}
       className="comment-update-form"
-      {...stylex.props(isEditing && styles.commentUpdateFormVisible)}
+      {...stylex.props(
+        isEditing ? styles.commentUpdateFormVisible : styles.commentUpdateFormHidden,
+      )}
       data-stylex-owner="commit-detail-comment-update-form"
     >
       <form
@@ -1606,7 +1608,7 @@ function ReviewForm({
     <div
       id="review-form"
       className="review-form"
-      {...stylex.props(isOpen && styles.reviewFormVisible)}
+      {...stylex.props(isOpen ? styles.reviewFormVisible : styles.reviewFormHidden)}
       data-stylex-owner="commit-detail-review-form"
     >
       <form action={action} method="post" encType="multipart/form-data">

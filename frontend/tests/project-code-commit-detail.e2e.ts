@@ -308,6 +308,10 @@ test("project commit detail comment edit toggle is route-owned React state", asy
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("innerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outerHTML");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("dangerouslySetInnerHTML");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.commentUpdateFormHidden");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.commentUpdateFormVisible");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormHidden");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormVisible");
 });
 
 test("project commit detail diff lines drop legacy data-type while preserving line side hooks", async ({
@@ -907,11 +911,14 @@ index 1234567..abcdef1 100644
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("globalThis.getSelection");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setBlockReviewFormOpen(true)");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClose={() => setBlockReviewFormOpen(false)}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('style={isOpen ? { display: "block" } : undefined}');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormHidden");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormVisible");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CodeCommentBox");
   await expect(popButton).toHaveCount(1);
   await expect(popButton).toBeHidden();
   await expect(reviewForm).toBeHidden();
+  await expect(reviewForm).toHaveAttribute("data-stylex-owner", "commit-detail-review-form");
+  await expect(reviewForm).toHaveCSS("display", "none");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -937,6 +944,13 @@ index 1234567..abcdef1 100644
     uploadResourceType: "COMMIT_COMMENT",
   });
   expect(page.url()).toBe(initialUrl);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileReviewBox = await reviewForm.evaluate((form) => {
+    const box = form.getBoundingClientRect();
+    return { left: box.left, right: box.right, viewportWidth: window.innerWidth };
+  });
+  expect(mobileReviewBox.left).toBeGreaterThanOrEqual(0);
+  expect(mobileReviewBox.right).toBeLessThanOrEqual(mobileReviewBox.viewportWidth);
   expect(
     await page.evaluate(
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
@@ -1805,6 +1819,11 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     page.locator("#reviewcards-open .review-card.open .avatar-wrap.smaller.margin-right-5 img"),
   ).toHaveAttribute("alt", "Dev User");
   await expect(page.locator("#comment-editform-601")).toBeHidden();
+  await expect(page.locator("#comment-editform-601")).toHaveAttribute(
+    "data-stylex-owner",
+    "commit-detail-comment-update-form",
+  );
+  await expect(page.locator("#comment-editform-601")).toHaveCSS("display", "none");
   const updateAttachment = page.locator(
     "#comment-editform-601 .attachment-files .attached-file.attached-file-marker",
   );
@@ -1937,6 +1956,12 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.locator('[data-comment-id="601"][title="Edit comment"]').click();
   await expect(page.locator("#comment-editform-601")).toBeVisible();
   await expect(page.locator("#comment-body-601")).toBeHidden();
+  const desktopUpdateBox = await page.locator("#comment-editform-601").evaluate((form) => {
+    const box = form.getBoundingClientRect();
+    return { left: box.left, right: box.right, viewportWidth: window.innerWidth };
+  });
+  expect(desktopUpdateBox.left).toBeGreaterThanOrEqual(0);
+  expect(desktopUpdateBox.right).toBeLessThanOrEqual(desktopUpdateBox.viewportWidth);
   await expect(
     page.locator(
       ".mt10:has(textarea[id^='editor-contents-']) a[href^='#edit-'], .mt10:has(textarea[id^='editor-contents-']) a[href^='#preview-']",
@@ -1976,6 +2001,14 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await page.locator("#comment-editform-601 .ybtn-cancel").click();
   await expect(page.locator("#comment-editform-601")).toBeHidden();
   await expect(page.locator("#comment-body-601")).toBeVisible();
+  await page.locator('[data-comment-id="601"][title="Edit comment"]').click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileUpdateBox = await page.locator("#comment-editform-601").evaluate((form) => {
+    const box = form.getBoundingClientRect();
+    return { left: box.left, right: box.right, viewportWidth: window.innerWidth };
+  });
+  expect(mobileUpdateBox.left).toBeGreaterThanOrEqual(0);
+  expect(mobileUpdateBox.right).toBeLessThanOrEqual(mobileUpdateBox.viewportWidth);
 });
 
 test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", async ({ page }) => {

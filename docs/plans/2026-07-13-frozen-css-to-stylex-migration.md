@@ -44,6 +44,12 @@ its matching border-box declaration. The broad `app.css` `.gnb-outer` and
 `.gnb-inner` rules remain because `/secret`, root login, user profile, and UIKit still use those
 legacy classes. This is a two-owner fallback-off geometry wave, not a shared-selector deletion.
 
+Batch 545 moves the default-hidden state of commit-detail comment editing and block review forms
+into their existing independent StyleX owners. Frozen `_page.less:3019-3020,6135-6137` establishes
+the `display:none` defaults; the existing React state transitions remain the only visibility
+controller. The wider comment/review selectors stay as shared fallback because other route and
+thread-form consumers still need their remaining declarations.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused
