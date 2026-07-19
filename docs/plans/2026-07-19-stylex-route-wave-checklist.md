@@ -26,12 +26,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
 | 1 | ORG-02, BOARD-01 | parent organization home header/menu; populated post rows | Batch 530 integrated; shared/mobile fallback retained |
-| 2 | ORG-03, USER-06, PROJECT-03 | preflight only against the resolved map before worker allocation | distinct TSX owners; setting/editor dependencies |
-| 3 | HOME-01, HOME-02, ROOT-01 | preflight only after leaf-route proof | shared shell is a last-consumer lane |
-| 4 | USER/ORG/SITE lanes | child routes are parallel only when their TSX owners differ | shared tab/menu/list shell |
-| 5 | ISSUE/BOARD/MILESTONE lanes | list/form/detail owner order | below serial edges |
-| 6 | CODE/PR lanes | tree/diff before PR changes/reviews | shared diff/tree plugins |
-| 7 | PROJECT-01, SITE-04, HOME/ROOT | leaf routes first, then shared shell/layout retirement | last-consumer proof required |
+| 2 | none | route-owner preflight exhausted by Batch 531 full refresh | do not create duplicate TSX/E2E/audit slices |
+| 3 | C/R selector families | schedule only after exact multi-route consumer graph is documented | shared fallback retirement, not new screen ownership |
+| 4 | SITE-04 / ROOT-01 / PROJECT-01 | last-consumer lanes after all shared-family proof | no isolated route owner remains |
 
 ## Canonical screen checklist
 
@@ -73,7 +70,7 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 | USER-03 | editform emails/password/notifications/token state matrices | `user/edit_{emails,password,notifications,token}.scala.html`, tab menu | DEPENDENCY | LOE--- |
 | USER-04 | `/user/files`: empty/populated/search/actions/pagination | `user/userFiles.scala.html`, `common/mySeriesMenuTab.scala.html` | DEPENDENCY | LOE--- |
 | USER-05 | `/user/issues`: open/closed/filter/quick-search/subtasks/pagination | `issue/my_list.scala.html`, `my_partial_*` | DEPENDENCY | LOE--- |
-| USER-06 | direct issue form new/mine/comment-derived states | `issue/create.scala.html` | DEPENDENCY | L----- |
+| USER-06 | direct issue form new/mine/comment-derived states | `issue/create.scala.html` | INVALID | L----- |
 | ORG-01 | `/organizations/new`: form/validation/success/error | `organization/create.scala.html` | DEPENDENCY | LOE--- |
 | ORG-02 | organization layout/home: header/menu/project/member/filter states | `organizationLayout`, `header`, `menu`, `view.scala.html` | DEPENDENCY | LOE--- |
 | ORG-03 | settingform/members/delete: logo, enrollment, roles, modals | `organization/{setting,members,deleteForm}.scala.html`, `partial_settingmenu` | DEPENDENCY | LOE--- |
@@ -190,6 +187,41 @@ Batch 530 adds the missing scoped owners for ORG-02 header/menu and BOARD-01 pop
 both retain shared or responsive fallback and therefore remain `DEPENDENCY | LOE---`. The next
 worker allocation must make this narrow preflight check against the row's listed commit/audit/E2E
 before editing. This replaces rediscovering the complete route universe each turn.
+
+Batch 531 extends that correction. ORG-03's `settingform` loaded state is already fully
+ownerized (`fec32816f`, `a25280f8f`, `ab73a957f`, `f2232a400`); PROJECT-03's `transfer` state
+is C/R-only (`ebfd91c33`, `12edafb25`, `6753f0854`). USER-06 is invalid as a separate styling
+target: both direct-user paths choose a project then delegate their complete visible surface to
+the project issue form. HOME-01, HOME-02, and ROOT-01 are also C/R-only: their actual
+authenticated/anonymous home, notification, navbar/usermenu/sidebar, toast, and login-dialog
+owners already reside in `-home-route-screen.tsx`/`__root.tsx` with focused E2E and audit evidence.
+Shared fallback is not authority to add duplicate wrapper StyleX owners. The next preflight is
+therefore restricted to the unverified directory/create/import lane rather than these rows.
+
+## Batch 531 full-refresh result
+
+The narrow follow-up preflights disproved the last apparent leaf candidates: DIR-01,
+CREATE-01, IMPORT-01, and BOARD-01 have complete route-local owner coverage. BOARD-01's
+remaining empty result and pagination are global `.error-wrap` / `.page-navigation-wrap` families;
+its filter/sort state is already StyleX-owned. Adding a board-only owner would duplicate shared
+geometry and is forbidden. **There is no eligible independent route-owner migration remaining in
+the 110 routable-entry inventory.**
+
+This table supersedes stale `L-----`, `READY`, and grouped labels as a selection source. `C/R-only`
+means the route's direct owner is migrated and its remaining work is exact shared-fallback consumer
+proof/retirement; it does not mean the overall fallback module is retired.
+
+| Classification | IDs |
+| --- | --- |
+| Complete isolated owners | HELP-01, SEARCH-02, ISSUE-02, ISSUE-05, MILE-01, MILE-02, BOARD-02, CODE-01, FORK-01 |
+| C/R-only or grouped shared-owner lanes | HOME-01/02, ROOT-01, HELP-02/03, SEARCH-01/03/04/05, DIR-01/02, CREATE-01, IMPORT-01, AUTH-01..05, USER-01..05, ORG-01..04, PROJECT-01..06, ISSUE-01/03/04, MILE-03, BOARD-01/03/04, CODE-02..06, PR-01..06, SITE-01..03 |
+| Invalid independent screen | USER-06 (delegates entirely to project issue-form); SITE-04 (shared site layout/pagination last-consumer lane) |
+| Deferred | MIG-01, UIKIT-01 |
+
+The next execution unit is not another route discovery pass. It must be a declaration-level
+shared-fallback retirement batch with an exact consumer graph that names every affected route,
+or a deferred-scope decision for a plugin/global rule. A route TSX/E2E/audit row may be changed
+only when that graph identifies an actual missing visible owner.
 
 ## Non-screen route files
 

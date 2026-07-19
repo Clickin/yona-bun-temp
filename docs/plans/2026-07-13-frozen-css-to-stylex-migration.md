@@ -3862,3 +3862,19 @@ fallback hash remains `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da
 The attempted MILE-01, BOARD-03, CODE-01, PROJECT-02, DIR-02, ISSUE-01 and CODE-02 allocations
 were already completed or C/R-only, so they are reconciled in the canonical checklist rather than
 duplicated. Shared header/menu/list/mobile fallback remains active; Wave 1 is not complete.
+
+Batch 531 is a targeted execution-map reconciliation. ORG-03 setting, PROJECT-03 transfer,
+HOME-01, HOME-02, and ROOT-01 were all shown by their exact legacy sources, existing StyleX
+owners, focused E2E, Scala audit rows, ledger records, and route history to be completed or
+C/R-only rather than new route-owner work. USER-06 is invalid as an independent styling screen:
+its direct-user routes delegate to the existing project issue-form owner. The next candidate
+preflight is limited to directory/create/import routes; this prevents duplicate TSX/audit slices
+without re-enumerating the entire repository.
+
+The Batch 531 directory/create/import and board-list follow-up completed the documented refresh:
+DIR-01, CREATE-01, IMPORT-01, and BOARD-01 also have all direct visible owners already migrated.
+BOARD empty/pagination are generic shared fallback, while its sort/filter is already StyleX-owned;
+creating a board-local duplicate would violate ownership boundaries. The 110-entry route inventory
+therefore has no remaining independent route-owner migration. Subsequent Wave 1 work must be an
+exact multi-route C/R retirement graph or a deferred plugin/global decision, not another route
+search or a duplicate TSX/E2E/audit slice.
