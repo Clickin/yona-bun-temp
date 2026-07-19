@@ -296,9 +296,17 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 </>
               )}
 
-              <div className="btns-row nm">
+              <div
+                className={`${stylex.props(loginProviderStyles.row).className} btns-row nm`}
+                data-stylex-owner="standalone-login-provider-row"
+              >
                 {socialProviders.length > 0 && !socialLoginOnly ? (
-                  <div className="social-login-title-line"> {t("title.or")} </div>
+                  <div
+                    className={`${stylex.props(loginProviderStyles.titleLine).className} social-login-title-line`}
+                    data-stylex-owner="standalone-login-provider-title"
+                  >
+                    {t("title.or")}
+                  </div>
                 ) : null}
                 {socialProviders.map((provider) => (
                   <OAuthProviderLink
@@ -381,7 +389,8 @@ function OAuthProviderLink({ basePath, provider }: { basePath: string; provider:
     <Link
       to={providerLoginPath}
       href={prefixBasePath(basePath, providerLoginPath)}
-      className="ybtn oauth-login-btn"
+      className={`${stylex.props(loginProviderStyles.button).className} ybtn oauth-login-btn`}
+      data-stylex-owner="standalone-login-provider-button"
       reloadDocument
     >
       {normalized === "github" ? (
@@ -434,7 +443,12 @@ function HighlightedLegacyMessage({ message }: { message: string }) {
   return (
     <>
       {match[1]}
-      <span className="highlight">{match[2]}</span>
+      <span
+        className={`${stylex.props(loginProviderStyles.titleHighlight).className} highlight`}
+        data-stylex-owner="standalone-login-title-highlight"
+      >
+        {match[2]}
+      </span>
       {match[3]}
     </>
   );

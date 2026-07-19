@@ -59,10 +59,20 @@ test.describe("StyleX standalone login form", () => {
     expect(route).toContain('data-stylex-part="standalone-login-identifier"');
     expect(route).toContain('data-stylex-part="standalone-login-submit"');
     expect(route).toContain("stylex.props(styles.textInput)");
-    expect(route).toContain('className="ybtn oauth-login-btn"');
+    for (const owner of [
+      "standalone-login-title-highlight",
+      "standalone-login-provider-row",
+      "standalone-login-provider-title",
+      "standalone-login-provider-button",
+    ]) {
+      expect(route).toContain(`data-stylex-owner="${owner}"`);
+    }
+    for (const residual of ["titleHighlight", "row", "titleLine", "button"]) {
+      expect(theme).toContain(`${residual}:`);
+    }
     expect(route).toContain('className="btns-row nm"');
     expect(theme).toContain("inputFocusBorder");
-    expect(route).toContain('lineHeight: "20px"');
+    expect(route).toContain('lineHeight: "22px"');
     expect(route).not.toContain("globalColors.");
     expect(fallback).toContain(".login-form-wrap .text");
     expect(fallback).toContain(".oauth-login-btn");
@@ -137,6 +147,29 @@ test.describe("StyleX standalone login form", () => {
     await expect(owner.locator('[data-stylex-part="standalone-login-error"]')).toBeVisible();
   });
 
+  test("keeps OAuth document navigation and redirects an authenticated session", async ({
+    page,
+  }) => {
+    await mockAnonymousLogin(page);
+    await page.route("**/authenticate/github", (route) =>
+      route.fulfill({ contentType: "text/html", body: "OAuth handoff" }),
+    );
+    const owner = await openStandardLogin(page);
+    await owner.getByRole("link", { name: "Sign in with github" }).click();
+    await expect(page).toHaveURL(`${basePath}/authenticate/github`);
+
+    await page.unroute("**/api/v1/session");
+    await page.route("**/api/v1/session", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: { defaultLandingPath: "/", isAnonymous: false, loginId: "admin" },
+      }),
+    );
+    await page.goto(`${basePath}/users/loginform`);
+    await expect(page).toHaveURL(new RegExp(`${basePath}/?$`, "u"));
+    await expect(page.locator('[data-stylex-owner="standalone-login-form"]')).toHaveCount(0);
+  });
+
   test("matches legacy desktop geometry and paint", async ({ page }) => {
     await mockAnonymousLogin(page);
     await page.setViewportSize(desktop);
@@ -145,6 +178,9 @@ test.describe("StyleX standalone login form", () => {
     const identifier = owner.locator('[data-stylex-part="standalone-login-identifier"]');
     const password = owner.locator('[data-stylex-part="standalone-login-password"]');
     const submit = owner.locator('[data-stylex-part="standalone-login-submit"]');
+    const providerRow = owner.locator('[data-stylex-owner="standalone-login-provider-row"]');
+    const providerTitle = owner.locator('[data-stylex-owner="standalone-login-provider-title"]');
+    const providerButton = owner.locator('[data-stylex-owner="standalone-login-provider-button"]');
 
     await expect(form).toHaveCSS("width", "400px");
     await expect(identifier).toHaveCSS("width", "386px");
@@ -154,6 +190,17 @@ test.describe("StyleX standalone login form", () => {
     await expect(identifier).toHaveCSS("border-bottom-color", "rgb(204, 204, 204)");
     await expect(password).toHaveCSS("margin-bottom", "15px");
     await expect(submit).toHaveCSS("width", "400px");
+    await expect(owner.locator('[data-stylex-owner="standalone-login-title-highlight"]')).toHaveCSS(
+      "color",
+      "rgb(255, 115, 50)",
+    );
+    await expect(providerRow).toHaveCSS("display", "block");
+    await expect(providerRow).toHaveCSS("text-align", "center");
+    await expect(providerTitle).toHaveCSS("margin-top", "12px");
+    await expect(providerTitle).toHaveCSS("margin-bottom", "10px");
+    await expect(providerButton.first()).toHaveCSS("display", "block");
+    await expect(providerButton.first()).toHaveCSS("margin-top", "10px");
+    await expect(providerButton.first()).toHaveCSS("margin-bottom", "10px");
     await identifier.focus();
     await expect(identifier).toHaveCSS("border-bottom-color", "rgb(243, 108, 34)");
     expect(await form.boundingBox()).toMatchObject({ width: 400, x: 483 });
@@ -175,10 +222,14 @@ test.describe("StyleX standalone login form", () => {
     const form = owner.locator('[data-stylex-part="standalone-login-form-wrap"]');
     const identifier = owner.locator('[data-stylex-part="standalone-login-identifier"]');
     const submit = owner.locator('[data-stylex-part="standalone-login-submit"]');
+    const providerButton = owner.locator('[data-stylex-owner="standalone-login-provider-button"]');
 
     await expect(form).toHaveCSS("width", "370.5px");
     await expect(identifier).toHaveCSS("width", "351.969px");
     await expect(submit).toHaveCSS("width", "370.5px");
+    await expect(providerButton.first()).toHaveCSS("display", "block");
+    await expect(providerButton.first()).toHaveCSS("margin-top", "10px");
+    await expect(providerButton.first()).toHaveCSS("margin-bottom", "10px");
     expect(await form.boundingBox()).toMatchObject({ width: 370.5, x: 9.75 });
     expect(await identifier.boundingBox()).toMatchObject({ width: 363.96875, x: 9.75 });
     expect(
