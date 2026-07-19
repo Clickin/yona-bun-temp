@@ -24,6 +24,50 @@ const legacySiteSidebarLinkProps = {
 const legacyMassMailSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 
 const styles = stylex.create({
+  page: {
+    marginTop: "10px",
+    minHeight: "450px",
+    "@media all and (max-width: 720px)": {
+      boxSizing: "border-box",
+      minWidth: "10px",
+      padding: "0px",
+      width: "100%",
+    },
+  },
+  content: { margin: "0px auto" },
+  grid: {
+    width: "100%",
+    "::before": { content: '\"\"', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '\"\"', display: "table", lineHeight: "0px" },
+  },
+  sidebarColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0px",
+    minHeight: "30px",
+    width: "14.893617021276595%",
+    "@media (min-width: 1200px)": { width: "14.52991452991453%" },
+    "@media (min-width: 768px) and (max-width: 979px)": { width: "14.3646408839779%" },
+    "@media (max-width: 767px)": { float: "none", width: "100%" },
+  },
+  contentColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "82.97872340425532%",
+    "@media (min-width: 1200px)": {
+      marginLeft: "2.564102564102564%",
+      width: "82.90598290598291%",
+    },
+    "@media (min-width: 768px) and (max-width: 979px)": {
+      marginLeft: "2.7624309392265194%",
+      width: "82.87292817679558%",
+    },
+    "@media (max-width: 767px)": { float: "none", marginLeft: "0px", width: "100%" },
+  },
   breadcrumbOuter: {
     boxSizing: "border-box",
     minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
@@ -271,13 +315,16 @@ function SiteMassMailScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig })
           </h3>
         </div>
       </div>
-      <div className="page-wrap-outer" data-stylex-owner="site-massmail-page">
-        <div className="site-setting-wrap" data-stylex-owner="site-massmail-content">
-          <div className="row-fluid">
-            <div className="span2" data-stylex-owner="site-massmail-sidebar-column">
+      <div {...stylex.props(styles.page)} data-stylex-owner="site-massmail-page">
+        <div {...stylex.props(styles.content)} data-stylex-owner="site-massmail-content">
+          <div {...stylex.props(styles.grid)} data-stylex-owner="site-massmail-setting-grid">
+            <div {...stylex.props(styles.sidebarColumn)} data-stylex-owner="site-massmail-sidebar-column">
               <SiteAdminSidebar showUpdateBadge={Boolean(updateQuery.data?.versionToUpdate)} />
             </div>
-            <div className="span10">
+            <div
+              {...stylex.props(styles.contentColumn)}
+              data-stylex-owner="site-massmail-setting-content-column"
+            >
               <div
                 {...titleAreaStyleProps}
                 className={`title_area ${titleAreaStyleProps.className ?? ""}`}
