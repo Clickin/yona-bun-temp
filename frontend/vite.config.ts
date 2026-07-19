@@ -33,9 +33,11 @@ function buildBackendProxy(basePath: string, target: string) {
       "files",
       "markdown",
       "rpc",
+      "logout",
       "user/email",
       "user/sidebar",
       "user/usermenuTabContentList",
+      "users/logout",
     ].map((leaf) => [
       prefixBasePath(basePath, leaf),
       {

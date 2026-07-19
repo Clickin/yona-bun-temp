@@ -1606,6 +1606,7 @@ async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
     assert!(current_json.contains("\"isAnonymous\":true"));
 
     let oauth_logout = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::GET)
@@ -1624,6 +1625,27 @@ async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
             .get(http::header::LOCATION)
             .and_then(|value| value.to_str().ok()),
         Some("/yona/projects")
+    );
+
+    let self_referer_logout = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/users/logout")
+                .header(http::header::COOKIE, &logout_cookie_header)
+                .header(http::header::REFERER, "/yona/users/logout")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(self_referer_logout.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        self_referer_logout
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/")
     );
 }
 

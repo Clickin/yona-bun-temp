@@ -1574,6 +1574,7 @@ pub(crate) async fn direct_legacy_logout(
         .get(http::header::REFERER)
         .and_then(|value| value.to_str().ok())
         .filter(|value| !value.trim().is_empty())
+        .filter(|value| !is_legacy_logout_path(value, &service.base_path))
         .map(str::to_string)
         .unwrap_or_else(|| base_path_href(&service.base_path, "/"));
     let previous_token = service
@@ -1589,6 +1590,15 @@ pub(crate) async fn direct_legacy_logout(
     let mut response = Redirect::to(&redirect_target).into_response();
     append_response_headers(response.headers_mut(), &ctx.response_headers);
     response
+}
+
+fn is_legacy_logout_path(value: &str, base_path: &str) -> bool {
+    let Ok(uri) = value.parse::<http::Uri>() else {
+        return false;
+    };
+    let path = uri.path();
+    path == base_path_href(base_path, "/logout")
+        || path == base_path_href(base_path, "/users/logout")
 }
 
 pub(crate) fn routes(
