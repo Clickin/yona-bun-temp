@@ -1310,7 +1310,11 @@ const globalGnbSearchFormStyles = stylex.create({
     position: "relative",
   },
   form: {
-    display: "inline-block",
+    display: {
+      default: "inline-block",
+      // Frozen _responsive.less:269-271 hides the legacy .gnb-search-form at max 720px.
+      "@media (max-width: 720px)": "none",
+    },
     fontSize: "0px",
     lineHeight: "30px",
     marginBottom: "0px",
@@ -1774,7 +1778,7 @@ export function SiteLayoutShell({
               >
                 <form
                   action={gnbSearchAction}
-                  className={`gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
+                  {...stylex.props(globalGnbSearchFormStyles.form)}
                   data-stylex-owner="global-gnb-search-form"
                   name="gnb-search-form"
                 >

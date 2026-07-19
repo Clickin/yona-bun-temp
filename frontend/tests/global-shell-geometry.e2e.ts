@@ -46,8 +46,10 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(feedbackLink).toHaveText("Yoram repository");
   await expect(feedbackLink).toHaveAttribute("href", LEGACY_FEEDBACK_URL);
   await expect(feedbackLink).toHaveAttribute("target", "_blank");
-  await expect(navItems.nth(4).locator("form.gnb-search-form")).toBeVisible();
-  await expect(navItems.nth(4).locator("form.gnb-search-form")).toHaveAttribute(
+  const searchForm = navItems.nth(4).locator('[data-stylex-owner="global-gnb-search-form"]');
+  await expect(searchForm).toBeVisible();
+  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveAttribute(
     "action",
     `${BASE_PATH}/search`,
   );
@@ -94,6 +96,35 @@ test("anonymous public shell matches live legacy desktop geometry and visible or
   await expect(pin).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-right")).toBeVisible();
   await expect(pin.locator(".yobicon-arrow-left")).toBeHidden();
+});
+
+test("site layout search owner keeps legacy responsive visibility without fallback class", async ({
+  page,
+}) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: true });
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+
+  const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
+  await expect(searchForm).toBeVisible();
+  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveAttribute("name", "gnb-search-form");
+  await expect(searchForm).toHaveAttribute("action", `${BASE_PATH}/search`);
+
+  const desktopMetrics = await readElementBox(searchForm);
+  const navbarMetrics = await readElementBox(page.locator('[data-stylex-owner="global-gnb-outer"]'));
+  expect(desktopMetrics.height).toBe(30);
+  expect(desktopMetrics.y).toBeGreaterThanOrEqual(navbarMetrics.y);
+  expect(desktopMetrics.y + desktopMetrics.height).toBeLessThanOrEqual(
+    navbarMetrics.y + navbarMetrics.height,
+  );
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(searchForm).toBeHidden();
+  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
+  await expect(searchForm).toHaveCSS("display", "none");
 });
 
 test("anonymous home login Link opens and dismisses the legacy root dialog", async ({ page }) => {
@@ -228,6 +259,9 @@ test("anonymous public shell keeps the live legacy mobile wrapping without overf
   await page.goto(`${BASE_PATH}/`);
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator('[data-stylex-owner="global-gnb-project-list-divider"]')).toBeVisible();
+  const searchForm = page.locator('[data-stylex-owner="global-gnb-search-form"]');
+  await expect(searchForm).toBeHidden();
+  await expect(searchForm).not.toHaveClass(/\bgnb-search-form\b/);
 
   const metrics = await readShellMetrics(page);
   expect(metrics.viewport).toEqual({ height: 844, scrollWidth: 390, width: 390 });
@@ -459,7 +493,7 @@ async function readShellMetrics(page: Page) {
       nav: box('[data-stylex-owner="global-gnb-nav"]'),
       navbar: box("[data-stylex-owner=global-gnb-outer]"),
       pin: box('[data-stylex-owner="global-sidebar-open-pin"]'),
-      search: box(".gnb-search-form"),
+      search: box('[data-stylex-owner="global-gnb-search-form"]'),
       signup: box('[data-stylex-owner="anonymous-site-signup"]'),
       userMenu: box(".gnb-usermenu"),
       viewport: {

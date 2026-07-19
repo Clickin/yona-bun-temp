@@ -3950,3 +3950,10 @@ creating a board-local duplicate would violate ownership boundaries. The 110-ent
 therefore has no remaining independent route-owner migration. Subsequent Wave 1 work must be an
 exact multi-route C/R retirement graph or a deferred plugin/global decision, not another route
 search or a duplicate TSX/E2E/audit slice.
+
+Batch 540 retires the `SiteLayoutShell`-specific `gnb-search-form` fallback consumer without
+touching the independent `/restricted` consumer. The existing form owner now carries the exact
+frozen `_responsive.less:269-271` max-720 hidden state in StyleX, alongside its already-owned
+desktop box/spacing/typography; the legacy class is removed only from the SiteLayout form. The
+stable global-shell assertion verifies visible desktop containment and hidden Korean 390px output
+without the class. Live legacy visual confirmation is unavailable for this shared shell slice.
