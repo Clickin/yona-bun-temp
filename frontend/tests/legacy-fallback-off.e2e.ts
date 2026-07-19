@@ -156,6 +156,20 @@ test("site post-row fallback bridges have no remaining selectors", () => {
   }
 });
 
+test("board label-picker fallback bridge has no remaining selector arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".board-label-picker");
+  expect(appCss).toContain(".board-form label {");
+  expect(appCss).toContain(".board-check {");
+
+  for (const route of [
+    "src/routes/$ownerName/$projectName/postform.tsx",
+    "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
+  ]) {
+    expect(readFileSync(route, "utf8")).not.toContain("board-label-picker");
+  }
+});
+
 test("dead temporary typography bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".eyebrow {");
@@ -401,6 +415,71 @@ async function mockIssueListSession(page: Page) {
         state: "open",
         total: 1,
         totalPages: 1,
+      },
+    }),
+  );
+}
+
+async function mockBoardEditFormSession(page: Page) {
+  const session = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-board-edit" },
+      json: {
+        actorId: 2,
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "dev",
+        userLabel: "Dev Member",
+      },
+    });
+  };
+  await page.route("**/api/v1/session", session);
+  await page.route("**/api/auth/session", session);
+  await page.route("**/api/v1/auth/session", session);
+  await page.route("**/api/v1/owners/admin/projects/sample/container", (route) =>
+    route.fulfill({
+      json: {
+        id: 7,
+        isFavorite: false,
+        isForkedFromOrigin: false,
+        isPrivate: false,
+        isProtected: false,
+        logoUrl: "/assets/images/project_default_logo.png",
+        menuSetting: { board: true, code: true, issue: true, milestone: true, pullRequest: true, review: true },
+        ownerName: "admin",
+        projectName: "sample",
+        vcs: "GIT",
+        viewerCanUpdate: true,
+      },
+    }),
+  );
+  await page.route("**/api/v1/projects/admin/sample/posts/3", (route) =>
+    route.fulfill({
+      json: {
+        attachments: [],
+        authorId: "2",
+        authorLabel: "Dev Member",
+        authorLoginId: "dev",
+        bodyHtml: "<p>Post <strong>markdown</strong></p>",
+        bodyMarkdown: "Post **markdown**",
+        commentCount: 0,
+        comments: [],
+        createdLabel: "Jul 2, 2026",
+        historyHtml: "",
+        historyMarkdown: "",
+        id: "103",
+        isWatching: false,
+        labels: [],
+        notice: false,
+        ownerName: "admin",
+        permissions: { canComment: true, canCreate: true, canDelete: true, canRead: true, canSetNotice: true, canUpdate: true, canWatch: true },
+        postNumber: "3",
+        projectName: "sample",
+        readme: false,
+        title: "Release note",
+        updatedLabel: "Jul 2, 2026",
+        watcherCount: 0,
       },
     }),
   );
@@ -954,6 +1033,45 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   expect(mobile.titleBox!.right).toBeLessThanOrEqual(mobile.rowBox.right + 1);
   expect(mobile.scrollWidth).toBeLessThanOrEqual(390);
   await expect(page.locator(".post-row, .post-row-main, .post-row-meta")).toHaveCount(0);
+});
+
+test("board edit form retains legacy form controls without the dead label-picker bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockBoardEditFormSession(page);
+  await page.goto(`${basePath}/admin/sample/post/3/editform`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const form = page.locator("form.nm");
+  await expect(form).toBeVisible();
+  await expect(form.locator(".content-wrap.frm-wrap")).toHaveCount(1);
+  await expect(form.locator(".actions")).toHaveCount(1);
+  await expect(form.locator("label.checkbox")).toHaveCount(3);
+  await expect(form.locator(".board-label-picker")).toHaveCount(0);
+  await expect(form.locator(".board-check")).toHaveCount(0);
+  const desktop = await form.evaluate((element) => {
+    const formBox = element.getBoundingClientRect();
+    const contentBox = element.querySelector(".content-wrap.frm-wrap")?.getBoundingClientRect();
+    const actionsBox = element.querySelector(".actions")?.getBoundingClientRect();
+    return { actionsBox, contentBox, formBox };
+  });
+  expect(desktop.contentBox!.left).toBeGreaterThanOrEqual(desktop.formBox.left);
+  expect(desktop.actionsBox!.right).toBeLessThanOrEqual(desktop.formBox.right + 1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await form.evaluate((element) => {
+    const formBox = element.getBoundingClientRect();
+    const actionsBox = element.querySelector(".actions")?.getBoundingClientRect();
+    return { actionsBox, formBox, scrollWidth: document.documentElement.scrollWidth };
+  });
+  expect(mobile.actionsBox!.right).toBeLessThanOrEqual(mobile.formBox.right + 1);
+  expect(mobile.scrollWidth).toBeLessThanOrEqual(390);
 });
 
 test("project posts retains legacy label output without the dead board-badge bridge", async ({

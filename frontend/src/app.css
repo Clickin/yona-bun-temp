@@ -3970,19 +3970,11 @@ div.markdown-preview {
   min-height: 140px;
 }
 
-.board-form label,
-.board-label-picker {
+.board-form label {
   display: grid;
   gap: 5px;
 }
 
-.board-label-picker {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-}
-
-.board-label-picker label,
 .board-check {
   display: inline-flex;
   gap: 6px;

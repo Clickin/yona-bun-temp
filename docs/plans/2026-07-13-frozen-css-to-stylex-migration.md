@@ -4113,3 +4113,13 @@ elements with StyleX and have no temporary class emitter. The focused contract r
 selector presence before deletion, exact absence afterward, and normal/fallback-off managed
 browser checks for both lists at desktop and 390px. Global fallback discovery remains
 incomplete/non-green, so this is not generated-fallback unlinking or live-legacy visual parity.
+
+Batch 562 retires only the source-less `.board-label-picker` arms from the board-form fallback:
+the comma arm beside `.board-form label`, its standalone box, and the comma arm beside
+`.board-check`. Legacy `board/create.scala.html:49-54,89-111` and
+`board/edit.scala.html:19-28,51-71` establish `.content-wrap.frm-wrap`, `.actions`, and
+`.checkbox` output; the form templates and comment DOM have no label-picker. Existing React
+post create/edit forms deliberately preserve that absence. The focused contract retains
+`.board-form label` and `.board-check`, then verifies the real edit form in normal and
+fallback-off managed runs at desktop and 390px. Global fallback discovery remains
+incomplete/non-green, so this is not generated-fallback unlinking or live-legacy visual parity.
