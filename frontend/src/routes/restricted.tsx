@@ -55,8 +55,11 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           <p id="unsupported-content" />
         </div>
       </div>
-      <header className="gnb-outer" data-stylex-owner="restricted-header">
-        <div className="gnb-inner">
+      <header
+        {...stylex.props(restrictedGnbStyles.outer)}
+        data-stylex-owner="restricted-gnb-outer"
+      >
+        <div {...stylex.props(restrictedGnbStyles.inner)} data-stylex-owner="restricted-gnb-inner">
           <div
             {...stylex.props(restrictedSidebarPinStyles.root)}
             data-stylex-owner="restricted-sidebar-pin"
@@ -69,28 +72,44 @@ function RestrictedScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
               className={`yobicon-arrow-right ${stylex.props(restrictedSidebarPinStyles.icon, restrictedSidebarPinStyles.visibleIcon).className}`}
             />
           </div>
-          <ul className="gnb-nav">
-            <li>
+          <ul {...stylex.props(restrictedGnbStyles.nav)} data-stylex-owner="restricted-gnb-nav">
+            <li {...stylex.props(restrictedGnbStyles.item)}>
               <Link
                 activeOptions={legacyPlainLinkActiveOptions}
                 activeProps={legacyPlainLinkActiveProps}
-                className="logo logo-letter"
+                {...stylex.props(restrictedGnbStyles.brand)}
+                data-stylex-owner="restricted-gnb-brand"
                 to="/"
               >
                 Y
               </Link>
             </li>
-            <li>
+            <li {...stylex.props(restrictedGnbStyles.item)}>
               <form
                 action={prefixBasePath(runtimeConfig.basePath, "/search")}
-                className="input-prepend gnb-search-form"
+                {...stylex.props(restrictedGnbStyles.searchForm)}
+                data-stylex-owner="restricted-gnb-search-form"
                 name="gnb-search-form"
               >
                 <input type="hidden" name="searchType" value="auto" />
-                <div className="search-box">
+                <div
+                  {...stylex.props(restrictedGnbStyles.searchBox)}
+                  data-stylex-owner="restricted-gnb-search-box"
+                >
                   {/* oxlint-disable-next-line jsx-a11y/no-access-key -- legacy siteLayout.scala.html renders accesskey="S" on the GNB search input. */}
-                  <input type="text" name="keyword" autoComplete="off" accessKey="S" />
-                  <button type="submit">
+                  <input
+                    {...stylex.props(restrictedGnbStyles.searchInput)}
+                    accessKey="S"
+                    autoComplete="off"
+                    data-stylex-owner="restricted-gnb-search-input"
+                    name="keyword"
+                    type="text"
+                  />
+                  <button
+                    {...stylex.props(restrictedGnbStyles.searchSubmit)}
+                    data-stylex-owner="restricted-gnb-search-submit"
+                    type="submit"
+                  >
                     <i className="yobicon-search" />
                   </button>
                 </div>
@@ -180,6 +199,179 @@ const restrictedSidebarPinStyles = stylex.create({
   },
   visibleIcon: {
     display: "block",
+  },
+});
+
+// Frozen common/navbar.scala.html and _page.less:111-130,198-203,240-295,421-471.
+const restrictedGnbStyles = stylex.create({
+  outer: {
+    backgroundColor: restrictedTheme.gnbOuterSurface,
+    boxSizing: "border-box",
+    height: "40px",
+    minWidth: {
+      default: "0px",
+      "@media (max-width: 720px)": "10px",
+    },
+    paddingBlock: "0px",
+    paddingInline: "10px",
+  },
+  inner: {
+    boxSizing: "content-box",
+    color: restrictedTheme.gnbInnerText,
+    height: "40px",
+    margin: "0px auto",
+    width: "98%",
+  },
+  nav: {
+    boxSizing: "content-box",
+    color: restrictedTheme.gnbNavText,
+    display: "block",
+    float: "left",
+    fontSize: "14px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    listStyle: "none",
+    margin: "0px 0px 0px 15px",
+    padding: "0px",
+  },
+  item: {
+    float: "left",
+    position: "relative",
+  },
+  brand: {
+    backgroundColor: restrictedTheme.gnbBrandSurface,
+    backgroundPosition: "11px 10px",
+    backgroundRepeat: "no-repeat",
+    borderRadius: "2px",
+    color: restrictedTheme.gnbBrandText,
+    display: "inline",
+    float: "none",
+    fontSize: "14px",
+    fontWeight: "700",
+    height: "40px",
+    lineHeight: "40px",
+    opacity: "0.7",
+    outlineStyle: "none",
+    paddingBlock: "6px",
+    paddingInline: "10px",
+    textDecoration: "none",
+    transitionDuration: "0.15s",
+    transitionProperty: "color",
+    width: "44px",
+    ":focus": {
+      color: restrictedTheme.gnbBrandText,
+      opacity: "0.7",
+      outlineStyle: "none",
+      textDecoration: "none",
+    },
+    ":hover": {
+      color: restrictedTheme.gnbBrandInteractionText,
+      opacity: "1",
+      outlineStyle: "none",
+      textDecoration: "none",
+    },
+    "::before": {
+      content: '" "',
+      float: "left",
+      height: "40px",
+      width: "1px",
+    },
+    "::after": {
+      content: '" "',
+      float: "left",
+      height: "40px",
+      marginLeft: {
+        default: "40px",
+        "@media (max-width: 720px)": "0px",
+      },
+      width: "1px",
+    },
+  },
+  searchForm: {
+    display: {
+      default: "inline-block",
+      // Frozen _responsive.less:269-271 hides legacy .gnb-search-form at max 720px.
+      "@media (max-width: 720px)": "none",
+    },
+    fontSize: "0px",
+    lineHeight: "30px",
+    margin: "5px 0px 0px",
+    paddingBlock: "0px",
+    paddingInline: "10px",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+  },
+  searchBox: {
+    backgroundColor: restrictedTheme.gnbSearchBoxSurface,
+    borderRadius: "3px",
+    boxSizing: "content-box",
+    display: "inline-block",
+    height: "30px",
+    verticalAlign: "middle",
+  },
+  searchInput: {
+    backgroundColor: restrictedTheme.gnbSearchInputSurface,
+    borderColor: {
+      default: restrictedTheme.gnbSearchInputText,
+      ":focus": restrictedTheme.gnbSearchInputFocusBorder,
+    },
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    boxSizing: "content-box",
+    color: restrictedTheme.gnbSearchInputText,
+    display: "inline-block",
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: "12px",
+    fontWeight: "400",
+    height: "20px",
+    lineHeight: "30px",
+    margin: "0px 0px 3px",
+    maxWidth: {
+      default: "none",
+      ":focus": "250px",
+    },
+    minHeight: "0px",
+    outlineStyle: "none",
+    outlineWidth: "0px",
+    padding: "5px 10px",
+    position: "relative",
+    transitionDuration: "0.3s",
+    transitionProperty: "width",
+    transitionTimingFunction: "ease",
+    verticalAlign: "top",
+    width: {
+      default: "50px",
+      ":focus": "200px",
+    },
+    zIndex: {
+      default: "auto",
+      ":focus": "2",
+    },
+  },
+  searchSubmit: {
+    appearance: "button",
+    backgroundColor: "transparent",
+    borderColor: restrictedTheme.gnbSearchSubmitText,
+    borderStyle: "none",
+    borderWidth: "0px",
+    boxShadow: "none",
+    boxSizing: "border-box",
+    color: restrictedTheme.gnbSearchSubmitText,
+    cursor: "pointer",
+    display: "inline-block",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    fontSize: "12px",
+    fontWeight: "400",
+    lineHeight: "20px",
+    margin: "5px",
+    minHeight: "0px",
+    outlineStyle: "none",
+    outlineWidth: "0px",
+    padding: "0px",
+    textAlign: "center",
+    verticalAlign: "middle",
   },
 });
 

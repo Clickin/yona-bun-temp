@@ -12,18 +12,18 @@ const EXPECTED_RESTRICTED_SCREEN = `
     <p id="unsupported-content"></p>
   </div>
 </div>
-<header class="gnb-outer">
-  <div class="gnb-inner">
+<header>
+  <div>
     <div class="pin" data-placement="bottom" title="Sidebar">
       <i class="yobicon-arrow-left"></i>
       <i class="yobicon-arrow-right"></i>
     </div>
-    <ul class="gnb-nav">
-      <li><a href="__BASE_PATH__" class="logo logo-letter">Y</a></li>
+    <ul>
+      <li><a href="__BASE_PATH__">Y</a></li>
       <li>
-        <form action="__BASE_PATH__/search" class="input-prepend gnb-search-form" name="gnb-search-form">
+        <form action="__BASE_PATH__/search" name="gnb-search-form">
           <input type="hidden" name="searchType" value="auto">
-          <div class="search-box">
+          <div>
             <input type="text" name="keyword" autocomplete="off" accesskey="S">
             <button type="submit"><i class="yobicon-search"></i></button>
           </div>
@@ -62,7 +62,7 @@ test("restricted page matches legacy restricted.scala.html rendered screen DOM",
   await mockRestrictedSession(page);
 
   await page.goto(`${basePath}/restricted`);
-  await expect(page.locator(".gnb-outer")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="restricted-gnb-outer"]')).toBeVisible();
   await expect(page).toHaveTitle("Yoram");
   await expect
     .poll(() =>
@@ -123,9 +123,9 @@ test("restricted logo link preserves SPA navigation to site home", async ({ page
   });
 
   await page.goto(`${basePath}/restricted`);
-  const logoLink = page.locator(".gnb-nav a.logo.logo-letter");
+  const logoLink = page.locator('[data-stylex-owner="restricted-gnb-brand"]');
   await expectLegacyAnchor(logoLink, {
-    className: "logo logo-letter",
+    className: null,
     href: rootHref(basePath),
     target: null,
     text: "Y",
@@ -156,7 +156,7 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
   expect(RESTRICTED_ROUTE_SOURCE).toContain(
     'import { Link, createFileRoute } from "@tanstack/react-router";',
   );
-  expect(RESTRICTED_ROUTE_SOURCE).toContain('className="logo logo-letter"');
+  expect(RESTRICTED_ROUTE_SOURCE).toContain('data-stylex-owner="restricted-gnb-brand"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain("activeProps={legacyPlainLinkActiveProps}");
   expect(RESTRICTED_ROUTE_SOURCE).toContain('to="/"');
   expect(RESTRICTED_ROUTE_SOURCE).toContain("<Link");
@@ -168,6 +168,9 @@ test("restricted route source keeps internal navigation out of raw anchors", asy
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("router.history");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyRootLink");
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("LegacyHrefAnchor");
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('className="logo logo-letter"');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('className="input-prepend gnb-search-form"');
+  expect(RESTRICTED_ROUTE_SOURCE).not.toContain('className="search-box"');
   expect(RESTRICTED_ROUTE_SOURCE).not.toContain("React.createElement");
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a(?:\s|>)/u);
   expect(RESTRICTED_ROUTE_SOURCE).not.toMatch(/<a\s+[^>]*href=\{prefixBasePath\([^}]*["'`]\/["'`]/);
@@ -275,9 +278,9 @@ async function expectLegacyAnchor(
 
 async function readDesktopRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
-    const logo = document.querySelector<HTMLElement>(".logo-letter");
+    const gnbOuter = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
+    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-inner"]');
+    const logo = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-brand"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
@@ -330,8 +333,8 @@ async function readDesktopRestrictedMetrics(page: Page) {
 
 async function readMobileRestrictedMetrics(page: Page) {
   return page.evaluate(() => {
-    const gnbOuter = document.querySelector<HTMLElement>(".gnb-outer");
-    const gnbInner = document.querySelector<HTMLElement>(".gnb-inner");
+    const gnbOuter = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
+    const gnbInner = document.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-inner"]');
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
     const iframe = document.querySelector<HTMLElement>("iframe");
     const footerOuter = document.querySelector<HTMLElement>(".page-footer-outer");
@@ -375,7 +378,9 @@ async function readMobileRestrictedMetrics(page: Page) {
 async function canonicalizeScreenRoots(page: Page) {
   return page.evaluate(() => {
     const roots = Array.from(
-      document.querySelectorAll(".unsupported, .gnb-outer, .page-wrap-outer, .page-footer-outer"),
+      document.querySelectorAll(
+        '.unsupported, [data-stylex-owner="restricted-gnb-outer"], .page-wrap-outer, .page-footer-outer',
+      ),
     );
     return roots.map((root) => visit(root)).join("");
 
@@ -442,6 +447,13 @@ async function canonicalizeScreenRoots(page: Page) {
             (value) =>
               value && value !== "pin" && !value.startsWith("x") && !value.includes("restricted__"),
           )
+          .join(" ");
+        return className ? `${name}=${JSON.stringify(className)}` : "";
+      }
+      if (name === "class" && current.closest('[data-stylex-owner^="restricted-gnb-"]')) {
+        const className = (current.getAttribute(name) ?? "")
+          .split(/\s+/u)
+          .filter((value) => value && !value.startsWith("x") && !value.includes("restricted__"))
           .join(" ");
         return className ? `${name}=${JSON.stringify(className)}` : "";
       }
@@ -525,6 +537,13 @@ async function canonicalizeHtml(page: Page, html: string) {
                 !value.startsWith("x") &&
                 !value.includes("restricted__"),
             )
+            .join(" ");
+          return className ? `${name}=${JSON.stringify(className)}` : "";
+        }
+        if (name === "class" && current.closest('[data-stylex-owner^="restricted-gnb-"]')) {
+          const className = (current.getAttribute(name) ?? "")
+            .split(/\s+/u)
+            .filter((value) => value && !value.startsWith("x") && !value.includes("restricted__"))
             .join(" ");
           return className ? `${name}=${JSON.stringify(className)}` : "";
         }

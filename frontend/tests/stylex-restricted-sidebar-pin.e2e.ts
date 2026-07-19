@@ -4,6 +4,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const BASE_PATH = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const OWNER = '[data-stylex-owner="restricted-sidebar-pin"]';
+const GNB_SEARCH_OWNER = '[data-stylex-owner="restricted-gnb-search-form"]';
 const SCREENSHOT_DIRECTORY = resolve("..", "output", "playwright");
 
 test.use({ locale: "en-US" });
@@ -31,6 +32,18 @@ test("restricted sidebar pin has route-paint and inline-geometry StyleX ownershi
   expect(appCss).not.toMatch(/^\.pin(?:\s|\{|:)/mu);
 });
 
+test("restricted GNB search is fully owned without legacy presentation classes", () => {
+  const route = readFileSync("src/routes/restricted.tsx", "utf8");
+
+  expect(route).toContain('data-stylex-owner="restricted-gnb-search-form"');
+  expect(route).toContain('data-stylex-owner="restricted-gnb-search-box"');
+  expect(route).toContain('data-stylex-owner="restricted-gnb-search-input"');
+  expect(route).toContain('data-stylex-owner="restricted-gnb-search-submit"');
+  expect(route).not.toContain('className="input-prepend gnb-search-form"');
+  expect(route).not.toContain('className="search-box"');
+  expect(route).toContain('"@media (max-width: 720px)": "none"');
+});
+
 for (const viewport of [
   { height: 900, label: "desktop", width: 1366 },
   { height: 844, label: "mobile", width: 390 },
@@ -42,11 +55,31 @@ for (const viewport of [
     await page.evaluate(() => document.fonts.ready);
 
     const pin = page.locator(OWNER);
-    await expect(page.locator('[data-stylex-owner="restricted-header"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="restricted-gnb-outer"]')).toBeVisible();
     await expect(page.locator('[data-stylex-owner="restricted-page"]')).toBeVisible();
     await expect(page.locator('[data-stylex-owner="restricted-content"]')).toBeVisible();
     await expect(page.locator('[data-stylex-owner="restricted-copy"]')).toBeVisible();
     await expect(page.locator('[data-stylex-owner="restricted-footer"]')).toBeVisible();
+    const searchForm = page.locator(GNB_SEARCH_OWNER);
+    await expect(searchForm).not.toHaveClass(/(?:^|\s)(?:input-prepend|gnb-search-form)(?:\s|$)/u);
+    await expect(page.locator('[data-stylex-owner="restricted-gnb-search-box"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-owner="restricted-gnb-search-input"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-owner="restricted-gnb-search-submit"]')).toHaveCount(1);
+    if (viewport.label === "mobile") {
+      await expect(searchForm).toBeHidden();
+    } else {
+      await expect(searchForm).toBeVisible();
+      const searchMetrics = await searchForm.evaluate((form) => {
+        const header = form.closest<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
+        const input = form.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-search-input"]');
+        if (!header || !input) throw new Error("Restricted GNB search metrics are missing");
+        const headerBox = header.getBoundingClientRect();
+        const inputBox = input.getBoundingClientRect();
+        return { headerBox, inputBox };
+      });
+      expect(searchMetrics.inputBox.top).toBeGreaterThanOrEqual(searchMetrics.headerBox.top);
+      expect(searchMetrics.inputBox.bottom).toBeLessThanOrEqual(searchMetrics.headerBox.bottom);
+    }
     const leftIcon = pin.locator(":scope > .yobicon-arrow-left");
     const rightIcon = pin.locator(":scope > .yobicon-arrow-right");
     await expect(pin).toHaveCount(1);

@@ -3957,3 +3957,13 @@ frozen `_responsive.less:269-271` max-720 hidden state in StyleX, alongside its 
 desktop box/spacing/typography; the legacy class is removed only from the SiteLayout form. The
 stable global-shell assertion verifies visible desktop containment and hidden Korean 390px output
 without the class. Live legacy visual confirmation is unavailable for this shared shell slice.
+
+Batch 541 completes the independent authenticated `/restricted` GNB consumer rather than
+preserving its legacy class bridge. `RestrictedScreen` now owns the exact navbar outer/inner/nav,
+logo, search form, search box, keyword input, and submit declarations from the frozen common
+navbar and `_page.less`; its route-local theme contains paint only. The form carries the same
+max-720 conditional hidden behavior from `_responsive.less:269-271`, so it no longer emits
+`gnb-search-form`, `input-prepend`, `search-box`, or the GNB presentation classes. Yobicon remains
+a global glyph primitive, and unrelated standalone/page/footer fallback remains outside this
+single-route state. Focused normal and fallback-off desktop/mobile checks preserve structural DOM,
+40px navbar containment, visual owner screenshots, and the hidden Korean-390 form state.
