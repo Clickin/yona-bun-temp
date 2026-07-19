@@ -218,7 +218,10 @@ function GlobalSearchSuccessBody({
         <div data-stylex-owner="global-search-shell">
           <div className="project-page-wrap">
             <div className="row-fluid">
-              <div {...stylex.props(styles.category)} data-stylex-owner="global-search-category">
+              <div
+                {...stylex.props(styles.categoryShell)}
+                data-stylex-owner="global-search-category-shell"
+              >
                 <ul className="lst-stacked unstyled search-category-wrap">
                   {GLOBAL_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
@@ -278,7 +281,12 @@ function GlobalSearchSuccessBody({
                     </button>
                   </form>
 
-                  <h3 className="search-result-title">{resultTitle}</h3>
+                  <h3
+                    className={`search-result-title ${stylex.props(styles.resultHeading).className}`}
+                    data-stylex-owner="global-search-result-heading"
+                  >
+                    {resultTitle}
+                  </h3>
                 </div>
                 <div {...stylex.props(styles.result)} data-stylex-owner="global-search-result-wrap">
                   <GlobalSearchResultList result={result} runtimeConfig={runtimeConfig} />
@@ -303,12 +311,15 @@ function GlobalSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
-    return <div className="empty-result"></div>;
+    return <div className="empty-result" data-stylex-owner="global-search-empty-result"></div>;
   }
 
   if (searchType === "project") {
     return (
-      <ul className="search-list-wrap">
+      <ul
+        className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
+        data-stylex-owner="global-search-result-list"
+      >
         {result.items.map((item) => {
           const projectLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
           const originProjectLink =
@@ -323,7 +334,11 @@ function GlobalSearchResultList({
               : null;
 
           return (
-            <li className="search-list-item project" key={item.id}>
+            <li
+              className={`search-list-item project ${stylex.props(styles.resultItem, styles.resultItemProject).className}`}
+              key={item.id}
+              data-stylex-owner="global-search-result-item"
+            >
               <Link
                 to={projectLink.to}
                 hash={projectLink.hash || undefined}
@@ -333,7 +348,10 @@ function GlobalSearchResultList({
                   src={item.projectLogoUrl || "/assets/images/project_default_logo.png"}
                 />
               </Link>
-              <div className="title-wrap">
+              <div
+                className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
+                data-stylex-owner="global-search-result-title-wrap"
+              >
                 <Link
                   to={projectLink.to}
                   hash={projectLink.hash || undefined}
@@ -391,12 +409,19 @@ function GlobalSearchResultList({
   if (searchType === "user") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
+          data-stylex-owner="global-search-result-list"
+        >
           {result.items.map((item) => {
             const userLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
 
             return (
-              <li className="search-list-item project" key={item.id}>
+              <li
+                className={`search-list-item project ${stylex.props(styles.resultItem, styles.resultItemProject).className}`}
+                key={item.id}
+                data-stylex-owner="global-search-result-item"
+              >
                 <RouterLink
                   to={userLink.to}
                   hash={userLink.hash || undefined}
@@ -410,7 +435,10 @@ function GlobalSearchResultList({
                     <img src={item.avatarUrl || ""} alt={item.authorLabel} width="32" height="32" />
                   )}
                 </RouterLink>
-                <div className="title-wrap">
+                <div
+                  className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
+                  data-stylex-owner="global-search-result-title-wrap"
+                >
                   <Link
                     to={userLink.to}
                     hash={userLink.hash || undefined}
@@ -448,7 +476,10 @@ function GlobalSearchResultList({
 
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
+          data-stylex-owner="global-search-result-list"
+        >
           {result.items.map((item) => {
             const itemLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
             const projectLink = globalSearchInternalLinkTarget(
@@ -472,14 +503,27 @@ function GlobalSearchResultList({
             ));
 
             return (
-              <li className="search-list-item" key={item.id}>
+              <li
+                className={`search-list-item ${stylex.props(styles.resultItem).className}`}
+                key={item.id}
+                data-stylex-owner="global-search-result-item"
+              >
                 {reviewThreadOnPullRequest ? (
-                  <div className="title-wrap">
-                    <span className="post-id">#{item.number}</span>
+                  <div
+                    className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
+                    data-stylex-owner="global-search-result-title-wrap"
+                  >
+                    <span
+                      className={`post-id ${stylex.props(styles.resultPostId).className}`}
+                      data-stylex-owner="global-search-result-post-id"
+                    >
+                      #{item.number}
+                    </span>
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
-                      className={titleClassName}
+                      className={`${titleClassName ?? ""} ${stylex.props(styles.resultTitle).className}`.trim()}
+                      data-stylex-owner="global-search-result-title"
                     >
                       {titleClassName ? (
                         <GlobalSearchHighlightedText text={item.title} keyword={result.keyword} />
@@ -536,7 +580,10 @@ function GlobalSearchResultList({
   if (searchType === "milestone") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          className={`search-list-wrap ${stylex.props(styles.resultList).className}`}
+          data-stylex-owner="global-search-result-list"
+        >
           {result.items.map((item) => {
             const itemLink = globalSearchInternalLinkTarget(item.href, runtimeConfig);
             const projectLink = globalSearchInternalLinkTarget(
@@ -545,9 +592,21 @@ function GlobalSearchResultList({
             );
 
             return (
-              <li className="search-list-item" key={item.id}>
-                <div className="title-wrap">
-                  <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
+              <li
+                className={`search-list-item ${stylex.props(styles.resultItem).className}`}
+                key={item.id}
+                data-stylex-owner="global-search-result-item"
+              >
+                <div
+                  className={`title-wrap ${stylex.props(styles.resultTitleWrap).className}`}
+                  data-stylex-owner="global-search-result-title-wrap"
+                >
+                  <Link
+                    to={itemLink.to}
+                    hash={itemLink.hash || undefined}
+                    className={`title ${stylex.props(styles.resultTitle).className}`}
+                    data-stylex-owner="global-search-result-title"
+                  >
                     <GlobalSearchHighlightedText text={item.title} keyword={result.keyword} />
                   </Link>
                 </div>
@@ -586,7 +645,7 @@ function GlobalSearchResultList({
     );
   }
 
-  return <div className="empty-result"></div>;
+  return <div className="empty-result" data-stylex-owner="global-search-empty-result"></div>;
 }
 
 function GlobalSearchPagination({ result }: { result: SearchResponse }) {

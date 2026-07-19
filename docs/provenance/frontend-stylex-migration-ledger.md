@@ -1388,3 +1388,7 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 518
 
 - Authenticated `/$ownerName/$projectName/setting` top boxes: route-local StyleX owns the frozen 399px floated columns, responsive right border/padding reset, desktop 260x188/mobile 100x100 logo, logo descriptions/point typography, list spacing, desktop 380px/mobile inherited field width, and textarea margin/resize. Existing Dynamic StyleX remains the effective runtime textarea-height owner. `yona-original/app/views/project/setting.scala.html`, frozen `_page.less:2213-2270`, and `_responsive.less:126-142` establish the output. Mobile document width remains the frozen 429px geometry rather than adding an ungrounded percentage-width compensation. Exact `.box-wrap .setting-box` blocks are retired; generic box/note/file-control fallback remains.
+
+## Batch 519
+
+- Top-level `/search` populated/empty global search: route-local StyleX composes category shell, result heading/list/item/title/post-id, and empty-result owners using frozen `_page.less:6375-6491`. Generic search selectors remain in `app.css` because project/organization search and `-search-screen.tsx` still consume them. Legacy `search/result.scala.html`, `search/partial_search.scala.html`, result partials, and `stylex-global-search-result-owners.e2e.ts` provide parity evidence; live legacy visual parity remains unverified.
