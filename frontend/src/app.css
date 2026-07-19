@@ -4413,7 +4413,6 @@ div.markdown-preview {
 }
 
 .site-admin-page .post-list-wrap,
-.site-admin-page .project-list-wrap,
 .site-admin-page .user-list-wrap {
   padding: 0;
   margin: 0;
@@ -4427,7 +4426,6 @@ div.markdown-preview {
 }
 
 .site-admin-page .post-list-wrap .listitem,
-.site-admin-page .project-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
   align-items: center;
   gap: 16px;
@@ -4436,7 +4434,6 @@ div.markdown-preview {
 }
 
 .site-admin-page .post-list-wrap .listitem:last-child,
-.site-admin-page .project-list-wrap .listitem:last-child,
 .site-admin-page .user-list-wrap .listitem:last-child {
   border-bottom: 0;
 }

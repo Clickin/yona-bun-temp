@@ -19,6 +19,42 @@ async function mockMassMailSession(page: Page) {
   );
 }
 
+async function mockProjectListSession(page: Page) {
+  const fulfill = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-project-list" },
+      json: { isAnonymous: false, isConfirmed: true, isSiteAdmin: true, loginId: "siteboss" },
+    });
+  };
+  await page.route("**/api/v1/session", fulfill);
+  await page.route("**/api/auth/session", fulfill);
+  await page.route("**/api/v1/auth/session", fulfill);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/site/projects?*", (route) =>
+    route.fulfill({
+      json: {
+        filter: "road",
+        page: 1,
+        pageSize: 20,
+        projects: [
+          {
+            createdAt: "2026-06-29",
+            id: 77,
+            ownerName: "acme",
+            overview: "Release planning",
+            projectLogoUrl: "/assets/images/default-project-logo.png",
+            projectName: "roadmap",
+          },
+        ],
+        total: 1,
+        totalPages: 1,
+      },
+    }),
+  );
+}
+
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
   test.skip(
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1",
@@ -100,4 +136,25 @@ test("massmail default and selected-project output retain the runtime fallback b
   await page.locator("#select-project").click();
   await expect(page.locator("#selected-projects")).toHaveText("admin/projectYobi x");
   await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
+});
+
+test("project-list output retains the runtime fallback boundary without its dead bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockProjectListSession(page);
+  await page.goto(`${basePath}/sites/projectList?filter=road`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const container = page.locator('[data-stylex-owner="site-project-list-container"]');
+  await expect(container).toBeVisible();
+  await expect(container.locator('[data-stylex-owner="site-project-list-project-name"]')).toHaveText(
+    "acme/roadmap",
+  );
+  await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
 });

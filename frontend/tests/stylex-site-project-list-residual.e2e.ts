@@ -117,7 +117,9 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
     expect(appCss).not.toContain(".site-setting-wrap .project-list-wrap {");
     expect(appCss).not.toContain(".site-setting-wrap .project-list-wrap .project-name {");
     expect(appCss).toContain(".site-setting-wrap .listhead {");
-    expect(appCss).toContain(".site-admin-page .project-list-wrap");
+    expect(appCss).not.toContain(".site-admin-page .project-list-wrap");
+    expect(route).not.toContain("site-admin-page");
+    expect(route).not.toContain("project-list-wrap");
   });
 
   test("keeps copy, row order, project navigation, and React-owned delete interaction", async ({
