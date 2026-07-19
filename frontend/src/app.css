@@ -4642,17 +4642,6 @@ div.markdown-preview {
   margin-bottom: 8px;
 }
 
-.site-admin-page .project-select-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.site-admin-page .project-select-row #input-project {
-  box-sizing: border-box;
-  width: 100%;
-}
-
 .site-admin-page .label {
   display: inline-block;
   padding: 3px 7px;

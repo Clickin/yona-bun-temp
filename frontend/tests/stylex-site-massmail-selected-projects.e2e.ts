@@ -48,7 +48,10 @@ test("site mass-mail keeps the legacy unadorned project wrapper and selected-pro
   expect(css).not.toContain(".site-admin-page #project-list-wrap {");
   expect(css).not.toContain(".site-admin-page #selected-projects {");
   expect(css).not.toContain(".site-admin-page .selected-project-remove {");
-  expect(css).toContain(".site-admin-page .project-select-row {");
+  expect(css).not.toContain(".site-admin-page .project-select-row {");
+  expect(css).not.toContain(".site-admin-page .project-select-row #input-project {");
+  expect(route).not.toContain("site-admin-page");
+  expect(route).not.toContain("project-select-row");
 
   for (const viewport of [
     { height: 900, width: 1366 },
@@ -57,9 +60,11 @@ test("site mass-mail keeps the legacy unadorned project wrapper and selected-pro
     await page.setViewportSize(viewport);
     await mockSession(page);
     await page.goto(`${basePath}/sites/massmail`);
+    await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
     await page.locator("#mailtoPrj").check();
     await page.locator("#input-project").fill("admin/projectYobi");
     await page.locator("#select-project").click();
+    await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
     expect(
       await page.locator("#project-list-wrap").evaluate((wrapper) => {
         const selectedProjects = wrapper.querySelector<HTMLElement>("#selected-projects")!;

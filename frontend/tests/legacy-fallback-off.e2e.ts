@@ -1,6 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
+
+async function mockMassMailSession(page: Page) {
+  const fulfill = async (route: Route) => {
+    await route.fulfill({
+      headers: { "x-csrf-token": "csrf-legacy-fallback-off-massmail" },
+      json: { isAnonymous: false, isSiteAdmin: true },
+    });
+  };
+  await page.route("**/api/v1/session", fulfill);
+  await page.route("**/api/auth/session", fulfill);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/projects", (route) =>
+    route.fulfill({ json: { projects: [{ ownerName: "admin", projectName: "projectYobi" }] } }),
+  );
+}
 
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
   test.skip(
@@ -61,4 +78,26 @@ test("fallback-off discovery mode removes the generated legacy stylesheet", asyn
     page.locator(`link[href$="${generatedFallbackHref}"]`),
   ).toHaveCount(0);
   await expect(page.locator("#root")).toHaveCount(1);
+});
+
+test("massmail default and selected-project output retain the runtime fallback boundary", async ({ page }) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockMassMailSession(page);
+  await page.goto(`${basePath}/sites/massmail`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  await expect(page.locator("#mailtoAll")).toBeChecked();
+  await expect(page.locator("#project-list-wrap")).toBeHidden();
+  await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
+
+  await page.locator("#mailtoPrj").check();
+  await page.locator("#input-project").fill("admin/projectYobi");
+  await page.locator("#select-project").click();
+  await expect(page.locator("#selected-projects")).toHaveText("admin/projectYobi x");
+  await expect(page.locator(".site-admin-page, .project-select-row")).toHaveCount(0);
 });

@@ -3872,7 +3872,11 @@ Batch 484 applies the workflow to the single active project webhook payload URL 
 
 Batch 485 applies the workflow to the new pull-request form's four React-owned Select2 choice buttons. Route-local StyleX now owns only box-sizing, width, height, and text alignment for those buttons; the shared fallback remains because the pull-request edit form still consumes the same selector. Legacy Scala HTML/JS is output DOM/UX evidence and behavior remains React-owned.
 
-Batch 487 applies the workflow to the site mass-mail selected-projects state. The project-selection panel, selected-projects flex container, and remove button gain route-local StyleX owners while preserving legacy ids/classes and React state/events; the exact mass-mail selectors retire while unrelated project-select-row and generic site-admin fallbacks remain.
+Batch 487 corrects the site mass-mail selected-projects state by removing source-less panel and
+flex decoration, retaining the legacy unadorned wrapper and inline selected-tag behavior while
+React keeps selection/removal state and events. Post-SITE-04 cleanup also deletes the dead
+`.site-admin-page .project-select-row` bridge and its nested input rule after static and runtime
+no-emitter verification.
 
 Batch 488 applies the workflow to the site mail send-action wrapper. The sole active `.site-setting-wrap .mail-btn-wrap` centering declaration moves into a route-local StyleX owner while preserving the legacy wrapper/button DOM and existing button owner; generic/dead mail fallbacks remain. The focused contract verifies legacy source evidence, stable ownership, and exact scoped fallback retirement.
 
