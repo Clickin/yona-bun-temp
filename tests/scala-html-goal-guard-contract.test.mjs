@@ -61,6 +61,23 @@ test("blocks an asset-only fallback-off batch without a global-run report", () =
   assert.match(result.message, /dated fallback-off global-run report/u);
 });
 
+test("allows only the history audit's pre-report fallback compatibility marker", () => {
+  const result = evaluateScalaHtmlGoalGuard({
+    changedFiles: [
+      "frontend/vite.config.ts",
+      "frontend/tests/legacy-fallback-off.e2e.ts",
+      "docs/provenance/frontend-stylex-migration-ledger.md",
+      "docs/plans/2026-07-13-frozen-css-to-stylex-migration.md",
+    ],
+    env: {
+      YONA_ENFORCE_SCALA_HTML_SINGLE_ROW: "1",
+      YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH: "1",
+    },
+  });
+
+  assert.equal(result.blocked, false);
+});
+
 test("blocks a fallback-off retirement batch that mutates frozen legacy CSS or LESS", () => {
   const result = evaluateScalaHtmlGoalGuard({
     changedFiles: [

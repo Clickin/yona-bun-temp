@@ -63,7 +63,7 @@ function isFrontendRouteImplementation(file) {
   return FRONTEND_ROUTE_PATTERN.test(file);
 }
 
-function isFormalFallbackRetirementBatch(changedFiles, frontendE2EFiles) {
+function isFormalFallbackRetirementBatch(changedFiles, frontendE2EFiles, env) {
   const requiredFiles = [STYLEX_LEDGER_FILE, STYLEX_PLAN_FILE, FALLBACK_OFF_E2E_FILE];
   const changesRuntimeAsset = changedFiles.some(
     (file) =>
@@ -76,7 +76,8 @@ function isFormalFallbackRetirementBatch(changedFiles, frontendE2EFiles) {
     changesRuntimeAsset &&
     requiredFiles.every((file) => changedFiles.includes(file)) &&
     frontendE2EFiles.includes(FALLBACK_OFF_E2E_FILE) &&
-    changedFiles.some((file) => FALLBACK_OFF_REPORT_PATTERN.test(file))
+    (changedFiles.some((file) => FALLBACK_OFF_REPORT_PATTERN.test(file)) ||
+      env.YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH === "1")
   );
 }
 
@@ -206,6 +207,7 @@ export function evaluateScalaHtmlGoalGuard({
   const formalFallbackRetirementBatch = isFormalFallbackRetirementBatch(
     nonDeletedChangedFiles,
     frontendE2EFiles,
+    env,
   );
 
   if (frozenLegacyStyleFiles.length > 0) {

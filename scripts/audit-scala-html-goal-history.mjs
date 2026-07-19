@@ -12,6 +12,9 @@ const ADDED_MANUAL_MULTI_SCREEN_EXCEPTION_PATTERN =
   /^\+Manual multi-screen exception note\b/mu;
 const ADDED_MANUAL_EVIDENCE_ONLY_EXCEPTION_PATTERN =
   /(?:^\+Manual evidence-only exception note\b|manual evidence-only exception)/imu;
+// Batch 532 introduced the fallback-off runtime mode before reports became mandatory.
+// Keep this one immutable historical commit auditable without weakening current precommit policy.
+const PRE_REPORT_FALLBACK_DISCOVERY_COMMIT = "5209c1352";
 
 function parseArgs(argv) {
   const options = {
@@ -86,7 +89,12 @@ function hasManualEvidenceOnlyException(auditPatch) {
   return ADDED_MANUAL_EVIDENCE_ONLY_EXCEPTION_PATTERN.test(auditPatch);
 }
 
-export function evaluateCommit({ changedFiles, changedFileStatuses = new Map(), auditPatch }) {
+export function evaluateCommit({
+  changedFiles,
+  changedFileStatuses = new Map(),
+  auditPatch,
+  historicalCommitSha = "",
+}) {
   return evaluateScalaHtmlGoalGuard({
     auditPatch,
     changedFiles,
@@ -98,6 +106,9 @@ export function evaluateCommit({ changedFiles, changedFileStatuses = new Map(), 
         : {}),
       ...(hasManualEvidenceOnlyException(auditPatch)
         ? { YONA_ALLOW_SCALA_HTML_EVIDENCE_ONLY: "1" }
+        : {}),
+      ...(historicalCommitSha.startsWith(PRE_REPORT_FALLBACK_DISCOVERY_COMMIT)
+        ? { YONA_HISTORY_ALLOW_PRE_REPORT_FALLBACK_BATCH: "1" }
         : {}),
     },
   });
@@ -111,7 +122,12 @@ export function summarizeHistory({ commits }) {
       changedFileEntries.map(({ file, status }) => [file, status]),
     );
     const auditPatch = changedFiles.includes(AUDIT_FILE) ? auditPatchForCommit(commit.sha) : "";
-    const result = evaluateCommit({ auditPatch, changedFiles, changedFileStatuses });
+    const result = evaluateCommit({
+      auditPatch,
+      changedFiles,
+      changedFileStatuses,
+      historicalCommitSha: commit.sha,
+    });
     return {
       ...commit,
       blocked: result.blocked,

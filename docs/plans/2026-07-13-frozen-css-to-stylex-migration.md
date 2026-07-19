@@ -200,6 +200,8 @@ ledger, `frontend/tests/legacy-fallback-off.e2e.ts`, and a dated
 exact command, default/fallback-off mode, desktop/mobile scope, failures or green result, and the
 owner/bridge/parity-defect classification for every visible failure. The Scala-HTML guard enforces
 that shape and rejects every `yona-original/**/*.css` or `yona-original/**/*.less` mutation.
+Batch 532 predates the report requirement and is the sole history-audit compatibility exception;
+all subsequent runtime-asset retirement batches require the report.
 
 For each classified React owner, the next implementation batch is deliberately narrow: copy only
 the exact legacy declarations into colocated StyleX, preserve DOM/behavior, and run the focused
