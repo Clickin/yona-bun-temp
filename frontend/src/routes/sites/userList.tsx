@@ -53,7 +53,7 @@ const LEGACY_SITE_USER_LIST_SIDEBAR_SEARCH = {
 };
 const styles = stylex.create({
   paginationSprite: (spriteUrl: string) => ({
-    "--site-user-list-pagination-sprite": `url(${spriteUrl})`,
+    backgroundImage: `url(${spriteUrl})`,
   }),
   breadcrumbOuter: {
     boxSizing: "border-box",
@@ -247,7 +247,10 @@ const styles = stylex.create({
     display: "inline-block",
     fontSize: "0px",
     listStyle: "none",
-    margin: "0px 0px 0px -120px",
+    margin: {
+      default: "0px 0px 0px -120px",
+      "@media (max-width: 720px)": "0px",
+    },
     padding: "0px",
   },
   paginationItem: {
@@ -286,7 +289,6 @@ const styles = stylex.create({
     width: "30px",
   },
   paginationIcon: {
-    backgroundImage: "var(--site-user-list-pagination-sprite)",
     backgroundRepeat: "no-repeat",
     display: "inline-block",
     height: "9px",
@@ -772,17 +774,23 @@ const paginationDelimiterStyleProps = stylex.props(
   styles.paginationDelimiter,
 );
 const paginationInputStyleProps = stylex.props(styles.paginationInput);
-const paginationPrevIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationPrevIcon);
-const paginationPrevDisabledIconStyleProps = stylex.props(
+const paginationPrevIconStyleProps = (spriteUrl: string) =>
+  stylex.props(styles.paginationIcon, styles.paginationPrevIcon, styles.paginationSprite(spriteUrl));
+const paginationPrevDisabledIconStyleProps = (spriteUrl: string) =>
+  stylex.props(
   styles.paginationIcon,
   styles.paginationPrevIcon,
   styles.paginationPrevIconDisabled,
+  styles.paginationSprite(spriteUrl),
 );
-const paginationNextIconStyleProps = stylex.props(styles.paginationIcon, styles.paginationNextIcon);
-const paginationNextDisabledIconStyleProps = stylex.props(
+const paginationNextIconStyleProps = (spriteUrl: string) =>
+  stylex.props(styles.paginationIcon, styles.paginationNextIcon, styles.paginationSprite(spriteUrl));
+const paginationNextDisabledIconStyleProps = (spriteUrl: string) =>
+  stylex.props(
   styles.paginationIcon,
   styles.paginationNextIcon,
   styles.paginationNextIconDisabled,
+  styles.paginationSprite(spriteUrl),
 );
 const paginationLabelStyleProps = stylex.props(styles.paginationLabel);
 const paginationDisabledLabelStyleProps = stylex.props(
@@ -1270,10 +1278,9 @@ function UserListPagination({
               to="/sites/userList"
             >
               <i
-                {...paginationPrevIconStyleProps}
+                {...paginationPrevIconStyleProps(legacySpriteUrl)}
                 data-disabled="false"
                 data-stylex-owner="site-user-list-pagination-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationLabelStyleProps}
@@ -1285,10 +1292,9 @@ function UserListPagination({
           ) : (
             <>
               <i
-                {...paginationPrevDisabledIconStyleProps}
+                {...paginationPrevDisabledIconStyleProps(legacySpriteUrl)}
                 data-disabled="true"
                 data-stylex-owner="site-user-list-pagination-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
               <span
                 {...paginationDisabledLabelStyleProps}
@@ -1357,10 +1363,9 @@ function UserListPagination({
                 {nextPageLabel}
               </span>
               <i
-                {...paginationNextIconStyleProps}
+                {...paginationNextIconStyleProps(legacySpriteUrl)}
                 data-disabled="false"
                 data-stylex-owner="site-user-list-pagination-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </Link>
           ) : (
@@ -1373,10 +1378,9 @@ function UserListPagination({
                 {nextPageLabel}
               </span>
               <i
-                {...paginationNextDisabledIconStyleProps}
+                {...paginationNextDisabledIconStyleProps(legacySpriteUrl)}
                 data-disabled="true"
                 data-stylex-owner="site-user-list-pagination-icon"
-                {...stylex.props(styles.paginationSprite(legacySpriteUrl))}
               ></i>
             </>
           )}

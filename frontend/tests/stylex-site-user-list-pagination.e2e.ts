@@ -15,6 +15,9 @@ test("pagination directly owns plugin presentation, input variants, and sprite i
   expect(plugin).toContain("$('<ul class=\"page-nums\">')");
   expect(common).toContain(".page-navigation-wrap {");
   expect(pageLess).toContain("margin-left: -120px !important;");
+  expect(
+    readFileSync("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
+  ).toContain(".page-nums {\n    margin-left: 0;");
   for (const owner of [
     "site-user-list-pagination",
     "site-user-list-pagination-list",
@@ -202,7 +205,7 @@ test("one-page pagination preserves desktop and mobile generated output", async 
     expect(evidence.list).toMatchObject({
       display: "inline-block",
       fontSize: "0px",
-      margin: "0px 0px 0px -120px",
+      margin: viewport.name === "desktop" ? "0px 0px 0px -120px" : "0px",
       padding: "0px",
     });
     expect(evidence.boxes.list.left).toBeLessThan(evidence.boxes.root.right);
