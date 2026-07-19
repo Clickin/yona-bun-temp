@@ -6,6 +6,19 @@ const containerSelector = '[data-stylex-owner="site-project-list-container"]';
 const projectNameSelector = '[data-stylex-owner="site-project-list-project-name"]';
 const deleteActionSelector = '[data-stylex-owner="site-project-list-delete-action"]';
 const routeSource = new URL("../src/routes/sites/projectList.tsx", import.meta.url);
+const appCssSource = new URL("../src/app.css", import.meta.url);
+const legacyTemplateSource = new URL(
+  "../../yona-original/app/views/site/projectList.scala.html",
+  import.meta.url,
+);
+const legacyLayoutSource = new URL(
+  "../../yona-original/app/views/site/siteMngLayout.scala.html",
+  import.meta.url,
+);
+const legacyPageLessSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_page.less",
+  import.meta.url,
+);
 
 async function openPopulatedProjectList(page: Page) {
   const session = {
@@ -62,6 +75,9 @@ async function openPopulatedProjectList(page: Page) {
   const container = page.locator(containerSelector);
   await expect(container).toBeVisible();
   await expect(
+    page.locator('[data-stylex-owner="site-project-list-setting-wrap"]'),
+  ).toHaveAttribute("data-stylex-owner-page", "site-project-list-page");
+  await expect(
     container.locator(':scope > [data-stylex-owner="site-project-list-row"]'),
   ).toHaveCount(2);
   return container;
@@ -69,9 +85,16 @@ async function openPopulatedProjectList(page: Page) {
 
 test.describe("StyleX site project-list residual populated surfaces", () => {
   test("keeps residual geometry inline and delete paint in the route theme", async () => {
-    const route = await readFile(routeSource, "utf8");
+    const [route, appCss, legacyTemplate, legacyLayout, legacyPageLess] = await Promise.all([
+      readFile(routeSource, "utf8"),
+      readFile(appCssSource, "utf8"),
+      readFile(legacyTemplateSource, "utf8"),
+      readFile(legacyLayoutSource, "utf8"),
+      readFile(legacyPageLessSource, "utf8"),
+    ]);
 
     expect(route).toContain('data-stylex-owner="site-project-list-container"');
+    expect(route).toContain('data-stylex-owner-page="site-project-list-page"');
     expect(route).toContain('data-stylex-owner="site-project-list-project-name"');
     expect(route).toContain('data-stylex-owner="site-project-list-delete-action"');
     expect(route).toContain("styles.projectListContainer");
@@ -85,6 +108,16 @@ test.describe("StyleX site project-list residual populated surfaces", () => {
     expect(route).toContain('padding: "4px 12px"');
     expect(route).toContain('transition: "all 0.3s ease"');
     expect(route).not.toContain("globalColors.");
+    expect(legacyTemplate).toContain('<div class="row-fluid listhead">');
+    expect(legacyTemplate).toContain('<ul class="project-list-wrap">');
+    expect(legacyLayout).toContain('<div class="site-setting-wrap">');
+    expect(legacyPageLess).toContain(".project-list-wrap {");
+    expect(legacyPageLess).toContain("font-size:14px;");
+    expect(legacyPageLess).toContain("font-weight: bold;");
+    expect(appCss).not.toContain(".site-setting-wrap .project-list-wrap {");
+    expect(appCss).not.toContain(".site-setting-wrap .project-list-wrap .project-name {");
+    expect(appCss).toContain(".site-setting-wrap .listhead {");
+    expect(appCss).toContain(".site-admin-page .project-list-wrap");
   });
 
   test("keeps copy, row order, project navigation, and React-owned delete interaction", async ({

@@ -2806,17 +2806,6 @@ h1 {
   line-height: 30px;
 }
 
-.site-setting-wrap .project-list-wrap {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.site-setting-wrap .project-list-wrap .project-name {
-  font-size: 14px;
-  font-weight: bold;
-}
-
 .site-setting-wrap .mess-mail-wrap input[type="text"] {
   margin: 0;
 }

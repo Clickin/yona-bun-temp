@@ -801,6 +801,7 @@ function SiteProjectListScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig
           {...settingWrapStyleProps}
           className={settingWrapStyleProps.className}
           data-stylex-owner="site-project-list-setting-wrap"
+          data-stylex-owner-page="site-project-list-page"
         >
           <div {...settingGridStyleProps} data-stylex-owner="site-project-list-setting-grid">
             <div
