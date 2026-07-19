@@ -38,17 +38,21 @@ async function openAnonymousLostPassword(page: Page) {
 }
 
 test.describe("StyleX anonymous lost-password form", () => {
-  test("declares globally themed anonymous ownership while retaining real fallback states", async () => {
+  test("declares route-themed ownership for every lost-password state", async () => {
     const [route, theme, legacyFallback] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
       readFile(legacyFallbackSource, "utf8"),
     ]);
 
-    expect(route).toContain('data-stylex-owner={anonymousBaseline ? "lost-password-form"');
+    expect(route).toMatch(
+      /data-stylex-owner=\{\s*anonymousBaseline\s*\?\s*"lost-password-form"/u,
+    );
     expect(route).toContain('"lost-password-login-id"');
     expect(route).toContain('"lost-password-submit"');
-    expect(route).toContain('className={anonymousBaseline ? textInputClassName : "text"}');
+    expect(route).toContain("className={textInputClassName}");
+    expect(route).toContain("color: lostPasswordTheme.titleHighlight");
+    expect(route).toContain('boxSizing: "content-box"');
     expect(route).toContain('default: "400px"');
     expect(route).toContain("borderBottomColor: lostPasswordTheme.inputFocusBorder");
     expect(theme).not.toMatch(/^\s+lostPassword[A-Z]/m);
@@ -188,18 +192,42 @@ test.describe("StyleX anonymous lost-password form", () => {
     });
   });
 
-  test("keeps requested, error, and authenticated prefill states outside anonymous ownership", async ({
+  test("keeps requested, error, and authenticated states inside the shared screen ownership", async ({
     page,
   }) => {
     await mockAnonymousSession(page);
     await page.goto(`${basePath}/lostPassword?requested=1`);
-    await expect(page.locator('[data-stylex-owner="lost-password-form"]')).toHaveCount(0);
-    await expect(page.locator('[data-stylex-part^="lost-password-"]')).toHaveCount(0);
-    await expect(page.locator(".alert-success")).toBeVisible();
+    const success = page.locator('[data-stylex-owner="lost-password-success-alert"]');
+    await expect(success).toBeVisible();
+    await expect(
+      success.locator('[data-stylex-part="lost-password-success-alert-heading"]'),
+    ).toHaveText("Mail has been sent.");
+    await expect(
+      success.locator('[data-stylex-part="lost-password-success-alert-dismiss"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        ".page.full > .login-form-wrap .alert-success, .page.full > .login-form-wrap input.text",
+      ),
+    ).toHaveCount(0);
+    await expect(success).toHaveCSS("background-color", "rgb(223, 240, 216)");
+    await expect(page.locator("#loginId")).toHaveCSS("width", "386px");
 
     await page.goto(`${basePath}/lostPassword?error=invalid`);
-    await expect(page.locator('[data-stylex-owner="lost-password-form"]')).toHaveCount(0);
-    await expect(page.locator(".alert-error")).toBeVisible();
+    const error = page.locator('[data-stylex-owner="lost-password-error-alert"]');
+    await expect(error).toBeVisible();
+    await expect(
+      error.locator('[data-stylex-part="lost-password-error-alert-heading"]'),
+    ).toHaveText("Failed to send mail.");
+    await expect(
+      error.locator('[data-stylex-part="lost-password-error-alert-dismiss"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        ".page.full > .login-form-wrap .alert-error, .page.full > .login-form-wrap input.text",
+      ),
+    ).toHaveCount(0);
+    await expect(error).toHaveCSS("background-color", "rgb(242, 222, 222)");
 
     await page.unroute("**/api/v1/session");
     await page.route("**/api/v1/session", async (route) => {
@@ -209,7 +237,24 @@ test.describe("StyleX anonymous lost-password form", () => {
       });
     });
     await page.goto(`${basePath}/lostPassword`);
-    await expect(page.locator('[data-stylex-owner="lost-password-form"]')).toHaveCount(0);
+    const authenticated = page.locator(
+      '[data-stylex-owner="lost-password-authenticated-prefill"]',
+    );
+    await expect(authenticated).toBeVisible();
+    await expect(
+      authenticated.locator(
+        '[data-stylex-part="lost-password-authenticated-prefill-form-wrap"]',
+      ),
+    ).toBeVisible();
+    await expect(
+      authenticated.locator(
+        '[data-stylex-part="lost-password-authenticated-prefill-login-id"]',
+      ),
+    ).toBeVisible();
+    await expect(
+      authenticated.locator('[data-stylex-part="lost-password-authenticated-prefill-email"]'),
+    ).toBeVisible();
+    await expect(page.locator(".page.full > .login-form-wrap input.text")).toHaveCount(0);
     await expect(page.locator("#loginId")).toHaveValue("door");
     await expect(page.locator("#emailAddress")).toHaveValue("door@example.com");
   });

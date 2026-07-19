@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 
 // Frozen paint evidence: site/lostPassword.scala.html + _page.less and Bootstrap alerts.
 export const lostPasswordTheme = stylex.defineVars({
+  titleHighlight: "#ff7332",
   taglineText: "#7c7c7c",
   inputBorder: "#cccccc",
   inputFocusBorder: "#f36c22",
