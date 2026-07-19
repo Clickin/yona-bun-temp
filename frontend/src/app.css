@@ -3940,29 +3940,6 @@ div.markdown-preview {
   border-bottom: 1px solid #e5e5e5;
 }
 
-.board-comment-form,
-.board-form {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.board-comment-form textarea,
-.board-form textarea {
-  min-height: 140px;
-}
-
-.board-form label {
-  display: grid;
-  gap: 5px;
-}
-
-.board-check {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-}
-
 .search-page {
   color: #333;
 }

@@ -4147,3 +4147,15 @@ Focused static evidence records RED then absence GREEN, while the managed PR edi
 preserves real selector/action order and desktop/390px containment in normal and fallback-off
 runs. Global fallback discovery remains incomplete/non-green, so this is neither generated
 fallback unlinking nor live-legacy visual-parity proof.
+
+Batch 565 retires only the source-less temporary board-form grid bridge family:
+`.board-comment-form`, `.board-form`, their textarea min-height branch,
+`.board-form label`, and `.board-check`. Frozen `board/create.scala.html` and
+`board/edit.scala.html` retain `form.nm > .content-wrap.frm-wrap`, `.checkbox`,
+and `.actions`; `common/commentForm.scala.html` retains the separate
+`#comment-form > .write-comment-box` structure. The current React post create,
+edit, and detail routes emit none of the retired temporary selectors. The
+focused edit-form fixture checks retained legacy control/action order and
+desktop/390px containment in normal and fallback-off managed runs. Global
+fallback discovery remains incomplete/non-green; this is not an unlinking or
+live-legacy visual-parity claim.

@@ -156,17 +156,34 @@ test("site post-row fallback bridges have no remaining selectors", () => {
   }
 });
 
-test("board label-picker fallback bridge has no remaining selector arm", () => {
+test("board form fallback bridges have no remaining selector arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-label-picker");
-  expect(appCss).toContain(".board-form label {");
-  expect(appCss).toContain(".board-check {");
+  for (const selector of [
+    ".board-comment-form,",
+    ".board-form {",
+    ".board-comment-form textarea,",
+    ".board-form textarea {",
+    ".board-form label {",
+    ".board-check {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
 
   for (const route of [
     "src/routes/$ownerName/$projectName/postform.tsx",
     "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
   ]) {
-    expect(readFileSync(route, "utf8")).not.toContain("board-label-picker");
+    const source = readFileSync(route, "utf8");
+    for (const selector of [
+      "board-label-picker",
+      "board-comment-form",
+      "board-form",
+      "board-check",
+    ]) {
+      expect(source).not.toContain(selector);
+    }
   }
 });
 
@@ -1173,10 +1190,25 @@ test("board edit form retains legacy form controls without dead board bridges", 
     const formBox = element.getBoundingClientRect();
     const contentBox = element.querySelector(".content-wrap.frm-wrap")?.getBoundingClientRect();
     const actionsBox = element.querySelector(".actions")?.getBoundingClientRect();
-    return { actionsBox, contentBox, formBox };
+    const content = element.querySelector(".content-wrap.frm-wrap");
+    const actions = content?.querySelector(":scope > .actions");
+    const checkboxGroup = Array.from(content?.children ?? []).find((child) =>
+      child.querySelector("label.checkbox"),
+    );
+    return {
+      actionsBox,
+      checkboxGroupBeforeActions:
+        !!checkboxGroup &&
+        !!actions &&
+        Array.from(content?.children ?? []).indexOf(checkboxGroup) <
+          Array.from(content?.children ?? []).indexOf(actions),
+      contentBox,
+      formBox,
+    };
   });
   expect(desktop.contentBox!.left).toBeGreaterThanOrEqual(desktop.formBox.left);
   expect(desktop.actionsBox!.right).toBeLessThanOrEqual(desktop.formBox.right + 1);
+  expect(desktop.checkboxGroupBeforeActions).toBe(true);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await form.evaluate((element) => {

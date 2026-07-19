@@ -1575,3 +1575,21 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 ## Batch 563
 
 - Source-less pull-request action/branch bridge retirement: frozen `git/create.scala.html:30-106` and `git/edit.scala.html` emit `.pull-request-wrap` with the from/arrow/to order and `.actions` submit/cancel controls; neither template, its frozen LESS context, nor current React production TS/TSX emits `.pull-request-actions` or `.pull-request-branches`. Delete only those two arms from the shared flex group and their coupled branch label/select blocks. Retain active `.thread-actrow`, `.actions`, and every `.pullrequeset-tab-menu` rule. `legacy-fallback-off.e2e.ts` records selector RED then exact absence GREEN and validates the real PR edit form's selector/action order and desktop/390px containment through normal and fallback-off managed runs. Global discovery remains incomplete/non-green; this is not generated-fallback unlinking or live-legacy visual-parity claim.
+
+## Batch 565
+
+- Source-less board-form bridge retirement: frozen `board/create.scala.html:49-111`
+  and `board/edit.scala.html:19-71` emit `form.nm > .content-wrap.frm-wrap`,
+  `.checkbox`, and `.actions`; `common/commentForm.scala.html:29-45` emits the
+  separate `#comment-form > .write-comment-box` comment form. Their frozen LESS
+  context owns `.frm-wrap` and `.write-comment-box`, not the temporary
+  `.board-comment-form`, `.board-form`, or `.board-check` family. Current React
+  post create/edit/detail source emits none of those selectors. Delete only the
+  source-less grid, textarea min-height, label-grid, and inline-flex blocks;
+  retain `.write-comment-box`, `.frm-wrap`, `.checkbox`, `.actions`,
+  `.board-comment-wrap`, and all other fallback. `legacy-fallback-off.e2e.ts`
+  records observed selector RED then exact absence GREEN and validates the real
+  edit form's legacy checkbox/action order plus desktop/390px containment in
+  normal and fallback-off managed runs. Global discovery remains incomplete and
+  non-green; this is not generated-fallback unlinking or live-legacy visual
+  parity.
