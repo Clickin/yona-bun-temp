@@ -760,6 +760,47 @@ test("root login dialog visible state matches legacy common/loginDialog.scala.ht
   expect(rootYobiDialogSource).not.toContain('data-dismiss="modal"');
 });
 
+test("root login dialog owns legacy action and OAuth row geometry without fallback", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockCapabilities(page, {
+    enabledSocialProviders: ["github", "google"],
+    socialLoginOnly: false,
+  });
+  await mockAnonymousSession(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/users/login?from=legacy`);
+  await page.locator("#required-logged-in > a.user-item-btn").click();
+
+  const desktop = await readRootLoginDialogFormMetrics(page);
+  expect(desktop).toEqual({
+    actionRowLineHeight: "22px",
+    actionRowOverflow: "auto",
+    dialogHeight: 378,
+    formHeight: 306,
+    rememberGroupFloat: "left",
+    titleLineMarginBottom: "10px",
+    titleLineMarginTop: "12px",
+  });
+  await page.locator("#loginDialog button.close").click();
+  await expect(page.locator("#loginDialog")).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("#required-logged-in > a.user-item-btn").click();
+  const mobile = await readRootLoginDialogFormMetrics(page);
+  expect(mobile).toEqual({
+    actionRowLineHeight: "22px",
+    actionRowOverflow: "auto",
+    dialogHeight: 378,
+    formHeight: 306,
+    rememberGroupFloat: "left",
+    titleLineMarginBottom: "10px",
+    titleLineMarginTop: "12px",
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
 test("email-verification login help matches legacy user/login.scala.html screen DOM", async ({
   page,
 }) => {
@@ -1622,6 +1663,29 @@ async function readRootLoginDialogMetrics(page: Page) {
       passwordInputHeight: Math.round(passwordRect.height),
       passwordInputWidth: getComputedStyle(passwordInput).width,
       submitButtonWidth: getComputedStyle(submitButton).width,
+      titleLineMarginTop: getComputedStyle(titleLine).marginTop,
+    };
+  });
+}
+
+async function readRootLoginDialogFormMetrics(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector<HTMLElement>("#loginDialog");
+    const form = document.querySelector<HTMLElement>("#loginDialog .login-form-wrap");
+    const actionRow = form?.querySelector<HTMLElement>(":scope > .act-row");
+    const rememberGroup = actionRow?.querySelector<HTMLElement>(":scope > .pull-left");
+    const titleLine = form?.querySelector<HTMLElement>(".social-login-title-line");
+    if (!dialog || !form || !actionRow || !rememberGroup || !titleLine) {
+      throw new Error("Expected root login dialog form targets are missing.");
+    }
+
+    return {
+      actionRowLineHeight: getComputedStyle(actionRow).lineHeight,
+      actionRowOverflow: getComputedStyle(actionRow).overflow,
+      dialogHeight: dialog.getBoundingClientRect().height,
+      formHeight: form.getBoundingClientRect().height,
+      rememberGroupFloat: getComputedStyle(rememberGroup).float,
+      titleLineMarginBottom: getComputedStyle(titleLine).marginBottom,
       titleLineMarginTop: getComputedStyle(titleLine).marginTop,
     };
   });

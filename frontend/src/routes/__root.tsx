@@ -203,7 +203,24 @@ const styles = stylex.create({
     display: "inline-block",
   },
   rootLoginDialogButtonRow: {
+    display: "block",
+    textAlign: "center",
     width: "auto",
+  },
+  // frozen _page.less:1626-1645. Keep the dialog's lower rows independent
+  // from the generated legacy fallback stylesheet.
+  rootLoginDialogSocialTitleLine: {
+    marginTop: "12px",
+    marginBottom: "10px",
+  },
+  rootLoginDialogActionRow: {
+    lineHeight: "22px",
+    overflow: "auto",
+  },
+  // frozen Bootstrap bootstrap.css:6097-6099. The legacy template uses this
+  // for the remember-me control, so it cannot depend on fallback CSS here.
+  rootLoginDialogRememberGroup: {
+    float: "left",
   },
   rootLoginDialogSubmit: {
     width: "100%",
@@ -230,6 +247,13 @@ const rootLoginDialogRememberLabelClassName = stylex.props(
   styles.rootLoginDialogRememberLabel,
 ).className;
 const rootLoginDialogButtonRowClassName = stylex.props(styles.rootLoginDialogButtonRow).className;
+const rootLoginDialogSocialTitleLineClassName = stylex.props(
+  styles.rootLoginDialogSocialTitleLine,
+).className;
+const rootLoginDialogActionRowClassName = stylex.props(styles.rootLoginDialogActionRow).className;
+const rootLoginDialogRememberGroupClassName = stylex.props(
+  styles.rootLoginDialogRememberGroup,
+).className;
 const rootLoginDialogSubmitClassName = stylex.props(styles.rootLoginDialogSubmit).className;
 const rootLoginDialogBackdropClassName = stylex.props(styles.rootLoginDialogBackdrop).className;
 
@@ -758,7 +782,13 @@ function RootLoginDialog({
             className={["btns-row nm", rootLoginDialogButtonRowClassName].filter(Boolean).join(" ")}
           >
             {socialProviders.length > 0 && !socialLoginOnly ? (
-              <div className="social-login-title-line"> {t("title.or")} </div>
+              <div
+                className={["social-login-title-line", rootLoginDialogSocialTitleLineClassName]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {" "}{t("title.or")}
+              </div>
             ) : null}
             {socialProviders.map((provider) => (
               <RootOAuthProviderLink
@@ -769,8 +799,16 @@ function RootLoginDialog({
             ))}
           </div>
           {!socialLoginOnly ? (
-            <div className="act-row right-txt mt20">
-              <div className="pull-left">
+            <div
+              className={["act-row right-txt mt20", rootLoginDialogActionRowClassName]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <div
+                className={["pull-left", rootLoginDialogRememberGroupClassName]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
                 <input
                   id="remember-meD"
                   type="checkbox"
