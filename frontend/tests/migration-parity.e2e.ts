@@ -156,7 +156,7 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-column-grid"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-destination-column-grid"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-status-column-grid"');
-  expect(MIGRATION_ROUTE_SOURCE).toContain('marginLeft: "-20px"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('marginLeft: "20px"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('float: "left"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('minHeight: "1px"');
   expect(MIGRATION_ROUTE_SOURCE).toContain('width: "460px"');
@@ -223,7 +223,7 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
     gnbOuterHeight: "40px",
     migrationRowBeforeDisplay: "table",
     migrationRowAfterDisplay: "table",
-    migrationRowMarginLeft: "-20px",
+    migrationRowMarginLeft: "20px",
     progressWidth: 0,
     sourceColumnFloat: "left",
     sourceColumnMarginLeft: "20px",
@@ -246,7 +246,7 @@ for (const viewport of [
     await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/migration`);
     const row = page.locator('[data-stylex-owner="migration-source-destination-row"]');
     await expect(row).toBeVisible();
-    await expect(row).toHaveCSS("margin-left", "-20px");
+    await expect(row).toHaveCSS("margin-left", "20px");
     for (const owner of [
       "migration-source-column-grid",
       "migration-destination-column-grid",

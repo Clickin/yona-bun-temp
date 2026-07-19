@@ -67,7 +67,11 @@ const styles = stylex.create({
     padding: "10px",
   },
   sourceDestination: {
-    marginLeft: "-20px",
+    // `_migration.less` adds the source-destination row's +20px offset. The
+    // retired `.yobi-migration .row` fallback supplied -20px only to the
+    // generic Bootstrap row shell; keep this route-specific net geometry on
+    // the active migration row after that fallback is removed.
+    marginLeft: "20px",
     "::before": { content: '""', display: "table", lineHeight: "0px" },
     "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
   },
