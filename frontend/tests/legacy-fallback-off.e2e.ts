@@ -244,6 +244,74 @@ async function mockPostListSession(page: Page) {
   );
 }
 
+async function mockAuthenticatedNotificationSession(page: Page) {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.addInitScript((configuredBasePath) => {
+    localStorage.setItem("shallWeOpenLeftNavigation", "false");
+    localStorage.setItem("yobi-intro", "false");
+    (
+      window as Window & { __YONA_RUNTIME_CONFIG__?: Record<string, unknown> }
+    ).__YONA_RUNTIME_CONFIG__ = {
+      basePath: configuredBasePath,
+      feedbackUrl: "https://github.com/yona-projects/yona/issues",
+      hideProjectListing: false,
+      siteName: "Yoram",
+      supportedLanguages: ["ko-KR"],
+    };
+  }, basePath);
+  await page.route("**/api/v1/session", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        actorId: 1,
+        defaultLandingPath: "/",
+        emailAddress: "admin@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isGuest: false,
+        isSiteAdmin: true,
+        loginId: "admin",
+        preferredLanguage: "ko-KR",
+        userLabel: "Site Admin",
+      },
+    }),
+  );
+  await page.route("**/api/v1/notifications**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        hasMore: false,
+        items: [
+          {
+            actor: {
+              avatarUrl: `${basePath}/assets/images/default-avatar-64.png`,
+              displayName: "Site Admin",
+              loginId: "admin",
+            },
+            createdAt: "2026-07-14T00:00:00Z",
+            createdLabel: "방금 전",
+            eventType: "NEW_COMMENT",
+            id: "notification-1",
+            message: "알림 본문",
+            targetHref: "",
+            targetTitle: "알림 제목",
+            typeIcon: "info",
+          },
+        ],
+        total: 1,
+      },
+    }),
+  );
+  for (const endpoint of ["workspace/overview", "projects", "organizations"]) {
+    await page.route(`**/api/v1/${endpoint}**`, (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: endpoint === "workspace/overview" ? { profile: { loginId: "admin" } } : { items: [] },
+      }),
+    );
+  }
+}
+
 async function mockProjectPostsSession(page: Page) {
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({
@@ -509,4 +577,25 @@ test("project posts output retains the runtime fallback boundary without its dea
   await expect(page.locator(".app-shell, .board-page")).toHaveCount(0);
   await expect(page.locator('[data-stylex-owner="project-posts-page"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-posts-item"]')).toHaveCount(1);
+});
+
+test("notifications output retains the runtime fallback boundary without its dead page bridge", async ({
+  page,
+}) => {
+  const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const basePath = configuredBasePath.endsWith("/")
+    ? configuredBasePath.slice(0, -1)
+    : configuredBasePath;
+  await mockAuthenticatedNotificationSession(page);
+  await page.goto(`${basePath}/notifications`);
+
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+  const list = page.locator('[data-stylex-owner="authenticated-home-notification-list"]');
+  await expect(list).toBeVisible();
+  await expect(
+    list.locator(':scope > [data-stylex-owner="authenticated-home-notification-row"]'),
+  ).toHaveCount(1);
+  await expect(page.locator(".notification-page, .activity-streams")).toHaveCount(0);
 });
