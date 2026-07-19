@@ -92,6 +92,11 @@ for (const viewport of [
       zIndex: "1000",
     });
     expect(evidence.detailStyles).toEqual({ fontSize: "10px", fontWeight: "400" });
+    // Legacy `common/navbar.scala.html` places `.pin` in a static `.gnb-outer`.
+    // `_page.less` therefore keeps its absolute `top: 6px` against the page,
+    // even when `layout.scala.html` renders the admin affix before the header.
+    expect(evidence.headerPosition).toBe("static");
+    expect(evidence.sidebarOpenPinY).toBe(6);
     await expect(page.locator("#mySidenav")).toHaveCSS("top", "84px");
 
     mkdirSync(SCREENSHOT_DIRECTORY, { recursive: true });
@@ -168,7 +173,10 @@ async function readAffixEvidence(owner: Locator) {
   return owner.evaluate((element) => {
     const detail = element.firstElementChild;
     const header = element.nextElementSibling;
-    if (!detail || !header) throw new Error("Affix detail or sibling header is missing");
+    const sidebarOpenPin = header?.querySelector('[data-stylex-owner="global-sidebar-open-pin"]');
+    if (!detail || !header || !sidebarOpenPin) {
+      throw new Error("Affix detail, sibling header, or sidebar-open pin is missing");
+    }
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
     const detailStyle = getComputedStyle(detail);
@@ -176,6 +184,8 @@ async function readAffixEvidence(owner: Locator) {
       box: { height: rect.height, width: rect.width, x: rect.x, y: rect.y },
       detailStyles: { fontSize: detailStyle.fontSize, fontWeight: detailStyle.fontWeight },
       headerY: header.getBoundingClientRect().y,
+      headerPosition: getComputedStyle(header).position,
+      sidebarOpenPinY: sidebarOpenPin.getBoundingClientRect().y,
       styles: {
         backgroundColor: style.backgroundColor,
         boxSizing: style.boxSizing,

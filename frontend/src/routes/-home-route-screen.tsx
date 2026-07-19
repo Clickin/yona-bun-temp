@@ -1438,9 +1438,6 @@ const globalGnbOuterStyles = stylex.create({
     width: "100%",
     zIndex: "1000",
   },
-  adminAffix: {
-    position: "relative",
-  },
 });
 
 const globalGnbInnerStyles = stylex.create({
@@ -1689,7 +1686,6 @@ export function SiteLayoutShell({
         <header
           {...stylex.props(
             globalGnbOuterStyles.root,
-            shouldRenderSiteAdminAffix && !hasScopedSearch && globalGnbOuterStyles.adminAffix,
             hasScopedSearch && globalGnbOuterStyles.project,
           )}
           data-stylex-owner="global-gnb-outer"
