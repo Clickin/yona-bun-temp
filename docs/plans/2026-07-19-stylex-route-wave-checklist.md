@@ -271,10 +271,16 @@ Deletion-only candidates. Each requires declaration-level exact source/DOM proof
 
 - [x] `.milestones .desc` — Batch 538: the current React milestone list emits no `.desc`; only the exact rendered Yobi descendant rule is excluded while progress-wrap, actrow, and completion-rate remain.
 - [x] `#notification-projects li button` base/hover/active — Batch 538: legacy and React notification tabs emit anchors/Links, and the React owner owns the corresponding list/link states.
-- [ ] `.profile-frmwrap .avatar-frm` with absent ancestor proof
-- [ ] `.all-projects .project .forked`
+- [x] `.profile-frmwrap .avatar-frm` — 2026-07-20 consumer graph: no legacy or React output
+  emits the `profile-frmwrap` ancestor, and the deterministic generated-fallback exclusion already
+  removes this root plus its descendants. Direct avatar StyleX owners retain the live geometry.
+- [x] `.all-projects .project .forked` — 2026-07-20 consumer graph: no React `forked` output
+  exists, and the exact compiled Yobi selector is already excluded from generated fallback; fork
+  origin presentation uses separate React-owned output.
 - [x] `.stats-wrap .like` variants — Batch 537: duplicate/consumer-free rendered Yobi selectors retired; no active module was unlinked.
-- [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item)
+- [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item).
+  The 2026-07-20 graph confirms this is an inactive `app.css` bridge with no React DOM ancestor, but its
+  declaration groups and static contracts must still retire one bounded group at a time.
 
 ## Refresh trigger
 
