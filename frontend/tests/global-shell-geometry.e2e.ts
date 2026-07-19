@@ -180,6 +180,44 @@ test("anonymous mobile home login dialog keeps legacy Korean geometry without ov
   await expect(page.locator("#loginIdOrEmailD")).toBeFocused();
 });
 
+test("anonymous Korean root login backdrop keeps the frozen Bootstrap/Yobi viewport surface", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installRuntimeConfig(page, { supportedLanguages: ["ko-KR"] });
+  await mockSession(page, { isAnonymous: true });
+  await mockRootLoginCapabilities(page);
+
+  await page.goto(`${BASE_PATH}/`);
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("#required-logged-in > a.user-item-btn").click();
+
+  const backdrop = page.locator('[data-stylex-owner="root-login-dialog-backdrop"]');
+  await expect(backdrop).toBeVisible();
+  const metrics = await backdrop.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      height: rect.height,
+      opacity: style.opacity,
+      position: style.position,
+      scrollWidth: document.documentElement.scrollWidth,
+      width: rect.width,
+      x: rect.x,
+      y: rect.y,
+      zIndex: style.zIndex,
+    };
+  });
+
+  expectBox(metrics, { height: 844, width: 390, x: 0, y: 0 });
+  expect(metrics.position).toBe("fixed");
+  expect(metrics.zIndex).toBe("1040");
+  expect(metrics.opacity).toBe("0.5");
+  expect(metrics.backgroundColor).toBe("rgb(0, 0, 0)");
+  expect(metrics.scrollWidth).toBe(390);
+});
+
 test("anonymous public shell keeps the live legacy mobile wrapping without overflow", async ({
   page,
 }) => {

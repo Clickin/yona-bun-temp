@@ -31,6 +31,12 @@ contract proves exact exclusions and neighboring milestone selectors remain live
 continues to prove that the runtime link is removed. This removes no active selector module and is
 not permanent fallback unlinking.
 
+Batch 539 moves only the React-owned root `RootLoginDialog` backdrop's frozen Bootstrap viewport
+surface into a single StyleX owner: fixed four-edge geometry, `z-index:1040`, black paint, and the
+Yobi `_override.less` 0.5 opacity. The dialog frame/body/form/navbar remain separate shared
+fallback work; this narrow owner is verified at the Korean 390px root state in normal and
+fallback-off modes without changing frozen CSS/LESS.
+
 Batch 308 applies the workflow to the authenticated loaded milestone detail label state. The
 server-provided parent and child issue-label background colors now use route-local Dynamic StyleX
 owners while legacy label classes, links, metadata, and geometry remain unchanged. The focused

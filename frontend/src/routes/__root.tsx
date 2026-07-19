@@ -184,6 +184,17 @@ const styles = stylex.create({
   rootLoginDialogSubmit: {
     width: "100%",
   },
+  // common/loginDialog.scala.html + frozen Bootstrap/.modal-backdrop + _override.less
+  rootLoginDialogBackdrop: {
+    position: "fixed",
+    top: "0px",
+    right: "0px",
+    bottom: "0px",
+    left: "0px",
+    zIndex: "1040",
+    backgroundColor: "#000000",
+    opacity: "0.5",
+  },
 });
 const rootLoginDialogClassName = stylex.props(styles.rootLoginDialog).className;
 const rootLoginDialogFormClassName = stylex.props(styles.rootLoginDialogForm).className;
@@ -197,6 +208,7 @@ const rootLoginDialogRememberLabelClassName = stylex.props(
 ).className;
 const rootLoginDialogButtonRowClassName = stylex.props(styles.rootLoginDialogButtonRow).className;
 const rootLoginDialogSubmitClassName = stylex.props(styles.rootLoginDialogSubmit).className;
+const rootLoginDialogBackdropClassName = stylex.props(styles.rootLoginDialogBackdrop).className;
 
 export function useRootToast() {
   const setRootToast = React.use(RootToastContext);
@@ -384,7 +396,12 @@ function RootResetShell() {
           {rootShellModal ? (
             // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Bootstrap 2 dismisses through the backdrop; root key capture provides Escape dismissal.
             <div
-              className="modal-backdrop in"
+              {...(rootShellModal === "loginDialog"
+                ? stylex.props(styles.rootLoginDialogBackdrop)
+                : {})}
+              className={["modal-backdrop in", rootShellModal === "loginDialog" ? rootLoginDialogBackdropClassName : null]
+                .filter(Boolean)
+                .join(" ")}
               data-stylex-owner={
                 rootShellModal === "loginDialog" ? "root-login-dialog-backdrop" : undefined
               }
