@@ -81,6 +81,13 @@ export const styles = stylex.create({
     borderBottomColor: issuesTheme.postBorder,
   },
   issuePostItemActive: { backgroundColor: issuesTheme.postActiveSurface },
+  massUpdateCheck: {
+    float: "left",
+    marginRight: "15px",
+    textAlign: "center",
+    verticalAlign: "middle",
+  },
+  massUpdateCheckInput: { marginTop: "15px" },
   titleWrap: {
     position: "relative",
     display: "block",

@@ -40,6 +40,12 @@
 
 | 2026-07-19 | Projects-recipient `/sites/massmail` selected-project panel and remove button | `site/massMail.scala.html`; frozen `_page.less` project panel and selected-project rules. | `#project-list-wrap` panel, `#selected-projects` flex container, and `.selected-project-remove` reset through colocated route StyleX owners. | `[data-stylex-owner="site-massmail-project-wrapper"]`, `[data-stylex-owner="site-massmail-selected-projects"]`, `[data-stylex-owner="site-massmail-selected-project-remove"]`. | Desktop panel/selection geometry, ids/classes, add/remove state, and containment. | Mobile panel/selection geometry and containment. | Exact mass-mail selectors retire; project-select-row and generic site-admin selectors remain fallback. | Focused `stylex-site-massmail-selected-projects.e2e.ts` GREEN; live legacy visual comparison unverified. |
 
+## Project issues mass-update checkbox
+
+- `issue/partial_list.scala.html:21-31` supplies the direct `span9 > label.mass-update-check.hide-in-mobile + .issue-item-row` skeleton. `_page.less:3851-3871` supplies the `float:left`, `15px` right gap, centered label, and `15px` input top margin; `_responsive.less` preserves the 720px hide boundary.
+- `issues.tsx` and `-issues.stylex.ts` now own those exact declarations through `project-issues-mass-update-check` and `project-issues-mass-update-check-input`, while the legacy class names and typed `validateSearch` defaults remain intact. The explicit default query entries are intentional legacy-compatible route output, not a TanStack type-safety requirement.
+- `project-issues-empty.e2e.ts` pins 1440px checkbox/title geometry and 720px responsive visibility; a live legacy screenshot comparison remains unverified.
+
 ## Labels-form list-header follow-up
 
 - Existing `labelsform.tsx` owners cover list-head surface/border and category/name alignment; exact scoped selectors are retired with generic fallback retained.

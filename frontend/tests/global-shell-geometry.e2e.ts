@@ -397,6 +397,52 @@ test("shared authenticated shell keeps navbar conditions and React-owned panel s
   await expect(sidebar).not.toHaveClass(/sidenav-open/);
 });
 
+test("site-admin affix keeps the global sidebar pin inside the unscoped GNB", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: false, isGuest: false, isSiteAdmin: true });
+  await mockSiteUserListData(page);
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${BASE_PATH}/sites/userList`);
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('[data-stylex-owner="site-user-list-title-strip"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toBeVisible();
+
+    const metrics = await page.evaluate(() => {
+      const box = (owner: string) => {
+        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        if (!element) throw new Error(`Missing ${owner}`);
+        const rect = element.getBoundingClientRect();
+        return { bottom: rect.bottom, height: rect.height, x: rect.x, y: rect.y };
+      };
+      return {
+        affix: box("site-admin-affix"),
+        gnb: box("global-gnb-outer"),
+        pin: box("global-sidebar-open-pin"),
+      };
+    });
+
+    expect(metrics.gnb.y).toBeCloseTo(metrics.affix.bottom, 1);
+    expect(metrics.pin.y).toBeCloseTo(metrics.gnb.y + 6, 1);
+    expect(metrics.pin.bottom).toBeLessThanOrEqual(metrics.gnb.bottom);
+    expect(metrics.pin.x).toBeCloseTo(metrics.gnb.x - 6, 1);
+  }
+});
+
+test("non-admin site shell does not render the site-admin affix", async ({ page }) => {
+  await installRuntimeConfig(page);
+  await mockSession(page, { isAnonymous: false, isGuest: false, isSiteAdmin: false });
+  await mockSiteUserListData(page);
+
+  await page.goto(`${BASE_PATH}/sites/userList`);
+  await expect(page.locator('[data-stylex-owner="global-gnb-outer"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="site-admin-affix"]')).toHaveCount(0);
+});
+
 test("guest session only suppresses List All and its divider", async ({ page }) => {
   await installRuntimeConfig(page);
   await mockSession(page, { isAnonymous: false });
@@ -465,6 +511,35 @@ async function mockSession(page: Page, overrides: Record<string, unknown>) {
     });
   });
   return requestPaths;
+}
+
+async function mockSiteUserListData(page: Page) {
+  const fulfillAuthSession = (route: import("@playwright/test").Route) =>
+    route.fulfill({
+      contentType: "application/json",
+      headers: { "x-csrf-token": "csrf-global-shell" },
+      json: { user: { loginId: "siteboss" } },
+    });
+  await page.route("**/api/auth/session", fulfillAuthSession);
+  await page.route("**/api/v1/auth/session", fulfillAuthSession);
+  await page.route("**/api/v1/site/update", (route) =>
+    route.fulfill({ contentType: "application/json", json: { versionToUpdate: null } }),
+  );
+  await page.route("**/api/v1/site/users*", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        page: 1,
+        pageSize: 20,
+        query: "",
+        siteAdminCount: 1,
+        state: "ACTIVE",
+        total: 0,
+        totalPages: 0,
+        users: [],
+      },
+    }),
+  );
 }
 
 async function mockRootLoginCapabilities(page: Page) {

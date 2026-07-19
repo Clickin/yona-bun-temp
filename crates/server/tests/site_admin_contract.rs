@@ -4945,6 +4945,72 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 }
 
 #[tokio::test]
+async fn site_admin_spa_shell_and_rest_routes_reject_direct_non_admin_access() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let repo = AppRepository::new(db.clone());
+    let asset_root = tempfile::tempdir().expect("site admin shell assets");
+    std::fs::write(
+        asset_root.path().join("index.html"),
+        "<!doctype html><html><head></head><body><main id=\"root\">site admin shell</main></body></html>",
+    )
+    .expect("index html");
+    let app = create_router_with_repository_and_filesystem_assets_and_app_config(
+        RuntimeConfig {
+            allow_anonymous_access: true,
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        repo,
+        asset_root.path().to_path_buf(),
+        AppRuntimeConfig::default(),
+    );
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    for path in [
+        "/yona/sites/userList",
+        "/yona/sites/postList",
+        "/yona/sites/mail",
+    ] {
+        assert_eq!(
+            rest_get(app.clone(), path, None).await.status(),
+            StatusCode::UNAUTHORIZED,
+            "anonymous direct {path} must not receive the SPA shell"
+        );
+        assert_eq!(
+            rest_get(app.clone(), path, Some(&member_cookie)).await.status(),
+            StatusCode::FORBIDDEN,
+            "non-admin direct {path} must not receive the SPA shell"
+        );
+        let response = rest_get(app.clone(), path, Some(&admin_cookie)).await;
+        assert_eq!(response.status(), StatusCode::OK, "site admin direct {path}");
+        assert!(response_text(response).await.contains("site admin shell"));
+    }
+
+    for path in ["/yona/api/v1/site/users", "/yona/api/v1/site/posts"] {
+        assert_eq!(
+            rest_get(app.clone(), path, None).await.status(),
+            StatusCode::UNAUTHORIZED,
+            "anonymous {path} must be denied"
+        );
+        assert_eq!(
+            rest_get(app.clone(), path, Some(&member_cookie)).await.status(),
+            StatusCode::FORBIDDEN,
+            "non-admin {path} must be denied"
+        );
+        assert_eq!(
+            rest_get(app.clone(), path, Some(&admin_cookie)).await.status(),
+            StatusCode::OK,
+            "site admin {path} remains available"
+        );
+    }
+}
+
+#[tokio::test]
 async fn site_admin_update_status_follows_legacy_update_view_branches() {
     // Guards site-admin update status using the app-scoped service update config snapshot.
     let (app, _repo, db) = build_app_with_site_update_config(SiteUpdateConfig::default()).await;

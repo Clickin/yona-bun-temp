@@ -3616,6 +3616,42 @@ async function issueSearchDueDateMetrics(page: Page) {
   });
 }
 
+test("project issue mass-update checkbox keeps legacy wide-row alignment and 720px hiding", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+  const desktop = await page.locator("#issue-item-42").evaluate((row) => {
+    const checkbox = row.querySelector(".mass-update-check") as HTMLElement;
+    const input = checkbox.querySelector("input") as HTMLElement;
+    const title = row.querySelector(".title-wrap") as HTMLElement;
+    const checkboxBox = checkbox.getBoundingClientRect();
+    const inputBox = input.getBoundingClientRect();
+    const titleBox = title.getBoundingClientRect();
+    const checkboxStyle = window.getComputedStyle(checkbox);
+    const inputStyle = window.getComputedStyle(input);
+    return {
+      checkboxBox,
+      checkboxFloat: checkboxStyle.float,
+      inputBox,
+      inputMarginTop: inputStyle.marginTop,
+      titleBox,
+    };
+  });
+  expect(desktop.checkboxFloat).toBe("left");
+  expect(desktop.inputMarginTop).toBe("15px");
+  expect(desktop.checkboxBox.width).toBeGreaterThan(0);
+  expect(desktop.titleBox.left).toBeGreaterThanOrEqual(desktop.checkboxBox.right + 15);
+  expect(desktop.inputBox.top).toBeGreaterThanOrEqual(desktop.titleBox.top + 10);
+
+  await page.setViewportSize({ width: 720, height: 900 });
+  await expect(page.locator("#issue-item-42 .mass-update-check")).toBeHidden();
+  await expect(page.locator("#issue-item-42 .title-wrap")).toBeVisible();
+});
+
 async function issueListRowMetrics(page: Page) {
   return page.locator("#issue-item-42").evaluate((row) => {
     const list = row.closest(".post-list-wrap") as HTMLElement;

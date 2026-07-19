@@ -671,6 +671,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/api\/site-admin\.ts$/i,
       /^frontend\/src\/routes\/-migration\.stylex\.ts$/i,
       /^frontend\/src\/routes\/migration\.tsx$/i,
+      /^frontend\/src\/routes\/sites\.tsx$/i,
       /^frontend\/src\/routes\/sites\/data\.tsx$/i,
       /^frontend\/src\/routes\/sites\/-data\.stylex\.ts$/i,
       /^frontend\/src\/routes\/sites\/diagnostic\.tsx$/i,

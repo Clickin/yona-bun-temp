@@ -1252,8 +1252,12 @@ pub(crate) fn routes(
 ) -> Router {
     let site_diagnostic_shell_assets = assets.clone();
     let site_diagnostic_shell_browser_runtime = browser_runtime.clone();
-    let site_mail_shell_assets = assets;
-    let site_mail_shell_browser_runtime = browser_runtime;
+    let site_mail_shell_assets = assets.clone();
+    let site_mail_shell_browser_runtime = browser_runtime.clone();
+    let site_admin_shell_assets = assets;
+    let site_admin_shell_browser_runtime = browser_runtime;
+    let site_mail_shell_service = service.clone();
+    let site_admin_shell_service = service.clone();
     let unwatch_service = service.clone();
     let site_update_download_service = service.clone();
     let site_update_download_file_service = service.clone();
@@ -1344,10 +1348,14 @@ pub(crate) fn routes(
             get({
                 let assets = site_mail_shell_assets.clone();
                 let browser_runtime = site_mail_shell_browser_runtime.clone();
-                move || {
+                let service = site_mail_shell_service.clone();
+                move |headers: HeaderMap| {
                     let assets = assets.clone();
                     let browser_runtime = browser_runtime.clone();
-                    async move { serve_frontend_page(assets, Method::GET, browser_runtime).await }
+                    let service = service.clone();
+                    async move {
+                        direct_site_admin_shell(headers, service, assets, browser_runtime).await
+                    }
                 }
             })
             .post(move |headers: HeaderMap, body: Bytes| {
@@ -1483,6 +1491,17 @@ pub(crate) fn routes(
                 }
             }),
         )
+        .route(
+            "/sites/{*site_page}",
+            get(move |headers: HeaderMap| {
+                let assets = site_admin_shell_assets.clone();
+                let browser_runtime = site_admin_shell_browser_runtime.clone();
+                let service = site_admin_shell_service.clone();
+                async move {
+                    direct_site_admin_shell(headers, service, assets, browser_runtime).await
+                }
+            }),
+        )
 }
 
 #[derive(Default, Deserialize)]
@@ -1491,6 +1510,18 @@ struct RestSiteDirectUserMutationQuery {
     login_id: String,
     query: Option<String>,
     state: Option<String>,
+}
+
+async fn direct_site_admin_shell(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+    assets: AssetMode,
+    browser_runtime: BrowserRuntimeConfig,
+) -> Response {
+    match rest_require_site_admin_repository(&service, &headers, false).await {
+        Ok(_) => serve_frontend_page(assets, Method::GET, browser_runtime).await,
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn direct_read_site_diagnostic_shell(

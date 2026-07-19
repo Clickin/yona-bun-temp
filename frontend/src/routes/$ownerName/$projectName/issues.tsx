@@ -1602,8 +1602,14 @@ function ProjectIssueItem({
       <div className="span9 span-hard-wrap">
         {showMassUpdateControls ? (
           /* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy mass-update checkbox label targets the row checkbox by id. */
-          <label htmlFor={`issue-${issueId}`} className="mass-update-check hide-in-mobile">
+          <label
+            {...stylex.props(styles.massUpdateCheck)}
+            htmlFor={`issue-${issueId}`}
+            className="mass-update-check hide-in-mobile"
+            data-stylex-owner="project-issues-mass-update-check"
+          >
             <input
+              {...stylex.props(styles.massUpdateCheckInput)}
               id={`issue-${issueId}`}
               type="checkbox"
               name="checked-issue"
@@ -1611,6 +1617,7 @@ function ProjectIssueItem({
               data-issue-labels={issueLabelData(issueLabels)}
               checked={issueSelected}
               onChange={(event) => onIssueSelectedChange(issueId, event.currentTarget.checked)}
+              data-stylex-owner="project-issues-mass-update-check-input"
             />
           </label>
         ) : null}
