@@ -482,6 +482,15 @@ test("shared markdown help uses typed React targets without legacy target marker
     "navChoice:",
     "navChoiceActive:",
     "navButton:",
+    "paneList:",
+    "pane:",
+    "paneActive:",
+    "output:",
+    "inputPre:",
+    "outputCode:",
+    "outputPre:",
+    "table:",
+    "taskList:",
   ]) {
     expect(SHARED_MARKDOWN_HELP_STYLE_SOURCE).toContain(styleName);
   }
@@ -596,12 +605,77 @@ test("shared markdown help uses typed React targets without legacy target marker
   );
   await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
 
+  const codeNav = navItems.filter({ hasText: /^Code$/u });
+  await codeNav.click();
+  const codePane = markdownHelp.locator(".markdown-help-wrap > .markdownCodes");
+  await expect(codePane).toBeVisible();
+  await expect(codePane).toHaveAttribute("data-stylex-owner", "markdown-help-pane");
+  await expect(codePane.locator('[data-stylex-owner="markdown-help-input-pre"]')).toHaveCSS(
+    "white-space",
+    "pre",
+  );
+  await expect(codePane.locator('[data-stylex-owner="markdown-help-output-pre"]')).toHaveCSS(
+    "background-color",
+    "rgb(239, 239, 239)",
+  );
+  await expect(codePane.locator('[data-stylex-owner="markdown-help-output-pre-code"]')).toHaveCSS(
+    "border-top-width",
+    "0px",
+  );
+
+  const tableNav = navItems.filter({ hasText: /^Table$/u });
+  await tableNav.click();
+  const tablePane = markdownHelp.locator(".markdown-help-wrap > .markdownTables");
+  const table = tablePane.locator('[data-stylex-owner="markdown-help-table"]');
+  await expect(tablePane).toBeVisible();
+  await expect(table).toHaveCSS("border-collapse", "collapse");
+  await expect(table.locator("th").first()).toHaveCSS("min-width", "45px");
+  await expect(table.locator("td").first()).toHaveCSS("word-break", "break-all");
+  expect(
+    await table.evaluate((element) => {
+      const pane = element.closest<HTMLElement>('[data-stylex-owner="markdown-help-pane"]');
+      const output = element.closest<HTMLElement>('[data-stylex-owner="markdown-help-output"]');
+      if (!pane || !output) throw new Error("missing table containment owners");
+      const paneBox = pane.getBoundingClientRect();
+      const outputBox = output.getBoundingClientRect();
+      const tableBox = element.getBoundingClientRect();
+      return {
+        outputInsidePane: outputBox.left >= paneBox.left && outputBox.right <= paneBox.right + 1,
+        tableFitsScrollableOutput: tableBox.width <= output.scrollWidth,
+      };
+    }),
+  ).toEqual({ outputInsidePane: true, tableFitsScrollableOutput: true });
+
+  const taskNav = navItems.filter({ hasText: /^Checklist$/u });
+  await taskNav.click();
+  const taskPane = markdownHelp.locator(".markdown-help-wrap > .markdownTaskList");
+  await expect(taskPane.locator('[data-stylex-owner="markdown-help-task-list"]')).toHaveCSS(
+    "list-style-type",
+    "disc",
+  );
+  await expect(taskPane.locator('input[type="checkbox"]').first()).toHaveCSS(
+    "vertical-align",
+    "top",
+  );
+  await taskNav.click();
+  await expect(markdownHelp.locator(".markdown-help-wrap > .active")).toHaveCount(0);
+
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(`${basePath}/admin/sample/issueform`);
   await expect(page.locator(".markdown-help")).toBeVisible();
   await expect(
     page.locator('.markdown-help-nav > [data-stylex-owner="markdown-help-nav-choice"]').first(),
   ).toHaveCSS("padding", "5px 8px");
+  await page
+    .locator(".markdown-help-nav > .help-nav")
+    .filter({ hasText: /^Checklist$/u })
+    .click();
+  await expect(
+    page.locator(".markdownTaskList").locator('[data-stylex-owner="markdown-help-task-list"]'),
+  ).toHaveCSS("font-size", "16px");
+  await expect(
+    page.locator(".markdownTaskList").locator('[data-stylex-owner="markdown-help-task-list"]'),
+  ).toHaveCSS("padding-left", "24px");
   expect(await readMarkdownHelpMobileMetrics(page)).toEqual({
     labelContainedInNav: true,
     navInsideRoot: true,
@@ -624,7 +698,10 @@ async function renderedMarkdownHelpPaneClasses(page: Page) {
     .evaluateAll((items) =>
       items.map((item) =>
         Array.from(item.classList).find(
-          (className) => className !== "markdown-help-item" && className !== "active",
+          (className) =>
+            className.startsWith("markdown") &&
+            className !== "markdown-help-item" &&
+            className !== "active",
         ),
       ),
     );

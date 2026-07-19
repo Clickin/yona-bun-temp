@@ -8,6 +8,9 @@ export const markdownHelpColors = stylex.defineVars({
   navText: "#9e9e9e",
   navTextActive: "#333333",
   paneSurface: "#ffffff",
+  codeSurface: "#efefef",
+  tableBorder: "#dcddde",
+  tableHeaderSurface: "#f7f7f7",
 });
 
 export const markdownHelpNavStyles = stylex.create({
@@ -92,4 +95,86 @@ export const markdownHelpNavStyles = stylex.create({
     padding: "0px",
     verticalAlign: "baseline",
   },
+});
+
+export const markdownHelpContentStyles = stylex.create({
+  paneList: {
+    backgroundColor: markdownHelpColors.paneSurface,
+    listStyle: "none",
+  },
+  pane: {
+    borderTopStyle: "none",
+    height: "0px",
+    overflow: "hidden",
+  },
+  paneActive: {
+    borderBottomStyle: "none",
+    borderColor: markdownHelpColors.navBorder,
+    borderLeftStyle: "solid",
+    borderRightStyle: "solid",
+    borderTopStyle: "none",
+    borderWidth: "1px",
+    height: "auto",
+    padding: "10px",
+  },
+  output: {
+    clear: "both",
+    fontSize: "1.1em",
+    overflow: "auto",
+    overflowWrap: "break-word",
+  },
+  inputPre: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    margin: "0px",
+    padding: "0px",
+    whiteSpace: "pre",
+    overflowWrap: "normal",
+  },
+  outputCode: {
+    borderColor: markdownHelpColors.navBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    fontSize: "13px",
+    padding: "5px 5px 2px",
+  },
+  outputPre: {
+    backgroundColor: markdownHelpColors.codeSurface,
+    borderStyle: "none",
+    fontSize: "1em",
+    margin: "10px 0px",
+    padding: "10px",
+    wordBreak: "normal",
+  },
+  outputPreCode: {
+    borderStyle: "none",
+    margin: "0px",
+    padding: "0px",
+  },
+  table: { borderCollapse: "collapse", margin: "15px" },
+  tableHeader: {
+    backgroundColor: markdownHelpColors.tableHeaderSurface,
+    borderColor: markdownHelpColors.tableBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    minWidth: "45px",
+    padding: "5px",
+  },
+  tableCell: {
+    borderColor: markdownHelpColors.tableBorder,
+    borderStyle: "solid",
+    borderWidth: "1px",
+    padding: "5px",
+    wordBreak: "break-all",
+  },
+  taskList: {
+    fontWeight: "normal",
+    lineHeight: "20px",
+    listStyle: "disc",
+    marginBottom: "16px",
+    marginLeft: "0px",
+    padding: "0px 0px 5px 2.5em",
+  },
+  taskCheckbox: { verticalAlign: "top" },
 });

@@ -6,7 +6,10 @@ import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown"
 import remarkGfm from "remark-gfm";
 import { useLegacyMessages } from "../i18n";
 import { prefixBasePath } from "../runtime-config";
-import { markdownHelpNavStyles as navStyles } from "./-legacy-markdown-help.stylex";
+import {
+  markdownHelpContentStyles as contentStyles,
+  markdownHelpNavStyles as navStyles,
+} from "./-legacy-markdown-help.stylex";
 
 const MARKDOWN_HELP_TARGETS = [
   "markdownHeaders",
@@ -220,16 +223,27 @@ function MarkdownSampleCode({
   node: _node,
   ...props
 }: MarkdownSampleCodeProps) {
+  const codeStyle = stylex.props(contentStyles.outputCode);
   if (className !== "language-javascript") {
     return (
-      <code {...props} className={className}>
+      <code
+        {...props}
+        {...codeStyle}
+        className={`${className ?? ""} ${codeStyle.className}`.trim()}
+        data-stylex-owner="markdown-help-output-code"
+      >
         {children}
       </code>
     );
   }
 
   return (
-    <code {...props} className={`${className} hljs`}>
+    <code
+      {...props}
+      {...stylex.props(contentStyles.outputPreCode)}
+      className={`${className} hljs ${stylex.props(contentStyles.outputPreCode).className}`}
+      data-stylex-owner="markdown-help-output-pre-code"
+    >
       <span className="hljs-function">
         <span className="hljs-keyword">function</span> <span className="hljs-title">test</span>(
         <span className="hljs-params" />){" "}
@@ -243,6 +257,46 @@ function MarkdownSampleCode({
   );
 }
 
+function MarkdownSamplePre({
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
+  return (
+    <pre
+      {...props}
+      {...stylex.props(contentStyles.outputPre)}
+      data-stylex-owner="markdown-help-output-pre"
+    />
+  );
+}
+
+function MarkdownSampleTable({
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"table"> & ExtraProps) {
+  return (
+    <table
+      {...props}
+      {...stylex.props(contentStyles.table)}
+      data-stylex-owner="markdown-help-table"
+    />
+  );
+}
+
+function MarkdownSampleTableHeader({
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"th"> & ExtraProps) {
+  return <th {...props} {...stylex.props(contentStyles.tableHeader)} />;
+}
+
+function MarkdownSampleTableCell({
+  node: _node,
+  ...props
+}: ComponentPropsWithoutRef<"td"> & ExtraProps) {
+  return <td {...props} {...stylex.props(contentStyles.tableCell)} />;
+}
+
 const MARKDOWN_SAMPLE_COMPONENTS = {
   a: MarkdownSampleLink,
   code: MarkdownSampleCode,
@@ -250,6 +304,10 @@ const MARKDOWN_SAMPLE_COMPONENTS = {
   h2: MarkdownSampleH2,
   h3: MarkdownSampleH3,
   img: MarkdownSampleImage,
+  pre: MarkdownSamplePre,
+  table: MarkdownSampleTable,
+  td: MarkdownSampleTableCell,
+  th: MarkdownSampleTableHeader,
 } satisfies Components;
 
 function markdownHelpContentId(target: MarkdownHelpTarget) {
@@ -258,7 +316,10 @@ function markdownHelpContentId(target: MarkdownHelpTarget) {
 
 function MarkdownSampleOutput({ sample }: { sample: string }) {
   return (
-    <div className="markdown-wrap">
+    <div
+      className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
+      data-stylex-owner="markdown-help-output"
+    >
       <ReactMarkdown components={MARKDOWN_SAMPLE_COMPONENTS} remarkPlugins={[remarkGfm]}>
         {sample}
       </ReactMarkdown>
@@ -271,6 +332,8 @@ export function LegacyMarkdownHelp() {
   const [activeTarget, setActiveTarget] = useState<MarkdownHelpTarget | null>(null);
 
   const activeClass = (target: MarkdownHelpTarget) => (activeTarget === target ? " active" : "");
+  const paneStyle = (target: MarkdownHelpTarget) =>
+    stylex.props(contentStyles.pane, activeTarget === target && contentStyles.paneActive);
   const toggleActiveTarget = (target: MarkdownHelpTarget) => {
     setActiveTarget((current) => (current === target ? null : target));
   };
@@ -325,10 +388,15 @@ export function LegacyMarkdownHelp() {
           );
         })}
       </ul>
-      <ul className="markdown-help-wrap">
+      <ul
+        className={`markdown-help-wrap ${stylex.props(contentStyles.paneList).className}`}
+        data-stylex-owner="markdown-help-pane-list"
+      >
         <li
+          {...paneStyle("markdownHeaders")}
           id={markdownHelpContentId("markdownHeaders")}
-          className={`markdown-help-item markdownHeaders${activeClass("markdownHeaders")}`}
+          className={`${paneStyle("markdownHeaders").className} markdown-help-item markdownHeaders${activeClass("markdownHeaders")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -336,7 +404,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_HEADER_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_HEADER_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_HEADER_SAMPLE} />
@@ -344,8 +417,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownStyling")}
           id={markdownHelpContentId("markdownStyling")}
-          className={`markdown-help-item markdownStyling${activeClass("markdownStyling")}`}
+          className={`${paneStyle("markdownStyling").className} markdown-help-item markdownStyling${activeClass("markdownStyling")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -353,7 +428,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_STYLING_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_STYLING_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_STYLING_SAMPLE} />
@@ -361,8 +441,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownLinks")}
           id={markdownHelpContentId("markdownLinks")}
-          className={`markdown-help-item markdownLinks${activeClass("markdownLinks")}`}
+          className={`${paneStyle("markdownLinks").className} markdown-help-item markdownLinks${activeClass("markdownLinks")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -370,7 +452,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_LINK_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_LINK_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_LINK_OUTPUT_SAMPLE} />
@@ -378,8 +465,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownLists")}
           id={markdownHelpContentId("markdownLists")}
-          className={`markdown-help-item markdownLists${activeClass("markdownLists")}`}
+          className={`${paneStyle("markdownLists").className} markdown-help-item markdownLists${activeClass("markdownLists")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -387,7 +476,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_LIST_INPUT_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_LIST_INPUT_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_LIST_OUTPUT_SAMPLE} />
@@ -395,8 +489,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownTaskList")}
           id={markdownHelpContentId("markdownTaskList")}
-          className={`markdown-help-item markdownTaskList${activeClass("markdownTaskList")}`}
+          className={`${paneStyle("markdownTaskList").className} markdown-help-item markdownTaskList${activeClass("markdownTaskList")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -404,22 +500,40 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_TASK_LIST_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_TASK_LIST_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap">
-                <ul>
+              <div
+                className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
+                data-stylex-owner="markdown-help-output"
+              >
+                <ul
+                  {...stylex.props(contentStyles.taskList)}
+                  data-stylex-owner="markdown-help-task-list"
+                >
                   <li>
-                    <input type="checkbox" /> Todos
+                    <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> Todos
                     <ul>
                       <li>
-                        <input type="checkbox" defaultChecked /> To do A
+                        <input
+                          {...stylex.props(contentStyles.taskCheckbox)}
+                          type="checkbox"
+                          defaultChecked
+                        />{" "}
+                        To do A
                       </li>
                       <li>
-                        <input type="checkbox" /> To do B
+                        <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To
+                        do B
                       </li>
                       <li>
-                        <input type="checkbox" /> To do C
+                        <input {...stylex.props(contentStyles.taskCheckbox)} type="checkbox" /> To
+                        do C
                       </li>
                     </ul>
                   </li>
@@ -429,8 +543,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownImages")}
           id={markdownHelpContentId("markdownImages")}
-          className={`markdown-help-item markdownImages${activeClass("markdownImages")}`}
+          className={`${paneStyle("markdownImages").className} markdown-help-item markdownImages${activeClass("markdownImages")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -438,7 +554,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_IMAGE_INPUT_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_IMAGE_INPUT_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_IMAGE_OUTPUT_SAMPLE} />
@@ -446,8 +567,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownBlockquotes")}
           id={markdownHelpContentId("markdownBlockquotes")}
-          className={`markdown-help-item markdownBlockquotes${activeClass("markdownBlockquotes")}`}
+          className={`${paneStyle("markdownBlockquotes").className} markdown-help-item markdownBlockquotes${activeClass("markdownBlockquotes")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -455,7 +578,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_BLOCKQUOTE_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_BLOCKQUOTE_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_BLOCKQUOTE_SAMPLE} />
@@ -463,8 +591,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownCodes")}
           id={markdownHelpContentId("markdownCodes")}
-          className={`markdown-help-item markdownCodes${activeClass("markdownCodes")}`}
+          className={`${paneStyle("markdownCodes").className} markdown-help-item markdownCodes${activeClass("markdownCodes")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -472,7 +602,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_CODE_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_CODE_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_CODE_SAMPLE} />
@@ -480,8 +615,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownTables")}
           id={markdownHelpContentId("markdownTables")}
-          className={`markdown-help-item markdownTables${activeClass("markdownTables")}`}
+          className={`${paneStyle("markdownTables").className} markdown-help-item markdownTables${activeClass("markdownTables")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -489,7 +626,12 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_TABLE_INPUT_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_TABLE_INPUT_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
               <MarkdownSampleOutput sample={MARKDOWN_TABLE_OUTPUT_SAMPLE} />
@@ -497,8 +639,10 @@ export function LegacyMarkdownHelp() {
           </div>
         </li>
         <li
+          {...paneStyle("markdownShortLinks")}
           id={markdownHelpContentId("markdownShortLinks")}
-          className={`markdown-help-item markdownShortLinks${activeClass("markdownShortLinks")}`}
+          className={`${paneStyle("markdownShortLinks").className} markdown-help-item markdownShortLinks${activeClass("markdownShortLinks")}`}
+          data-stylex-owner="markdown-help-pane"
         >
           <div className="row-fluid thead">
             <div className="span6">Markdown Input</div>
@@ -506,10 +650,18 @@ export function LegacyMarkdownHelp() {
           </div>
           <div className="row-fluid markdwon-syntax-wrap">
             <div className="span6 markdwon-syntax">
-              <pre>{MARKDOWN_SHORT_LINK_SAMPLE}</pre>
+              <pre
+                {...stylex.props(contentStyles.inputPre)}
+                data-stylex-owner="markdown-help-input-pre"
+              >
+                {MARKDOWN_SHORT_LINK_SAMPLE}
+              </pre>
             </div>
             <div className="span6">
-              <div className="markdown-wrap">
+              <div
+                className={`markdown-wrap ${stylex.props(contentStyles.output).className}`}
+                data-stylex-owner="markdown-help-output"
+              >
                 <p>
                   Issue no:{" "}
                   <MarkdownSampleLink href="/example/example/issue/2">#2</MarkdownSampleLink>
