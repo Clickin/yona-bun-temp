@@ -5,6 +5,7 @@ const MIGRATION_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/migration.tsx", import.meta.url),
   "utf8",
 );
+const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
 
 const EXPECTED_MIGRATION_SCREEN = `
 <div class="unsupported hidden">
@@ -151,7 +152,23 @@ test("migration route source keeps tabindex, progress width, and title declarati
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={1}");
   expect(MIGRATION_ROUTE_SOURCE).toContain("tabIndex={2}");
   expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-progress-bar"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-destination-row"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-source-column-grid"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-destination-column-grid"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('data-stylex-owner="migration-status-column-grid"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('marginLeft: "-20px"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('float: "left"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('minHeight: "1px"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('width: "460px"');
+  expect(MIGRATION_ROUTE_SOURCE).toContain('width: "300px"');
   expect(MIGRATION_ROUTE_SOURCE).not.toContain('style={{ width: "0%" }}');
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row\s*\{/u);
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row::before/u);
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row::after/u);
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row > \[class\*="span"\]/u);
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row > \.span6/u);
+  expect(APP_CSS_SOURCE).not.toMatch(/\.yobi-migration \.row > \.span4/u);
+  expect(APP_CSS_SOURCE).toContain('.row-fluid [class*="span"]');
 });
 
 test("migration disabled shell matches legacy migration/home.scala.html screen DOM", async ({
@@ -198,15 +215,69 @@ test("migration disabled shell matches legacy migration/home.scala.html screen D
   expect(actual).toEqual(expected);
 
   expect(await readMigrationMetrics(page)).toEqual({
+    destinationColumnFloat: "left",
+    destinationColumnMarginLeft: "20px",
+    destinationColumnMinHeight: "1px",
     destinationWidth: 300,
     footerPadding: "10px 0px",
     gnbOuterHeight: "40px",
+    migrationRowBeforeDisplay: "table",
+    migrationRowAfterDisplay: "table",
     migrationRowMarginLeft: "-20px",
     progressWidth: 0,
+    sourceColumnFloat: "left",
+    sourceColumnMarginLeft: "20px",
+    sourceColumnMinHeight: "1px",
     sourceWidth: 300,
+    statusColumnFloat: "left",
+    statusColumnMarginLeft: "20px",
+    statusColumnMinHeight: "1px",
+    statusWidth: 460,
     systemMsgDisplay: "block",
   });
 });
+
+for (const viewport of [
+  { height: 900, name: "desktop", width: 1366 },
+  { height: 844, name: "mobile", width: 390 },
+]) {
+  test(`migration grid owners preserve ${viewport.name} legacy geometry`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/migration`);
+    const row = page.locator('[data-stylex-owner="migration-source-destination-row"]');
+    await expect(row).toBeVisible();
+    await expect(row).toHaveCSS("margin-left", "-20px");
+    for (const owner of [
+      "migration-source-column-grid",
+      "migration-destination-column-grid",
+      "migration-status-column-grid",
+    ]) {
+      await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toHaveCount(1);
+    }
+    const metrics = await row.evaluate((rowElement) => {
+      const source = rowElement.querySelector<HTMLElement>(".source-project");
+      const destination = rowElement.querySelector<HTMLElement>(".destination-project");
+      const status = rowElement.querySelector<HTMLElement>(":scope > .status");
+      if (!source || !destination || !status) throw new Error("Migration grid columns missing.");
+      return {
+        sourceWidth: Math.round(source.getBoundingClientRect().width),
+        destinationWidth: Math.round(destination.getBoundingClientRect().width),
+        statusWidth: Math.round(status.getBoundingClientRect().width),
+        sourceFloat: getComputedStyle(source).float,
+        destinationFloat: getComputedStyle(destination).float,
+        statusFloat: getComputedStyle(status).float,
+      };
+    });
+    expect(metrics).toEqual({
+      sourceWidth: 300,
+      destinationWidth: 300,
+      statusWidth: 460,
+      sourceFloat: "left",
+      destinationFloat: "left",
+      statusFloat: "left",
+    });
+  });
+}
 
 async function readMigrationMetrics(page: Page) {
   return page.evaluate(() => {
@@ -214,20 +285,42 @@ async function readMigrationMetrics(page: Page) {
     const row = document.querySelector<HTMLElement>(".yobi-migration .source-destination");
     const source = document.querySelector<HTMLElement>(".source-project.span4");
     const destination = document.querySelector<HTMLElement>(".destination-project.span4");
+    const status = document.querySelector<HTMLElement>(".source-destination > .status.span6");
     const progress = document.querySelector<HTMLElement>(".progress .span10");
     const systemMsg = document.querySelector<HTMLElement>("#system-msg");
     const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
-    if (!gnbOuter || !row || !source || !destination || !progress || !systemMsg || !footer) {
+    if (
+      !gnbOuter ||
+      !row ||
+      !source ||
+      !destination ||
+      !status ||
+      !progress ||
+      !systemMsg ||
+      !footer
+    ) {
       throw new Error("Expected migration metric targets are missing.");
     }
 
     return {
+      destinationColumnFloat: getComputedStyle(destination).float,
+      destinationColumnMarginLeft: getComputedStyle(destination).marginLeft,
+      destinationColumnMinHeight: getComputedStyle(destination).minHeight,
       destinationWidth: Math.round(destination.getBoundingClientRect().width),
       footerPadding: getComputedStyle(footer).padding,
       gnbOuterHeight: getComputedStyle(gnbOuter).height,
+      migrationRowBeforeDisplay: getComputedStyle(row, "::before").display,
+      migrationRowAfterDisplay: getComputedStyle(row, "::after").display,
       migrationRowMarginLeft: getComputedStyle(row).marginLeft,
       progressWidth: Math.round(progress.getBoundingClientRect().width),
+      sourceColumnFloat: getComputedStyle(source).float,
+      sourceColumnMarginLeft: getComputedStyle(source).marginLeft,
+      sourceColumnMinHeight: getComputedStyle(source).minHeight,
       sourceWidth: Math.round(source.getBoundingClientRect().width),
+      statusColumnFloat: getComputedStyle(status).float,
+      statusColumnMarginLeft: getComputedStyle(status).marginLeft,
+      statusColumnMinHeight: getComputedStyle(status).minHeight,
+      statusWidth: Math.round(status.getBoundingClientRect().width),
       systemMsgDisplay: getComputedStyle(systemMsg).display,
     };
   });

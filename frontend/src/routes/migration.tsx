@@ -66,7 +66,18 @@ const styles = stylex.create({
     fontSize: "20px",
     padding: "10px",
   },
-  selection: { marginLeft: "20px" },
+  sourceDestination: {
+    marginLeft: "-20px",
+    "::before": { content: '""', display: "table", lineHeight: "0px" },
+    "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  migrationColumn: {
+    float: "left",
+    minHeight: "1px",
+    marginLeft: "20px",
+  },
+  migrationSpan6: { width: "460px" },
+  migrationSpan4: { width: "300px" },
   paneHeader: {
     padding: "10px",
     backgroundColor: migrationTheme.paneHeaderSurface,
@@ -116,7 +127,10 @@ const destinationTitleClassName = stylex.props(styles.destinationTitle).classNam
 const projectWarnClassName = stylex.props(styles.projectWarn).className;
 const arrowClassName = stylex.props(styles.arrow).className;
 const arrowIconClassName = stylex.props(styles.arrowIcon).className;
-const selectionClassName = stylex.props(styles.selection).className;
+const sourceDestinationClassName = stylex.props(styles.sourceDestination).className;
+const migrationColumnClassName = stylex.props(styles.migrationColumn).className;
+const migrationSpan6ClassName = stylex.props(styles.migrationSpan6).className;
+const migrationSpan4ClassName = stylex.props(styles.migrationSpan4).className;
 const paneHeaderClassName = stylex.props(styles.paneHeader).className;
 const searchClassName = stylex.props(styles.search).className;
 const searchInputClassName = stylex.props(styles.searchInput).className;
@@ -189,8 +203,14 @@ function MigrationScreen() {
             </div>
           </div>
         </div>
-        <div className={`row source-destination ${selectionClassName}`}>
-          <div className="source-project span4">
+        <div
+          className={`row source-destination ${sourceDestinationClassName}`}
+          data-stylex-owner="migration-source-destination-row"
+        >
+          <div
+            className={`source-project span4 ${migrationColumnClassName} ${migrationSpan4ClassName}`}
+            data-stylex-owner="migration-source-column-grid"
+          >
             <div className={`header ${paneHeaderClassName}`}>Source 0 개</div>
             <div className={`search left-border ${searchClassName}`}>
               <input
@@ -204,7 +224,10 @@ function MigrationScreen() {
             </div>
             <div className={`left-project-list ${projectListClassName}`} />
           </div>
-          <div className={`destination-project span4 ${destinationProjectClassName}`}>
+          <div
+            className={`destination-project span4 ${destinationProjectClassName} ${migrationColumnClassName} ${migrationSpan4ClassName}`}
+            data-stylex-owner="migration-destination-column-grid"
+          >
             <div className={`header ${paneHeaderClassName}`}>Destination 0 개</div>
             <div className={`search ${searchClassName}`}>
               <input
@@ -220,7 +243,10 @@ function MigrationScreen() {
               className={`destination-project-list ${projectListClassName} ${destinationProjectListClassName}`}
             />
           </div>
-          <div className="span6 status">
+          <div
+            className={`span6 status ${migrationColumnClassName} ${migrationSpan6ClassName}`}
+            data-stylex-owner="migration-status-column-grid"
+          >
             <div className="progress row">
               <div
                 className={`bar span10 bar-danger ${progressBarClassName}`}

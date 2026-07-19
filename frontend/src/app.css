@@ -2650,35 +2650,6 @@ h1 {
   margin-left: 180px;
 }
 
-.yobi-migration .row {
-  margin-left: -20px;
-}
-
-.yobi-migration .row::before,
-.yobi-migration .row::after {
-  display: table;
-  line-height: 0;
-  content: "";
-}
-
-.yobi-migration .row::after {
-  clear: both;
-}
-
-.yobi-migration .row > [class*="span"] {
-  float: left;
-  min-height: 1px;
-  margin-left: 20px;
-}
-
-.yobi-migration .row > .span6 {
-  width: 460px;
-}
-
-.yobi-migration .row > .span4 {
-  width: 300px;
-}
-
 .cu-label {
   display: inline-block;
   width: 160px;
