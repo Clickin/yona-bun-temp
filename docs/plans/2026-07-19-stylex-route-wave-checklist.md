@@ -25,9 +25,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 
 | Order | IDs | Work | Dependency |
 | --- | --- | --- | --- |
-| 1 | ORG-02, MILE-01, BOARD-01 | parent organization home, milestone list, post list | 독립 3-worker batch |
-| 2 | BOARD-03, CODE-01, PROJECT-02 | post detail, branch list, project setting | 독립 3-worker batch |
-| 3 | PROJECT-04, PROJECT-05, ORG-01 | labels, webhooks, organization create | Select2/form fallback remains shared |
+| 1 | ORG-02, BOARD-01 | parent organization home header/menu; populated post rows | Batch 530 integrated; shared/mobile fallback retained |
+| 2 | ORG-03, USER-06, PROJECT-03 | preflight only against the resolved map before worker allocation | distinct TSX owners; setting/editor dependencies |
+| 3 | HOME-01, HOME-02, ROOT-01 | preflight only after leaf-route proof | shared shell is a last-consumer lane |
 | 4 | USER/ORG/SITE lanes | child routes are parallel only when their TSX owners differ | shared tab/menu/list shell |
 | 5 | ISSUE/BOARD/MILESTONE lanes | list/form/detail owner order | below serial edges |
 | 6 | CODE/PR lanes | tree/diff before PR changes/reviews | shared diff/tree plugins |
@@ -75,7 +75,7 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 | USER-05 | `/user/issues`: open/closed/filter/quick-search/subtasks/pagination | `issue/my_list.scala.html`, `my_partial_*` | DEPENDENCY | LOE--- |
 | USER-06 | direct issue form new/mine/comment-derived states | `issue/create.scala.html` | DEPENDENCY | L----- |
 | ORG-01 | `/organizations/new`: form/validation/success/error | `organization/create.scala.html` | DEPENDENCY | LOE--- |
-| ORG-02 | organization layout/home: header/menu/project/member/filter states | `organizationLayout`, `header`, `menu`, `view.scala.html` | READY | L----- |
+| ORG-02 | organization layout/home: header/menu/project/member/filter states | `organizationLayout`, `header`, `menu`, `view.scala.html` | DEPENDENCY | LOE--- |
 | ORG-03 | settingform/members/delete: logo, enrollment, roles, modals | `organization/{setting,members,deleteForm}.scala.html`, `partial_settingmenu` | DEPENDENCY | LOE--- |
 | ORG-04 | boards/issues/pullrequests open/closed/populated/empty/pagination | `group_{board,issue,pullrequest}_list*.scala.html` | DEPENDENCY | L----- |
 
@@ -88,7 +88,7 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 | PROJECT-03 | changeVCS/delete/transfer/members | corresponding project templates plus setting menu | DEPENDENCY | L----- |
 | PROJECT-04 | issue labels categories/labels CRUD | `project/issuelabels.scala.html`, `partial_issuelabels_*` | DEPENDENCY | L----- |
 | PROJECT-05 | webhooks list/create/delete/test | `project/webhooks.scala.html`, `partial_webhooks_list` | DEPENDENCY | L----- |
-| PROJECT-06 | watchers and statistics/chart states | `project/watchers.scala.html`, `project/statistics.scala.html` | READY | L----- |
+| PROJECT-06 | watchers and statistics/chart states | `project/watchers.scala.html`, `project/statistics.scala.html` | DEPENDENCY | LOE--- |
 
 ### Issue, milestone, board
 
@@ -99,31 +99,31 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 | ISSUE-03 | issue detail header/body/sidebar/open-closed/error | `issue/view.scala.html` | DEPENDENCY | LOE--- |
 | ISSUE-04 | issue comments/events/child/voter/attachment/modal states | `partial_comments`, `partial_history`, `partial_index_comments`, child/voter partials | DEPENDENCY | L----- |
 | ISSUE-05 | issue edit loaded/editor/options/error | `issue/edit.scala.html`, assignee/label/subtask partials | DEPENDENCY | L----- |
-| MILE-01 | milestone list open/closed/empty | `milestone/list.scala.html`, `partial_status` | READY | L----- |
-| MILE-02 | milestone create/edit forms and validation | `milestone/create.scala.html`, `edit.scala.html` | READY | L----- |
+| MILE-01 | milestone list open/closed/empty | `milestone/list.scala.html`, `partial_status` | COMPLETE | LOECR✓ |
+| MILE-02 | milestone create/edit forms and validation | `milestone/create.scala.html`, `edit.scala.html` | COMPLETE | LOECR✓ |
 | MILE-03 | milestone detail/progress/issues/mass-update/empty | `milestone/view.scala.html`, issue list/mass-update partials | DEPENDENCY | L----- |
-| BOARD-01 | board list populated/empty/filter/paging | `board/list.scala.html`, `partial_list` | READY | L----- |
+| BOARD-01 | board list populated/empty/filter/paging | `board/list.scala.html`, `partial_list` | DEPENDENCY | LOE--- |
 | BOARD-02 | board create/edit editor/upload/validation | `board/create.scala.html`, `edit.scala.html` | DEPENDENCY | L----- |
-| BOARD-03 | post detail/body/sidebar/error | `board/view.scala.html` | READY | L----- |
+| BOARD-03 | post detail/body/sidebar/error | `board/view.scala.html` | DEPENDENCY | LOE--- |
 | BOARD-04 | post comments/history/labels/attachments states | board comment/history and issue label partials | DEPENDENCY | L----- |
 
 ### Code, pull request, fork
 
 | ID | Route / visible states | Legacy root and principal partials | Status | Gates |
 | --- | --- | --- | --- | --- |
-| CODE-01 | branches list/default/delete/error | `code/branches.scala.html`, `partial_branchrow` | READY | L----- |
+| CODE-01 | branches list/default/delete/error | `code/branches.scala.html`, `partial_branchrow` | COMPLETE | LOECR✓ |
 | CODE-02 | repository/nohead/folder/tree/branch selector | `code/view.scala.html`, `nohead*.scala.html`, `partial_view_folder` | DEPENDENCY | L----- |
 | CODE-03 | file/binary/rendered/code/error states | `partial_view_file.scala.html` | DEPENDENCY | L----- |
 | CODE-04 | commit history root/branch/file/empty/paging | `code/history.scala.html` | DEPENDENCY | L----- |
 | CODE-05 | commit detail metadata/diff/comments/binary | `code/diff.scala.html`, code-comment/shared diff partials | DEPENDENCY | L----- |
 | CODE-06 | compare valid/empty/invalid/SVN | `code/compare.scala.html`, `compare_svn.scala.html` | DEPENDENCY | L----- |
-| PR-01 | open/sent/closed lists/filter/paging/empty | `git/list.scala.html`, `partial_search`, `partial_list`, `partial_state` | READY | L----- |
+| PR-01 | open/sent/closed lists/filter/paging/empty | `git/list.scala.html`, `partial_search`, `partial_list`, `partial_state` | DEPENDENCY | LOE--- |
 | PR-02 | create/edit branch/source/form/validation | `git/create.scala.html`, `edit.scala.html`, branch partials | DEPENDENCY | L----- |
 | PR-03 | detail open/merged/closed/info/state | `git/view.scala.html`, `partial_branch`, `partial_info`, `partial_state` | DEPENDENCY | L----- |
 | PR-04 | detail events/reviews/merge outcomes/modals | `partial_pull_request_event`, `partial_reviewlist`, `partial_merge_result` | DEPENDENCY | L----- |
 | PR-05 | changes aggregate/commit diff/comments/reviews | `git/viewChanges.scala.html`, shared diff and review partials | DEPENDENCY | L----- |
 | PR-06 | reviews list populated/empty/filter/paging | `reviewthread/list.scala.html`, `partial_list`, `common/reviewForm` | DEPENDENCY | L----- |
-| FORK-01 | fork owner choice/progress/error/list | `git/fork.scala.html`, `partial_forklist` | READY | L----- |
+| FORK-01 | fork owner choice/progress/error/list | `git/fork.scala.html`, `partial_forklist` | COMPLETE | LOECR✓ |
 
 ### Site administration
 
@@ -173,6 +173,23 @@ Selection protocol: choose only the first eligible IDs from **Immediate queue** 
 update the selected row after integration. Do not re-run a route-wide discovery scan unless a
 **Refresh trigger** applies. A worker receives the exact owner path(s) above, legacy root,
 permitted write scope, and the indicated serial edge.
+
+### 2026-07-19 reconciliation evidence
+
+The initial `READY` labels were disproved by commit/audit/E2E evidence during Batch 530. This
+is a checklist correction, not completion inferred from a `className` count. The following
+rows have already exhausted their isolated route-owner work: MILE-01 (`c6b811c10`), MILE-02
+(`220b374a7`), CODE-01 (`9830dfd57`), CODE-02 (`998d2850e`), CODE-06 (`f49ef50e3`), ISSUE-02
+(`d378c69ad`), ISSUE-05 (`c46b4c6d0`), BOARD-02 (`f9d91e9b4`), and FORK-01 (`982b58738`).
+The remaining Issue/Milestone/Board/Code/PR rows have a route-local StyleX module, focused
+E2E, Scala audit row, and ledger record; they are C/R or shared-fallback evidence lanes unless a
+new exact legacy declaration is identified. They are not candidates for a duplicate route
+skeleton or audit row.
+
+Batch 530 adds the missing scoped owners for ORG-02 header/menu and BOARD-01 populated rows;
+both retain shared or responsive fallback and therefore remain `DEPENDENCY | LOE---`. The next
+worker allocation must make this narrow preflight check against the row's listed commit/audit/E2E
+before editing. This replaces rediscovering the complete route universe each turn.
 
 ## Non-screen route files
 

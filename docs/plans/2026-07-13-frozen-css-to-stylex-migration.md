@@ -3853,3 +3853,12 @@ through an imported screen owner. `PROJECT-06` is retained as C/R evidence work 
 new-skeleton target; `ORG-02` is corrected to the parent organization route and `BOARD-01` to
 `posts.tsx`. Future batches select directly from the fixed queue/map and must not re-discover the
 route universe unless a documented refresh trigger occurs.
+
+Batch 530 applies the reconciled map to two eligible loaded states in parallel: ORG-02 moves the
+organization header/menu shell (including the existing Dynamic logo composition) into six
+route-local owners, while BOARD-01 moves populated post-list shells and rows into six route-local
+owners. Focused browser checks pass together at desktop and 390px, and the generated frozen
+fallback hash remains `6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f`.
+The attempted MILE-01, BOARD-03, CODE-01, PROJECT-02, DIR-02, ISSUE-01 and CODE-02 allocations
+were already completed or C/R-only, so they are reconciled in the canonical checklist rather than
+duplicated. Shared header/menu/list/mobile fallback remains active; Wave 1 is not complete.
