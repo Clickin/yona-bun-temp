@@ -121,6 +121,9 @@ function OrganizationBoardsBody({
   const organizationName = stringField(organization.organizationName, boards.organizationName);
   const hasNotices = boards.notices.length > 0 && search.pageNum === 1;
   const hasPosts = hasNotices || boards.items.length > 0;
+  const searchStyleProps = stylex.props(styles.search);
+  const filterInputStyleProps = stylex.props(styles.filterInput);
+  const listStyleProps = stylex.props(styles.list);
 
   return (
     <>
@@ -128,8 +131,8 @@ function OrganizationBoardsBody({
       <div className="page-wrap-outer" data-stylex-owner="organization-boards-page">
         <div className="project-page-wrap" data-stylex-owner="organization-boards-shell">
           <div
-            {...stylex.props(styles.search)}
-            className="search-wrap underline"
+            {...searchStyleProps}
+            className={`search-wrap underline ${searchStyleProps.className ?? ""}`.trim()}
             data-stylex-owner="organization-boards-search"
           >
             <form id="option_form" method="get" className="pull-left">
@@ -161,8 +164,8 @@ function OrganizationBoardsBody({
               <div className="search-bar span4">
                 <input
                   name="filter"
-                  {...stylex.props(styles.filterInput)}
-                  className="textbox group-board"
+                  {...filterInputStyleProps}
+                  className={`textbox group-board ${filterInputStyleProps.className ?? ""}`.trim()}
                   data-stylex-owner="organization-boards-search-input"
                   type="text"
                   placeholder={t("title.searchByKeyword")}
@@ -188,8 +191,8 @@ function OrganizationBoardsBody({
               ) : null}
               {hasNotices ? (
                 <ul
-                  {...stylex.props(styles.list)}
-                  className="post-list-wrap notice-wrap"
+                  {...listStyleProps}
+                  className={`post-list-wrap notice-wrap ${listStyleProps.className ?? ""}`.trim()}
                   data-stylex-owner="organization-boards-notice-list"
                 >
                   {boards.notices.map((post) => (
@@ -202,8 +205,8 @@ function OrganizationBoardsBody({
                 </ul>
               ) : null}
               <ul
-                {...stylex.props(styles.list)}
-                className="post-list-wrap"
+                {...listStyleProps}
+                className={`post-list-wrap ${listStyleProps.className ?? ""}`.trim()}
                 data-stylex-owner="organization-boards-list"
               >
                 {boards.items.map((post) => (
@@ -233,6 +236,7 @@ function BoardFilters({
   search: OrganizationBoardsSearch;
 }) {
   const { t } = useLegacyMessages();
+  const filtersStyleProps = stylex.props(styles.filters);
   const filters = [
     { field: "updatedDate", label: t("common.order.updatedDate") },
     { field: "createdDate", label: t("common.order.date") },
@@ -242,8 +246,8 @@ function BoardFilters({
   return (
     <div className="filter-wrap board">
       <div
-        {...stylex.props(styles.filters)}
-        className="filters"
+        {...filtersStyleProps}
+        className={`filters ${filtersStyleProps.className ?? ""}`.trim()}
         data-stylex-owner="organization-boards-filters"
       >
         {filters.map((filter) => {
@@ -410,6 +414,7 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
   const avatarStyleProps = stylex.props(styles.rowAvatar);
   const titleWrapStyleProps = stylex.props(styles.rowTitleWrap);
   const postIdStyleProps = stylex.props(styles.rowPostId);
+  const titleStyleProps = stylex.props(styles.title);
   return (
     <li
       {...rowStyleProps}
@@ -438,8 +443,8 @@ function OrganizationBoardPost({ basePath, post }: { basePath: string; post: Boa
             projectName: post.projectName,
             postNumber: String(post.postNumber),
           }}
-          {...stylex.props(styles.title)}
-          className="title"
+          {...titleStyleProps}
+          className={`title ${titleStyleProps.className ?? ""}`.trim()}
           data-stylex-owner="organization-boards-title"
         >
           {post.title}
@@ -507,6 +512,7 @@ function TwoColumnModeCheckbox() {
     () =>
       typeof localStorage !== "undefined" && localStorage.getItem("useTwoColumnMode") === "true",
   );
+  const twoColumnPopoverStyleProps = stylex.props(styles.twoColumnPopover);
   const clearPopoverTimers = () => {
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -568,8 +574,8 @@ function TwoColumnModeCheckbox() {
       </label>
       {showPopover ? (
         <div
-          {...stylex.props(styles.twoColumnPopover)}
-          className="popover top"
+          {...twoColumnPopoverStyleProps}
+          className={`popover top ${twoColumnPopoverStyleProps.className ?? ""}`.trim()}
           role="tooltip"
           data-stylex-owner="organization-boards-two-column-popover"
         >
