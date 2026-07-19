@@ -1389,6 +1389,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Authenticated `/$ownerName/$projectName/setting` top boxes: route-local StyleX owns the frozen 399px floated columns, responsive right border/padding reset, desktop 260x188/mobile 100x100 logo, logo descriptions/point typography, list spacing, desktop 380px/mobile inherited field width, and textarea margin/resize. Existing Dynamic StyleX remains the effective runtime textarea-height owner. `yona-original/app/views/project/setting.scala.html`, frozen `_page.less:2213-2270`, and `_responsive.less:126-142` establish the output. Mobile document width remains the frozen 429px geometry rather than adding an ungrounded percentage-width compensation. Exact `.box-wrap .setting-box` blocks are retired; generic box/note/file-control fallback remains.
 
-## Batch 519
+## Batch 520
 
 - Top-level `/search` populated global search: route-local StyleX composes the existing category owner plus result heading/list/item/title/post-id owners using frozen `_page.less:6375-6491`. Generic search selectors, including empty-result styling, remain in `app.css` because project/organization search and `-search-screen.tsx` still consume them. Legacy `search/result.scala.html`, `search/partial_search.scala.html`, result partials, and `stylex-global-search-result-owners.e2e.ts` provide parity evidence; live legacy visual parity remains unverified.
+
+## Batch 521
+
+- Project `/$ownerName/$projectName/search` populated/empty result family: `searchCategory` owns category emphasis, `searchBox` owns the search form shell padding/border, `searchResultTitle` owns result heading typography/spacing, `searchList`/`searchListItem` own result list reset/row geometry, `searchListProjectItem` owns project-row left inset, and `emptyResult` owns the empty-state min-height/padding/paint. Legacy `search/partial_search.scala.html`, result partials, and frozen `_page.less:6375-6415` establish the output. Generic `.search-category-wrap`, `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, and `.empty-result` fallback remains because global and organization search routes still consume them; no shared selector was retired. Focused project-search E2E verifies owner/source/declaration contracts and the desktop/mobile state family.

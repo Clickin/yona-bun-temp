@@ -22,9 +22,9 @@ Snapshot: 2026-07-19, `frontend/src/routes/**/*.tsx` 116 files
 | [x] | A1 | `/$ownerName/$projectName/issue/$issueNumber` populated body/sidebar | `issueBoardAuthor`, `issueBoardContent`, `issueBoardActions`, `issueBoardFooter`, `issueInfo` | `.issue-detail-page .board-body .author-info`, `.board-body .content`, `.board-actrow`, `.board-footer`, `.issue-info` | `issue/view.scala.html:138-206,294-330,454+`; frozen `_page.less` issue-detail rules |
 | [x] | A2 | `/$ownerName/$projectName/issues` populated list | `issuePostItem`, `issueTitleWrap`, `issuePostId`, `issueSubtaskProgress`, `issueChildDate` | `.issue-list-page .post-item`, `.title-wrap`, `.title-wrap .post-id`, `.for-subtask-progressbar`, `.child-issue .child-issue-date` | `issue/partial_list.scala.html`, `partial_list_draft.scala.html`, `partial_view_childIssueList.scala.html`; `_page.less:3312-3559` |
 | [x] | A3 | `/$ownerName/$projectName/setting` authenticated setting boxes | `settingBox`, `settingLogo`, `settingLogoDesc`, `settingDescs`, `settingPoint`, `settingFields` | `.box-wrap .setting-box` and its route-local left/right descendants | `project/setting.scala.html:30-169`; `_page.less:2213-2270` |
-| [ ] | B1 | `/$ownerName/$projectName/issueform` remaining editor/option shell | `issueEditorCell`, `issueEditorTabContent`, `rightMenu`, `issueCombobox`, `titleHeadCombobox` | `.issue-form-page-wrap .issue-editor-cell`, `.issue-editor-tab-content`, `.right-menu`, `.issue-combobox`, `.title-head-combobox` | `common/editor.scala.html`, `issue/create.scala.html`; frozen editor/issue-option chain |
+| [x] | B1 | `/$ownerName/$projectName/issueform` remaining editor shell | `issueEditorCell`, `issueEditorTabContent` | `.issue-form-page-wrap .issue-editor-cell`, `.issue-editor-tab-content`; current-only `.right-menu`/combobox/title-head fallback retained | `common/editor.scala.html`, `issue/create.scala.html` exact inline declarations |
 | [x] | B2 | `/$ownerName/$projectName/pullRequest/$pullRequestNumber` overview branches/actions | **DEAD/INVALID** — requested selectors are absent from legacy; cited `_page.less:4296-4314` is posting-history diff CSS | no safe owner; implementation intentionally stopped | `git/view.scala.html`/`git/partial_state.scala.html` only expose `.pullRequest-branchInfo`/`.pullRequest-stateInfo`; `_page.less:4296-4314` is unrelated |
-| [ ] | B3 | `/$ownerName/$projectName/search` populated/empty project search | `searchCategory`, `searchBox`, `searchResultTitle`, `searchListItem`, `emptyResult` | `.search-category-wrap`, `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` | `search/partial_search.scala.html` and result partials; `_page.less:6375-6415` |
+| [x] | B3 | `/$ownerName/$projectName/search` populated/empty project search | `searchCategory`, `searchBox`, `searchResultTitle`, `searchListItem`, `emptyResult` | shared `.search-category-wrap`, `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` retained for global/organization consumers | `search/partial_search.scala.html` and result partials; `_page.less:6375-6415` |
 | [x] | C1 | `/search` populated/empty global search family | category shell, result heading/list/item, empty result | `.search-category-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-list-item`, `.empty-result` | `search/result.scala.html`, `search/partial_search.scala.html`, result partials; `_page.less:6375-6491` |
 
 `C1` is completed for the top-level `/search` route only. `-search-screen.tsx` and project/organization search remain out of scope; shared app.css selectors remain fallback-owned by those consumers.
@@ -39,17 +39,17 @@ The inventory was produced in one O(n) pass over the 116 route TSX files and che
 
 ### Project family — 57 files
 
-- `NEXT` 6: the six project rows `A1`–`B3` above.
+- `NEXT` 0: all catalogued project rows are resolved; B2 was invalidated rather than migrated.
 - `DEAD` 1: `milestones.tsx` (`.milestones .desc` has no active React consumer).
-- `DONE` 26: `branches`, `changeVCS`, code/commit index wrappers, `deleteform`, project `index`, issue index, `issue/labelsform`, `members`, milestone index, new-fork wrappers, post index, pull-request changes/index wrappers, `statistics`, `transfer`, `watchers`, `webhooks`.
+- `DONE` 31: the previous 26 routes plus A1–A3, B1, and B3.
 - `BLOCKED` 24: project root plus `closedPullRequests`, code/file/commit detail routes, compare, issue edit, milestone detail/edit/new, PR create/edit/changes/list variants, post detail/edit/form/list, reviews, sent PRs, and `settingform`. Their remaining selectors are shared code/editor/uploader/post-list/Select2/Bootstrap/modal fallbacks or need another state first.
 
 ### Top-level, auth, user, verify — 37 files
 
-- `NEXT` 2 files forming `C1`: `search.tsx`, `-search-screen.tsx`.
+- `NEXT` 0: top-level `search.tsx` is complete; `-search-screen.tsx` remains blocked as a separate shared screen.
 - `DEAD` 1: `[_]UIKit.tsx` demo-only surface.
-- `DONE` 11: outlet transition helper, help, index wrapper, notification wrappers, migration, direct issue-form wrappers, and `users/login.tsx` alias.
-- `BLOCKED` 23: `$user`, home/root/global shell, markdown help, import, auth forms, org/project directory/form, restart/restricted/secret, user settings/files/issues, and verification state branches. Remaining selectors are shared or state-prerequisite boundaries.
+- `DONE` 12: the previous 11 routes plus top-level `search.tsx`.
+- `BLOCKED` 24: `$user`, `-search-screen`, home/root/global shell, markdown help, import, auth forms, org/project directory/form, restart/restricted/secret, user settings/files/issues, and verification state branches. Remaining selectors are shared or state-prerequisite boundaries.
 
 ### Organization, site-admin, redirect-only — 22 files
 

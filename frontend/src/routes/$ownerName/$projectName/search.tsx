@@ -34,6 +34,17 @@ import {
 } from "../../-search-screen";
 import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
+const sx = {
+  searchCategory: stylex.props(styles.searchCategory),
+  searchCategoryEmpty: stylex.props(styles.searchCategoryEmpty),
+  searchBox: stylex.props(styles.searchBox),
+  searchResultTitle: stylex.props(styles.searchResultTitle),
+  searchList: stylex.props(styles.searchList),
+  searchListItem: stylex.props(styles.searchListItem),
+  searchListProjectItem: stylex.props(styles.searchListProjectItem),
+  emptyResult: stylex.props(styles.emptyResult),
+} as const;
+
 type ProjectSearchRouteSearch = {
   keyword: string;
   pageNum?: number;
@@ -363,14 +374,21 @@ function ProjectSearchSuccessBody({
           <div className="project-page-wrap">
             <div className="row-fluid">
               <div className="span2">
-                <ul className="lst-stacked unstyled search-category-wrap">
+                <ul
+                  {...sx.searchCategory}
+                  className={`${sx.searchCategory.className} lst-stacked unstyled search-category-wrap`}
+                  data-stylex-owner="project-search-category"
+                >
                   {PROJECT_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
                     const className = `${category.type === activeType ? "active" : ""} ${
                       count === 0 ? "empty" : ""
                     }`;
                     return (
-                      <li className={className} key={category.type}>
+                      <li
+                        className={`${sx.searchCategory.className} ${className}`}
+                        key={category.type}
+                      >
                         <Link
                           activeOptions={projectSearchPaginationLinkActiveOptions}
                           activeProps={projectSearchPaginationLinkActiveProps}
@@ -390,6 +408,7 @@ function ProjectSearchSuccessBody({
                             searchType: category.type,
                           }}
                           to="/$ownerName/$projectName/search"
+                          className={count === 0 ? sx.searchCategoryEmpty.className : undefined}
                         >
                           {t(category.labelKey)}{" "}
                           <span className="num-badge pull-right">{count}</span>
@@ -400,7 +419,11 @@ function ProjectSearchSuccessBody({
                 </ul>
               </div>
               <div className="span10">
-                <div className="search-box-wrap">
+                <div
+                  {...sx.searchBox}
+                  className={`${sx.searchBox.className} search-box-wrap`}
+                  data-stylex-owner="project-search-box"
+                >
                   <form
                     id="searchInnerForm"
                     method="get"
@@ -425,7 +448,13 @@ function ProjectSearchSuccessBody({
                       {t("title.search")}
                     </button>
                   </form>
-                  <h3 className="search-result-title">{resultTitle}</h3>
+                  <h3
+                    {...sx.searchResultTitle}
+                    className={`${sx.searchResultTitle.className} search-result-title`}
+                    data-stylex-owner="project-search-result-title"
+                  >
+                    {resultTitle}
+                  </h3>
                 </div>
                 <div className="search-result-wrap">
                   <ProjectSearchResultList
@@ -461,7 +490,13 @@ function ProjectSearchResultList({
   const { t } = useLegacyMessages();
 
   if (result.items.length === 0) {
-    return <div className="empty-result"></div>;
+    return (
+      <div
+        {...sx.emptyResult}
+        className={`${sx.emptyResult.className} empty-result`}
+        data-stylex-owner="project-search-empty-result"
+      ></div>
+    );
   }
 
   const normalizedType = projectSearchNormalizedType(result.searchType);
@@ -469,11 +504,20 @@ function ProjectSearchResultList({
   if (normalizedType === "user") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          {...sx.searchList}
+          className={`${sx.searchList.className} search-list-wrap`}
+          data-stylex-owner="project-search-list"
+        >
           {result.items.map((item) => {
             const userLink = projectSearchInternalLinkTarget(item.href, runtimeConfig);
             return (
-              <li className="search-list-item project" key={item.id}>
+              <li
+                {...sx.searchListItem}
+                className={`${sx.searchListItem.className} ${sx.searchListProjectItem.className} search-list-item project`}
+                data-stylex-owner="project-search-list-item"
+                key={item.id}
+              >
                 <RouterLink
                   to={userLink.to}
                   hash={userLink.hash || undefined}
@@ -534,7 +578,11 @@ function ProjectSearchResultList({
 
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          {...sx.searchList}
+          className={`${sx.searchList.className} search-list-wrap`}
+          data-stylex-owner="project-search-list"
+        >
           {result.items.map((item) => {
             const itemLink = projectSearchInternalLinkTarget(item.href, runtimeConfig);
             const authorLink = projectSearchInternalLinkTarget(
@@ -555,7 +603,12 @@ function ProjectSearchResultList({
             const legacyReplyTitle = titleClassName ? item.title : `Re) ${item.title}`;
 
             return (
-              <li className="search-list-item" key={item.id}>
+              <li
+                {...sx.searchListItem}
+                className={`${sx.searchListItem.className} search-list-item`}
+                data-stylex-owner="project-search-list-item"
+                key={item.id}
+              >
                 {reviewThreadOnPullRequest ? (
                   <div className="title-wrap">
                     <span className="post-id">#{item.number}</span>
@@ -617,11 +670,20 @@ function ProjectSearchResultList({
   if (normalizedType === "milestone") {
     return (
       <>
-        <ul className="search-list-wrap">
+        <ul
+          {...sx.searchList}
+          className={`${sx.searchList.className} search-list-wrap`}
+          data-stylex-owner="project-search-list"
+        >
           {result.items.map((item) => {
             const itemLink = projectSearchInternalLinkTarget(item.href, runtimeConfig);
             return (
-              <li className="search-list-item" key={item.id}>
+              <li
+                {...sx.searchListItem}
+                className={`${sx.searchListItem.className} search-list-item`}
+                data-stylex-owner="project-search-list-item"
+                key={item.id}
+              >
                 <div className="title-wrap">
                   <Link to={itemLink.to} hash={itemLink.hash || undefined} className="title">
                     <HighlightedProjectSearchText text={item.title} keyword={result.keyword} />
@@ -660,7 +722,13 @@ function ProjectSearchResultList({
     );
   }
 
-  return <div className="empty-result"></div>;
+  return (
+    <div
+      {...sx.emptyResult}
+      className={`${sx.emptyResult.className} empty-result`}
+      data-stylex-owner="project-search-empty-result"
+    ></div>
+  );
 }
 
 function ProjectSearchPagination({
