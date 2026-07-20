@@ -4171,3 +4171,17 @@ absence GREEN and uses the stable board edit form at desktop/390px in normal and
 fallback-off managed runs only to prove the generated-asset boundary. Global
 fallback discovery remains incomplete/non-green; this is not generated-fallback
 unlinking or live-legacy visual-parity proof.
+
+Batch 567 migrates only `/sites/update`'s site-management breadcrumb presentation
+boundary from the two raw `.site-breadcrumb-outer` / `.site-breadcrumb-inner`
+classes to route-local StyleX owners. Frozen `site/siteMngLayout.scala.html:34-38`
+establishes the unchanged outer > inner > `h3` DOM and `site.sidebar` copy;
+frozen `_page.less:743-753` and `_responsive.less:349-351,627-631` establish
+the inner auto margin, heading line/padding, and mobile outer box geometry.
+`frontend/src/routes/sites/update.tsx` owns only those lost declarations with
+inline values; it adds no theme variable, no compensating layout value, and no
+new UX. `stylex-site-update-breadcrumb.e2e.ts` pins source evidence, exact
+class retirement, owner/order, and desktop/390px local geometry in normal and
+fallback-off managed runs. This does not remove `app.css`, unlink the generated
+fallback, or migrate the separate raw breadcrumb consumers in diagnostic, mail,
+and other routes; global discovery remains incomplete/non-green.

@@ -14,6 +14,20 @@ const legacySiteSidebarLinkProps = {
 };
 const legacyUpdateSidebarSearch = { __legacySiteSidebarActiveMarker: undefined };
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: {
+      default: null,
+      "@media (max-width: 720px)": "10px",
+    },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   page: {
     marginTop: "10px",
     minHeight: "450px",
@@ -192,6 +206,9 @@ const styles = stylex.create({
     borderRadius: "4px",
   },
 });
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
 const titleAreaStyleProps = stylex.props(styles.titleArea);
 const titleStyleProps = stylex.props(styles.title);
 const noUpdateParagraphStyleProps = stylex.props(styles.noUpdateParagraph);
@@ -220,9 +237,9 @@ function SiteUpdateScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   return (
     <>
       <SiteUpdateTitle />
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-update-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-update-breadcrumb-inner">
+          <h3 {...breadcrumbHeadingStyleProps} data-stylex-owner="site-update-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

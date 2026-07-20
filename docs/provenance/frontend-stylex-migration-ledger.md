@@ -1608,3 +1608,20 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
   managed normal/fallback-off board edit form runs retain desktop/390px legacy
   form containment. Global fallback discovery remains incomplete/non-green;
   this is not generated-fallback unlinking or live-legacy visual-parity proof.
+
+## Batch 567
+
+- Site update breadcrumb route-local fallback ownership: frozen
+  `site/siteMngLayout.scala.html:34-38` retains the outer > inner > `h3`
+  structure and `site.sidebar` copy. Frozen `_page.less:743-753` and
+  `_responsive.less:349-351,627-631` establish the lost inner auto margin,
+  heading line-height/padding, and responsive outer box geometry. Only
+  `frontend/src/routes/sites/update.tsx` now applies inline route-local StyleX
+  `site-update-breadcrumb-{outer,inner,heading}` owners, removes its two raw
+  presentation classes, and preserves DOM order/query behavior. The targeted
+  `stylex-site-update-breadcrumb.e2e.ts` static contract and normal/fallback-off
+  managed browser runs each pass 3/3 for source/class evidence plus desktop and
+  390px owner/geometry. No `app.css` selector or generated fallback asset is
+  removed; diagnostic, mail, and other raw breadcrumb consumers remain outside
+  this wave. Global fallback discovery remains incomplete/non-green, so this is
+  not an unlinking or live-legacy visual-parity claim.
