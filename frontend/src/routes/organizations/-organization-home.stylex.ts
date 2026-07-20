@@ -3,6 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 export const organizationHomeColors = stylex.defineVars({
   mutedText: "#777777",
   accentText: "#337581",
+  originProjectText: "#5DBBE0",
   panelSurface: "#f5f5f5",
   headerSurface: "#565656",
   menuSurface: "#ececec",
@@ -12,6 +13,7 @@ export const organizationHomeColors = stylex.defineVars({
 export const styles = stylex.create({
   // yona-original/app/assets/stylesheets/less/_common.less .small-font.
   smallFont: { fontSize: "10px", fontWeight: "normal" },
+  projectOrigin: { color: organizationHomeColors.originProjectText },
   projectVisibilityBadge: { color: "#788ba7", fontSize: "14px", marginLeft: "5px" },
   projectUtilWrap: { bottom: "20px", position: "absolute", right: "0" },
   projectUtil: { listStyle: "none", margin: "0" },

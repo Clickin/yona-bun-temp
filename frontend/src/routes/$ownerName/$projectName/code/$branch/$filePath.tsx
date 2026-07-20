@@ -662,7 +662,11 @@ function FileView({
             >
               {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
-                <span className="number-of-comments ml5">
+                <span
+                  {...stylex.props(styles.commentCount)}
+                  className={`${stylex.props(styles.commentCount).className} ml5`}
+                  data-stylex-owner="project-code-file-comment-count"
+                >
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}
                 </span>
               ) : null}

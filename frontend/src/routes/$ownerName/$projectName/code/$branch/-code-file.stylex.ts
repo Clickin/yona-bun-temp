@@ -7,6 +7,7 @@ export const codeFileColors = stylex.defineVars({
   binaryMutedText: "#999999",
   actionText: "#333333",
   popoverText: "#333333",
+  commentText: "#666666",
 });
 
 export const styles = stylex.create({
@@ -50,6 +51,10 @@ export const styles = stylex.create({
   fileInfo: {
     color: codeFileColors.metadataText,
     minWidth: 0,
+  },
+  commentCount: {
+    marginRight: "8px",
+    color: codeFileColors.commentText,
   },
   fileActions: {
     display: "flex",

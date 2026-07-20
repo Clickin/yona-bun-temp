@@ -4856,3 +4856,15 @@ button behavior.
 Migrate the board post creation options and attachment-help `right-txt`
 consumers into route-local StyleX owners, retaining `mt10 mb10`, `help`, copy,
 and upload geometry.
+
+## Batch 637
+
+Migrate the organization fork-origin `blue-txt` paint into a dedicated
+route-local semantic color owner while keeping the existing small-font owner
+and origin link structure.
+
+## Batch 638
+
+Migrate the code-file comment-count span's `number-of-comments` color and
+spacing into the existing code-file StyleX owner while preserving `ml5`, icon,
+copy, and file metadata geometry.

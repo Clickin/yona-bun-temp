@@ -6,6 +6,10 @@ test("organization home owns legacy small-font typography in route-local StyleX"
   const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
   const stylex = readFileSync("src/routes/organizations/-organization-home.stylex.ts", "utf8");
   const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
+  const variables = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
 
   expect(legacy).toContain(".small-font{");
   expect(legacy).toContain("font-size: 10px;");
@@ -15,7 +19,65 @@ test("organization home owns legacy small-font typography in route-local StyleX"
   expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
   expect(route).toContain('data-stylex-owner="organization-home-project-code-update"');
   expect(stylex).toContain('smallFont: { fontSize: "10px", fontWeight: "normal" }');
+  expect(legacy).toContain(".blue-txt      { color:@blue;}");
+  expect(variables).toContain("@blue   : #5DBBE0;");
+  expect(route).not.toContain("blue-txt");
+  expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
+  expect(stylex).toContain('originProjectText: "#5DBBE0"');
+  expect(stylex).toContain("projectOrigin: { color: organizationHomeColors.originProjectText }");
 });
+
+for (const viewport of [
+  { height: 900, name: "desktop", width: 1366 },
+  { height: 844, name: "mobile", width: 390 },
+]) {
+  test(`organization home preserves fork origin blue text on ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.route("**/api/v1/session", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: { isAnonymous: false, isGuest: false, loginId: "admin" },
+      }),
+    );
+    await page.route("**/api/v1/organizations/acme/container", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        json: {
+          organizationName: "acme",
+          description: "Acme projects",
+          logoUrl: "",
+          viewerCanUpdate: true,
+          viewerCanLeave: true,
+          viewerCanLeaveAfterValidation: true,
+          viewerCanCreateProject: true,
+          visibleProjects: [
+            {
+              ownerName: "acme",
+              projectName: "forked",
+              originOwnerName: "admin",
+              originProjectName: "sample",
+              overview: "Forked project",
+              projectScope: "PUBLIC",
+              createdLabel: "today",
+              labels: [],
+            },
+          ],
+          adminMembers: [],
+          memberMembers: [],
+        },
+      }),
+    );
+    await page.goto("/yona/organizations/acme");
+    const origin = page.locator('[data-stylex-owner="organization-home-project-origin"]');
+    await expect(origin).toHaveText(/admin\s*\/\s*sample/u);
+    await expect(origin).not.toHaveClass(/(?:^|\s)blue-txt(?:\s|$)/u);
+    await expect
+      .poll(() => origin.evaluate((element) => getComputedStyle(element).color))
+      .toBe("rgb(93, 187, 224)");
+  });
+}
 
 test("organization home renders legacy project and member panels", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 900 });

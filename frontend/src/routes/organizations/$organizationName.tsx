@@ -395,7 +395,7 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             </Link>
             {originOwnerName && originProjectName ? (
               <span
-                className={`${stylex.props(styles.smallFont).className} blue-txt`}
+                className={stylex.props(styles.smallFont, styles.projectOrigin).className}
                 data-stylex-owner="organization-home-project-origin"
               >
                 <Link

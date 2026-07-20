@@ -149,10 +149,41 @@ test("project code file committer title metadata is native without placement mar
     "href",
     `${basePath}/admin/sample/commit/1234567890abcdef?branch=main#README.txt`,
   );
-  await expect(page.locator("#revisionNo .number-of-comments")).toHaveText("2");
+  await expect(page.locator('[data-stylex-owner="project-code-file-comment-count"]')).toHaveText(
+    "2",
+  );
   await expect(page.locator("#commitDate")).toHaveText("Jul 2, 2026");
   await expect(page.locator("#commitMessage")).toHaveText("Update README");
   expect(codeRequests).toEqual(["branch=main&path=README.txt"]);
+});
+
+test("project code file comment count owns legacy spacing and color in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const codeRequests: string[] = [];
+  await mockProjectCodeFile(page, codeRequests, "README.txt");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/code/main/README.txt`);
+
+  const commentCount = page.locator('[data-stylex-owner="project-code-file-comment-count"]');
+  await expect(commentCount).toHaveText("2");
+  await expect(commentCount).toHaveClass(/ml5/u);
+  await expect(commentCount).not.toHaveClass(/number-of-comments/u);
+  await expect(commentCount).toHaveCSS("margin-left", "5px");
+  await expect(commentCount).toHaveCSS("margin-right", "8px");
+  await expect(commentCount).toHaveCSS("color", "rgb(102, 102, 102)");
+  await expect(commentCount.locator(".yobicon-comments")).toHaveCount(1);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: "commit" });
+  const mobileCommentCount = page.locator('[data-stylex-owner="project-code-file-comment-count"]');
+  await expect(mobileCommentCount).toBeVisible();
+  await expect(mobileCommentCount).toHaveCSS("margin-left", "5px");
+  await expect(mobileCommentCount).toHaveCSS("margin-right", "8px");
+  await expect(mobileCommentCount).toHaveCSS("color", "rgb(102, 102, 102)");
+  expect(codeRequests).toEqual(["branch=main&path=README.txt", "branch=main&path=README.txt"]);
 });
 
 test("project code text file includes legacy group search scope when project has org data", async ({
