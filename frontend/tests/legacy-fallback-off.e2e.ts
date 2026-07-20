@@ -487,6 +487,14 @@ test("milestone mass-update button bridge has no app.css arms", () => {
   expect(appCss).toContain(".issue-list-page .item-count-groups > button.sharer-color");
 });
 
+test("dot-variant ybtn bridges have no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".ybtn.primary {");
+  expect(appCss).not.toContain(".ybtn.danger {");
+  expect(appCss).toContain(".ybtn-primary,");
+  expect(appCss).toContain(".ybtn {");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");

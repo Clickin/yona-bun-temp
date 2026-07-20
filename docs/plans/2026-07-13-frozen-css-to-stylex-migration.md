@@ -4462,3 +4462,13 @@ Retain the standalone `.milesion-wrap` sharer arm, frozen Scala/LESS source,
 generated fallback, and geometry baselines. Update the formal fallback-off and
 milestone mass-update static contracts; do not change TSX or frozen/generated
 CSS.
+
+## Batch 593
+
+Retire only the unreachable dot-variant `.ybtn.primary` and `.ybtn.danger`
+blocks from `frontend/src/app.css`. Current React routes use the hyphenated
+`.ybtn-primary`/`.ybtn-danger` primitives (or generic `.ybtn`), and no current
+React or frozen Scala/JS consumer emits the dot variants. Retain the active
+hyphenated and generic Yobi rules, frozen/generated fallback assets, and
+geometry baselines. Update the formal fallback-off static contract in normal
+and fallback-off modes; do not change TSX or frozen/generated CSS.

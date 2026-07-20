@@ -1934,6 +1934,19 @@ contracts in normal and fallback-off modes; no TSX changed.
   remain unchanged. `legacy-fallback-off.e2e.ts` asserts exact absence and
   neighboring Yobi selector retention in normal and fallback-off modes.
 
+## Batch 593
+
+- Dead dot-variant Yobi button bridge retirement: current React routes emit
+  generic `.ybtn` together with hyphenated `.ybtn-primary`/`.ybtn-danger`
+  variants; repository inventory found no `.ybtn.primary` or `.ybtn.danger`
+  consumer in React, frozen Scala, or legacy JS. `frontend/src/app.css`
+  removes only the two unreachable dot-variant blocks. Generic and
+  hyphenated Yobi consumers/declarations where present, frozen/generated
+  fallback, and geometry remain unchanged; the danger paint continues through
+  the generic/frozen cascade. `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact absence
+  and neighboring selector retention in normal and fallback-off modes; no TSX
+  changed.
+
 ## Batch 592
 
 - Milestone mass-update `.milesion-wrap` button bridge retirement:
