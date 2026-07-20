@@ -5013,3 +5013,10 @@ assignee-avatar declarations into route-local StyleX owners while preserving
 the legacy mass-update checkbox float/margin and wide-row geometry. Keep the
 shared fallback for unrelated issue-list consumers and verify desktop/mobile
 checkbox alignment in the existing populated issue-list E2E.
+
+## Batch 653
+
+Retire the source-less React-side `.number-of-comments` fallback bridge. The
+current frontend emits no `number-of-comments` class after the commit-history
+and code-file owners moved to StyleX; retain the frozen Scala/LESS and generated
+fallback declarations as legacy evidence for unrelated historical output.

@@ -3793,11 +3793,6 @@ div.markdown-preview {
   vertical-align: top;
 }
 
-.number-of-comments {
-  margin-right: 8px;
-  color: #666;
-}
-
 .commitMsg.short {
   padding: 5px;
   font-size: 14px;

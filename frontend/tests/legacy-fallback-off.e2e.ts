@@ -675,6 +675,19 @@ test("source-less ml20 utility bridge has no app.css arm", () => {
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("ml20"))).toBe(false);
 });
 
+test("source-less number-of-comments bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".number-of-comments {");
+  expect(appCss).toContain(".commitMsg.short {");
+  const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  expect(
+    runtimeSources.some((file) => readFileSync(file, "utf8").includes("number-of-comments")),
+  ).toBe(false);
+  expect(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
+    ".number-of-comments",
+  );
+});
+
 test("source-less mr6 utility bridge has no app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".mr6 {");
