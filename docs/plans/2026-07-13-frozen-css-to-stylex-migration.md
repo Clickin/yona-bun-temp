@@ -5222,6 +5222,14 @@ margin, into the existing route-local StyleX owner. Preserve input/button DOM,
 placeholder, filter interaction, project output, and responsive containment;
 retain icon and unrelated search fallback consumers.
 
+## Batch 680
+
+Move the organization home conditional create-project action wrapper's exact
+Bootstrap `pull-right` float declaration into the route-local StyleX owner.
+Preserve the legacy wrapper class, Link/copy/query, conditional visibility,
+filtering, and responsive containment; retain generic button and grid
+fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

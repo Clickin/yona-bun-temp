@@ -22,15 +22,20 @@ const variablesSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_variables.less",
   import.meta.url,
 );
+const bootstrapSource = new URL(
+  "../../yona-original/public/bootstrap/css/bootstrap.css",
+  import.meta.url,
+);
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess, yobiUi, variables] = await Promise.all([
+  const [route, style, legacy, pageLess, yobiUi, variables, bootstrap] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),
     readFile(pageLessSource, "utf8"),
     readFile(yobiUiSource, "utf8"),
     readFile(variablesSource, "utf8"),
+    readFile(bootstrapSource, "utf8"),
   ]);
   expect(legacy).toContain("project");
   expect(route).toContain('data-stylex-owner="organization-home-project-filter-item"');
@@ -126,6 +131,11 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   );
   expect(route).toContain("className={`${stylex.props(styles.projects).className} all-projects`}");
   expect(route).toContain('data-stylex-owner="organization-home-projects"');
+  expect(legacy).toContain('<div class="pull-right">');
+  expect(bootstrap).toContain(".pull-right {");
+  expect(bootstrap).toContain("float: right;");
+  expect(style).toContain('createProjectWrapper: { float: "right" }');
+  expect(route).toContain('data-stylex-owner="organization-home-create-project-wrapper"');
 });
 
 async function mockOrganizationHome(page: Page) {
@@ -195,10 +205,34 @@ for (const viewport of [
     const searchBar = page.locator('[data-stylex-owner="organization-home-search-bar"]');
     const searchInput = page.locator('[data-stylex-owner="organization-home-search-input"]');
     const searchButton = page.locator('[data-stylex-owner="organization-home-search-button"]');
+    const createProjectWrapper = page.locator(
+      '[data-stylex-owner="organization-home-create-project-wrapper"]',
+    );
+    const createProjectLink = createProjectWrapper.getByRole("link", {
+      name: /create new project/i,
+    });
     await expect(card).toBeVisible();
     await expect(searchBar).toBeVisible();
     await expect(searchInput).toBeVisible();
     await expect(searchButton).toBeAttached();
+    await expect(createProjectWrapper).toBeVisible();
+    await expect(createProjectLink).toBeVisible();
+    await expect(createProjectLink).toHaveAttribute("href", /owner=weblabs/);
+    const createProjectMetrics = await createProjectWrapper.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const wrapperBox = node.getBoundingClientRect();
+      const searchBox = node.parentElement?.querySelector(".search-bar")?.getBoundingClientRect();
+      return {
+        float: style.float,
+        left: wrapperBox.left,
+        right: wrapperBox.right,
+        parentRight: node.parentElement?.getBoundingClientRect().right ?? 0,
+        searchRight: searchBox?.right ?? 0,
+      };
+    });
+    expect(createProjectMetrics.float).toBe("right");
+    expect(createProjectMetrics.right).toBeLessThanOrEqual(createProjectMetrics.parentRight);
+    expect(createProjectMetrics.left).toBeGreaterThanOrEqual(createProjectMetrics.searchRight);
     await expect(searchInput).toHaveAttribute("placeholder", /.+/);
     const searchMetrics = await searchBar.evaluate((node) => {
       const bar = getComputedStyle(node);

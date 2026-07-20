@@ -523,6 +523,15 @@ containment remain unchanged. Focused normal and fallback-off checks pass
 3/3 each, covering source mapping, computed list geometry, visible projects,
 and filter interaction.
 
+### 2026-07-21 Batch 680 organization home create-project owner proof
+
+ORG-02 conditional Create new project output now owns the frozen Bootstrap
+`pull-right` float through a route-local StyleX owner. The wrapper class,
+Link/copy/query, conditional visibility, project filtering, and responsive
+containment remain unchanged; generic button/grid declarations stay fallback-
+owned. Focused normal and fallback-off checks pass 3/3 each, covering source
+mapping, computed float/geometry, visible Link, and filtering.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

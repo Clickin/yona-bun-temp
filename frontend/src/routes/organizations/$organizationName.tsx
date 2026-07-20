@@ -263,7 +263,10 @@ function OrganizationHomeScreen({
                   </div>
                 </div>
                 {booleanField(organization.viewerCanCreateProject) ? (
-                  <div className="pull-right">
+                  <div
+                    className={`${stylex.props(styles.createProjectWrapper).className} pull-right`}
+                    data-stylex-owner="organization-home-create-project-wrapper"
+                  >
                     <Link
                       activeOptions={{
                         exact: true,
