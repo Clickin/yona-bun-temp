@@ -1905,3 +1905,13 @@ contracts in normal and fallback-off modes; no TSX changed.
   and `legacy-fallback-off.e2e.ts` assert exact absence and raw row/class
   ownership in normal and fallback-off modes. No TSX, frozen source,
   generated asset, or geometry baseline changed.
+
+## Batch 589
+
+- Pull-request tab typo bridge retirement: frozen project and organization
+  templates retain the historical `.pullrequeset-tab-menu` class, but current
+  React routes emit no such class and own tabs through StyleX. `frontend/src/app.css`
+  removes only the typo class base, hover/focus, and active button blocks while
+  generic `.nav-tabs` rules and frozen/generated fallback remain. Focused project,
+  organization, and fallback-off contracts assert exact absence and retained
+  generic tab rules.

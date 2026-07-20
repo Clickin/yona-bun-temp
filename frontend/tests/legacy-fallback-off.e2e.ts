@@ -437,6 +437,28 @@ test("codediff markdown-editor plugin bridge has no app.css arms", () => {
   );
 });
 
+test("pull-request tab button bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".pullrequeset-tab-menu > li > button {",
+    ".pullrequeset-tab-menu > li > button:hover,",
+    ".pullrequeset-tab-menu > li > button:focus {",
+    ".pullrequeset-tab-menu > li.active > button,",
+    ".pullrequeset-tab-menu > li.active > button:hover,",
+    ".pullrequeset-tab-menu > li.active > button:focus {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".nav-tabs > li > a:hover,");
+  expect(appCss).toContain(".nav-tabs > li.active > a,");
+  expect(readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8")).not.toContain(
+    "pullrequeset-tab-menu",
+  );
+  expect(
+    readFileSync("src/routes/organizations/$organizationName/pullrequests.tsx", "utf8"),
+  ).not.toContain("pullrequeset-tab-menu");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");

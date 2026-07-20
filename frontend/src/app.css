@@ -1646,21 +1646,6 @@ h1 {
   font-weight: bold;
 }
 
-.pullrequeset-tab-menu > li > button {
-  display: block;
-  padding: 8px 30px;
-  margin-right: 2px;
-  color: #3592b5;
-  font: inherit;
-  font-weight: bold;
-  line-height: 20px;
-  cursor: pointer;
-  appearance: none;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px 4px 0 0;
-}
-
 .nav-tabs > li > a:hover,
 .nav-tabs > li > a:focus,
 #mySidenav .right-menu > .nav-tabs.nm > li > button:hover,
@@ -1677,13 +1662,6 @@ h1 {
 .content-wrap.frm-wrap form.nm > .nav-tabs > li > button:focus,
 .content-wrap.frm-wrap .mt10 > .nav-tabs > li > button:hover,
 .content-wrap.frm-wrap .mt10 > .nav-tabs > li > button:focus {
-  border-color: #eee #eee #ddd;
-  text-decoration: none;
-  background-color: #f2f2f2;
-}
-
-.pullrequeset-tab-menu > li > button:hover,
-.pullrequeset-tab-menu > li > button:focus {
   border-color: #eee #eee #ddd;
   text-decoration: none;
   background-color: #f2f2f2;
@@ -1713,16 +1691,6 @@ h1 {
 .content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button,
 .content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button:hover,
 .content-wrap.frm-wrap .mt10 > .nav-tabs > li.active > button:focus {
-  color: #555;
-  cursor: default;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-bottom-color: transparent;
-}
-
-.pullrequeset-tab-menu > li.active > button,
-.pullrequeset-tab-menu > li.active > button:hover,
-.pullrequeset-tab-menu > li.active > button:focus {
   color: #555;
   cursor: default;
   background-color: #fff;

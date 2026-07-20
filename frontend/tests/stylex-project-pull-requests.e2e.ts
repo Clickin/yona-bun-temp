@@ -8,6 +8,7 @@ test.use({ locale: "ko-KR" });
 
 test("records project pull request list owners and responsive containment", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/pullRequests.tsx", "utf8");
+  const appCss = readFileSync("src/app.css", "utf8");
   const theme = readFileSync("src/routes/$ownerName/$projectName/-pull-requests.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/git/partial_list.scala.html", "utf8");
   const twoColumn = readFileSync(
@@ -20,6 +21,16 @@ test("records project pull request list owners and responsive containment", asyn
   );
   expect(template).toContain('class="post-list-wrap"');
   expect(template).toContain('class="avatar-wrap mlarge"');
+  expect(route).not.toContain("pullrequeset-tab-menu");
+  for (const selector of [
+    ".pullrequeset-tab-menu > li > button {",
+    ".pullrequeset-tab-menu > li > button:hover,",
+    ".pullrequeset-tab-menu > li.active > button,",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".nav-tabs > li > a:hover,");
+  expect(appCss).toContain(".nav-tabs > li.active > a,");
   expect(route).toContain('data-stylex-owner="project-pullrequests-tabs"');
   expect(route).toContain("searchColumnHidden");
   expect(route).not.toContain('style={leftMenuHiddenByTwoColumnMode ? { display: "none" }');

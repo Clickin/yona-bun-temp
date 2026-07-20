@@ -14,6 +14,7 @@ test("records organization pull request list owners and responsive containment",
   page,
 }) => {
   const route = readFileSync("src/routes/organizations/$organizationName/pullrequests.tsx", "utf8");
+  const appCss = readFileSync("src/app.css", "utf8");
   const theme = readFileSync(
     "src/routes/organizations/$organizationName/-organization-pullrequests.stylex.ts",
     "utf8",
@@ -24,6 +25,16 @@ test("records organization pull request list owners and responsive containment",
   );
   expect(template).toContain("pullrequeset-tab-menu");
   expect(template).toContain('name="filter"');
+  expect(route).not.toContain("pullrequeset-tab-menu");
+  for (const selector of [
+    ".pullrequeset-tab-menu > li > button {",
+    ".pullrequeset-tab-menu > li > button:hover,",
+    ".pullrequeset-tab-menu > li.active > button,",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".nav-tabs > li > a:hover,");
+  expect(appCss).toContain(".nav-tabs > li.active > a,");
   expect(route).toContain('data-stylex-owner="organization-pullrequests-tabs"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-search-input"');
   expect(closedRoute).toContain('category="closed"');

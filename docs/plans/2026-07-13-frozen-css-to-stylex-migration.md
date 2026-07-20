@@ -4423,3 +4423,14 @@ Scala/LESS source, generated fallback, and geometry baselines. Verify exact
 selector absence and retained raw row/class ownership in the project-issues
 static and formal fallback-off contracts in normal and fallback-off modes; do
 not change TSX.
+
+## Batch 589
+
+Retire only the unreachable `.pullrequeset-tab-menu > li > button` base,
+hover/focus, and active-state blocks from `frontend/src/app.css`. The typoed
+legacy class is present in frozen project/organization templates, but current
+React pull-request routes do not emit it; their tab controls are owned by
+route markup and StyleX. Retain generic `.nav-tabs` rules, frozen source,
+generated fallback, and geometry baselines. Update project and organization
+pull-request static contracts plus the formal fallback-off contract and run
+both modes. Do not change TSX, frozen source, generated CSS, or baselines.
