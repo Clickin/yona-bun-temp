@@ -451,3 +451,12 @@ changing search variants/navigation, profile tab state/copy, or the root
 not-found shell. Combined focused runs pass 3/3 normally and 3/3 with the
 legacy fallback disabled; the shared `.error-wrap` fallback remains for
 other React emitters.
+
+### 2026-07-21 Batch 670 error-wrap owner proof
+
+Batch 670 adds exact owners for the project generic internal-error shell and
+the public missing-user not-found shell. The frozen `_page.less`/`_sprites.less`
+declarations are colocated without changing project/profile shells, copy, or
+home navigation. Focused runs pass 2/2 normally and 2/2 with the legacy
+fallback disabled; an unreachable dead post-detail producer was inspected
+and explicitly excluded from the wave.

@@ -6,6 +6,7 @@ import { createFileRoute, Link, Navigate, redirect } from "@tanstack/react-route
 import { currentSessionQueryOptions } from "../api/session";
 import { RestApiError } from "../api/rest-client";
 import { readPublicUserProfileQueryOptions, type PublicUserProfileResponse } from "../api/users";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import type {
   WorkspaceIssueItem,
   WorkspaceMemberProjectItem,
@@ -18,7 +19,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
-import { styles } from "./-user-profile.stylex";
+import { styles, userProfileNotFoundStyles } from "./-user-profile.stylex";
 
 type PublicProfileSearch = {
   daysAgo?: number;
@@ -231,12 +232,30 @@ function PublicProfileNotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeCo
           </ul>
         </div>
       </header>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-stylex-owner="user-profile-notfound-page">
         <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico ico-err2"></i>
-            <p>{t("user.notExists.name")}</p>
-            <Link {...LEGACY_LINK_PROPS} to="/" className="ybtn ybtn-info">
+          <div
+            {...stylex.props(userProfileNotFoundStyles.errorWrap)}
+            className={`${stylex.props(userProfileNotFoundStyles.errorWrap).className} error-wrap`}
+            data-stylex-owner="user-profile-notfound-error-wrap"
+          >
+            <i
+              {...stylex.props(userProfileNotFoundStyles.errorIcon(legacySpriteUrl))}
+              className={`${stylex.props(userProfileNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+              data-stylex-owner="user-profile-notfound-error-icon"
+            />
+            <p
+              {...stylex.props(userProfileNotFoundStyles.errorMessage)}
+              data-stylex-owner="user-profile-notfound-error-message"
+            >
+              {t("user.notExists.name")}
+            </p>
+            <Link
+              {...LEGACY_LINK_PROPS}
+              to="/"
+              className="ybtn ybtn-info"
+              data-stylex-owner="user-profile-notfound-home"
+            >
               {t("menu.home")}
             </Link>
           </div>

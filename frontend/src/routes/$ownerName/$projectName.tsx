@@ -798,16 +798,35 @@ function ProjectMembersErrorRouteShell({
 
 function ProjectPostEditNotFoundRouteShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   const { t } = useLegacyMessages();
+  const errorWrapProps = stylex.props(projectHomeStyles.errorWrap);
+  const errorIconProps = stylex.props(projectHomeStyles.errorIcon(legacySpriteUrl));
 
   return (
     <SiteLayoutShell runtimeConfig={runtimeConfig}>
       <title>{t("error.internalServerError")}</title>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico-404"></i>
-            <p>{t("error.internalServerError")}</p>
-            <Link to="/" className="ybtn ybtn-primary">
+          <div
+            {...errorWrapProps}
+            className={`${errorWrapProps.className} error-wrap`}
+            data-stylex-owner="project-post-edit-internal-error-wrap"
+          >
+            <i
+              {...errorIconProps}
+              className={`${errorIconProps.className} ico-404`}
+              data-stylex-owner="project-post-edit-internal-error-icon"
+            ></i>
+            <p
+              {...stylex.props(projectHomeStyles.errorMessage)}
+              data-stylex-owner="project-post-edit-internal-error-message"
+            >
+              {t("error.internalServerError")}
+            </p>
+            <Link
+              to="/"
+              className="ybtn ybtn-primary"
+              data-stylex-owner="project-post-edit-internal-error-home"
+            >
               {t("menu.home")}
             </Link>
           </div>

@@ -5152,3 +5152,11 @@ message typography into the shared search error family, public user-profile
 empty panels, and root alias not-found owner. Preserve the existing search
 error variants and navigation, profile tab DOM/state/copy, and root not-found
 shell; keep the shared fallback for all other error consumers.
+
+## Batch 670
+
+Move the frozen `.error-wrap` geometry, `ico-404`/`ico-err2` sprite
+positioning, and message typography into the project generic internal-error
+shell and public missing-user not-found shell. Preserve the existing project
+and anonymous-profile shells, copy, home navigation, and responsive geometry;
+retain the shared fallback for all other error consumers.
