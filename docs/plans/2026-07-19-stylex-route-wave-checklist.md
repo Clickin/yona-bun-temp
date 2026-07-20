@@ -523,6 +523,16 @@ containment remain unchanged. Focused normal and fallback-off checks pass
 3/3 each, covering source mapping, computed list geometry, visible projects,
 and filter interaction.
 
+### 2026-07-21 Batch 679 organization home search-shell owner proof
+
+ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and
+`.search-btn` declarations through route-local StyleX, including the exact
+mobile `margin: 5px 0` rule. Input/button DOM, placeholder, filtering, project
+output, and responsive containment remain unchanged; search icon styling stays
+fallback-owned. Focused normal and fallback-off checks pass 3/3 each,
+covering source mapping, computed desktop/mobile geometry, visible controls,
+and filter interaction.
+
 ### 2026-07-21 Batch 677 organization home project-card stats owner proof
 
 ORG-02 project-card stats now own the emitted `.members`, member-list `ul`,

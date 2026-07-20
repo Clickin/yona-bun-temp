@@ -14,17 +14,22 @@ const pageLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
+const yobiUiSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+  import.meta.url,
+);
 const variablesSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_variables.less",
   import.meta.url,
 );
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess, variables] = await Promise.all([
+  const [route, style, legacy, pageLess, yobiUi, variables] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),
     readFile(pageLessSource, "utf8"),
+    readFile(yobiUiSource, "utf8"),
     readFile(variablesSource, "utf8"),
   ]);
   expect(legacy).toContain("project");
@@ -84,6 +89,33 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(route).toContain('data-stylex-owner="organization-home-project-card-members"');
   expect(route).toContain('data-stylex-owner="organization-home-project-card-members-list"');
   expect(route).toContain('data-stylex-owner="organization-home-project-card-count"');
+  expect(route).toContain('data-stylex-owner="organization-home-search-bar"');
+  expect(route).toContain('data-stylex-owner="organization-home-search-input"');
+  expect(route).toContain('data-stylex-owner="organization-home-search-button"');
+  expect(style).toContain("searchBar:");
+  expect(style).toContain('backgroundColor: "#FFF"');
+  expect(style).toContain('borderColor: "#ccc"');
+  expect(style).toContain('borderRadius: "3px"');
+  expect(style).toContain('height: "20px"');
+  expect(style).toContain('lineHeight: "20px"');
+  expect(style).toContain('padding: "4px 25px 4px 5px"');
+  expect(style).toContain('position: "relative"');
+  expect(style).toContain('"@media (max-width: 767px)": { margin: "5px 0" }');
+  expect(style).toContain("searchTextbox:");
+  expect(style).toContain('margin: "0 -5px"');
+  expect(style).toContain('padding: "0 5px"');
+  expect(style).toContain('width: "350px"');
+  expect(style).toContain('searchTextboxFull: { width: "100%" }');
+  expect(style).toContain("searchButton:");
+  expect(style).toContain('backgroundColor: "transparent"');
+  expect(style).toContain('position: "absolute"');
+  expect(style).toContain('right: "5px"');
+  expect(style).toContain('top: "5px"');
+  expect(yobiUi).toContain(".search-bar {");
+  expect(yobiUi).toContain("border:1px solid #ccc;");
+  expect(yobiUi).toContain("padding:4px 25px 4px 5px;");
+  expect(yobiUi).toContain(".textbox {");
+  expect(yobiUi).toContain(".search-btn {");
   expect(legacy).toContain('<ul class="all-projects">');
   expect(pageLess).toContain(".all-projects {");
   expect(pageLess).toContain("margin: 0 0 20px;");
@@ -160,7 +192,98 @@ for (const viewport of [
       .locator('[data-stylex-owner="organization-home-project-filter-item"]')
       .first();
     const list = page.locator('[data-stylex-owner="organization-home-projects"]');
+    const searchBar = page.locator('[data-stylex-owner="organization-home-search-bar"]');
+    const searchInput = page.locator('[data-stylex-owner="organization-home-search-input"]');
+    const searchButton = page.locator('[data-stylex-owner="organization-home-search-button"]');
     await expect(card).toBeVisible();
+    await expect(searchBar).toBeVisible();
+    await expect(searchInput).toBeVisible();
+    await expect(searchButton).toBeAttached();
+    await expect(searchInput).toHaveAttribute("placeholder", /.+/);
+    const searchMetrics = await searchBar.evaluate((node) => {
+      const bar = getComputedStyle(node);
+      const input = node.querySelector<HTMLInputElement>(
+        '[data-stylex-owner="organization-home-search-input"]',
+      );
+      const button = node.querySelector<HTMLButtonElement>(
+        '[data-stylex-owner="organization-home-search-button"]',
+      );
+      const inputStyle = input ? getComputedStyle(input) : null;
+      const buttonStyle = button ? getComputedStyle(button) : null;
+      const barBox = node.getBoundingClientRect();
+      const inputBox = input?.getBoundingClientRect();
+      const buttonBox = button?.getBoundingClientRect();
+      return {
+        bar: {
+          backgroundColor: bar.backgroundColor,
+          border: `${bar.borderTopWidth} ${bar.borderTopStyle} ${bar.borderTopColor}`,
+          borderRadius: bar.borderRadius,
+          height: bar.height,
+          lineHeight: bar.lineHeight,
+          margin: bar.margin,
+          padding: bar.padding,
+          position: bar.position,
+        },
+        input: inputStyle
+          ? {
+              borderStyle: inputStyle.borderStyle,
+              height: inputStyle.height,
+              margin: inputStyle.margin,
+              padding: inputStyle.padding,
+              width: inputStyle.width,
+            }
+          : null,
+        button: buttonStyle
+          ? {
+              backgroundColor: buttonStyle.backgroundColor,
+              borderStyle: buttonStyle.borderStyle,
+              height: buttonStyle.height,
+              outlineStyle: buttonStyle.outlineStyle,
+              position: buttonStyle.position,
+              right: buttonStyle.right,
+              top: buttonStyle.top,
+              visibility: buttonStyle.visibility,
+            }
+          : null,
+        containment:
+          inputBox && buttonBox
+            ? inputBox.left >= barBox.left &&
+              inputBox.right <= barBox.right &&
+              buttonBox.top >= barBox.top &&
+              buttonBox.bottom <= barBox.bottom &&
+              buttonBox.right <= barBox.right
+            : false,
+      };
+    });
+    expect(searchMetrics.bar).toEqual({
+      backgroundColor: "rgb(255, 255, 255)",
+      border: "1px solid rgb(204, 204, 204)",
+      borderRadius: "3px",
+      height: "20px",
+      lineHeight: "20px",
+      margin: viewport.name === "mobile" ? "5px 0px" : "0px",
+      padding: "4px 25px 4px 5px",
+      position: "relative",
+    });
+    expect(searchMetrics.input).toMatchObject({
+      borderStyle: "none",
+      height: "20px",
+      margin: "0px -5px",
+      padding: "0px 5px",
+    });
+    expect(searchMetrics.input?.width).toMatch(/px$/);
+    expect(Number.parseFloat(searchMetrics.input?.width ?? "0")).toBeGreaterThan(0);
+    expect(searchMetrics.button).toEqual({
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      borderStyle: "none",
+      height: "20px",
+      outlineStyle: "none",
+      position: "absolute",
+      right: "5px",
+      top: "5px",
+      visibility: "visible",
+    });
+    expect(searchMetrics.containment).toBe(true);
     await expect(card.locator(".header a.black")).toHaveText("sample");
     await expect(card.locator(".desc")).toHaveText("Sample project");
 

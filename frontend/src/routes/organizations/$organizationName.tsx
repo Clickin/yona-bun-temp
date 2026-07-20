@@ -239,17 +239,25 @@ function OrganizationHomeScreen({
                 data-stylex-owner="organization-home-search"
               >
                 <div className="span7">
-                  <div className="search-bar">
+                  <div
+                    className={`${stylex.props(styles.searchBar).className} search-bar`}
+                    data-stylex-owner="organization-home-search-bar"
+                  >
                     <input
                       name="mylist-filter"
                       id="mylist-filter"
-                      className="textbox full"
+                      className={`${stylex.props(styles.searchTextbox, styles.searchTextboxFull).className} textbox full`}
+                      data-stylex-owner="organization-home-search-input"
                       type="text"
                       defaultValue=""
                       placeholder={t("title.type.name")}
                       onChange={(event) => setProjectFilter(event.currentTarget.value)}
                     />
-                    <button type="button" className="search-btn">
+                    <button
+                      type="button"
+                      className={`${stylex.props(styles.searchButton).className} search-btn`}
+                      data-stylex-owner="organization-home-search-button"
+                    >
                       <i className="yobicon-search"></i>
                     </button>
                   </div>

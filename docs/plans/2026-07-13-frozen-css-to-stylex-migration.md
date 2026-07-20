@@ -5214,6 +5214,14 @@ and clear declarations into the existing route-local StyleX owner. Preserve
 the legacy list class, project card DOM/order, links, filtering, and
 responsive containment; retain unrelated frozen fallback consumers.
 
+## Batch 679
+
+Move the organization home search shell's exact `.search-bar`, `.textbox.full`,
+and `.search-btn` declarations, including the consumed mobile search-bar
+margin, into the existing route-local StyleX owner. Preserve input/button DOM,
+placeholder, filter interaction, project output, and responsive containment;
+retain icon and unrelated search fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count
