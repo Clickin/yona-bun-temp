@@ -485,3 +485,12 @@ padding, overflow, and border declarations through conditional route-local
 StyleX. The legacy class, item-search filtering, card order, and links remain
 unchanged. Focused normal and fallback-off checks pass 3/3 each, covering
 static source mapping plus desktop/mobile card geometry and filtering.
+
+### 2026-07-21 Batch 674 organization home membership-panel owner proof
+
+ORG-02 membership panels now own the frozen `.project-home` inner panel,
+header, `.project-members`, and `.member` declarations through route-local
+StyleX. Legacy classes, member links, labels, leave interaction, and panel
+containment remain unchanged. Focused normal and fallback-off checks pass 5/5
+each, covering source mapping plus desktop/mobile panel geometry and visible
+member links.

@@ -541,10 +541,26 @@ function MemberPanel({
   const { t } = useLegacyMessages();
 
   return (
-    <div className={className}>
-      <div className="inner member-info">
-        <header>
-          <h3>{title}</h3>
+    <div
+      {...stylex.props(styles.memberPanel)}
+      className={`${className} ${stylex.props(styles.memberPanel).className ?? ""}`.trim()}
+      data-stylex-owner="organization-home-members-panel"
+    >
+      <div
+        {...stylex.props(styles.memberPanelInner)}
+        className={`inner member-info ${stylex.props(styles.memberPanelInner).className ?? ""}`.trim()}
+        data-stylex-owner="organization-home-members-panel-inner"
+      >
+        <header
+          className={stylex.props(styles.memberPanelHeader).className}
+          data-stylex-owner="organization-home-members-panel-header"
+        >
+          <h3
+            className={stylex.props(styles.memberPanelTitle).className}
+            data-stylex-owner="organization-home-members-panel-title"
+          >
+            {title}
+          </h3>
           {showLeave ? (
             <button
               type="button"
@@ -558,10 +574,27 @@ function MemberPanel({
         </header>
         <div className={className.includes("mt10") ? "member-wrap" : "member-wrap "}>
           <ul
-            className={className.includes("mt10") ? "unstyled project-members" : "project-members"}
+            {...stylex.props(styles.memberList)}
+            className={`${className.includes("mt10") ? "unstyled project-members" : "project-members"} ${stylex.props(styles.memberList).className ?? ""}`.trim()}
+            data-stylex-owner="organization-home-members-list"
           >
-            {members.map((member) => (
-              <li className="member" key={stringField(member.loginId, "")}>
+            {members.map((member, index) => (
+              <li
+                {...stylex.props(
+                  styles.member,
+                  index === 0 ? styles.memberFirst : undefined,
+                  index === members.length - 1 ? styles.memberLast : undefined,
+                )}
+                className={`member ${
+                  stylex.props(
+                    styles.member,
+                    index === 0 ? styles.memberFirst : undefined,
+                    index === members.length - 1 ? styles.memberLast : undefined,
+                  ).className ?? ""
+                }`.trim()}
+                data-stylex-owner="organization-home-member"
+                key={stringField(member.loginId, "")}
+              >
                 <Link
                   activeOptions={{
                     exact: true,

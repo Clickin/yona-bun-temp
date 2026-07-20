@@ -5182,3 +5182,11 @@ Move the organization home `all-projects .project` card's exact padding,
 overflow, and bottom-border declarations into the existing route-local StyleX
 owner. Preserve the legacy `project` class, item-search filtering, card DOM,
 and project links; retain unrelated frozen fallback consumers.
+
+## Batch 674
+
+Move the organization home membership-panel container, inner panel, header,
+member list, and member-row declarations from the frozen project-home LESS
+into the existing route-local StyleX owner. Preserve the legacy member-panel
+DOM/classes, labels, links, leave interaction, and responsive containment;
+retain unrelated frozen fallback consumers.

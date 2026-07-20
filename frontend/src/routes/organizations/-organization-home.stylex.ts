@@ -68,6 +68,37 @@ export const styles = stylex.create({
   project: { display: "list-item" },
   projectInfo: { float: "left" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
+  // yona-original/app/assets/stylesheets/less/_page.less .project-home/.inner.
+  memberPanel: { padding: "10px" },
+  memberPanelInner: {
+    backgroundColor: "#ffffff",
+    borderRadius: "10px",
+    boxShadow: "0 1px 0 rgba(0, 0, 0, .05)",
+    fontSize: "12px",
+    marginBottom: "10px",
+    overflow: "hidden",
+    verticalAlign: "top",
+  },
+  memberPanelHeader: { backgroundColor: "#F8F8F8", padding: "10px 0" },
+  memberPanelTitle: {
+    color: "#4C4C4C",
+    display: "inline-block",
+    fontSize: "12px",
+    lineHeight: "20px",
+    margin: "0",
+  },
+  // yona-original/app/assets/stylesheets/less/_page.less .project-members/.member.
+  memberList: { listStyle: "none", margin: "0", padding: "10px" },
+  member: {
+    borderBottomColor: "#ededed",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    color: "#999",
+    display: "block",
+    padding: "5px 10px",
+  },
+  memberFirst: { paddingTop: "0" },
+  memberLast: { borderBottomStyle: "none", borderBottomWidth: "0", paddingBottom: "0" },
   leaveModalVisible: { display: "block" },
   projectHidden: { display: "none" },
 });

@@ -109,7 +109,7 @@ test("organization home renders legacy project and member panels", async ({ page
           },
         ],
         adminMembers: [{ loginId: "admin", userLabel: "Admin", avatarUrl: "" }],
-        memberMembers: [],
+        memberMembers: [{ loginId: "member", userLabel: "Member", avatarUrl: "" }],
       },
     }),
   );
@@ -122,6 +122,37 @@ test("organization home renders legacy project and member panels", async ({ page
     "sample",
   );
   await expect(page.locator('[data-stylex-owner="organization-home-members"]')).toBeVisible();
+  const panels = page.locator('[data-stylex-owner="organization-home-members-panel"]');
+  await expect(panels).toHaveCount(2);
+  await expect(panels.first().locator('a[title="admin"]')).toHaveCount(2);
+  await expect(panels.nth(1).locator('a[title="member"]')).toHaveCount(2);
+  const desktopGeometry = await panels.first().evaluate((panel) => {
+    const inner = panel.querySelector(
+      '[data-stylex-owner="organization-home-members-panel-inner"]',
+    );
+    const list = panel.querySelector('[data-stylex-owner="organization-home-members-list"]');
+    const member = panel.querySelector('[data-stylex-owner="organization-home-member"]');
+    const panelStyle = getComputedStyle(panel);
+    const innerStyle = inner ? getComputedStyle(inner) : null;
+    const listStyle = list ? getComputedStyle(list) : null;
+    const memberStyle = member ? getComputedStyle(member) : null;
+    return {
+      panelWidth: panel.getBoundingClientRect().width,
+      panelPadding: panelStyle.padding,
+      innerWidth: inner?.getBoundingClientRect().width ?? 0,
+      innerBackground: innerStyle?.backgroundColor,
+      innerRadius: innerStyle?.borderRadius,
+      listPadding: listStyle?.padding,
+      memberBorder: memberStyle?.borderBottomStyle,
+    };
+  });
+  expect(desktopGeometry.panelWidth).toBeGreaterThan(0);
+  expect(desktopGeometry.innerWidth).toBeGreaterThan(0);
+  expect(desktopGeometry.panelPadding).toBe("10px");
+  expect(desktopGeometry.innerBackground).toBe("rgb(255, 255, 255)");
+  expect(desktopGeometry.innerRadius).toBe("10px");
+  expect(desktopGeometry.listPadding).toBe("10px");
+  expect(desktopGeometry.memberBorder).toBe("none");
   await page.setViewportSize({ width: 390, height: 844 });
   const containment = await page
     .locator('[data-stylex-owner="organization-home-page"]')
@@ -131,4 +162,31 @@ test("organization home renders legacy project and member panels", async ({ page
     }));
   expect(containment.width).toBeGreaterThan(0);
   expect(containment.scrollWidth).toBe(390);
+  const mobileGeometry = await panels.first().evaluate((panel) => ({
+    width: panel.getBoundingClientRect().width,
+    right: panel.getBoundingClientRect().right,
+    viewport: window.innerWidth,
+  }));
+  expect(mobileGeometry.width).toBeGreaterThan(0);
+  expect(mobileGeometry.right).toBeLessThanOrEqual(mobileGeometry.viewport);
+  await expect(panels.first().locator('a[title="admin"]').last()).toBeVisible();
+});
+
+test("organization home membership panels map frozen legacy declarations to route-local StyleX", () => {
+  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
+  const stylex = readFileSync("src/routes/organizations/-organization-home.stylex.ts", "utf8");
+  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+
+  expect(legacy).toContain(".project-home {");
+  expect(legacy).toContain("padding: 10px;");
+  expect(legacy).toContain("font-size: 12px;");
+  expect(legacy).toContain(".project-members {");
+  expect(legacy).toContain("border-bottom: 1px solid #ededed;");
+  expect(stylex).toContain('memberPanel: { padding: "10px" }');
+  expect(stylex).toContain('fontSize: "12px"');
+  expect(stylex).toContain('memberList: { listStyle: "none", margin: "0", padding: "10px" }');
+  expect(stylex).toContain('borderBottomColor: "#ededed"');
+  expect(route).toContain('data-stylex-owner="organization-home-members-panel"');
+  expect(route).toContain('data-stylex-owner="organization-home-members-list"');
+  expect(route).toContain('data-stylex-owner="organization-home-member"');
 });
