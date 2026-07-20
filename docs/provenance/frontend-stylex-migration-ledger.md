@@ -1969,3 +1969,12 @@ contracts in normal and fallback-off modes; no TSX changed.
   surrounding post-list/search rules, frozen/generated fallback, and geometry
   remain unchanged. The project-posts and formal fallback-off contracts assert
   exact absence in normal and fallback-off modes. No TSX changed.
+
+## Batch 595
+
+- Dead `.badge-info` compatibility bridge retirement: current React inventory
+  has no `.badge-info` producer. `frontend/src/app.css` removes only the
+  `.badge-info` arm from the shared `.label-info, .badge-info` paint rule;
+  `.label-info`, frozen Bootstrap, generated fallback, and geometry remain
+  unchanged. The formal fallback-off contract asserts exact absence and
+  retained label paint in normal and fallback-off modes. No TSX changed.

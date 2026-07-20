@@ -495,6 +495,12 @@ test("dot-variant ybtn bridges have no app.css arms", () => {
   expect(appCss).toContain(".ybtn {");
 });
 
+test("dead badge-info bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".badge-info");
+  expect(appCss).toContain(".label-info {\n  background-color: #3a87ad;\n}");
+});
+
 test("board toolbar bridge has no current producer", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-toolbar");

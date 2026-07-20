@@ -4483,3 +4483,12 @@ StyleX owners. Retain surrounding post-list/search rules, frozen CSS, generated
 fallback, and geometry baselines. Update the project-posts and formal
 fallback-off static contracts in normal and fallback-off modes; do not change
 TSX or frozen/generated CSS.
+
+## Batch 595
+
+Retire only the unreachable `.badge-info` arm from the grouped `.label-info,
+.badge-info` rule in `frontend/src/app.css`. Current React sources emit no
+`.badge-info` consumer; retain `.label-info`, frozen Bootstrap, generated
+fallback, and geometry baselines. Update the formal fallback-off static
+contract in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change
+TSX or frozen/generated CSS.

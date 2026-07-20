@@ -962,8 +962,7 @@ pre code {
   display: none;
 }
 
-.label-info,
-.badge-info {
+.label-info {
   background-color: #3a87ad;
 }
 
