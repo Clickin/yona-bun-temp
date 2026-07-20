@@ -312,3 +312,11 @@ Full inventory refresh is allowed only when:
 5. a checklist row is disproved by legacy or runtime evidence.
 
 Otherwise update only the completed screen row and select the next IDs from this document. Do not rescan all routes per turn.
+
+### 2026-07-20 declaration refresh decision (Batch 654)
+
+The complete current React/TSX and frozen legacy inventory has no additional safe source-less
+`app.css` bridge. The only unmatched selector families are plugin-generated `hljs-*` syntax
+highlighting and `.issue-form-project-header`, which has no frozen legacy selector/declaration
+evidence. Both remain deferred; no route-owner wave or fallback deletion is authorized without
+new producer/source evidence.

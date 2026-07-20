@@ -5020,3 +5020,14 @@ Retire the source-less React-side `.number-of-comments` fallback bridge. The
 current frontend emits no `number-of-comments` class after the commit-history
 and code-file owners moved to StyleX; retain the frozen Scala/LESS and generated
 fallback declarations as legacy evidence for unrelated historical output.
+
+## Batch 654
+
+Record the declaration-level fallback refresh decision. The complete current
+React/TSX and frozen legacy inventory leaves no safe source-less `app.css`
+bridge to retire: the only unmatched selector families are plugin-generated
+`hljs-*` syntax highlighting and `.issue-form-project-header`, which has no
+frozen legacy selector/declaration evidence. Keep both fallback families
+deferred; do not remove or migrate them without new producer/source evidence.
+This is a scope decision only: no route, frozen source, generated fallback, or
+StyleX owner changes.
