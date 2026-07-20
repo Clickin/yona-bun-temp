@@ -4715,6 +4715,14 @@ Keep all frozen/generated sources unchanged and do not alter route DOM or
 accessibility behavior. Update the formal fallback-off static contract and
 record the stale-note boundary in provenance.
 
+## Batch 620
+
+Refresh the route-wave checklist after the bounded utility cleanup. No additional isolated
+route owner or declaration-level dead arm is currently eligible: plugin-generated task-list and
+syntax-highlight families remain deferred, and the nested issue-form header arm lacks frozen
+legacy evidence. Continue only with an exact shared-fallback consumer graph or a documented
+deferred-scope decision; do not perform another broad route scan.
+
 ## Batch 615
 
 Retire only the source-less `.ml20` utility arm from `frontend/src/app.css`.

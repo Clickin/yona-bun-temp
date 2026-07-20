@@ -211,6 +211,17 @@ This table supersedes stale `L-----`, `READY`, and grouped labels as a selection
 means the route's direct owner is migrated and its remaining work is exact shared-fallback consumer
 proof/retirement; it does not mean the overall fallback module is retired.
 
+### 2026-07-20 refresh after Batch 505
+
+The declaration-level refresh found no additional safe route-local owner wave or dead fallback
+arm. `.task-list-item*` and `.hljs-*` remain plugin-generated families and are deferred; the
+nested `.issue-form-project-header` arm has neither a current emitter nor frozen legacy selector
+evidence and is therefore not removable. The utility aliases `.ml20`, `.mr6`, `.mt4`, `.vtop`,
+and `.vertical-top` were retired in bounded waves through commits `d06928c0a`, `e24cf4215`,
+`1e3c8a60f`, `151268fcf`, and `2007c2fe8`. The next eligible work is an exact shared-fallback
+consumer graph or an explicit deferred-scope decision; do not repeat route discovery or remove
+plugin/global rules without that evidence.
+
 | Classification | IDs |
 | --- | --- |
 | Complete isolated owners | HELP-01, SEARCH-02, ISSUE-02, ISSUE-05, MILE-01, MILE-02, BOARD-02, CODE-01, FORK-01 |

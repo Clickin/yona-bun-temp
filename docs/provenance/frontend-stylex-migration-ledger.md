@@ -1,5 +1,7 @@
 # Frontend StyleX Migration Ledger
 
+| 2026-07-20 | Route-wave and fallback inventory refresh | After the bounded utility waves, no additional isolated route owner or safe dead arm remains. Plugin-generated task-list/syntax-highlight families and the legacy-evidence-less issue-form header arm are explicitly deferred. | No CSS or TSX change; future work requires an exact shared-fallback consumer graph or deferred-scope decision. | `docs/plans/2026-07-19-stylex-route-wave-checklist.md` refresh records the evidence and prevents repeated broad discovery. |
+
 | 2026-07-20 | Source-less `.vertical-top` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `vertical-top`; frozen legacy `_common.less` retains the historical utility evidence. | `frontend/src/app.css` removes only `.vertical-top { vertical-align: top !important; }`; no remaining sibling arm or frozen/generated CSS is changed. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact absence and current no-emitter in normal/fallback-off static modes. |
 
 | 2026-07-20 | Source-less `.vtop` grouped utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `vtop`; frozen legacy `_common.less` retains the historical alias. | `frontend/src/app.css` removes only the `.vtop` grouped arm while retaining `.vertical-top { vertical-align: top !important; }`; frozen/generated CSS remains unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts alias absence, live sibling retention, and current no-emitter in normal/fallback-off static modes. |
