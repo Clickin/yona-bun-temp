@@ -303,6 +303,19 @@ test("search-layout fallback bridge has no remaining selector", () => {
   expect(appCss).toContain("#searchInnerForm {");
 });
 
+test("search-page fallback bridge has no React or legacy producer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".search-page {");
+
+  for (const route of [
+    "src/routes/search.tsx",
+    "src/routes/$ownerName/$projectName/search.tsx",
+    "src/routes/organizations/$organizationName/search.tsx",
+  ]) {
+    expect(readFileSync(route, "utf8")).not.toMatch(/className=[^{\n]*["'`]search-page["'`]/u);
+  }
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({
@@ -1373,13 +1386,19 @@ test("global search output retains the runtime fallback boundary without the dea
     ? configuredBasePath.slice(0, -1)
     : configuredBasePath;
   await mockGlobalSearchSession(page);
-  await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/search?keyword=bug&searchType=issue`);
 
-  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
-  await expect(page.locator('[data-stylex-owner="global-search-input"]')).toHaveValue("bug");
-  await expect(page.locator('[data-stylex-owner="global-search-result-wrap"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="global-search-result-item"]')).toHaveCount(1);
-  await expect(page.locator(".search-layout")).toHaveCount(0);
+    await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(
+      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+    );
+    await expect(page.locator('[data-stylex-owner="global-search-input"]')).toHaveValue("bug");
+    await expect(page.locator('[data-stylex-owner="global-search-result-wrap"]')).toBeVisible();
+    await expect(page.locator('[data-stylex-owner="global-search-result-item"]')).toHaveCount(1);
+    await expect(page.locator(".search-layout, .search-page")).toHaveCount(0);
+  }
 });

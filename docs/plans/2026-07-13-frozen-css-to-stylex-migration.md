@@ -4185,3 +4185,16 @@ class retirement, owner/order, and desktop/390px local geometry in normal and
 fallback-off managed runs. This does not remove `app.css`, unlink the generated
 fallback, or migrate the separate raw breadcrumb consumers in diagnostic, mail,
 and other routes; global discovery remains incomplete/non-green.
+
+Batch 568 retires only the source-less standalone `.search-page { color: #333; }`
+bridge. Frozen `search/result.scala.html` and `search/partial_search.scala.html`
+emit the Bootstrap `page-wrap-outer > project-page-wrap > row-fluid > span2/span10`
+search shell and its active search-category/result selectors; complete frozen
+view/LESS/JS and current production TS/TSX inventories contain no `.search-page`
+producer. Delete only that exact app.css block, preserving `.search-category-wrap`,
+`#searchInnerForm`, `.page-navigation-wrap`, `.lst-stacked`, and all search result
+geometry. `legacy-fallback-off.e2e.ts` records exact absence and route non-emitter
+proof, while the populated global-search fixture checks the retained owners and
+absence of both `.search-layout` and `.search-page` in normal/fallback-off managed
+runs at desktop and 390px. Global fallback discovery remains incomplete/non-green;
+this is not generated-fallback unlinking or live-legacy visual-parity proof.

@@ -1624,4 +1624,20 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
   390px owner/geometry. No `app.css` selector or generated fallback asset is
   removed; diagnostic, mail, and other raw breadcrumb consumers remain outside
   this wave. Global fallback discovery remains incomplete/non-green, so this is
-  not an unlinking or live-legacy visual-parity claim.
+not an unlinking or live-legacy visual-parity claim.
+
+## Batch 568
+
+- Source-less global-search page bridge retirement: frozen
+  `search/result.scala.html` and `search/partial_search.scala.html` emit the
+  Bootstrap `page-wrap-outer > project-page-wrap > row-fluid > span2/span10`
+  shell and active `.search-category-wrap`, search form, and result selectors;
+  complete frozen view/LESS/JS and current production TS/TSX inventories emit
+  no `.search-page` class. Delete only the standalone `.search-page { color:
+  #333; }` block. Preserve `.search-category-wrap`, `#searchInnerForm`,
+  `.page-navigation-wrap`, `.lst-stacked`, and all result/list geometry.
+  `legacy-fallback-off.e2e.ts` records exact CSS absence and non-emitter proof;
+  the populated global-search fixture retains its StyleX owners and asserts no
+  `.search-layout` or `.search-page` DOM in normal and fallback-off managed runs.
+  Global fallback discovery remains incomplete/non-green; this is not generated
+  fallback unlinking or live-legacy visual-parity proof.
