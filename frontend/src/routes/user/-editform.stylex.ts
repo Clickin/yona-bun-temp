@@ -105,6 +105,9 @@ export const userSettingsAvatarStyles = stylex.create({
     overflow: "hidden",
     position: "relative",
   },
+  uploadWrap: {
+    textAlign: "center",
+  },
   uploadInput: {
     cursor: "pointer",
     left: "5px",
@@ -116,4 +119,7 @@ export const userSettingsAvatarStyles = stylex.create({
     zIndex: 2,
   },
   cropVisible: { display: "block" },
+  cropHeader: {
+    textAlign: "center",
+  },
 });

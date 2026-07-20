@@ -470,7 +470,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
               data-stylex-owner="user-settings-avatar-progress-bar"
             ></div>
           </div>
-          <div className="btn-wrap mt10 center-txt">
+          <div
+            className={`btn-wrap mt10 ${stylex.props(userSettingsAvatarStyles.uploadWrap).className}`}
+            data-stylex-owner="user-settings-avatar-upload-wrap"
+          >
             <div
               className={`ybtn ybtn-small fake-file-wrap btnUploadAvatar ${stylex.props(userSettingsAvatarStyles.upload).className}`}
               data-stylex-owner="user-settings-avatar-upload"
@@ -520,7 +523,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         {...avatarCropVisibleProps}
         className={`${avatarCropModalOpen ? "modal hide in" : "modal hide"} ${stylex.props(styles.avatarCrop).className} ${avatarCropVisibleProps?.className ?? ""}`.trim()}
       >
-        <div className="modal-header center-txt">
+        <div
+          className={`modal-header ${stylex.props(userSettingsAvatarStyles.cropHeader).className}`}
+          data-stylex-owner="user-settings-avatar-crop-header"
+        >
           <div className="avatar-wrap xlarge">
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
             <img

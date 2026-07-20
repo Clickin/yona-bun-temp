@@ -68,4 +68,5 @@ export const styles = stylex.create({
   },
   conflictDismiss: { color: pullRequestEditColors.modalDismiss },
   conflictDescription: { color: pullRequestEditColors.modalDescription },
+  conflictActions: { textAlign: "center" },
 });

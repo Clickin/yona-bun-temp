@@ -8,7 +8,12 @@ test.use({ locale: "ko-KR" });
 
 test("records the legacy profile separator and avatar image fallback", () => {
   const route = readFileSync("src/routes/user/editform.tsx", "utf8");
+  const theme = readFileSync("src/routes/user/-editform.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/user/edit.scala.html", "utf8");
+  const commonLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
 
   expect(template).toContain(
@@ -18,13 +23,21 @@ test("records the legacy profile separator and avatar image fallback", () => {
     '<img src="@user.avatarUrl(256)" style="width:128px; max-width:none;" />',
   );
   expect(template).toContain('<img style="max-width:500px;">');
+  expect(template).toContain('<div class="btn-wrap mt10 center-txt">');
+  expect(template).toContain('<div class="modal-header center-txt">');
+  expect(commonLess).toContain(".center-txt    { text-align:center; }");
   expect(pageLess).toContain(".reset-user-visited-list {");
   expect(route).toContain('data-stylex-owner="user-settings-avatar-form"');
-  expect(route).toContain('marginLeft: "50px"');
-  expect(route).toContain('paddingLeft: "50px"');
+  expect(route).toContain('data-stylex-owner="user-settings-avatar-upload-wrap"');
+  expect(route).toContain('data-stylex-owner="user-settings-avatar-crop-header"');
+  expect(route).toContain("userSettingsAvatarStyles.uploadWrap");
+  expect(route).toContain("userSettingsAvatarStyles.cropHeader");
+  expect(route).not.toContain("center-txt");
+  expect(theme).toContain('margin: "0px 0px 2px 50px"');
+  expect(theme).toContain('paddingLeft: "50px"');
   expect(route).not.toContain('style={{ borderLeft: "1px solid #ddd"');
-  expect(route).toContain('style={{ maxWidth: "none", width: "128px" }}');
-  expect(route).toContain('style={{ maxWidth: "500px" }}');
+  expect(theme).toContain('maxWidth: "none"');
+  expect(theme).toContain('maxWidth: "500px"');
   expect(pageLess).toContain(".avatar-wrap");
 
   // legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
@@ -45,6 +58,8 @@ test("pins profile form interaction and avatar containment on desktop/mobile", a
     await expect(avatarForm).toHaveCSS("border-left-width", "1px");
     await expect(avatarForm).toHaveCSS("margin-left", "50px");
     await expect(avatarForm).toHaveCSS("padding-left", "50px");
+    await expect(owner(page, "user-settings-avatar-upload-wrap")).toHaveCSS("text-align", "center");
+    await expect(owner(page, "user-settings-avatar-crop-header")).toHaveCSS("text-align", "center");
 
     const geometry = await avatarForm.evaluate((element) => {
       const formBox = element.getBoundingClientRect();

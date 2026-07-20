@@ -297,7 +297,10 @@ function PullRequestConflictConfirmModal({
             <p className="msg">{t("pullRequest.ignore.conflict")}</p>
             <p className={`${stylex.props(sx.conflictDescription).className} desc`}></p>
           </div>
-          <div className="center-txt buttons">
+          <div
+            className={`${stylex.props(sx.conflictActions).className} buttons`}
+            data-stylex-owner="pull-request-edit-conflict-actions"
+          >
             <button type="button" className="ybtn ybtn-default" onClick={onClose}>
               {t("button.cancel")}
             </button>

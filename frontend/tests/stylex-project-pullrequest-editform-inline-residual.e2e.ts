@@ -31,7 +31,23 @@ test("pull-request edit editor tab-content owns the legacy static layout", async
   await expect(page.locator("#editor-body-body")).toBeVisible();
 });
 
-async function mockEditForm(page: Page) {
+test("pull-request conflict actions own legacy center-txt alignment", async ({ page }) => {
+  expect(readFileSync("../yona-original/app/views/common/scripts.scala.html", "utf8")).toContain(
+    '<div class="center-txt buttons">',
+  );
+  expect(routeSource).not.toContain('className="center-txt buttons"');
+  expect(styleSource).toContain('conflictActions: { textAlign: "center" }');
+
+  await mockEditForm(page, { conflict: true });
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  await page.locator('button[type="submit"]').click();
+  const actions = page.locator('[data-stylex-owner="pull-request-edit-conflict-actions"]');
+  await expect(actions).toBeVisible();
+  await expect(actions).toHaveCSS("text-align", "center");
+  await expect(actions).toHaveClass(/buttons/u);
+});
+
+async function mockEditForm(page: Page, options: { conflict?: boolean } = {}) {
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -82,7 +98,7 @@ async function mockEditForm(page: Page) {
   await page.route("**/api/v1/owners/admin/projects/sample/pull-requests/merge-result?*", (route) =>
     route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify({ commits: [], conflict: false }),
+      body: JSON.stringify({ commits: [], conflict: options.conflict ?? false }),
     }),
   );
 }
