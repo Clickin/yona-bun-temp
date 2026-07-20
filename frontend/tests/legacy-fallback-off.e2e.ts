@@ -215,6 +215,15 @@ test("dead syntax selector family has no app.css arms", () => {
   }
 });
 
+test("organization home small-font typography has no shared fallback arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
+  expect(appCss).not.toContain(".small-font");
+  expect(route).not.toContain("small-font");
+  expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
+  expect(route).toContain('data-stylex-owner="organization-home-project-code-update"');
+});
+
 test("sidebar refresh plugin bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

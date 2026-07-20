@@ -293,6 +293,9 @@ Deletion-only candidates. Each requires declaration-level exact source/DOM proof
 - [x] `.all-projects .project .forked` — 2026-07-20 consumer graph: no React `forked` output
   exists, and the exact compiled Yobi selector is already excluded from generated fallback; fork
   origin presentation uses separate React-owned output.
+- [x] `.small-font` — 2026-07-20 organization-home consumer graph: the two live
+  organization project-card spans now use the route-local `styles.smallFont`
+  owner; the shared app.css arm is retired while frozen/generated evidence remains.
 - [x] `.stats-wrap .like` variants — Batch 537: duplicate/consumer-free rendered Yobi selectors retired; no active module was unlinked.
 - [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item).
   The 2026-07-20 graph confirms this is an inactive `app.css` bridge with no React DOM ancestor, but its

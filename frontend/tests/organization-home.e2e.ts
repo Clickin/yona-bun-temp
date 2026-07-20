@@ -526,7 +526,7 @@ test("organization home project cards restore legacy fork and scope header metad
   expect(await canonicalizeLocator(page, ".all-projects .project:nth-child(1) .header")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="header"><a class="black" href="${basePath}/weblabs/sample">sample</a><span class="small-font blue-txt"><a class="origin-title" href="${basePath}/origin/base"><i class="yobicon-split"></i>origin / base</a></span><span class="project-protected" title="Group Project">G</span></div>`,
+      `<div class="header"><a class="black" href="${basePath}/weblabs/sample">sample</a><span class="blue-txt"><a class="origin-title" href="${basePath}/origin/base"><i class="yobicon-split"></i>origin / base</a></span><span class="project-protected" title="Group Project">G</span></div>`,
     ),
   );
   await expect(protectedForkHeader.locator(".yobicon-lock")).toHaveCount(0);
@@ -631,7 +631,9 @@ test("organization home project card route source uses Link for internal card na
     'const isProtected = booleanField(project.isProtected) || projectScope === "protected";',
   );
   expect(source).toContain('className="origin-title"');
-  expect(source).toContain('className="small-font blue-txt"');
+  expect(source).not.toContain("small-font");
+  expect(source).toContain('data-stylex-owner="organization-home-project-origin"');
+  expect(source).toContain('data-stylex-owner="organization-home-project-code-update"');
   expect(source).toContain('to="/$user"');
   expect(source).toContain("params={{ user: ownerName }}");
   expect(source).toContain('params={{ user: stringField(member.loginId, "") }}');

@@ -394,7 +394,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
               {projectName}
             </Link>
             {originOwnerName && originProjectName ? (
-              <span className="small-font blue-txt">
+              <span
+                className={`${stylex.props(styles.smallFont).className} blue-txt`}
+                data-stylex-owner="organization-home-project-origin"
+              >
                 <Link
                   activeOptions={{
                     exact: true,
@@ -453,7 +456,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             at{" "}
             <strong title={stringField(project.createdTitle, createdLabel)}>{createdLabel}</strong>{" "}
             {lastPushedLabel ? (
-              <span className="small-font">
+              <span
+                {...stylex.props(styles.smallFont)}
+                data-stylex-owner="organization-home-project-code-update"
+              >
                 , {t("project.codeUpdate")}{" "}
                 <strong title={stringField(project.lastPushedTitle, lastPushedLabel)}>
                   {lastPushedLabel}

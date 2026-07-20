@@ -1,4 +1,21 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+test("organization home owns legacy small-font typography in route-local StyleX", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
+  const stylex = readFileSync("src/routes/organizations/-organization-home.stylex.ts", "utf8");
+  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
+
+  expect(legacy).toContain(".small-font{");
+  expect(legacy).toContain("font-size: 10px;");
+  expect(legacy).toContain("font-weight: normal;");
+  expect(appCss).not.toContain(".small-font");
+  expect(route).not.toContain("small-font");
+  expect(route).toContain('data-stylex-owner="organization-home-project-origin"');
+  expect(route).toContain('data-stylex-owner="organization-home-project-code-update"');
+  expect(stylex).toContain('smallFont: { fontSize: "10px", fontWeight: "normal" }');
+});
 
 test("organization home renders legacy project and member panels", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 900 });

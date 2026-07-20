@@ -10,6 +10,8 @@ export const organizationHomeColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  // yona-original/app/assets/stylesheets/less/_common.less .small-font.
+  smallFont: { fontSize: "10px", fontWeight: "normal" },
   projectVisibilityBadge: { color: "#788ba7", fontSize: "14px", marginLeft: "5px" },
   projectUtilWrap: { bottom: "20px", position: "absolute", right: "0" },
   projectUtil: { listStyle: "none", margin: "0" },
