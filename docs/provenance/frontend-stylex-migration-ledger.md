@@ -1915,3 +1915,11 @@ contracts in normal and fallback-off modes; no TSX changed.
   generic `.nav-tabs` rules and frozen/generated fallback remain. Focused project,
   organization, and fallback-off contracts assert exact absence and retained
   generic tab rules.
+## Batch 590
+
+- Dead `.uneditable-input` width bridge retirement: frozen Bootstrap retains the
+  historical class, but current React sources emit no consumer. `frontend/src/app.css`
+  removes only that selector arm from the shared `input, textarea` width rule;
+  generic width, frozen source, generated fallback, and geometry remain unchanged.
+  `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact absence and retained
+  generic width in normal/fallback-off contract runs.

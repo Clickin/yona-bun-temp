@@ -4434,3 +4434,11 @@ route markup and StyleX. Retain generic `.nav-tabs` rules, frozen source,
 generated fallback, and geometry baselines. Update project and organization
 pull-request static contracts plus the formal fallback-off contract and run
 both modes. Do not change TSX, frozen source, generated CSS, or baselines.
+## Batch 590
+
+Retire only the unreachable `.uneditable-input` width arm from
+`frontend/src/app.css`. Current React sources emit no `.uneditable-input`
+consumer; retain the `input, textarea` width declaration and frozen Bootstrap
+source. Update the formal fallback-off contract and record this as a React-side
+dead bridge removal. No frozen source, generated fallback, or geometry baseline
+changes are permitted.

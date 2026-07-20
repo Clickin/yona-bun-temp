@@ -459,6 +459,12 @@ test("pull-request tab button bridge has no app.css arms", () => {
   ).not.toContain("pullrequeset-tab-menu");
 });
 
+test("uneditable-input width bridge has no current React consumer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".uneditable-input");
+  expect(appCss).toContain("input,\ntextarea {\n  width: 206px;\n}");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");

@@ -333,8 +333,7 @@ select {
 }
 
 input,
-textarea,
-.uneditable-input {
+textarea {
   width: 206px;
 }
 
