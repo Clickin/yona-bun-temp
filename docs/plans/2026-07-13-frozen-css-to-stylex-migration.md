@@ -5344,3 +5344,21 @@ focused source/owner check passes, while desktop/mobile geometry shows `18px` he
 line boxes and a `6px` upward row shift. An exact frozen Bootstrap `line-height:20px` translation
 fixes the line-box heights but leaves a source-unexplained `2px` origin difference. Do not add a
 compensating offset; retain this candidate as blocked and keep the fallback boundary unchanged.
+
+## Batch 694
+
+Review the organization-directory responsive search candidate. The frozen responsive declarations
+for mobile search-wrap height and textbox width are route-local and reproduce the input geometry,
+but fallback-off leaves the search button at `0px` because the route-owned glyph depends on the
+shared frozen `yobicon` `@font-face` boundary. Do not invent a button width or alter the fallback
+font boundary in this route wave; retain the candidate as a shared-bridge blocker and keep the
+fallback enabled.
+
+## Batch 695
+
+Classify the next SITE-01 probes before selecting an implementation wave. The site data sidebar
+source/owner/link/SPA checks pass fallback-off; its one failure compares a StyleX-owned `list-style`
+against a newly created unstyled synthetic `<ul>` and is stale test scaffolding, not a route CSS
+consumer. The site data page/grid/column contract passes fallback-off desktop and mobile geometry
+(`3/3`). Keep the fallback boundary unchanged and do not weaken the synthetic comparison or add
+route declarations.

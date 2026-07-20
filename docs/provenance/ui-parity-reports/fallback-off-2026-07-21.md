@@ -97,3 +97,23 @@ The exact frozen Bootstrap `line-height:20px` declaration was replayed in the ex
 identity owner; it corrected the line-box heights, but left a `2px` content-origin difference.
 No frozen declaration supports a route-local `2px` compensation, so the candidate remains blocked
 without changes. The fallback remains enabled by default.
+
+## Candidate review — organization directory responsive search
+
+The `/orgs` focused contract exposed a valid responsive owner gap: the legacy mobile cascade sets
+`.search-wrap` height to `inherit` and `.search-bar .textbox` width to `inherit !important`. A
+route-local StyleX trial reproduced those declarations and made the input fit the 390px viewport,
+but fallback-off still rendered the search button at `0px` width because its `yobicon` glyph depends
+on the shared frozen `yobicon` `@font-face` currently supplied by the legacy fallback stylesheet.
+Adding a route-local button width would invent geometry not present in the frozen source. The
+responsive owner therefore remains blocked in the shared font-boundary lane; no route or focused
+E2E changes were retained, and the fallback remains enabled by default.
+
+## Candidate review — site data administration probes
+
+The site data sidebar contract passed its source, owner, links, SPA navigation, and repeated-owner
+checks (`4/5`) with fallback disabled. Its single failure is a synthetic fallback comparison: the
+test creates a new unstyled `<ul>` whose browser default `list-style: disc` is compared against the
+StyleX-owned `none`; it is not a rendered route mismatch. The site data page/grid/column contract
+passed all fallback-off desktop/mobile checks (`3/3`). No implementation or focused E2E files were
+changed, and the fallback remains enabled by default.
