@@ -11,6 +11,17 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { siteDiagnosticColors } from "./-diagnostic.stylex";
 
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   page: {
     boxSizing: "border-box",
     marginTop: "10px",
@@ -187,9 +198,18 @@ function SiteDiagnosticScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig 
   return (
     <>
       <title>{t("title.siteSetting")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div
+        {...stylex.props(styles.breadcrumbOuter)}
+        data-stylex-owner="site-diagnostic-breadcrumb-outer"
+      >
+        <div
+          {...stylex.props(styles.breadcrumbInner)}
+          data-stylex-owner="site-diagnostic-breadcrumb-inner"
+        >
+          <h3
+            {...stylex.props(styles.breadcrumbHeading)}
+            data-stylex-owner="site-diagnostic-breadcrumb-heading"
+          >
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

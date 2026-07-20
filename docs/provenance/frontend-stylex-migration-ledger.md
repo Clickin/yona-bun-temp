@@ -1641,3 +1641,19 @@ not an unlinking or live-legacy visual-parity claim.
   `.search-layout` or `.search-page` DOM in normal and fallback-off managed runs.
   Global fallback discovery remains incomplete/non-green; this is not generated
   fallback unlinking or live-legacy visual-parity proof.
+
+## Batch 569
+
+- `/sites/diagnostic` site-management breadcrumb StyleX ownership: frozen
+  `yona-original/app/views/site/siteMngLayout.scala.html:34-38` retains the
+  outer > inner > `h3` DOM and `site.sidebar` copy; frozen
+  `_page.less:743-753` and `_responsive.less:349-351,627-631` establish inner
+  auto margin, heading line-height/padding, and responsive outer geometry.
+  Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React
+  state/events/components + TanStack Router/Query로 번역한다. The diagnostic
+  route now owns only the three breadcrumb boundaries with inline StyleX and
+  stable data-stylex owners; no theme, app.css, generated asset, or frozen
+  source changed. `stylex-site-diagnostic-breadcrumb.e2e.ts` passes static,
+  desktop 1366px, and mobile 390px checks 3/3 in both managed normal and
+  fallback-off runs (exit 0). Other raw breadcrumb consumers remain outside
+  this wave; global fallback discovery remains incomplete/non-green.

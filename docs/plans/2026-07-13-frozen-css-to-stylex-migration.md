@@ -4198,3 +4198,18 @@ proof, while the populated global-search fixture checks the retained owners and
 absence of both `.search-layout` and `.search-page` in normal/fallback-off managed
 runs at desktop and 390px. Global fallback discovery remains incomplete/non-green;
 this is not generated-fallback unlinking or live-legacy visual-parity proof.
+
+## Batch 569
+
+- `/sites/diagnostic` site-management breadcrumb ownership: frozen
+  `site/siteMngLayout.scala.html:34-38` retains the outer > inner > `h3` DOM and
+  `site.sidebar` copy. Frozen `_page.less:743-753` and
+  `_responsive.less:349-351,627-631` establish the inner auto margin, heading
+  line-height/padding, and responsive outer box geometry. `diagnostic.tsx`
+  replaces only this route's raw breadcrumb classes with three inline StyleX
+  owners and stable `data-stylex-owner` markers; page/grid/title/sidebar/query
+  behavior is unchanged. `stylex-site-diagnostic-breadcrumb.e2e.ts` verifies
+  source evidence, exact class retirement, owner/order/copy, and desktop 1366px
+  plus mobile 390px geometry. Managed normal and fallback-off runs each pass
+  3/3. No frozen source, theme, app.css, or generated fallback asset changes;
+  other breadcrumb consumers remain outside this wave.
