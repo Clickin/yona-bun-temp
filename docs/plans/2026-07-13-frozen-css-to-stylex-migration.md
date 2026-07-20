@@ -4484,6 +4484,14 @@ fallback, and geometry baselines. Update the project-posts and formal
 fallback-off static contracts in normal and fallback-off modes; do not change
 TSX or frozen/generated CSS.
 
+## Batch 616
+
+Retire only the source-less `.mr6` utility arm from `frontend/src/app.css`.
+The current React/TSX inventory emits no `mr6`; frozen legacy utility sources
+remain historical evidence. Keep neighboring margin utilities unchanged and
+update the formal fallback-off static contract. Do not change route TSX or
+frozen/generated CSS.
+
 ## Batch 596
 
 Retire only the source-less issue-form picker compatibility family from
