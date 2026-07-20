@@ -5198,3 +5198,11 @@ overview heading declarations from the frozen project-home LESS into the
 existing route-local StyleX owner. Preserve the legacy header/overview DOM,
 description copy, and responsive containment; retain unrelated frozen
 fallback consumers.
+
+## Batch 676
+
+Move the organization home project-card inner avatar, header, description,
+name-tag, and stats declarations from the frozen `all-projects .project`
+LESS into the existing route-local StyleX owner. Preserve project card DOM,
+links, filtering, visibility branches, and responsive behavior; retain
+unrelated frozen fallback consumers.

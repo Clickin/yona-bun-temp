@@ -383,7 +383,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
       data-stylex-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">
-        <div className="owner-avatar-wrap hide-in-mobile">
+        <div
+          className={`${stylex.props(styles.projectCardOwnerAvatar).className} owner-avatar-wrap hide-in-mobile`}
+          data-stylex-owner="organization-home-project-card-owner-avatar"
+        >
           <Link
             activeOptions={{
               exact: true,
@@ -407,7 +410,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
           className={stylex.props(styles.projectInfo).className}
           data-stylex-owner="organization-home-project-info"
         >
-          <div className="header">
+          <div
+            className={`${stylex.props(styles.projectCardHeader).className} header`}
+            data-stylex-owner="organization-home-project-card-header"
+          >
             <Link
               activeOptions={{
                 exact: true,
@@ -465,8 +471,16 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
               </span>
             ) : null}
           </div>
-          <div className="desc">{stringField(project.overview, "")}</div>
-          <p className="name-tag">
+          <div
+            className={`${stylex.props(styles.projectCardDescription).className} desc`}
+            data-stylex-owner="organization-home-project-card-description"
+          >
+            {stringField(project.overview, "")}
+          </div>
+          <p
+            className={`${stylex.props(styles.projectCardNameTag).className} name-tag`}
+            data-stylex-owner="organization-home-project-card-name-tag"
+          >
             by{" "}
             <Link
               activeOptions={{
@@ -503,7 +517,10 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
           </p>
         </div>
       </div>
-      <div className="stats-wrap pull-right">
+      <div
+        className={`${stylex.props(styles.projectCardStats).className} stats-wrap pull-right`}
+        data-stylex-owner="organization-home-project-card-stats"
+      >
         <div className="members">
           <ul className="unstyled"></ul>
           <p>

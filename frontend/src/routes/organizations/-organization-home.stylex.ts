@@ -75,6 +75,38 @@ export const styles = stylex.create({
   // organization/view.scala.html + yona-common item-search: an empty query shows every project.
   project: { display: "list-item" },
   projectInfo: { float: "left" },
+  // yona-original/app/assets/stylesheets/less/_page.less .all-projects .project .info-wrap.
+  projectCardOwnerAvatar: {
+    borderRadius: "3px",
+    display: "inline",
+    float: "left",
+    height: "50px",
+    marginRight: "10px",
+    overflow: "hidden",
+    position: "relative",
+    width: "50px",
+  },
+  projectCardHeader: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    marginBottom: "5px",
+    marginLeft: "10px",
+  },
+  projectCardDescription: {
+    color: "#bababa",
+    marginLeft: "10px",
+    maxHeight: "100px",
+    maxWidth: "647px",
+    overflowY: "auto",
+    textOverflow: "ellipsis",
+  },
+  projectCardNameTag: {
+    color: "#999",
+    fontSize: "11px",
+    margin: "0",
+    marginLeft: "10px",
+  },
+  projectCardStats: { marginTop: "0", textAlign: "right" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
   // yona-original/app/assets/stylesheets/less/_page.less .project-home/.inner.
   memberPanel: { padding: "10px" },

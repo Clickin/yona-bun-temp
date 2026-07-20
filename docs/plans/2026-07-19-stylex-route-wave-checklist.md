@@ -503,3 +503,13 @@ through route-local StyleX. Legacy classes, description copy, ordering, and
 responsive containment remain unchanged. Focused normal and fallback-off
 checks pass 6/6 each, covering source mapping plus desktop/mobile computed
 geometry and visible description copy.
+
+### 2026-07-21 Batch 676 organization home project-card inner owner proof
+
+ORG-02 loaded project cards now own the frozen avatar, header, description,
+name-tag, and stats declarations through route-local StyleX. Clone/search and
+member-panel declarations remain outside this wave; project links, filtering,
+visibility branches, and responsive containment remain unchanged. Focused
+normal and fallback-off checks pass 3/3 each, covering source mapping, all
+inner owners, desktop/mobile computed geometry, visible content, and filter
+interaction.
