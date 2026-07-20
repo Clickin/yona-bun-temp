@@ -47,6 +47,48 @@ const GLOBAL_SEARCH_CATEGORIES: SearchCategory[] = [
   { countKey: "reviews", labelKey: "search.menu.reviews", type: "review" },
 ];
 
+// The legacy Scala HTML/JS is the output DOM/UX source of truth; interaction is
+// translated to React state/events and TanStack Router navigation below.
+const globalSearchCategoryStyles = stylex.create({
+  list: {
+    borderTopColor: "#ddd",
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    listStyle: "none",
+    margin: "0px",
+    padding: "0px",
+  },
+  item: {
+    borderBottomColor: "#e5e5e5",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    fontSize: "13px",
+    fontWeight: "bold",
+    padding: "8px",
+  },
+  link: {
+    alignItems: "center",
+    appearance: "none",
+    backgroundColor: "transparent",
+    border: "0px",
+    borderRadius: "0px",
+    boxShadow: "none",
+    color: "#333",
+    display: "flex",
+    font: "inherit",
+    gap: "8px",
+    justifyContent: "space-between",
+    padding: "9px 8px",
+    textAlign: "left",
+    textDecoration: "none",
+    width: "100%",
+  },
+  linkActive: { color: "#fff" },
+  linkEmpty: { color: "#d3d2d3" },
+  badge: { paddingLeft: "2px", paddingRight: "2px" },
+  badgeActive: { color: "#fff" },
+});
+
 const legacySearchPaginationLinkActiveOptions = {
   exact: true,
   explicitUndefined: true,
@@ -219,7 +261,10 @@ function GlobalSearchSuccessBody({
           <div className="project-page-wrap">
             <div className="row-fluid">
               <div {...stylex.props(styles.category)} data-stylex-owner="global-search-category">
-                <ul className="lst-stacked unstyled search-category-wrap">
+                <ul
+                  className={`lst-stacked unstyled search-category-wrap ${stylex.props(globalSearchCategoryStyles.list).className}`}
+                  data-stylex-owner="global-search-category-list"
+                >
                   {GLOBAL_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
 
@@ -229,6 +274,7 @@ function GlobalSearchSuccessBody({
                           count === 0 ? "empty" : ""
                         } ${
                           stylex.props(
+                            globalSearchCategoryStyles.item,
                             styles.categoryItem,
                             category.type === activeType && styles.categoryItemActive,
                           ).className
@@ -238,8 +284,11 @@ function GlobalSearchSuccessBody({
                       >
                         <Link
                           {...stylex.props(
+                            globalSearchCategoryStyles.link,
                             styles.categoryLink,
+                            category.type === activeType && globalSearchCategoryStyles.linkActive,
                             category.type === activeType && styles.categoryLinkActive,
+                            count === 0 && globalSearchCategoryStyles.linkEmpty,
                             count === 0 && styles.categoryLinkEmpty,
                           )}
                           to="/search"
@@ -254,7 +303,9 @@ function GlobalSearchSuccessBody({
                           <span
                             className={`num-badge pull-right ${
                               stylex.props(
+                                globalSearchCategoryStyles.badge,
                                 styles.categoryBadge,
+                                category.type === activeType && globalSearchCategoryStyles.badgeActive,
                                 category.type === activeType && styles.categoryBadgeActive,
                               ).className
                             }`}

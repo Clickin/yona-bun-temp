@@ -1672,3 +1672,24 @@ not an unlinking or live-legacy visual-parity claim.
   passes static, desktop 1366px, and mobile 390px checks 3/3 in both managed
   normal and fallback-off runs (exit 0). Other raw consumers remain outside this
   wave; global fallback discovery remains incomplete/non-green.
+
+## Batch 571
+
+- Global, project, and organization search category wrappers now have
+  route-local StyleX owners for the legacy list/item/link/active/empty/badge
+  geometry. Frozen `search/partial_search.scala.html:77-128` establishes the
+  category order, copy, count badges, and state classes; frozen `_page.less`
+  `:6394-6404` establishes bold item and empty-link behavior. The existing
+  `.search-category-wrap`, `.lst-stacked`, `.active`, `.empty`, and
+  `.num-badge.pull-right` tokens remain because current global/project/
+  organization parity suites and additional search consumers still select them.
+  Focused contracts are `stylex-global-search-category.e2e.ts`,
+  `stylex-project-search-category.e2e.ts`, and
+  `stylex-organization-search-category.e2e.ts`, with desktop/390px containment
+  checks. The integrated managed batch passes 7/7 in normal mode and 7/7 with
+  `VITE_DISABLE_LEGACY_FALLBACK=1`. Project and organization category actions
+  retain frozen Bootstrap `box-sizing:border-box`; their focused tests scope
+  bounds to owned category/list/item/action/content boxes because the shared
+  mobile `.span2`/`.span10` grid retains an unrelated 7px document overflow.
+  No app.css, frozen source, theme variable, or generated fallback asset
+  changed; global fallback discovery remains incomplete/non-green.

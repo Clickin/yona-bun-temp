@@ -117,7 +117,7 @@ test("project search route source renders legacy projectLayout title without dir
   );
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toContain("includeHash: true");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).toMatch(
-    /search-category-wrap[\s\S]*<Link[\s\S]*activeOptions=\{projectSearchPaginationLinkActiveOptions\}[\s\S]*activeProps=\{projectSearchPaginationLinkActiveProps\}[\s\S]*from="\/\$ownerName\/\$projectName\/search"/u,
+    /project-search-category-list[\s\S]*<Link[\s\S]*activeOptions=\{projectSearchPaginationLinkActiveOptions\}[\s\S]*activeProps=\{projectSearchPaginationLinkActiveProps\}[\s\S]*from="\/\$ownerName\/\$projectName\/search"/u,
   );
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain("createLink");
   expect(PROJECT_SEARCH_ROUTE_SOURCE).not.toContain('data-toggle="tooltip"');
@@ -146,9 +146,9 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue", "sample");
-  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
-  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"]')).not.toContainText("Projects");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Issues");
   await expect(page.locator(".search-result-title strong")).toHaveText("1");
   await expect(page.locator(".search-result-wrap > .search-list-wrap")).toHaveCount(1);
@@ -183,7 +183,7 @@ test("project issue search renders legacy partial_issues.scala.html scoped resul
 
   const layout = await page.evaluate(() => {
     const row = document.querySelector(".row-fluid");
-    const category = document.querySelector(".search-category-wrap");
+    const category = document.querySelector('[data-stylex-owner="project-search-category-list"]');
     const searchBox = document.querySelector(".search-box-wrap");
     const keyword = document.querySelector("#searchKeyword");
     const button = document.querySelector("#searchInnerForm .ybtn");
@@ -227,7 +227,7 @@ test("project issue search category Links keep legacy active state on list items
   await page.goto(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
 
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=sample&searchType=issue`);
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 1");
   await expectProjectSearchCategoryAttributes(page, basePath, "sample");
   await expectProjectSearchCategoryActiveMarkers(page);
 });
@@ -242,9 +242,9 @@ test("project issue comment search renders legacy partial_issue_comments.scala.h
 
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "issue_comment", "sample");
-  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
-  await expect(page.locator(".search-category-wrap")).not.toContainText("Projects");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"]')).not.toContainText("Projects");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issue Comments 1");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 1 result(s) in Issue Comments",
   );
@@ -289,7 +289,7 @@ test("project user search preserves legacy tooltip metadata without Bootstrap in
 
   await expectProjectSearchShell(page);
   await expectProjectSearchForm(page, basePath, "user", "sample");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Users 1");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Users 1");
   await expect(page.locator(".search-result-title")).toHaveText("Found 1 result(s) in Users");
 
   const row = page.locator(".search-result-wrap .search-list-item.project");
@@ -358,8 +358,8 @@ test("project search pins the live localhost issue-comment zero-result project s
     "1",
   ]);
   await expect(page.locator(".project-setting")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li")).toHaveCount(7);
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issue Comments 0");
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li')).toHaveCount(7);
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issue Comments 0");
   await expect(page.locator(".search-result-title")).toHaveText(
     "Found 0 result(s) in Issue Comments",
   );
@@ -372,7 +372,7 @@ test("project search pins the live localhost issue-comment zero-result project s
     const scope = document.querySelector("#gnb-search-scope-title");
     const searchBox = document.querySelector('[data-stylex-owner="global-gnb-search-box"]');
     const searchInput = document.querySelector('[data-stylex-owner="global-gnb-search-input"]');
-    const category = document.querySelector(".search-category-wrap");
+    const category = document.querySelector('[data-stylex-owner="project-search-category-list"]');
     const searchTitle = document.querySelector(".search-result-title");
     const emptyResult = document.querySelector(".search-result-wrap > .empty-result");
     if (
@@ -557,7 +557,7 @@ test("project search preserves whitespace-only keyword and calls scoped search A
   await page.goto(`${basePath}/admin/sample/search?keyword=%20%20&searchType=review`);
   await expect(page.locator(".search-result-wrap .empty-result")).toBeVisible();
   await expect(page.locator("#searchKeyword")).toHaveValue("  ");
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Code Reviews 0");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Code Reviews 0");
   await expectProjectSearchCategoryAttributes(page, basePath, "  ");
   expect(searchApi.count).toBe(1);
   expect(searchApi.keywords).toEqual(["  "]);
@@ -573,14 +573,14 @@ test("project search category and form navigation stay inside the React SPA", as
   await page.locator("#searchKeyword").fill("fresh");
   await expectProjectSearchCategoryAttributes(page, basePath, "fresh");
   await expectProjectSearchCategoryActiveMarkers(page);
-  const issueCategory = page.locator(".search-category-wrap a", { hasText: "Issues" });
+  const issueCategory = page.locator('[data-stylex-owner="project-search-category-list"] a', { hasText: "Issues" });
   await expect(issueCategory).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/search?keyword=fresh&searchType=issue`,
   );
   await issueCategory.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/search?keyword=fresh&searchType=issue`);
-  await expect(page.locator(".search-category-wrap li.active")).toHaveText("Issues 0");
+  await expect(page.locator('[data-stylex-owner="project-search-category-item"][data-stylex-active="true"]')).toHaveText("Issues 0");
   await expectProjectSearchCategoryActiveMarkers(page);
   await expectSearchSpaSession(page);
 
@@ -754,7 +754,7 @@ async function expectProjectSearchCategoryAttributes(
   basePath: string,
   keyword: string,
 ) {
-  const categories = await page.locator(".search-category-wrap li > a").evaluateAll((anchors) =>
+  const categories = await page.locator('[data-stylex-owner="project-search-category-list"] li > a').evaluateAll((anchors) =>
     anchors.map((anchor) => {
       const badge = anchor.querySelector(".num-badge");
       const label = Array.from(anchor.childNodes)
@@ -802,17 +802,25 @@ async function expectProjectSearchCategoryAttributes(
 }
 
 async function expectProjectSearchCategoryActiveMarkers(page: Page) {
-  await expect(page.locator(".search-category-wrap a[aria-current]")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap a[data-status]")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap a[class]")).toHaveCount(0);
-  await expect(page.locator(".search-category-wrap li.active")).toHaveCount(1);
-  await expect(page.locator(".search-category-wrap a.active")).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] a[aria-current]')).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] a[data-status]')).toHaveCount(0);
+  await expect(page.locator('[data-stylex-owner="project-search-category-list"] li[data-stylex-active="true"]')).toHaveCount(1);
 
   expect(
     await page
-      .locator(".search-category-wrap li:not(.active) > a")
-      .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("class"))),
-  ).toEqual(Array(EXPECTED_PROJECT_SEARCH_CATEGORIES.length - 1).fill(null));
+      .locator('[data-stylex-owner="project-search-category-list"] li:not([data-stylex-active="true"]) > a')
+      .evaluateAll((anchors) =>
+        anchors.map((anchor) => ({
+          hasStyleXClass: (anchor.getAttribute("class") ?? "").includes("x"),
+          hasLegacyActiveClass: (anchor.getAttribute("class") ?? "").split(/\s+/u).includes("active"),
+        })),
+      ),
+  ).toEqual(
+    Array(EXPECTED_PROJECT_SEARCH_CATEGORIES.length - 1).fill({
+      hasStyleXClass: true,
+      hasLegacyActiveClass: false,
+    }),
+  );
 }
 
 async function mockProjectSearch(
@@ -1180,7 +1188,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1188,7 +1196,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return (
         attr.name === "href" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1196,7 +1204,7 @@ async function canonicalizeScreenRoots(page: Page) {
       return (
         attr.name === "class" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1229,7 +1237,10 @@ async function canonicalizeScreenRoots(page: Page) {
     }
 
     function isModernizedLegacySearchCategoryButton(node: Element | null) {
-      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest('[data-stylex-owner="project-search-category-list"]') !== null
+      );
     }
 
     function isModernizedLegacySearchCategoryControl(node: Element | null) {
@@ -1438,7 +1449,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       return (
         (attr.name === "data-toggle" || attr.name === "data-type") &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1446,7 +1457,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       return (
         attr.name === "href" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1454,7 +1465,7 @@ async function canonicalizeHtml(page: Page, html: string) {
       return (
         attr.name === "class" &&
         isModernizedLegacySearchCategoryControl(attr.ownerElement) &&
-        attr.ownerElement.closest(".search-category-wrap") !== null
+        attr.ownerElement.closest('[data-stylex-owner="project-search-category-list"]') !== null
       );
     }
 
@@ -1487,7 +1498,10 @@ async function canonicalizeHtml(page: Page, html: string) {
     }
 
     function isModernizedLegacySearchCategoryButton(node: Element | null) {
-      return node instanceof HTMLButtonElement && node.closest(".search-category-wrap") !== null;
+      return (
+        node instanceof HTMLButtonElement &&
+        node.closest('[data-stylex-owner="project-search-category-list"]') !== null
+      );
     }
 
     function isModernizedLegacySearchCategoryControl(node: Element | null) {

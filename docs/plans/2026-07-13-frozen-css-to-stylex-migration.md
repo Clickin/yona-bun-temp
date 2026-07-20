@@ -4227,3 +4227,21 @@ this is not generated-fallback unlinking or live-legacy visual-parity proof.
   390px geometry. Managed normal and fallback-off runs each pass 3/3. No frozen
   source, theme, app.css, or generated fallback asset changes; other consumers
   remain outside this wave.
+
+## Batch 571
+
+Migrate the global, project, and organization search category wrappers to
+route-local StyleX owners. Use
+`yona-original/app/views/search/partial_search.scala.html` and frozen
+`_page.less:6394-6404` as the DOM/UX and geometry source of truth. Preserve the
+shared `.search-category-wrap` compatibility tokens until every search consumer
+and parity assertion is migrated; do not retire or unlink the fallback in this
+batch. Verify the three focused contracts at desktop and 390px in normal and
+fallback-off managed runs, then record the integration results in the parity
+report.
+
+Integration result: the combined managed batch passed 7/7 tests in normal mode
+and 7/7 with `VITE_DISABLE_LEGACY_FALLBACK=1`. The shared mobile Bootstrap
+`.span2`/`.span10` grid still contributes a separate 7px document overflow;
+focused assertions cover the owned category/list/item/action/content boxes and
+do not claim that shared grid fallback is retired.

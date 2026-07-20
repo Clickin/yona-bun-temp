@@ -36,7 +36,7 @@ import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$proje
 
 const sx = {
   searchCategory: stylex.props(styles.searchCategory),
-  searchCategoryEmpty: stylex.props(styles.searchCategoryEmpty),
+  searchCategoryBadge: stylex.props(styles.searchCategoryBadge),
   searchBox: stylex.props(styles.searchBox),
   searchInput: stylex.props(styles.searchInput),
   searchResultTitle: stylex.props(styles.searchResultTitle),
@@ -385,20 +385,33 @@ function ProjectSearchSuccessBody({
           <div className="project-page-wrap">
             <div className="row-fluid">
               <div className="span2">
-                <ul className="lst-stacked unstyled search-category-wrap">
+                <ul
+                  {...sx.searchCategory}
+                  className={`${sx.searchCategory.className} lst-stacked unstyled search-category-wrap`}
+                  data-stylex-owner="project-search-category-list"
+                >
                   {PROJECT_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
-                    const className = `${category.type === activeType ? "active" : ""} ${
-                      count === 0 ? "empty" : ""
-                    }`;
                     return (
                       <li
-                        {...sx.searchCategory}
-                        className={`${sx.searchCategory.className} ${className}`}
+                        className={
+                          `${stylex.props(
+                            styles.searchCategoryItem,
+                            category.type === activeType && styles.searchCategoryItemActive,
+                          ).className} ${category.type === activeType ? "active" : ""} ${
+                            count === 0 ? "empty" : ""
+                          }`
+                        }
                         data-stylex-owner="project-search-category-item"
+                        data-stylex-active={category.type === activeType ? "true" : undefined}
                         key={category.type}
                       >
                         <Link
+                          {...stylex.props(
+                            styles.searchCategoryAction,
+                            category.type === activeType && styles.searchCategoryActionActive,
+                            count === 0 && styles.searchCategoryEmpty,
+                          )}
                           activeOptions={projectSearchPaginationLinkActiveOptions}
                           activeProps={projectSearchPaginationLinkActiveProps}
                           from="/$ownerName/$projectName/search"
@@ -417,10 +430,11 @@ function ProjectSearchSuccessBody({
                             searchType: category.type,
                           }}
                           to="/$ownerName/$projectName/search"
-                          className={count === 0 ? sx.searchCategoryEmpty.className : undefined}
                         >
                           {t(category.labelKey)}{" "}
-                          <span className="num-badge pull-right">{count}</span>
+                          <span {...sx.searchCategoryBadge} className="num-badge">
+                            {count}
+                          </span>
                         </Link>
                       </li>
                     );

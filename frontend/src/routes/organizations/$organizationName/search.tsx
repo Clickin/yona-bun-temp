@@ -224,7 +224,11 @@ function OrganizationSearchBody({
                 className={`${stylex.props(styles.category).className} span2`}
                 data-stylex-owner="organization-search-categories"
               >
-                <ul className="lst-stacked unstyled search-category-wrap">
+                <ul
+                  {...stylex.props(styles.categoryList)}
+                  className="lst-stacked unstyled search-category-wrap"
+                  data-stylex-owner="organization-search-category-list"
+                >
                   {ORGANIZATION_SEARCH_CATEGORIES.map((category) => {
                     const count = result.counts[category.countKey];
                     return (
@@ -266,7 +270,7 @@ function OrganizationSearchBody({
                   })}
                 </ul>
               </div>
-              <div className="span10">
+              <div className="span10" data-stylex-owner="organization-search-content-column">
                 <div
                   className={`${stylex.props(styles.searchBox).className} search-box-wrap`}
                   data-stylex-owner="organization-search-box"

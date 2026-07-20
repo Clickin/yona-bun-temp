@@ -17,8 +17,15 @@ export const organizationSearchColors = stylex.defineVars({
 export const styles = stylex.create({
   page: { minHeight: "100%" },
   category: { minWidth: 0 },
+  categoryList: {
+    boxSizing: "border-box",
+    listStyleType: "none",
+    marginLeft: 0,
+  },
   categoryItem: {
+    fontSize: "13px",
     fontWeight: "bold",
+    padding: "8px",
   },
   categoryItemActive: {
     backgroundColor: organizationSearchColors.activeCategorySurface,
@@ -27,7 +34,18 @@ export const styles = stylex.create({
     overflow: "auto",
   },
   categoryAction: {
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    boxSizing: "border-box",
+    color: "inherit",
+    cursor: "pointer",
     display: "block",
+    font: "inherit",
+    margin: 0,
+    overflow: "visible",
+    padding: 0,
+    textAlign: "left",
+    width: "100%",
   },
   categoryActionEmpty: {
     color: organizationSearchColors.emptyCategoryText,
