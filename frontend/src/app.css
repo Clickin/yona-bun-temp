@@ -2337,10 +2337,6 @@ h1 {
   margin-left: 0;
 }
 
-.row-fluid .controls-row [class*="span"] + [class*="span"] {
-  margin-left: 2.127659574468085%;
-}
-
 .row-fluid .span12 {
   width: 100%;
 }

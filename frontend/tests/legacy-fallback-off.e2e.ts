@@ -158,6 +158,12 @@ test("posting-history modal trigger bridge has no remaining selector arm", () =>
   }
 });
 
+test("row-fluid controls-row fallback bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain('.row-fluid .controls-row [class*="span"] + [class*="span"] {');
+  expect(appCss).toContain('.row-fluid [class*="span"]:first-child {');
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

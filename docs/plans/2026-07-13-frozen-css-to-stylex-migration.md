@@ -4314,3 +4314,14 @@ React state and intentionally omit plugin attributes. Keep the generic
 exact selector absence with the post-detail modal static contract in normal and
 fallback-off runs; no TSX, frozen source, generated fallback, or geometry
 baseline changes are allowed.
+
+## Batch 579
+
+Retire only the unreachable `.row-fluid .controls-row [class*="span"] +
+[class*="span"]` bridge from `frontend/src/app.css`. A complete current
+React/JSX and legacy-view inventory found no `.controls-row` consumer, while
+the frozen Bootstrap rule and generated legacy fallback remain untouched for
+any future legacy/plugin output. Verify exact app.css absence and frozen-rule
+retention with the focused static contract in normal and fallback-off runs; no
+TSX, frozen source, generated fallback, or geometry baseline changes are
+allowed.
