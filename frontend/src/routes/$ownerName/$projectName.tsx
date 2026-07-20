@@ -32,8 +32,8 @@ const projectHistoryStyles = stylex.create({
   actor: { fontWeight: "bold" },
   others: { paddingLeft: "0" },
   date: { marginLeft: "0" },
-  pullRequestDate: { color: "#999" },
-  pullRequestLink: { marginRight: "17px" },
+  pullRequestDate: { color: "#999", textAlign: "right" },
+  pullRequestLink: { marginRight: "17px", textAlign: "right" },
   whereis: { color: "#333", fontSize: "11px" },
   where: {
     backgroundColor: "#f7f7f7",
@@ -2247,7 +2247,7 @@ function DashboardPane({
                             </Link>
                           </div>
                           <div
-                            className={`${stylex.props(projectHistoryStyles.pullRequestDate).className} span3 num right-txt`}
+                            className={`${stylex.props(projectHistoryStyles.pullRequestDate).className} span3 num`}
                             data-stylex-owner="project-history-pull-request-date"
                           >
                             {stringField(record.createdLabel, "")}
@@ -2256,7 +2256,7 @@ function DashboardPane({
                       );
                     })}
                     <div
-                      className={`${stylex.props(projectHistoryStyles.pullRequestLink).className} right-txt mt5`}
+                      className={`${stylex.props(projectHistoryStyles.pullRequestLink).className} mt5`}
                       data-stylex-owner="project-history-pull-request-link"
                     >
                       <Link

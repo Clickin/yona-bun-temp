@@ -4832,3 +4832,15 @@ Retain `.number-of-comments` fallback for the separate file/merge consumers.
 Migrate the project members delete-confirmation action row's `center-txt`
 alignment into the route-local StyleX owner while preserving the legacy modal
 message, buttons class, and interaction.
+
+## Batch 633
+
+Migrate the project dashboard pull-request metadata rows' two `right-txt`
+consumers into the existing project-history StyleX owners. Preserve the
+`span3 num`/`mt5` geometry and the legacy pull-request links.
+
+## Batch 634
+
+Migrate all three pull-request changes commit-hash `blue-txt` consumers into
+the route-local semantic commit-hash color owner. Preserve `mr10`,
+`commit-hash`, dropdown copy, and commit navigation.

@@ -1214,12 +1214,38 @@ test("project pull request changes internal navigation links render legacy hrefs
   });
   await expect(
     page.locator("#commits .dropdown-menu li").nth(2).locator("a .commit-hash"),
-  ).toHaveClass("blue-txt mr10 commit-hash");
+  ).toHaveClass(/mr10/u);
+  await expect(
+    page.locator("#commits .dropdown-menu li").nth(2).locator("a .commit-hash"),
+  ).toHaveAttribute("data-stylex-owner", "pull-request-changes-commit-hash");
   await assertLegacyAnchor(page.locator("#reviewcards-open .review-card.open"), {
     className: "review-card open",
     href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
     text: "General **note**OutdatedJul 7, 2026",
   });
+});
+
+test("project pull request commit hashes keep legacy blue text on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockPullRequestChanges(page, { commits: [SELECTED_COMMIT] });
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+    const commitHash = page.locator("#commits .commit-hash").last();
+    await expect(commitHash).toHaveCount(1);
+    await expect(commitHash).toHaveAttribute(
+      "data-stylex-owner",
+      "pull-request-changes-commit-hash",
+    );
+    await expect(commitHash).not.toHaveClass(/blue-txt/u);
+    await expect(commitHash).toHaveCSS("color", "rgb(93, 187, 224)");
+  }
 });
 
 test("project pull request changes route source uses TanStack Links for navigation", async () => {

@@ -1542,13 +1542,24 @@ function CommitDropdown({
         <span className="d-label">
           {selectedCommit ? (
             <>
-              <strong className="blue-txt mr10 commit-hash">{selectedCommit.commitShortId}</strong>
+              <strong
+                className={`${stylex.props(styles.commitHash).className} mr10 commit-hash`}
+                data-stylex-owner="pull-request-changes-commit-hash"
+              >
+                {selectedCommit.commitShortId}
+              </strong>
               <span>{selectedCommitLabel(selectedCommit, t("review.outdated"))}</span>
             </>
           ) : commitId ? (
             <>
               {`${t("pullRequest.changes.all")} (${t("review.outdated")} - `}
-              <strong className="blue-txt mr10">{shortId(commitId)}</strong>)
+              <strong
+                className={`${stylex.props(styles.commitHash).className} mr10`}
+                data-stylex-owner="pull-request-changes-commit-hash"
+              >
+                {shortId(commitId)}
+              </strong>
+              )
             </>
           ) : (
             t("pullRequest.changes.all")
@@ -1585,7 +1596,12 @@ function CommitDropdown({
                 activeProps={legacyLinkActiveProps}
                 onClick={closeDropdown}
               >
-                <strong className="blue-txt mr10 commit-hash">{commit.commitShortId}</strong>
+                <strong
+                  className={`${stylex.props(styles.commitHash).className} mr10 commit-hash`}
+                  data-stylex-owner="pull-request-changes-commit-hash"
+                >
+                  {commit.commitShortId}
+                </strong>
                 <span>{commitSummary(commit)}</span>
               </Link>
             </li>

@@ -42,6 +42,29 @@ test("project home Dashboard tab matches legacy dashboard partials DOM", async (
   });
 });
 
+test("project dashboard pull-request metadata keeps right alignment on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectHome(page);
+
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample?tabId=dashboard`);
+    await expect(page.locator(".project-overview-home")).toBeVisible();
+
+    const pullRequestDate = page.locator('[data-stylex-owner="project-history-pull-request-date"]');
+    const pullRequestLink = page.locator('[data-stylex-owner="project-history-pull-request-link"]');
+    await expect(pullRequestDate).toHaveCSS("text-align", "right");
+    await expect(pullRequestLink).toHaveCSS("text-align", "right");
+    await expect(pullRequestDate).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/);
+    await expect(pullRequestLink).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/);
+  }
+});
+
 test("project home empty asset fields use the base path on desktop", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const mountPrefix = basePath === "/" ? "" : basePath;
@@ -212,7 +235,7 @@ test("project home Dashboard tab follows legacy non-empty row filters and pull r
   expect(await canonicalizeLocator(page, ".overview-pullrequest")).toEqual(
     await canonicalizeHtml(
       page,
-      `<div class="overview-pullrequest"><div class="row-fluid"><div class="span9 title"><a href="${basePath}/admin/sample/pullRequests?contributorId=2" class="usf-group"><span class="avatar-wrap smaller" title="Dev Member (@dev)"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span></a><a href="${basePath}/admin/sample/pullRequest/11">Ready PR</a></div><div class="span3 num right-txt" style="color:rgb(153,153,153)">Jul 1, 2026</div></div><div class="right-txt mt5" style="margin-right:17px"><a href="${basePath}/admin/sample/pullRequests">See <strong>3</strong> more</a></div></div>`,
+      `<div class="overview-pullrequest"><div class="row-fluid"><div class="span9 title"><a href="${basePath}/admin/sample/pullRequests?contributorId=2" class="usf-group"><span class="avatar-wrap smaller" title="Dev Member (@dev)"><img src="/assets/images/default-avatar-32.png" width="20" height="20"></span></a><a href="${basePath}/admin/sample/pullRequest/11">Ready PR</a></div><div class="span3 num" style="color:rgb(153,153,153);text-align:right">Jul 1, 2026</div></div><div class="mt5" style="margin-right:17px;text-align:right"><a href="${basePath}/admin/sample/pullRequests">See <strong>3</strong> more</a></div></div>`,
     ),
   );
 });
