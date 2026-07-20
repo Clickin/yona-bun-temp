@@ -2,13 +2,26 @@ import * as stylex from "@stylexjs/stylex";
 
 export const postFormColors = stylex.defineVars({
   action: "#51a351",
+  attachedFilesBorder: "#e0e0e0",
   editorBorder: "#dddddd",
   inputBorder: "#cccccc",
   inputText: "#555555",
+  uploadSurface: "#f5f5f5",
   warning: "#f89406",
 });
 
 export const styles = stylex.create({
+  attachedFiles: {
+    borderTopColor: postFormColors.attachedFilesBorder,
+    borderTopStyle: "solid",
+    borderTopWidth: "1px",
+    display: "none",
+    marginBottom: "0px",
+    marginTop: "15px",
+    paddingBottom: "15px",
+    paddingTop: "15px",
+  },
+  attachWrap: { textAlign: "center" },
   editorWrapper: { position: "relative" },
   editorTabContent: { overflow: "visible", position: "relative" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
@@ -33,6 +46,17 @@ export const styles = stylex.create({
     marginBottom: "10px",
     marginTop: "10px",
     textAlign: "right",
+  },
+  uploadButtonWrap: {
+    display: "inline-block",
+    marginLeft: "5px",
+    marginRight: "5px",
+    verticalAlign: "top",
+  },
+  uploadPlain: { display: "inline-block", lineHeight: "30px" },
+  uploadWrap: {
+    backgroundColor: postFormColors.uploadSurface,
+    borderRadius: "5px",
   },
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },

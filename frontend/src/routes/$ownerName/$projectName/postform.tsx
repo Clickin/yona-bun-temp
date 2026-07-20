@@ -437,16 +437,36 @@ function BoardPostFileUploader() {
     typeof FormData !== "undefined" &&
     typeof FileReader !== "undefined";
   return (
-    <div id="upload" className="upload-wrap content-footer" data-resource-type="BOARD_POST">
-      <div className="attach-wrap">
+    <div
+      {...stylex.props(styles.uploadWrap)}
+      id="upload"
+      className={`upload-wrap content-footer ${stylex.props(styles.uploadWrap).className ?? ""}`.trim()}
+      data-resource-type="BOARD_POST"
+      data-stylex-owner="project-postform-upload-wrap"
+    >
+      <div
+        {...stylex.props(styles.attachWrap)}
+        className={`attach-wrap ${stylex.props(styles.attachWrap).className ?? ""}`.trim()}
+        data-stylex-owner="project-postform-attach-wrap"
+      >
         <span className="help help-droppable">{t("common.attach.drophere")}</span>
-        <div className="btn-wrap">
+        <div
+          {...stylex.props(styles.uploadButtonWrap)}
+          className={`btn-wrap ${stylex.props(styles.uploadButtonWrap).className ?? ""}`.trim()}
+          data-stylex-owner="project-postform-upload-button-wrap"
+        >
           <div className="nbtn medium white fake-file-wrap">
             <i className="yobicon-upload"></i> {t("button.upload")}
             <input type="file" className="file" name="filePath" multiple />
           </div>
         </div>
-        <span className="plain">{t("common.attach.clickbutton")}</span>
+        <span
+          {...stylex.props(styles.uploadPlain)}
+          className={`plain ${stylex.props(styles.uploadPlain).className ?? ""}`.trim()}
+          data-stylex-owner="project-postform-upload-plain"
+        >
+          {t("common.attach.clickbutton")}
+        </span>
         <span
           className="help help-pastable"
           {...(pasteSupported ? stylex.props(styles.pasteHelpVisible) : {})}
@@ -455,7 +475,11 @@ function BoardPostFileUploader() {
           {t("common.attach.pastehere")}
         </span>
       </div>
-      <ul className="attached-files unstyled"></ul>
+      <ul
+        {...stylex.props(styles.attachedFiles)}
+        className={`attached-files unstyled ${stylex.props(styles.attachedFiles).className ?? ""}`.trim()}
+        data-stylex-owner="project-postform-attached-files"
+      ></ul>
       <p
         {...stylex.props(styles.uploadAttachSaveHelp)}
         className={`help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}

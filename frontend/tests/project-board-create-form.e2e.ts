@@ -22,6 +22,14 @@ const POSTFORM_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/postform.tsx", import.meta.url),
   "utf8",
 );
+const POSTFORM_STYLE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/-postform.stylex.ts", import.meta.url),
+  "utf8",
+);
+const UPLOAD_FORM_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
+  "utf8",
+);
 const EXPECTED_CREATE_FORM_BODY = `
 <div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
@@ -374,6 +382,68 @@ test("project board create form preserves uploader and zero-gap actions on mobil
     )
     .toBe(100);
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
+});
+
+test("project board uploader keeps legacy alignment with route-local StyleX owners", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectBoardCreateForm(page, []);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/postform`);
+
+  const metrics = await page.locator("#upload").evaluate((upload) => {
+    const get = (owner: string) => upload.querySelector(`[data-stylex-owner="${owner}"]`)!;
+    const uploadStyle = getComputedStyle(upload);
+    const attachStyle = getComputedStyle(get("project-postform-attach-wrap"));
+    const buttonStyle = getComputedStyle(get("project-postform-upload-button-wrap"));
+    const plainStyle = getComputedStyle(get("project-postform-upload-plain"));
+    const attachedStyle = getComputedStyle(get("project-postform-attached-files"));
+    return {
+      backgroundColor: uploadStyle.backgroundColor,
+      borderRadius: uploadStyle.borderRadius,
+      attachTextAlign: attachStyle.textAlign,
+      buttonDisplay: buttonStyle.display,
+      buttonMargin: `${buttonStyle.marginLeft} ${buttonStyle.marginRight}`,
+      buttonVerticalAlign: buttonStyle.verticalAlign,
+      plainDisplay: plainStyle.display,
+      plainLineHeight: plainStyle.lineHeight,
+      attachedDisplay: attachedStyle.display,
+      attachedBorderTop: `${attachedStyle.borderTopWidth} ${attachedStyle.borderTopStyle} ${attachedStyle.borderTopColor}`,
+    };
+  });
+  expect(metrics).toEqual({
+    backgroundColor: "rgb(245, 245, 245)",
+    borderRadius: "5px",
+    attachTextAlign: "center",
+    buttonDisplay: "inline-block",
+    buttonMargin: "5px 5px",
+    buttonVerticalAlign: "top",
+    plainDisplay: "inline-block",
+    plainLineHeight: "30px",
+    attachedDisplay: "none",
+    attachedBorderTop: "1px solid rgb(224, 224, 224)",
+  });
+  expect(UPLOAD_FORM_SOURCE).toContain('class="upload-wrap content-footer"');
+  expect(UPLOAD_FORM_SOURCE).toContain('class="attach-wrap"');
+  expect(UPLOAD_FORM_SOURCE).toContain('class="btn-wrap"');
+  expect(UPLOAD_FORM_SOURCE).toContain('class="plain"');
+  expect(UPLOAD_FORM_SOURCE).toContain('class="attached-files unstyled"');
+  expect(POSTFORM_ROUTE_SOURCE).toContain('data-stylex-owner="project-postform-attach-wrap"');
+  expect(POSTFORM_ROUTE_SOURCE).toContain('data-stylex-owner="project-postform-upload-wrap"');
+  expect(POSTFORM_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="project-postform-upload-button-wrap"',
+  );
+  expect(POSTFORM_ROUTE_SOURCE).toContain('data-stylex-owner="project-postform-upload-plain"');
+  expect(POSTFORM_ROUTE_SOURCE).toContain('data-stylex-owner="project-postform-attached-files"');
+  expect(POSTFORM_STYLE_SOURCE).toContain('attachWrap: { textAlign: "center" }');
+  expect(POSTFORM_STYLE_SOURCE).toContain(
+    'uploadPlain: { display: "inline-block", lineHeight: "30px" }',
+  );
+  await expect(
+    page.locator('#upload[data-stylex-owner="project-postform-upload-wrap"]'),
+  ).toHaveCount(1);
+  await expect(page.locator("#upload [data-stylex-owner]")).toHaveCount(6);
 });
 
 test("project board postform right-aligned options and attachment help retain legacy alignment", async ({

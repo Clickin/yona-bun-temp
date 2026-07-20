@@ -4977,3 +4977,10 @@ uploader/form behavior.
 Migrate pull-request changes thread/comment/review/upload alignment and issue
 detail action/comment/upload alignment into route-local StyleX owners,
 preserving button/copy/forms, help text, and existing interaction geometry.
+
+## Batch 648
+
+Migrate the project post creation uploader surface and attach-control alignment
+into route-local StyleX owners. Preserve the legacy `upload-wrap`,
+`content-footer`, `attach-wrap`, `btn-wrap`, `plain`, and `attached-files`
+classes, uploader DOM, copy, and fallback-only declarations.
