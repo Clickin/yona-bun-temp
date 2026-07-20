@@ -4910,3 +4910,9 @@ Migrate the issue-label list heading and milestone detail action row
 Migrate the commit-history comment count and pull-request overview help action
 utility consumers into route-local StyleX owners, preserving compact metadata
 geometry, icon/copy, button behavior, and help-modal interaction.
+
+## Batch 646
+
+Migrate post-edit options and issue-edit attachment-help `right-txt` consumers
+into route-local StyleX owners, preserving `mt10 mb10`, `help`, icon/copy, and
+uploader/form behavior.

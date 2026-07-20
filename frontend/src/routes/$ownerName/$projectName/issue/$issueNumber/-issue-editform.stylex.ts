@@ -37,6 +37,7 @@ export const styles = stylex.create({
   labelPicker: { display: "inline-block" },
   labelSearchInput: { width: "10px" },
   pasteHelp: { display: "block" },
+  uploadHelp: { textAlign: "right" },
   actions: { margin: "10px 0px", textAlign: "right" },
   issueOption: {
     borderTopColor: issueEditColors.optionBorder,

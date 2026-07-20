@@ -8,7 +8,7 @@ const EDITFORM_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 const EXPECTED_EDIT_FORM_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/post/3" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dt><label for="title">Title</label></dt><dd><input type="text" id="title" name="title" value="Release note" class="zen-mode text title " maxlength="250" tabindex="1" autocomplete="off"></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><label class="checkbox"><input type="checkbox" id="readme" name="readme">make it a README file</label></div><div class="actions"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button class="ybtn ybtn-info" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/post/3" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dt><label for="title">Title</label></dt><dd><input type="text" id="title" name="title" value="Release note" class="zen-mode text title " maxlength="250" tabindex="1" autocomplete="off"></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="2">Post **markdown**</textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST" data-resource-id="103"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><label class="checkbox"><input type="checkbox" id="readme" name="readme">make it a README file</label></div><div class="actions"><span class="send-notification-check"><label class="checkbox inline"><input type="checkbox" name="notificationMail" id="notificationMail" value="yes" checked=""><strong>Send notification mail</strong></label></span><button class="ybtn ybtn-info" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
 const LEGACY_MARKDOWN_HELP = readFileSync(
   new URL("../../yona-original/app/views/help/markdown.scala.html", import.meta.url),
@@ -41,6 +41,10 @@ test("project board edit form matches legacy board/edit.scala.html core form DOM
 }) => {
   expect(EDITFORM_ROUTE_SOURCE).toContain('window.alert(t("post.error.emptyTitle"))');
   expect(EDITFORM_ROUTE_SOURCE).not.toContain('t("validation.required")');
+  expect(EDITFORM_ROUTE_SOURCE).toContain(
+    "className={`${stylex.props(styles.options).className} mt10 mb10`}",
+  );
+  expect(EDITFORM_ROUTE_SOURCE).not.toContain("styles.options).className} right-txt");
   expect(EDITFORM_ROUTE_SOURCE).toContain(
     'import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help"',
   );
@@ -405,7 +409,9 @@ async function readBoardEditFormMetrics(page: Page) {
     const title = contentWrap.querySelector<HTMLElement>("#title");
     const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
     const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
-    const noticeRow = contentWrap.querySelector<HTMLElement>(".right-txt.mt10.mb10");
+    const noticeRow = contentWrap.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-edit-form-options"]',
+    );
     const actions = contentWrap.querySelector<HTMLElement>(".actions");
     const notificationCheckbox = actions?.querySelector<HTMLElement>(".checkbox.inline");
     const missing = Object.entries({

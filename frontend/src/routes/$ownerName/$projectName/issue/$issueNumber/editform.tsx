@@ -38,6 +38,7 @@ const sx = {
   labelPicker: stylex.props(styles.labelPicker),
   labelSearchInput: stylex.props(styles.labelSearchInput),
   pasteHelp: stylex.props(styles.pasteHelp),
+  uploadHelp: stylex.props(styles.uploadHelp),
   actions: stylex.props(styles.actions),
   issueOption: stylex.props(styles.issueOption),
   sidebar: stylex.props(styles.sidebar),
@@ -1125,7 +1126,7 @@ function IssuePostFileUploader({ resourceId }: { resourceId: string }) {
         </span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p className="help" {...sx.uploadHelp} data-stylex-owner="issue-editform-upload-help">
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>

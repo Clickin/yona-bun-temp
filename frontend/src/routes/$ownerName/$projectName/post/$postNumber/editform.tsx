@@ -152,7 +152,7 @@ function ProjectBoardEditFormBody({
               <BoardPostFileUploader resourceId={String(post.id)} />
 
               <div
-                className={`${stylex.props(styles.options).className} right-txt mt10 mb10`}
+                className={`${stylex.props(styles.options).className} mt10 mb10`}
                 data-stylex-owner="post-edit-form-options"
               >
                 {canSetNotice ? (

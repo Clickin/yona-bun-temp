@@ -28,6 +28,8 @@ test("issue editform owns static editor, assignee, and paste-help declarations",
   expect(assignee).toContain('id="assignee"');
   expect(editor).toContain('style="position:relative;overflow: visible;"');
   expect(uploader).toContain('class="help help-pastable"');
+  expect(uploader).toContain('class="right-txt help"');
+  expect(route).not.toContain('className="right-txt help"');
   expect(route).not.toContain('style={{ position: "relative" }}');
   expect(route).not.toContain('style={{ width: "100%" }}');
   expect(route).not.toContain('style={{ position: "relative", overflow: "visible" }}');
@@ -35,6 +37,7 @@ test("issue editform owns static editor, assignee, and paste-help declarations",
   expect(stylexSource).toContain('editorTabContent: { position: "relative", overflow: "visible" }');
   expect(stylexSource).toContain('assigneeInput: { width: "100%" }');
   expect(stylexSource).toContain('pasteHelp: { display: "block" }');
+  expect(stylexSource).toContain('uploadHelp: { textAlign: "right" }');
 
   await mockIssueEditForm(page);
   for (const viewport of [
@@ -65,6 +68,10 @@ test("issue editform owns static editor, assignee, and paste-help declarations",
     await expect(page.locator('[data-stylex-owner="issue-editform-paste-help"]')).toHaveCSS(
       "display",
       "block",
+    );
+    await expect(page.locator('[data-stylex-owner="issue-editform-upload-help"]')).toHaveCSS(
+      "text-align",
+      "right",
     );
     const editorBox = await page
       .locator('[data-stylex-owner="issue-editform-editor-wrapper"]')
