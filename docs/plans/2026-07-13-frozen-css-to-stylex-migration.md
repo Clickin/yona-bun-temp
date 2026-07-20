@@ -4738,6 +4738,13 @@ highlight consumers already compose route-local StyleX keyword owners. The froze
 `.search-list-wrap strong.keyword` rule remains immutable evidence; `.empty-result`
 and other search residuals remain pending route-specific geometry proof.
 
+## Batch 623
+
+Retire the single-consumer `.primary-txt` arm from the project fork form. The
+existing-fork link already owns the frozen primary color through its route-local
+StyleX owner; preserve `vmiddle` and the frozen legacy source as evidence. No
+other text utility family is included in this wave.
+
 ## Batch 621
 
 Retire the shared `.search-category-wrap` fallback family after confirming its three current

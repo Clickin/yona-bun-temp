@@ -316,11 +316,15 @@ test("project fork route-local links preserve legacy hrefs and navigate in the S
 
   await page.goto(`${basePath}/admin/sample/newFork/devs`);
 
-  const existingForkLink = page.locator("#helpMessage a.vmiddle.primary-txt", {
-    hasText: "devs / sample",
-  });
+  const existingForkLink = page.locator(
+    '#helpMessage [data-stylex-owner="project-fork-existing-link"]',
+    {
+      hasText: "devs / sample",
+    },
+  );
   await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
-  await expect(existingForkLink).toHaveClass("vmiddle primary-txt");
+  await expect(existingForkLink).toHaveClass(/\bvmiddle\b/u);
+  await expect(existingForkLink).not.toHaveClass(/\bprimary-txt\b/u);
   await expect(existingForkLink).toHaveText("devs / sample");
 
   const cancelLink = page.locator(".content-wrap.frm-wrap a.ybtn", { hasText: "Cancel" });
@@ -384,11 +388,15 @@ test("project fork shell anchors keep legacy active state on owning list items",
   await expect(projectAdminLink.locator(".menu-name")).toHaveText("Project configuration");
   await expectNoTanStackActiveMarkers(projectAdminLink);
 
-  const existingForkLink = page.locator("#helpMessage a.vmiddle.primary-txt", {
-    hasText: "devs / sample",
-  });
+  const existingForkLink = page.locator(
+    '#helpMessage [data-stylex-owner="project-fork-existing-link"]',
+    {
+      hasText: "devs / sample",
+    },
+  );
   await expect(existingForkLink).toHaveAttribute("href", `${basePath}/devs/sample`);
-  await expect(existingForkLink).toHaveClass("vmiddle primary-txt");
+  await expect(existingForkLink).toHaveClass(/\bvmiddle\b/u);
+  await expect(existingForkLink).not.toHaveClass(/\bprimary-txt\b/u);
   await expect(existingForkLink).toHaveText("devs / sample");
   await expectNoTanStackActiveMarkers(existingForkLink);
 
@@ -435,6 +443,19 @@ test("project fork route has no raw route-local internal anchors", async () => {
   expect(source).not.toContain("data-url");
   expect(source).not.toContain("dataset.url");
   expect(source).not.toContain("selectedOptions");
+});
+
+test("project fork existing-link color is owned by StyleX", async () => {
+  const source = readFileSync(PROJECT_FORK_ROUTE_SOURCE, "utf8");
+  const stylexSource = readFileSync(
+    "src/routes/$ownerName/$projectName/-newFork.stylex.ts",
+    "utf8",
+  );
+
+  expect(source).toContain('data-stylex-owner="project-fork-existing-link"');
+  expect(source).not.toContain("primary-txt");
+  expect(stylexSource).toContain('existingLink: "#f36c22"');
+  expect(stylexSource).toContain("existingLink: { color: forkColors.existingLink");
 });
 
 test("project fork browser title is rendered through React head title", async () => {

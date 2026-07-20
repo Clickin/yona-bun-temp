@@ -352,7 +352,7 @@ function ProjectForkBody({
                             <Link
                               to={projectPath(forkOwnerName, forkProjectName)}
                               {...sx.existingLink}
-                              className={`${sx.existingLink.className} vmiddle primary-txt`}
+                              className={`${sx.existingLink.className} vmiddle`}
                               data-stylex-owner="project-fork-existing-link"
                               activeOptions={legacyProjectShellLinkActiveOptions}
                               activeProps={legacyProjectShellLinkActiveProps}

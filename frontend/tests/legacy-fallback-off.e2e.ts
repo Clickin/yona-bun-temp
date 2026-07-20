@@ -469,6 +469,21 @@ test("commit-message wrapper fallback arms have no current React producer", () =
   expect(appCss).toContain(".commitMsg");
 });
 
+test("primary text fallback arm has StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const route = readFileSync("src/routes/$ownerName/$projectName/newFork.tsx", "utf8");
+  const stylexSource = readFileSync(
+    "src/routes/$ownerName/$projectName/-newFork.stylex.ts",
+    "utf8",
+  );
+
+  expect(appCss).not.toContain(".primary-txt {");
+  expect(route).not.toContain("primary-txt");
+  expect(route).toContain('data-stylex-owner="project-fork-existing-link"');
+  expect(stylexSource).toContain('existingLink: "#f36c22"');
+  expect(stylexSource).toContain("existingLink: { color: forkColors.existingLink");
+});
+
 test("pull-request tab button bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [
