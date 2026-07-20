@@ -5328,3 +5328,11 @@ label hypothesis does not reproduce legacy geometry. The organization settings f
 stale owner-contract assertion (`organization-setting-body`), not a CSS-owner candidate. Keep
 the fallback boundary unchanged and select a future candidate only after a source-backed focused
 red/green proof.
+
+## Batch 692
+
+Classify the next focused fallback-off probes before selecting another implementation wave. The
+project milestone/PR and site-update title failures are fixture/data-contract failures, the site
+user-list listhead failure is stale source/parent scope, and the site-update responsive grid plus
+organization issue states are fallback-off green. Do not modify route CSS or weaken these tests;
+retain the fallback boundary and select the next candidate from a valid route-local mismatch.

@@ -73,3 +73,17 @@ because the test still expects the retired `organization-setting-body` owner mar
 route emits the current split owners. This is a stale test contract, not evidence for a frozen
 CSS owner migration. No route, test, frozen asset, or fallback boundary was changed for either
 candidate.
+
+## Candidate review — site/project probes
+
+Additional focused probes did not produce a valid new CSS-owner wave. The project milestone and
+pull-request creation checks target legacy sample fixtures that are not rendered by the current
+route tree; the site update title checks likewise fail before title geometry because the fixture
+response does not produce the expected content. The site user-list listhead contract reads the
+project code-branch source and compares an unscoped fallback fixture against a scoped StyleX owner,
+so its failures are stale test scope rather than evidence for a route declaration.
+
+The site-update responsive grid contract passed fallback-off (`1/1`) across available/current/error
+states and desktop/tablet/mobile geometry. Organization issue search and quick-search contracts
+also passed fallback-off (`1/1` each). No implementation or focused E2E file was changed during
+these probes; the fallback remains enabled by default.
