@@ -1915,24 +1915,6 @@ h1 {
   padding: 20px 20px 10px;
 }
 
-.project-home .inner header .project-status {
-  float: right;
-  line-height: 19px;
-}
-
-.project-home .inner header .project-status .ico-like {
-  vertical-align: bottom;
-}
-
-.project-home .inner header .project-status .num {
-  color: #4489a4;
-}
-
-.project-home .inner header .project-status .sp {
-  margin: 0 7px;
-  color: #ccc;
-}
-
 .box-wrap {
   padding: 0 20px;
   border-bottom: 1px solid #e9e9e9;

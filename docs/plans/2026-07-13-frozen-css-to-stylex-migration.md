@@ -4531,3 +4531,14 @@ through `standalone-login-verification-help` StyleX ownership and emits no legac
 class; frozen Scala and generated fallback CSS remain unchanged as evidence.
 Update the standalone verification-help and formal fallback-off static contracts,
 then run normal and `VITE_DISABLE_LEGACY_FALLBACK=1` focused Playwright checks.
+
+## Batch 600
+
+Retire only the unreachable `.project-home .inner header .project-status`
+compatibility block (including its `.ico-like`, `.num`, and `.sp` descendants)
+from `frontend/src/app.css`. Current React project-home output emits no
+`project-status` consumer; the frozen project-home LESS/Scala output and
+generated fallback remain as historical evidence. Preserve unrelated generic
+rules and geometry baselines. Update the project-home and formal fallback-off
+static contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not
+change TSX, frozen/generated CSS, or baselines.

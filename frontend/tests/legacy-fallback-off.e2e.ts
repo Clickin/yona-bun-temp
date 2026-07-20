@@ -526,6 +526,24 @@ test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   expect(appCss).not.toContain(".project-home .issue-wrap a.btn {");
 });
 
+test("project-home status bridge has no React-side app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".project-home .inner header .project-status {",
+    ".project-home .inner header .project-status .ico-like {",
+    ".project-home .inner header .project-status .num {",
+    ".project-home .inner header .project-status .sp {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+  ).toContain(".project-home .inner header .project-status {");
+  expect(
+    readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8"),
+  ).not.toContain("project-status");
+});
+
 test("site mail form-horizontal bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".form-horizontal .control-group");

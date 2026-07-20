@@ -2015,4 +2015,15 @@ retained label paint in normal and fallback-off modes. No TSX changed.
   absence, retained generated fallback evidence, enabled/disabled/social-only state
   behavior, and desktop/mobile geometry. Global fallback discovery remains
   incomplete/non-green.
+
+## Batch 600
+
+- Dead project-home status compatibility bridge retirement: frozen
+  `project/home.scala.html`/`_page.less` retain the historical
+  `.project-status` header output and `.ico-like`, `.num`, and `.sp` descendants
+  as legacy evidence, while current React project-home output emits no consumer.
+  `frontend/src/app.css` removes only the scoped status block and descendants;
+  frozen/generated fallback and geometry remain unchanged. The project-home
+  side-panel and formal fallback-off contracts assert exact absence and retained
+  frozen/generated evidence in normal and fallback-off modes.
 | 2026-07-20 | Dead project-home issue-wrap compatibility bridge retirement | Frozen `yona-original/app/views/project/home.scala.html` provides the historical project-home issue section evidence; current React project-home routes emit no `.issue-wrap` consumer. | `frontend/src/app.css` removes only `.project-home .issue-wrap { margin-bottom:15px; }` and `.project-home .issue-wrap a.btn { width:105px; }`; frozen/generated assets and geometry remain unchanged. | `frontend/tests/stylex-project-home-side-panel.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` assert exact absence in normal/fallback-off modes; `fallback-off-2026-07-20-project-home-issue-wrap.md` records the bounded evidence. |

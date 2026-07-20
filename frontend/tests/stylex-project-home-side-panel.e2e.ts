@@ -22,8 +22,14 @@ test("project home side panel owns legacy padding", async () => {
   expect(legacy).toContain('class="bubble-wrap gray project-home"');
   expect(less).toContain(".project-home");
   expect(source).toContain('data-stylex-owner="project-home-side-panel"');
+  expect(source).not.toContain("project-status");
   expect(styles).toContain("projectHome:");
+  expect(less).toContain(".project-status");
   expect(css).not.toContain(".project-home {\n  padding: 10px;");
   expect(css).not.toContain(".project-home .issue-wrap {");
   expect(css).not.toContain(".project-home .issue-wrap a.btn {");
+  expect(css).not.toContain(".project-home .inner header .project-status");
+  expect(css).not.toContain(".project-status .ico-like");
+  expect(css).not.toContain(".project-status .num");
+  expect(css).not.toContain(".project-status .sp");
 });
