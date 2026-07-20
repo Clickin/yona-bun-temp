@@ -1639,7 +1639,8 @@ function ProjectIssueItem({
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
-              className="title"
+              className={`title ${stylex.props(styles.issueTitle).className}`}
+              data-stylex-owner="project-issues-title"
             >
               <span
                 className={`post-id ${stylex.props(styles.postId).className}`}
@@ -1688,12 +1689,16 @@ function ProjectIssueItem({
               activeProps={legacyRouteLocalActiveProps}
               to="/$ownerName/$projectName/issue/$issueNumber"
               params={issueParams}
-              className="title"
+              className={`title ${stylex.props(styles.issueTitle).className}`}
+              data-stylex-owner="project-issues-title"
             >
               {titleParts.title}
             </Link>
           </div>
-          <div className="infos">
+          <div
+            className={`infos ${stylex.props(styles.issueInfos).className}`}
+            data-stylex-owner="project-issues-infos"
+          >
             {issue.authorLabel ? (
               <Link
                 activeProps={legacyRouteLocalActiveProps}
@@ -1805,7 +1810,8 @@ function ProjectIssueItem({
               activeProps={legacyRouteLocalActiveProps}
               to="/$user"
               params={{ user: assigneeLoginId }}
-              className="avatar-wrap assinee"
+              className={`avatar-wrap assinee ${stylex.props(styles.issueAvatar, styles.issueAssigneeAvatar).className}`}
+              data-stylex-owner="project-issues-assignee-avatar"
               title={`${t("issue.assignee")}: ${assigneeLabel}`}
             >
               <img

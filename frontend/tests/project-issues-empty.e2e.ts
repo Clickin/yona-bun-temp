@@ -3636,11 +3636,21 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
     const checkbox = row.querySelector(".mass-update-check") as HTMLElement;
     const input = checkbox.querySelector("input") as HTMLElement;
     const title = row.querySelector(".title-wrap") as HTMLElement;
+    const issueTitle = row.querySelector(
+      '[data-stylex-owner="project-issues-title"]',
+    ) as HTMLElement;
+    const infos = row.querySelector('[data-stylex-owner="project-issues-infos"]') as HTMLElement;
+    const assigneeAvatar = row.querySelector(
+      '[data-stylex-owner="project-issues-assignee-avatar"]',
+    ) as HTMLElement;
     const checkboxBox = checkbox.getBoundingClientRect();
     const inputBox = input.getBoundingClientRect();
     const titleBox = title.getBoundingClientRect();
     const checkboxStyle = window.getComputedStyle(checkbox);
     const inputStyle = window.getComputedStyle(input);
+    const issueTitleStyle = window.getComputedStyle(issueTitle);
+    const infosStyle = window.getComputedStyle(infos);
+    const assigneeAvatarStyle = window.getComputedStyle(assigneeAvatar);
     return {
       checkboxHasStyleXOwner: checkbox.getAttribute("data-stylex-owner"),
       checkboxBox,
@@ -3649,6 +3659,16 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
       inputBox,
       inputMarginTop: inputStyle.marginTop,
       titleBox,
+      issueTitleColor: issueTitleStyle.color,
+      issueTitleFontSize: issueTitleStyle.fontSize,
+      issueTitleFontWeight: issueTitleStyle.fontWeight,
+      infosDisplay: infosStyle.display,
+      infosFontSize: infosStyle.fontSize,
+      infosLineHeight: infosStyle.lineHeight,
+      infosColor: infosStyle.color,
+      infosOverflow: infosStyle.overflow,
+      assigneeAvatarFloat: assigneeAvatarStyle.float,
+      assigneeAvatarMarginRight: assigneeAvatarStyle.marginRight,
     };
   });
   expect(desktop.checkboxHasStyleXOwner).toBe("project-issues-mass-update-check");
@@ -3658,10 +3678,24 @@ test("project issue mass-update checkbox keeps legacy wide-row alignment and 720
   expect(desktop.checkboxBox.width).toBeGreaterThan(0);
   expect(desktop.titleBox.left).toBeGreaterThanOrEqual(desktop.checkboxBox.right + 15);
   expect(desktop.inputBox.top).toBeGreaterThanOrEqual(desktop.titleBox.top + 10);
+  expect(desktop.issueTitleColor).toBe("rgb(51, 51, 51)");
+  expect(desktop.issueTitleFontSize).toBe("15px");
+  expect(desktop.issueTitleFontWeight).toBe("600");
+  expect(desktop.infosDisplay).toBe("block");
+  expect(desktop.infosFontSize).toBe("12px");
+  expect(desktop.infosLineHeight).toBe("20px");
+  expect(desktop.infosColor).toBe("rgb(153, 153, 153)");
+  expect(desktop.infosOverflow).toBe("hidden");
+  expect(desktop.assigneeAvatarFloat).toBe("left");
+  expect(desktop.assigneeAvatarMarginRight).toBe("0px");
 
   await page.setViewportSize({ width: 720, height: 900 });
   await expect(page.locator("#issue-item-42 .mass-update-check")).toBeHidden();
   await expect(page.locator("#issue-item-42 .title-wrap")).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-issues-title"]').last()).toHaveCSS(
+    "font-size",
+    "16px",
+  );
 });
 
 async function issueListRowMetrics(page: Page) {

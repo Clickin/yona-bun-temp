@@ -5005,3 +5005,11 @@ to the legacy `act-row right-menu-icons` DOM contract used by issue detail.
 Keep the board-specific action buttons, labels, copy, and React interactions
 unchanged; this bounded parity fix addresses the post-vs-issue right-menu
 rendering difference without changing frozen or shared CSS.
+
+## Batch 652
+
+Migrate the authenticated project issue-list row title, metadata, and
+assignee-avatar declarations into route-local StyleX owners while preserving
+the legacy mass-update checkbox float/margin and wide-row geometry. Keep the
+shared fallback for unrelated issue-list consumers and verify desktop/mobile
+checkbox alignment in the existing populated issue-list E2E.

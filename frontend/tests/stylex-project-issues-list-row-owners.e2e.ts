@@ -48,13 +48,29 @@ test("populated project issue rows own scoped StyleX geometry and states", async
   expect(childList).toContain("partial_view_child");
   expect(child).toContain("child-issue-date");
   expect(subtask).toContain("subtask-progress");
+  expect(legacy).toContain('class="mass-update-check hide-in-mobile"');
+  expect(legacy).toContain('class="avatar-wrap assinee"');
+  expect(legacy).toContain('class="infos"');
 
-  for (const owner of ["issuePostItem", "titleWrap", "postId", "subtaskProgress", "childDate"]) {
+  for (const owner of [
+    "issuePostItem",
+    "issueTitle",
+    "issueInfos",
+    "issueAvatar",
+    "issueAssigneeAvatar",
+    "titleWrap",
+    "postId",
+    "subtaskProgress",
+    "childDate",
+  ]) {
     expect(route).toContain(`styles.${owner}`);
     expect(style).toContain(`${owner}:`);
   }
   for (const marker of [
     "project-issues-post-item",
+    "project-issues-title",
+    "project-issues-infos",
+    "project-issues-assignee-avatar",
     "project-issues-title-wrap",
     "project-issues-post-id",
     "project-issues-subtask-progress",
@@ -66,6 +82,13 @@ test("populated project issue rows own scoped StyleX geometry and states", async
   expect(route).toContain("childDateVisible");
   expect(route).toContain("onMouseEnter");
   expect(route).toContain("onMouseLeave");
+  expect(style).toContain("issueTitle: {");
+  expect(style).toContain('fontSize: "15px"');
+  expect(style).toContain("fontWeight: 600");
+  expect(style).toContain("issueInfos: {");
+  expect(style).toContain('lineHeight: "20px"');
+  expect(style).toContain('issueAvatar: { float: "left", marginRight: "10px" }');
+  expect(style).toContain("issueAssigneeAvatar: { marginRight: 0 }");
 
   for (const retiredSelector of [
     ".issue-list-page .post-item {",
