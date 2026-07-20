@@ -494,3 +494,12 @@ StyleX. Legacy classes, member links, labels, leave interaction, and panel
 containment remain unchanged. Focused normal and fallback-off checks pass 5/5
 each, covering source mapping plus desktop/mobile panel geometry and visible
 member links.
+
+### 2026-07-21 Batch 675 organization home header/overview owner proof
+
+ORG-02 organization-home header and overview now own the frozen
+`project-home-header`, `project-overview`, and overview `h3` declarations
+through route-local StyleX. Legacy classes, description copy, ordering, and
+responsive containment remain unchanged. Focused normal and fallback-off
+checks pass 6/6 each, covering source mapping plus desktop/mobile computed
+geometry and visible description copy.

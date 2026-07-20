@@ -118,6 +118,47 @@ test("organization home renders legacy project and member panels", async ({ page
   await expect(page.locator('[data-stylex-owner="organization-home-overview"]')).toContainText(
     "Acme projects",
   );
+  const header = page.locator('[data-stylex-owner="organization-home-header"]');
+  const overview = page.locator('[data-stylex-owner="organization-home-overview"]');
+  const title = overview.locator("h3");
+  await expect(title).toContainText("Acme projects");
+  const desktopHeaderGeometry = await header.evaluate((element) => {
+    const overviewElement = element.querySelector(
+      '[data-stylex-owner="organization-home-overview"]',
+    );
+    const titleElement = overviewElement?.querySelector("h3");
+    const headerStyle = getComputedStyle(element);
+    const overviewStyle = overviewElement ? getComputedStyle(overviewElement) : null;
+    const titleStyle = titleElement ? getComputedStyle(titleElement) : null;
+    const headerBox = element.getBoundingClientRect();
+    const overviewBox = overviewElement?.getBoundingClientRect();
+    return {
+      headerBottom: headerBox.bottom,
+      headerMarginBottom: headerStyle.marginBottom,
+      headerPadding: headerStyle.padding,
+      headerPosition: headerStyle.position,
+      headerTop: headerBox.top,
+      overviewBorderLeft: overviewStyle?.borderLeft,
+      overviewPadding: overviewStyle?.padding,
+      overviewBottom: overviewBox?.bottom ?? 0,
+      overviewTop: overviewBox?.top ?? 0,
+      titleFontSize: titleStyle?.fontSize,
+      titleFontWeight: titleStyle?.fontWeight,
+      titleLineHeight: titleStyle?.lineHeight,
+    };
+  });
+  expect(desktopHeaderGeometry.headerMarginBottom).toBe("20px");
+  expect(desktopHeaderGeometry.headerPadding).toBe("5px 0px");
+  expect(desktopHeaderGeometry.headerPosition).toBe("relative");
+  expect(desktopHeaderGeometry.overviewBorderLeft).toBe("3px solid rgb(252, 73, 30)");
+  expect(desktopHeaderGeometry.overviewPadding).toBe("0px 10px");
+  expect(desktopHeaderGeometry.overviewTop).toBeGreaterThanOrEqual(desktopHeaderGeometry.headerTop);
+  expect(desktopHeaderGeometry.overviewBottom).toBeLessThanOrEqual(
+    desktopHeaderGeometry.headerBottom,
+  );
+  expect(desktopHeaderGeometry.titleFontSize).toBe("14px");
+  expect(desktopHeaderGeometry.titleFontWeight).toBe("400");
+  expect(desktopHeaderGeometry.titleLineHeight).toBe("30px");
   await expect(page.locator('[data-stylex-owner="organization-home-projects"]')).toContainText(
     "sample",
   );
@@ -162,6 +203,25 @@ test("organization home renders legacy project and member panels", async ({ page
     }));
   expect(containment.width).toBeGreaterThan(0);
   expect(containment.scrollWidth).toBe(390);
+  await expect(overview).toContainText("Acme projects");
+  const mobileHeaderGeometry = await header.evaluate((element) => {
+    const overviewElement = element.querySelector(
+      '[data-stylex-owner="organization-home-overview"]',
+    );
+    const headerBox = element.getBoundingClientRect();
+    const overviewBox = overviewElement?.getBoundingClientRect();
+    return {
+      headerLeft: headerBox.left,
+      headerRight: headerBox.right,
+      overviewLeft: overviewBox?.left ?? 0,
+      overviewRight: overviewBox?.right ?? 0,
+      viewport: window.innerWidth,
+    };
+  });
+  expect(mobileHeaderGeometry.headerLeft).toBeGreaterThanOrEqual(0);
+  expect(mobileHeaderGeometry.headerRight).toBeLessThanOrEqual(mobileHeaderGeometry.viewport);
+  expect(mobileHeaderGeometry.overviewLeft).toBeGreaterThanOrEqual(0);
+  expect(mobileHeaderGeometry.overviewRight).toBeLessThanOrEqual(mobileHeaderGeometry.viewport);
   const mobileGeometry = await panels.first().evaluate((panel) => ({
     width: panel.getBoundingClientRect().width,
     right: panel.getBoundingClientRect().right,
@@ -189,4 +249,30 @@ test("organization home membership panels map frozen legacy declarations to rout
   expect(route).toContain('data-stylex-owner="organization-home-members-panel"');
   expect(route).toContain('data-stylex-owner="organization-home-members-list"');
   expect(route).toContain('data-stylex-owner="organization-home-member"');
+});
+
+test("organization home header and overview map frozen declarations to route-local StyleX", () => {
+  const route = readFileSync("src/routes/organizations/$organizationName.tsx", "utf8");
+  const stylex = readFileSync("src/routes/organizations/-organization-home.stylex.ts", "utf8");
+  const legacy = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+
+  expect(legacy).toContain(".project-home-header {");
+  expect(legacy).toContain("padding:5px 0 ;");
+  expect(legacy).toContain("margin-bottom:20px;");
+  expect(legacy).toContain("position: relative;");
+  expect(legacy).toContain("border-left:3px solid #fc491e;");
+  expect(legacy).toContain("padding:0 10px;");
+  expect(legacy).toContain("line-height: 30px;");
+  expect(legacy).toContain("font-size:14px;");
+  expect(legacy).toContain("font-weight: normal;");
+  expect(stylex).toContain(
+    'projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" }',
+  );
+  expect(stylex).toContain('borderLeftColor: "#fc491e"');
+  expect(stylex).toContain('padding: "0 10px"');
+  expect(stylex).toContain(
+    'overviewTitle: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" }',
+  );
+  expect(route).toContain('data-stylex-owner="organization-home-header"');
+  expect(route).toContain('data-stylex-owner="organization-home-overview"');
 });

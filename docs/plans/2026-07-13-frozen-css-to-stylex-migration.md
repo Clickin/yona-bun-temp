@@ -5190,3 +5190,11 @@ member list, and member-row declarations from the frozen project-home LESS
 into the existing route-local StyleX owner. Preserve the legacy member-panel
 DOM/classes, labels, links, leave interaction, and responsive containment;
 retain unrelated frozen fallback consumers.
+
+## Batch 675
+
+Move the organization home `project-home-header`, `project-overview`, and
+overview heading declarations from the frozen project-home LESS into the
+existing route-local StyleX owner. Preserve the legacy header/overview DOM,
+description copy, and responsive containment; retain unrelated frozen
+fallback consumers.

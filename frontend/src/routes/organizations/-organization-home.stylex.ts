@@ -62,7 +62,15 @@ export const styles = stylex.create({
   },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
-  overview: { color: organizationHomeColors.accentText },
+  projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" },
+  overview: {
+    borderLeftColor: "#fc491e",
+    borderLeftStyle: "solid",
+    borderLeftWidth: "3px",
+    color: organizationHomeColors.accentText,
+    padding: "0 10px",
+  },
+  overviewTitle: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
   projects: { minWidth: 0 },
   // organization/view.scala.html + yona-common item-search: an empty query shows every project.
   project: { display: "list-item" },

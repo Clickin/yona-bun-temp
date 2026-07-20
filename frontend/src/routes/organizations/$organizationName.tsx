@@ -222,7 +222,7 @@ function OrganizationHomeScreen({
       >
         <div className="project-page-wrap">
           <div
-            className="project-home-header row-fluid"
+            className={`${stylex.props(styles.projectHomeHeader).className} project-home-header row-fluid`}
             data-stylex-owner="organization-home-header"
           >
             <div className="span9 span-hard-wrap">
@@ -230,7 +230,7 @@ function OrganizationHomeScreen({
                 className={`${stylex.props(styles.overview).className} project-overview`}
                 data-stylex-owner="organization-home-overview"
               >
-                <h3>
+                <h3 className={stylex.props(styles.overviewTitle).className}>
                   <span id="project-description">{stringField(organization.description, "")}</span>
                 </h3>
               </div>
