@@ -43,6 +43,17 @@ const organizationMenuMigrationStyles = stylex.create({
   },
 });
 
+const organizationProjectCardMigrationStyles = stylex.create({
+  // yona-original/app/assets/stylesheets/less/_page.less .all-projects .project.
+  card: {
+    borderBottomColor: "#DCDCDC",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    overflow: "hidden",
+    padding: "15px 0 10px 0",
+  },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -364,7 +375,11 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
       className="project"
       data-item="project-item"
       data-value={dataValue}
-      {...stylex.props(styles.project, hidden && styles.projectHidden)}
+      {...stylex.props(
+        styles.project,
+        organizationProjectCardMigrationStyles.card,
+        hidden && styles.projectHidden,
+      )}
       data-stylex-owner="organization-home-project-filter-item"
     >
       <div className="info-wrap">

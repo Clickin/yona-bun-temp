@@ -477,3 +477,11 @@ declarations through route-local StyleX: float, font weight/size, position,
 inline-block display, line-height, desktop/mobile padding, and hover paint.
 The legacy active classes and TanStack Router links remain unchanged. Focused
 normal and fallback-off checks pass 1/1 each at desktop and mobile viewports.
+
+### 2026-07-21 Batch 673 organization home project-card owner proof
+
+ORG-02 project-card/filter output now owns the frozen `all-projects .project`
+padding, overflow, and border declarations through conditional route-local
+StyleX. The legacy class, item-search filtering, card order, and links remain
+unchanged. Focused normal and fallback-off checks pass 3/3 each, covering
+static source mapping plus desktop/mobile card geometry and filtering.

@@ -5175,3 +5175,10 @@ existing organization route owner: float, typography, inline-block display,
 line-height, desktop/mobile padding, and legacy hover paint. Preserve active
 menu behavior, DOM/classes, Link navigation, and the frozen fallback for
 unrelated project-menu consumers.
+
+## Batch 673
+
+Move the organization home `all-projects .project` card's exact padding,
+overflow, and bottom-border declarations into the existing route-local StyleX
+owner. Preserve the legacy `project` class, item-search filtering, card DOM,
+and project links; retain unrelated frozen fallback consumers.
