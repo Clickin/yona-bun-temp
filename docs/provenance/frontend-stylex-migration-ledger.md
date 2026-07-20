@@ -1505,6 +1505,10 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
 
 - Project `/$ownerName/$projectName/search` populated/empty result family: `searchCategory` owns category emphasis, `searchBox` owns the search form shell padding/border, `searchResultTitle` owns result heading typography/spacing, `searchList`/`searchListItem` own result list reset/row geometry, `searchListProjectItem` owns project-row left inset, and `emptyResult` owns the empty-state min-height/padding/paint. Legacy `search/partial_search.scala.html`, result partials, and frozen `_page.less:6375-6415` establish the output. The shared `.search-category-wrap` family and `.search-list-item` arm are retired after three-route owner proof; `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, content/meta, and `.empty-result` fallback remain pending geometry/consumer proof. Focused project-search E2E verifies owner/source/declaration contracts and the desktop/mobile state family.
 
+## Batch 522
+
+- Shared search highlight residual: global, project, and organization search spans compose route-local `styles.keyword`/`sx.keyword` owners. Frozen `_page.less:6518-6520` and generated fallback retain only the legacy `strong.keyword` descendant rule, which does not match current React span output. The generic `.keyword` arm is retired from `frontend/src/app.css`; `.empty-result` and other route-specific search residuals remain pending geometry/consumer proof. Static normal/fallback-off ownership contracts are recorded in `legacy-fallback-off.e2e.ts`; live legacy visual parity remains unverified.
+
 ## Batch 523
 
 - Shared search dead consumer: removed the unimported `LegacySearchBody` renderer and its private result-list, pagination, highlighting, navigation, and query-key subtree from `frontend/src/routes/-search-screen.tsx`. Imported error bodies/predicates and `emptySearchResult` remain for global, project, organization, project-shell, pull-request, and fork consumers. The focused dead-consumer contract proves the removed symbols have no runtime importer.

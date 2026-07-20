@@ -627,6 +627,19 @@ test("search result owners have no shared app.css bridge arms", () => {
   }
 });
 
+test("search keyword owners have no generic app.css bridge arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".keyword {");
+  const sourceContracts = [
+    ["src/routes/search.tsx", "styles.keyword"],
+    ["src/routes/$ownerName/$projectName/search.tsx", "sx.keyword"],
+    ["src/routes/organizations/$organizationName/search.tsx", "styles.keyword"],
+  ] as const;
+  for (const [sourcePath, owner] of sourceContracts) {
+    expect(readFileSync(sourcePath, "utf8")).toContain(owner);
+  }
+});
+
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".project-home .issue-wrap {");

@@ -4731,6 +4731,13 @@ proving global, project, and organization search owners. Keep `.search-box-wrap`
 their route-specific geometry and consumer graph are separately verified. Frozen legacy LESS and
 generated fallback remain immutable.
 
+## Batch 622
+
+Retire the generic `.keyword` app.css arm after confirming all three search
+highlight consumers already compose route-local StyleX keyword owners. The frozen
+`.search-list-wrap strong.keyword` rule remains immutable evidence; `.empty-result`
+and other search residuals remain pending route-specific geometry proof.
+
 ## Batch 621
 
 Retire the shared `.search-category-wrap` fallback family after confirming its three current
