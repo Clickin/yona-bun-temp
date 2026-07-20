@@ -86,6 +86,8 @@ export const styles = stylex.create({
     padding: "0 10px",
   },
   overviewTitle: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
+  // yona-original/app/assets/stylesheets/less/_common.less .mt10.
+  searchWrap: { marginTop: "10px" },
   // yona-original/app/assets/stylesheets/less/_yobiUI.less .search-bar.
   searchBar: {
     backgroundColor: "#FFF",

@@ -5260,6 +5260,13 @@ declarations into the existing route-local StyleX owner. Preserve the legacy
 page wrapper class/DOM, color, child layout, responsive containment, and
 project filtering; retain unrelated page-wrapper fallback consumers.
 
+## Batch 685
+
+Move the organization home search wrapper's exact `.mt10` margin declaration
+into a route-local StyleX owner. Preserve the legacy search wrapper
+class/DOM/order, search controls, create-project action, filtering, and
+responsive containment; retain unrelated utility-class fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

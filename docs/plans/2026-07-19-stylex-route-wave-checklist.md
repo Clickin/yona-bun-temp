@@ -570,6 +570,16 @@ containment remain unchanged. Focused normal and fallback-off checks pass 3/3
 each, covering source mapping, computed desktop/mobile wrapper geometry, and
 project filtering/visibility.
 
+### 2026-07-21 Batch 685 organization home search-wrapper owner proof
+
+ORG-02 organization home search output now owns the frozen `.mt10`
+`margin-top: 10px` declaration through a route-local StyleX owner. Search
+wrapper classes/DOM/order, controls, Create new project action, filtering, and
+responsive containment remain unchanged; unrelated utility consumers stay
+fallback-owned. Focused normal and fallback-off checks pass 3/3 each,
+covering source mapping, computed desktop/mobile wrapper margin/containment,
+and filtering/visibility.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

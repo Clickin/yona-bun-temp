@@ -14,6 +14,10 @@ const pageLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
+const commonLessSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_common.less",
+  import.meta.url,
+);
 const yobiUiSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_yobiUI.less",
   import.meta.url,
@@ -32,12 +36,13 @@ const responsiveSource = new URL(
 );
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess, yobiUi, variables, bootstrap, responsive] =
+  const [route, style, legacy, pageLess, commonLess, yobiUi, variables, bootstrap, responsive] =
     await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(styleSource, "utf8"),
       readFile(legacySource, "utf8"),
       readFile(pageLessSource, "utf8"),
+      readFile(commonLessSource, "utf8"),
       readFile(yobiUiSource, "utf8"),
       readFile(variablesSource, "utf8"),
       readFile(bootstrapSource, "utf8"),
@@ -49,6 +54,11 @@ test("organization home project filter uses conditional StyleX visibility", asyn
     ".page-wrap-outer {\n    min-height: 450px;\n    margin-top: 10px;\n}",
   );
   expect(yobiUi).toContain(".search-bar {");
+  expect(legacy).toContain('<div class="project-search-wrap row-fluid mt10">');
+  expect(commonLess).toContain(".mt10 { margin-top:10px; }");
+  expect(route).toContain('data-stylex-owner="organization-home-search"');
+  expect(route).toContain("styles.searchWrap");
+  expect(style).toContain('searchWrap: { marginTop: "10px" }');
   expect(responsive).toContain(
     "  .page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;\n  }",
   );
@@ -235,6 +245,7 @@ for (const viewport of [
       .locator('[data-stylex-owner="organization-home-project-filter-item"]')
       .first();
     const pageWrap = page.locator('[data-stylex-owner="organization-home-page"]');
+    const searchWrap = page.locator('[data-stylex-owner="organization-home-search"]');
     const list = page.locator('[data-stylex-owner="organization-home-projects"]');
     const searchBar = page.locator('[data-stylex-owner="organization-home-search-bar"]');
     const searchInput = page.locator('[data-stylex-owner="organization-home-search-input"]');
@@ -247,6 +258,7 @@ for (const viewport of [
     });
     await expect(card).toBeVisible();
     await expect(pageWrap).toBeVisible();
+    await expect(searchWrap).toBeVisible();
     await expect(searchBar).toBeVisible();
     await expect(searchInput).toBeVisible();
     await expect(searchButton).toBeAttached();
@@ -279,6 +291,23 @@ for (const viewport of [
     expect(pageWrapMetrics.right).toBe(viewport.width);
     expect(pageWrapMetrics.width).toBe(`${viewport.width}px`);
     expect(pageWrapMetrics.height).toBeGreaterThanOrEqual(450);
+    const searchWrapMetrics = await searchWrap.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      const parentBox = node.parentElement?.getBoundingClientRect();
+      return {
+        marginTop: style.marginTop,
+        left: box.left,
+        right: box.right,
+        parentLeft: parentBox?.left ?? 0,
+        parentRight: parentBox?.right ?? 0,
+        width: box.width,
+      };
+    });
+    expect(searchWrapMetrics.marginTop).toBe("10px");
+    expect(searchWrapMetrics.left).toBeGreaterThanOrEqual(searchWrapMetrics.parentLeft);
+    expect(searchWrapMetrics.right).toBeLessThanOrEqual(searchWrapMetrics.parentRight);
+    expect(searchWrapMetrics.width).toBeGreaterThan(0);
     const createProjectMetrics = await createProjectWrapper.evaluate((node) => {
       const style = getComputedStyle(node);
       const wrapperBox = node.getBoundingClientRect();
