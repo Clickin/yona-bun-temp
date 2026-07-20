@@ -35,6 +35,7 @@ test("milestone mass-update item buttons own milestone geometry and states", asy
   expect(style).toContain('backgroundImage: "linear-gradient(to bottom, #08c, #0077b3)"');
   expect(css).not.toContain(".milestone-detail .mass-update-list > li > button");
   expect(css).not.toContain(".milestone-detail .mass-update-list > li > button:hover");
-  expect(css).toContain(".milesion-wrap .mass-update-list > li > button");
-  expect(css).toContain(".milesion-wrap .mass-update-list > li > button:hover");
+  expect(css).not.toContain(".milesion-wrap .mass-update-list > li > button");
+  expect(css).not.toContain(".milesion-wrap .mass-update-list > li > button:hover");
+  expect(css).not.toContain(".milesion-wrap .mass-update-list > li > button:focus");
 });

@@ -4451,3 +4451,14 @@ sources emit no literal `.btn-primary` class; retain active `.ybtn-primary` and
 `.ybtn-success` shared Yobi declarations, frozen Bootstrap, generated fallback,
 and geometry baselines. Update the formal fallback-off contract and record the
 bounded React-side bridge retirement. No TSX or frozen/generated CSS changes.
+
+## Batch 592
+
+Retire only the unreachable `.milesion-wrap .mass-update-list > li > button`
+base and hover/focus selector arms from `frontend/src/app.css`. Current React
+milestone and issue mass-update buttons are owned by route-local StyleX and no
+current React route emits the typo-preserved `.milesion-wrap` button bridge.
+Retain the standalone `.milesion-wrap` sharer arm, frozen Scala/LESS source,
+generated fallback, and geometry baselines. Update the formal fallback-off and
+milestone mass-update static contracts; do not change TSX or frozen/generated
+CSS.

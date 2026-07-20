@@ -1933,3 +1933,16 @@ contracts in normal and fallback-off modes; no TSX changed.
   active Yobi selectors, frozen Bootstrap, generated fallback, and geometry
   remain unchanged. `legacy-fallback-off.e2e.ts` asserts exact absence and
   neighboring Yobi selector retention in normal and fallback-off modes.
+
+## Batch 592
+
+- Milestone mass-update `.milesion-wrap` button bridge retirement:
+  `yona-original/app/views/issue/partial_massupdate.scala.html` and frozen
+  `_page.less:5506-5509` establish the legacy mass-update list button
+  presentation; current milestone and issue routes translate the controls to
+  React-owned buttons. `frontend/src/app.css` removes only the unreachable
+  `.milesion-wrap .mass-update-list > li > button` base and hover/focus arms.
+  Route-local `massUpdateButton` StyleX owns active milestone button geometry
+  and states; the standalone `.milesion-wrap` sharer selector, frozen/generated
+  fallback, and geometry remain unchanged. The milestone mass-update and
+  fallback-off contracts assert exact selector absence and StyleX ownership.

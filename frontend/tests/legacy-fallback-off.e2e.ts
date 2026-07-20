@@ -474,6 +474,19 @@ test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
   expect(appCss).toContain(".ybtn-success:focus {");
 });
 
+test("milestone mass-update button bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".milesion-wrap .mass-update-list > li > button {",
+    ".milesion-wrap .mass-update-list > li > button:hover,",
+    ".milesion-wrap .mass-update-list > li > button:focus {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".milesion-wrap .item-count-groups > button.sharer-color,");
+  expect(appCss).toContain(".issue-list-page .item-count-groups > button.sharer-color");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");
