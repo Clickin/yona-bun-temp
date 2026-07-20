@@ -146,7 +146,7 @@ export const issueFormStyles = stylex.create({
     border: "0px",
     opacity: 0,
   },
-  uploadAttachSaveHelp: { display: "block" },
+  uploadAttachSaveHelp: { display: "block", textAlign: "right" },
   attachedFileInsertCopy: {
     marginLeft: "8px",
     color: "#666",

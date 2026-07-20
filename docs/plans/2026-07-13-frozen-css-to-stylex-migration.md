@@ -2,6 +2,13 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## 2026-07-20 — Project issue-form attachment-help alignment
+
+The issue-form upload attachment-save help remains a route-local consumer of
+the frozen `.right-txt` utility. Its display and right alignment now belong to
+the issue-form StyleX owner while the upload/help DOM and behavior remain
+unchanged. Focused coverage is `frontend/tests/stylex-project-issueform.e2e.ts`.
+
 ## 2026-07-20 — `.orange-txt` retirement
 
 The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now

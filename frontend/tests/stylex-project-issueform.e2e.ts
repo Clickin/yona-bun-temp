@@ -12,9 +12,9 @@ test("project issue form preserves legacy editor layout with StyleX owners", asy
   await mockIssueForm(page);
   await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
 
-  await expect(page.locator('link[href$="legacy-assets/stylesheets/legacy-fallback.css"]')).toHaveCount(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
-  );
+  await expect(
+    page.locator('link[href$="legacy-assets/stylesheets/legacy-fallback.css"]'),
+  ).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
   await expect(page).toHaveTitle("New issue - admin/sample");
   await expect(page.locator(".app-shell")).toHaveCount(0);
   await expect(page.locator(".project-header-outer")).toBeVisible();
@@ -143,7 +143,9 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   await expect(progressShell).toHaveCSS("vertical-align", "middle");
   await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
   await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
-  expect(await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON())).toMatchObject({
+  expect(
+    await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON()),
+  ).toMatchObject({
     height: 7,
     width: 100,
   });
@@ -166,17 +168,62 @@ test("issue form upload progress uses a dynamic route-local StyleX width", async
   await expect(progressShell).toHaveCSS("vertical-align", "middle");
   await expect(progressShell).toHaveCSS("background-color", "rgb(240, 240, 240)");
   await expect(progressShell).toHaveCSS("box-shadow", /inset/u);
-  expect(await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON())).toMatchObject({
+  expect(
+    await progressShell.evaluate((element) => element.getBoundingClientRect().toJSON()),
+  ).toMatchObject({
     height: 7,
     width: 100,
   });
   await expect(progress).toHaveCSS("background-color", "rgb(243, 108, 34)");
   await expect(progress).toHaveCSS("display", "block");
   await expect(progress).toHaveCSS("height", "7px");
-  expect(await progress.evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(2);
+  expect(await progress.evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(
+    2,
+  );
 
   releaseUpload?.();
   await expect(progress).toHaveCount(0);
+});
+
+test("issue form attachment save help owns right alignment in StyleX", async ({ page }) => {
+  const route = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/issueform.tsx", import.meta.url),
+    "utf8",
+  );
+  const styles = readFileSync(
+    new URL("../src/routes/$ownerName/$projectName/-issueform.stylex.ts", import.meta.url),
+    "utf8",
+  );
+  const legacy = readFileSync("../yona-original/app/views/common/uploadForm.scala.html", "utf8");
+  expect(legacy).toContain('<p class="right-txt help">');
+  expect(route).toContain('data-stylex-owner="project-issue-form-upload-attach-save-help"');
+  expect(route).not.toContain("right-txt help attach-save-help");
+  expect(styles).toContain('uploadAttachSaveHelp: { display: "block", textAlign: "right" }');
+
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 501,
+        mimeType: "image/png",
+        name: "diagram.png",
+        size: 1,
+        url: "/files/501/diagram.png",
+      }),
+    });
+  });
+  await mockIssueForm(page);
+  await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
+  await page.locator('#upload input[type="file"]').setInputFiles({
+    name: "diagram.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("x"),
+  });
+  const help = page.locator('[data-stylex-owner="project-issue-form-upload-attach-save-help"]');
+  await expect(help).toBeVisible();
+  await expect(help).not.toHaveClass(/right-txt/u);
+  await expect(help).toHaveCSS("display", "block");
+  await expect(help).toHaveCSS("text-align", "right");
 });
 
 async function mockIssueForm(page: Page) {

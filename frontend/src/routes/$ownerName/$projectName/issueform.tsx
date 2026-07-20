@@ -2446,7 +2446,7 @@ function IssuePostFileUploader({
       {rows.length > 0 ? (
         <p
           {...stylex.props(issueFormStyles.uploadAttachSaveHelp)}
-          className={`right-txt help attach-save-help ${stylex.props(issueFormStyles.uploadAttachSaveHelp).className ?? ""}`.trim()}
+          className={`help attach-save-help ${stylex.props(issueFormStyles.uploadAttachSaveHelp).className ?? ""}`.trim()}
           data-stylex-owner="project-issue-form-upload-attach-save-help"
         >
           <i className="yobicon-supportrequest" /> {t("common.attach.attachIfYouSave")}
