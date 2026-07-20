@@ -460,3 +460,12 @@ declarations are colocated without changing project/profile shells, copy, or
 home navigation. Focused runs pass 2/2 normally and 2/2 with the legacy
 fallback disabled; an unreachable dead post-detail producer was inspected
 and explicitly excluded from the wave.
+
+### 2026-07-21 Batch 671 shared fallback retirement proof
+
+Batch 671 removes only the React-side `app.css` `.error-wrap` wrapper/icon/
+message bridge after the reachable consumer graph confirms colocated StyleX
+ownership across 29 route/owner groups. Reset-password-specific selectors,
+the frozen source, generated fallback, and the explicitly unreachable stale
+post producer remain. Static/runtime proof passes 2/2 normally and 2/2 with
+the legacy fallback disabled.

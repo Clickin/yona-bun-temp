@@ -5160,3 +5160,10 @@ positioning, and message typography into the project generic internal-error
 shell and public missing-user not-found shell. Preserve the existing project
 and anonymous-profile shells, copy, home navigation, and responsive geometry;
 retain the shared fallback for all other error consumers.
+
+## Batch 671
+
+Retire the React-side `app.css` `.error-wrap` bridge after proving every
+reachable React emitter has a colocated StyleX owner. Retain the frozen and
+generated legacy fallback, reset-password-specific rules, legacy classes, and
+the explicitly unreachable stale post producer.

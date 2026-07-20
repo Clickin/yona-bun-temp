@@ -106,6 +106,34 @@ test("app-shell fallback bridge has no remaining selector", () => {
   expect(appCss).not.toContain(".app-shell");
 });
 
+test("error-wrap fallback bridge is retired while legacy fallback remains intact", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+
+  for (const selector of [
+    ".error-wrap {",
+    ".error-wrap .ico {",
+    ".error-wrap .ico-err1 {",
+    ".error-wrap .ico-err2 {",
+    ".error-wrap p {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  for (const selector of [
+    ".reset-password-bad-request > .project-page-wrap {",
+    ".reset-password-bad-request .ico-404 {",
+    ".reset-password-bad-request .ybtn-info {",
+  ]) {
+    expect(appCss).toContain(selector);
+  }
+  for (const selector of [".error-wrap {", ".error-wrap p {", ".ico-err1 {", ".ico-err2 {"]) {
+    expect(generatedFallback).toContain(selector);
+  }
+});
+
 test("runtime-error-banner fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".runtime-error-banner");
