@@ -20,9 +20,11 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationAdminView, YoramRecord, YoramUserItem } from "../../../api/types";
 import { RestApiError } from "../../../api/rest-client";
 import { readSessionBootstrap, searchLegacyMemberUsers } from "../../../auth-workspace-client";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { globalBreakpoints } from "../../../theme.stylex";
+import { errorStyles } from "./-organization-members.stylex";
 import { organizationMemberColors } from "./-members.stylex";
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
@@ -59,13 +61,27 @@ function OrganizationMembersScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
 
 function OrganizationMembersErrorBody({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
+  const iconProps = stylex.props(errorStyles.icon, errorStyles.sprite(`url(${legacySpriteUrl})`));
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(messageKey)}</p>
+        <div
+          {...stylex.props(errorStyles.wrap)}
+          className={`${stylex.props(errorStyles.wrap).className} error-wrap`}
+          data-stylex-owner="organization-members-error-wrap"
+        >
+          <i
+            {...iconProps}
+            className={`${iconProps.className ?? ""} ico ico-err2`.trim()}
+            data-stylex-owner="organization-members-error-icon"
+          ></i>
+          <p
+            {...stylex.props(errorStyles.message)}
+            data-stylex-owner="organization-members-error-message"
+          >
+            {t(messageKey)}
+          </p>
         </div>
       </div>
     </div>

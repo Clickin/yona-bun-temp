@@ -19,6 +19,27 @@ export const issuesTheme = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  errorWrap: {
+    padding: "100px 0px",
+    textAlign: "center",
+  },
+  errorIcon: {
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  },
+  errorIconSprite: (spriteUrl: string) => ({
+    backgroundImage: `url(${spriteUrl})`,
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   downloadWrap: { padding: "10px" },
   keymapWrap: { marginLeft: "55px", padding: "10px 0" },
   manageLabel: { marginLeft: "2px" },

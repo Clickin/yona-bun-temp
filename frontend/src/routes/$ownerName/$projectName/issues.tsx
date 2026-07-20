@@ -17,6 +17,7 @@ import { currentSessionQueryOptions } from "../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { listProjectLabelsQueryOptions } from "../../../api/project-labels";
 import type { ProjectContainer, ProjectMilestone } from "../../../api/types";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { styles } from "./-issues.stylex";
 
@@ -567,9 +568,22 @@ function ProjectIssuesBody({
             </ul>
             {!currentPageHasItems ? (
               <>
-                <div className="error-wrap">
-                  <i className="ico ico-err1"></i>
-                  <p>{t("issue.is.empty")}</p>
+                <div
+                  {...stylex.props(styles.errorWrap)}
+                  className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+                  data-stylex-owner="project-issues-empty-error-wrap"
+                >
+                  <i
+                    {...stylex.props(styles.errorIcon, styles.errorIconSprite(legacySpriteUrl))}
+                    className={`${stylex.props(styles.errorIcon, styles.errorIconSprite(legacySpriteUrl)).className ?? ""} ico ico-err1`.trim()}
+                    data-stylex-owner="project-issues-empty-error-icon"
+                  ></i>
+                  <p
+                    {...stylex.props(styles.errorMessage)}
+                    data-stylex-owner="project-issues-empty-error-message"
+                  >
+                    {t("issue.is.empty")}
+                  </p>
                 </div>
                 <IssueListKeymap project={project} />
               </>

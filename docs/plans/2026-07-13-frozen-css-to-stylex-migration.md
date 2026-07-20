@@ -5079,3 +5079,11 @@ Move the frozen `.error-wrap` geometry, `ico-err1` sprite positioning, and
 message typography into the existing organization boards, issues, and pull
 requests empty-state StyleX owners. Preserve legacy DOM/classes/copy and the
 sprite asset; keep the shared fallback for all other error consumers.
+
+## Batch 661
+
+Move the frozen `.error-wrap` geometry, `ico-err1`/`ico-err2` sprite
+positioning, and message typography into the project issue-list, project
+pull-request-list, and organization-members forbidden-state StyleX owners.
+Preserve legacy DOM/classes/copy and sprite assets; keep the shared fallback
+for all remaining error consumers.

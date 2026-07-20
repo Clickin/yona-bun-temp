@@ -14,6 +14,7 @@ import {
 } from "../../../api/pull-requests";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { ProjectContainer } from "../../../api/types";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
@@ -39,6 +40,9 @@ const sx = {
   twoColumnPopover: stylex.props(styles.twoColumnPopover),
   rowPointer: stylex.props(styles.rowPointer),
   grayTextSeparator: stylex.props(styles.grayTextSeparator),
+  errorWrap: stylex.props(styles.errorWrap),
+  errorIcon: (backgroundImage: string) => stylex.props(styles.errorIcon(backgroundImage)),
+  errorMessage: stylex.props(styles.errorMessage),
 } as const;
 
 const LEGACY_LIST_LINK_PROPS = {
@@ -618,9 +622,23 @@ function ProjectPullRequestRows({
   if (pullRequests.items.length === 0) {
     return (
       <ul className="post-list-wrap" data-stylex-owner="project-pullrequests-empty">
-        <div className="error-wrap">
-          <i className="ico ico-err1"></i>
-          <p>{t("pullRequest.is.empty")}</p>
+        <div
+          {...sx.errorWrap}
+          className={`${sx.errorWrap.className} error-wrap`}
+          data-stylex-owner="project-pullrequests-empty-error-wrap"
+        >
+          <i
+            {...sx.errorIcon(`url(${legacySpriteUrl})`)}
+            className={`${sx.errorIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err1`.trim()}
+            data-stylex-owner="project-pullrequests-empty-icon"
+          ></i>
+          <p
+            {...sx.errorMessage}
+            className={sx.errorMessage.className}
+            data-stylex-owner="project-pullrequests-empty-message"
+          >
+            {t("pullRequest.is.empty")}
+          </p>
         </div>
       </ul>
     );

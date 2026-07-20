@@ -10,6 +10,22 @@ export const pullRequestColors = stylex.defineVars({
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: (backgroundImage: string) => ({
+    backgroundImage,
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   searchColumn: { paddingTop: "0px" },
   searchColumnHidden: { display: "none" },
   searchBar: {
