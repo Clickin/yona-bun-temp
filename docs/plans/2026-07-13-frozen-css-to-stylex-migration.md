@@ -4551,3 +4551,14 @@ directory output has no member list-item/avatar consumer; frozen Scala/LESS
 and generated fallback remain historical evidence. Preserve the parent members
 layout and verify organization-directory plus formal fallback-off contracts in
 normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes.
+
+## Batch 602
+
+Retire only the unreachable issue-detail timeline `.event.event-index` base
+and nested `.state` compatibility arms from `frontend/src/app.css`. Current
+React issue timelines emit no `event-index` class; frozen Scala index-event
+markup and generated fallback remain historical evidence. Retain the adjacent
+generic `.issue-detail-page .comments .event .state i` rule and all state
+variant styling. Update issue-detail event contracts and the formal
+fallback-off contract in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes;
+do not change TSX, frozen/generated CSS, or geometry baselines.

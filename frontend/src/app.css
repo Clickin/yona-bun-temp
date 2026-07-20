@@ -3286,18 +3286,6 @@ div.markdown-preview {
   width: 100%;
 }
 
-.issue-detail-page .comments .event.event-index {
-  padding: 0;
-  font-size: 12px;
-  line-height: normal;
-}
-
-.issue-detail-page .comments .event.event-index .state {
-  width: auto;
-  margin-right: 0;
-  padding: 1px 3px;
-}
-
 .issue-detail-page .comments .event .state i {
   margin-right: 3px;
 }

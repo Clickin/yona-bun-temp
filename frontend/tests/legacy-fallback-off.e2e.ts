@@ -544,6 +544,16 @@ test("project-home status bridge has no React-side app.css arms", () => {
   ).not.toContain("project-status");
 });
 
+test("issue detail event-index bridge has no React-side app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index {");
+  expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index .state {");
+  expect(appCss).toContain(".issue-detail-page .comments .event .state i {");
+  expect(
+    readFileSync("../yona-original/app/views/issue/partial_index_event_timeline.scala.html", "utf8"),
+  ).toContain('class="event event-index"');
+});
+
 test("site mail form-horizontal bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".form-horizontal .control-group");

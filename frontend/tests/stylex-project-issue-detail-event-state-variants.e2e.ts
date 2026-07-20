@@ -70,6 +70,7 @@ test("issue detail event state variants use finite StyleX lookup", async () => {
     ".state.sharer-deleted",
   ])
     expect(css).not.toContain(`.issue-detail-page .comments .event ${selector}`);
-  expect(css).toContain(".issue-detail-page .comments .event.event-index");
+  expect(css).not.toContain(".issue-detail-page .comments .event.event-index {");
+  expect(css).not.toContain(".issue-detail-page .comments .event.event-index .state {");
   expect(css).toContain(".issue-detail-page .comments .event .state i");
 });

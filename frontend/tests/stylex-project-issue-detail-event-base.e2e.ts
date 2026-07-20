@@ -54,6 +54,7 @@ test("issue detail timeline event base/date use route-local StyleX", async () =>
   expect(appCss).not.toContain(".issue-detail-page .comments .event {");
   expect(appCss).not.toContain(".issue-detail-page .comments .event .date {");
   expect(appCss).not.toContain(".issue-detail-page .comments .event .state {");
-  expect(appCss).toContain(".issue-detail-page .comments .event.event-index {");
-  expect(appCss).toContain(".issue-detail-page .comments .event .state.open {");
+  expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index {");
+  expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index .state {");
+  expect(appCss).toContain(".issue-detail-page .comments .event .state i {");
 });
