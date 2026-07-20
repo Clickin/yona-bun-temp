@@ -172,6 +172,21 @@ test("alert-danger fallback bridge has no app.css arms", () => {
   expect(appCss).toContain(".alert-error h4 {");
 });
 
+test("issueform legacy insert bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".attached-file .btn-insert",
+    ".attached-file .btn-insert:hover",
+    ".attached-file.complete .btn-insert",
+  ]) {
+    expect(appCss).not.toContain(`${selector} {`);
+  }
+  expect(appCss).toContain(".attached-file.complete .progress {");
+  expect(readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8")).toContain(
+    'className={`btn-insert-copy ${stylex.props(issueFormStyles.attachedFileInsertCopy).className ?? ""}`.trim()}',
+  );
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

@@ -4335,3 +4335,11 @@ the frozen Bootstrap/generated fallback for legacy/plugin output. Verify exact
 app.css branch absence and retained fallback selectors in normal and
 fallback-off static contracts. Do not edit TSX, frozen source, generated
 fallback, or geometry baselines.
+
+## Batch 581
+
+Retire only the unreachable `.attached-file .btn-insert` base/hover/complete
+branches from `frontend/src/app.css`. Current React translates the insertion
+control to `btn-insert-copy` and owns it with StyleX; frozen file-uploader and
+generated fallback rules remain unchanged. Verify the attachment-row and
+formal fallback-off contracts in both modes without changing geometry baselines.

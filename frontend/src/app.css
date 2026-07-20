@@ -3316,29 +3316,12 @@ div.markdown-preview {
   color: #51aacc;
 }
 
-.attached-file .btn-insert {
-  display: none;
-  margin-top: 2px;
-  margin-right: 10px;
-  line-height: 20px;
-  box-shadow: none;
-}
-
-.attached-file .btn-insert:hover {
-  color: #51aacc;
-  background: #fff;
-}
-
 .attached-file.complete .progress {
   display: none;
 }
 
 .attached-file.complete .btn-delete {
   display: inline-block;
-}
-
-.attached-file.complete .btn-insert {
-  display: block;
 }
 
 .attached-file.temporary i {

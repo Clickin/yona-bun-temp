@@ -107,6 +107,18 @@ test("issueform attachment rows own active React-matched StyleX geometry", async
   }
   // Generic upload/fake-file and legacy `.attached-file` rules remain intentionally frozen.
   expect(css).toContain(".attached-file {");
+  // The frozen uploader emits `.btn-insert`, but the current React owner emits
+  // `.btn-insert-copy` and owns its ready-state presentation in StyleX. Keep
+  // the generated/frozen legacy fallback intact while removing the dead app.css
+  // bridge arms.
+  for (const retiredSelector of [
+    ".attached-file .btn-insert",
+    ".attached-file .btn-insert:hover",
+    ".attached-file.complete .btn-insert",
+  ]) {
+    expect(css).not.toContain(`${retiredSelector} {`);
+  }
+  expect(css).toContain(".attached-file.complete .progress {");
   expect(css).toContain(".write-comment-box .upload-wrap .help-pastable");
   expect(style).toContain('cursor: "default"');
   expect(style).toContain("opacity: 0.65");
