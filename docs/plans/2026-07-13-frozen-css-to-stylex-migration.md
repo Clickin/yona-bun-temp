@@ -4868,3 +4868,9 @@ and origin link structure.
 Migrate the code-file comment-count span's `number-of-comments` color and
 spacing into the existing code-file StyleX owner while preserving `ml5`, icon,
 copy, and file metadata geometry.
+
+## Batch 639
+
+Migrate the populated project-fork notice and standalone signup confirmation
+notice `center-txt` consumers into their existing route-local StyleX owners,
+preserving the legacy centered copy and DOM.

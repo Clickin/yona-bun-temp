@@ -317,7 +317,7 @@ function ProjectForkBody({
                   ) : (
                     <div
                       {...sx.existing}
-                      className={`${sx.existing.className} help-messages center-txt`}
+                      className={`${sx.existing.className} help-messages`}
                       data-stylex-owner="project-fork-existing"
                     >
                       <i

@@ -305,7 +305,7 @@ function SignupFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
 
           {signupRequireConfirm ? (
             <div
-              className={`center-txt ${confirmationNoticeClassName}`}
+              className={confirmationNoticeClassName}
               data-stylex-owner="standalone-signup-confirmation-notice"
               data-stylex-part="signup-confirmation-notice"
             >

@@ -13,6 +13,7 @@ test("preserves the populated fork notice and project link geometry", async ({ p
   expect(template).toContain('class="help-messages center-txt"');
   expect(route).toContain('data-stylex-owner="project-fork-existing"');
   expect(route).toContain('data-stylex-owner="project-fork-existing-link"');
+  expect(route).not.toContain("center-txt");
 
   await mockFork(page);
   for (const viewport of [
@@ -34,10 +35,12 @@ test("preserves the populated fork notice and project link geometry", async ({ p
       right: element.getBoundingClientRect().right,
       viewport: window.innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
+      textAlign: getComputedStyle(element).textAlign,
     }));
     expect(geometry.width).toBeGreaterThan(0);
     expect(geometry.right).toBeLessThanOrEqual(geometry.viewport + 1);
     expect(geometry.scrollWidth).toBe(viewport.width);
+    expect(geometry.textAlign).toBe("center");
   }
 });
 
