@@ -4410,3 +4410,16 @@ route-local StyleX or generic rules. Retain generic search rules, frozen
 Scala/LESS source, generated fallback, and geometry baselines. Verify exact
 absence plus retained generic contracts in project-issues static and formal
 fallback-off tests in normal and fallback-off modes; do not change TSX.
+
+## Batch 588
+
+Retire only the contiguous unreachable `.issue-list-page` mass-update, issue
+row, metadata, count-group, and child-issue selector block from
+`frontend/src/app.css`. Current project, user, milestone, and organization
+issue rows emit no `issue-list-page` ancestor; their active presentation is
+owned by route-local StyleX and generic compatibility rules. Keep the
+standalone `.milesion-wrap` sharer arm, generic issue/count rules, frozen
+Scala/LESS source, generated fallback, and geometry baselines. Verify exact
+selector absence and retained raw row/class ownership in the project-issues
+static and formal fallback-off contracts in normal and fallback-off modes; do
+not change TSX.

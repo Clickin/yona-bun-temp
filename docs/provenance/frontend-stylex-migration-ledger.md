@@ -1887,6 +1887,21 @@ not an unlinking or live-legacy visual-parity claim.
   eight unreachable `.issue-list-page .left-menu` selector arms (`#search
   hr.hide-in-mobile`, search-bar/textbox/search-btn, and issue-option/dt/dd/
   select). Generic search rules, frozen source, generated fallback, and
-  geometry remain. `stylex-project-issues-static-owners-wave.e2e.ts` and
-  `legacy-fallback-off.e2e.ts` assert exact absence plus retained neighboring
-  contracts in normal and fallback-off modes; no TSX changed.
+geometry remain. `stylex-project-issues-static-owners-wave.e2e.ts` and
+`legacy-fallback-off.e2e.ts` assert exact absence plus retained neighboring
+contracts in normal and fallback-off modes; no TSX changed.
+
+## Batch 588
+
+- Project issues unreachable row and mass-update ancestor bridge retirement:
+  legacy issue partials use the historical `issue-list-page` wrapper, but no
+  current React project, user, milestone, or organization issue route emits
+  that ancestor. Their active row, mass-update, metadata, count-group, and
+  child-list presentation is owned by route-local StyleX and generic
+  compatibility rules. `frontend/src/app.css` removes only the contiguous
+  `.issue-list-page` block covering those declarations; the standalone
+  `.milesion-wrap` sharer arm, frozen Scala/LESS source, and generated legacy
+  fallback remain unchanged. `stylex-project-issues-list-row-owners.e2e.ts`
+  and `legacy-fallback-off.e2e.ts` assert exact absence and raw row/class
+  ownership in normal and fallback-off modes. No TSX, frozen source,
+  generated asset, or geometry baseline changed.

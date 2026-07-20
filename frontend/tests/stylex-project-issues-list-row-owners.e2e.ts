@@ -83,9 +83,14 @@ test("populated project issue rows own scoped StyleX geometry and states", async
     ".issue-list-page .for-subtask-progressbar .completion-ratio,",
     ".issue-list-page .child-issue .child-issue-date {",
     ".issue-list-page .issue-item-row:hover .child-issue-date {",
+    ".issue-list-page .mass-update-form .btn-group {",
+    ".issue-list-page .post-item .mass-update-check {",
+    ".issue-list-page .post-item .avatar-wrap {",
+    ".issue-list-page .post-item .title-wrap .title {",
+    ".issue-list-page .post-item .infos {",
+    ".issue-list-page .item-count-groups {",
+    ".issue-list-page .child-issue-list {",
   ]) {
     expect(css).not.toContain(retiredSelector);
   }
-  expect(css).toContain(".issue-list-page .post-item .title-wrap .title {");
-  expect(css).toContain(".issue-list-page .item-count-groups {");
 });
