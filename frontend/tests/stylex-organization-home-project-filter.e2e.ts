@@ -76,6 +76,11 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(style).toContain('fontSize: "11px"');
   expect(style).toContain('color: "#999"');
   expect(style).toContain('projectCardStats: { marginTop: "0", textAlign: "right" }');
+  expect(legacy).toContain('<div class="stats-wrap pull-right">');
+  expect(bootstrap).toContain(".pull-right {\n  float: right;\n}");
+  expect(style).toContain('projectCardStatsWrapper: { float: "right" }');
+  expect(route).toContain("styles.projectCardStatsWrapper");
+  expect(route).toContain('data-stylex-owner="organization-home-project-card-stats"');
   expect(pageLess).toContain("padding: 15px 0 10px 0;");
   expect(pageLess).toContain("overflow: hidden;");
   expect(pageLess).toContain("border-bottom: 1px solid #DCDCDC;");
@@ -403,10 +408,23 @@ for (const viewport of [
           : null,
         stats: statsStyle
           ? {
+              float: statsStyle.float,
               marginTop: statsStyle.marginTop,
               textAlign: statsStyle.textAlign,
               width: statsStyle.width,
             }
+          : null,
+        statsGeometry: stats
+          ? (() => {
+              const box = stats.getBoundingClientRect();
+              const parentBox = node.getBoundingClientRect();
+              return {
+                left: box.left,
+                right: box.right,
+                parentLeft: parentBox.left,
+                parentRight: parentBox.right,
+              };
+            })()
           : null,
         members: membersStyle ? { width: membersStyle.width } : null,
         memberList: memberListStyle
@@ -476,6 +494,13 @@ for (const viewport of [
     });
     expect(metrics.stats?.marginTop).toBe("0px");
     expect(metrics.stats?.textAlign).toBe("right");
+    expect(metrics.stats?.float).toBe("right");
+    expect(metrics.statsGeometry?.left).toBeGreaterThanOrEqual(
+      metrics.statsGeometry?.parentLeft ?? 0,
+    );
+    expect(metrics.statsGeometry?.right).toBeLessThanOrEqual(
+      metrics.statsGeometry?.parentRight ?? 0,
+    );
     expect(metrics.members?.width).toBe(metrics.stats?.width);
     expect(metrics.memberList).toEqual({
       display: "inline-block",

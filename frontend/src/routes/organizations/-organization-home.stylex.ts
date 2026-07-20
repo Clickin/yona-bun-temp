@@ -142,6 +142,8 @@ export const styles = stylex.create({
     margin: "0",
     marginLeft: "10px",
   },
+  // yona-original/public/bootstrap/css/bootstrap.css .pull-right.
+  projectCardStatsWrapper: { float: "right" },
   projectCardStats: { marginTop: "0", textAlign: "right" },
   // yona-original/app/assets/stylesheets/less/_page.less .all-projects .project .stats-wrap .members.
   projectCardMembers: { width: "100%" },

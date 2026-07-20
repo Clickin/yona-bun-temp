@@ -532,6 +532,15 @@ containment remain unchanged; generic button/grid declarations stay fallback-
 owned. Focused normal and fallback-off checks pass 3/3 each, covering source
 mapping, computed float/geometry, visible Link, and filtering.
 
+### 2026-07-21 Batch 681 organization home project-card stats owner proof
+
+ORG-02 project-card stats output now owns the frozen Bootstrap `.pull-right`
+float through a route-local StyleX owner. The legacy wrapper class, counts,
+icons, watch state, filtering, and responsive containment remain unchanged;
+unrelated generic float consumers stay fallback-owned. Focused normal and
+fallback-off checks pass 3/3 each, covering source mapping, computed
+float/geometry, stats visibility, and filtering.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and
