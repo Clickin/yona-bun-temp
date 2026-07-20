@@ -415,6 +415,15 @@ existing project shells, copy, or list/navigation behavior. The shared
 `.error-wrap` fallback remains for other React emitters; normal and
 fallback-disabled focused runs both pass 3/3 serially.
 
+### 2026-07-21 Batch 666 error-wrap owner proof
+
+Batch 666 adds exact route-local owners for secret not-found, project
+issue-labels empty, and project webhooks empty states. The frozen
+`_page.less`/`_sprites.less` declarations are colocated without changing the
+existing global/project shells, copy, or settings navigation. The shared
+`.error-wrap` fallback remains for other React emitters; normal and
+fallback-disabled focused runs both pass 3/3 serially.
+
 ### 2026-07-21 Batch 667 error-wrap owner proof
 
 Batch 667 adds exact route-local owners for project milestones empty and
@@ -424,11 +433,11 @@ shells, tabs, search/navigation, or copy. The shared `.error-wrap` fallback
 remains for other React emitters; normal and fallback-disabled focused runs
 both pass 2/2 serially.
 
-### 2026-07-21 Batch 666 error-wrap owner proof
+### 2026-07-21 Batch 668 error-wrap owner proof
 
-Batch 666 adds exact route-local owners for secret not-found, project
-issue-labels empty, and project webhooks empty states. The frozen
-`_page.less`/`_sprites.less` declarations are colocated without changing the
-existing global/project shells, copy, or settings navigation. The shared
-`.error-wrap` fallback remains for other React emitters; normal and
-fallback-disabled focused runs both pass 3/3 serially.
+Batch 668 adds an exact route-local owner for the current-user issues empty
+state. The frozen `_page.less`/`_sprites.less` declarations are colocated
+without changing the existing user issues shell, search/filter tabs,
+interaction, or copy. The shared `.error-wrap` fallback remains for other
+React emitters; normal and fallback-disabled focused runs both pass 1/1
+serially.

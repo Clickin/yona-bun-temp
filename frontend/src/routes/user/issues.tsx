@@ -10,6 +10,7 @@ import {
   type RestIssueListItem,
   type UserIssueListRestResponse,
 } from "../../auth-workspace-client";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
@@ -374,9 +375,22 @@ function UserIssuesBody({
                 />
               </>
             ) : (
-              <div className="error-wrap">
-                <i className="ico ico-err1"></i>
-                <p>{t("issue.is.empty")}</p>
+              <div
+                {...stylex.props(issueStyles.errorWrap)}
+                className={`${stylex.props(issueStyles.errorWrap).className} error-wrap`}
+                data-stylex-owner="user-issues-empty-error-wrap"
+              >
+                <i
+                  {...stylex.props(issueStyles.errorIcon(legacySpriteUrl))}
+                  className={`${stylex.props(issueStyles.errorIcon(legacySpriteUrl)).className} ico ico-err1`}
+                  data-stylex-owner="user-issues-empty-error-icon"
+                ></i>
+                <p
+                  {...stylex.props(issueStyles.errorMessage)}
+                  data-stylex-owner="user-issues-empty-error-message"
+                >
+                  {t("issue.is.empty")}
+                </p>
               </div>
             )}
           </div>

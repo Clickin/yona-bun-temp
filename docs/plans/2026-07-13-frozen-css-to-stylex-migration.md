@@ -5136,3 +5136,11 @@ message typography into the project milestones empty and organization
 directory empty owners. Preserve the existing project/global shells, tabs,
 search/navigation, legacy DOM/classes/copy, and responsive geometry; keep the
 shared fallback for all other error consumers.
+
+## Batch 668
+
+Move the frozen `.error-wrap` geometry, `ico-err1` sprite positioning, and
+message typography into the current-user issues empty owner. Preserve the
+existing user issues shell, search/filter tabs, legacy DOM/classes/copy,
+interaction, and responsive geometry; keep the shared fallback for all other
+error consumers.
