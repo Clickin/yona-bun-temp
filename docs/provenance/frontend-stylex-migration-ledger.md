@@ -1991,4 +1991,16 @@ retained label paint in normal and fallback-off modes. No TSX changed.
   baselines remain unchanged. The issueform and formal fallback-off contracts
   assert exact absence and retained shared combobox rules in normal and
   fallback-off modes. No TSX changed.
+
+## Batch 598
+
+- Dead `/sites/mail` horizontal-form compatibility bridge retirement:
+  `yona-original/app/views/site/mail.scala.html` and frozen Bootstrap establish
+  the historical `.form-horizontal` group/label/controls geometry. The
+  configured React form owns the same values through route-local StyleX and
+  emits none of these legacy classes. `frontend/src/app.css` removes only the
+  complete horizontal-form group/label/controls block; frozen/generated
+  fallback and geometry remain unchanged. The site-mail and formal
+  fallback-off contracts assert exact selector absence in normal and
+  `VITE_DISABLE_LEGACY_FALLBACK=1` modes.
 | 2026-07-20 | Dead project-home issue-wrap compatibility bridge retirement | Frozen `yona-original/app/views/project/home.scala.html` provides the historical project-home issue section evidence; current React project-home routes emit no `.issue-wrap` consumer. | `frontend/src/app.css` removes only `.project-home .issue-wrap { margin-bottom:15px; }` and `.project-home .issue-wrap a.btn { width:105px; }`; frozen/generated assets and geometry remain unchanged. | `frontend/tests/stylex-project-home-side-panel.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` assert exact absence in normal/fallback-off modes; `fallback-off-2026-07-20-project-home-issue-wrap.md` records the bounded evidence. |

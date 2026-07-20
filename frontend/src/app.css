@@ -2286,33 +2286,6 @@ h1 {
   width: 6.382978723404255%;
 }
 
-.form-horizontal .control-group {
-  margin-bottom: 20px;
-}
-
-.form-horizontal .control-group::before,
-.form-horizontal .control-group::after {
-  display: table;
-  line-height: 0;
-  content: "";
-}
-
-.form-horizontal .control-group::after {
-  clear: both;
-}
-
-.form-horizontal .control-label {
-  display: block;
-  float: left;
-  width: 160px;
-  padding-top: 5px;
-  text-align: right;
-}
-
-.form-horizontal .controls {
-  margin-left: 180px;
-}
-
 .dl-horizontal::before,
 .dl-horizontal::after {
   display: table;

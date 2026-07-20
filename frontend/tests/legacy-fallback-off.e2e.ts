@@ -526,6 +526,16 @@ test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   expect(appCss).not.toContain(".project-home .issue-wrap a.btn {");
 });
 
+test("site mail form-horizontal bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".form-horizontal .control-group");
+  expect(appCss).not.toContain(".form-horizontal .control-label");
+  expect(appCss).not.toContain(".form-horizontal .controls");
+  expect(readFileSync("src/routes/sites/mail.tsx", "utf8")).toContain(
+    'data-stylex-owner="site-mail-form"',
+  );
+});
+
 test("board toolbar bridge has no current producer", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-toolbar");

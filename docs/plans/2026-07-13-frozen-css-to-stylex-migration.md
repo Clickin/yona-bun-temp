@@ -4514,3 +4514,11 @@ routes emit no `.issue-wrap` consumer; retain frozen legacy source, generated
 fallback, and geometry baselines. Update the project-home side-panel and formal fallback-off static
 contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change
 TSX or frozen/generated CSS.
+## Batch 598
+
+Retire the React-side `.form-horizontal` compatibility block (`.control-group`,
+`.control-label`, and `.controls`) from `frontend/src/app.css`. Current React
+site forms omit these legacy classes and own their layout through StyleX;
+frozen Scala templates and generated fallback remain unchanged as legacy
+evidence. Verify exact absence plus retained route-local form ownership in
+normal and fallback-off contracts.

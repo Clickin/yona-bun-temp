@@ -11,6 +11,7 @@ const responsiveBootstrap = new URL(
   "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
   import.meta.url,
 );
+const appCss = new URL("../src/app.css", import.meta.url);
 
 async function mockSession(page: Page) {
   const fulfill = async (route: Route) => {
@@ -30,10 +31,11 @@ async function mockSession(page: Page) {
 }
 
 test("site mail configured form owns frozen Bootstrap horizontal and responsive rules", async ({ page }) => {
-  const [route, legacy, responsive] = await Promise.all([
+  const [route, legacy, responsive, appCssSource] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(legacyTemplate, "utf8"),
     readFile(responsiveBootstrap, "utf8"),
+    readFile(appCss, "utf8"),
   ]);
   expect(legacy).toContain('class="form-horizontal"');
   expect(legacy).toContain('class="control-group mr10"');
@@ -42,6 +44,9 @@ test("site mail configured form owns frozen Bootstrap horizontal and responsive 
   expect(responsive).toContain("@media (max-width: 767px)");
   expect(responsive).toContain('input[class*="span"]');
   expect(responsive).toContain(".form-horizontal .control-label");
+  expect(appCssSource).not.toContain(".form-horizontal .control-group");
+  expect(appCssSource).not.toContain(".form-horizontal .control-label");
+  expect(appCssSource).not.toContain(".form-horizontal .controls");
   expect(route).toContain('data-stylex-owner="site-mail-form"');
   expect(route).toContain('data-stylex-owner="site-mail-form-group"');
   expect(route).toContain('data-stylex-owner="site-mail-form-label"');
