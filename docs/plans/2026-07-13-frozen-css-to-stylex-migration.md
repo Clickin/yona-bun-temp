@@ -4398,3 +4398,15 @@ generic `.nav-tabs` rules, frozen source, generated fallback, and geometry
 baselines. Verify exact selector absence and review-tab retention in the
 project-code static contract and formal fallback-off contract in normal and
 fallback-off modes; do not change TSX in this bridge-retirement batch.
+
+## Batch 587
+
+Retire only the unreachable eight-selector `.issue-list-page .left-menu` search
+and filter bridge from `frontend/src/app.css`: the scoped `#search` hide-in-
+mobile rule, search-bar/textbox/search-button rules, and issue-option/dt/dd/
+select rules. Current project, user, and organization issue routes emit no
+`issue-list-page` ancestor and own their active search presentation through
+route-local StyleX or generic rules. Retain generic search rules, frozen
+Scala/LESS source, generated fallback, and geometry baselines. Verify exact
+absence plus retained generic contracts in project-issues static and formal
+fallback-off tests in normal and fallback-off modes; do not change TSX.

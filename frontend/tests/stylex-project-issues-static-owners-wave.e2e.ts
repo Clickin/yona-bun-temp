@@ -47,6 +47,19 @@ test("project issues static owners use route-local StyleX", async () => {
   expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
   expect(appCss).toContain(".post-list-wrap {");
   expect(appCss).not.toContain(".issue-list-page .issue-item-row {");
+  for (const selector of [
+    ".issue-list-page .left-menu #search hr.hide-in-mobile {",
+    ".issue-list-page .left-menu .search-bar {",
+    ".issue-list-page .left-menu .search-bar .textbox {",
+    ".issue-list-page .left-menu .search-bar .search-btn {",
+    ".issue-list-page .left-menu .issue-option {",
+    ".issue-list-page .left-menu .issue-option dt {",
+    ".issue-list-page .left-menu .issue-option dd {",
+    ".issue-list-page .left-menu .issue-option select {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".search-box-wrap {");
   expect(route).toContain('className="issue-item-row"');
   expect(route).not.toContain('className="issue-list-page');
 });

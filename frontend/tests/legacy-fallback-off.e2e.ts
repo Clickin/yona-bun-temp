@@ -467,6 +467,24 @@ test("project-issues dead list-reset bridge is retired", () => {
   );
 });
 
+test("project-issues left-menu scoped search bridge is retired", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".issue-list-page .left-menu #search hr.hide-in-mobile {",
+    ".issue-list-page .left-menu .search-bar {",
+    ".issue-list-page .left-menu .search-bar .textbox {",
+    ".issue-list-page .left-menu .search-bar .search-btn {",
+    ".issue-list-page .left-menu .issue-option {",
+    ".issue-list-page .left-menu .issue-option dt {",
+    ".issue-list-page .left-menu .issue-option dd {",
+    ".issue-list-page .left-menu .issue-option select {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".search-box-wrap {");
+  expect(appCss).toContain(".search-category-wrap li.empty a,");
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({

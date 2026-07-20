@@ -1875,3 +1875,18 @@ not an unlinking or live-legacy visual-parity claim.
   `legacy-fallback-off.e2e.ts` assert exact absence and review-tab retention in
   both modes; no TSX, frozen source, generated fallback, or geometry baseline
   changed.
+
+## Batch 587
+
+- Project issues left-menu scoped search/filter bridge retirement: legacy
+  `yona-original/app/views/issue/partial_list_wrap.scala.html` establishes the
+  `left-menu` placement and `partial_searchform.scala.html` establishes the
+  search-bar/issue-option output. Current React project, user, and organization
+  issue routes emit no `issue-list-page` ancestor and own active controls with
+  route-local StyleX or generic rules. `frontend/src/app.css` removes only the
+  eight unreachable `.issue-list-page .left-menu` selector arms (`#search
+  hr.hide-in-mobile`, search-bar/textbox/search-btn, and issue-option/dt/dd/
+  select). Generic search rules, frozen source, generated fallback, and
+  geometry remain. `stylex-project-issues-static-owners-wave.e2e.ts` and
+  `legacy-fallback-off.e2e.ts` assert exact absence plus retained neighboring
+  contracts in normal and fallback-off modes; no TSX changed.
