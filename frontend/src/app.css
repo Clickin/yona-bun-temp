@@ -4667,19 +4667,6 @@ div.markdown-preview {
   color: inherit;
 }
 
-.posting-history > button[data-toggle="modal"],
-.voter-list li > button[data-toggle="modal"],
-.vote-description-people[data-toggle="modal"] {
-  padding: 0;
-  color: #0088cc;
-  cursor: pointer;
-  font: inherit;
-  line-height: inherit;
-  text-align: inherit;
-  background: none;
-  border: 0;
-}
-
 @media (max-width: 640px) {
   .board-toolbar {
     align-items: stretch;

@@ -149,7 +149,11 @@ test("project history generic activity wrappers have no fallback bridge", () => 
 test("posting-history modal trigger bridge has no remaining selector arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain('.board-view .posting-history > button[data-toggle="modal"]');
-  expect(appCss).toContain(".posting-history");
+  expect(appCss).not.toContain('.posting-history > button[data-toggle="modal"]');
+  expect(appCss).not.toContain('.voter-list li > button[data-toggle="modal"]');
+  expect(appCss).not.toContain('.vote-description-people[data-toggle="modal"]');
+  expect(appCss).toContain(".modal {");
+  expect(appCss).toContain(".modal-backdrop");
   for (const route of [
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",

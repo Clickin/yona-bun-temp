@@ -41,6 +41,9 @@ test("issue detail modal consumers own route-scoped geometry in StyleX", async (
   expect(less).toContain("line-height:30px");
   expect(css).not.toContain(".issue-detail-page .modal");
   expect(css).not.toContain(".issue-detail-page .keymap-help");
+  expect(css).not.toContain('.posting-history > button[data-toggle="modal"]');
+  expect(css).not.toContain('.voter-list li > button[data-toggle="modal"]');
+  expect(css).not.toContain('.vote-description-people[data-toggle="modal"]');
   expect(css).toContain(".hide {");
   expect(css).toContain(".modal");
 });

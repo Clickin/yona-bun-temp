@@ -4353,3 +4353,16 @@ identifier arms. Current React and legacy inventories emit Highlight.js
 assets. Verify exact app.css absence plus retained `hljs-*` selectors with the
 static contract in normal and fallback-off modes. Do not edit TSX, frozen
 source, generated fallback, or geometry baselines.
+
+## Batch 583
+
+Retire only the unreachable plugin-trigger selector block from
+`frontend/src/app.css`: `.posting-history > button[data-toggle="modal"]`,
+`.voter-list li > button[data-toggle="modal"]`, and
+`.vote-description-people[data-toggle="modal"]`. Current React issue/post
+detail controls use stateful `button[type="button"]` without plugin attributes,
+so these arms match no current DOM. Keep generic modal, voter-list, and
+posting-history rules and all frozen/generated fallback assets. Verify focused
+post-detail and issue-detail modal contracts plus the formal fallback-off
+contract in normal and fallback-off modes; do not edit TSX, frozen source,
+generated fallback, or geometry baselines.

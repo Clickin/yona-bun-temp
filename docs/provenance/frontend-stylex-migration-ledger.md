@@ -1825,3 +1825,15 @@ not an unlinking or live-legacy visual-parity claim.
   absence plus retained Highlight.js selectors in normal and fallback-off
   modes. No TSX, frozen source, generated fallback, or geometry baseline
   changed; global fallback discovery remains incomplete/non-green.
+
+## Batch 583
+
+- Project/issue modal and voter plugin-trigger bridge retirement: legacy
+  Scala uses `data-toggle="modal"` anchors, while current React controls own
+  state with `button[type="button"]` and emit no plugin attribute. Removed only
+  the unreachable `.posting-history > button[data-toggle="modal"]`,
+  `.voter-list li > button[data-toggle="modal"]`, and
+  `.vote-description-people[data-toggle="modal"]` arms from `frontend/src/app.css`.
+  Generic modal/voter/posting-history rules and frozen/generated assets remain.
+  Focused modal contracts and the formal fallback-off contract assert exact
+  selector absence in normal and fallback-off runs.

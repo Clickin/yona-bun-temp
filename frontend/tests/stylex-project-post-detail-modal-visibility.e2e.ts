@@ -18,4 +18,7 @@ test("post detail modal states use conditional StyleX visibility", async () => {
   expect(style).toContain('historyModalVisible: { display: "block" }');
   expect(style).toContain('commentDeleteVisible: { display: "block" }');
   expect(appCss).not.toContain('.board-view .posting-history > button[data-toggle="modal"]');
+  expect(appCss).not.toContain('.posting-history > button[data-toggle="modal"]');
+  expect(appCss).not.toContain('.voter-list li > button[data-toggle="modal"]');
+  expect(appCss).not.toContain('.vote-description-people[data-toggle="modal"]');
 });
