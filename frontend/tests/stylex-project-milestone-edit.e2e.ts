@@ -21,7 +21,10 @@ test("milestone edit form preserves legacy editor/options geometry with StyleX",
   await expect(page.locator('[data-stylex-owner="milestone-edit-form"]')).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="milestone-edit-form-editor-pane"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="milestone-edit-form-options"]')).toBeVisible();
-  await expect(page.locator('[data-stylex-owner="milestone-edit-form-actions"]')).toBeVisible();
+  const actions = page.locator('[data-stylex-owner="milestone-edit-form-actions"]');
+  await expect(actions).toBeVisible();
+  await expect(actions).not.toHaveClass(/right-txt/);
+  await expect(actions).toHaveCSS("text-align", "right");
   await expect(page.locator('[data-stylex-owner="milestone-edit-form-uploader"]')).toBeVisible();
   await expect(page.locator("#title")).toHaveValue("Sprint 1");
   await expect(page.locator("#editor-contents-content-body")).toHaveAttribute("tabindex", "2");
@@ -46,6 +49,10 @@ test("milestone edit form preserves legacy editor/options geometry with StyleX",
   expect(SOURCE).toContain('id="milestone-form"');
   expect(SOURCE).toContain('id="button-clear-temporary"');
   expect(SOURCE).toContain("MilestoneFileUploader");
+  expect(SOURCE).toContain("className={`${stylex.props(styles.actions).className} actrow`}");
+  expect(SOURCE).not.toContain(
+    "className={`${stylex.props(styles.actions).className} actrow right-txt`}",
+  );
   expect(SOURCE).not.toContain("$yobi.loadModule");
   expect(SOURCE).not.toMatch(/href="javascript:/u);
 });

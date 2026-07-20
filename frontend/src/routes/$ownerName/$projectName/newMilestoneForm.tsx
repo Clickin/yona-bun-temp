@@ -76,6 +76,7 @@ const titleStyleProps = stylex.props(styles.title);
 const saveStyleProps = stylex.props(styles.save);
 const cancelStyleProps = stylex.props(styles.cancel);
 const dueDateStyleProps = stylex.props(styles.dueDate);
+const actionStyleProps = stylex.props(newMilestoneFormStyles.actions);
 
 export const Route = createFileRoute("/$ownerName/$projectName/newMilestoneForm")({
   component: ProjectMilestoneCreateFormRoute,
@@ -268,7 +269,10 @@ function ProjectMilestoneCreateFormBody({ runtimeConfig }: { runtimeConfig: Runt
 
                   <MilestoneFileUploader />
 
-                  <div className=" actrow right-txt" data-stylex-owner="project-milestone-actions">
+                  <div
+                    className={`actrow ${actionStyleProps.className}`}
+                    data-stylex-owner="project-milestone-actions"
+                  >
                     <button
                       {...saveStyleProps}
                       type="submit"

@@ -4874,3 +4874,9 @@ copy, and file metadata geometry.
 Migrate the populated project-fork notice and standalone signup confirmation
 notice `center-txt` consumers into their existing route-local StyleX owners,
 preserving the legacy centered copy and DOM.
+
+## Batch 640
+
+Migrate the milestone create and milestone edit action-row `right-txt`
+consumers into their route-local StyleX owners, preserving `actrow`, button
+order, and form geometry.

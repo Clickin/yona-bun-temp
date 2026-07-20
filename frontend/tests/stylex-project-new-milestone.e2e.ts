@@ -43,6 +43,12 @@ test("new milestone theme contains paint only while route keeps geometry declara
   expect(routeSource).toContain('to="/$ownerName/$projectName/milestones"');
 });
 
+test("new milestone actions own right alignment through direct StyleX", () => {
+  expect(styleSource).toContain('actions: { textAlign: "right" }');
+  expect(routeSource).toContain("newMilestoneFormStyles.actions");
+  expect(routeSource).toContain("className={`actrow ${actionStyleProps.className}`}");
+});
+
 test("new milestone route translates legacy editor and date behavior to React state", () => {
   expect(routeSource).toContain("setActiveTab");
   expect(routeSource).toContain("setDueDate");

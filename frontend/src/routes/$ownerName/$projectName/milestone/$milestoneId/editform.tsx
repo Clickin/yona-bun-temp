@@ -203,7 +203,7 @@ function ProjectMilestoneEditFormBody({
                   <MilestoneFileUploader resourceId={stringField(milestone.id, "")} />
 
                   <div
-                    className={`${stylex.props(styles.actions).className} actrow right-txt`}
+                    className={`${stylex.props(styles.actions).className} actrow`}
                     data-stylex-owner="milestone-edit-form-actions"
                   >
                     <button type="submit" className="ybtn ybtn-info">
