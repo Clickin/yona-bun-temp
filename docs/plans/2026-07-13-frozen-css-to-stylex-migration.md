@@ -5119,3 +5119,12 @@ message typography into the project issue-edit not-found, pull-request-edit
 403/404, and new-pull-request 400 error owners. Preserve the existing project
 shell, legacy DOM/classes/copy, list/navigation behavior, and responsive
 geometry; keep the shared fallback for all other error consumers.
+
+## Batch 666
+
+Move the frozen `.error-wrap` geometry, `ico-err1`/`ico-err2` sprite
+positioning, and message typography into the global secret not-found,
+project issue-labels empty, and project webhooks empty owners. Preserve the
+existing global/project shells, legacy DOM/classes/copy, settings navigation,
+and responsive geometry; keep the shared fallback for all other error
+consumers.

@@ -414,3 +414,12 @@ pull-request-edit 403/404, and new-pull-request 400 states. The frozen
 existing project shells, copy, or list/navigation behavior. The shared
 `.error-wrap` fallback remains for other React emitters; normal and
 fallback-disabled focused runs both pass 3/3 serially.
+
+### 2026-07-21 Batch 666 error-wrap owner proof
+
+Batch 666 adds exact route-local owners for secret not-found, project
+issue-labels empty, and project webhooks empty states. The frozen
+`_page.less`/`_sprites.less` declarations are colocated without changing the
+existing global/project shells, copy, or settings navigation. The shared
+`.error-wrap` fallback remains for other React emitters; normal and
+fallback-disabled focused runs both pass 3/3 serially.

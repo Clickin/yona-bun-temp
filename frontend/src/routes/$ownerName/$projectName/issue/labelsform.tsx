@@ -26,6 +26,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../../i18n";
 import { YoramQueryProvider } from "../../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { labelsFormColors, labelsFormDynamicStyles, labelsFormStyles } from "./-labelsform.stylex";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 
 const styles = stylex.create({
   copyForm: { margin: "30px auto" },
@@ -879,10 +880,27 @@ function ProjectLabelsList({
   const { t } = useLegacyMessages();
 
   if (labels.length === 0) {
+    const errorWrap = stylex.props(labelsFormStyles.errorWrap);
+    const errorIcon = stylex.props(labelsFormStyles.errorIcon(legacySpriteUrl));
+    const errorMessage = stylex.props(labelsFormStyles.errorMessage);
     return (
-      <div className="error-wrap">
-        <i className="ico ico-err1"></i>
-        <p>{t("label.list.empty")}</p>
+      <div
+        {...errorWrap}
+        className={`${errorWrap.className ?? ""} error-wrap`.trim()}
+        data-stylex-owner="project-labels-empty-error-wrap"
+      >
+        <i
+          {...errorIcon}
+          className={`${errorIcon.className ?? ""} ico ico-err1`.trim()}
+          data-stylex-owner="project-labels-empty-error-icon"
+        ></i>
+        <p
+          {...errorMessage}
+          className={`${errorMessage.className ?? ""}`.trim()}
+          data-stylex-owner="project-labels-empty-error-message"
+        >
+          {t("label.list.empty")}
+        </p>
       </div>
     );
   }

@@ -6,11 +6,12 @@ import { readAuthUiCapabilitiesRest, setupSecretAdminRest } from "../api/auth";
 import { apiQueryKeys } from "../api/query-keys";
 import { RestApiError } from "../api/rest-client";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, lookupLegacyMessage, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { secretTheme } from "./-secret.stylex";
+import { secretNotFoundStyles, secretTheme } from "./-secret.stylex";
 
 type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   secretSetupRequired?: boolean;
@@ -379,12 +380,30 @@ function NotFoundPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
           </ul>
         </div>
       </header>
-      <div className="page-wrap-outer">
+      <div className="page-wrap-outer" data-stylex-owner="secret-notfound-page">
         <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico ico-err2" />
-            <p>{t("error.notfound")}</p>
-            <Link to="/" activeProps={legacyLinkActiveProps} className="ybtn ybtn-info">
+          <div
+            {...stylex.props(secretNotFoundStyles.errorWrap)}
+            className={`${stylex.props(secretNotFoundStyles.errorWrap).className} error-wrap`}
+            data-stylex-owner="secret-notfound-error-wrap"
+          >
+            <i
+              {...stylex.props(secretNotFoundStyles.errorIcon(legacySpriteUrl))}
+              className={`${stylex.props(secretNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+              data-stylex-owner="secret-notfound-error-icon"
+            />
+            <p
+              {...stylex.props(secretNotFoundStyles.errorMessage)}
+              data-stylex-owner="secret-notfound-error-message"
+            >
+              {t("error.notfound")}
+            </p>
+            <Link
+              to="/"
+              activeProps={legacyLinkActiveProps}
+              className="ybtn ybtn-info"
+              data-stylex-owner="secret-notfound-home"
+            >
               {t("menu.home")}
             </Link>
           </div>

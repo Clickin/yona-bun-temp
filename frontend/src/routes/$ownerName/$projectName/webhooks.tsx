@@ -16,6 +16,7 @@ import type {
 } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
@@ -453,9 +454,23 @@ function ProjectWebhooksList({
 
   if (webhooks.length === 0) {
     return (
-      <div className="error-wrap">
-        <i className="ico ico-err1"></i>
-        <p>{t("project.webhook.list.empty")}</p>
+      <div
+        {...stylex.props(webhooksStyles.errorWrap)}
+        className={`${stylex.props(webhooksStyles.errorWrap).className} error-wrap`}
+        data-stylex-owner="project-webhooks-empty"
+      >
+        <i
+          {...stylex.props(webhooksStyles.errorIcon(legacySpriteUrl))}
+          className={`${stylex.props(webhooksStyles.errorIcon(legacySpriteUrl)).className} ico ico-err1`}
+          data-stylex-owner="project-webhooks-empty-icon"
+        ></i>
+        <p
+          {...stylex.props(webhooksStyles.errorMessage)}
+          className={`${stylex.props(webhooksStyles.errorMessage).className}`}
+          data-stylex-owner="project-webhooks-empty-message"
+        >
+          {t("project.webhook.list.empty")}
+        </p>
       </div>
     );
   }
@@ -478,7 +493,9 @@ function ProjectWebhooksList({
         <div className={`${stylex.props(styles.listHeadCell).className} span2 secret text-center`}>
           <strong>Include git push events</strong>
         </div>
-        <div className={`${stylex.props(styles.listHeadCell).className} span1 secret text-center`}></div>
+        <div
+          className={`${stylex.props(styles.listHeadCell).className} span1 secret text-center`}
+        ></div>
       </div>
       {webhooks.map((webhook) => (
         <div
