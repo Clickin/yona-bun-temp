@@ -578,6 +578,28 @@ test("source-less vertical-top utility bridge has no app.css arm", () => {
   );
 });
 
+test("search category owners have no app.css bridge arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".search-category-wrap {",
+    ".search-category-wrap li {",
+    ".search-category-wrap a,",
+    ".search-category-wrap li.active a,",
+    ".search-category-wrap li.empty a,",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".lst-stacked li {");
+  const sourceContracts = [
+    ["src/routes/search.tsx", "globalSearchCategoryStyles"],
+    ["src/routes/$ownerName/$projectName/search.tsx", "styles.searchCategoryItem"],
+    ["src/routes/organizations/$organizationName/search.tsx", "styles.categoryList"],
+  ] as const;
+  for (const [sourcePath, owner] of sourceContracts) {
+    expect(readFileSync(sourcePath, "utf8")).toContain(owner);
+  }
+});
+
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".project-home .issue-wrap {");

@@ -4723,6 +4723,15 @@ syntax-highlight families remain deferred, and the nested issue-form header arm 
 legacy evidence. Continue only with an exact shared-fallback consumer graph or a documented
 deferred-scope decision; do not perform another broad route scan.
 
+## Batch 621
+
+Retire the shared `.search-category-wrap` fallback family after confirming its three current
+consumers: global search, project search, and organization search. Each route already owns the
+list, item, link, active, and empty declarations through colocated StyleX. Remove only the
+category-family arms from `frontend/src/app.css`; preserve broader search/title/post selectors,
+frozen legacy LESS, and generated fallback evidence. Validate normal and fallback-off category
+states with stable owner/source contracts.
+
 ## Batch 615
 
 Retire only the source-less `.ml20` utility arm from `frontend/src/app.css`.
