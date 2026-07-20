@@ -5318,3 +5318,13 @@ color declarations from the frozen LESS into the existing route-local StyleX
 owner. Preserve counts, icons, watch state/title, card links/filtering, and
 responsive behavior; retain non-emitted avatar-list rules and unrelated
 frozen fallback consumers.
+
+## Batch 691
+
+Review the next organization candidates from fallback-off discovery without accepting
+source-unsupported repairs. The organization creation screen's 1px legend-to-field mismatch
+remains pending because its exact frozen `dt` margin is already present and the tested Bootstrap
+label hypothesis does not reproduce legacy geometry. The organization settings failure is a
+stale owner-contract assertion (`organization-setting-body`), not a CSS-owner candidate. Keep
+the fallback boundary unchanged and select a future candidate only after a source-backed focused
+red/green proof.

@@ -57,3 +57,19 @@ classes, and role/delete behavior remain unchanged. The focused list test passes
 fallback enabled and `3/3` with `VITE_DISABLE_LEGACY_FALLBACK=1`, covering populated/empty
 desktop/mobile row and list geometry. The remaining outer document-width difference is not
 assigned to this route owner and remains in the global/shared bridge lane.
+
+## Candidate review — organization creation/settings
+
+The organization creation screen was replayed with fallback disabled. Its focused contract had
+three behavioral/static passes, but both desktop and mobile geometry checks reported a 1px short
+legend-to-name-field gap (`46px` versus the legacy `47px`). The frozen `.frm-wrap dt` declaration
+is already reproduced exactly (`margin: 3px 0 1px 0`); changing it to `2px` would be an invented
+compensation. The Bootstrap `label { display: block; margin-bottom: 5px; }` hypothesis was also
+replayed and produced `45px`, so this candidate remains un-repaired pending a source-backed DOM or
+cascade explanation.
+
+The organization settings candidate was not selected: its focused fallback-off check failed only
+because the test still expects the retired `organization-setting-body` owner marker, while the
+route emits the current split owners. This is a stale test contract, not evidence for a frozen
+CSS owner migration. No route, test, frozen asset, or fallback boundary was changed for either
+candidate.
