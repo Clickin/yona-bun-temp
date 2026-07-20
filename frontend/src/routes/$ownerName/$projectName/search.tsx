@@ -35,6 +35,9 @@ import {
 import { ProjectHeader, ProjectMenu, ProjectNestedShellContext } from "../$projectName";
 
 const sx = {
+  pageGridRow: stylex.props(styles.pageGridRow),
+  pageGridCategory: stylex.props(styles.pageGridCategory),
+  pageGridResults: stylex.props(styles.pageGridResults),
   searchCategory: stylex.props(styles.searchCategory),
   searchCategoryBadge: stylex.props(styles.searchCategoryBadge),
   searchBox: stylex.props(styles.searchBox),
@@ -383,8 +386,16 @@ function ProjectSearchSuccessBody({
           data-stylex-owner="project-search-results"
         >
           <div className="project-page-wrap">
-            <div className="row-fluid">
-              <div className="span2">
+            <div
+              {...sx.pageGridRow}
+              className={`${sx.pageGridRow.className} row-fluid`}
+              data-stylex-owner="project-search-page-grid-row"
+            >
+              <div
+                {...sx.pageGridCategory}
+                className={`${sx.pageGridCategory.className} span2`}
+                data-stylex-owner="project-search-page-grid-category-column"
+              >
                 <ul
                   {...sx.searchCategory}
                   className={`${sx.searchCategory.className} lst-stacked unstyled search-category-wrap`}
@@ -441,7 +452,11 @@ function ProjectSearchSuccessBody({
                   })}
                 </ul>
               </div>
-              <div className="span10">
+              <div
+                {...sx.pageGridResults}
+                className={`${sx.pageGridResults.className} span10`}
+                data-stylex-owner="project-search-page-grid-results-column"
+              >
                 <div
                   {...sx.searchBox}
                   className={`${sx.searchBox.className} search-box-wrap`}

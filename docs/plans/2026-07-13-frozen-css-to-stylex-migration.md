@@ -4255,3 +4255,11 @@ shared consumers still require them, and verify route-local row/category/results
 owners at desktop and 390px in normal and fallback-off managed runs. The
 focused batch passes 2/2 in each mode; shared grid fallback outside this
 route/state remains active.
+
+## Batch 573
+
+Migrate only the populated project search page-grid boundary using the frozen
+search partials and Bootstrap responsive ratios. Preserve raw grid classes for
+shared consumers, verify the route-local row/category/results owners at 1366px
+and 390px in normal and fallback-off runs, and keep shared document overflow
+outside this owner wave. Focused project search checks pass 2/2 in both modes.

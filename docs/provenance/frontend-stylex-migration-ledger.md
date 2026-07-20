@@ -1708,3 +1708,15 @@ not an unlinking or live-legacy visual-parity claim.
   2/2 in fallback-off mode at 1366px/390px. No frozen source, theme, app.css,
   or generated fallback asset changed; shared grid fallback remains outside
   this route/state.
+
+## Batch 573
+
+- Project search populated page-grid ownership: frozen search result/partial
+  templates and Bootstrap desktop/responsive rules establish the nested
+  `row-fluid > span2/span10` shell, 14.8936%/82.9787% columns, box sizing, and
+  max-767px stacking. `frontend/src/routes/$ownerName/$projectName/search.tsx`
+  and `-project-search.stylex.ts` now own the row/category/results columns with
+  stable owners while retaining raw classes for shared compatibility.
+  `stylex-project-search.e2e.ts` passes 2/2 normal and 2/2 fallback-off tests;
+  bounds and link/style assertions remain owner-scoped. No frozen source,
+  theme, app.css, or generated fallback asset changed.

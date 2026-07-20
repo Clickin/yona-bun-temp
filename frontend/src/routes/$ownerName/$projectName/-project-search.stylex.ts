@@ -14,7 +14,40 @@ export const projectSearchTheme = stylex.defineVars({
 });
 
 export const styles = stylex.create({
-  results: { backgroundColor: projectSearchTheme.resultSurface },
+  results: {
+    backgroundColor: projectSearchTheme.resultSurface,
+    width: "100%",
+  },
+  pageGridRow: {
+    display: "block",
+    width: "100%",
+  },
+  pageGridCategory: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: 0,
+    minHeight: "30px",
+    width: "14.893617021276595%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      marginLeft: 0,
+      width: "100%",
+    },
+  },
+  pageGridResults: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    width: "82.97872340425532%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      marginLeft: 0,
+      width: "100%",
+    },
+  },
   searchCategory: {
     borderTopColor: projectSearchTheme.border,
     borderTopStyle: "solid",
