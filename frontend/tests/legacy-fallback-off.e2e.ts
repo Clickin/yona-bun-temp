@@ -540,6 +540,13 @@ test("source-less sr-only bridge has no app.css arm", () => {
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("sr-only"))).toBe(false);
 });
 
+test("source-less ml20 utility bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".ml20 {");
+  const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("ml20"))).toBe(false);
+});
+
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".project-home .issue-wrap {");

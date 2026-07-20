@@ -4681,3 +4681,12 @@ mention is a stale historical progress note about an earlier generated heading.
 Keep all frozen/generated sources unchanged and do not alter route DOM or
 accessibility behavior. Update the formal fallback-off static contract and
 record the stale-note boundary in provenance.
+
+## Batch 615
+
+Retire only the source-less `.ml20` utility arm from `frontend/src/app.css`.
+The current React/TSX inventory emits no `ml20`; frozen legacy utility sources
+remain historical evidence. Keep the neighboring `.ml10`, `.mr*`, and other
+utility declarations unchanged. Update the formal fallback-off static contract
+and record the bounded utility-family scope in provenance; do not change route
+TSX or frozen/generated CSS.
