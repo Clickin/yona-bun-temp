@@ -553,8 +553,7 @@ body:has([data-stylex-owner="framed-site-shell"][data-sidebar-open="true"]) {
   list-style: none;
 }
 
-.gnb-nav > li,
-.gnb-usermenu > li {
+.gnb-nav > li {
   float: left;
   position: relative;
 }

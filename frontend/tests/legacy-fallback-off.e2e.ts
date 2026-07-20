@@ -567,6 +567,13 @@ test("authenticated user-menu dropdown declaration bridge has no app.css arms", 
   ).toContain('data-stylex-owner="authenticated-site-user-menu"');
 });
 
+test("authenticated user-menu item bridge keeps only the live standalone arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".gnb-nav > li,\n.gnb-usermenu > li {");
+  expect(appCss).toContain(".gnb-nav > li {\n  float: left;\n  position: relative;");
+  expect(appCss).toContain(".gnb-usermenu > li {\n  position: relative;\n  float: left;");
+});
+
 test("site mail form-horizontal bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".form-horizontal .control-group");

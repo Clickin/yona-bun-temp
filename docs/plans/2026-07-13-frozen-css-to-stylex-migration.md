@@ -4572,3 +4572,13 @@ arm, other usermenu selectors, frozen sources, generated fallback, and
 geometry baselines. Update the authenticated global-shell and formal
 fallback-off static contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1`
 modes; do not change TSX or frozen/generated CSS.
+
+## Batch 604
+
+Retire only the redundant `.gnb-usermenu > li` arm from the grouped
+`.gnb-nav > li, .gnb-usermenu > li` rule in `frontend/src/app.css`. Retain the
+live `.gnb-nav > li` replacement and later standalone `.gnb-usermenu > li`
+rule used by current root user-menu output. Update the authenticated user-menu
+and formal fallback-off static contracts in normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX, frozen CSS, generated
+fallback, or geometry baselines.
