@@ -5111,3 +5111,11 @@ message typography into the project post not-found, project-search forbidden,
 and organization-search error owners. Preserve the existing project or
 organization shell, legacy DOM/classes/copy, login or list navigation, and
 responsive geometry; keep the shared fallback for all other error consumers.
+
+## Batch 665
+
+Move the frozen `.error-wrap` geometry, `ico-err2` sprite positioning, and
+message typography into the project issue-edit not-found, pull-request-edit
+403/404, and new-pull-request 400 error owners. Preserve the existing project
+shell, legacy DOM/classes/copy, list/navigation behavior, and responsive
+geometry; keep the shared fallback for all other error consumers.

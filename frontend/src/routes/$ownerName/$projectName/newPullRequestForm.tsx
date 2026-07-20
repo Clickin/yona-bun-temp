@@ -14,6 +14,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { RestApiError } from "../../../api/rest-client";
 import type { ProjectContainer } from "../../../api/types";
 import { readSessionBootstrap } from "../../../auth-workspace-client";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../-legacy-markdown-help";
@@ -128,12 +129,25 @@ function ProjectNewPullRequestScreen({
 }
 
 function ProjectPullRequestCreateBadRequest({ message }: { message: string }) {
+  const errorIconStyleProps = stylex.props(uploadStyles.errorIcon(`url(${legacySpriteUrl})`));
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="new-pull-request-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2" />
-          <p>{message}</p>
+        <div
+          className={`${stylex.props(uploadStyles.errorWrap).className} error-wrap`.trim()}
+          data-stylex-owner="new-pull-request-error-wrap"
+        >
+          <i
+            {...errorIconStyleProps}
+            className={`${errorIconStyleProps.className ?? ""} ico ico-err2`.trim()}
+            data-stylex-owner="new-pull-request-error-icon"
+          ></i>
+          <p
+            className={stylex.props(uploadStyles.errorMessage).className}
+            data-stylex-owner="new-pull-request-error-message"
+          >
+            {message}
+          </p>
         </div>
       </div>
     </div>

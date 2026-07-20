@@ -13,6 +13,7 @@ import {
 import { listProjectLabelsQueryOptions } from "../../../../../api/project-labels";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer, YoramRecord } from "../../../../../api/types";
+import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import {
   listIssueParentOptions,
   readIssueDetail,
@@ -129,11 +130,24 @@ function ProjectIssueEditNotFoundBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="project-issue-editform-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.notfound.issue_post")}</p>
+        <div
+          {...stylex.props(styles.errorWrap)}
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+          data-stylex-owner="project-issue-editform-error-wrap"
+        >
+          <i
+            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
+            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+            data-stylex-owner="project-issue-editform-error-icon"
+          ></i>
+          <p
+            {...stylex.props(styles.errorMessage)}
+            data-stylex-owner="project-issue-editform-error-message"
+          >
+            {t("error.notfound.issue_post")}
+          </p>
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}
@@ -151,6 +165,7 @@ function ProjectIssueEditNotFoundBody({
               pageNum: 1,
             }}
             className="ybtn ybtn-primary"
+            data-stylex-owner="project-issue-editform-error-list"
           >
             {t("button.list")}
           </Link>

@@ -11,6 +11,7 @@ import {
   type PullRequestFormSelected,
 } from "../../../../../api/pull-requests";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
+import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../../-legacy-markdown-help";
@@ -66,11 +67,25 @@ function ProjectPullRequestEditScreen({ runtimeConfig }: { runtimeConfig: Runtim
 function ProjectPullRequestEditErrorBody({ status }: { status: 403 | 404 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="pull-request-edit-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+        <div
+          {...stylex.props(sx.errorWrap)}
+          className={`${stylex.props(sx.errorWrap).className} error-wrap`.trim()}
+          data-stylex-owner="pull-request-edit-error-wrap"
+        >
+          <i
+            {...stylex.props(sx.errorIcon(`url(${legacySpriteUrl})`))}
+            className={`${stylex.props(sx.errorIcon(`url(${legacySpriteUrl})`)).className} ico ico-err2`.trim()}
+            data-stylex-owner="pull-request-edit-error-icon"
+          ></i>
+          <p
+            {...stylex.props(sx.errorMessage)}
+            className={stylex.props(sx.errorMessage).className}
+            data-stylex-owner="pull-request-edit-error-message"
+          >
+            {t(status === 404 ? "error.notfound" : "error.forbidden")}
+          </p>
         </div>
       </div>
     </div>

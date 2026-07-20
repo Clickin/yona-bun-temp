@@ -405,3 +405,12 @@ project-search forbidden, and organization-search error states. The frozen
 existing shells, copy, or login/list behavior. The shared `.error-wrap`
 fallback remains for other React emitters; normal and fallback-disabled
 focused runs both pass 3/3 serially.
+
+### 2026-07-21 Batch 665 form error-wrap owner proof
+
+Batch 665 adds exact route-local owners for project issue-edit not-found,
+pull-request-edit 403/404, and new-pull-request 400 states. The frozen
+`_page.less`/`_sprites.less` declarations are colocated without changing the
+existing project shells, copy, or list/navigation behavior. The shared
+`.error-wrap` fallback remains for other React emitters; normal and
+fallback-disabled focused runs both pass 3/3 serially.
