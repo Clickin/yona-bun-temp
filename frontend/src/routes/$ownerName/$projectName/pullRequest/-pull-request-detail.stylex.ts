@@ -9,7 +9,11 @@ export const pullRequestDetailColors = stylex.defineVars({
 export const styles = stylex.create({
   page: { minHeight: "100%" },
   body: { minWidth: 0 },
-  author: { color: pullRequestDetailColors.accentText, marginTop: "20px" },
+  author: {
+    color: pullRequestDetailColors.accentText,
+    marginTop: "20px",
+    textAlign: "left",
+  },
   content: { minWidth: 0, borderColor: pullRequestDetailColors.contentBorder },
   state: { color: pullRequestDetailColors.mutedText, marginTop: "15px" },
   alert: {

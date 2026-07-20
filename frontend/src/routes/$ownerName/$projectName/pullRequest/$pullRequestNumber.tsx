@@ -237,7 +237,7 @@ function PullRequestOverviewBody({
             data-stylex-owner="pull-request-detail-body"
           >
             <div
-              className={`${stylex.props(styles.author).className} author-info left-txt`}
+              className={`${stylex.props(styles.author).className} author-info`}
               data-stylex-owner="pull-request-detail-author"
             >
               <Link

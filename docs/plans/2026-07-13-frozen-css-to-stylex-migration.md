@@ -4745,6 +4745,14 @@ existing-fork link already owns the frozen primary color through its route-local
 StyleX owner; preserve `vmiddle` and the frozen legacy source as evidence. No
 other text utility family is included in this wave.
 
+## Batch 624
+
+Retire the single-consumer `.left-txt` fallback arm from the pull-request overview
+author row. The route-local `styles.author` owner now carries the frozen
+`text-align: left` declaration directly; preserve the `author-info` DOM, branch
+layout, and immutable legacy LESS/generated fallback evidence. No other text utility
+family is included in this wave.
+
 ## Batch 621
 
 Retire the shared `.search-category-wrap` fallback family after confirming its three current

@@ -15,9 +15,17 @@ const legacyPartial = readFileSync(
   "utf8",
 );
 const legacyRoot = readFileSync("../yona-original/app/views/git/view.scala.html", "utf8");
+const appCss = readFileSync("src/app.css", "utf8");
+const legacyCommon = readFileSync(
+  "../yona-original/app/assets/stylesheets/less/_common.less",
+  "utf8",
+);
 
 test("pull request detail owns static author and reviewer spacing in StyleX", async ({ page }) => {
   expect(legacyPartial).toContain('style="display:inline-block; margin-right:5px;"');
+  expect(legacyRoot).toContain('<div class="author-info left-txt"');
+  expect(legacyCommon).toContain(".left-txt      { text-align:left;  }");
+  expect(appCss).not.toContain(".left-txt {");
   expect(legacyRoot).toContain('<div class="mr5" style="display:inline-block;">');
   expect(legacyPartial).toContain(
     'style="font-size: 13px; vertical-align: middle; margin: 0 10px;"',
@@ -29,9 +37,9 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
   expect(routeSource).not.toContain('style={{ marginTop: "20px" }}');
   expect(routeSource).not.toContain('style={{ display: "inline-block", marginRight: "5px" }}');
   expect(routeSource).not.toContain('style={{ display: "inline-block" }}');
-  expect(styleSource).toContain(
-    'author: { color: pullRequestDetailColors.accentText, marginTop: "20px" }',
-  );
+  expect(styleSource).toContain("color: pullRequestDetailColors.accentText");
+  expect(styleSource).toContain('textAlign: "left"');
+  expect(routeSource).not.toContain("author-info left-txt");
   expect(styleSource).toContain('reviewers: { display: "inline-block", marginRight: "5px" }');
   expect(styleSource).toContain(
     'reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" }',
@@ -50,6 +58,7 @@ test("pull request detail owns static author and reviewer spacing in StyleX", as
     const summary = page.locator('[data-stylex-owner="pull-request-detail-reviewer-summary"]');
     const actionWrapper = page.locator('[data-stylex-owner="pull-request-detail-action-wrapper"]');
     await expect(author).toHaveCSS("margin-top", "20px");
+    await expect(author).toHaveCSS("text-align", "left");
     await expect(reviewers).toHaveCSS("display", "inline-block");
     await expect(reviewers).toHaveCSS("margin-right", "5px");
     await expect(summary).toHaveCSS("font-size", "13px");

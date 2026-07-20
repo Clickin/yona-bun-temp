@@ -484,6 +484,23 @@ test("primary text fallback arm has StyleX ownership", () => {
   expect(stylexSource).toContain("existingLink: { color: forkColors.existingLink");
 });
 
+test("pull request author left alignment has StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const route = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    "utf8",
+  );
+  const stylexSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(appCss).not.toContain(".left-txt {");
+  expect(route).not.toContain("left-txt");
+  expect(route).toContain('data-stylex-owner="pull-request-detail-author"');
+  expect(stylexSource).toContain('textAlign: "left"');
+});
+
 test("pull-request tab button bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [
