@@ -62,6 +62,8 @@ export const styles = stylex.create({
   },
   // yona-original/app/assets/stylesheets/less/_page.less .project-menu-inner.
   organizationMenuInner: { height: "39px", margin: "0 auto" },
+  // yona-original/app/assets/stylesheets/less/_page.less .project-menu-nav.
+  organizationMenuNav: { height: "39px", listStyle: "none", margin: "0" },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
   projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" },

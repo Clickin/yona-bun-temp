@@ -24,6 +24,10 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   const innerRule = legacyPage.match(/\.project-menu-inner\s*\{([^}]*)\}/)?.[1] ?? "";
   expect(innerRule).toContain("height:39px;");
   expect(innerRule).toContain("margin:0 auto;");
+  const navRule = legacyPage.match(/\.project-menu-nav\s*\{([^}]*)\}/)?.[1] ?? "";
+  expect(navRule).toContain("list-style: none;");
+  expect(navRule).toContain("margin:0;");
+  expect(navRule).toContain("height:39px;");
   expect(legacyPage).toContain("float:left;");
   expect(legacyPage).toContain("padding:5px 20px 4px;");
   expect(legacyPage).toContain("background-color: #dadada;");
@@ -39,6 +43,7 @@ test("organization home moves the legacy header and menu shells into StyleX owne
     "organization-header-breadcrumb",
     "organization-menu-shell",
     "organization-menu-inner",
+    "organization-menu-settings",
   ]) {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -50,10 +55,18 @@ test("organization home moves the legacy header and menu shells into StyleX owne
     "headerBreadcrumb",
     "menuShell",
     "organizationMenuInner",
+    "organizationMenuNav",
   ]) {
     expect(style).toContain(`${styleName}:`);
   }
   expect(style).toContain('organizationMenuInner: { height: "39px", margin: "0 auto" }');
+  expect(style).toContain(
+    'organizationMenuNav: { height: "39px", listStyle: "none", margin: "0" }',
+  );
+  expect(route).toContain("styles.organizationMenuNav, styles.projectMenuGroup");
+  expect(route).toContain(
+    "className={`${stylex.props(styles.organizationMenuNav).className} project-menu-nav`}",
+  );
 
   await mockOrganizationHome(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -71,6 +84,8 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       "organization-header-breadcrumb",
       "organization-menu-shell",
       "organization-menu-inner",
+      "organization-menu-group",
+      "organization-menu-settings",
     ];
     const nodes = Object.fromEntries(
       required.map((owner) => [owner, document.querySelector(`[data-stylex-owner=\"${owner}\"]`)]),
@@ -84,6 +99,8 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       header: box(nodes["organization-profile-header-background"] as Element),
       menu: box(nodes["organization-menu-shell"] as Element),
       menuInner: box(nodes["organization-menu-inner"] as Element),
+      menuGroup: box(nodes["organization-menu-group"] as Element),
+      menuSettings: box(nodes["organization-menu-settings"] as Element),
       headerBackground: getComputedStyle(nodes["organization-profile-header-background"] as Element)
         .backgroundColor,
       headerHeight: getComputedStyle(nodes["organization-profile-header-background"] as Element)
@@ -92,6 +109,22 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       menuHeight: getComputedStyle(nodes["organization-menu-shell"] as Element).height,
       menuInnerHeight: getComputedStyle(nodes["organization-menu-inner"] as Element).height,
       menuInnerMargin: getComputedStyle(nodes["organization-menu-inner"] as Element).margin,
+      menuGroupStyle: (() => {
+        const computed = getComputedStyle(nodes["organization-menu-group"] as Element);
+        return {
+          height: computed.height,
+          listStyle: computed.listStyleType,
+          margin: computed.margin,
+        };
+      })(),
+      menuSettingsStyle: (() => {
+        const computed = getComputedStyle(nodes["organization-menu-settings"] as Element);
+        return {
+          height: computed.height,
+          listStyle: computed.listStyleType,
+          margin: computed.margin,
+        };
+      })(),
       menuItem: (() => {
         const item = document.querySelector('[data-stylex-owner="organization-menu-group"] > li');
         const link = item?.querySelector("a");
@@ -115,6 +148,12 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(desktop.menuHeight).toBe("39px");
   expect(desktop.menuInnerHeight).toBe("39px");
   expect(desktop.menuInnerMargin).toBe("0px");
+  expect(desktop.menuGroupStyle).toEqual({
+    height: "39px",
+    listStyle: "none",
+    margin: "0px 0px 0px 110px",
+  });
+  expect(desktop.menuSettingsStyle).toEqual({ height: "39px", listStyle: "none", margin: "0px" });
   expect(desktop.menuBackground).toBe("rgb(236, 236, 236)");
   expect(desktop.menuItem.float).toBe("left");
   expect(desktop.menuItem.fontSize).toBe("14px");
@@ -129,6 +168,14 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(desktop.menuInner.bottom).toBeLessThanOrEqual(desktop.menu.bottom);
   expect(desktop.menuInner.left).toBeGreaterThanOrEqual(desktop.menu.left);
   expect(desktop.menuInner.right).toBeLessThanOrEqual(desktop.menu.right);
+  expect(desktop.menuGroup.top).toBe(desktop.menuInner.top);
+  expect(desktop.menuGroup.bottom).toBeLessThanOrEqual(desktop.menuInner.bottom);
+  expect(desktop.menuSettings.top).toBe(desktop.menuInner.top);
+  expect(desktop.menuSettings.bottom).toBeLessThanOrEqual(desktop.menuInner.bottom);
+  await expect(page.locator('[data-stylex-owner="organization-menu-group"] > li')).toHaveCount(4);
+  await expect(page.locator('[data-stylex-owner="organization-menu-settings"] > li')).toHaveCount(
+    0,
+  );
 
   const firstMenuLink = page
     .locator('[data-stylex-owner="organization-menu-group"] > li a')
@@ -178,6 +225,25 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       const computed = getComputedStyle(link);
       return { padding: computed.padding, width: link.getBoundingClientRect().width };
     })(),
+    menuLists: [
+      { expectedMargin: "0px 0px 0px 110px", owner: "organization-menu-group" },
+      { expectedMargin: "0px", owner: "organization-menu-settings" },
+    ].map(({ expectedMargin, owner }) => {
+      const list = document.querySelector(`[data-stylex-owner="${owner}"]`);
+      if (!(list instanceof HTMLElement)) throw new Error(`missing mobile ${owner}`);
+      const box = list.getBoundingClientRect();
+      const computed = getComputedStyle(list);
+      return {
+        bottom: box.bottom,
+        height: computed.height,
+        left: box.left,
+        listStyle: computed.listStyleType,
+        margin: computed.margin,
+        expectedMargin,
+        right: box.right,
+        top: box.top,
+      };
+    }),
   }));
   expect(mobile.headerWidth).toBe(390);
   expect(mobile.menuWidth).toBe(390);
@@ -190,6 +256,15 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(mobile.scrollWidth).toBeLessThanOrEqual(398);
   expect(mobile.menuLink.padding).toBe("5px 12px 4px");
   expect(mobile.menuLink.width).toBeGreaterThan(0);
+  for (const list of mobile.menuLists) {
+    expect(list.height).toBe("39px");
+    expect(list.listStyle).toBe("none");
+    expect(list.margin).toBe(list.expectedMargin);
+    expect(list.top).toBe(mobile.menuInner.top);
+    expect(list.bottom).toBeLessThanOrEqual(mobile.menuInner.bottom);
+    expect(list.left).toBeGreaterThanOrEqual(mobile.menuInner.left);
+    expect(list.right).toBeLessThanOrEqual(mobile.menuInner.right);
+  }
 });
 
 async function mockOrganizationHome(page: Page) {

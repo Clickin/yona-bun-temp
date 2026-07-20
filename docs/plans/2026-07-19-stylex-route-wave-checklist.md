@@ -550,6 +550,16 @@ visibility, and responsive containment remain unchanged. Focused normal and
 fallback-off checks pass 1/1 each, covering source mapping, computed
 desktop/mobile geometry, containment, and menu behavior.
 
+### 2026-07-21 Batch 683 organization home menu-nav owner proof
+
+ORG-02 organization menu main/settings lists now own the frozen
+`.project-menu-nav` `list-style: none`, `margin: 0`, and `height: 39px`
+declarations through one route-local StyleX owner. The main group's existing
+`margin-left: 110px` offset, legacy classes, links, active state, settings
+visibility, and responsive containment remain unchanged. Focused normal and
+fallback-off checks pass 1/1 each, covering source mapping, computed
+desktop/mobile list geometry, containment, and menu behavior.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

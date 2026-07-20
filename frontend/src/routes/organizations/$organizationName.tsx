@@ -876,7 +876,7 @@ export function OrganizationMenu({
         data-stylex-owner="organization-menu-inner"
       >
         <ul
-          className={`${stylex.props(styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
+          className={`${stylex.props(styles.organizationMenuNav, styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
           data-stylex-owner="organization-menu-group"
         >
           <li
@@ -996,7 +996,10 @@ export function OrganizationMenu({
           className={`${stylex.props(styles.projectSetting).className} project-setting`}
           data-stylex-owner="organization-menu-setting"
         >
-          <ul className="project-menu-nav">
+          <ul
+            className={`${stylex.props(styles.organizationMenuNav).className} project-menu-nav`}
+            data-stylex-owner="organization-menu-settings"
+          >
             {viewerCanUpdate ? (
               <li className="">
                 <Link

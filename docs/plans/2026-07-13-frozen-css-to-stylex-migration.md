@@ -5245,6 +5245,14 @@ Preserve the legacy menu DOM/classes, link and active-state behavior, settings
 visibility, and responsive containment; retain unrelated menu fallback
 consumers.
 
+## Batch 683
+
+Move the organization home `.project-menu-nav` list-style, margin, and height
+declarations into one route-local StyleX owner shared by the emitted main and
+settings lists. Preserve the menu-group float/offset, legacy classes, links,
+active state, settings visibility, and responsive containment; retain
+unrelated menu fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count
