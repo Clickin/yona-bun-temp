@@ -560,6 +560,16 @@ visibility, and responsive containment remain unchanged. Focused normal and
 fallback-off checks pass 1/1 each, covering source mapping, computed
 desktop/mobile list geometry, containment, and menu behavior.
 
+### 2026-07-21 Batch 684 organization home page-wrapper owner proof
+
+ORG-02 organization home output now owns the frozen `.page-wrap-outer` base
+and effective responsive declarations through the existing route-local StyleX
+owner: min-height, margin-top, min-width, padding, width, and box-sizing.
+Legacy wrapper DOM/class, color, child layout, filtering, and responsive
+containment remain unchanged. Focused normal and fallback-off checks pass 3/3
+each, covering source mapping, computed desktop/mobile wrapper geometry, and
+project filtering/visibility.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

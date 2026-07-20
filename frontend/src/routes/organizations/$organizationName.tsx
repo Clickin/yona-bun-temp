@@ -217,6 +217,7 @@ function OrganizationHomeScreen({
     <>
       <title>{organizationName}</title>
       <div
+        {...stylex.props(styles.home)}
         className={`${stylex.props(styles.home).className} page-wrap-outer`}
         data-stylex-owner="organization-home-page"
       >

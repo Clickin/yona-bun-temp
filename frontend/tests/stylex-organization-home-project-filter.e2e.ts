@@ -26,18 +26,46 @@ const bootstrapSource = new URL(
   "../../yona-original/public/bootstrap/css/bootstrap.css",
   import.meta.url,
 );
+const responsiveSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_responsive.less",
+  import.meta.url,
+);
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess, yobiUi, variables, bootstrap] = await Promise.all([
-    readFile(routeSource, "utf8"),
-    readFile(styleSource, "utf8"),
-    readFile(legacySource, "utf8"),
-    readFile(pageLessSource, "utf8"),
-    readFile(yobiUiSource, "utf8"),
-    readFile(variablesSource, "utf8"),
-    readFile(bootstrapSource, "utf8"),
-  ]);
+  const [route, style, legacy, pageLess, yobiUi, variables, bootstrap, responsive] =
+    await Promise.all([
+      readFile(routeSource, "utf8"),
+      readFile(styleSource, "utf8"),
+      readFile(legacySource, "utf8"),
+      readFile(pageLessSource, "utf8"),
+      readFile(yobiUiSource, "utf8"),
+      readFile(variablesSource, "utf8"),
+      readFile(bootstrapSource, "utf8"),
+      readFile(responsiveSource, "utf8"),
+    ]);
   expect(legacy).toContain("project");
+  expect(legacy).toContain('<div class="page-wrap-outer">');
+  expect(pageLess).toContain(
+    ".page-wrap-outer {\n    min-height: 450px;\n    margin-top: 10px;\n}",
+  );
+  expect(yobiUi).toContain(".search-bar {");
+  expect(responsive).toContain(
+    "  .page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;\n  }",
+  );
+  expect(responsive).toContain(
+    "  .page-wrap-outer {\n    padding: 0 10px;\n    width: 100%;\n    box-sizing: border-box;\n  }",
+  );
+  expect(route).toContain('data-stylex-owner="organization-home-page"');
+  expect(route).toContain("styles.home");
+  expect(style).toContain("home:");
+  expect(style).toContain('boxSizing: "border-box"');
+  expect(style).toContain('marginTop: "10px"');
+  expect(style).toContain('minHeight: "450px"');
+  expect(style).toContain('minWidth: { [globalBreakpoints.mobile]: "10px !important" }');
+  expect(style).toContain(
+    'padding: { default: "0 10px", [globalBreakpoints.mobile]: "0 !important" }',
+  );
+  expect(style).toContain('width: "100%"');
   expect(route).toContain('data-stylex-owner="organization-home-project-filter-item"');
   expect(route).toContain("projectHidden");
   expect(route).not.toContain('style={hidden ? { display: "none" } : undefined}');
@@ -206,6 +234,7 @@ for (const viewport of [
     const card = page
       .locator('[data-stylex-owner="organization-home-project-filter-item"]')
       .first();
+    const pageWrap = page.locator('[data-stylex-owner="organization-home-page"]');
     const list = page.locator('[data-stylex-owner="organization-home-projects"]');
     const searchBar = page.locator('[data-stylex-owner="organization-home-search-bar"]');
     const searchInput = page.locator('[data-stylex-owner="organization-home-search-input"]');
@@ -217,12 +246,39 @@ for (const viewport of [
       name: /create new project/i,
     });
     await expect(card).toBeVisible();
+    await expect(pageWrap).toBeVisible();
     await expect(searchBar).toBeVisible();
     await expect(searchInput).toBeVisible();
     await expect(searchButton).toBeAttached();
     await expect(createProjectWrapper).toBeVisible();
     await expect(createProjectLink).toBeVisible();
     await expect(createProjectLink).toHaveAttribute("href", /owner=weblabs/);
+    const pageWrapMetrics = await pageWrap.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      return {
+        boxSizing: style.boxSizing,
+        height: box.height,
+        left: box.left,
+        marginTop: style.marginTop,
+        minHeight: style.minHeight,
+        minWidth: style.minWidth,
+        padding: style.padding,
+        right: box.right,
+        width: style.width,
+      };
+    });
+    expect(pageWrapMetrics).toMatchObject({
+      boxSizing: "border-box",
+      marginTop: "10px",
+      minHeight: "450px",
+      padding: viewport.name === "mobile" ? "0px" : "0px 10px",
+      minWidth: viewport.name === "mobile" ? "10px" : pageWrapMetrics.minWidth,
+    });
+    expect(pageWrapMetrics.left).toBe(0);
+    expect(pageWrapMetrics.right).toBe(viewport.width);
+    expect(pageWrapMetrics.width).toBe(`${viewport.width}px`);
+    expect(pageWrapMetrics.height).toBeGreaterThanOrEqual(450);
     const createProjectMetrics = await createProjectWrapper.evaluate((node) => {
       const style = getComputedStyle(node);
       const wrapperBox = node.getBoundingClientRect();

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { globalBreakpoints } from "../../theme.stylex";
 
 export const organizationHomeColors = stylex.defineVars({
   mutedText: "#777777",
@@ -65,7 +66,17 @@ export const styles = stylex.create({
   // yona-original/app/assets/stylesheets/less/_page.less .project-menu-nav.
   organizationMenuNav: { height: "39px", listStyle: "none", margin: "0" },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
-  home: { color: organizationHomeColors.mutedText },
+  // yona-original/app/assets/stylesheets/less/_page.less .page-wrap-outer.
+  // yona-original/app/assets/stylesheets/less/_responsive.less .page-wrap-outer.
+  home: {
+    boxSizing: "border-box",
+    color: organizationHomeColors.mutedText,
+    marginTop: "10px",
+    minHeight: "450px",
+    minWidth: { [globalBreakpoints.mobile]: "10px !important" },
+    padding: { default: "0 10px", [globalBreakpoints.mobile]: "0 !important" },
+    width: "100%",
+  },
   projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" },
   overview: {
     borderLeftColor: "#fc491e",

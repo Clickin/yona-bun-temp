@@ -5253,6 +5253,13 @@ settings lists. Preserve the menu-group float/offset, legacy classes, links,
 active state, settings visibility, and responsive containment; retain
 unrelated menu fallback consumers.
 
+## Batch 684
+
+Move the organization home `.page-wrap-outer` base and effective responsive
+declarations into the existing route-local StyleX owner. Preserve the legacy
+page wrapper class/DOM, color, child layout, responsive containment, and
+project filtering; retain unrelated page-wrapper fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count
