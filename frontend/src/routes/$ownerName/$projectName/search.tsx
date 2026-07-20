@@ -23,6 +23,7 @@ import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SiteLayoutShell } from "../../-home-route-screen";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { styles } from "./-project-search.stylex";
 import {
   DefaultSearchErrorBody,
@@ -57,6 +58,9 @@ const sx = {
   metaItem: stylex.props(styles.metaItem),
   keyword: stylex.props(styles.keyword),
   emptyResult: (backgroundImage: string) => stylex.props(styles.emptyResult(backgroundImage)),
+  forbiddenErrorWrap: stylex.props(styles.forbiddenErrorWrap),
+  forbiddenErrorIcon: stylex.props(styles.forbiddenErrorIcon(legacySpriteUrl)),
+  forbiddenErrorMessage: stylex.props(styles.forbiddenErrorMessage),
 } as const;
 
 type ProjectSearchRouteSearch = {
@@ -1041,14 +1045,25 @@ function ProjectSearchForbiddenErrorBody({
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="project-search-forbidden-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.forbidden")}</p>
+        <div
+          {...sx.forbiddenErrorWrap}
+          className={`${sx.forbiddenErrorWrap.className} error-wrap`}
+          data-stylex-owner="project-search-forbidden-wrap"
+        >
+          <i
+            {...sx.forbiddenErrorIcon}
+            className={`${sx.forbiddenErrorIcon.className} ico ico-err2`}
+            data-stylex-owner="project-search-forbidden-icon"
+          ></i>
+          <p {...sx.forbiddenErrorMessage} data-stylex-owner="project-search-forbidden-message">
+            {t("error.forbidden")}
+          </p>
           {isAnonymous ? (
             <Link
               className="ybtn ybtn-primary"
+              data-stylex-owner="project-search-forbidden-login"
               search={{ redirectUrl } as never}
               to="/users/loginform"
             >

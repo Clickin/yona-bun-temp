@@ -5103,3 +5103,11 @@ message typography into the project-members forbidden/bad-request shell, code
 file branch-not-found state, and milestone not-found state. Preserve the
 existing project shell, legacy DOM/classes/copy, login or list navigation, and
 responsive geometry; keep the shared fallback for all other error consumers.
+
+## Batch 664
+
+Move the frozen `.error-wrap` geometry, `ico-err2` sprite positioning, and
+message typography into the project post not-found, project-search forbidden,
+and organization-search error owners. Preserve the existing project or
+organization shell, legacy DOM/classes/copy, login or list navigation, and
+responsive geometry; keep the shared fallback for all other error consumers.

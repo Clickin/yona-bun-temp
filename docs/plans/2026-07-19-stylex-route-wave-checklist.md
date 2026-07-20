@@ -396,3 +396,12 @@ preserve the existing legacy classes and navigation while moving only the
 frozen `_page.less`/`_sprites.less` declarations into colocated StyleX. The
 shared `.error-wrap` fallback remains for the still-unmigrated React emitters;
 normal and fallback-disabled focused runs both pass 3/3 serially.
+
+### 2026-07-21 Batch 664 search/post error-wrap owner proof
+
+Batch 664 adds exact route-local owners for project post not-found,
+project-search forbidden, and organization-search error states. The frozen
+`_page.less`/`_sprites.less` declarations are colocated without changing the
+existing shells, copy, or login/list behavior. The shared `.error-wrap`
+fallback remains for other React emitters; normal and fallback-disabled
+focused runs both pass 3/3 serially.

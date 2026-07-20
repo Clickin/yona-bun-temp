@@ -14,6 +14,23 @@ export const postDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  // Frozen `_page.less` `.error-wrap` and `_sprites.less` `.ico-err2` parity.
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: (spriteUrl: string) => ({
+    backgroundImage: `url(${spriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   labelBackground: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   header: { color: postDetailColors.bodyText },

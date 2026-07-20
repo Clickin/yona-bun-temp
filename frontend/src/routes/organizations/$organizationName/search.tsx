@@ -18,6 +18,7 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../../i18n";
 import { YoramQueryProvider } from "../../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import { styles } from "./-organization-search.stylex";
 import {
@@ -841,13 +842,27 @@ function OrganizationSearchPagination({
 
 function OrganizationSearchErrorBody({ messageKey }: { messageKey: string }) {
   const { t } = useLegacyMessages();
+  const iconProps = stylex.props(styles.errorIcon(`url(${legacySpriteUrl})`));
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="organization-search-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(messageKey)}</p>
+        <div
+          {...stylex.props(styles.errorWrap)}
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+          data-stylex-owner="organization-search-error-wrap"
+        >
+          <i
+            {...iconProps}
+            className={`${iconProps.className ?? ""} ico ico-err2`}
+            data-stylex-owner="organization-search-error-icon"
+          ></i>
+          <p
+            {...stylex.props(styles.errorMessage)}
+            data-stylex-owner="organization-search-error-message"
+          >
+            {t(messageKey)}
+          </p>
         </div>
       </div>
     </div>

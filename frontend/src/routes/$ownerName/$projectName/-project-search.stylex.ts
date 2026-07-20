@@ -162,4 +162,20 @@ export const styles = stylex.create({
     paddingRight: "20px",
     textAlign: "center",
   }),
+  forbiddenErrorWrap: { padding: "100px 0px", textAlign: "center" },
+  forbiddenErrorIcon: (spriteUrl: string) => ({
+    backgroundImage: `url(${spriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  forbiddenErrorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
 });

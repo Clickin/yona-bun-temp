@@ -16,6 +16,26 @@ export const organizationSearchColors = stylex.defineVars({
 
 export const styles = stylex.create({
   page: { minHeight: "100%" },
+  // Frozen `_page.less` `.error-wrap` and `_sprites.less` `.ico-err2`.
+  errorWrap: {
+    padding: "100px 0px",
+    textAlign: "center",
+  },
+  errorIcon: (spriteUrl: string) => ({
+    backgroundImage: spriteUrl,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   gridRow: {
     display: "flow-root",
     width: "100%",

@@ -34,6 +34,7 @@ import { readSessionBootstrap } from "../../../../auth-workspace-client";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { styles } from "./-post-detail.stylex";
 
 const sx = {
@@ -56,6 +57,9 @@ const sx = {
   tasklistProgress: stylex.props(styles.tasklistProgress),
   keymapWrapper: stylex.props(styles.keymapWrapper),
   mobileMetadata: stylex.props(styles.mobileMetadata),
+  errorWrap: stylex.props(styles.errorWrap),
+  errorIcon: stylex.props(styles.errorIcon(legacySpriteUrl)),
+  errorMessage: stylex.props(styles.errorMessage),
 } as const;
 
 type PostDetailModalId = "deleteConfirm" | "helpKeys" | "postingHistory";
@@ -176,13 +180,24 @@ function ProjectPostNotFoundBody({
   return (
     <div {...sx.page} data-stylex-owner="post-detail-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.notfound.board_post")}</p>
+        <div
+          {...sx.errorWrap}
+          className={`${sx.errorWrap.className} error-wrap`}
+          data-stylex-owner="post-detail-error-wrap"
+        >
+          <i
+            {...sx.errorIcon}
+            className={`${sx.errorIcon.className} ico ico-err2`}
+            data-stylex-owner="post-detail-error-icon"
+          ></i>
+          <p {...sx.errorMessage} data-stylex-owner="post-detail-error-message">
+            {t("error.notfound.board_post")}
+          </p>
           <Link
             to="/$ownerName/$projectName/posts"
             params={{ ownerName, projectName }}
             className="ybtn ybtn-primary"
+            data-stylex-owner="post-detail-error-list"
           >
             {t("button.list")}
           </Link>
