@@ -126,6 +126,26 @@ test("runtime-grid fallback bridge has no remaining selectors", () => {
   }
 });
 
+test("project history generic activity wrappers have no fallback bridge", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".content-container .main-stream {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
+  // The item-specific first/last rules remain until their conditional StyleX
+  // variants own the legacy padding and border declarations.
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
+  );
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:last-child",
+  );
+  expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).toContain(
+    'data-stylex-owner="project-history-stream"',
+  );
+  expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).toContain(
+    'data-stylex-owner="project-history-activity-streams"',
+  );
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [
@@ -244,7 +264,14 @@ test("dead temporary typography bridges have no remaining selectors", () => {
   expect(appCss).not.toContain(".eyebrow {");
   expect(appCss).not.toContain(".lede {");
   expect(appCss).toContain("h1 {");
-  expect(appCss).toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).not.toContain(".content-container .main-stream {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
+  );
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:last-child",
+  );
 });
 
 test("secret-page fallback selector branches have no React emitter", () => {

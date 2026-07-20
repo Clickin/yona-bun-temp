@@ -6,8 +6,8 @@ The bounded fallback contract now asserts that the unreachable
 asserted not to emit the retired ancestor class.
 
 Managed fallback-off execution passed the focused project-issues contract (1
-passed). The existing fallback-off discovery contract confirms that the
-generated `legacy-assets/stylesheets/legacy-fallback.css` link is absent when
-`VITE_DISABLE_LEGACY_FALLBACK=1`; no generated fallback CSS, frozen source, or
+passed) and the existing generated-fallback discovery contract (1 passed). The
+latter observed zero `legacy-assets/stylesheets/legacy-fallback.css` links when
+`VITE_DISABLE_LEGACY_FALLBACK=1`. No generated fallback CSS, frozen source, or
 geometry baseline was changed. This retirement is limited to the single dead
 app.css declaration.

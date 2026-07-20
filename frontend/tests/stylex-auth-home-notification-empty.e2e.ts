@@ -56,7 +56,14 @@ test("authenticated Home empty notification has bounded global-theme StyleX owne
   // Generic/remaining consumers stay in fallback; only this owner retires its classes.
   expect(appCss).toContain(".unstyled {");
   expect(appCss).toContain(".warning-none {");
-  expect(appCss).toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).not.toContain(".content-container .main-stream {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
+  );
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:last-child",
+  );
   expect(appCss).not.toContain(".notification-stream {");
   expect(bootstrap).toContain("ul.unstyled,\nol.unstyled {");
   expect(yobi).toContain(".notification-stream {");

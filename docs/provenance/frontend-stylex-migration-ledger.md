@@ -1744,3 +1744,37 @@ not an unlinking or live-legacy visual-parity claim.
   `stylex-project-issues-static-owners-wave.e2e.ts` contract asserts scoped
   absence and generic-rule retention; global fallback discovery remains
   incomplete/non-green.
+
+## Batch 576
+
+- Pull-request create Select2 closed-choice bridge retirement: the only
+  runtime consumer of `frontend/src/app.css`'s
+  `.pull-request-wrap .select2-container > button.select2-choice` block is
+  `newPullRequestForm.tsx`, where `styles.select2Choice` already owns the
+  exact `box-sizing`, width, height, and text alignment declarations. The
+  pull-request edit route emits native disabled selects under the same wrapper
+  and has no matching Select2 button. Frozen `_page.less` defines only the
+  wrapper geometry and contains no nested Select2 declaration. The redundant
+  app.css block is removed; raw `pull-request-wrap` and `select2-choice`
+  compatibility classes remain. The focused create/edit ownership and
+  Select2-state contract passes 2/2 in normal mode and 2/2 with
+  `VITE_DISABLE_LEGACY_FALLBACK=1`. No frozen source, TSX, generated fallback,
+  or baseline changed; global fallback discovery remains incomplete/non-green.
+
+## Batch 577
+
+- Project history generic activity wrapper bridge retirement: frozen
+  `yona-original/app/views/project/partial_history.scala.html` and
+  `_page.less:1200+` establish the `main-stream`/`activity-streams` shell;
+  the only current React consumer is `HistoryPane` in
+  `frontend/src/routes/$ownerName/$projectName.tsx`.
+- `frontend/src/app.css` no longer contains the two generic wrapper selectors
+  `.content-container .main-stream` and
+  `.content-container .main-stream .activity-streams`; route-local
+  `projectHistoryStyles.stream` and `activityStreams` own the matching margin
+  declarations. Item-specific `:first-of-type` and `:last-child` fallback
+  rules remain because conditional StyleX ownership is not complete.
+- `frontend/tests/stylex-project-history-typography.e2e.ts` and
+  `frontend/tests/legacy-fallback-off.e2e.ts` assert exact selector absence and
+  variant retention. Normal and fallback-off focused runs pass; no frozen
+  source, generated fallback, TSX, or geometry baseline changed.

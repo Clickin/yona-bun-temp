@@ -39,5 +39,12 @@ test("project history header typography uses route-local StyleX ownership", asyn
   expect(appCss).not.toContain(
     ".content-container .main-stream .activity-streams .activity-stream .activity-desc .whereis",
   );
-  expect(appCss).toContain(".content-container .main-stream .activity-streams");
+  expect(appCss).not.toContain(".content-container .main-stream {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
+  );
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:last-child",
+  );
 });

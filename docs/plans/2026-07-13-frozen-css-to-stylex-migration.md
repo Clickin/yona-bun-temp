@@ -4280,3 +4280,25 @@ none; }` bridge from `frontend/src/app.css`. No current React route emits the
 rule remains active. The focused project-issues static contract verifies exact
 scoped absence plus generic-rule retention; no TSX, frozen source, generated
 fallback, or geometry baseline changes are allowed.
+
+## Batch 576
+
+Retire only the redundant `.pull-request-wrap .select2-container >
+button.select2-choice` bridge from `frontend/src/app.css`. The create route's
+StyleX `select2Choice` owner already provides the exact declarations, while
+the edit route has no matching Select2 button. Preserve the raw compatibility
+classes and wrapper geometry. Update the focused contract to assert scoped
+absence, then run the create-form ownership/closed-state checks in normal and
+fallback-off modes; no TSX, frozen source, generated fallback, or baseline
+changes are allowed.
+
+## Batch 577
+
+Retire only the redundant project-history wrapper declarations
+`.content-container .main-stream { margin-bottom: 15px; }` and
+`.content-container .main-stream .activity-streams { margin: 0; }`. The sole
+current React consumer is `HistoryPane`, whose route-local StyleX owns both
+declarations. Keep the item-specific `:first-of-type` and `:last-child`
+fallback variants until their conditional StyleX owners exist. Verify the
+static contracts in normal and fallback-off runs; do not edit TSX, frozen
+Scala/LESS, generated fallback, or baselines.

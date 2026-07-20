@@ -29,14 +29,6 @@ button {
   padding: 0;
 }
 
-/* React owns Select2 choices as buttons; preserve the frozen anchor sizing semantics. */
-.pull-request-wrap .select2-container > button.select2-choice {
-  box-sizing: border-box;
-  width: 100%;
-  height: auto;
-  text-align: left;
-}
-
 body {
   margin: 0;
   background-color: #fff;
@@ -1614,14 +1606,6 @@ h1 {
 .markdown-wrap h4:hover .head-anchor,
 .markdown-wrap h5:hover .head-anchor {
   opacity: 1;
-}
-
-.content-container .main-stream {
-  margin-bottom: 15px;
-}
-
-.content-container .main-stream .activity-streams {
-  margin: 0;
 }
 
 .content-container .main-stream .activity-streams .activity-stream {

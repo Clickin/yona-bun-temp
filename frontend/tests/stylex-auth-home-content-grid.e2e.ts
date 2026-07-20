@@ -85,11 +85,20 @@ test("authenticated Home content grid has bounded global-theme StyleX ownership"
   }
   expect(ownerMarkup).not.toMatch(/className=[^\n]*\b(?:content-container|main-stream)\b/u);
 
-  expect(appCss).toContain(".content-container .main-stream {");
-  expect(appCss).toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).not.toContain(".content-container .main-stream {");
+  expect(appCss).not.toContain(".content-container .main-stream .activity-streams {");
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:first-of-type",
+  );
+  expect(appCss).toContain(
+    ".content-container .main-stream .activity-streams .activity-stream:last-child",
+  );
   expect(appCss).not.toContain(".content-container .main-stream .activity-streams .warning-none {");
   expect(appCss).not.toContain("  .main-stream,\n  .content-container .main-stream {");
-  expect(projectRoute).toContain('className="main-stream" style={{ width: "100%" }}');
+  expect(projectRoute).toContain(
+    'className={`${stylex.props(projectHistoryStyles.stream).className} main-stream`}',
+  );
+  expect(projectRoute).toContain('data-stylex-owner="project-history-stream"');
 });
 
 for (const viewport of [

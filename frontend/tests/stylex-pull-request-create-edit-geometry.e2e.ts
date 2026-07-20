@@ -35,5 +35,5 @@ test("pull request create/edit selector geometry uses StyleX", async () => {
   expect(css).not.toContain(".pull-request-wrap {");
   expect(css).not.toContain(".pull-request-wrap .field-title {");
   expect(css).not.toContain(".pull-request-wrap .arrow {");
-  expect(css).toContain(".pull-request-wrap .select2-container > button.select2-choice");
+  expect(css).not.toContain(".pull-request-wrap .select2-container > button.select2-choice");
 });
