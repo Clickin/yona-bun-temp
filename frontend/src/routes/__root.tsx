@@ -217,6 +217,7 @@ const styles = stylex.create({
   rootLoginDialogActionRow: {
     lineHeight: "22px",
     overflow: "auto",
+    textAlign: "right",
   },
   // frozen Bootstrap bootstrap.css:6097-6099. The legacy template uses this
   // for the remember-me control, so it cannot depend on fallback CSS here.
@@ -676,7 +677,7 @@ function RootLoginDialog({
     <div
       id="loginDialog"
       {...rootLoginDialogProps}
-      className={rootLoginDialogProps.className}
+      className={["loginDialog", rootLoginDialogProps.className].filter(Boolean).join(" ")}
       tabIndex={-1}
       role="dialog"
       aria-hidden={visible ? false : true}
@@ -805,9 +806,10 @@ function RootLoginDialog({
           </div>
           {!socialLoginOnly ? (
             <div
-              className={["act-row right-txt mt20", rootLoginDialogActionRowClassName]
+              className={["act-row mt20", rootLoginDialogActionRowClassName]
                 .filter(Boolean)
                 .join(" ")}
+              data-stylex-owner="root-login-dialog-action-row"
             >
               <div
                 className={["pull-left", rootLoginDialogRememberGroupClassName]

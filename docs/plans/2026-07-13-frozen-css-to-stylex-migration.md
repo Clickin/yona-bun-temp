@@ -50,6 +50,13 @@ route-local StyleX while preserving the legacy upload DOM, copy, and behavior.
 Focused coverage is
 `frontend/tests/stylex-project-pullrequest-editform-inline-residual.e2e.ts`.
 
+## 2026-07-20 — Root login-dialog action alignment
+
+The root login dialog action row now owns right alignment in its existing
+StyleX owner while preserving the legacy `act-row mt20` structure, buttons,
+copy, and login behavior. Focused coverage is
+`frontend/tests/loginform.e2e.ts`.
+
 ## 2026-07-20 — `.orange-txt` retirement
 
 The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now
