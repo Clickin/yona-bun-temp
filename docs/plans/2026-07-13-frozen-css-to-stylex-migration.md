@@ -17,6 +17,13 @@ action alignment in route-local StyleX. The legacy comment/upload DOM and
 behavior remain unchanged. Focused coverage is
 `frontend/tests/stylex-project-post-detail-inline-residual.e2e.ts`.
 
+## 2026-07-20 — New pull-request upload-help alignment
+
+The new pull-request form's attachment-save help now owns its right alignment
+in route-local StyleX. The legacy upload markup, copy, and upload behavior stay
+unchanged. Focused coverage is
+`frontend/tests/stylex-project-new-pull-request-form-paste.e2e.ts`.
+
 ## 2026-07-20 — `.orange-txt` retirement
 
 The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now

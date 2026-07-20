@@ -28,4 +28,5 @@ export const styles = stylex.create({
   conflictModalClosed: { display: "none" },
   conflictMessage: { textAlign: "center" },
   conflictActions: { textAlign: "center" },
+  uploadSaveHelp: { textAlign: "right" },
 });
