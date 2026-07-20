@@ -1,5 +1,7 @@
 # Frontend StyleX Migration Ledger
 
+| 2026-07-20 | Source-less `.vertical-top` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `vertical-top`; frozen legacy `_common.less` retains the historical utility evidence. | `frontend/src/app.css` removes only `.vertical-top { vertical-align: top !important; }`; no remaining sibling arm or frozen/generated CSS is changed. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact absence and current no-emitter in normal/fallback-off static modes. |
+
 | 2026-07-20 | Source-less `.vtop` grouped utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `vtop`; frozen legacy `_common.less` retains the historical alias. | `frontend/src/app.css` removes only the `.vtop` grouped arm while retaining `.vertical-top { vertical-align: top !important; }`; frozen/generated CSS remains unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts alias absence, live sibling retention, and current no-emitter in normal/fallback-off static modes. |
 
 | 2026-07-20 | Source-less `.mt4` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `mt4`; frozen legacy utility definitions remain historical evidence. | `frontend/src/app.css` removes only `.mt4 { margin-top: 4px; }`; neighboring margin utilities and frozen/generated CSS remain unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact app.css absence and current no-emitter in normal/fallback-off static modes; no route DOM or behavior changes. |
