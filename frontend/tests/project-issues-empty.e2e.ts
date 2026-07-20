@@ -372,6 +372,11 @@ test("project issue list route source uses Link for navigation and buttons for s
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#comments`}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("href={`${issueHref}#vote`}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('to="/$ownerName/$projectName/issue/$issueNumber"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("const issuePostItemClassName = [");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("currentIssueRowHoverStyle");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain(
+    "{...(currentIssueRowHoverStyle\n        ? stylex.props(styles.issueRowHoverBackground",
+  );
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("params={issueParams}");
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="comments"');
   expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('hash="vote"');

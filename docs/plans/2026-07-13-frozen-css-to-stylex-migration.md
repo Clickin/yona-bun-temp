@@ -4601,3 +4601,14 @@ from `frontend/src/app.css`. Current UI-kit React output emits no
 frozen/generated assets remain historical evidence. Update the UI-kit and
 formal fallback-off static contracts in normal and
 `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX or frozen CSS.
+
+## Batch 607
+
+Repair the project-issues selected-row class composition in the existing
+checkbox owner. The row previously assigned its base `className` and then
+spread hover/two-column StyleX props, allowing a later `className` property to
+overwrite `post-item active` and the base row classes after checkbox selection.
+Compose base, selected, hover, and two-column StyleX classes into one
+`className` while preserving the legacy DOM, geometry, and React-owned
+selection behavior. Update the focused route contract and provenance; do not
+change frozen CSS or add geometry compensation.

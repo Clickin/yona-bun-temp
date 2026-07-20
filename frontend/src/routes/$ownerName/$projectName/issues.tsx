@@ -1580,9 +1580,22 @@ function ProjectIssueItem({
     revealChildIssueListFromRow(event.target instanceof Element ? event.target : null);
   };
 
+  const issuePostItemClassName = [
+    `post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""}`,
+    stylex.props(styles.issuePostItem, issueSelected ? styles.issuePostItemActive : undefined)
+      .className,
+    currentIssueRowHoverStyle
+      ? stylex.props(styles.issueRowHoverBackground(currentIssueRowHoverStyle.backgroundColor))
+          .className
+      : "",
+    useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow).className : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <li
-      className={`post-item title${issueSelected ? " active" : ""}${highlighted ? " highlightBg" : ""} ${stylex.props(styles.issuePostItem, issueSelected ? styles.issuePostItemActive : undefined).className}`}
+      className={issuePostItemClassName}
       id={`issue-item-${issueId}`}
       data-item="issue-item"
       data-value={`${authorLoginId} ${issueNumber} ${issue.title}`}
@@ -1591,10 +1604,6 @@ function ProjectIssueItem({
       onKeyDown={handleIssueItemKeyDown}
       onMouseEnter={() => onIssueRowHover({ backgroundColor: "#fafafa", issueId })}
       onMouseLeave={() => onIssueRowHover({ backgroundColor: "#fff", issueId })}
-      {...(currentIssueRowHoverStyle
-        ? stylex.props(styles.issueRowHoverBackground(currentIssueRowHoverStyle.backgroundColor))
-        : {})}
-      {...(useTwoColumnMode ? stylex.props(projectIssuesStyles.clickableRow) : {})}
       data-stylex-owner-clickable={useTwoColumnMode ? "project-issues-clickable-row" : undefined}
       {...issueListItemLegacyAttrs}
       data-stylex-owner="project-issues-post-item"
