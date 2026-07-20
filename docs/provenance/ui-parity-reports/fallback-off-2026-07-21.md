@@ -87,3 +87,13 @@ The site-update responsive grid contract passed fallback-off (`1/1`) across avai
 states and desktop/tablet/mobile geometry. Organization issue search and quick-search contracts
 also passed fallback-off (`1/1` each). No implementation or focused E2E file was changed during
 these probes; the fallback remains enabled by default.
+
+## Candidate review — projects directory row content
+
+The projects row-content contract passed its fallback-off source/owner check, but desktop and
+mobile geometry both exposed a real residual: the header and description line boxes were `18px`
+instead of the expected `20px`, moving the row content upward by `6px` and shortening the row.
+The exact frozen Bootstrap `line-height:20px` declaration was replayed in the existing route-local
+identity owner; it corrected the line-box heights, but left a `2px` content-origin difference.
+No frozen declaration supports a route-local `2px` compensation, so the candidate remains blocked
+without changes. The fallback remains enabled by default.

@@ -5336,3 +5336,11 @@ project milestone/PR and site-update title failures are fixture/data-contract fa
 user-list listhead failure is stale source/parent scope, and the site-update responsive grid plus
 organization issue states are fallback-off green. Do not modify route CSS or weaken these tests;
 retain the fallback boundary and select the next candidate from a valid route-local mismatch.
+
+## Batch 693
+
+Review the projects directory row-content candidate exposed by fallback-off discovery. The
+focused source/owner check passes, while desktop/mobile geometry shows `18px` header/description
+line boxes and a `6px` upward row shift. An exact frozen Bootstrap `line-height:20px` translation
+fixes the line-box heights but leaves a source-unexplained `2px` origin difference. Do not add a
+compensating offset; retain this candidate as blocked and keep the fallback boundary unchanged.
