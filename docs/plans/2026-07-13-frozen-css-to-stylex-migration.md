@@ -4263,3 +4263,11 @@ search partials and Bootstrap responsive ratios. Preserve raw grid classes for
 shared consumers, verify the route-local row/category/results owners at 1366px
 and 390px in normal and fallback-off runs, and keep shared document overflow
 outside this owner wave. Focused project search checks pass 2/2 in both modes.
+
+## Batch 574
+
+Migrate only the populated organization search page-grid boundary using frozen
+search partials and Bootstrap responsive ratios. Preserve raw grid classes for
+shared consumers, verify row/category/content owners at 1366px and 390px in
+normal and fallback-off managed runs, and keep shared fallback outside this
+route/state. Focused organization search checks pass 3/3 in both modes.

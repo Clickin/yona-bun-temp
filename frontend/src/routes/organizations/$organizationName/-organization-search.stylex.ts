@@ -16,7 +16,37 @@ export const organizationSearchColors = stylex.defineVars({
 
 export const styles = stylex.create({
   page: { minHeight: "100%" },
-  category: { minWidth: 0 },
+  gridRow: {
+    display: "flow-root",
+    width: "100%",
+  },
+  category: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: 0,
+    minHeight: "30px",
+    minWidth: 0,
+    width: "14.893617021276595%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      width: "100%",
+    },
+  },
+  contentColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.127659574468085%",
+    minHeight: "30px",
+    minWidth: 0,
+    width: "82.97872340425532%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      marginLeft: 0,
+      width: "100%",
+    },
+  },
   categoryList: {
     boxSizing: "border-box",
     listStyleType: "none",

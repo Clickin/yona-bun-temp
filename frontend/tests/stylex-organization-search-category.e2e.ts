@@ -18,8 +18,16 @@ test("organization search category wrapper has legacy-backed StyleX ownership", 
   expect(route).toContain('data-stylex-owner="organization-search-category-list"');
   expect(route).toContain('data-stylex-owner="organization-search-category-item"');
   expect(route).toContain('data-stylex-owner="organization-search-content-column"');
+  expect(route).toContain('data-stylex-owner="organization-search-grid-row"');
   expect(route).toContain('className="lst-stacked unstyled search-category-wrap"');
-  for (const declaration of ["categoryList:", "categoryItem:", "categoryAction:"]) {
+  for (const declaration of [
+    "gridRow:",
+    "category:",
+    "contentColumn:",
+    "categoryList:",
+    "categoryItem:",
+    "categoryAction:",
+  ]) {
     expect(style).toContain(declaration);
   }
 });
@@ -36,28 +44,29 @@ test.describe("organization search category geometry", () => {
         `${BASE_PATH}/organizations/weblabs/search?keyword=sample&searchType=project`,
       );
       const category = page.locator('[data-stylex-owner="organization-search-category-list"]');
+      const row = page.locator('[data-stylex-owner="organization-search-grid-row"]');
       const content = page.locator(
         '[data-stylex-owner="organization-search-content-column"]',
       );
       await expect(category).toBeVisible();
       await expect(category.locator("li")).toHaveCount(8);
       const boxes = await Promise.all([
+        row.boundingBox(),
         category.boundingBox(),
         content.boundingBox(),
         page.locator('[data-stylex-owner="organization-search-category-item"]').first().boundingBox(),
-        category.locator("button").first().boundingBox(),
       ]);
       expect(boxes[0]).toBeTruthy();
       expect(boxes[1]).toBeTruthy();
       expect(boxes[2]).toBeTruthy();
       expect(boxes[3]).toBeTruthy();
+      expect(boxes[0]!.width).toBeGreaterThan(0);
+      expect(boxes[0]!.height).toBeGreaterThan(0);
       if (viewport.width >= 768) {
-        expect(boxes[0]!.x).toBeLessThan(boxes[1]!.x);
+        expect(boxes[1]!.x).toBeLessThan(boxes[2]!.x);
       } else {
-        expect(boxes[0]!.x).toBeLessThanOrEqual(boxes[1]!.x);
+        expect(boxes[1]!.x).toBeLessThanOrEqual(boxes[2]!.x);
       }
-      expect(boxes[2]!.width).toBeGreaterThan(0);
-      expect(boxes[2]!.height).toBeGreaterThan(0);
       expect(boxes[3]!.width).toBeGreaterThan(0);
       expect(boxes[3]!.height).toBeGreaterThan(0);
       const viewportWidth = await page.evaluate(() => document.documentElement.clientWidth);

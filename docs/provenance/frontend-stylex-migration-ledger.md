@@ -1720,3 +1720,14 @@ not an unlinking or live-legacy visual-parity claim.
   `stylex-project-search.e2e.ts` passes 2/2 normal and 2/2 fallback-off tests;
   bounds and link/style assertions remain owner-scoped. No frozen source,
   theme, app.css, or generated fallback asset changed.
+
+## Batch 574
+
+- Organization search populated page-grid ownership: frozen search partials and
+  Bootstrap desktop/responsive rules establish the nested `row-fluid >
+  span2/span10` shell, 14.8936%/82.9787% columns, box sizing, and max-767px
+  stacking. `frontend/src/routes/organizations/$organizationName/search.tsx`
+  and `-organization-search.stylex.ts` now own the row/category/content
+  columns with stable owners while retaining raw grid classes. The focused
+  organization search contract passes 3/3 normal and 3/3 fallback-off tests;
+  no frozen source, theme, app.css, or generated fallback asset changed.

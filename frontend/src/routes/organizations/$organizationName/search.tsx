@@ -219,9 +219,14 @@ function OrganizationSearchBody({
       >
         <div className="project-page-wrap">
           <div className="project-page-wrap">
-            <div className="row-fluid">
+            <div
+              {...stylex.props(styles.gridRow)}
+              className="row-fluid"
+              data-stylex-owner="organization-search-grid-row"
+            >
               <div
-                className={`${stylex.props(styles.category).className} span2`}
+                {...stylex.props(styles.category)}
+                className={`span2 ${stylex.props(styles.category).className ?? ""}`}
                 data-stylex-owner="organization-search-categories"
               >
                 <ul
@@ -270,7 +275,11 @@ function OrganizationSearchBody({
                   })}
                 </ul>
               </div>
-              <div className="span10" data-stylex-owner="organization-search-content-column">
+              <div
+                {...stylex.props(styles.contentColumn)}
+                className={`span10 ${stylex.props(styles.contentColumn).className ?? ""}`}
+                data-stylex-owner="organization-search-content-column"
+              >
                 <div
                   className={`${stylex.props(styles.searchBox).className} search-box-wrap`}
                   data-stylex-owner="organization-search-box"
