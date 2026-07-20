@@ -1830,8 +1830,8 @@ function ProjectIssueItem({
         {issue.dueDateLabel ? (
           <div
             className={`mr20 mt10 pull-right${
-              issue.state === "closed" ? " darkgray-txt" : issue.dueDateOverdue ? " overdue" : ""
-            }`}
+              issue.dueDateOverdue ? " overdue" : ""
+            } ${stylex.props(issue.state === "closed" ? styles.dueDateClosed : undefined).className ?? ""}`}
             {...dueDateAttrs}
           >
             <i className="yobicon-clock2 mr3 vmiddle"></i>

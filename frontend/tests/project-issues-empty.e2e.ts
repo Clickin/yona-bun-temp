@@ -3179,7 +3179,10 @@ test("closed project issue row preserves legacy weight arrow and due-date stylin
   await expect(page.locator(".weight-up-arrow")).toHaveAttribute("title", "Issue weight 4");
   await expect(page.locator(".weight-up-arrow")).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(page.locator(".weight-up-arrow")).not.toHaveAttribute("data-placement");
-  await expect(page.locator(".mr20.mt10.pull-right.darkgray-txt")).toHaveText("Jul 5, 2026");
+  const dueDate = page.locator(".mr20.mt10.pull-right");
+  await expect(dueDate).toHaveText("Jul 5, 2026");
+  await expect(dueDate).not.toHaveClass(/\bdarkgray-txt\b/u);
+  await expect(dueDate).toHaveCSS("color", "rgb(153, 153, 153)");
 
   expect(await canonicalizeScreenRoots(page)).toEqual(
     await canonicalizeHtml(

@@ -528,6 +528,26 @@ test("issue edit number secondary color has StyleX ownership", () => {
   expect(stylexSource).toContain("issueNumber: { color: issueEditColors.issueNumber }");
 });
 
+test("closed issue due-date color has bounded StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const issuesRoute = readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8");
+  const issuesStylex = readFileSync("src/routes/$ownerName/$projectName/-issues.stylex.ts", "utf8");
+  const milestoneRoute = readFileSync(
+    "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
+    "utf8",
+  );
+  const milestoneStylex = readFileSync(
+    "src/routes/$ownerName/$projectName/milestone/-milestone-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(appCss).not.toContain(".darkgray-txt {");
+  expect(issuesRoute).not.toContain("darkgray-txt");
+  expect(milestoneRoute).not.toContain("darkgray-txt");
+  expect(issuesStylex).toContain('dueDateClosedText: "#999"');
+  expect(milestoneStylex).toContain('dueDateClosedText: "#999"');
+});
+
 test("orange text required markers have StyleX ownership", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".orange-txt {");

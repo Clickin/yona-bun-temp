@@ -39,6 +39,7 @@ const sx = {
   issueList: stylex.props(styles.issueList),
   issueRow: stylex.props(styles.issueRow),
   issueMeta: stylex.props(styles.issueMeta),
+  dueDateClosed: stylex.props(styles.dueDateClosed),
   massUpdate: stylex.props(styles.massUpdate),
   search: stylex.props(styles.search),
   deleteModalVisible: stylex.props(styles.deleteModalVisible),
@@ -1270,12 +1271,8 @@ function MilestoneIssueRow({
         {stringField(issue.dueDateLabel) ? (
           <div
             className={`mr20 mt10 pull-right${
-              state === "closed"
-                ? " darkgray-txt"
-                : booleanField(issue.dueDateOverdue)
-                  ? " overdue"
-                  : ""
-            }`}
+              booleanField(issue.dueDateOverdue) ? " overdue" : ""
+            } ${state === "closed" ? sx.dueDateClosed.className : ""}`}
             {...dueDateAttrs}
           >
             <i className="yobicon-clock2 mr3 vmiddle"></i>

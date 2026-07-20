@@ -9,6 +9,7 @@ export const milestoneDetailColors = stylex.defineVars({
   descriptionShadow: "inset 0 0 5px #ffffff",
   progress: "#fd6956",
   searchBorder: "#cccccc",
+  dueDateClosedText: "#999",
 });
 
 export const styles = stylex.create({
@@ -53,6 +54,7 @@ export const styles = stylex.create({
     padding: "10px 0px",
   },
   issueMeta: { lineHeight: "20px" },
+  dueDateClosed: { color: milestoneDetailColors.dueDateClosedText },
   massUpdate: { position: "relative", transitionDuration: "0.5s", transitionProperty: "padding" },
   massUpdateButton: {
     display: "block",

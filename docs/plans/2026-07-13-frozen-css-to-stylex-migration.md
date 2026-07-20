@@ -4802,3 +4802,9 @@ Retire the shared `.gray-txt` fallback for the login-dialog `|` separator and th
 project/organization pull-request review `/` separators. Preserve the separator
 spans and frozen `#ccc` paint through route-owned StyleX owners; leave frozen
 legacy/generated CSS untouched.
+
+## Batch 628
+
+Retire the conditional `.darkgray-txt` arm from issue and milestone due-date
+wrappers. CLOSED-state text retains the frozen `#999` color through local StyleX;
+overdue behavior and conditional class composition remain unchanged.

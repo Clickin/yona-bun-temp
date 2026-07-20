@@ -13,6 +13,7 @@ export const issuesTheme = stylex.defineVars({
   progressDoneBar: "#8bc34a",
   progressOpenBar: "#c93426",
   childDateText: "lightgrey",
+  dueDateClosedText: "#999",
 });
 
 export const styles = stylex.create({
@@ -81,6 +82,7 @@ export const styles = stylex.create({
     borderBottomColor: issuesTheme.postBorder,
   },
   issuePostItemActive: { backgroundColor: issuesTheme.postActiveSurface },
+  dueDateClosed: { color: issuesTheme.dueDateClosedText },
   massUpdateCheck: {
     float: "left",
     marginRight: "15px",
