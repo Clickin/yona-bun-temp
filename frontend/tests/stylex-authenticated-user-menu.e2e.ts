@@ -62,6 +62,9 @@ test("authenticated user menu owns its legacy declarations through global StyleX
   expect(menu).not.toContain("dropdwon-box-btn");
   expect(appSource).not.toContain(".gnb-usermenu-dropdown .gnb-dropdown-toggle");
   expect(appSource).not.toContain(".gnb-usermenu-dropdown > button");
+  expect(appSource).not.toContain(".gnb-usermenu-dropdown {\n");
+  expect(appSource).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
+  expect(appSource).toContain(".gnb-usermenu-item {\n    color: #5dbbe0 !important;");
 });
 
 test("authenticated user-menu frozen sources stay byte-identical", () => {

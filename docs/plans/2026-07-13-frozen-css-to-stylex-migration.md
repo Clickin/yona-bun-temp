@@ -4562,3 +4562,13 @@ generic `.issue-detail-page .comments .event .state i` rule and all state
 variant styling. Update issue-detail event contracts and the formal
 fallback-off contract in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes;
 do not change TSX, frozen/generated CSS, or geometry baselines.
+## Batch 603
+
+Retire only the redundant `.gnb-usermenu-dropdown` base color/font-size
+declarations and its max-width-720 color arm from `frontend/src/app.css`.
+`AuthenticatedSiteUserMenu` already owns the dropdown presentation through
+StyleX; retain the semantic class, the `.gnb-usermenu-item` responsive color
+arm, other usermenu selectors, frozen sources, generated fallback, and
+geometry baselines. Update the authenticated global-shell and formal
+fallback-off static contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1`
+modes; do not change TSX or frozen/generated CSS.

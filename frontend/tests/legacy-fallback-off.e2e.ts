@@ -554,6 +554,19 @@ test("issue detail event-index bridge has no React-side app.css arms", () => {
   ).toContain('class="event event-index"');
 });
 
+test("authenticated user-menu dropdown declaration bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".gnb-usermenu-dropdown {\n");
+  expect(appCss).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
+  expect(appCss).toContain(".gnb-usermenu-item {\n    color: #5dbbe0 !important;");
+  expect(
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+  ).toContain(".gnb-usermenu-dropdown {");
+  expect(
+    readFileSync("src/routes/-home-route-screen.tsx", "utf8"),
+  ).toContain('data-stylex-owner="authenticated-site-user-menu"');
+});
+
 test("site mail form-horizontal bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".form-horizontal .control-group");

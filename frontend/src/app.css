@@ -1448,14 +1448,8 @@ span.issue-label {
   text-decoration: none;
 }
 
-.gnb-usermenu-dropdown {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-
 @media (max-width: 720px) {
-  .gnb-usermenu-item,
-  .gnb-usermenu-dropdown {
+  .gnb-usermenu-item {
     color: #5dbbe0 !important;
   }
 }
