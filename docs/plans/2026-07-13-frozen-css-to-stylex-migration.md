@@ -5167,3 +5167,11 @@ Retire the React-side `app.css` `.error-wrap` bridge after proving every
 reachable React emitter has a colocated StyleX owner. Retain the frozen and
 generated legacy fallback, reset-password-specific rules, legacy classes, and
 the explicitly unreachable stale post producer.
+
+## Batch 672
+
+Move the remaining organization home menu item and link declarations into the
+existing organization route owner: float, typography, inline-block display,
+line-height, desktop/mobile padding, and legacy hover paint. Preserve active
+menu behavior, DOM/classes, Link navigation, and the frozen fallback for
+unrelated project-menu consumers.

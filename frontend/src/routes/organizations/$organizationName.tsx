@@ -24,6 +24,25 @@ import { SiteLayoutShell } from "../-home-route-screen";
 import { LastOutletTransition } from "../-last-outlet-transition";
 import { styles } from "./-organization-home.stylex";
 
+const organizationMenuMigrationStyles = stylex.create({
+  item: {
+    float: "left",
+    fontSize: "14px",
+    fontWeight: "bold",
+    position: "relative",
+  },
+  link: {
+    display: "inline-block",
+    lineHeight: "30px",
+    padding: { default: "5px 20px 4px", "@media (max-width: 767px)": "5px 12px 4px" },
+    ":hover": {
+      textDecoration: "none",
+      color: "#fc491e",
+      backgroundColor: "#dadada",
+    },
+  },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -761,7 +780,9 @@ export function OrganizationMenu({
           className={`${stylex.props(styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
           data-stylex-owner="organization-menu-group"
         >
-          <li className={active === "home" ? "active" : ""}>
+          <li
+            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "home" ? "active" : ""}`.trim()}
+          >
             <Link
               activeOptions={{
                 exact: true,
@@ -774,6 +795,7 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
+              {...stylex.props(organizationMenuMigrationStyles.link)}
               params={{ organizationName }}
               hash="organization-home-active-sentinel"
               mask={{
@@ -785,7 +807,9 @@ export function OrganizationMenu({
               {t("title.organizationHome")}
             </Link>
           </li>
-          <li className={active === "issues" ? "active" : ""}>
+          <li
+            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "issues" ? "active" : ""}`.trim()}
+          >
             <Link
               activeOptions={{
                 exact: true,
@@ -798,6 +822,7 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
+              {...stylex.props(organizationMenuMigrationStyles.link)}
               params={{ organizationName }}
               search={{
                 assigneeId: "",
@@ -815,7 +840,9 @@ export function OrganizationMenu({
               {t("menu.issue")}
             </Link>
           </li>
-          <li className={active === "boards" ? "active" : ""}>
+          <li
+            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "boards" ? "active" : ""}`.trim()}
+          >
             <Link
               activeOptions={{
                 exact: true,
@@ -828,6 +855,7 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
+              {...stylex.props(organizationMenuMigrationStyles.link)}
               params={{ organizationName }}
               search={{
                 filter: "",
@@ -841,7 +869,9 @@ export function OrganizationMenu({
               {t("menu.board")}
             </Link>
           </li>
-          <li className={active === "pullrequests" ? "active" : ""}>
+          <li
+            className={`${stylex.props(organizationMenuMigrationStyles.item).className} ${active === "pullrequests" ? "active" : ""}`.trim()}
+          >
             <Link
               activeOptions={{
                 exact: true,
@@ -854,6 +884,7 @@ export function OrganizationMenu({
                 className: undefined,
                 "data-status": undefined,
               }}
+              {...stylex.props(organizationMenuMigrationStyles.link)}
               params={{ organizationName }}
               search={{ filter: "", pageNum: 1 }}
               to="/organizations/$organizationName/pullrequests"

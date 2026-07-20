@@ -16,6 +16,17 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(legacyHeader).toContain('class="project-header-outer"');
   expect(legacyHeader).toContain('class="project-header-avatar"');
   expect(legacyMenu).toContain('class="project-menu-outer"');
+  const legacyPage = await readFile(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  expect(legacyPage).toContain("float:left;");
+  expect(legacyPage).toContain("padding:5px 20px 4px;");
+  expect(legacyPage).toContain("background-color: #dadada;");
+  expect(route).toContain("organizationMenuMigrationStyles");
+  expect(route).toContain('padding: { default: "5px 20px 4px"');
+  expect(route).toContain('"@media (max-width: 767px)": "5px 12px 4px"');
+  expect(route).toContain('backgroundColor: "#dadada"');
   for (const owner of [
     "organization-profile-header-background",
     "organization-header-inner",
@@ -70,15 +81,50 @@ test("organization home moves the legacy header and menu shells into StyleX owne
         .height,
       menuBackground: getComputedStyle(nodes["organization-menu-shell"] as Element).backgroundColor,
       menuHeight: getComputedStyle(nodes["organization-menu-shell"] as Element).height,
+      menuItem: (() => {
+        const item = document.querySelector('[data-stylex-owner="organization-menu-group"] > li');
+        const link = item?.querySelector("a");
+        if (!(item instanceof HTMLElement) || !(link instanceof HTMLElement))
+          throw new Error("missing menu item");
+        const itemStyle = getComputedStyle(item);
+        const linkStyle = getComputedStyle(link);
+        return {
+          float: itemStyle.cssFloat,
+          fontSize: itemStyle.fontSize,
+          linkDisplay: linkStyle.display,
+          lineHeight: linkStyle.lineHeight,
+          padding: linkStyle.padding,
+          linkWidth: link.getBoundingClientRect().width,
+        };
+      })(),
     };
   });
   expect(desktop.headerHeight).toBe("120px");
   expect(desktop.headerBackground).toBe("rgb(86, 86, 86)");
   expect(desktop.menuHeight).toBe("39px");
   expect(desktop.menuBackground).toBe("rgb(236, 236, 236)");
+  expect(desktop.menuItem.float).toBe("left");
+  expect(desktop.menuItem.fontSize).toBe("14px");
+  expect(desktop.menuItem.linkDisplay).toBe("inline-block");
+  expect(desktop.menuItem.lineHeight).toBe("30px");
+  expect(desktop.menuItem.padding).toBe("5px 20px 4px");
+  expect(desktop.menuItem.linkWidth).toBeGreaterThan(0);
   expect(desktop.avatar.bottom).toBeGreaterThan(desktop.header.bottom);
   expect(desktop.breadcrumb.bottom).toBeLessThanOrEqual(desktop.header.bottom);
   expect(desktop.menu.top).toBeCloseTo(desktop.header.bottom, 0);
+
+  const firstMenuLink = page
+    .locator('[data-stylex-owner="organization-menu-group"] > li a')
+    .first();
+  await firstMenuLink.hover();
+  await expect
+    .poll(async () =>
+      firstMenuLink.evaluate((element) => {
+        const computed = getComputedStyle(element);
+        return `${computed.backgroundColor}|${computed.color}|${computed.textDecorationLine}`;
+      }),
+    )
+    .toBe("rgb(218, 218, 218)|rgb(252, 73, 30)|none");
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await page.evaluate(() => ({
@@ -89,10 +135,18 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       .querySelector('[data-stylex-owner="organization-menu-shell"]')
       ?.getBoundingClientRect().width,
     scrollWidth: document.documentElement.scrollWidth,
+    menuLink: (() => {
+      const link = document.querySelector('[data-stylex-owner="organization-menu-group"] > li a');
+      if (!(link instanceof HTMLElement)) throw new Error("missing mobile menu link");
+      const computed = getComputedStyle(link);
+      return { padding: computed.padding, width: link.getBoundingClientRect().width };
+    })(),
   }));
   expect(mobile.headerWidth).toBe(390);
   expect(mobile.menuWidth).toBe(390);
   expect(mobile.scrollWidth).toBeLessThanOrEqual(398);
+  expect(mobile.menuLink.padding).toBe("5px 12px 4px");
+  expect(mobile.menuLink.width).toBeGreaterThan(0);
 });
 
 async function mockOrganizationHome(page: Page) {

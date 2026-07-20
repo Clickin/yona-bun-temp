@@ -469,3 +469,11 @@ ownership across 29 route/owner groups. Reset-password-specific selectors,
 the frozen source, generated fallback, and the explicitly unreachable stale
 post producer remain. Static/runtime proof passes 2/2 normally and 2/2 with
 the legacy fallback disabled.
+
+### 2026-07-21 Batch 672 organization home menu owner proof
+
+ORG-02 organization home menu items now own the frozen menu `li` and Link
+declarations through route-local StyleX: float, font weight/size, position,
+inline-block display, line-height, desktop/mobile padding, and hover paint.
+The legacy active classes and TanStack Router links remain unchanged. Focused
+normal and fallback-off checks pass 1/1 each at desktop and mobile viewports.
