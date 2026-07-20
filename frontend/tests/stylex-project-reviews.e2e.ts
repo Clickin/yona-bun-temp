@@ -21,11 +21,16 @@ const owners = [
   "project-reviews-list",
   "project-reviews-row",
   "project-reviews-title",
+];
+const emptyOwners = [
+  "project-reviews-empty-state",
+  "project-reviews-empty-icon",
+  "project-reviews-empty-message",
 ] as const;
 
 test("reviews route exposes direct StyleX owners for sidebar, filters, and review rows", () => {
-  expect(new Set(owners).size).toBe(8);
-  for (const owner of owners) {
+  expect(new Set([...owners, ...emptyOwners]).size).toBe(11);
+  for (const owner of [...owners, ...emptyOwners]) {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(routeSource).toContain('import * as stylex from "@stylexjs/stylex"');
@@ -179,5 +184,106 @@ test("reviews list renders populated row and preserves filter/sort interaction",
     const locator = page.locator(`[data-stylex-owner="${owner}"]`);
     await expect(locator).toBeVisible();
     expect(await locator.getAttribute("class")).toMatch(/\bx[\w-]+\b/u);
+  }
+});
+
+test("reviews empty state preserves legacy error geometry on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/owners/admin/projects/sample/container", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        enrolledUsers: [],
+        id: 7,
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
+        ownerName: "admin",
+        projectName: "sample",
+        vcs: "GIT",
+        viewerUserId: 1,
+      }),
+    });
+  });
+  await page.route("**/api/v1/owners/admin/projects/sample/reviews**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        allCount: 0,
+        authorCount: 0,
+        closedCount: 0,
+        items: [],
+        openCount: 0,
+        pageNum: 1,
+        pageSize: 15,
+        participantCount: 0,
+        state: "open",
+        totalCount: 0,
+      }),
+    });
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/reviews`);
+    await expect(page.locator('[data-stylex-owner="project-reviews-empty-state"]')).toBeVisible();
+    await expect(page.locator(".error-wrap")).toHaveClass(/x[\w-]+/u);
+    await expect(page.locator(".error-wrap")).toHaveText("No review has been added.");
+
+    const computed = await page.evaluate(() => {
+      const required = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing ${selector}`);
+        return element;
+      };
+      const state = required('[data-stylex-owner="project-reviews-empty-state"]');
+      const icon = required('[data-stylex-owner="project-reviews-empty-icon"]');
+      const message = required('[data-stylex-owner="project-reviews-empty-message"]');
+      const stateStyle = getComputedStyle(state);
+      const iconStyle = getComputedStyle(icon);
+      const messageStyle = getComputedStyle(message);
+      const stateRect = state.getBoundingClientRect();
+      const messageRect = message.getBoundingClientRect();
+      return {
+        stateWidth: stateRect.width,
+        messageCenter: messageRect.left + messageRect.width / 2,
+        stateCenter: stateRect.left + stateRect.width / 2,
+        paddingTop: stateStyle.paddingTop,
+        paddingBottom: stateStyle.paddingBottom,
+        textAlign: stateStyle.textAlign,
+        iconWidth: iconStyle.width,
+        iconHeight: iconStyle.height,
+        iconImage: iconStyle.backgroundImage,
+        iconPosition: iconStyle.backgroundPosition,
+        iconDisplay: iconStyle.display,
+        messageColor: messageStyle.color,
+        messageFontSize: messageStyle.fontSize,
+        messageFontWeight: messageStyle.fontWeight,
+        messageMargin: messageStyle.margin,
+      };
+    });
+    expect(computed.paddingTop).toBe("100px");
+    expect(computed.paddingBottom).toBe("100px");
+    expect(computed.textAlign).toBe("center");
+    expect(computed.iconWidth).toBe("62px");
+    expect(computed.iconHeight).toBe("82px");
+    expect(computed.iconImage).not.toBe("none");
+    expect(computed.iconPosition).toBe("-5px -160px");
+    expect(computed.iconDisplay).toBe("inline-block");
+    expect(computed.messageColor).toBe("rgb(137, 137, 137)");
+    expect(computed.messageFontSize).toBe("16px");
+    expect(computed.messageFontWeight).toBe("700");
+    expect(computed.messageMargin).toBe("30px 0px");
+    expect(computed.messageCenter).toBeCloseTo(computed.stateCenter, 0);
   }
 });

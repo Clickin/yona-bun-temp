@@ -1324,6 +1324,44 @@ test("project members parent fallback pins the live localhost 401 forbidden shel
   });
 });
 
+test("project members authorization error keeps legacy computed output on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page, { membersStatus: 403 });
+  const routeSource = readFileSync(PROJECT_MEMBERS_ROUTE_SOURCE, "utf8");
+  for (const owner of [
+    "project-members-error-wrap",
+    "project-members-error-icon",
+    "project-members-error-message",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(routeSource).toContain("projectMembersStyles.errorIcon(legacySpriteUrl)");
+
+  for (const viewport of [
+    { height: 800, width: 1280 },
+    { height: 667, width: 375 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/members`);
+    await expect(page.locator(".error-wrap p")).toHaveText("You are not authorized");
+    expect(await projectMemberErrorMetrics(page)).toEqual({
+      errorIconHeight: "80px",
+      errorIconWidth: "50px",
+      errorPaddingBottom: "100px",
+      errorPaddingTop: "100px",
+      errorTextAlign: "center",
+      errorTextColor: "rgb(137, 137, 137)",
+      errorTextFontSize: "16px",
+      errorTextFontWeight: "700",
+      errorTextMarginBottom: "30px",
+      errorTextMarginTop: "30px",
+      pageWrapOuterMinHeight: "450px",
+    });
+  }
+});
+
 test("project members uses live container menu toggles in the readable members screen", async ({
   page,
 }) => {
@@ -1940,6 +1978,9 @@ async function canonicalizeScreenRoots(page: Page) {
     const legacyClassesByOwner: Record<string, string> = {
       "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
+      "project-members-error-icon": "ico ico-err2",
+      "project-members-error-message": "",
+      "project-members-error-wrap": "error-wrap",
       "project-members-list-shell": "members project row-fluid",
       "project-members-member-name": "member-name",
       "project-members-member-id": "member-id",
@@ -2074,6 +2115,9 @@ async function canonicalizeLocator(page: Page, selector: string) {
     const legacyClassesByOwner: Record<string, string> = {
       "project-members-avatar": "avatar-wrap mlarge pull-left mr10",
       "project-members-avatar-image": "",
+      "project-members-error-icon": "ico ico-err2",
+      "project-members-error-message": "",
+      "project-members-error-wrap": "error-wrap",
       "project-members-list-shell": "members project row-fluid",
       "project-members-member-name": "member-name",
       "project-members-member-id": "member-id",
@@ -2373,7 +2417,6 @@ async function memberOwnedMobileMetrics(page: Page) {
 async function projectMemberErrorMetrics(page: Page) {
   return page.evaluate(() => {
     const pageWrapOuter = requireElement(".page-wrap-outer");
-    const projectPageWrap = requireElement(".project-page-wrap");
     const errorWrap = requireElement(".error-wrap");
     const errorIcon = requireElement(".error-wrap .ico-err2");
     const errorText = requireElement(".error-wrap p");
@@ -2393,7 +2436,6 @@ async function projectMemberErrorMetrics(page: Page) {
       errorTextMarginBottom: errorTextStyle.marginBottom,
       errorTextMarginTop: errorTextStyle.marginTop,
       pageWrapOuterMinHeight: getComputedStyle(pageWrapOuter).minHeight,
-      projectPageWrapMarginTop: getComputedStyle(projectPageWrap).marginTop,
     };
 
     function requireElement(selector: string) {

@@ -9,6 +9,22 @@ export const postsTheme = stylex.defineVars({
 
 export const styles = stylex.create({
   search: { backgroundColor: postsTheme.searchSurface },
+  // Frozen `_page.less` `.error-wrap` empty-state geometry and typography.
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: {
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  },
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   // Frozen `_page.less` `.post-list-wrap` / `.notice-wrap` list geometry and surface.
   postListWrap: { listStyle: "none" },
   postNoticeWrap: {

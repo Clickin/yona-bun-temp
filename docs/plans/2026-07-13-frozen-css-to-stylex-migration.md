@@ -5064,3 +5064,11 @@ Move the frozen `no_contents.jpg` paint into the global, project, and
 organization search empty-result StyleX owners. Resolve the asset through the
 runtime base path so `/yona` and root deployments render the same legacy image;
 retain the empty-result DOM/classes, frozen source, and generated fallback.
+
+## Batch 659
+
+Move the frozen `.error-wrap` geometry, error-icon sprite positioning, and
+message typography into the existing project reviews, posts, and members
+StyleX owners for their empty/authorization states. Preserve the legacy DOM,
+classes, copy, and sprite asset; keep the shared fallback for all other error
+consumers.

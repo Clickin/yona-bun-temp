@@ -19,10 +19,15 @@ import {
 } from "../../../api/boards";
 import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import type { ProjectContainer } from "../../../api/types";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { issueLabelStyle } from "../../../legacy-issue-label-style";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-posts.stylex";
+
+const errorIconSpriteStyles = stylex.create({
+  sprite: (backgroundImage: string) => ({ backgroundImage }),
+});
 
 type ProjectPostsRouteSearch = {
   filter?: string;
@@ -199,9 +204,24 @@ function ProjectPostsBody({
         </div>
 
         {!hasPosts ? (
-          <div className="error-wrap">
-            <i className="ico ico-err1"></i>
-            <p>{t("post.is.empty")}</p>
+          <div
+            {...stylex.props(styles.errorWrap)}
+            className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+            data-stylex-owner="project-posts-empty"
+          >
+            <i
+              {...stylex.props(styles.errorIcon)}
+              {...stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`))}
+              className={`${stylex.props(styles.errorIcon).className} ${stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
+              data-stylex-owner="project-posts-empty-icon"
+            ></i>
+            <p
+              {...stylex.props(styles.errorMessage)}
+              className={stylex.props(styles.errorMessage).className}
+              data-stylex-owner="project-posts-empty-message"
+            >
+              {t("post.is.empty")}
+            </p>
           </div>
         ) : (
           <>

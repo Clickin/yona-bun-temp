@@ -32,8 +32,9 @@ import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { globalBreakpoints } from "../../../theme.stylex";
 import { SiteLayoutShell } from "../../-home-route-screen";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { ProjectHeader, ProjectMenu } from "../$projectName";
-import { projectMembersTheme } from "./-members.stylex";
+import { projectMembersStyles, projectMembersTheme } from "./-members.stylex";
 
 const legacyLinkActiveProps = {
   "aria-current": undefined,
@@ -289,9 +290,20 @@ function ProjectMembersErrorBody({
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(messageKey)}</p>
+        <div
+          className={`${stylex.props(projectMembersStyles.errorWrap).className} error-wrap`}
+          data-stylex-owner="project-members-error-wrap"
+        >
+          <i
+            className={`${stylex.props(projectMembersStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+            data-stylex-owner="project-members-error-icon"
+          ></i>
+          <p
+            className={stylex.props(projectMembersStyles.errorMessage).className}
+            data-stylex-owner="project-members-error-message"
+          >
+            {t(messageKey)}
+          </p>
           {loginRedirectPath ? (
             <Link
               activeOptions={{ exact: true, explicitUndefined: true, includeSearch: true }}

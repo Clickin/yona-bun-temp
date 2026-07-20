@@ -10,10 +10,11 @@ import {
 } from "../../../api/pull-requests";
 import type { ProjectContainer } from "../../../api/types";
 import defaultAvatarUrl from "../../../assets/legacy/default-avatar-64.png";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { SitePagination } from "../../sites/-pagination";
-import { reviewsColors, reviewsLayout } from "./-reviews.stylex";
+import { reviewsColors, reviewsDynamicStyles, reviewsLayout } from "./-reviews.stylex";
 
 const styles = stylex.create({
   sideEffectButton: {
@@ -344,10 +345,26 @@ function ProjectReviewRows({
   const { t } = useLegacyMessages();
   const listProps = stylex.props(styles.list);
   if (reviews.items.length === 0) {
+    const emptyStateProps = stylex.props(reviewsLayout.emptyState);
+    const emptyIconProps = stylex.props(
+      reviewsLayout.emptyIcon,
+      reviewsDynamicStyles.emptyIconSprite(legacySpriteUrl),
+    );
+    const emptyMessageProps = stylex.props(reviewsLayout.emptyMessage);
     return (
-      <div className="error-wrap">
-        <i className="ico ico-err1"></i>
-        <p>{t("review.is.empty")}</p>
+      <div
+        {...emptyStateProps}
+        className={`error-wrap ${emptyStateProps.className ?? ""}`.trim()}
+        data-stylex-owner="project-reviews-empty-state"
+      >
+        <i
+          {...emptyIconProps}
+          className={`ico ico-err1 ${emptyIconProps.className ?? ""}`.trim()}
+          data-stylex-owner="project-reviews-empty-icon"
+        ></i>
+        <p {...emptyMessageProps} data-stylex-owner="project-reviews-empty-message">
+          {t("review.is.empty")}
+        </p>
       </div>
     );
   }
