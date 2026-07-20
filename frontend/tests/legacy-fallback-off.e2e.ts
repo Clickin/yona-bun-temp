@@ -520,6 +520,12 @@ test("dead badge-info bridge has no app.css arm", () => {
   expect(appCss).toContain(".label-info {\n  background-color: #3a87ad;\n}");
 });
 
+test("project-home issue-wrap bridge has no React-side fallback arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".project-home .issue-wrap {");
+  expect(appCss).not.toContain(".project-home .issue-wrap a.btn {");
+});
+
 test("board toolbar bridge has no current producer", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-toolbar");

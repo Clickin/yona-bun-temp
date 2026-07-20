@@ -1991,3 +1991,4 @@ retained label paint in normal and fallback-off modes. No TSX changed.
   baselines remain unchanged. The issueform and formal fallback-off contracts
   assert exact absence and retained shared combobox rules in normal and
   fallback-off modes. No TSX changed.
+| 2026-07-20 | Dead project-home issue-wrap compatibility bridge retirement | Frozen `yona-original/app/views/project/home.scala.html` provides the historical project-home issue section evidence; current React project-home routes emit no `.issue-wrap` consumer. | `frontend/src/app.css` removes only `.project-home .issue-wrap { margin-bottom:15px; }` and `.project-home .issue-wrap a.btn { width:105px; }`; frozen/generated assets and geometry remain unchanged. | `frontend/tests/stylex-project-home-side-panel.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` assert exact absence in normal/fallback-off modes; `fallback-off-2026-07-20-project-home-issue-wrap.md` records the bounded evidence. |

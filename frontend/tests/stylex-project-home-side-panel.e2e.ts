@@ -24,4 +24,6 @@ test("project home side panel owns legacy padding", async () => {
   expect(source).toContain('data-stylex-owner="project-home-side-panel"');
   expect(styles).toContain("projectHome:");
   expect(css).not.toContain(".project-home {\n  padding: 10px;");
+  expect(css).not.toContain(".project-home .issue-wrap {");
+  expect(css).not.toContain(".project-home .issue-wrap a.btn {");
 });

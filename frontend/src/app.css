@@ -1922,14 +1922,6 @@ h1 {
   padding: 20px 20px 10px;
 }
 
-.project-home .issue-wrap {
-  margin-bottom: 15px;
-}
-
-.project-home .issue-wrap a.btn {
-  width: 105px;
-}
-
 .project-home .inner header .project-status {
   float: right;
   line-height: 19px;

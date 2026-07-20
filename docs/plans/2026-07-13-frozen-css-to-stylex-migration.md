@@ -4505,3 +4505,12 @@ Retire only the unreachable `.badge-info` arm from the grouped `.label-info,
 fallback, and geometry baselines. Update the formal fallback-off static
 contract in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change
 TSX or frozen/generated CSS.
+
+## Batch 597
+
+Retire only the unreachable `.project-home .issue-wrap` margin and button-width
+compatibility rules from `frontend/src/app.css`. Current React project-home
+routes emit no `.issue-wrap` consumer; retain frozen legacy source, generated
+fallback, and geometry baselines. Update the project-home side-panel and formal fallback-off static
+contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change
+TSX or frozen/generated CSS.
