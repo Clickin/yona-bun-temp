@@ -5,6 +5,17 @@ const SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", import.meta.url),
   "utf8",
 );
+const UPLOAD_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
+  "utf8",
+);
+const STYLE_SOURCE = readFileSync(
+  new URL(
+    "../src/routes/$ownerName/$projectName/post/$postNumber/-post-editform.stylex.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("post edit form preserves legacy editor and action owners with StyleX", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -27,6 +38,9 @@ test("post edit form preserves legacy editor and action owners with StyleX", asy
   await expect(page.locator("#editor-body-body")).toHaveAttribute("tabindex", "2");
   await expect(page.locator('[data-stylex-owner="post-edit-form-actions"]')).toBeVisible();
   await expect(page.locator('[data-stylex-owner="post-edit-form-uploader"]')).toBeVisible();
+  const uploadSaveHelp = page.locator('[data-stylex-owner="post-edit-form-upload-save-help"]');
+  await expect(uploadSaveHelp).toHaveCount(1);
+  await expect(uploadSaveHelp).toHaveCSS("text-align", "right");
   await expect(page.locator("#notice")).toBeChecked();
   const desktopFormBox = await form.evaluate((node) => {
     const box = node.getBoundingClientRect();
@@ -51,6 +65,11 @@ test("post edit form preserves legacy editor and action owners with StyleX", asy
   await expect(page.locator("[data-toggle], [data-dismiss], [data-request-method]")).toHaveCount(0);
   expect(SOURCE).toContain('id="button-clear-temporary"');
   expect(SOURCE).toContain("BoardPostFileUploader");
+  expect(SOURCE).not.toContain('className="right-txt help"');
+  expect(SOURCE).toContain('data-stylex-owner="post-edit-form-upload-save-help"');
+  expect(UPLOAD_SOURCE).toContain('<p class="right-txt help">');
+  expect(UPLOAD_SOURCE).toContain("common.attach.attachIfYouSave");
+  expect(STYLE_SOURCE).toContain('uploadSaveHelp: { textAlign: "right" }');
   expect(SOURCE).not.toContain("$yobi.loadModule");
 });
 
