@@ -5072,3 +5072,10 @@ message typography into the existing project reviews, posts, and members
 StyleX owners for their empty/authorization states. Preserve the legacy DOM,
 classes, copy, and sprite asset; keep the shared fallback for all other error
 consumers.
+
+## Batch 660
+
+Move the frozen `.error-wrap` geometry, `ico-err1` sprite positioning, and
+message typography into the existing organization boards, issues, and pull
+requests empty-state StyleX owners. Preserve legacy DOM/classes/copy and the
+sprite asset; keep the shared fallback for all other error consumers.

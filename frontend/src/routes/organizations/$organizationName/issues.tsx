@@ -18,12 +18,17 @@ import {
   type RestIssueListItem,
 } from "../../../auth-workspace-client";
 import { apiQueryKeys } from "../../../api/query-keys";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-organization-issues.stylex";
 
 const organizationHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
+});
+
+const errorIconSpriteStyles = stylex.create({
+  sprite: (backgroundImage: string) => ({ backgroundImage }),
 });
 
 type OrganizationIssuesSearch = {
@@ -355,12 +360,24 @@ function OrganizationIssuesBody({
                 </>
               ) : (
                 <div
-                  {...stylex.props(styles.empty)}
-                  className={`${stylex.props(styles.empty).className} error-wrap`}
+                  {...stylex.props(styles.empty, styles.errorWrap)}
+                  className={`${stylex.props(styles.empty, styles.errorWrap).className} error-wrap`}
                   data-stylex-owner="organization-issues-empty"
                 >
-                  <i className="ico ico-err1"></i>
-                  <p>{t("issue.is.empty")}</p>
+                  <i
+                    {...stylex.props(
+                      styles.errorIcon,
+                      errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`),
+                    )}
+                    className={`${stylex.props(styles.errorIcon, errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
+                    data-stylex-owner="organization-issues-empty-icon"
+                  ></i>
+                  <p
+                    {...stylex.props(styles.errorMessage)}
+                    data-stylex-owner="organization-issues-empty-message"
+                  >
+                    {t("issue.is.empty")}
+                  </p>
                 </div>
               )}
             </div>

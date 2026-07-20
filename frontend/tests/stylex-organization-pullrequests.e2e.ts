@@ -23,6 +23,12 @@ test("records organization pull request list owners and responsive containment",
     "../yona-original/app/views/organization/group_pullrequest_list.scala.html",
     "utf8",
   );
+  const partial = readFileSync(
+    "../yona-original/app/views/organization/group_pullrequest_list_partial.scala.html",
+    "utf8",
+  );
+  const gitPartial = readFileSync("../yona-original/app/views/git/partial_list.scala.html", "utf8");
+  const less = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   expect(template).toContain("pullrequeset-tab-menu");
   expect(template).toContain('name="filter"');
   expect(route).not.toContain("pullrequeset-tab-menu");
@@ -51,6 +57,19 @@ test("records organization pull request list owners and responsive containment",
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(theme).toContain("export const organizationPullRequestColors");
+  for (const evidence of [partial, gitPartial]) {
+    expect(evidence).toContain('<div class="error-wrap">');
+    expect(evidence).toContain('<i class="ico ico-err1"></i>');
+    expect(evidence).toContain('Messages("pullRequest.is.empty")');
+  }
+  expect(less).toContain("padding:100px 0px;");
+  expect(less).toContain("font-weight:bold; font-size:16px;");
+  expect(route).toContain('import legacySpriteUrl from "../../../assets/legacy/sprite.png"');
+  expect(route).toContain('data-stylex-owner="organization-pullrequests-empty-icon"');
+  expect(route).toContain('data-stylex-owner="organization-pullrequests-empty-message"');
+  expect(theme).toContain('backgroundPosition: "-5px -160px"');
+  expect(theme).toContain('height: "82px"');
+  expect(theme).toContain('width: "62px"');
   await mockPullRequests(page);
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -61,6 +80,43 @@ test("records organization pull request list owners and responsive containment",
     await expect(owner(page, "organization-pullrequests-tabs")).toBeVisible();
     await expect(owner(page, "organization-pullrequests-list")).toBeVisible();
     await expect(owner(page, "organization-pullrequests-empty")).toBeVisible();
+    await expect(owner(page, "organization-pullrequests-empty-icon")).toHaveCSS(
+      "background-image",
+      /sprite\.png/u,
+    );
+    await expect(owner(page, "organization-pullrequests-empty-icon")).toHaveCSS(
+      "background-position",
+      "-5px -160px",
+    );
+    await expect(owner(page, "organization-pullrequests-empty-icon")).toHaveCSS("width", "62px");
+    await expect(owner(page, "organization-pullrequests-empty-icon")).toHaveCSS("height", "82px");
+    await expect(owner(page, "organization-pullrequests-empty-message")).toHaveText(
+      "등록된 코드 주고 받기가 없습니다.",
+    );
+    const emptyGeometry = await page.evaluate(() => {
+      const wrap = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="organization-pullrequests-empty"]',
+      );
+      const icon = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="organization-pullrequests-empty-icon"]',
+      );
+      const message = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="organization-pullrequests-empty-message"]',
+      );
+      if (!wrap || !icon || !message) return null;
+      return {
+        wrap: wrap.getBoundingClientRect().toJSON(),
+        icon: icon.getBoundingClientRect().toJSON(),
+        message: message.getBoundingClientRect().toJSON(),
+      };
+    });
+    expect(emptyGeometry).not.toBeNull();
+    expect(emptyGeometry!.icon.width).toBe(62);
+    expect(emptyGeometry!.icon.height).toBe(82);
+    expect(emptyGeometry!.icon.left).toBeGreaterThanOrEqual(emptyGeometry!.wrap.left);
+    expect(emptyGeometry!.icon.right).toBeLessThanOrEqual(emptyGeometry!.wrap.right);
+    expect(emptyGeometry!.message.left).toBeGreaterThanOrEqual(emptyGeometry!.wrap.left);
+    expect(emptyGeometry!.message.right).toBeLessThanOrEqual(emptyGeometry!.wrap.right);
     await expect(owner(page, "organization-pullrequests-search-input")).toHaveAttribute(
       "name",
       "filter",

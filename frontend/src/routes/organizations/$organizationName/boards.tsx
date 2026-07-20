@@ -10,9 +10,17 @@ import {
 import { readOrganizationContainerRest } from "../../../api/org-project";
 import { apiQueryKeys } from "../../../api/query-keys";
 import type { OrganizationContainer } from "../../../api/types";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { type RuntimeConfig } from "../../../runtime-config";
-import { organizationBoardsColors } from "./-organization-boards.stylex";
+import {
+  organizationBoardsColors,
+  organizationBoardsEmptyStyles,
+} from "./-organization-boards.stylex";
+
+const errorIconSpriteStyles = stylex.create({
+  sprite: (backgroundImage: string) => ({ backgroundImage }),
+});
 
 const styles = stylex.create({
   search: {
@@ -180,9 +188,24 @@ function OrganizationBoardsBody({
           </div>
 
           {!hasPosts ? (
-            <div className="error-wrap" data-stylex-owner="organization-boards-empty">
-              <i className="ico ico-err1"></i>
-              <p>{t("post.is.empty")}</p>
+            <div
+              {...stylex.props(organizationBoardsEmptyStyles.errorWrap)}
+              className={`${stylex.props(organizationBoardsEmptyStyles.errorWrap).className} error-wrap`.trim()}
+              data-stylex-owner="organization-boards-empty"
+            >
+              <i
+                {...stylex.props(organizationBoardsEmptyStyles.errorIcon)}
+                {...stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`))}
+                className={`${stylex.props(organizationBoardsEmptyStyles.errorIcon).className} ${stylex.props(errorIconSpriteStyles.sprite(`url(${legacySpriteUrl})`)).className ?? ""} ico ico-err1`.trim()}
+                data-stylex-owner="organization-boards-empty-icon"
+              ></i>
+              <p
+                {...stylex.props(organizationBoardsEmptyStyles.errorMessage)}
+                className={stylex.props(organizationBoardsEmptyStyles.errorMessage).className}
+                data-stylex-owner="organization-boards-empty-message"
+              >
+                {t("post.is.empty")}
+              </p>
             </div>
           ) : (
             <>

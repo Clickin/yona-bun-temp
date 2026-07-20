@@ -32,6 +32,9 @@ const owners = [
   "organization-boards-row-post-id",
   "organization-boards-title",
   "organization-boards-pagination",
+  "organization-boards-empty",
+  "organization-boards-empty-icon",
+  "organization-boards-empty-message",
 ] as const;
 
 test("organization boards exposes direct StyleX owners for search, filters, and rows", () => {
@@ -44,13 +47,90 @@ test("organization boards exposes direct StyleX owners for search, filters, and 
   expect(styleSource).toContain("stylex.defineVars({");
 });
 
-test("organization boards keeps geometry in route declarations and theme variables paint-only", () => {
-  for (const geometryProperty of ["margin:", "padding:", "width:", "height:", "top:", "left:"]) {
-    expect(styleSource).not.toContain(geometryProperty);
-  }
+test("organization boards keeps search geometry in the route and empty-state geometry in its owner", () => {
   expect(routeSource).toContain('padding: "4px 6px"');
   expect(routeSource).toContain("pageSearch");
   expect(routeSource).toContain("requestSubmit");
+  expect(styleSource).toContain("organizationBoardsEmptyStyles");
+  expect(styleSource).toContain('padding: "100px 0px"');
+  expect(styleSource).toContain('backgroundPosition: "-5px -160px"');
+});
+
+test("organization boards empty state preserves legacy image, position, size, and message on desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.route("**/api/v1/organizations/weblabs/container", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: { organizationName: "weblabs", viewerCanUpdate: true },
+    }),
+  );
+  await page.route("**/api/v1/organizations/weblabs/boards**", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      json: {
+        items: [],
+        notices: [],
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 15,
+        totalCount: 0,
+        visibleProjects: [],
+      },
+    }),
+  );
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/organizations/weblabs/boards`);
+    const state = await page
+      .locator('[data-stylex-owner="organization-boards-empty"]')
+      .evaluate((empty) => {
+        const icon = empty.querySelector<HTMLElement>(
+          '[data-stylex-owner="organization-boards-empty-icon"]',
+        );
+        const message = empty.querySelector<HTMLElement>(
+          '[data-stylex-owner="organization-boards-empty-message"]',
+        );
+        if (!icon || !message) return null;
+        const emptyBox = empty.getBoundingClientRect();
+        const iconBox = icon.getBoundingClientRect();
+        const iconStyle = getComputedStyle(icon);
+        const messageStyle = getComputedStyle(message);
+        return {
+          emptyLeft: emptyBox.left,
+          emptyWidth: emptyBox.width,
+          iconBackgroundImage: iconStyle.backgroundImage,
+          iconBackgroundPosition: iconStyle.backgroundPosition,
+          iconHeight: iconBox.height,
+          iconLeft: iconBox.left,
+          iconWidth: iconBox.width,
+          message: message.textContent?.trim(),
+          messageColor: messageStyle.color,
+          messageFontSize: messageStyle.fontSize,
+          messageFontWeight: messageStyle.fontWeight,
+        };
+      });
+    expect(state).not.toBeNull();
+    expect(state!.emptyWidth).toBeGreaterThan(0);
+    expect(state!.emptyWidth).toBeLessThanOrEqual(viewport.width);
+    expect(state!.iconBackgroundImage).toContain("sprite");
+    expect(state!.iconBackgroundPosition).toBe("-5px -160px");
+    expect(state!.iconWidth).toBe(62);
+    expect(state!.iconHeight).toBe(82);
+    expect(state!.iconLeft).toBeGreaterThanOrEqual(state!.emptyLeft);
+    expect(state!.iconLeft + state!.iconWidth).toBeLessThanOrEqual(
+      state!.emptyLeft + state!.emptyWidth,
+    );
+    expect(state!.message).toBe("No post has been added.");
+    expect(state!.messageColor).toBe("rgb(137, 137, 137)");
+    expect(state!.messageFontSize).toBe("16px");
+    expect(state!.messageFontWeight).toBe("700");
+  }
 });
 
 test("organization boards translates legacy filters and two-column controls to React", () => {
@@ -148,9 +228,9 @@ test("organization boards renders populated post and submits filter through rout
   const boardRow = boardList.locator('[data-stylex-owner="organization-boards-row"]');
   await expect(boardList).toBeVisible();
   await expect(page.locator('[data-stylex-owner="organization-boards-row"]')).toHaveCount(2);
-  await expect(
-    boardList.locator('[data-stylex-owner="organization-boards-title"]'),
-  ).toHaveText("Release notes");
+  await expect(boardList.locator('[data-stylex-owner="organization-boards-title"]')).toHaveText(
+    "Release notes",
+  );
   await page.locator('[data-stylex-owner="organization-boards-search-input"]').fill("release");
   await expect(page.locator('[data-stylex-owner="organization-boards-search-input"]')).toHaveValue(
     "release",
@@ -163,11 +243,15 @@ test("organization boards renders populated post and submits filter through rout
   });
   expect(geometry.left).toBeGreaterThanOrEqual(0);
   expect(geometry.width).toBeGreaterThan(0);
-  await expect(boardRow.locator('[data-stylex-owner="organization-boards-row-avatar"]')).toBeVisible();
+  await expect(
+    boardRow.locator('[data-stylex-owner="organization-boards-row-avatar"]'),
+  ).toBeVisible();
   await expect(
     boardRow.locator('[data-stylex-owner="organization-boards-row-title-wrap"]'),
   ).toBeVisible();
-  await expect(boardRow.locator('[data-stylex-owner="organization-boards-row-post-id"]')).toHaveText("#4");
+  await expect(
+    boardRow.locator('[data-stylex-owner="organization-boards-row-post-id"]'),
+  ).toHaveText("#4");
   const rowStyles = await page.evaluate(() => {
     const avatar = document.querySelector('[data-stylex-owner="organization-boards-row-avatar"]');
     const titleWrap = document.querySelector(

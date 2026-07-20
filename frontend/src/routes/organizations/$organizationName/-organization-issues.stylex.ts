@@ -59,6 +59,21 @@ export const styles = stylex.create({
   },
   list: { listStyle: "none" },
   empty: { backgroundColor: organizationIssuesTheme.emptySurface },
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: {
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  },
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   row: {
     display: "block",
     clear: "both",

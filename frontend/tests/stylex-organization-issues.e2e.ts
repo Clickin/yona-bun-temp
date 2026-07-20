@@ -12,11 +12,16 @@ test("records organization issue search and tabs owners", async ({ page }) => {
     "src/routes/organizations/$organizationName/-organization-issues.stylex.ts",
     "utf8",
   );
-  const template = readFileSync(
-    "../yona-original/app/views/organization/group_issue_list.scala.html",
+  const groupIssues = readFileSync(
+    "../yona-original/app/views/organization/group_issue_list_partial.scala.html",
     "utf8",
   );
-  expect(template).toContain("group_issue_search_partial");
+  const issueList = readFileSync(
+    "../yona-original/app/views/issue/partial_list.scala.html",
+    "utf8",
+  );
+  expect(groupIssues).toContain('<ul class="post-list-wrap">');
+  expect(issueList).toContain('<ul class="post-list-wrap row-fluid">');
   expect(route).toContain('data-stylex-owner="organization-issues-search-input"');
   expect(route).toContain('data-stylex-owner="organization-issues-tabs"');
   for (const owner of [
@@ -37,7 +42,49 @@ test("records organization issue search and tabs owners", async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/organizations/weblabs/issues`);
     await expect(owner(page, "organization-issues-tabs")).toBeVisible();
-    await expect(owner(page, "organization-issues-empty")).toBeVisible();
+    const empty = owner(page, "organization-issues-empty");
+    const icon = owner(page, "organization-issues-empty-icon");
+    const message = owner(page, "organization-issues-empty-message");
+    await expect(empty).toBeVisible();
+    await expect(icon).toBeVisible();
+    await expect(message).toHaveText("등록된 이슈가 없습니다.");
+    const state = await empty.evaluate((element) => {
+      const iconElement = element.querySelector(
+        '[data-stylex-owner="organization-issues-empty-icon"]',
+      );
+      const messageElement = element.querySelector(
+        '[data-stylex-owner="organization-issues-empty-message"]',
+      );
+      if (!iconElement || !messageElement) throw new Error("empty state children missing");
+      const iconStyle = getComputedStyle(iconElement);
+      const messageStyle = getComputedStyle(messageElement);
+      const box = element.getBoundingClientRect();
+      const iconBox = iconElement.getBoundingClientRect();
+      const messageBox = messageElement.getBoundingClientRect();
+      return {
+        backgroundImage: iconStyle.backgroundImage,
+        backgroundPosition: iconStyle.backgroundPosition,
+        iconHeight: iconBox.height,
+        iconWidth: iconBox.width,
+        messageFontSize: messageStyle.fontSize,
+        messageFontWeight: messageStyle.fontWeight,
+        messageText: messageElement.textContent,
+        paddingTop: getComputedStyle(element).paddingTop,
+        boxTop: box.top,
+        iconTop: iconBox.top,
+        messageTop: messageBox.top,
+      };
+    });
+    expect(state.backgroundImage).toContain("sprite.png");
+    expect(state.backgroundPosition).toBe("-5px -160px");
+    expect(state.iconWidth).toBe(62);
+    expect(state.iconHeight).toBe(82);
+    expect(state.messageFontSize).toBe("16px");
+    expect(state.messageFontWeight).toBe("700");
+    expect(state.messageText).toBe("등록된 이슈가 없습니다.");
+    expect(state.paddingTop).toBe("100px");
+    expect(state.iconTop).toBeGreaterThanOrEqual(state.boxTop + 100);
+    expect(state.messageTop).toBeGreaterThan(state.iconTop + 82);
     await expect(owner(page, "organization-issues-search-input")).toHaveAttribute("name", "filter");
     const geometry = await owner(page, "organization-issues-wrap").evaluate((element) => ({
       width: element.getBoundingClientRect().width,

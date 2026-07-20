@@ -7,6 +7,7 @@ import {
   type PullRequestListItem,
   type PullRequestListResponse,
 } from "../../../api/pull-requests";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-organization-pullrequests.stylex";
@@ -24,6 +25,8 @@ const sx = {
   content: stylex.props(styles.content),
   list: stylex.props(styles.list),
   empty: stylex.props(styles.empty),
+  emptyIcon: (backgroundImage: string) => stylex.props(styles.emptyIcon(backgroundImage)),
+  emptyMessage: stylex.props(styles.emptyMessage),
   row: stylex.props(styles.row),
   meta: stylex.props(styles.meta),
   state: stylex.props(styles.state),
@@ -251,8 +254,18 @@ function OrganizationPullRequestList({
           className={`${sx.empty.className} error-wrap`}
           data-stylex-owner="organization-pullrequests-empty"
         >
-          <i className="ico ico-err1"></i>
-          <p>{t("pullRequest.is.empty")}</p>
+          <i
+            {...sx.emptyIcon(`url(${legacySpriteUrl})`)}
+            className={`${sx.emptyIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err1`.trim()}
+            data-stylex-owner="organization-pullrequests-empty-icon"
+          ></i>
+          <p
+            {...sx.emptyMessage}
+            className={sx.emptyMessage.className}
+            data-stylex-owner="organization-pullrequests-empty-message"
+          >
+            {t("pullRequest.is.empty")}
+          </p>
         </div>
       )}
     </ul>

@@ -23,6 +23,16 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Normal and fallback-off focused Playwright checks pass for all three
   owners at desktop and mobile viewports.
 
+### 2026-07-20 Batch 660 organization error-wrap owner proof
+
+- [x] Organization boards, issues, and pull-request empty states own the
+  frozen `.error-wrap`, `ico-err1` sprite, and message declarations through
+  existing route-local StyleX modules.
+- [x] Legacy classes/DOM/copy remain intact; the shared fallback remains for
+  other error states and parent list geometry.
+- [x] Normal and fallback-off focused Playwright checks pass for all three
+  owners at desktop and mobile viewports.
+
 이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다.
 
 ## Completion model
