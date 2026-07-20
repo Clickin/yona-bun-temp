@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import defaultAvatarUrl from "../../../../assets/legacy/default-avatar-64.png";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { currentSessionQueryOptions } from "../../../../api/session";
@@ -192,11 +193,24 @@ export function ProjectMilestoneNotFoundBody() {
   const { t } = useLegacyMessages();
 
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="project-milestone-detail-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.notfound.milestone")}</p>
+        <div
+          {...stylex.props(styles.errorWrap)}
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+          data-stylex-owner="project-milestone-detail-error-wrap"
+        >
+          <i
+            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
+            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+            data-stylex-owner="project-milestone-detail-error-icon"
+          ></i>
+          <p
+            {...stylex.props(styles.errorMessage)}
+            data-stylex-owner="project-milestone-detail-error-message"
+          >
+            {t("error.notfound.milestone")}
+          </p>
           <Link
             to="/$ownerName/$projectName/milestones"
             params={{ ownerName, projectName }}

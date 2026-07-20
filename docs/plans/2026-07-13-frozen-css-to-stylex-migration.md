@@ -5095,3 +5095,11 @@ message typography into the project issue-detail not-found, pull-request
 detail error, and pull-request changes error owners. Preserve legacy
 DOM/classes/copy, list-navigation and 403/404 behavior, and the sprite asset;
 keep the shared fallback for all other error consumers.
+
+## Batch 663
+
+Move the frozen `.error-wrap` geometry, `ico-err2` sprite positioning, and
+message typography into the project-members forbidden/bad-request shell, code
+file branch-not-found state, and milestone not-found state. Preserve the
+existing project shell, legacy DOM/classes/copy, login or list navigation, and
+responsive geometry; keep the shared fallback for all other error consumers.

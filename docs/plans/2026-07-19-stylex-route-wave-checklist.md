@@ -387,3 +387,12 @@ The complete current React/TSX and frozen legacy inventory has no additional saf
 highlighting and `.issue-form-project-header`, which has no frozen legacy selector/declaration
 evidence. Both remain deferred; no route-owner wave or fallback deletion is authorized without
 new producer/source evidence.
+
+### 2026-07-21 Batch 663 project error-wrap detail-state owner proof
+
+Batch 663 adds exact route-local owners for the project-members error shell,
+code-file branch-not-found state, and milestone not-found state. The workers
+preserve the existing legacy classes and navigation while moving only the
+frozen `_page.less`/`_sprites.less` declarations into colocated StyleX. The
+shared `.error-wrap` fallback remains for the still-unmigrated React emitters;
+normal and fallback-disabled focused runs both pass 3/3 serially.

@@ -14,6 +14,7 @@ import { currentSessionQueryOptions } from "../../../../../api/session";
 import type { ProjectContainer } from "../../../../../api/types";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
+import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { styles } from "./-code-file.stylex";
 
 export const Route = createFileRoute("/$ownerName/$projectName/code/$branch/$filePath")({
@@ -127,14 +128,28 @@ function ProjectCodeNotFound({
 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="project-code-file-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.notfound.code", { args: [branch] })}</p>
+        <div
+          {...stylex.props(styles.errorWrap)}
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+          data-stylex-owner="project-code-file-error-wrap"
+        >
+          <i
+            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
+            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+            data-stylex-owner="project-code-file-error-icon"
+          ></i>
+          <p
+            {...stylex.props(styles.errorMessage)}
+            data-stylex-owner="project-code-file-error-message"
+          >
+            {t("error.notfound.code", { args: [branch] })}
+          </p>
           <Link
             to={projectPath(ownerName, projectName, "settingform")}
             className="ybtn ybtn-primary"
+            data-stylex-owner="project-code-file-error-list"
           >
             {t("button.list")}
           </Link>

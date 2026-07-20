@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import defaultHistoryAvatarUrl from "../../assets/legacy/default-avatar-64.png";
 import defaultProjectBackgroundUrl from "../../assets/legacy/project_default.jpg";
 import defaultProjectLogoUrl from "../../assets/legacy/project_default_logo.png";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex";
 
 const projectHistoryStyles = stylex.create({
@@ -760,9 +761,22 @@ function ProjectMembersErrorRouteShell({
         data-stylex-owner="project-home-page"
       >
         <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico ico-err2"></i>
-            <p>{t(isForbidden ? "error.forbidden" : "error.badrequest")}</p>
+          <div
+            {...stylex.props(styles.errorWrap)}
+            className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+            data-stylex-owner="project-members-error-wrap"
+          >
+            <i
+              {...stylex.props(styles.errorIcon(legacySpriteUrl))}
+              className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+              data-stylex-owner="project-members-error-icon"
+            ></i>
+            <p
+              {...stylex.props(styles.errorMessage)}
+              data-stylex-owner="project-members-error-message"
+            >
+              {t(isForbidden ? "error.forbidden" : "error.badrequest")}
+            </p>
             {errorStatus === 401 ? (
               <Link
                 activeOptions={legacyProjectShellLinkActiveOptions}
@@ -770,6 +784,7 @@ function ProjectMembersErrorRouteShell({
                 className="ybtn ybtn-primary"
                 search={{ redirectUrl: `/${ownerName}/${projectName}/members` }}
                 to="/users/loginform"
+                data-stylex-owner="project-members-error-login"
               >
                 {t("title.login")}
               </Link>

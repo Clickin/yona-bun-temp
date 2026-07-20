@@ -15,6 +15,22 @@ export const milestoneDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: (spriteUrl: string) => ({
+    backgroundImage: `url(${spriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   badge: {
     display: "inline-block",
     padding: "5px 15px",
