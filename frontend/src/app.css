@@ -2652,31 +2652,6 @@ h1 {
   }
 }
 
-.board-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-  margin: 16px 0;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
-.board-toolbar form {
-  display: flex;
-  flex: 1 1 360px;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.board-toolbar input,
-.board-toolbar select {
-  min-width: 180px;
-  max-width: 100%;
-}
-
 .post-list-wrap {
   padding-left: 0;
   list-style: none;
@@ -4355,17 +4330,6 @@ div.markdown-preview {
 }
 
 @media (max-width: 640px) {
-  .board-toolbar {
-    align-items: stretch;
-  }
-
-  .board-toolbar form,
-  .board-toolbar input,
-  .board-toolbar select,
-  .board-toolbar .ybtn {
-    width: 100%;
-  }
-
   #searchInnerForm {
     align-items: stretch;
     flex-direction: column;

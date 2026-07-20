@@ -1959,3 +1959,13 @@ contracts in normal and fallback-off modes; no TSX changed.
   and states; the standalone `.milesion-wrap` sharer selector, frozen/generated
   fallback, and geometry remain unchanged. The milestone mass-update and
   fallback-off contracts assert exact selector absence and StyleX ownership.
+
+## Batch 594
+
+- Dead `.board-toolbar` compatibility bridge retirement: repository inventory
+  found no current React, frozen Scala, or legacy JavaScript producer for the
+  class. `frontend/src/app.css` removes only the base and max-width-640
+  `.board-toolbar` blocks, including nested form/input/select/`.ybtn` arms;
+  surrounding post-list/search rules, frozen/generated fallback, and geometry
+  remain unchanged. The project-posts and formal fallback-off contracts assert
+  exact absence in normal and fallback-off modes. No TSX changed.

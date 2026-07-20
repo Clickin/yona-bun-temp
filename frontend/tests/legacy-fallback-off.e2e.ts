@@ -495,6 +495,14 @@ test("dot-variant ybtn bridges have no app.css arms", () => {
   expect(appCss).toContain(".ybtn {");
 });
 
+test("board toolbar bridge has no current producer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".board-toolbar");
+  expect(readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8")).not.toContain(
+    "board-toolbar",
+  );
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");

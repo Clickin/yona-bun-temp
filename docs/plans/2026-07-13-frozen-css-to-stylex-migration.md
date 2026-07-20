@@ -4472,3 +4472,14 @@ React or frozen Scala/JS consumer emits the dot variants. Retain the active
 hyphenated and generic Yobi rules, frozen/generated fallback assets, and
 geometry baselines. Update the formal fallback-off static contract in normal
 and fallback-off modes; do not change TSX or frozen/generated CSS.
+
+## Batch 594
+
+Retire only the source-less `.board-toolbar` base and max-width-640 responsive
+compatibility rules from `frontend/src/app.css`, including nested
+form/input/select/`.ybtn` arms. Current project posts React and frozen legacy
+sources emit no `.board-toolbar`; the route uses `search-wrap underline` and
+StyleX owners. Retain surrounding post-list/search rules, frozen CSS, generated
+fallback, and geometry baselines. Update the project-posts and formal
+fallback-off static contracts in normal and fallback-off modes; do not change
+TSX or frozen/generated CSS.

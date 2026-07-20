@@ -33,6 +33,7 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   expect(less).toContain(".post-item {");
   expect(appCss).not.toContain(".app-shell.board-page");
   expect(appCss).not.toContain(".board-page");
+  expect(appCss).not.toContain(".board-toolbar");
   expect(partial).toContain('class="label label-notice"');
   expect(partial).toContain('class="label label-important"');
   expect(appCss).not.toContain(".board-badges");
