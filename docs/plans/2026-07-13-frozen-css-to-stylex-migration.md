@@ -4522,3 +4522,12 @@ site forms omit these legacy classes and own their layout through StyleX;
 frozen Scala templates and generated fallback remain unchanged as legacy
 evidence. Verify exact absence plus retained route-local form ownership in
 normal and fallback-off contracts.
+
+## Batch 599
+
+Retire only the React-side `.login-form-wrap .email-verification-help` rule from
+`frontend/src/app.css`. The standalone login route already owns the enabled helper
+through `standalone-login-verification-help` StyleX ownership and emits no legacy
+class; frozen Scala and generated fallback CSS remain unchanged as evidence.
+Update the standalone verification-help and formal fallback-off static contracts,
+then run normal and `VITE_DISABLE_LEGACY_FALLBACK=1` focused Playwright checks.

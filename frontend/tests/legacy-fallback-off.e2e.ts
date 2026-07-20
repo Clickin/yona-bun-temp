@@ -536,6 +536,17 @@ test("site mail form-horizontal bridge has no app.css arms", () => {
   );
 });
 
+test("email verification helper bridge has no React-side app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".login-form-wrap .email-verification-help");
+  expect(
+    readFileSync("src/routes/users/loginform.tsx", "utf8"),
+  ).not.toContain('className="email-verification-help"');
+  expect(
+    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
+  ).toContain(".login-form-wrap .email-verification-help");
+});
+
 test("board toolbar bridge has no current producer", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-toolbar");

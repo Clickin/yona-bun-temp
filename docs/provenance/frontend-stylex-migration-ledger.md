@@ -2003,4 +2003,16 @@ retained label paint in normal and fallback-off modes. No TSX changed.
   fallback and geometry remain unchanged. The site-mail and formal
   fallback-off contracts assert exact selector absence in normal and
   `VITE_DISABLE_LEGACY_FALLBACK=1` modes.
+
+## Batch 599
+
+- Dead standalone login email-verification helper bridge retirement: the legacy
+  `user/login.scala.html` helper remains frozen evidence, while current React
+  loginform emits the helper through the StyleX owner
+  `standalone-login-verification-help` and no `email-verification-help` class.
+  `frontend/src/app.css` removes only the scoped helper block; generated fallback
+  CSS and frozen sources remain unchanged. Focused contracts assert exact app.css
+  absence, retained generated fallback evidence, enabled/disabled/social-only state
+  behavior, and desktop/mobile geometry. Global fallback discovery remains
+  incomplete/non-green.
 | 2026-07-20 | Dead project-home issue-wrap compatibility bridge retirement | Frozen `yona-original/app/views/project/home.scala.html` provides the historical project-home issue section evidence; current React project-home routes emit no `.issue-wrap` consumer. | `frontend/src/app.css` removes only `.project-home .issue-wrap { margin-bottom:15px; }` and `.project-home .issue-wrap a.btn { width:105px; }`; frozen/generated assets and geometry remain unchanged. | `frontend/tests/stylex-project-home-side-panel.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` assert exact absence in normal/fallback-off modes; `fallback-off-2026-07-20-project-home-issue-wrap.md` records the bounded evidence. |
