@@ -39,6 +39,7 @@ test("project posts preserves legacy populated-list owners and sort geometry", a
   expect(appCss).not.toContain(".board-badges");
   expect(appCss).not.toContain(".board-badge");
   expect(appCss).not.toContain(".board-label {");
+  expect(appCss).not.toContain(".board-comments {");
   expect(route).toContain('data-stylex-owner="project-posts-avatar"');
   expect(route).toContain('data-stylex-owner="project-posts-title-wrap"');
   expect(route).toContain('data-stylex-owner="project-posts-infos"');

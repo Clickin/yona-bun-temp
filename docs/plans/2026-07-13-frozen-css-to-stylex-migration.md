@@ -4582,3 +4582,13 @@ rule used by current root user-menu output. Update the authenticated user-menu
 and formal fallback-off static contracts in normal and
 `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX, frozen CSS, generated
 fallback, or geometry baselines.
+
+## Batch 605
+
+Retire only the source-less `.board-comments` reset block from
+`frontend/src/app.css`. Current React, frozen Scala, and legacy JavaScript
+inventories emit no `.board-comments` consumer; retain live
+`.board-comment-wrap`, `.comments`, and review-card comment selectors, along
+with frozen/generated fallback evidence and geometry. Update the project-posts
+and formal fallback-off static contracts in normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX or frozen CSS.
