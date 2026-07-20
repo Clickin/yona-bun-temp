@@ -3801,7 +3801,11 @@ function ChildComments({
       >
         Reply
       </div>
-      <div className="subcomment-media-body">
+      <div
+        {...stylex.props(styles.childCommentSurface)}
+        className={`${stylex.props(styles.childCommentSurface).className} subcomment-media-body`}
+        data-stylex-owner="project-issue-detail-child-comment-surface"
+      >
         <div className="child-comments">
           {childComments.map((comment) => (
             <ChildComment
@@ -3825,7 +3829,11 @@ function ChildComments({
                 name="parentCommentId"
                 value={parentCommentId}
               />
-              <div className="oneline-comment-box">
+              <div
+                {...stylex.props(styles.childCommentFormRow)}
+                className={`${stylex.props(styles.childCommentFormRow).className} oneline-comment-box`}
+                data-stylex-owner="project-issue-detail-child-comment-form-row"
+              >
                 <textarea
                   ref={textareaRef}
                   className="editorSeries"
@@ -3885,7 +3893,11 @@ function ChildComment({
 
   return (
     <div className="one-line-comment">
-      <div className="contents">
+      <div
+        {...stylex.props(styles.childCommentContents)}
+        className={`${stylex.props(styles.childCommentContents).className} contents`}
+        data-stylex-owner="project-issue-detail-child-comment-contents"
+      >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
           {stringField(comment.contentsMarkdown)}
         </ReactMarkdown>
@@ -3911,7 +3923,9 @@ function ChildComment({
           {booleanField(comment.viewerCanDelete) ? (
             <button
               type="button"
-              className="btn-transparent deleteButtonX"
+              {...stylex.props(styles.childCommentDelete)}
+              className={`${stylex.props(styles.childCommentDelete).className} btn-transparent deleteButtonX`}
+              data-stylex-owner="project-issue-detail-child-comment-delete"
               title="Delete comment"
               onClick={(event) => {
                 insulateModalButtonClick(event);

@@ -238,6 +238,25 @@ export const styles = stylex.create({
     padding: "0 0 15px 54px",
     fontFamily: "inherit",
   },
+  childCommentSurface: {
+    marginLeft: "60px",
+    textAlign: "right",
+  },
+  childCommentContents: {
+    marginLeft: "12px",
+    padding: "5px 0 4px 10px",
+    textAlign: "left",
+    borderBottom: "1px dashed #ccc",
+  },
+  childCommentDelete: {
+    display: "inline-flex",
+    alignItems: "center",
+    color: "red",
+  },
+  childCommentFormRow: {
+    display: "flex",
+    marginLeft: "12px",
+  },
   sidebarMetaDl: { marginBottom: "20px" },
   sidebarMetaDd: { padding: "5px 0px" },
   sidebarMetaAssigneeName: { fontSize: "11px" },

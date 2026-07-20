@@ -4984,3 +4984,9 @@ Migrate the project post creation uploader surface and attach-control alignment
 into route-local StyleX owners. Preserve the legacy `upload-wrap`,
 `content-footer`, `attach-wrap`, `btn-wrap`, `plain`, and `attached-files`
 classes, uploader DOM, copy, and fallback-only declarations.
+
+## Batch 649
+
+Migrate authenticated issue-detail child-comment gutter, content, delete
+action, and reply-row declarations into route-local StyleX owners while
+preserving legacy classes, DOM, copy, and React-owned interactions.

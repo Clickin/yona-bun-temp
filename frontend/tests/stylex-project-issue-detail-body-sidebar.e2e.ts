@@ -40,6 +40,11 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
   expect(legacyLess).toContain(".board-actrow");
   expect(legacyLess).toContain(".board-footer");
   expect(legacyLess).toContain(".issue-info");
+  expect(legacyLess).toContain(".subcomment-media-body");
+  expect(legacyLess).toContain(".one-line-comment");
+  expect(legacyLess).toContain(".contents {");
+  expect(legacyLess).toContain(".deleteButtonX");
+  expect(legacyLess).toContain(".oneline-comment-box");
 
   for (const owner of ["author", "content", "actions", "boardFooter", "issueInfo"]) {
     expect(styleSource).toContain(`${owner}:`);
@@ -62,6 +67,10 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
     "project-issue-detail-comment-update-actions",
     "project-issue-detail-board-footer",
     "project-issue-detail-sidebar-meta",
+    "project-issue-detail-child-comment-surface",
+    "project-issue-detail-child-comment-contents",
+    "project-issue-detail-child-comment-delete",
+    "project-issue-detail-child-comment-form-row",
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${marker}"`);
   }
@@ -78,6 +87,11 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
     'marginTop: "20px"',
     'textAlign: "right"',
     'padding: "15px 0 0 10px"',
+    'marginLeft: "60px"',
+    'padding: "5px 0 4px 10px"',
+    'borderBottom: "1px dashed #ccc"',
+    'display: "inline-flex"',
+    'marginLeft: "12px"',
   ]) {
     expect(styleSource).toContain(declaration);
   }
@@ -125,6 +139,12 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   // `_page.less` uses the 52px desktop metadata gutter; `_responsive.less`
   // narrows it only at the frozen 720px breakpoint.
   await expect(sidebar).toHaveCSS("padding-left", "52px");
+  await expect(
+    page.locator('[data-stylex-owner="project-issue-detail-child-comment-surface"]'),
+  ).toHaveCSS("margin-left", "60px");
+  await expect(
+    page.locator('[data-stylex-owner="project-issue-detail-child-comment-contents"]'),
+  ).toHaveCSS("border-bottom-width", "1px");
   const desktop = await page.evaluate(() => {
     const get = (selector: string) => {
       const element = document.querySelector<HTMLElement>(selector);
@@ -212,7 +232,32 @@ async function mockIssueDetail(page: import("@playwright/test").Page) {
         weight: 2,
         voters: [],
         sharers: [],
-        comments: [],
+        comments: [
+          {
+            id: 101,
+            parentCommentId: "",
+            authorLoginId: "admin",
+            authorLabel: "Site Admin",
+            authorAvatarUrl: "",
+            contentsMarkdown: "Top-level comment",
+            createdLabel: "Jul 2, 2026",
+            viewerCanRead: true,
+            viewerCanUpdate: true,
+            viewerCanDelete: true,
+            viewerHasVoted: false,
+            childComments: [
+              {
+                id: 102,
+                parentCommentId: "101",
+                authorLoginId: "admin",
+                authorLabel: "Site Admin",
+                contentsMarkdown: "Child comment",
+                createdLabel: "Jul 2, 2026",
+                viewerCanDelete: true,
+              },
+            ],
+          },
+        ],
         timeline: [],
         childIssues: [],
         attachments: [],
