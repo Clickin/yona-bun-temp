@@ -239,7 +239,10 @@ function OrganizationHomeScreen({
                 className={`${stylex.props(styles.searchWrap).className} project-search-wrap row-fluid mt10`}
                 data-stylex-owner="organization-home-search"
               >
-                <div className="span7">
+                <div
+                  className={`${stylex.props(styles.organizationHomeSearchColumn).className} span7`}
+                  data-stylex-owner="organization-home-search-column"
+                >
                   <div
                     className={`${stylex.props(styles.searchBar).className} search-bar`}
                     data-stylex-owner="organization-home-search-bar"

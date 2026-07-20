@@ -88,6 +88,23 @@ export const styles = stylex.create({
   overviewTitle: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
   // yona-original/app/assets/stylesheets/less/_common.less .mt10.
   searchWrap: { marginTop: "10px" },
+  // yona-original/public/bootstrap/css/bootstrap-responsive.css .row-fluid [class*="span"] / .span7.
+  organizationHomeSearchColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.564102564102564%",
+    minHeight: "30px",
+    width: "57.26495726495726%",
+    ":first-child": { marginLeft: "0" },
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      float: "none",
+      marginLeft: "0",
+      minHeight: "30px",
+      width: "100%",
+    },
+  },
   // yona-original/app/assets/stylesheets/less/_yobiUI.less .search-bar.
   searchBar: {
     backgroundColor: "#FFF",

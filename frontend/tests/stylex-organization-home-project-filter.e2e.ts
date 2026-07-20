@@ -34,20 +34,35 @@ const responsiveSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_responsive.less",
   import.meta.url,
 );
+const bootstrapResponsiveSource = new URL(
+  "../../yona-original/public/bootstrap/css/bootstrap-responsive.css",
+  import.meta.url,
+);
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess, commonLess, yobiUi, variables, bootstrap, responsive] =
-    await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(styleSource, "utf8"),
-      readFile(legacySource, "utf8"),
-      readFile(pageLessSource, "utf8"),
-      readFile(commonLessSource, "utf8"),
-      readFile(yobiUiSource, "utf8"),
-      readFile(variablesSource, "utf8"),
-      readFile(bootstrapSource, "utf8"),
-      readFile(responsiveSource, "utf8"),
-    ]);
+  const [
+    route,
+    style,
+    legacy,
+    pageLess,
+    commonLess,
+    yobiUi,
+    variables,
+    bootstrap,
+    responsive,
+    bootstrapResponsive,
+  ] = await Promise.all([
+    readFile(routeSource, "utf8"),
+    readFile(styleSource, "utf8"),
+    readFile(legacySource, "utf8"),
+    readFile(pageLessSource, "utf8"),
+    readFile(commonLessSource, "utf8"),
+    readFile(yobiUiSource, "utf8"),
+    readFile(variablesSource, "utf8"),
+    readFile(bootstrapSource, "utf8"),
+    readFile(responsiveSource, "utf8"),
+    readFile(bootstrapResponsiveSource, "utf8"),
+  ]);
   expect(legacy).toContain("project");
   expect(legacy).toContain('<div class="page-wrap-outer">');
   expect(pageLess).toContain(
@@ -59,6 +74,27 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(route).toContain('data-stylex-owner="organization-home-search"');
   expect(route).toContain("styles.searchWrap");
   expect(style).toContain('searchWrap: { marginTop: "10px" }');
+  expect(legacy).toContain('<div class="span7">');
+  expect(bootstrapResponsive).toContain(
+    '  .row-fluid [class*="span"] {\n    display: block;\n    float: left;\n    width: 100%;\n    min-height: 30px;\n    margin-left: 2.564102564102564%;',
+  );
+  expect(bootstrapResponsive).toContain(
+    '  .row-fluid [class*="span"]:first-child {\n    margin-left: 0;\n  }',
+  );
+  expect(bootstrapResponsive).toContain("  .row-fluid .span7 {\n    width: 57.26495726495726%;");
+  expect(bootstrapResponsive).toContain(
+    '  [class*="span"],\n  .uneditable-input[class*="span"],\n  .row-fluid [class*="span"] {\n    display: block;\n    float: none;\n    width: 100%;\n    margin-left: 0;',
+  );
+  expect(route).toContain('data-stylex-owner="organization-home-search-column"');
+  expect(route).toContain("styles.organizationHomeSearchColumn");
+  expect(style).toContain("organizationHomeSearchColumn:");
+  expect(style).toContain('float: "left"');
+  expect(style).toContain('marginLeft: "2.564102564102564%"');
+  expect(style).toContain('minHeight: "30px"');
+  expect(style).toContain('width: "57.26495726495726%"');
+  expect(style).toContain('":first-child": { marginLeft: "0" }');
+  expect(style).toContain('float: "none"');
+  expect(style).toContain('width: "100%"');
   expect(responsive).toContain(
     "  .page-wrap-outer {\n    min-width: 10px !important;\n    padding: 0 !important;\n  }",
   );
@@ -246,6 +282,7 @@ for (const viewport of [
       .first();
     const pageWrap = page.locator('[data-stylex-owner="organization-home-page"]');
     const searchWrap = page.locator('[data-stylex-owner="organization-home-search"]');
+    const searchColumn = page.locator('[data-stylex-owner="organization-home-search-column"]');
     const list = page.locator('[data-stylex-owner="organization-home-projects"]');
     const searchBar = page.locator('[data-stylex-owner="organization-home-search-bar"]');
     const searchInput = page.locator('[data-stylex-owner="organization-home-search-input"]');
@@ -259,6 +296,7 @@ for (const viewport of [
     await expect(card).toBeVisible();
     await expect(pageWrap).toBeVisible();
     await expect(searchWrap).toBeVisible();
+    await expect(searchColumn).toBeVisible();
     await expect(searchBar).toBeVisible();
     await expect(searchInput).toBeVisible();
     await expect(searchButton).toBeAttached();
@@ -308,6 +346,48 @@ for (const viewport of [
     expect(searchWrapMetrics.left).toBeGreaterThanOrEqual(searchWrapMetrics.parentLeft);
     expect(searchWrapMetrics.right).toBeLessThanOrEqual(searchWrapMetrics.parentRight);
     expect(searchWrapMetrics.width).toBeGreaterThan(0);
+    const searchColumnMetrics = await searchColumn.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      const parentBox = node.parentElement?.getBoundingClientRect();
+      return {
+        boxSizing: style.boxSizing,
+        display: style.display,
+        float: style.float,
+        left: box.left,
+        marginLeft: style.marginLeft,
+        minHeight: style.minHeight,
+        parentLeft: parentBox?.left ?? 0,
+        parentRight: parentBox?.right ?? 0,
+        right: box.right,
+        width: style.width,
+        widthRatio: parentBox && parentBox.width > 0 ? box.width / parentBox.width : 0,
+      };
+    });
+    expect(searchColumnMetrics).toMatchObject(
+      viewport.name === "mobile"
+        ? {
+            boxSizing: "border-box",
+            display: "block",
+            float: "none",
+            marginLeft: "0px",
+            minHeight: "30px",
+          }
+        : {
+            boxSizing: "border-box",
+            display: "block",
+            float: "left",
+            marginLeft: "0px",
+            minHeight: "30px",
+          },
+    );
+    expect(searchColumnMetrics.left).toBeGreaterThanOrEqual(searchColumnMetrics.parentLeft);
+    expect(searchColumnMetrics.right).toBeLessThanOrEqual(searchColumnMetrics.parentRight);
+    if (viewport.name === "mobile") {
+      expect(searchColumnMetrics.widthRatio).toBeCloseTo(1, 5);
+    } else {
+      expect(searchColumnMetrics.widthRatio).toBeCloseTo(0.5726495726495726, 4);
+    }
     const createProjectMetrics = await createProjectWrapper.evaluate((node) => {
       const style = getComputedStyle(node);
       const wrapperBox = node.getBoundingClientRect();
@@ -322,7 +402,9 @@ for (const viewport of [
     });
     expect(createProjectMetrics.float).toBe("right");
     expect(createProjectMetrics.right).toBeLessThanOrEqual(createProjectMetrics.parentRight);
-    expect(createProjectMetrics.left).toBeGreaterThanOrEqual(createProjectMetrics.searchRight);
+    if (viewport.name === "desktop") {
+      expect(createProjectMetrics.left).toBeGreaterThanOrEqual(createProjectMetrics.searchRight);
+    }
     await expect(searchInput).toHaveAttribute("placeholder", /.+/);
     const searchMetrics = await searchBar.evaluate((node) => {
       const bar = getComputedStyle(node);

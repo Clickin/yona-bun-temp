@@ -5267,6 +5267,14 @@ into a route-local StyleX owner. Preserve the legacy search wrapper
 class/DOM/order, search controls, create-project action, filtering, and
 responsive containment; retain unrelated utility-class fallback consumers.
 
+## Batch 686
+
+Move the organization home search column's emitted `span7` Bootstrap fluid-grid
+declarations into a route-local StyleX owner, including the desktop
+first-column offset behavior and mobile full-width transition. Preserve the
+legacy class/DOM/order, search controls, create-project action, filtering, and
+responsive containment; retain unrelated grid fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

@@ -580,6 +580,17 @@ fallback-owned. Focused normal and fallback-off checks pass 3/3 each,
 covering source mapping, computed desktop/mobile wrapper margin/containment,
 and filtering/visibility.
 
+### 2026-07-21 Batch 686 organization home search-column owner proof
+
+ORG-02 organization home search output now owns the emitted Bootstrap `span7`
+fluid-grid declarations through a route-local StyleX owner: desktop float,
+fluid width, first-column margin behavior, min-height, box sizing, and the
+mobile float/width/margin transition. Legacy class/DOM/order, controls,
+Create new project action, filtering, and responsive containment remain
+unchanged; unrelated grid consumers stay fallback-owned. Focused normal and
+fallback-off checks pass 3/3 each, covering source mapping, computed
+desktop/mobile column geometry, containment, and filtering/visibility.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and
