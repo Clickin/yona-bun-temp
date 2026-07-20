@@ -5057,3 +5057,10 @@ complete current consumer graph: global, project, and organization search.
 Their colocated StyleX owners carry the legacy empty-state geometry and paint;
 retain the frozen search partial/LESS declarations and generated fallback as
 historical evidence.
+
+## Batch 658
+
+Move the frozen `no_contents.jpg` paint into the global, project, and
+organization search empty-result StyleX owners. Resolve the asset through the
+runtime base path so `/yona` and root deployments render the same legacy image;
+retain the empty-result DOM/classes, frozen source, and generated fallback.

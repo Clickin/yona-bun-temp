@@ -56,7 +56,7 @@ const sx = {
   meta: stylex.props(styles.meta),
   metaItem: stylex.props(styles.metaItem),
   keyword: stylex.props(styles.keyword),
-  emptyResult: stylex.props(styles.emptyResult),
+  emptyResult: (backgroundImage: string) => stylex.props(styles.emptyResult(backgroundImage)),
 } as const;
 
 type ProjectSearchRouteSearch = {
@@ -405,14 +405,14 @@ function ProjectSearchSuccessBody({
                     const count = result.counts[category.countKey];
                     return (
                       <li
-                        className={
-                          `${stylex.props(
+                        className={`${
+                          stylex.props(
                             styles.searchCategoryItem,
                             category.type === activeType && styles.searchCategoryItemActive,
-                          ).className} ${category.type === activeType ? "active" : ""} ${
-                            count === 0 ? "empty" : ""
-                          }`
-                        }
+                          ).className
+                        } ${category.type === activeType ? "active" : ""} ${
+                          count === 0 ? "empty" : ""
+                        }`}
                         data-stylex-owner="project-search-category-item"
                         data-stylex-active={category.type === activeType ? "true" : undefined}
                         key={category.type}
@@ -527,12 +527,17 @@ function ProjectSearchResultList({
   searchPath: string;
 }) {
   const { t } = useLegacyMessages();
+  const emptyResultBackground = prefixBasePath(
+    runtimeConfig.basePath,
+    "/legacy-assets/images/no_contents.jpg",
+  );
+  const emptyResultProps = sx.emptyResult(`url("${emptyResultBackground}")`);
 
   if (result.items.length === 0) {
     return (
       <div
-        {...sx.emptyResult}
-        className={`${sx.emptyResult.className} empty-result`}
+        {...emptyResultProps}
+        className={`${emptyResultProps.className} empty-result`}
         data-stylex-owner="project-search-empty-result"
       ></div>
     );
@@ -797,8 +802,8 @@ function ProjectSearchResultList({
 
   return (
     <div
-      {...sx.emptyResult}
-      className={`${sx.emptyResult.className} empty-result`}
+      {...emptyResultProps}
+      className={`${emptyResultProps.className} empty-result`}
       data-stylex-owner="project-search-empty-result"
     ></div>
   );

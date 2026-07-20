@@ -186,7 +186,8 @@ export const styles = stylex.create({
     backgroundColor: organizationSearchColors.keywordSurface,
     padding: "2px",
   },
-  empty: {
+  empty: (backgroundImage: string) => ({
+    backgroundImage,
     backgroundPosition: "center 50%",
     backgroundRepeat: "no-repeat",
     marginBottom: "20px",
@@ -197,5 +198,5 @@ export const styles = stylex.create({
     paddingRight: "20px",
     paddingTop: 0,
     textAlign: "center",
-  },
+  }),
 });

@@ -610,7 +610,7 @@ test("global search residual StyleX owners preserve populated, empty, and catego
         };
       }),
     ).toEqual({
-      backgroundImage: expect.stringContaining("no_contents.jpg"),
+      backgroundImage: expect.stringContaining(`${basePath}/legacy-assets/images/no_contents.jpg`),
       minHeight: "250px",
       paddingLeft: "20px",
       textAlign: "center",

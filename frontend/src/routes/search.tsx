@@ -311,7 +311,8 @@ function GlobalSearchSuccessBody({
                               stylex.props(
                                 globalSearchCategoryStyles.badge,
                                 styles.categoryBadge,
-                                category.type === activeType && globalSearchCategoryStyles.badgeActive,
+                                category.type === activeType &&
+                                  globalSearchCategoryStyles.badgeActive,
                                 category.type === activeType && styles.categoryBadgeActive,
                               ).className
                             }`}
@@ -388,9 +389,16 @@ function GlobalSearchResultList({
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
 
   if (result.items.length === 0) {
+    const emptyResultProps = stylex.props(
+      styles.emptyResult,
+      styles.emptyResultBackground(
+        `url(${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")})`,
+      ),
+    );
     return (
       <div
-        className={`empty-result ${stylex.props(styles.emptyResult).className}`}
+        {...emptyResultProps}
+        className={`empty-result ${emptyResultProps.className}`}
         data-stylex-owner="global-search-empty-result"
       ></div>
     );
@@ -761,9 +769,16 @@ function GlobalSearchResultList({
     );
   }
 
+  const emptyResultProps = stylex.props(
+    styles.emptyResult,
+    styles.emptyResultBackground(
+      `url(${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")})`,
+    ),
+  );
   return (
     <div
-      className={`empty-result ${stylex.props(styles.emptyResult).className}`}
+      {...emptyResultProps}
+      className={`empty-result ${emptyResultProps.className}`}
       data-stylex-owner="global-search-empty-result"
     ></div>
   );

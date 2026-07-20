@@ -346,11 +346,17 @@ function OrganizationSearchResultList({
 }) {
   const { t } = useLegacyMessages();
   const searchType = result.searchType === "auto" ? "issue" : result.searchType;
+  const emptyResultStyle = stylex.props(
+    styles.empty(
+      `url('${prefixBasePath(runtimeConfig.basePath, "/legacy-assets/images/no_contents.jpg")}')`,
+    ),
+  );
 
   if (result.items.length === 0) {
     return (
       <div
-        className={`${stylex.props(styles.empty).className} empty-result`}
+        {...emptyResultStyle}
+        className={`${emptyResultStyle.className} empty-result`}
         data-stylex-owner="organization-search-empty"
       ></div>
     );
@@ -718,7 +724,8 @@ function OrganizationSearchResultList({
 
   return (
     <div
-      className={`${stylex.props(styles.empty).className} empty-result`}
+      {...emptyResultStyle}
+      className={`${emptyResultStyle.className} empty-result`}
       data-stylex-owner="organization-search-empty"
     ></div>
   );

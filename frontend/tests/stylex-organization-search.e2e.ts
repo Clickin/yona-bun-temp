@@ -130,6 +130,8 @@ test("organization search maps the frozen result family to six route-local owner
   ]) {
     expect(styleSource).toContain(`${style}:`);
   }
+  expect(styleSource).toContain("empty: (backgroundImage: string)");
+  expect(routeSource).toContain('"/legacy-assets/images/no_contents.jpg"');
 
   const themeBlock = styleSource.slice(
     styleSource.indexOf("stylex.defineVars({"),
@@ -211,7 +213,7 @@ test("organization search preserves mobile containment and the empty-result fall
   await expect(empty).toHaveCSS("min-height", "250px");
   await expect(empty).toHaveCSS("background-repeat", "no-repeat");
   expect(await empty.evaluate((element) => getComputedStyle(element).backgroundImage)).toContain(
-    "no_contents.jpg",
+    "/yona/legacy-assets/images/no_contents.jpg",
   );
 
   const geometry = await page.evaluate(() => {

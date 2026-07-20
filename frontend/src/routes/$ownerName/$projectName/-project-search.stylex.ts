@@ -150,9 +150,16 @@ export const styles = stylex.create({
   },
   metaItem: { lineHeight: "20px", marginRight: "10px" },
   keyword: { backgroundColor: projectSearchTheme.keywordSurface, padding: "2px" },
-  emptyResult: {
+  emptyResult: (backgroundImage: string) => ({
+    backgroundImage,
     color: projectSearchTheme.metaText,
-    minHeight: "32px",
-    padding: "10px 0",
-  },
+    backgroundPosition: "center 50%",
+    backgroundRepeat: "no-repeat",
+    marginBottom: "20px",
+    marginTop: "20px",
+    minHeight: "250px",
+    paddingLeft: "20px",
+    paddingRight: "20px",
+    textAlign: "center",
+  }),
 });

@@ -152,4 +152,5 @@ export const styles = stylex.create({
     paddingRight: "20px",
     textAlign: "center",
   },
+  emptyResultBackground: (backgroundImage: string) => ({ backgroundImage }),
 });

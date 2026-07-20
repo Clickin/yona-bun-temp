@@ -104,7 +104,7 @@ test("project search StyleX owners preserve populated and empty result contracts
   expect(style).toContain("searchCategory: {");
   expect(style).toContain("searchResultTitle: {");
   expect(style).toContain("searchListItem: {");
-  expect(style).toContain("emptyResult: {");
+  expect(style).toContain("emptyResult: (");
   for (const owner of [
     "project-search-page-grid-row",
     "project-search-page-grid-category-column",
@@ -226,7 +226,12 @@ test("project search populated and empty states keep responsive bounds and links
     route.fulfill({ contentType: "application/json", json: emptyResponse() }),
   );
   await page.goto(`${basePath}/weblabs/demo/search?keyword=none&searchType=issue`);
-  await expect(page.locator('[data-stylex-owner="project-search-empty-result"]')).toBeVisible();
+  const emptyResult = page.locator('[data-stylex-owner="project-search-empty-result"]');
+  await expect(emptyResult).toBeVisible();
+  await expect(emptyResult).toHaveCSS(
+    "background-image",
+    new RegExp(`${basePath}/legacy-assets/images/no_contents\\.jpg`),
+  );
 });
 
 async function mockProjectSearch(page: Page) {
