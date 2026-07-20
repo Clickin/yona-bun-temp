@@ -38,6 +38,7 @@ export const styles = stylex.create({
   actions: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" },
   actionWrapper: { display: "inline-block" },
   comments: { minWidth: 0 },
+  helpActions: { textAlign: "right" },
   reviewers: { display: "inline-block", marginRight: "5px" },
   reviewerSummary: { fontSize: "13px", verticalAlign: "middle", margin: "0 10px" },
   helpModalVisible: { display: "block" },

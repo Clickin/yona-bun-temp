@@ -15,6 +15,7 @@ const sx = {
   repo: stylex.props(styles.repo),
   breadcrumbs: stylex.props(styles.breadcrumbs),
   history: stylex.props(styles.history),
+  commentCount: stylex.props(styles.commentCount),
 } as const;
 
 export const Route = createFileRoute("/$ownerName/$projectName/commits/$branch/$filePath")({
@@ -235,7 +236,10 @@ function ProjectCodeFileHistoryBody({
                           </td>
                           <td className="messages">
                             {commit.commentCount > 0 ? (
-                              <span className="number-of-comments">
+                              <span
+                                {...sx.commentCount}
+                                data-stylex-owner="commit-file-comment-count"
+                              >
                                 <i className="yobicon-comments"></i> {commit.commentCount}
                               </span>
                             ) : null}

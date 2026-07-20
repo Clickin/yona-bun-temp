@@ -15,18 +15,46 @@ test("records commit file history owners and responsive containment", async ({ p
     "src/routes/$ownerName/$projectName/commits/-commit-file.stylex.ts",
     "utf8",
   );
+  const historyTemplate = readFileSync(
+    "../yona-original/app/views/code/history.scala.html",
+    "utf8",
+  );
   const template = readFileSync(
     "../yona-original/app/views/code/partial_view_file.scala.html",
     "utf8",
   );
   expect(template).toContain('class="file-wrap"');
   expect(template).toContain('class="file-header nm"');
+  expect(historyTemplate).toContain(
+    '<span class="number-of-comments"><i class="yobicon-comments"></i> @numOfComment</span>',
+  );
   expect(route).toContain('data-stylex-owner="commit-file-breadcrumbs"');
+  expect(route).toContain('data-stylex-owner="commit-file-comment-count"');
+  expect(route).not.toContain('className="number-of-comments"');
   expect(theme).toContain("export const commitFileColors");
+  expect(theme).toContain(
+    'commentCount: {\n    float: "right",\n    marginRight: "8px",\n    position: "relative",\n    color: commitFileColors.commentText,\n  }',
+  );
   await mockHistory(page);
   await page.goto(`${basePath}/weblabs/demo/commits/main/src/app.ts`);
   await expect(owner(page, "commit-file-breadcrumbs")).toBeVisible();
   await expect(owner(page, "commit-file-history")).toBeVisible();
+  const commentCount = owner(page, "commit-file-comment-count");
+  await expect(commentCount).toHaveText("2");
+  await expect(commentCount.locator(".yobicon-comments")).toHaveCount(1);
+  await expect(commentCount).toHaveAttribute("data-stylex-owner", "commit-file-comment-count");
+  await expect
+    .poll(() => commentCount.evaluate((element) => getComputedStyle(element).cssFloat))
+    .toBe("right");
+  await expect
+    .poll(() => commentCount.evaluate((element) => getComputedStyle(element).position))
+    .toBe("relative");
+  await expect
+    .poll(() => commentCount.evaluate((element) => getComputedStyle(element).marginRight))
+    .toBe("8px");
+  await expect
+    .poll(() => commentCount.evaluate((element) => getComputedStyle(element).color))
+    .toBe("rgb(102, 102, 102)");
   const geometry = await owner(page, "commit-file-history").evaluate((element) => ({
     width: element.getBoundingClientRect().width,
     scrollWidth: document.documentElement.scrollWidth,
@@ -67,7 +95,20 @@ async function mockHistory(page: Page) {
       json: {
         selectedBranch: "main",
         breadcrumbs: [{ name: "src", path: "src" }],
-        commits: [],
+        commits: [
+          {
+            authorAvatarUrl: "",
+            authorDate: "Jul 17, 2026",
+            authorEmail: "admin@example.com",
+            authorLoginId: "admin",
+            authorName: "Admin",
+            commentCount: 2,
+            commitId: "abcdef1234567890",
+            commitShortId: "abcdef1",
+            message: "Initial commit",
+            shortMessage: "Initial commit",
+          },
+        ],
         pageNum: 1,
         totalPages: 1,
       },

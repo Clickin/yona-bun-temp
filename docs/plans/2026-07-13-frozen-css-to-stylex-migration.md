@@ -4904,3 +4904,9 @@ preserving modal, button, and avatar DOM.
 Migrate the issue-label list heading and milestone detail action row
 `right-txt` consumers into route-local StyleX owners, preserving `mr20`,
 `actrow row-fluid`, action geometry, and legacy DOM order.
+
+## Batch 645
+
+Migrate the commit-history comment count and pull-request overview help action
+utility consumers into route-local StyleX owners, preserving compact metadata
+geometry, icon/copy, button behavior, and help-modal interaction.

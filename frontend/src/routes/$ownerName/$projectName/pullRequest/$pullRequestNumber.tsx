@@ -346,7 +346,10 @@ function PullRequestOverviewBody({
             <PullRequestEvents pullRequest={pullRequest} />
           </div>
 
-          <div className="right-txt">
+          <div
+            className={stylex.props(styles.helpActions).className}
+            data-stylex-owner="pull-request-detail-help-actions"
+          >
             <button
               type="button"
               className="ybtn ybtn-inverse ybtn-mini"

@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 
 export const commitFileColors = stylex.defineVars({
   border: "#ddd",
+  commentText: "#666",
   meta: "#999",
   surface: "#333",
   text: "#fff",
@@ -20,4 +21,11 @@ export const styles = stylex.create({
     padding: "5px 0px",
   },
   history: { overflowX: "auto" },
+  // history.scala.html:152 / _page.less:4824 owns the compact comment marker.
+  commentCount: {
+    float: "right",
+    marginRight: "8px",
+    position: "relative",
+    color: commitFileColors.commentText,
+  },
 });
