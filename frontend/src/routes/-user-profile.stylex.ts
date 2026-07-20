@@ -77,4 +77,12 @@ export const styles = stylex.create({
     overflow: "auto",
     whiteSpace: "normal",
   },
+  // Frozen less/_page.less .error-wrap and its nested message paragraph.
+  emptyErrorWrap: { padding: "100px 0px", textAlign: "center" },
+  emptyErrorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
 });

@@ -459,8 +459,16 @@ function PublicProfileBody({
                         className={`tab-pane ${activeIssueTab === "openIssues" ? "active" : ""}`}
                       >
                         {issues.length === 0 ? (
-                          <div className="error-wrap">
-                            <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
+                          <div
+                            className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
+                            data-stylex-owner="user-profile-open-issues-empty-wrap"
+                          >
+                            <p
+                              className={stylex.props(styles.emptyErrorMessage).className}
+                              data-stylex-owner="user-profile-open-issues-empty-message"
+                            >
+                              {`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}
+                            </p>
                           </div>
                         ) : null}
                         <ul className="post-list-wrap my-issues row-fluid">
@@ -478,8 +486,16 @@ function PublicProfileBody({
                         className={`tab-pane ${activeIssueTab === "closedIssues" ? "active" : ""}`}
                       >
                         {issues.length === 0 ? (
-                          <div className="error-wrap">
-                            <p>{`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}</p>
+                          <div
+                            className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
+                            data-stylex-owner="user-profile-closed-issues-empty-wrap"
+                          >
+                            <p
+                              className={stylex.props(styles.emptyErrorMessage).className}
+                              data-stylex-owner="user-profile-closed-issues-empty-message"
+                            >
+                              {`${t("userinfo.daysAgo.prefix")} ${t("issue.is.empty")}`}
+                            </p>
                           </div>
                         ) : null}
                         <ul className="post-list-wrap my-issues row-fluid">
@@ -499,8 +515,16 @@ function PublicProfileBody({
                     className={`tab-pane ${activeTab === "pullRequests" ? "active" : ""}`}
                   >
                     {profileResponse.pullRequestItems.length === 0 ? (
-                      <div className="error-wrap">
-                        <p>{`${t("userinfo.daysAgo.prefix")} ${t("pullRequest.is.empty")}`}</p>
+                      <div
+                        className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
+                        data-stylex-owner="user-profile-pull-requests-empty-wrap"
+                      >
+                        <p
+                          className={stylex.props(styles.emptyErrorMessage).className}
+                          data-stylex-owner="user-profile-pull-requests-empty-message"
+                        >
+                          {`${t("userinfo.daysAgo.prefix")} ${t("pullRequest.is.empty")}`}
+                        </p>
                       </div>
                     ) : null}
                     <ul className="post-list-wrap  row-fluid">
@@ -517,8 +541,16 @@ function PublicProfileBody({
                     className={`tab-pane ${activeTab === "projects" ? "active" : ""}`}
                   >
                     {profileResponse.memberProjects.length === 0 ? (
-                      <div className="error-wrap">
-                        <p>{t("project.is.empty")}</p>
+                      <div
+                        className={`${stylex.props(styles.emptyErrorWrap).className} error-wrap`}
+                        data-stylex-owner="user-profile-projects-empty-wrap"
+                      >
+                        <p
+                          className={stylex.props(styles.emptyErrorMessage).className}
+                          data-stylex-owner="user-profile-projects-empty-message"
+                        >
+                          {t("project.is.empty")}
+                        </p>
                       </div>
                     ) : null}
                     <ul className="user-streams all-projects">

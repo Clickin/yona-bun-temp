@@ -5144,3 +5144,11 @@ message typography into the current-user issues empty owner. Preserve the
 existing user issues shell, search/filter tabs, legacy DOM/classes/copy,
 interaction, and responsive geometry; keep the shared fallback for all other
 error consumers.
+
+## Batch 669
+
+Move the frozen `.error-wrap` geometry, error-icon sprite positioning, and
+message typography into the shared search error family, public user-profile
+empty panels, and root alias not-found owner. Preserve the existing search
+error variants and navigation, profile tab DOM/state/copy, and root not-found
+shell; keep the shared fallback for all other error consumers.

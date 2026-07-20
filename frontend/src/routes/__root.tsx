@@ -11,9 +11,10 @@ import {
 import { readAuthUiCapabilitiesRest } from "../api/auth";
 import type { ReadAuthUiCapabilitiesResponse } from "../api/types";
 import { submitRootLoginDialogForm } from "../auth-root-shell-login-dialog";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { LegacyI18nProvider, resolveInitialLanguage, useLegacyMessages } from "../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import { rootColors, rootProviderStyles } from "./-root.stylex";
+import { rootColors, rootNotFoundStyles, rootProviderStyles } from "./-root.stylex";
 
 export interface AppRouterContext {
   runtimeConfig: RuntimeConfig;
@@ -1047,13 +1048,27 @@ function RootAliasNotFoundScreen({ runtimeConfig }: { runtimeConfig: RuntimeConf
       </header>
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
-          <div className="error-wrap">
-            <i className="ico ico-err2" />
-            <p>{t("error.notfound")}</p>
+          <div
+            {...stylex.props(rootNotFoundStyles.errorWrap)}
+            className={`${stylex.props(rootNotFoundStyles.errorWrap).className} error-wrap`}
+            data-stylex-owner="root-alias-notfound-error-wrap"
+          >
+            <i
+              {...stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl))}
+              className={`${stylex.props(rootNotFoundStyles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+              data-stylex-owner="root-alias-notfound-error-icon"
+            />
+            <p
+              {...stylex.props(rootNotFoundStyles.errorMessage)}
+              data-stylex-owner="root-alias-notfound-error-message"
+            >
+              {t("error.notfound")}
+            </p>
             <Link
               activeOptions={legacyPlainLinkActiveOptions}
               activeProps={legacyPlainLinkActiveProps}
               className="ybtn ybtn-info"
+              data-stylex-owner="root-alias-notfound-home"
               to="/"
             >
               {t("menu.home")}

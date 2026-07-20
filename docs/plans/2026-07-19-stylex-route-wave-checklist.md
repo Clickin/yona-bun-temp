@@ -441,3 +441,13 @@ without changing the existing user issues shell, search/filter tabs,
 interaction, or copy. The shared `.error-wrap` fallback remains for other
 React emitters; normal and fallback-disabled focused runs both pass 1/1
 serially.
+
+### 2026-07-21 Batch 669 error-wrap owner proof
+
+Batch 669 adds exact owners for the shared search error family, the four
+public user-profile empty panels, and the root alias not-found state. The
+frozen `_page.less`/`_sprites.less` declarations are colocated without
+changing search variants/navigation, profile tab state/copy, or the root
+not-found shell. Combined focused runs pass 3/3 normally and 3/3 with the
+legacy fallback disabled; the shared `.error-wrap` fallback remains for
+other React emitters.

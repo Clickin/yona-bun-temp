@@ -22,3 +22,23 @@ export const rootProviderStyles = stylex.create({
     width: "30px",
   },
 });
+
+// Frozen notfound_default.scala.html + yobi.less/_page.less/_sprites.less.
+export const rootNotFoundStyles = stylex.create({
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: (spriteUrl: string) => ({
+    backgroundImage: `url(${spriteUrl})`,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
+});
