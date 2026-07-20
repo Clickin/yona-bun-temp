@@ -1,6 +1,17 @@
 # Frozen CSS/LESS to StyleX Migration Plan
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
+
+## 2026-07-20 — `.orange-txt` retirement
+
+The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now
+owned by the three legacy form consumers: two required markers in
+`/projectform`, three required markers in `/_import`, and the organization
+settings validation wrapper. The exact `.orange-txt` arm was removed from
+`frontend/src/app.css`; DOM structure and legacy classes around these controls
+remain unchanged. Focused static coverage is
+`frontend/tests/stylex-orange-text-retirement.e2e.ts`, with organization
+settings interaction selectors migrated to its stable StyleX owner.
 Date: 2026-07-14
 Owner: frontend parity migration
 Prerequisite: TanStack Router typecheck recovery and focused route-regression gates are green
@@ -4759,6 +4770,13 @@ Retire the single-consumer `.secondary-txt` arm from the project issue edit form
 The existing issue-number owner now carries the frozen `#51aacc` color directly;
 preserve the label/strong DOM and immutable legacy LESS/generated fallback evidence.
 No other text utility family is included in this wave.
+
+## Batch 626
+
+Retire the `.orange-txt` fallback across the project create, project import, and
+organization setting required/validation output. Each current consumer now owns
+the frozen `#f36c22` color through route-local StyleX; preserve the required-marker
+and validation DOM and do not change the distinct `.orange-text` error copy.
 
 ## Batch 621
 

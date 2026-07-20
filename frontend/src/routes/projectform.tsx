@@ -229,7 +229,12 @@ function ProjectCreateScreen({
                 <dt>
                   <label htmlFor="project-owner">
                     {t("project.owner")}
-                    <strong className="orange-txt">*</strong>
+                    <strong
+                      {...stylex.props(projectFormLayout.requiredMarker)}
+                      data-stylex-owner="project-form-required-marker-owner"
+                    >
+                      *
+                    </strong>
                   </label>
                 </dt>
                 <dd>
@@ -260,7 +265,12 @@ function ProjectCreateScreen({
                 <dt>
                   <label htmlFor="project-name">
                     {t("project.name")}
-                    <strong className="orange-txt">*</strong>
+                    <strong
+                      {...stylex.props(projectFormLayout.requiredMarker)}
+                      data-stylex-owner="project-form-required-marker-name"
+                    >
+                      *
+                    </strong>
                   </label>
                 </dt>
                 <dd>

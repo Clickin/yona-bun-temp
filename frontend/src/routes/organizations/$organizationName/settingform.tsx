@@ -86,6 +86,7 @@ function OrganizationSettingsBody({
       color: organizationSettingColors.saveText,
     },
     warning: { color: organizationSettingColors.warningText },
+    validationMessage: { color: organizationSettingColors.warningText },
   });
 
   const updateMutation = useMutation({
@@ -256,7 +257,10 @@ function OrganizationSettingsBody({
                       maxLength={250}
                       defaultValue={organizationName}
                     />
-                    <div className="orange-txt">
+                    <div
+                      {...stylex.props(styles.validationMessage)}
+                      data-stylex-owner="organization-setting-validation-message"
+                    >
                       {serverNameError ? (
                         <span
                           className={`warning ${stylex.props(styles.warning).className}`}

@@ -519,6 +519,34 @@ test("issue edit number secondary color has StyleX ownership", () => {
   expect(stylexSource).toContain("issueNumber: { color: issueEditColors.issueNumber }");
 });
 
+test("orange text required markers have StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".orange-txt {");
+  const sourceContracts = [
+    [
+      "src/routes/projectform.tsx",
+      ["project-form-required-marker-owner", "project-form-required-marker-name"],
+    ],
+    [
+      "src/routes/[_]import.tsx",
+      [
+        "project-import-required-marker-url",
+        "project-import-required-marker-owner",
+        "project-import-required-marker-name",
+      ],
+    ],
+    [
+      "src/routes/organizations/$organizationName/settingform.tsx",
+      ["organization-setting-validation-message"],
+    ],
+  ] as const;
+  for (const [sourcePath, owners] of sourceContracts) {
+    const source = readFileSync(sourcePath, "utf8");
+    expect(source).not.toContain("orange-txt");
+    for (const owner of owners) expect(source).toContain(`data-stylex-owner="${owner}"`);
+  }
+});
+
 test("pull-request tab button bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

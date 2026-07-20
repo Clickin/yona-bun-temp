@@ -463,10 +463,16 @@ test("organization settings duplicate name error stays under the name field like
   await page.locator("#project-name").fill("weblabs2");
   await page.locator("#save").click();
 
-  const warning = page.locator("#saveSetting .orange-txt .warning");
+  const warning = page.locator(
+    '#saveSetting [data-stylex-owner="organization-setting-validation-message"] .warning',
+  );
   await expect(warning).toHaveText("Already existent user's login id or group name.");
   await expect(warning).toBeVisible();
-  await expect(page.locator("#saveSetting .orange-txt .wrongName")).toBeHidden();
+  await expect(
+    page.locator(
+      '#saveSetting [data-stylex-owner="organization-setting-validation-message"] .wrongName',
+    ),
+  ).toBeHidden();
   expect(updateRequests).toEqual([
     {
       body: {
@@ -480,9 +486,15 @@ test("organization settings duplicate name error stays under the name field like
 
   const errorMetrics = await page.evaluate(() => {
     const nameField = mustElement("#project-name");
-    const errorWrap = mustElement("#project-name + .orange-txt");
-    const warningElement = mustElement("#project-name + .orange-txt .warning");
-    const wrongNameElement = mustElement("#project-name + .orange-txt .wrongName");
+    const errorWrap = mustElement(
+      '#project-name + [data-stylex-owner="organization-setting-validation-message"]',
+    );
+    const warningElement = mustElement(
+      '#project-name + [data-stylex-owner="organization-setting-validation-message"] .warning',
+    );
+    const wrongNameElement = mustElement(
+      '#project-name + [data-stylex-owner="organization-setting-validation-message"] .wrongName',
+    );
     const fieldBox = nameField.getBoundingClientRect();
     const wrapBox = errorWrap.getBoundingClientRect();
     const warningBox = warningElement.getBoundingClientRect();

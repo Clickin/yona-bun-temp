@@ -25,6 +25,7 @@ export const styles = stylex.create({
   repoAuthVisible: { display: "block" },
   protectedScopeHidden: { display: "none" },
   selectContainer: { width: "220px" },
+  requiredMarker: { color: projectImportColors.warningText },
   selectButton: {
     fontFamily: "inherit",
     fontSize: "inherit",

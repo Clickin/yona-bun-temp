@@ -226,7 +226,12 @@ function ProjectImportScreen({
                 <dt>
                   <label htmlFor="url">
                     {t("project.git.repository.url")}
-                    <strong className="orange-txt">*</strong>
+                    <strong
+                      {...stylex.props(styles.requiredMarker)}
+                      data-stylex-owner="project-import-required-marker-url"
+                    >
+                      *
+                    </strong>
                   </label>
                 </dt>
                 <dd>
@@ -309,7 +314,12 @@ function ProjectImportScreen({
                 <dt className="bordertop">
                   <label htmlFor="project-owner">
                     {t("project.owner")}
-                    <strong className="orange-txt">*</strong>
+                    <strong
+                      {...stylex.props(styles.requiredMarker)}
+                      data-stylex-owner="project-import-required-marker-owner"
+                    >
+                      *
+                    </strong>
                   </label>
                 </dt>
                 <dd>
@@ -440,7 +450,12 @@ function ProjectImportScreen({
                 <dt>
                   <label htmlFor="project-name">
                     {t("project.name")}
-                    <strong className="orange-txt">*</strong>
+                    <strong
+                      {...stylex.props(styles.requiredMarker)}
+                      data-stylex-owner="project-import-required-marker-name"
+                    >
+                      *
+                    </strong>
                   </label>
                 </dt>
                 <dd>

@@ -8,12 +8,14 @@ export const projectFormTheme = stylex.defineVars({
   scopeNoteText: "#777777",
   errorSurface: "#ffffff",
   errorBorder: "#cccccc",
+  requiredMarker: "#f36c22",
 });
 
 export const projectFormLayout = stylex.create({
   select: {
     minWidth: "220px",
   },
+  requiredMarker: { color: projectFormTheme.requiredMarker },
 });
 
 export const projectFormConditionalStyles = stylex.create({
