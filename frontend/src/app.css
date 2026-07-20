@@ -1028,14 +1028,12 @@ pre code {
   color: #468847;
 }
 
-.alert-danger,
 .alert-error {
   color: #b94a48;
   background-color: #f2dede;
   border-color: #eed3d7;
 }
 
-.alert-danger h4,
 .alert-error h4 {
   color: #b94a48;
 }

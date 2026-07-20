@@ -10,7 +10,7 @@ legacy fallback remain unchanged for legacy/plugin output.
 
 ## Evidence
 
-- Frozen source: `frontend/public/legacy-assets/bootstrap/css/bootstrap.css:375`.
+- Frozen source: `yona-original/public/bootstrap/css/bootstrap.css:375`.
 - Generated fallback: `frontend/public/legacy-assets/stylesheets/legacy-fallback.css:378`.
 - Removed app-owned declaration: `frontend/src/app.css`.
 - Focused contracts: `frontend/tests/stylex-controls-row-fallback.e2e.ts` and

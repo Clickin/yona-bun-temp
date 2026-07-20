@@ -4325,3 +4325,13 @@ any future legacy/plugin output. Verify exact app.css absence and frozen-rule
 retention with the focused static contract in normal and fallback-off runs; no
 TSX, frozen source, generated fallback, or geometry baseline changes are
 allowed.
+
+## Batch 580
+
+Retire only the unreachable `.alert-danger` branches from `frontend/src/app.css`.
+The current React/Scala inventory emits `.alert-error` and `.alert-success`,
+not `.alert-danger`; retain the shared `.alert`/`.alert-error` declarations and
+the frozen Bootstrap/generated fallback for legacy/plugin output. Verify exact
+app.css branch absence and retained fallback selectors in normal and
+fallback-off static contracts. Do not edit TSX, frozen source, generated
+fallback, or geometry baselines.

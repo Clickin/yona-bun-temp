@@ -1,6 +1,6 @@
 # Frontend StyleX Migration Ledger
 
-| 2026-07-20 | Unreachable `.row-fluid .controls-row` sibling-gutter bridge retirement | Frozen `frontend/public/legacy-assets/bootstrap/css/bootstrap.css:375` and generated `legacy-fallback.css:378` retain the Bootstrap rule for legacy/plugin output; a complete current React/JSX and legacy-view inventory found no `.controls-row` consumer. | `frontend/src/app.css` removes only `.row-fluid .controls-row [class*="span"] + [class*="span"] { margin-left: 2.127659574468085%; }`; generic `.row-fluid` span rules remain and no TSX/frozen/generated source changes. | `frontend/tests/stylex-controls-row-fallback.e2e.ts` asserts exact app.css absence and frozen/generated rule retention; normal and fallback-off static contracts pass. |
+| 2026-07-20 | Unreachable `.row-fluid .controls-row` sibling-gutter bridge retirement | Frozen `yona-original/public/bootstrap/css/bootstrap.css:375` and generated `legacy-fallback.css:378` retain the Bootstrap rule for legacy/plugin output; a complete current React/JSX and legacy-view inventory found no `.controls-row` consumer. | `frontend/src/app.css` removes only `.row-fluid .controls-row [class*="span"] + [class*="span"] { margin-left: 2.127659574468085%; }`; generic `.row-fluid` span rules remain and no TSX/frozen/generated source changes. | `frontend/tests/stylex-controls-row-fallback.e2e.ts` asserts exact app.css absence and frozen/generated rule retention; normal and fallback-off static contracts pass. |
 
 | 2026-07-20 | Source-less `.app-shell` fallback bridge retirement | No frozen Scala HTML, LESS, or CSS source emits `.app-shell`. `project/header.scala.html:52` and its menu partial, `issue/create.scala.html:35-39`, frozen `_page.less:479-629`, and `_responsive.less:353-359` instead establish the project header/menu and issue-form output that the former React-only ancestor attempted to scope. | No route owner changes: `frontend/src/app.css` deletes only its 20 source-less `.app-shell` selector entries (base, project/page overrides, user-issue width, and mobile issue-form menu subtree). Current React and frozen legacy inventories both have zero `.app-shell` emitters. | The project header/menu, issue-form, and site layout owners already render without that ancestor; unrelated unprefixed header/menu/issue-form rules remain fallback-owned. | `frontend/tests/stylex-project-issueform.e2e.ts` verifies project header/menu plus 390px issue-form output and normal/fallback-off asset boundaries; `frontend/tests/legacy-fallback-off.e2e.ts` verifies static absence and populated non-project massmail output in both modes. Global fallback-off discovery remains incomplete/non-green. |
 
@@ -1795,3 +1795,17 @@ not an unlinking or live-legacy visual-parity claim.
   exact selector absence and existing conditional StyleX modal visibility.
   No TSX, frozen source, generated fallback, theme, or geometry baseline
   changed; global fallback discovery remains incomplete/non-green.
+
+## Batch 580
+
+- Dead `.alert-danger` app.css branch retirement: current React and legacy
+  Scala inventories emit `.alert-error`/`.alert-success` and have no
+  `.alert-danger` consumer. Frozen Bootstrap
+  `yona-original/public/bootstrap/css/bootstrap.css:3856-3863` and generated
+  fallback retain the selector for legacy/plugin output. `frontend/src/app.css`
+  removes only the `.alert-danger` and `.alert-danger h4` arms while retaining
+  shared alert declarations and `.alert-error`. The focused
+  `stylex-alert-danger-bridge.e2e.ts` and `legacy-fallback-off.e2e.ts` contracts
+  prove exact app.css absence and frozen/generated retention in normal and
+  fallback-off modes; no TSX, frozen source, generated fallback, or baseline
+  changed.

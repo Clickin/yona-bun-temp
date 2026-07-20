@@ -164,6 +164,14 @@ test("row-fluid controls-row fallback bridge has no app.css arm", () => {
   expect(appCss).toContain('.row-fluid [class*="span"]:first-child {');
 });
 
+test("alert-danger fallback bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".alert-danger,");
+  expect(appCss).not.toContain(".alert-danger h4,");
+  expect(appCss).toContain(".alert-error {");
+  expect(appCss).toContain(".alert-error h4 {");
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [
