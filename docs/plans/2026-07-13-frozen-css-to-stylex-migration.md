@@ -4492,6 +4492,14 @@ remain historical evidence. Keep neighboring margin utilities unchanged and
 update the formal fallback-off static contract. Do not change route TSX or
 frozen/generated CSS.
 
+## Batch 618
+
+Retire only the source-less `.vtop` alias from the grouped vertical-alignment
+utility in `frontend/src/app.css`, retaining the live `.vertical-top` sibling.
+The current React/TSX inventory emits no `vtop`; frozen legacy utility sources
+remain historical evidence. Update the formal fallback-off static contract and
+do not change route TSX or frozen/generated CSS.
+
 ## Batch 617
 
 Retire only the source-less `.mt4` utility arm from `frontend/src/app.css`.

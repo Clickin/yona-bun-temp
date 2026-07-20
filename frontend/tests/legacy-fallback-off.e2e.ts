@@ -561,6 +561,14 @@ test("source-less mt4 utility bridge has no app.css arm", () => {
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("mt4"))).toBe(false);
 });
 
+test("source-less vtop utility bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".vtop");
+  expect(appCss).toContain(".vertical-top {");
+  const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("vtop"))).toBe(false);
+});
+
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".project-home .issue-wrap {");
