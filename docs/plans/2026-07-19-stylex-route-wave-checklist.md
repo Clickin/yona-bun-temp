@@ -602,6 +602,16 @@ fallback-owned. Focused normal and fallback-off checks pass 3/3 each,
 covering source mapping, computed desktop/mobile column geometry,
 containment, and filtering/visibility.
 
+### 2026-07-21 Batch 688 global fallback-off discovery classification
+
+The complete managed fallback-off suite ran with desktop and mobile cases: 2,675 tests yielded
+1,541 passed, 1 skipped, and 1,133 failed in 49.4 minutes. The failure artifacts are classified
+in `docs/provenance/ui-parity-reports/fallback-off-2026-07-21.md` into 449 React StyleX owner
+candidates, 40 global/shared bridge candidates, 641 route DOM/behavior/data parity failures, and
+3 fallback-boundary/static contract failures. This is discovery evidence only: the fallback stays
+enabled by default, no shared selector is retired, and the next repair wave must re-prove the
+exact frozen consumer boundary.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

@@ -5283,6 +5283,16 @@ Preserve the legacy classes, two-column DOM/order, header/search/project/member
 content, filtering, and responsive containment; retain unrelated grid fallback
 consumers.
 
+## Batch 688
+
+Run the required global fallback-off discovery gate with the managed dynamic-port Playwright
+wrapper and record the complete desktop/mobile result in
+`docs/provenance/ui-parity-reports/fallback-off-2026-07-21.md`. The run covers 2,675 tests and is
+not green (`1,541` passed, `1` skipped, `1,133` failed), so the generated legacy fallback stays
+enabled by default. Classify the failure artifacts into React StyleX owner, global/shared bridge,
+route DOM/behavior/data parity, and fallback-boundary/static lanes before selecting the next
+bounded repair wave; do not unlink the fallback or retire shared selectors in this batch.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count
