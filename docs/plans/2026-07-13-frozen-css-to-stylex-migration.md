@@ -31,6 +31,12 @@ alignment in route-local StyleX while preserving the legacy upload DOM, copy,
 and behavior. Focused coverage is
 `frontend/tests/stylex-project-milestone-editform-owners.e2e.ts`.
 
+## 2026-07-20 — New milestone upload-help alignment
+
+The new milestone form's attachment-save help now owns right alignment in
+route-local StyleX while preserving the legacy upload DOM, copy, and behavior.
+Focused coverage is `frontend/tests/project-milestone-create-form.e2e.ts`.
+
 ## 2026-07-20 — `.orange-txt` retirement
 
 The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now

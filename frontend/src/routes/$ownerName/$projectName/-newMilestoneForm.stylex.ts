@@ -17,4 +17,5 @@ export const newMilestoneFormStyles = stylex.create({
   editorPositioned: { position: "relative" },
   editorTabContent: { overflow: "visible", position: "relative" },
   pasteHelpVisible: { display: "block" },
+  uploadSaveHelp: { textAlign: "right" },
 });

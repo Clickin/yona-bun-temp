@@ -123,9 +123,12 @@ test("project milestone create form matches legacy milestone/create.scala.html c
   await expect(page.locator("#upload input.file[name=filePath]")).toHaveAttribute("multiple", "");
   await expect(page.locator("#upload .attach-wrap")).toBeVisible();
   await expect(page.locator("#upload .attached-files.unstyled")).toHaveCount(1);
-  await expect(page.locator("#upload .right-txt.help")).toContainText(
+  const uploadSaveHelp = page.locator('[data-stylex-owner="project-milestone-upload-save-help"]');
+  await expect(uploadSaveHelp).toContainText(
     "Selected file will be attached when your comment is saved.",
   );
+  await expect(uploadSaveHelp).toHaveCSS("text-align", "right");
+  await expect(page.locator("#upload .right-txt.help")).toHaveCount(0);
   await expect(page.locator("#tplAttachedFile")).toHaveCount(0);
   await expect(page.locator("#tplDropFilesHere")).toHaveCount(0);
   await expect(
@@ -341,6 +344,28 @@ test("project milestone create form uploader has no route-local jQuery template 
   expect(routeSource).not.toContain("tplDropFilesHere");
   expect(routeSource).not.toContain("attachedFileTemplate");
   expect(routeSource).not.toContain("dropFilesHereTemplate");
+});
+
+test("project milestone upload save help is route-local StyleX owned", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/newMilestoneForm.tsx",
+    "utf8",
+  );
+  const routeStyles = readFileSync(
+    "src/routes/$ownerName/$projectName/-newMilestoneForm.stylex.ts",
+    "utf8",
+  );
+  const legacyUpload = readFileSync(
+    "../yona-original/app/views/common/uploadForm.scala.html",
+    "utf8",
+  );
+
+  expect(legacyUpload).toContain('<p class="right-txt help">');
+  expect(legacyUpload).toContain("common.attach.attachIfYouSave");
+  expect(routeSource).toContain('data-stylex-owner="project-milestone-upload-save-help"');
+  expect(routeSource).toContain("newMilestoneFormStyles.uploadSaveHelp");
+  expect(routeSource).not.toContain('<p className="right-txt help">');
+  expect(routeStyles).toContain('uploadSaveHelp: { textAlign: "right" }');
 });
 
 test("project milestone create form route keeps legacy write behavior in React events", () => {
