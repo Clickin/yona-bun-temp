@@ -6,6 +6,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
+import "../yobicon-font.css";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -193,7 +194,7 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                       <i
                         {...sx.icon}
                         data-stylex-owner="organization-directory-search-icon"
-                        className="yobicon-search"
+                        className={`${sx.icon.className ?? ""} yobicon-search`.trim()}
                       ></i>
                     </button>
                   </div>

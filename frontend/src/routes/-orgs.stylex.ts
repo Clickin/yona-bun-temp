@@ -1,5 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
+import { globalBreakpoints } from "../theme.stylex";
+
 export const organizationDirectoryColors = stylex.defineVars({
   descriptionText: "#bababa",
   emptyText: "#898989",
@@ -58,7 +60,11 @@ export const styles = stylex.create({
     width: "100%",
   },
   page: { margin: "5px auto 0px", width: "100%" },
-  searchWrap: { clear: "both", height: "30px", padding: "10px 0px" },
+  searchWrap: {
+    clear: "both",
+    height: { default: "30px", [globalBreakpoints.mobile]: "inherit" },
+    padding: "10px 0px",
+  },
   searchContainer: { float: "left" },
   searchForm: { margin: "0px 0px 2px" },
   searchBar: {
@@ -69,6 +75,7 @@ export const styles = stylex.create({
     borderWidth: "1px",
     height: "20px",
     lineHeight: "20px",
+    margin: { default: null, [globalBreakpoints.mobile]: "5px 0px" },
     padding: "4px 25px 4px 5px",
     position: "relative",
   },
@@ -84,7 +91,7 @@ export const styles = stylex.create({
     outline: "none",
     padding: "0px 5px",
     transition: "width 0.15s ease",
-    width: "350px",
+    width: { default: "350px", [globalBreakpoints.mobile]: "inherit" },
   },
   searchButton: {
     backgroundColor: "transparent",

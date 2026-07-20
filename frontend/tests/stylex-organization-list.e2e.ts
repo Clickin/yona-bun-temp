@@ -13,6 +13,10 @@ test("records organization directory StyleX ownership and responsive geometry", 
   const theme = readFileSync("src/routes/-orgs.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/organization/list.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const responsiveLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
   const appCss = readFileSync("src/app.css", "utf8");
   expect(template).toContain('<ul class="all-projects">');
   expect(template).toContain('placeholder="@Messages("site.organization.filter")"');
@@ -20,15 +24,21 @@ test("records organization directory StyleX ownership and responsive geometry", 
   expect(pageLess).toContain("float:right;");
   expect(pageLess).toContain("margin-right:3px; margin-bottom:3px;");
   expect(appCss).not.toContain(".all-projects .project .stats-wrap .members ul li {");
-  expect(appCss).not.toContain(
-    ".all-projects .project .stats-wrap .members ul li .avatar-wrap {",
-  );
+  expect(appCss).not.toContain(".all-projects .project .stats-wrap .members ul li .avatar-wrap {");
   expect(route).not.toContain('className="avatar-wrap"');
   expect(route).toContain('data-stylex-owner="organization-directory-search-input"');
+  expect(route).toContain('className={`${sx.icon.className ?? ""} yobicon-search`.trim()}');
   expect(route).toContain('data-stylex-owner="organization-directory-title-area"');
   expect(route).toContain('data-stylex-owner="organization-directory-list"');
   expect(theme).toContain("export const organizationDirectoryColors");
   expect(theme).toContain("descriptionText");
+  expect(responsiveLess).toContain(".search-wrap {");
+  expect(responsiveLess).toContain("height: inherit !important;");
+  expect(responsiveLess).toContain(".search-bar {");
+  expect(responsiveLess).toContain("margin: 5px 0;");
+  expect(responsiveLess).toContain("width: inherit !important;");
+  expect(theme).toContain('[globalBreakpoints.mobile]: "inherit"');
+  expect(theme).toContain('[globalBreakpoints.mobile]: "5px 0px"');
 
   await mockOrganizations(page);
   for (const viewport of [
@@ -46,6 +56,30 @@ test("records organization directory StyleX ownership and responsive geometry", 
       "border",
       "1px solid rgb(204, 204, 204)",
     );
+    if (viewport.width === 390) {
+      const searchBar = owner(page, "organization-directory-search-bar");
+      const input = owner(page, "organization-directory-search-input");
+      const button = owner(page, "organization-directory-search-button");
+      await expect(button).toBeVisible();
+      const containment = await Promise.all(
+        [searchBar, input, button].map(async (element) => {
+          const box = await element.boundingBox();
+          return box;
+        }),
+      );
+      expect(containment[0]).not.toBeNull();
+      expect(containment[1]).not.toBeNull();
+      expect(containment[2]).not.toBeNull();
+      const [bar, inputBox, buttonBox] = containment as [
+        NonNullable<(typeof containment)[0]>,
+        NonNullable<(typeof containment)[1]>,
+        NonNullable<(typeof containment)[2]>,
+      ];
+      expect(inputBox.x).toBeGreaterThanOrEqual(bar.x);
+      expect(inputBox.x + inputBox.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
+      expect(buttonBox.x).toBeGreaterThanOrEqual(bar.x);
+      expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
+    }
     const geometry = await list.evaluate((element) => {
       const rect = element.getBoundingClientRect();
       return { x: rect.x, width: rect.width, scrollWidth: document.documentElement.scrollWidth };

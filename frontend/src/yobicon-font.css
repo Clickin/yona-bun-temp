@@ -1,0 +1,12 @@
+@layer legacy {
+  @font-face {
+    font-family: "yobicon";
+    src: url("./assets/legacy/yobicon/fonts/yobicon.eot");
+    src: url("./assets/legacy/yobicon/fonts/yobicon.eot?#iefix") format("embedded-opentype"),
+      url("./assets/legacy/yobicon/fonts/yobicon.woff") format("woff"),
+      url("./assets/legacy/yobicon/fonts/yobicon.ttf") format("truetype"),
+      url("./assets/legacy/yobicon/fonts/yobicon.svg#yobicon") format("svg");
+    font-weight: normal;
+    font-style: normal;
+  }
+}

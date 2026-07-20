@@ -5362,3 +5362,13 @@ against a newly created unstyled synthetic `<ul>` and is stale test scaffolding,
 consumer. The site data page/grid/column contract passes fallback-off desktop and mobile geometry
 (`3/3`). Keep the fallback boundary unchanged and do not weaken the synthetic comparison or add
 route declarations.
+
+## Batch 696
+
+Repair the `/orgs` responsive search candidate and its shared font dependency. Move the exact
+legacy mobile search-wrap height, search-bar margin, and textbox inherited width into the existing
+route-local StyleX owners. Preserve the legacy search icon class while composing it with the
+generated StyleX class, and provide the frozen Yobicon `@font-face` through Vite-owned byte-identical
+assets so fallback-off retains intrinsic icon geometry. Prove normal/fallback-off filter interaction
+and mobile containment, record the route audit/ledger evidence, and retain the legacy fallback for
+all other consumers.

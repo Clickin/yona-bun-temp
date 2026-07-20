@@ -21,6 +21,14 @@ const fallback = readFileSync(
   new URL("../public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
   "utf8",
 );
+const yobiconFoundation = readFileSync(new URL("./yobicon-font.css", import.meta.url), "utf8");
+const frozenYobicon = readFileSync(
+  new URL("../../yona-original/public/stylesheets/yobicon/style.css", import.meta.url),
+  "utf8",
+);
+
+const yobiconFontSources = ["yobicon.eot", "yobicon.woff", "yobicon.ttf", "yobicon.svg"] as const;
+const yobiconAssets = ["yobicon.dev.svg", ...yobiconFontSources] as const;
 
 test("the generated legacy fallback is deterministic and preserves runtime cascade order", () => {
   expect(createHash("sha256").update(fallback).digest("hex")).toBe(manifest.artifactSha256);
@@ -45,6 +53,47 @@ test("the frontend loads only the generated legacy fallback entry", () => {
   expect(indexHtml).not.toMatch(
     /(?:bootstrap\/css\/bootstrap|stylesheets\/(?:usermenu|yobi))\.css/u,
   );
+});
+
+test("the Vite-owned Yobicon foundation preserves the frozen font-face source mapping", () => {
+  expect(yobiconFoundation).toContain('font-family: "yobicon";');
+  expect(frozenYobicon).toContain("font-family: 'yobicon';");
+  for (const font of yobiconFontSources) {
+    const sourcePath = `./assets/legacy/yobicon/fonts/${font}`;
+    expect(yobiconFoundation).toContain(`url("${sourcePath}`);
+    expect(
+      createHash("sha256")
+        .update(readFileSync(new URL(`./assets/legacy/yobicon/fonts/${font}`, import.meta.url)))
+        .digest("hex"),
+    ).toBe(
+      createHash("sha256")
+        .update(
+          readFileSync(
+            new URL(`../public/legacy-assets/stylesheets/yobicon/fonts/${font}`, import.meta.url),
+          ),
+        )
+        .digest("hex"),
+    );
+  }
+  for (const font of yobiconAssets) {
+    expect(
+      createHash("sha256")
+        .update(readFileSync(new URL(`./assets/legacy/yobicon/fonts/${font}`, import.meta.url)))
+        .digest("hex"),
+    ).toBe(
+      createHash("sha256")
+        .update(
+          readFileSync(
+            new URL(`../public/legacy-assets/stylesheets/yobicon/fonts/${font}`, import.meta.url),
+          ),
+        )
+        .digest("hex"),
+    );
+  }
+  expect(yobiconFoundation).toContain('format("embedded-opentype")');
+  expect(yobiconFoundation).toContain('format("woff")');
+  expect(yobiconFoundation).toContain('format("truetype")');
+  expect(yobiconFoundation).toContain('format("svg")');
 });
 
 test("all non-StyleX Vite CSS inputs explicitly join the legacy layer", () => {
