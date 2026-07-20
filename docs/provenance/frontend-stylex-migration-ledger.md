@@ -1778,3 +1778,18 @@ not an unlinking or live-legacy visual-parity claim.
   `frontend/tests/legacy-fallback-off.e2e.ts` assert exact selector absence and
   variant retention. Normal and fallback-off focused runs pass; no frozen
   source, generated fallback, TSX, or geometry baseline changed.
+
+## Batch 578
+
+- Posting-history modal trigger bridge retirement: legacy
+  `yona-original/app/views/issue/view.scala.html:160` and
+  `yona-original/app/views/board/view.scala.html:77` emit plugin anchors with
+  `data-toggle="modal"`; current React issue/post detail routes emit
+  `button[type="button"]` and own open/close state, with no modal plugin
+  attributes. `frontend/src/app.css` no longer contains the unreachable
+  `.board-view .posting-history > button[data-toggle="modal"]` block. The
+  generic posting-history layout and other modal fallback selectors remain.
+- `frontend/tests/stylex-project-post-detail-modal-visibility.e2e.ts` asserts
+  exact selector absence and existing conditional StyleX modal visibility.
+  No TSX, frozen source, generated fallback, theme, or geometry baseline
+  changed; global fallback discovery remains incomplete/non-green.

@@ -146,6 +146,18 @@ test("project history generic activity wrappers have no fallback bridge", () => 
   );
 });
 
+test("posting-history modal trigger bridge has no remaining selector arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain('.board-view .posting-history > button[data-toggle="modal"]');
+  expect(appCss).toContain(".posting-history");
+  for (const route of [
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+  ]) {
+    expect(readFileSync(route, "utf8")).not.toContain('data-toggle="modal"');
+  }
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

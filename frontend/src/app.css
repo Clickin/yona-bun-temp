@@ -217,16 +217,6 @@ body {
   border: 0;
 }
 
-.board-view .posting-history > button[data-toggle="modal"] {
-  padding: 0;
-  color: #3592b5;
-  font: inherit;
-  cursor: pointer;
-  appearance: none;
-  background: transparent;
-  border: 0;
-}
-
 .close {
   float: right;
   font-size: 20px;

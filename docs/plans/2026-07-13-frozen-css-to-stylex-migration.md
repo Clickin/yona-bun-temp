@@ -4302,3 +4302,15 @@ declarations. Keep the item-specific `:first-of-type` and `:last-child`
 fallback variants until their conditional StyleX owners exist. Verify the
 static contracts in normal and fallback-off runs; do not edit TSX, frozen
 Scala/LESS, generated fallback, or baselines.
+
+## Batch 578
+
+Retire only the unreachable `.board-view .posting-history >
+button[data-toggle="modal"]` bridge from `frontend/src/app.css`. Legacy board
+and issue templates used a plugin-controlled anchor with `data-toggle="modal"`,
+but current React posting-history controls are `button[type="button"]` owned by
+React state and intentionally omit plugin attributes. Keep the generic
+`.posting-history` layout and all modal fallback rules unchanged. Verify the
+exact selector absence with the post-detail modal static contract in normal and
+fallback-off runs; no TSX, frozen source, generated fallback, or geometry
+baseline changes are allowed.
