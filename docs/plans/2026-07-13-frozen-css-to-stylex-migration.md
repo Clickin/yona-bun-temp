@@ -4808,3 +4808,15 @@ legacy/generated CSS untouched.
 Retire the conditional `.darkgray-txt` arm from issue and milestone due-date
 wrappers. CLOSED-state text retains the frozen `#999` color through local StyleX;
 overdue behavior and conditional class composition remain unchanged.
+
+## Batch 629
+
+Migrate the commit-detail route's five `right-txt` alignment owners into the
+colocated StyleX owner. Preserve the legacy action/help DOM and all shared
+fallback consumers outside this route.
+
+## Batch 630
+
+Migrate the branches route pull-request state link's `blue-txt` color into its
+route-local theme variable. Preserve the branch table structure and shared
+`.blue-txt` fallback for unrelated consumers.

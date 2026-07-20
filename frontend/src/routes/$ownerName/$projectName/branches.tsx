@@ -308,7 +308,7 @@ function BranchRow({
               className: undefined,
               "data-status": undefined,
             }}
-            className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            className={`${stylex.props(styles.pullRequestLink).className} pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
             data-stylex-owner="project-branches-pull-request-link"
             title={t(`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`)}
           >
@@ -417,6 +417,9 @@ const styles = stylex.create({
   branchLink: {
     color: projectBranchesTheme.branchLink,
     fontFamily: "monospace",
+  },
+  pullRequestLink: {
+    color: projectBranchesTheme.pullRequestLink,
   },
   defaultBadge: {
     backgroundColor: projectBranchesTheme.defaultBadgeBackground,

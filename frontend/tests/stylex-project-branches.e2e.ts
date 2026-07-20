@@ -6,6 +6,18 @@ const SOURCE = readFileSync(
   "utf8",
 );
 const APP_CSS = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const BRANCHES_STYLEX = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/-branches.stylex.ts", import.meta.url),
+  "utf8",
+);
+const LEGACY_COMMON = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
+  "utf8",
+);
+const LEGACY_VARIABLES = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_variables.less", import.meta.url),
+  "utf8",
+);
 const LEGACY_BRANCHES = readFileSync(
   new URL("../../yona-original/app/views/code/branches.scala.html", import.meta.url),
   "utf8",
@@ -32,6 +44,9 @@ test("project branches owns the legacy branch table with route StyleX", async ({
   await expect(page.locator('[data-stylex-owner="project-branches-pull-request-link"]')).toHaveText(
     "pullRequest-3",
   );
+  await expect(
+    page.locator('[data-stylex-owner="project-branches-pull-request-link"]'),
+  ).toHaveCount(1);
   await expect(page.locator('[data-stylex-owner="project-branches-pull-request-dot"]')).toHaveCount(
     1,
   );
@@ -71,6 +86,11 @@ test("project branches owns the legacy branch table with route StyleX", async ({
         actionsTextAlign: getComputedStyle(actions).textAlign,
         dotWidth: getComputedStyle(dot).width,
         dotHeight: getComputedStyle(dot).height,
+        pullRequestColor: getComputedStyle(
+          table.querySelector<HTMLElement>(
+            "[data-stylex-owner='project-branches-pull-request-link']",
+          )!,
+        ).color,
       };
     });
   expect(metrics).toEqual({
@@ -86,7 +106,15 @@ test("project branches owns the legacy branch table with route StyleX", async ({
     actionsTextAlign: "right",
     dotWidth: "10px",
     dotHeight: "10px",
+    pullRequestColor: "rgb(93, 187, 224)",
   });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(page.locator('[data-stylex-owner="project-branches-pull-request-link"]')).toHaveCSS(
+    "color",
+    "rgb(93, 187, 224)",
+  );
 
   expect(SOURCE).not.toContain('data-toggle="tooltip"');
   expect(SOURCE).not.toContain("data-placement");
@@ -102,6 +130,10 @@ test("project branches owns the legacy branch table with route StyleX", async ({
   expect(APP_CSS).not.toContain(".branch-list-wrap .branchName");
   expect(APP_CSS).not.toContain(".branch-list-wrap .commit");
   expect(APP_CSS).not.toContain(".branch-list-wrap .pullRequest");
+  expect(SOURCE).not.toContain("blue-txt");
+  expect(BRANCHES_STYLEX).toContain('pullRequestLink: "#5dbbe0"');
+  expect(LEGACY_COMMON).toContain(".blue-txt      { color:@blue;}");
+  expect(LEGACY_VARIABLES).toMatch(/@blue\s*:\s*#5DBBE0;/u);
   expect(LEGACY_BRANCHES).toContain('class="table branch-list-wrap"');
   expect(LEGACY_BRANCH_ROW).toContain('<td class="branchName">');
   expect(LEGACY_BRANCH_ROW).toContain('<td class="actions">');

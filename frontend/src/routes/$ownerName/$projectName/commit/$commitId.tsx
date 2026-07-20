@@ -43,6 +43,7 @@ const sx = {
   reviewTabs: stylex.props(styles.reviewTabs),
   editorTabContent: stylex.props(styles.editorTabContent),
   reviewTextarea: stylex.props(styles.reviewTextarea),
+  rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
@@ -1284,7 +1285,7 @@ function CodeCommentThreadView({
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
               <UploadForm resourceType="COMMIT_COMMENT" />
-              <div className="right-txt">
+              <div {...sx.rightText} data-stylex-owner="commit-detail-thread-actions">
                 <button
                   type="button"
                   className="ybtn ybtn-default ybtn-small"
@@ -1404,7 +1405,11 @@ function CodeCommentUpdateForm({
                 <div className="msg">{t("common.attach.dropFilesHere")}</div>
               </div>
             </div>
-            <div className="right-txt comment-update-button upload-button-line">
+            <div
+              className="comment-update-button upload-button-line"
+              {...sx.rightText}
+              data-stylex-owner="commit-detail-comment-update-actions"
+            >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
                   {t("button.upload")}
@@ -1574,7 +1579,7 @@ function CommentForm({
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm resourceType="COMMIT_COMMENT" />
         <div className="write-comment-wrap">
-          <div className="right-txt">
+          <div {...sx.rightText} data-stylex-owner="commit-detail-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1642,7 +1647,7 @@ function ReviewForm({
             </div>
             <Editor editorMode="code-review-body" wrapId="review" />
             <UploadForm resourceType="COMMIT_COMMENT" />
-            <div className="right-txt">
+            <div {...sx.rightText} data-stylex-owner="commit-detail-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
               </button>
@@ -1769,7 +1774,7 @@ function UploadForm({ resourceType }: { resourceType: string }) {
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p className="help" {...sx.rightText} data-stylex-owner="commit-detail-attachment-help">
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>

@@ -20,6 +20,7 @@ export const styles = stylex.create({
   reviewTextarea: { height: "100px" },
   reviewFormHidden: { display: "none" },
   reviewFormVisible: { display: "block" },
+  rightText: { textAlign: "right" },
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
   originalMessageToggle: {

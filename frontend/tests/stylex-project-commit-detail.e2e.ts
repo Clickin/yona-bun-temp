@@ -13,6 +13,21 @@ test("records commit detail owners and responsive diff containment", async ({ pa
     "utf8",
   );
   const template = readFileSync("../yona-original/app/views/common/commitMsg.scala.html", "utf8");
+  const commonLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  expect(commonLess).toContain(".right-txt     { text-align:right; }");
+  expect(route).not.toContain("right-txt");
+  for (const marker of [
+    "commit-detail-thread-actions",
+    "commit-detail-comment-update-actions",
+    "commit-detail-comment-actions",
+    "commit-detail-review-actions",
+    "commit-detail-attachment-help",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${marker}"`);
+  }
   expect(template).toContain('class="commitMsg short"');
   expect(template).toContain('class="commitMsg desc');
   expect(route).toContain('data-stylex-owner="commit-detail-info"');
@@ -27,6 +42,12 @@ test("records commit detail owners and responsive diff containment", async ({ pa
     await page.goto(`${basePath}/weblabs/demo/commit/abc123`);
     await expect(owner(page, "commit-detail-browse")).toBeVisible();
     await expect(owner(page, "commit-detail-short-message")).toHaveText("Fix issue");
+    const commentActions = owner(page, "commit-detail-comment-actions");
+    await expect(commentActions).toBeVisible();
+    await expect(commentActions).toHaveCSS("text-align", "right");
+    const attachmentHelp = owner(page, "commit-detail-attachment-help");
+    await expect(attachmentHelp).toBeAttached();
+    await expect(attachmentHelp).toHaveCSS("text-align", "right");
     const geometry = await owner(page, "commit-detail-diff-body").evaluate((element) => ({
       width: element.getBoundingClientRect().width,
       scrollWidth: document.documentElement.scrollWidth,
@@ -62,7 +83,7 @@ async function mockCommit(page: Page) {
       json: { ownerName: "weblabs", projectName: "demo", vcs: "GIT" },
     }),
   );
-  await page.route("**/api/v1/owners/**/projects/**/commits/abc123**", (route: Route) =>
+  await page.route("**/api/v1/projects/**/commit/abc123**", (route: Route) =>
     route.fulfill({
       contentType: "application/json",
       json: {
@@ -76,6 +97,7 @@ async function mockCommit(page: Page) {
         },
         files: [],
         threads: [],
+        permissions: { canComment: true, canUpdateThreadState: true },
         isWatching: false,
       },
     }),

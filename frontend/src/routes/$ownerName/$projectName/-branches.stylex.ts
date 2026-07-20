@@ -10,6 +10,7 @@ export const projectBranchesTheme = stylex.defineVars({
   rowBorder: "#e5e5e5",
   headerBorder: "#cccccc",
   branchLink: "#51aacc",
+  pullRequestLink: "#5dbbe0",
   defaultBadgeBackground: "#ffffff",
   defaultBadgeBorder: "rgba(0, 0, 0, 0.1)",
   defaultBadgeText: "#0088cc",
