@@ -75,6 +75,8 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(route).toContain("styles.searchWrap");
   expect(style).toContain('searchWrap: { marginTop: "10px" }');
   expect(legacy).toContain('<div class="span7">');
+  expect(legacy).toContain('<div class="span9 span-hard-wrap">');
+  expect(legacy).toContain('<div class="span3 span-hard-wrap">');
   expect(bootstrapResponsive).toContain(
     '  .row-fluid [class*="span"] {\n    display: block;\n    float: left;\n    width: 100%;\n    min-height: 30px;\n    margin-left: 2.564102564102564%;',
   );
@@ -82,9 +84,28 @@ test("organization home project filter uses conditional StyleX visibility", asyn
     '  .row-fluid [class*="span"]:first-child {\n    margin-left: 0;\n  }',
   );
   expect(bootstrapResponsive).toContain("  .row-fluid .span7 {\n    width: 57.26495726495726%;");
+  expect(bootstrapResponsive).toContain("  .row-fluid .span9 {\n    width: 74.35897435897436%;");
+  expect(bootstrapResponsive).toContain("  .row-fluid .span3 {\n    width: 23.076923076923077%;");
   expect(bootstrapResponsive).toContain(
     '  [class*="span"],\n  .uneditable-input[class*="span"],\n  .row-fluid [class*="span"] {\n    display: block;\n    float: none;\n    width: 100%;\n    margin-left: 0;',
   );
+  expect(responsive).toContain("  .span-hard-wrap {\n    min-width: 95%;\n    width: 100vw;\n  }");
+  expect(route).toContain('data-stylex-owner="organization-home-main-column"');
+  expect(route).toContain("styles.organizationHomeFluidColumn");
+  expect(route).toContain("styles.organizationHomeMainColumn");
+  expect(route).toContain('data-stylex-owner="organization-home-members"');
+  expect(route).toContain("styles.organizationHomeMembersColumn");
+  expect(style).toContain("organizationHomeMainColumn:");
+  expect(style).toContain("organizationHomeMembersColumn:");
+  expect(style).toContain("organizationHomeFluidColumn:");
+  expect(style).toContain('width: "100%"');
+  for (const width of ['width: "74.35897435897436%"', 'width: "23.076923076923077%"']) {
+    expect(style).toContain(width);
+  }
+  expect(style).toContain('marginLeft: "2.564102564102564%"');
+  expect(style).toContain('minHeight: "30px"');
+  expect(style).toContain('boxSizing: "border-box"');
+  expect(style).toContain('"@media (max-width: 720px)": { minWidth: "95%", width: "100vw" }');
   expect(route).toContain('data-stylex-owner="organization-home-search-column"');
   expect(route).toContain("styles.organizationHomeSearchColumn");
   expect(style).toContain("organizationHomeSearchColumn:");
@@ -281,6 +302,9 @@ for (const viewport of [
       .locator('[data-stylex-owner="organization-home-project-filter-item"]')
       .first();
     const pageWrap = page.locator('[data-stylex-owner="organization-home-page"]');
+    const header = page.locator('[data-stylex-owner="organization-home-header"]');
+    const mainColumn = page.locator('[data-stylex-owner="organization-home-main-column"]');
+    const membersColumn = page.locator('[data-stylex-owner="organization-home-members"]');
     const searchWrap = page.locator('[data-stylex-owner="organization-home-search"]');
     const searchColumn = page.locator('[data-stylex-owner="organization-home-search-column"]');
     const list = page.locator('[data-stylex-owner="organization-home-projects"]');
@@ -295,6 +319,14 @@ for (const viewport of [
     });
     await expect(card).toBeVisible();
     await expect(pageWrap).toBeVisible();
+    await expect(header).toBeVisible();
+    await expect(mainColumn).toBeVisible();
+    await expect(membersColumn).toBeVisible();
+    await expect(
+      header.locator(
+        ':scope > [data-stylex-owner="organization-home-main-column"], :scope > [data-stylex-owner="organization-home-members"]',
+      ),
+    ).toHaveCount(2);
     await expect(searchWrap).toBeVisible();
     await expect(searchColumn).toBeVisible();
     await expect(searchBar).toBeVisible();
@@ -329,6 +361,60 @@ for (const viewport of [
     expect(pageWrapMetrics.right).toBe(viewport.width);
     expect(pageWrapMetrics.width).toBe(`${viewport.width}px`);
     expect(pageWrapMetrics.height).toBeGreaterThanOrEqual(450);
+    const columnMetrics = await header.evaluate((node) => {
+      const rowBox = node.getBoundingClientRect();
+      return Array.from(
+        node.querySelectorAll<HTMLElement>(
+          ':scope > [data-stylex-owner="organization-home-main-column"], :scope > [data-stylex-owner="organization-home-members"]',
+        ),
+      ).map((column) => {
+        const style = getComputedStyle(column);
+        const box = column.getBoundingClientRect();
+        return {
+          boxSizing: style.boxSizing,
+          display: style.display,
+          float: style.float,
+          left: box.left,
+          marginLeft: style.marginLeft,
+          minHeight: style.minHeight,
+          minWidth: style.minWidth,
+          right: box.right,
+          styleWidth: style.width,
+          top: box.top,
+          width: box.width,
+          widthRatio: rowBox.width > 0 ? box.width / rowBox.width : 0,
+        };
+      });
+    });
+    expect(columnMetrics).toHaveLength(2);
+    for (const column of columnMetrics) {
+      expect(column).toMatchObject({
+        boxSizing: "border-box",
+        display: "block",
+        minHeight: "30px",
+      });
+      expect(column.left).toBeGreaterThanOrEqual(pageWrapMetrics.left - 1);
+      expect(column.right).toBeLessThanOrEqual(pageWrapMetrics.right + 1);
+      expect(column.width).toBeGreaterThan(0);
+      if (viewport.name === "mobile") {
+        expect(column.float).toBe("none");
+        expect(column.marginLeft).toBe("0px");
+        expect(column.styleWidth).toBe(`${viewport.width}px`);
+        expect(column.width).toBe(viewport.width);
+        expect(column.widthRatio).toBeCloseTo(1, 5);
+        expect(column.minWidth).toBe("95%");
+      } else {
+        expect(column.float).toBe("left");
+      }
+    }
+    expect(columnMetrics[0]?.marginLeft).toBe("0px");
+    if (viewport.name === "mobile") {
+      expect(columnMetrics[1]?.marginLeft).toBe("0px");
+    } else {
+      expect(columnMetrics[0]?.widthRatio).toBeCloseTo(0.7435897435897436, 4);
+      expect(columnMetrics[1]?.widthRatio).toBeCloseTo(0.23076923076923077, 4);
+      expect(columnMetrics[1]?.marginLeft).not.toBe("0px");
+    }
     const searchWrapMetrics = await searchWrap.evaluate((node) => {
       const style = getComputedStyle(node);
       const box = node.getBoundingClientRect();

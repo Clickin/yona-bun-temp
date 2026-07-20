@@ -78,6 +78,36 @@ export const styles = stylex.create({
     width: "100%",
   },
   projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" },
+  // yona-original/public/bootstrap/css/bootstrap-responsive.css .row-fluid [class*="span"] / mobile reset.
+  organizationHomeFluidColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.564102564102564%",
+    minHeight: "30px",
+    width: "100%",
+    "@media (max-width: 767px)": {
+      boxSizing: "border-box",
+      display: "block",
+      float: "none",
+      marginLeft: "0",
+      minHeight: "30px",
+      width: "100%",
+    },
+  },
+  // yona-original/public/bootstrap/css/bootstrap-responsive.css .row-fluid .span9.
+  organizationHomeMainColumn: {
+    width: "74.35897435897436%",
+    ":first-child": { marginLeft: "0" },
+    // yona-original/app/assets/stylesheets/less/_responsive.less .span-hard-wrap.
+    "@media (max-width: 720px)": { minWidth: "95%", width: "100vw" },
+  },
+  // yona-original/public/bootstrap/css/bootstrap-responsive.css .row-fluid .span3.
+  organizationHomeMembersColumn: {
+    width: "23.076923076923077%",
+    // yona-original/app/assets/stylesheets/less/_responsive.less .span-hard-wrap.
+    "@media (max-width: 720px)": { minWidth: "95%", width: "100vw" },
+  },
   overview: {
     borderLeftColor: "#fc491e",
     borderLeftStyle: "solid",

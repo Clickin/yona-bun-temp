@@ -591,6 +591,17 @@ unchanged; unrelated grid consumers stay fallback-owned. Focused normal and
 fallback-off checks pass 3/3 each, covering source mapping, computed
 desktop/mobile column geometry, containment, and filtering/visibility.
 
+### 2026-07-21 Batch 687 organization home outer-column owner proof
+
+ORG-02 organization home main/member output now owns the emitted Bootstrap
+`span9`/`span3` fluid-grid declarations and frozen `span-hard-wrap` responsive
+min-width/viewport-width cascade through route-local StyleX owners. Legacy
+classes, two-column DOM/order, header/search/project/member content, filtering,
+and responsive containment remain unchanged; unrelated grid consumers stay
+fallback-owned. Focused normal and fallback-off checks pass 3/3 each,
+covering source mapping, computed desktop/mobile column geometry,
+containment, and filtering/visibility.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

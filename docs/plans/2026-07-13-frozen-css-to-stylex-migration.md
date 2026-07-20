@@ -5275,6 +5275,14 @@ first-column offset behavior and mobile full-width transition. Preserve the
 legacy class/DOM/order, search controls, create-project action, filtering, and
 responsive containment; retain unrelated grid fallback consumers.
 
+## Batch 687
+
+Move the organization home emitted `span9`/`span3` columns and
+`span-hard-wrap` responsive declarations into route-local StyleX owners.
+Preserve the legacy classes, two-column DOM/order, header/search/project/member
+content, filtering, and responsive containment; retain unrelated grid fallback
+consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

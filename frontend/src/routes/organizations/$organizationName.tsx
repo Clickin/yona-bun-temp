@@ -226,7 +226,10 @@ function OrganizationHomeScreen({
             className={`${stylex.props(styles.projectHomeHeader).className} project-home-header row-fluid`}
             data-stylex-owner="organization-home-header"
           >
-            <div className="span9 span-hard-wrap">
+            <div
+              className={`${stylex.props(styles.organizationHomeFluidColumn, styles.organizationHomeMainColumn).className} span9 span-hard-wrap`}
+              data-stylex-owner="organization-home-main-column"
+            >
               <div
                 className={`${stylex.props(styles.overview).className} project-overview`}
                 data-stylex-owner="organization-home-overview"
@@ -306,7 +309,10 @@ function OrganizationHomeScreen({
                 ))}
               </ul>
             </div>
-            <div className="span3 span-hard-wrap" data-stylex-owner="organization-home-members">
+            <div
+              className={`${stylex.props(styles.organizationHomeFluidColumn, styles.organizationHomeMembersColumn).className} span3 span-hard-wrap`}
+              data-stylex-owner="organization-home-members"
+            >
               {shouldShowMemberPanels ? (
                 <>
                   <MemberPanel
