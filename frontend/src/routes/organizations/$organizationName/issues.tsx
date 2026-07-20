@@ -683,13 +683,24 @@ function OrganizationIssueItem({
       <div className="span10 span-hard-wrap">
         <Link
           to={authorRoutePath}
-          className="avatar-wrap mlarge hide-in-mobile"
+          {...stylex.props(styles.avatar)}
+          className={`${stylex.props(styles.avatar).className} avatar-wrap mlarge hide-in-mobile`}
+          data-stylex-owner="organization-issues-row-avatar"
           title={issue.authorLoginId}
         >
           <img src={issue.authorAvatarUrl || "/assets/images/default-avatar-32.png"} alt="" />
         </Link>
-        <div className="title-wrap">
-          <Link to={issueRoutePath} className="title">
+        <div
+          {...stylex.props(styles.titleWrap)}
+          data-stylex-owner="organization-issues-row-title-wrap"
+          className="title-wrap"
+        >
+          <Link
+            to={issueRoutePath}
+            {...stylex.props(styles.title)}
+            className={`${stylex.props(styles.title).className} title`}
+            data-stylex-owner="organization-issues-row-title"
+          >
             {issue.title}
           </Link>
         </div>
@@ -751,7 +762,13 @@ function OrganizationIssueItem({
           <Link to={projectRoutePath} className="infos-link-item group-project-name">
             {issue.projectName}
           </Link>
-          <span className="post-id margin-right-5">#{issue.issueNumber}</span>
+          <span
+            {...stylex.props(styles.postId)}
+            className={`${stylex.props(styles.postId).className} post-id margin-right-5`}
+            data-stylex-owner="organization-issues-row-post-id"
+          >
+            #{issue.issueNumber}
+          </span>
           {issue.labels.map((label) => (
             <Link
               to="/$ownerName/$projectName/issues"

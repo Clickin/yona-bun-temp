@@ -4612,3 +4612,16 @@ Compose base, selected, hover, and two-column StyleX classes into one
 `className` while preserving the legacy DOM, geometry, and React-owned
 selection behavior. Update the focused route contract and provenance; do not
 change frozen CSS or add geometry compensation.
+
+## Batch 608
+
+Extend the organization issues populated-row owner in
+`organizations/$organizationName/issues` with the legacy post-item, avatar,
+title-wrap, title, post-id, and metadata declarations. Use the frozen
+organization issue partial and `_page.less` as output/style evidence; keep
+legacy classes and shared fallback intact, and keep route semantic colors in
+the route theme while writing geometry/typography directly in StyleX. Update
+one focused populated organization-issues contract and provenance. Do not
+modify frozen CSS, global app.css, or unrelated routes. Live browser replay is
+required before wave acceptance; this worker only completed static/typecheck
+validation.

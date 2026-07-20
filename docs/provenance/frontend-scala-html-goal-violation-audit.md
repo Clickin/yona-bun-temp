@@ -1,5 +1,7 @@
 # Frontend Scala HTML Goal Violation Audit
 
+| 2026-07-20 | Organization issues populated-row and project post-detail StyleX ownership wave | `yona-original/app/views/organization/group_issue_list_partial.scala.html`, the shared issue partial, and `yona-original/app/views/board/view.scala.html:39-51` with frozen LESS establish the row and board-header DOM/geometry. Legacy Scala HTML/JS is output DOM/UX evidence; React owns route state, filtering, navigation, and toggle behavior. | `frontend/src/routes/organizations/$organizationName/issues.tsx`, `-organization-issues.stylex.ts`, `frontend/src/routes/$ownerName/$projectName/post/$postNumber.tsx`, and `-post-detail.stylex.ts` add route-local owners while retaining semantic legacy classes and shared fallback consumers. Geometry/typography are direct StyleX declarations; route themes hold only semantic colors. | `frontend/tests/stylex-organization-issues-label-color.e2e.ts` and `frontend/tests/stylex-project-post-detail-inline-residual.e2e.ts` assert populated row and board-header owners, computed geometry, responsive metadata, toggle behavior, and fallback-off parity. Typecheck/build and focused normal/fallback-off replay pass. |
+
 | 2026-07-20 | `/admin/sample/issues?filter=bulk` selected issue-row class composition repair | `yona-original/app/views/issue/partial_list.scala.html:22-35`, `yona-original/app/assets/stylesheets/less/_page.less:3851-3871`, and `frontend/tests/project-issues-empty.e2e.ts` establish the member checkbox and `.post-item.active` selected-row output. | `frontend/src/routes/$ownerName/$projectName/issues.tsx` composes route-local base/selected/hover/two-column StyleX classes in one `className`; this preserves the legacy `active` class after checkbox selection instead of allowing a later hover StyleX spread to replace the complete class attribute. | Legacy Scala HTML/JS is output DOM/UX evidence; selection remains React state/event owned. |
 
 | 2026-07-20 | Unreachable attachment `btn-insert` bridge retirement | `yona-original/app/views/common/fileUploader.scala.html` and frozen uploader LESS define the historical `.btn-insert` output; current React issueform intentionally translates the control to `btn-insert-copy` and owns behavior/presentation with React state and StyleX. | `frontend/src/app.css` removes only the three `.attached-file .btn-insert` selector branches; active attachment/progress/delete/upload rules remain, as do frozen/generated legacy sources. | `frontend/tests/stylex-project-issueform-attachments-visible.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` verify exact absence and retained active rules in normal/fallback-off runs. |
@@ -431,6 +433,12 @@ the goal directive; coordinated exceptions must set
 `YONA_ALLOW_SCALA_HTML_MULTI_SCREEN=1` explicitly.
 
 Manual multi-screen exception note, 2026-07-04:
+
+Manual multi-screen exception note, 2026-07-20:
+
+- Routes: `/$ownerName/$projectName/post/$postNumber` and `/organizations/$organizationName/issues`.
+- Reason: the user explicitly authorized batching independent route waves; project post-detail header and organization issue-row StyleX owners were implemented by separate workers with disjoint route/test scopes and validated together.
+- Follow-up: keep unattended goal commits to one screen state; retain both focused fallback-off reports and rerun their combined suite when shared shell or fallback boundaries change.
 
 Manual evidence-only exception note, 2026-07-12:
 

@@ -2039,6 +2039,23 @@ retained label paint in normal and fallback-off modes. No TSX changed.
   Project-posts and formal fallback-off static contracts assert exact absence
   and retained comment selectors in normal/fallback-off modes; see
   `fallback-off-2026-07-20-board-comments-bridge.md`.
+
+## Batch 608
+
+- Organization issue populated-row StyleX ownership wave: the frozen
+  `yona-original/app/views/organization/group_issue_list_partial.scala.html`
+  delegates row output to the shared issue list partial, while frozen
+  `_page.less` establishes the post-item, avatar, title-wrap, post-id, title,
+  and metadata geometry. The organization route already owned the row/meta
+  border/color declarations; this bounded wave extends that same route-local
+  owner to the six populated-row declarations without changing the shared
+  fallback or frozen source. `organizationIssuesTheme` holds only route
+  semantic colors; geometry and typography remain direct StyleX declarations.
+  The legacy classes and DOM order remain for the shared cascade. Focused
+  `stylex-organization-issues-label-color.e2e.ts` records stable owner
+  selectors, dynamic label paint, row geometry, and populated title/avatar/
+  post-id computed values. Live managed-server replay was unavailable in this
+  worker; typecheck passed and the static/source gate is retained.
 | 2026-07-20 | Dead project-home issue-wrap compatibility bridge retirement | Frozen `yona-original/app/views/project/home.scala.html` provides the historical project-home issue section evidence; current React project-home routes emit no `.issue-wrap` consumer. | `frontend/src/app.css` removes only `.project-home .issue-wrap { margin-bottom:15px; }` and `.project-home .issue-wrap a.btn { width:105px; }`; frozen/generated assets and geometry remain unchanged. | `frontend/tests/stylex-project-home-side-panel.e2e.ts` and `frontend/tests/legacy-fallback-off.e2e.ts` assert exact absence in normal/fallback-off modes; `fallback-off-2026-07-20-project-home-issue-wrap.md` records the bounded evidence. |
 | 2026-07-20 | Dead organization member avatar bridge retirement | Frozen organization list Scala/LESS retain historical member list-item float/avatar spacing; current React organization directory emits no matching member item/avatar consumer. | Remove only the two scoped app.css arms; retain parent members layout and frozen/generated evidence. | Organization-list and fallback-off static contracts assert exact absence in normal/fallback-off modes; no TSX or frozen source changed. |
 | 2026-07-20 | Dead issue-detail event-index bridge retirement | Frozen `yona-original/app/views/issue/partial_index_event_timeline.scala.html` retains the historical `event event-index` output; current React issue timelines emit no `event-index` consumer. | Remove only `.issue-detail-page .comments .event.event-index` and its nested `.state` arms from `frontend/src/app.css`; retain the adjacent generic `.event .state i` rule, frozen source, generated fallback, and geometry. | `stylex-project-issue-detail-event-base.e2e.ts`, `stylex-project-issue-detail-event-state-variants.e2e.ts`, and `legacy-fallback-off.e2e.ts` assert exact absence and generic-rule retention in normal/fallback-off modes; `fallback-off-2026-07-20-issue-detail-event-index.md` records bounded evidence. |

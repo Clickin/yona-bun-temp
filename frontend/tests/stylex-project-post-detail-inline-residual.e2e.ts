@@ -34,6 +34,10 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(boardTemplate).toContain(
     '<div class="pull-right hide show-in-mobile" style="font-size: 0.7em">',
   );
+  expect(boardTemplate).toContain('class="board-id">#@post.getNumber</strong>');
+  expect(boardTemplate).toContain(
+    'class="date" title="@JodaDateUtil.getDateString(post.createdDate)">',
+  );
   expect(selectedLabelPartial).toContain('style="background:@label.color"');
   expect(responsiveStyles).toContain(".show-in-mobile {");
   expect(responsiveStyles).toContain("display: block !important;");
@@ -54,13 +58,23 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(route).not.toContain(
     'className="pull-left" style={{ padding: "10px 0px", marginLeft: 55 }}',
   );
+  expect(route).toContain('data-stylex-owner="post-detail-title"');
+  expect(route).toContain('data-stylex-owner="post-detail-board-id"');
+  expect(route).toContain('data-stylex-owner="post-detail-date"');
+  expect(theme).toContain("title: {");
+  expect(theme).toContain("boardId: {");
+  expect(theme).toContain("date: {");
   expect(route).not.toContain("style={{ background: label.color }}");
   expect(route).toContain("styles.labelBackground(label.color)");
   expect(theme).toContain("labelBackground: (backgroundColor: string) => ({ backgroundColor })");
   expect(route).not.toContain('style={{ fontSize: "0.7em" }}');
-  expect(theme).toContain('mobileMetadata: { fontSize: "0.7em" }');
+  expect(theme).toContain(
+    'mobileMetadata: {\n    display: "none",\n    fontSize: "0.7em",\n    "@media all and (max-width: 720px)": { display: "block" },',
+  );
   expect(theme).toContain('editorTabContent: { overflow: "visible", position: "relative" }');
-  expect(theme).toContain("originalMessageToggle: { paddingLeft: 5, paddingRight: 5 }");
+  expect(theme).toContain(
+    'originalMessageToggle: {\n    borderStyle: "none",\n    borderWidth: 0,',
+  );
   expect(theme).toContain("tasklistProgress: { width: 0 }");
   expect(theme).toContain('keymapWrapper: { marginLeft: 55, padding: "10px 0px" }');
 
@@ -95,6 +109,16 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   }));
   expect(mobileMetadataStyle.display).toBe("block");
   expect(mobileMetadataStyle.fontSize).toBeCloseTo(12.6, 0);
+  const title = page.locator('[data-stylex-owner="post-detail-title"]');
+  const boardId = page.locator('[data-stylex-owner="post-detail-board-id"]');
+  const date = page.locator('[data-stylex-owner="post-detail-date"]').first();
+  await expect(title).toHaveCSS("padding-left", "20px");
+  await expect(title).toHaveCSS("padding-right", "20px");
+  await expect(title).toHaveCSS("background-color", "rgb(242, 242, 242)");
+  await expect(boardId).toHaveCSS("color", "rgb(147, 147, 147)");
+  await expect(boardId).toHaveCSS("font-size", "14px");
+  await expect(date).toHaveCSS("color", "rgb(153, 153, 153)");
+  await expect(date).toHaveCSS("line-height", "29px");
   const mobileMetadataBox = await mobileMetadata.boundingBox();
   const titleBox = await page.locator(".title").first().boundingBox();
   expect(mobileMetadataBox).not.toBeNull();
@@ -117,7 +141,6 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
 
   const toggle = page.locator('[data-stylex-owner="post-detail-original-message-toggle"]');
   await expect(toggle).toHaveCount(1);
-  await expect(toggle).toHaveAttribute("style", /border: 0/);
   await expect(toggle).toHaveCSS("border-top-width", "0px");
   await expect(toggle).toHaveCSS("padding-left", "5px");
   await expect(toggle).toHaveCSS("padding-right", "5px");

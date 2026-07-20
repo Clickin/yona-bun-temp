@@ -22,6 +22,16 @@ test("organization issue labels keep server colors through Dynamic StyleX", asyn
   expect(stylexSource).toContain(
     "issueLabelBackground: (backgroundColor) => ({ backgroundColor })",
   );
+  for (const owner of [
+    "organization-issues-row-avatar",
+    "organization-issues-row-title-wrap",
+    "organization-issues-row-title",
+    "organization-issues-row-post-id",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(stylexSource).toContain('display: "block"');
+  expect(stylexSource).toContain('fontSize: "15px"');
 
   await mockOrganizationIssues(page);
   await page.goto(`${basePath}/organizations/weblabs/issues?state=open`, {
@@ -34,6 +44,18 @@ test("organization issue labels keep server colors through Dynamic StyleX", asyn
   expect(await label.evaluate((element) => (element as HTMLElement).style.background)).toBe("");
   expect(await label.getAttribute("style")).toContain("--x-backgroundColor");
   const row = page.locator('[data-stylex-owner="organization-issues-row"]').first();
+  await expect(page.locator('[data-stylex-owner="organization-issues-row-title"]')).toHaveCSS(
+    "font-size",
+    "15px",
+  );
+  await expect(page.locator('[data-stylex-owner="organization-issues-row-post-id"]')).toHaveCSS(
+    "font-size",
+    "13px",
+  );
+  await expect(page.locator('[data-stylex-owner="organization-issues-row-avatar"]')).toHaveCSS(
+    "float",
+    "left",
+  );
   const geometry = await row.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return { left: rect.left, right: rect.right, viewport: window.innerWidth };

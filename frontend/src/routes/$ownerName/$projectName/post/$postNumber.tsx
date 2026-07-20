@@ -39,6 +39,9 @@ import { styles } from "./-post-detail.stylex";
 const sx = {
   page: stylex.props(styles.page),
   header: stylex.props(styles.header),
+  title: stylex.props(styles.title),
+  boardId: stylex.props(styles.boardId),
+  date: stylex.props(styles.date),
   body: stylex.props(styles.body),
   author: stylex.props(styles.author),
   content: stylex.props(styles.content),
@@ -366,18 +369,39 @@ function ProjectPostDetailBody({
           data-stylex-owner="post-detail-header"
         >
           <div className="pull-right mr10 mt10 hide-in-mobile">
-            <div className="date" title={post.createdLabel}>
+            <div
+              {...sx.date}
+              className={`${sx.date.className} date`}
+              data-stylex-owner="post-detail-date"
+              title={post.createdLabel}
+            >
               {legacyRelativeDateLabel(post.createdLabel, language)}
             </div>
           </div>
-          <div className="title">
-            <strong className="board-id">#{postNumber}</strong> {post.title}
+          <div
+            {...sx.title}
+            className={`${sx.title.className} title`}
+            data-stylex-owner="post-detail-title"
+          >
+            <strong
+              {...sx.boardId}
+              className={`${sx.boardId.className} board-id`}
+              data-stylex-owner="post-detail-board-id"
+            >
+              #{postNumber}
+            </strong>{" "}
+            {post.title}
             <div
               {...sx.mobileMetadata}
-              className="pull-right hide show-in-mobile"
+              className={`${sx.mobileMetadata.className} pull-right hide show-in-mobile`}
               data-stylex-owner="post-detail-mobile-metadata"
             >
-              <span className="date" title={post.createdLabel}>
+              <span
+                {...sx.date}
+                className={`${sx.date.className} date`}
+                data-stylex-owner="post-detail-date"
+                title={post.createdLabel}
+              >
                 {legacyRelativeDateLabel(post.createdLabel, language)}
               </span>
             </div>
