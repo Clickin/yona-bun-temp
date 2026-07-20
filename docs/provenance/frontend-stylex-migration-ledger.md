@@ -1861,3 +1861,17 @@ not an unlinking or live-legacy visual-parity claim.
   frozen/generated fallback assets. The formal fallback-off contract asserts
   exact selector absence and StyleX ownership; geometry and frozen sources are
   unchanged.
+
+## Batch 586
+
+- Codediff markdown-editor plugin bridge retirement: legacy Scala editor markup
+  and plugin scripts use `[data-toggle="markdown-editor"]`, but current React
+  commit-detail and pull-request changes editors emit no such attribute and own
+  tab state with React controls. `frontend/src/app.css` removes only the
+  `.codediff-wrap [data-toggle="markdown-editor"]` arms from the shared base,
+  reset, hover/focus, and active tab groups. The
+  `.codediff-wrap .review-container` arms, generic nav-tab rules, frozen source,
+  and generated fallback remain. `project-code-commit-detail.e2e.ts` and
+  `legacy-fallback-off.e2e.ts` assert exact absence and review-tab retention in
+  both modes; no TSX, frozen source, generated fallback, or geometry baseline
+  changed.

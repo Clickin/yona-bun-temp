@@ -16,6 +16,7 @@ const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
   "utf8",
 );
+const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
 const LEGACY_MESSAGES_SOURCE = readFileSync(
   new URL("../../yona-original/conf/messages", import.meta.url),
   "utf8",
@@ -360,6 +361,22 @@ test("project commit detail React tab controls do not carry Bootstrap tab trigge
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setReviewCardTab");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("setActiveTab");
+});
+
+test("project code diff retains review tabs without the removed markdown-editor bridge", () => {
+  expect(APP_CSS_SOURCE).not.toContain(
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button',
+  );
+  expect(APP_CSS_SOURCE).not.toContain(
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button',
+  );
+  expect(APP_CSS_SOURCE).toContain(
+    ".codediff-wrap .review-container .nav-tabs > li > button",
+  );
+  expect(APP_CSS_SOURCE).toContain(
+    ".codediff-wrap .review-container .nav-tabs > li.active > button",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('data-toggle="markdown-editor"');
 });
 
 test("project commit detail native titles are preserved without Bootstrap tooltip markers", async () => {

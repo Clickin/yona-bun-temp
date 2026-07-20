@@ -4386,3 +4386,15 @@ hover/focus block. Legacy `sidebar.scala.html` emitted the jQuery-bound
 active sidebar tab rules, frozen legacy CSS, generated fallback, and geometry
 baselines. Verify exact absence and StyleX ownership in normal and fallback-off
 static contracts.
+
+## Batch 586
+
+Retire only the unreachable `.codediff-wrap [data-toggle="markdown-editor"] >
+.nav-tabs > li > button` arms from the shared nav-tab base/reset, hover/focus,
+and active-state groups in `frontend/src/app.css`. Current React commit detail
+and pull-request changes editors emit no plugin attribute and own editor state
+with React controls. Retain every `.codediff-wrap .review-container` tab arm,
+generic `.nav-tabs` rules, frozen source, generated fallback, and geometry
+baselines. Verify exact selector absence and review-tab retention in the
+project-code static contract and formal fallback-off contract in normal and
+fallback-off modes; do not change TSX in this bridge-retirement batch.

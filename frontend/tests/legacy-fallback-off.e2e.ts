@@ -419,6 +419,24 @@ test("code and diff fallback bridges have no remaining selectors", () => {
   }
 });
 
+test("codediff markdown-editor plugin bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button',
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:hover',
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li > button:focus',
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button',
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:hover',
+    '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button:focus',
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".codediff-wrap .review-container .nav-tabs > li > button");
+  expect(appCss).toContain(
+    ".codediff-wrap .review-container .nav-tabs > li.active > button",
+  );
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");
