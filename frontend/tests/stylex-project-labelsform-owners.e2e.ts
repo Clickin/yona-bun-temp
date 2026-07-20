@@ -16,6 +16,7 @@ const styleSource = readFileSync(
 );
 const owners = [
   "project-labels-category-list",
+  "project-labels-category-heading",
   "project-labels-confirm-actions",
   "project-labels-edit-category-modal",
   "project-labels-edit-category-fields",
@@ -192,6 +193,10 @@ test("populated labels form keeps category and edit modal owners within the view
 
   const category = page.locator('[data-stylex-owner="project-labels-category-list"]').first();
   await expect(category).toBeVisible();
+  await expect(category.locator('[data-stylex-owner="project-labels-category-heading"]')).toHaveCSS(
+    "text-align",
+    "right",
+  );
   await expect(category.locator('[data-stylex-owner="project-labels-preset-color"]')).toHaveCount(
     0,
   );

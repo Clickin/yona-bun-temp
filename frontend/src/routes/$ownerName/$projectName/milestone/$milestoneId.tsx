@@ -363,7 +363,7 @@ function ProjectMilestoneDetailBody({
           )}
 
           <div
-            className={`${sx.actions.className} actrow right-txt row-fluid`}
+            className={`${sx.actions.className} actrow row-fluid`}
             data-stylex-owner="milestone-detail-actions"
           >
             <Link

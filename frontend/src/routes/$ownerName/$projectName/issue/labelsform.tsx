@@ -81,6 +81,7 @@ const styles = stylex.create({
     textAlign: "right",
   },
   listNameColumn: { paddingLeft: "8px", lineHeight: "30px" },
+  categoryHeading: { textAlign: "right" },
   categoryName: { marginRight: "2px" },
   exclusiveIcon: {
     color: labelsFormColors.notice,
@@ -921,7 +922,11 @@ function ProjectLabelsList({
           key={category.id || category.name}
         >
           <div className="span3">
-            <h5 className="right-txt mr20">
+            <h5
+              {...stylex.props(styles.categoryHeading)}
+              className={`${stylex.props(styles.categoryHeading).className} mr20`}
+              data-stylex-owner="project-labels-category-heading"
+            >
               <span
                 {...stylex.props(styles.categoryName)}
                 className={`${stylex.props(styles.categoryName).className} category-name`}

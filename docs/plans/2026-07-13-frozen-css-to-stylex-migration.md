@@ -4898,3 +4898,9 @@ buttons, spacing, copy, and React interactions.
 Migrate the user profile avatar upload/crop center alignment and pull-request
 conflict confirmation action center alignment into route-local StyleX owners,
 preserving modal, button, and avatar DOM.
+
+## Batch 644
+
+Migrate the issue-label list heading and milestone detail action row
+`right-txt` consumers into route-local StyleX owners, preserving `mr20`,
+`actrow row-fluid`, action geometry, and legacy DOM order.
