@@ -2507,17 +2507,6 @@ h1 {
   }
 }
 
-.user-file-search {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin: 12px 0 16px;
-}
-
-.user-file-search .textbox {
-  width: min(320px, 100%);
-}
-
 .attachment-files {
   width: 100%;
   font-size: 13px;

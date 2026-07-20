@@ -97,7 +97,7 @@ test.describe("StyleX user files screen family", () => {
     await expect(files.locator('[data-stylex-owner="user-files-row"]')).toHaveCount(0);
     await expect(page.locator("#pagination")).toBeEmpty();
 
-    await page.locator('.user-file-search input[name="filter"]').fill("avatar");
+    await page.locator('[data-stylex-owner="user-files-search-input"]').fill("avatar");
     await page.locator('[data-stylex-owner="user-files-search-action"]').click();
     await expect(page).toHaveURL(`${basePath}/user/files?filter=avatar&pageNum=1`);
     const row = files.locator('[data-stylex-owner="user-files-row"]');

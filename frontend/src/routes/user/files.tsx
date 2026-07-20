@@ -69,6 +69,9 @@ const styles = stylex.create({
     height: "20px",
     lineHeight: "normal",
     margin: "0px",
+    // Keep the icon action's legacy 12px hit area when the optional fallback
+    // stylesheet (which supplies the icon font) is disabled.
+    minWidth: "12px",
     outline: "0 none",
     padding: "0px",
     position: "absolute",
@@ -224,12 +227,12 @@ function UserFilesScreen({
           >
             <div
               {...searchStyleProps}
-              className={`${searchStyleProps.className} user-file-search search search-bar`}
+              className={searchStyleProps.className}
               data-stylex-owner="user-files-search"
             >
               <input
                 {...searchInputStyleProps}
-                className={`${searchInputStyleProps.className} textbox`}
+                className={searchInputStyleProps.className}
                 key={`${filter}:${pageNum}`}
                 name="filter"
                 type="text"
@@ -239,7 +242,7 @@ function UserFilesScreen({
               />
               <button
                 {...searchActionStyleProps}
-                className={`${searchActionStyleProps.className} search-btn`}
+                className={searchActionStyleProps.className}
                 type="submit"
                 data-stylex-owner="user-files-search-action"
               >

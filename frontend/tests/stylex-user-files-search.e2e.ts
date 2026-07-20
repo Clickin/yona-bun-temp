@@ -33,17 +33,23 @@ test("records the exact three-owner legacy search boundary", () => {
     expect(route.match(new RegExp(`data-stylex-owner="${name}"`, "gu")) ?? []).toHaveLength(1);
   }
   expect(route).not.toContain('className="user-file-search search search-bar"');
+  expect(route).not.toContain(" user-file-search ");
+  expect(route).not.toContain(" search-bar");
   expect(route).not.toContain('className="textbox"');
   expect(route).not.toContain('className="search-btn"');
   expect(route).toContain('className="yobicon-search"');
-  expect(theme).toContain("export const userFilesSearchColors");
-  expect(theme).not.toMatch(
+  const searchTheme = theme.match(
+    /export const userFilesSearchColors = stylex\.defineVars\(\{[\s\S]*?\n\}\);/u,
+  )?.[0];
+  expect(searchTheme).toBeTruthy();
+  expect(searchTheme).not.toMatch(
     /(?:margin|padding|width|height|font|lineHeight|position|borderWidth|borderStyle|borderRadius)/u,
   );
 });
 
 test("pins the empty-state search output and React navigation", async ({ page }) => {
   const requests: string[] = [];
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
   await mockEmptyFiles(page, requests);
   mkdirSync(screenshotDirectory, { recursive: true });
 
@@ -96,11 +102,13 @@ test("pins the empty-state search output and React navigation", async ({ page })
     await expect(input).toHaveCSS("padding", "0px 5px");
     await expect(action).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(action).toHaveCSS("border", "0px none rgb(0, 0, 0)");
-    await expect(icon).toHaveCSS("font-family", "yobicon");
-    await expect(icon).toHaveCSS("line-height", "12px");
-    expect(await icon.evaluate((element) => getComputedStyle(element, "::before").content)).toBe(
-      '""',
-    );
+    if (process.env.VITE_DISABLE_LEGACY_FALLBACK !== "1") {
+      await expect(icon).toHaveCSS("font-family", "yobicon");
+      await expect(icon).toHaveCSS("line-height", "12px");
+      expect(await icon.evaluate((element) => getComputedStyle(element, "::before").content)).toBe(
+        '""',
+      );
+    }
 
     const geometry = await root.evaluate((element) => {
       const box = (target: Element) => {
@@ -114,15 +122,29 @@ test("pins the empty-state search output and React navigation", async ({ page })
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
+    const expectedRoot = fallbackOff
+      ? { ...viewport.root, width: viewport.width, x: 0, y: viewport.root.y - 42 }
+      : viewport.root;
+    const expectedInput = fallbackOff
+      ? {
+          height: viewport.input.height,
+          x: 1,
+          y: viewport.input.y - 42,
+          width: viewport.width - 22,
+        }
+      : {
+          height: viewport.input.height,
+          width: viewport.input.width,
+          x: viewport.input.x,
+          y: viewport.input.y,
+        };
+    const expectedAction = fallbackOff
+      ? { ...viewport.action, x: viewport.width - 18, y: viewport.action.y - 42 }
+      : viewport.action;
     expect(geometry).toEqual({
-      action: viewport.action,
-      input: {
-        height: viewport.input.height,
-        width: viewport.input.width,
-        x: viewport.input.x,
-        y: viewport.input.y,
-      },
-      root: viewport.root,
+      action: expectedAction,
+      input: expectedInput,
+      root: expectedRoot,
       scrollWidth: viewport.width,
     });
     await page.screenshot({

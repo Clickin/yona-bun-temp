@@ -4639,3 +4639,14 @@ parent `.code-browse-wrap .commitInfo` and generic `.commitMsg`
 declarations, and do not modify frozen or generated CSS or route TSX.
 The focused project-code contract must pass in normal and
 `VITE_DISABLE_LEGACY_FALLBACK=1` modes.
+
+## Batch 611
+
+Retire only the route-local `.user-file-search` fallback block from
+`frontend/src/app.css`. The `/user/files` search root, input, and action
+already own the legacy geometry, responsive values, and paint through their
+StyleX owners; remove the legacy `user-file-search`, `search`, `search-bar`,
+`textbox`, and `search-btn` runtime classes while preserving the Scala fixture
+classes as historical evidence. Keep shared `.search`, `.search-bar`, and
+`.attachment-files` rules and all frozen sources unchanged. Update stable-owner
+focused tests and run normal/fallback-off desktop/mobile checks.

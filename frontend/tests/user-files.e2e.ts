@@ -132,8 +132,11 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(fileRow).toHaveClass("attachment-file-detail row hover");
   await page.locator(".attachment-files-header").hover();
   await expect(fileRow).toHaveClass("attachment-file-detail row");
-  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveAttribute("value", "");
-  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveValue("");
+  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveAttribute(
+    "value",
+    "",
+  );
+  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveValue("");
 
   const previewLink = page.locator(".attachment-file-detail .file-preview > a");
   await expect(previewLink).toHaveAttribute("href", `${basePath}/files/7`);
@@ -262,13 +265,13 @@ test("current-user files page matches legacy user/userFiles.scala.html screen DO
   await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
   await page.goto(`${basePath}/user/files?filter=avatar&pageNum=2`);
-  await page.locator('.user-file-search input[name="filter"]').fill("fresh");
+  await page.locator('[data-stylex-owner="user-files-search-input"]').fill("fresh");
   await page.evaluate(() => {
     (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker = "files-search";
   });
-  await page.locator(".user-file-search .search-btn").click();
+  await page.locator('[data-stylex-owner="user-files-search-action"]').click();
   await expect(page).toHaveURL(`${basePath}/user/files?filter=fresh&pageNum=1`);
-  await expect(page.locator('.user-file-search input[name="filter"]')).toHaveValue("");
+  await expect(page.locator('[data-stylex-owner="user-files-search-input"]')).toHaveValue("");
   expect(
     await page.evaluate(() => (window as Window & { __yonaSpaMarker?: string }).__yonaSpaMarker),
   ).toBe("files-search");
@@ -410,7 +413,7 @@ async function readUserFilesMetrics(page: Page) {
   return page.evaluate(() => {
     const gnbOuter = document.querySelector<HTMLElement>("[data-stylex-owner=global-gnb-outer]");
     const pageWrapOuter = document.querySelector<HTMLElement>(".page-wrap-outer");
-    const search = document.querySelector<HTMLElement>(".user-file-search");
+    const search = document.querySelector<HTMLElement>('[data-stylex-owner="user-files-search"]');
     const files = document.querySelector<HTMLElement>(".attachment-files");
     const firstRow = document.querySelector<HTMLElement>(".attachment-files .row");
     const footer = document.querySelector<HTMLElement>("[data-stylex-owner=site-footer]");
