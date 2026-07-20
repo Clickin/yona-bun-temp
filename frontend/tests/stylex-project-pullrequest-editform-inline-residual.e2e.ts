@@ -47,6 +47,26 @@ test("pull-request conflict actions own legacy center-txt alignment", async ({ p
   await expect(actions).toHaveClass(/buttons/u);
 });
 
+test("pull-request edit upload save help owns legacy right alignment", async ({ page }) => {
+  expect(readFileSync("../yona-original/app/views/common/uploadForm.scala.html", "utf8")).toContain(
+    '<p class="right-txt help">',
+  );
+  expect(
+    readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
+  ).toContain(".right-txt     { text-align:right; }");
+  expect(routeSource).not.toContain('<p className="right-txt help">');
+  expect(routeSource).toContain('data-stylex-owner="pull-request-edit-upload-save-help"');
+  expect(styleSource).toContain('uploadSaveHelp: { textAlign: "right" }');
+
+  await mockEditForm(page);
+  await page.goto(`${basePath}/admin/sample/pullRequest/7/editform`);
+  const help = page.locator('[data-stylex-owner="pull-request-edit-upload-save-help"]');
+  await expect(help).toHaveCount(1);
+  await expect(help).toContainText("Selected file will be attached when your comment is saved.");
+  await expect(help).toHaveCSS("text-align", "right");
+  await expect(help).toHaveClass(/help/u);
+});
+
 async function mockEditForm(page: Page, options: { conflict?: boolean } = {}) {
   await page.route("**/api/v1/session", (route) =>
     route.fulfill({

@@ -51,6 +51,7 @@ export const styles = stylex.create({
     borderRadius: "5px",
     padding: "10px",
   },
+  uploadSaveHelp: { textAlign: "right" },
   attachmentDivider: {
     borderTopColor: pullRequestEditColors.attachmentDivider,
     borderTopStyle: "solid",

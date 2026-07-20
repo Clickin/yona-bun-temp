@@ -511,7 +511,10 @@ function PullRequestFileUploader({ resourceId }: { resourceId?: number }) {
       <ul
         className={`${stylex.props(sx.attachmentDivider).className} attached-files unstyled`}
       ></ul>
-      <p className="right-txt help">
+      <p
+        className={`help ${stylex.props(sx.uploadSaveHelp).className ?? ""}`.trim()}
+        data-stylex-owner="pull-request-edit-upload-save-help"
+      >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
