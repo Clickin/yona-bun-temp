@@ -259,8 +259,14 @@ function GlobalSearchSuccessBody({
       <div {...stylex.props(styles.page)} data-stylex-owner="global-search-page">
         <div data-stylex-owner="global-search-shell">
           <div className="project-page-wrap">
-            <div className="row-fluid">
-              <div {...stylex.props(styles.category)} data-stylex-owner="global-search-category">
+            <div
+              className={`row-fluid ${stylex.props(styles.globalSearchGridRow).className}`}
+              data-stylex-owner="global-search-grid-row"
+            >
+              <div
+                className={`span2 ${stylex.props(styles.globalSearchCategoryColumn, styles.category).className}`}
+                data-stylex-owner="global-search-category"
+              >
                 <ul
                   className={`lst-stacked unstyled search-category-wrap ${stylex.props(globalSearchCategoryStyles.list).className}`}
                   data-stylex-owner="global-search-category-list"
@@ -318,7 +324,10 @@ function GlobalSearchSuccessBody({
                   })}
                 </ul>
               </div>
-              <div className="span10" data-stylex-owner="global-search-results-column">
+              <div
+                className={`span10 ${stylex.props(styles.globalSearchResultsColumn).className}`}
+                data-stylex-owner="global-search-results-column"
+              >
                 <div {...stylex.props(styles.searchBox)} data-stylex-owner="global-search-box-wrap">
                   <form
                     id="searchInnerForm"

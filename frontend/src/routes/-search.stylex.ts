@@ -18,6 +18,36 @@ export const searchColors = stylex.defineVars({
   keywordBackground: "#6bc4e9",
 });
 export const styles = stylex.create({
+  globalSearchGridRow: {
+    display: "flow-root",
+    width: "100%",
+  },
+  globalSearchCategoryColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "0%",
+    minHeight: "30px",
+    width: "14.52991452991453%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      marginLeft: "0%",
+      width: "100%",
+    },
+  },
+  globalSearchResultsColumn: {
+    boxSizing: "border-box",
+    display: "block",
+    float: "left",
+    marginLeft: "2.564102564102564%",
+    minHeight: "30px",
+    width: "82.90598290598291%",
+    "@media (max-width: 767px)": {
+      float: "none",
+      marginLeft: "0%",
+      width: "100%",
+    },
+  },
   breadcrumb: { margin: "0px auto" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   category: {

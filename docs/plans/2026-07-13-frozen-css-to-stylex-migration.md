@@ -4245,3 +4245,13 @@ and 7/7 with `VITE_DISABLE_LEGACY_FALLBACK=1`. The shared mobile Bootstrap
 `.span2`/`.span10` grid still contributes a separate 7px document overflow;
 focused assertions cover the owned category/list/item/action/content boxes and
 do not claim that shared grid fallback is retired.
+
+## Batch 572
+
+Migrate only the populated global `/search` page-grid boundary. Use the frozen
+search result/partial templates and Bootstrap desktop/responsive grid rules as
+the source of truth. Keep raw `row-fluid`, `span2`, and `span10` tokens where
+shared consumers still require them, and verify route-local row/category/results
+owners at desktop and 390px in normal and fallback-off managed runs. The
+focused batch passes 2/2 in each mode; shared grid fallback outside this
+route/state remains active.

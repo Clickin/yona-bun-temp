@@ -1693,3 +1693,18 @@ not an unlinking or live-legacy visual-parity claim.
   mobile `.span2`/`.span10` grid retains an unrelated 7px document overflow.
   No app.css, frozen source, theme variable, or generated fallback asset
   changed; global fallback discovery remains incomplete/non-green.
+
+## Batch 572
+
+- Global `/search` populated page-grid ownership: frozen
+  `yona-original/app/views/search/result.scala.html` and
+  `search/partial_search.scala.html` retain the nested page shell and
+  `row-fluid > span2/span10` order; frozen Bootstrap desktop percentages,
+  `box-sizing`, clearfix, and max-767px stacking are the geometry source.
+  `frontend/src/routes/search.tsx` now owns the row, category column, and
+  results column with `global-search-grid-row`, `global-search-category`, and
+  `global-search-results-column` StyleX owners while retaining raw compatibility
+  classes. `stylex-global-search-page-grid.e2e.ts` passes 2/2 in normal mode and
+  2/2 in fallback-off mode at 1366px/390px. No frozen source, theme, app.css,
+  or generated fallback asset changed; shared grid fallback remains outside
+  this route/state.
