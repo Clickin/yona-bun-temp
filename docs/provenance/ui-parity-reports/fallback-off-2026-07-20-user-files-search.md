@@ -12,6 +12,11 @@ Scala fixture and LESS remain unchanged as parity evidence; shared `.search`,
 `.search-bar`, `.textbox`, `.search-btn`, and `.attachment-files` rules are
 outside this retirement.
 
+The existing route-local action owner keeps a `12px` minimum width, matching
+the legacy icon action's computed hit area. This prevents the button from
+collapsing to zero width when fallback-off intentionally omits the optional
+legacy icon-font stylesheet.
+
 Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
 
 ## Evidence
@@ -31,3 +36,8 @@ existing TanStack Router/Query filter path.
 
 Global fallback-off discovery remains incomplete/non-green; this report does
 not claim that the generated fallback stylesheet can be unlinked globally.
+
+Focused search contract: normal desktop/mobile `2/2`; fallback-off
+desktop/mobile `2/2`. The broader pre-existing `user-files.e2e.ts` DOM checks
+still require exact legacy class-only assertions on unrelated StyleX row/icon
+owners and are not used as evidence for this search retirement.

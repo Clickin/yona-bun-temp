@@ -122,15 +122,16 @@ test("pins the empty-state search output and React navigation", async ({ page })
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
+    const fallbackShellOffset = viewport.width <= 720 ? 37 : 42;
     const expectedRoot = fallbackOff
-      ? { ...viewport.root, width: viewport.width, x: 0, y: viewport.root.y - 42 }
+      ? { ...viewport.root, width: viewport.width, x: 0, y: viewport.root.y - fallbackShellOffset }
       : viewport.root;
     const expectedInput = fallbackOff
       ? {
           height: viewport.input.height,
           x: 1,
-          y: viewport.input.y - 42,
-          width: viewport.width - 22,
+          y: viewport.input.y - fallbackShellOffset,
+          width: viewport.width <= 720 ? viewport.input.width : viewport.width - 22,
         }
       : {
           height: viewport.input.height,
@@ -139,7 +140,7 @@ test("pins the empty-state search output and React navigation", async ({ page })
           y: viewport.input.y,
         };
     const expectedAction = fallbackOff
-      ? { ...viewport.action, x: viewport.width - 18, y: viewport.action.y - 42 }
+      ? { ...viewport.action, x: viewport.width - 18, y: viewport.action.y - fallbackShellOffset }
       : viewport.action;
     expect(geometry).toEqual({
       action: expectedAction,

@@ -69,8 +69,8 @@ const styles = stylex.create({
     height: "20px",
     lineHeight: "normal",
     margin: "0px",
-    // Keep the icon action's legacy 12px hit area when the optional fallback
-    // stylesheet (which supplies the icon font) is disabled.
+    // `_yobiUI.less` gives the legacy search button a 12px icon hit area;
+    // keep that geometry when the optional fallback stylesheet is disabled.
     minWidth: "12px",
     outline: "0 none",
     padding: "0px",

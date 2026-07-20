@@ -4650,3 +4650,5 @@ StyleX owners; remove the legacy `user-file-search`, `search`, `search-bar`,
 classes as historical evidence. Keep shared `.search`, `.search-bar`, and
 `.attachment-files` rules and all frozen sources unchanged. Update stable-owner
 focused tests and run normal/fallback-off desktop/mobile checks.
+The existing StyleX action owner also keeps the legacy 12px icon-action hit
+area when the optional fallback stylesheet's icon font is disabled.
