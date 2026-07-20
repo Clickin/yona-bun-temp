@@ -187,6 +187,22 @@ test("board form fallback bridges have no remaining selector arms", () => {
   }
 });
 
+test("board-comment fallback bridge has no remaining producer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".board-comment {");
+  expect(appCss).toContain(".board-comments {");
+  expect(appCss).toContain(".board-comment-wrap");
+  expect(appCss).toContain(".review-card .comments {");
+
+  for (const route of [
+    "src/routes/$ownerName/$projectName/postform.tsx",
+    "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+  ]) {
+    expect(readFileSync(route, "utf8")).not.toMatch(/["'`]board-comment["'`]/);
+  }
+});
+
 test("board-actions fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".board-actions {");

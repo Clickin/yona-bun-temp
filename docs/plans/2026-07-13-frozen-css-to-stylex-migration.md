@@ -4159,3 +4159,15 @@ focused edit-form fixture checks retained legacy control/action order and
 desktop/390px containment in normal and fallback-off managed runs. Global
 fallback discovery remains incomplete/non-green; this is not an unlinking or
 live-legacy visual-parity claim.
+
+Batch 566 retires only the standalone source-less `.board-comment` fallback block
+from `app.css` (its `12px 0` padding and bottom border). Frozen board/post output
+uses `.board-comment-wrap`, timeline/comments descendants, and the separate
+`.write-comment-box` form; it has no `.board-comment` class. Current React board
+post create, edit, and detail sources also have no exact bridge emitter. Preserve
+`.board-comments`, `.board-comment-wrap`, `.comments`, review/thread selectors,
+and all frozen sources. The focused static contract records observed RED then exact
+absence GREEN and uses the stable board edit form at desktop/390px in normal and
+fallback-off managed runs only to prove the generated-asset boundary. Global
+fallback discovery remains incomplete/non-green; this is not generated-fallback
+unlinking or live-legacy visual-parity proof.

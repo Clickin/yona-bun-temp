@@ -1593,3 +1593,18 @@ The assembled six-test Playwright wave, frontend typecheck, Vitest 11/11, produc
   normal and fallback-off managed runs. Global discovery remains incomplete and
   non-green; this is not generated-fallback unlinking or live-legacy visual
   parity.
+
+## Batch 566
+
+- Source-less board-comment bridge retirement: frozen
+  `board/view.scala.html:131-137` emits `#comments.board-comment-wrap` with
+  timeline/comment-form descendants, while `common/commentForm.scala.html`
+  emits `.write-comment-box`; neither source emits the standalone
+  `.board-comment` bridge. Current board post create/edit/detail routes also
+  have no exact emitter. Delete only the two-declaration standalone block from
+  `app.css`; retain `.board-comments`, `.board-comment-wrap`, `.comments`, and
+  all review/thread selectors. `legacy-fallback-off.e2e.ts` records observed
+  selector RED then exact absence GREEN plus board-route non-emitter proof, and
+  managed normal/fallback-off board edit form runs retain desktop/390px legacy
+  form containment. Global fallback discovery remains incomplete/non-green;
+  this is not generated-fallback unlinking or live-legacy visual-parity proof.
