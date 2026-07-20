@@ -5237,6 +5237,14 @@ Move the organization home project-card stats wrapper's exact Bootstrap
 Preserve the legacy wrapper class, counts, icons, watch state, filtering, and
 responsive containment; retain unrelated generic float fallback consumers.
 
+## Batch 682
+
+Move the organization home `.project-menu-inner` height and auto-margin
+declarations into the existing organization route-local StyleX owner.
+Preserve the legacy menu DOM/classes, link and active-state behavior, settings
+visibility, and responsive containment; retain unrelated menu fallback
+consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

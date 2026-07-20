@@ -541,6 +541,15 @@ unrelated generic float consumers stay fallback-owned. Focused normal and
 fallback-off checks pass 3/3 each, covering source mapping, computed
 float/geometry, stats visibility, and filtering.
 
+### 2026-07-21 Batch 682 organization home menu-inner owner proof
+
+ORG-02 organization menu output now owns the frozen `.project-menu-inner`
+`height: 39px` and `margin: 0 auto` declarations through a route-local
+StyleX owner. Legacy menu classes, DOM order, links, active state, settings
+visibility, and responsive containment remain unchanged. Focused normal and
+fallback-off checks pass 1/1 each, covering source mapping, computed
+desktop/mobile geometry, containment, and menu behavior.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

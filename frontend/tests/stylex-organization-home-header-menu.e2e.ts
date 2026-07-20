@@ -16,10 +16,14 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(legacyHeader).toContain('class="project-header-outer"');
   expect(legacyHeader).toContain('class="project-header-avatar"');
   expect(legacyMenu).toContain('class="project-menu-outer"');
+  expect(legacyMenu).toContain('class="project-menu-inner"');
   const legacyPage = await readFile(
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
   );
+  const innerRule = legacyPage.match(/\.project-menu-inner\s*\{([^}]*)\}/)?.[1] ?? "";
+  expect(innerRule).toContain("height:39px;");
+  expect(innerRule).toContain("margin:0 auto;");
   expect(legacyPage).toContain("float:left;");
   expect(legacyPage).toContain("padding:5px 20px 4px;");
   expect(legacyPage).toContain("background-color: #dadada;");
@@ -34,6 +38,7 @@ test("organization home moves the legacy header and menu shells into StyleX owne
     "organization-header-avatar",
     "organization-header-breadcrumb",
     "organization-menu-shell",
+    "organization-menu-inner",
   ]) {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -44,9 +49,11 @@ test("organization home moves the legacy header and menu shells into StyleX owne
     "headerAvatar",
     "headerBreadcrumb",
     "menuShell",
+    "organizationMenuInner",
   ]) {
     expect(style).toContain(`${styleName}:`);
   }
+  expect(style).toContain('organizationMenuInner: { height: "39px", margin: "0 auto" }');
 
   await mockOrganizationHome(page);
   await page.setViewportSize({ width: 1366, height: 900 });
@@ -63,6 +70,7 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       "organization-header-avatar",
       "organization-header-breadcrumb",
       "organization-menu-shell",
+      "organization-menu-inner",
     ];
     const nodes = Object.fromEntries(
       required.map((owner) => [owner, document.querySelector(`[data-stylex-owner=\"${owner}\"]`)]),
@@ -75,12 +83,15 @@ test("organization home moves the legacy header and menu shells into StyleX owne
       breadcrumb: box(nodes["organization-header-breadcrumb"] as Element),
       header: box(nodes["organization-profile-header-background"] as Element),
       menu: box(nodes["organization-menu-shell"] as Element),
+      menuInner: box(nodes["organization-menu-inner"] as Element),
       headerBackground: getComputedStyle(nodes["organization-profile-header-background"] as Element)
         .backgroundColor,
       headerHeight: getComputedStyle(nodes["organization-profile-header-background"] as Element)
         .height,
       menuBackground: getComputedStyle(nodes["organization-menu-shell"] as Element).backgroundColor,
       menuHeight: getComputedStyle(nodes["organization-menu-shell"] as Element).height,
+      menuInnerHeight: getComputedStyle(nodes["organization-menu-inner"] as Element).height,
+      menuInnerMargin: getComputedStyle(nodes["organization-menu-inner"] as Element).margin,
       menuItem: (() => {
         const item = document.querySelector('[data-stylex-owner="organization-menu-group"] > li');
         const link = item?.querySelector("a");
@@ -102,6 +113,8 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(desktop.headerHeight).toBe("120px");
   expect(desktop.headerBackground).toBe("rgb(86, 86, 86)");
   expect(desktop.menuHeight).toBe("39px");
+  expect(desktop.menuInnerHeight).toBe("39px");
+  expect(desktop.menuInnerMargin).toBe("0px");
   expect(desktop.menuBackground).toBe("rgb(236, 236, 236)");
   expect(desktop.menuItem.float).toBe("left");
   expect(desktop.menuItem.fontSize).toBe("14px");
@@ -112,6 +125,10 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   expect(desktop.avatar.bottom).toBeGreaterThan(desktop.header.bottom);
   expect(desktop.breadcrumb.bottom).toBeLessThanOrEqual(desktop.header.bottom);
   expect(desktop.menu.top).toBeCloseTo(desktop.header.bottom, 0);
+  expect(desktop.menuInner.top).toBe(desktop.menu.top);
+  expect(desktop.menuInner.bottom).toBeLessThanOrEqual(desktop.menu.bottom);
+  expect(desktop.menuInner.left).toBeGreaterThanOrEqual(desktop.menu.left);
+  expect(desktop.menuInner.right).toBeLessThanOrEqual(desktop.menu.right);
 
   const firstMenuLink = page
     .locator('[data-stylex-owner="organization-menu-group"] > li a')
@@ -134,6 +151,26 @@ test("organization home moves the legacy header and menu shells into StyleX owne
     menuWidth: document
       .querySelector('[data-stylex-owner="organization-menu-shell"]')
       ?.getBoundingClientRect().width,
+    menuBox: (() => {
+      const menu = document.querySelector('[data-stylex-owner="organization-menu-shell"]');
+      if (!(menu instanceof HTMLElement)) throw new Error("missing mobile menu shell");
+      const box = menu.getBoundingClientRect();
+      return { bottom: box.bottom, left: box.left, right: box.right, top: box.top };
+    })(),
+    menuInner: (() => {
+      const inner = document.querySelector('[data-stylex-owner="organization-menu-inner"]');
+      if (!(inner instanceof HTMLElement)) throw new Error("missing mobile menu inner");
+      const box = inner.getBoundingClientRect();
+      const computed = getComputedStyle(inner);
+      return {
+        bottom: box.bottom,
+        height: computed.height,
+        left: box.left,
+        margin: computed.margin,
+        right: box.right,
+        top: box.top,
+      };
+    })(),
     scrollWidth: document.documentElement.scrollWidth,
     menuLink: (() => {
       const link = document.querySelector('[data-stylex-owner="organization-menu-group"] > li a');
@@ -144,6 +181,12 @@ test("organization home moves the legacy header and menu shells into StyleX owne
   }));
   expect(mobile.headerWidth).toBe(390);
   expect(mobile.menuWidth).toBe(390);
+  expect(mobile.menuInner.height).toBe("39px");
+  expect(mobile.menuInner.margin).toBe("0px");
+  expect(mobile.menuInner.top).toBe(mobile.menuBox.top);
+  expect(mobile.menuInner.bottom).toBeLessThanOrEqual(mobile.menuBox.bottom);
+  expect(mobile.menuInner.left).toBeGreaterThanOrEqual(mobile.menuBox.left);
+  expect(mobile.menuInner.right).toBeLessThanOrEqual(mobile.menuBox.right);
   expect(mobile.scrollWidth).toBeLessThanOrEqual(398);
   expect(mobile.menuLink.padding).toBe("5px 12px 4px");
   expect(mobile.menuLink.width).toBeGreaterThan(0);

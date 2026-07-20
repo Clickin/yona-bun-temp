@@ -60,6 +60,8 @@ export const styles = stylex.create({
     borderBottomWidth: "1px",
     height: "39px",
   },
+  // yona-original/app/assets/stylesheets/less/_page.less .project-menu-inner.
+  organizationMenuInner: { height: "39px", margin: "0 auto" },
   headerBackground: (backgroundImage: string) => ({ backgroundImage }),
   home: { color: organizationHomeColors.mutedText },
   projectHomeHeader: { marginBottom: "20px", padding: "5px 0", position: "relative" },

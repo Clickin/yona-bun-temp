@@ -871,7 +871,10 @@ export function OrganizationMenu({
       className={`${stylex.props(styles.menuShell).className} project-menu-outer`}
       data-stylex-owner="organization-menu-shell"
     >
-      <div className="project-menu-inner">
+      <div
+        className={`${stylex.props(styles.organizationMenuInner).className} project-menu-inner`}
+        data-stylex-owner="organization-menu-inner"
+      >
         <ul
           className={`${stylex.props(styles.projectMenuGroup).className} project-menu-nav project-menu-gruop`}
           data-stylex-owner="organization-menu-group"
