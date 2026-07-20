@@ -612,6 +612,15 @@ candidates, 40 global/shared bridge candidates, 641 route DOM/behavior/data pari
 enabled by default, no shared selector is retired, and the next repair wave must re-prove the
 exact frozen consumer boundary.
 
+### 2026-07-21 Batch 689 organization pull-request review-progress owner repair
+
+The fallback-off organization PR artifact was repaired at the existing route owner. Frozen
+`.infos .upload-progress` geometry (`display:inline-block`, `width:30px`, `height:7px`,
+`vertical-align:middle`, `overflow:hidden`, `margin-top:3px`, `border-radius:5px`) and the
+inner `.bar { height:100% }` now live in route-local StyleX; the API-derived percentage
+continues through the dynamic StyleX width carrier. Focused normal and fallback-off checks pass
+1/1 each at desktop and mobile viewports. The global fallback remains enabled by default.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

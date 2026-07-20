@@ -5293,6 +5293,15 @@ enabled by default. Classify the failure artifacts into React StyleX owner, glob
 route DOM/behavior/data parity, and fallback-boundary/static lanes before selecting the next
 bounded repair wave; do not unlink the fallback or retire shared selectors in this batch.
 
+## Batch 689
+
+Repair the organization pull-request review-progress owner exposed by the fallback-off
+classification. Move the emitted `.upload-progress` track geometry and inner `.bar` height
+from the frozen LESS/CSS into the existing route-local StyleX owner, preserving the legacy
+30px track, 7px height, spacing, radius, and API-derived percentage width. Prove the owner in
+focused normal and fallback-off desktop/mobile checks; leave the global fallback and shared
+selectors unchanged.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

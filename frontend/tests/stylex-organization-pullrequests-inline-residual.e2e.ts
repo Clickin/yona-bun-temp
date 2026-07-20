@@ -19,9 +19,13 @@ test("moves static review progress spacing and dynamic width into StyleX", async
   expect(template).toContain('style="margin-right:20px;"');
   expect(route).toContain('data-stylex-owner="organization-pullrequests-row-progress"');
   expect(route).toContain("sx.progressFill(`${percent}%`)");
+  expect(route).toContain('data-stylex-owner="organization-pullrequests-row-progress-track"');
   expect(route).not.toContain("style={{ width: `${percent}%` }}");
   expect(route).not.toContain("style={{ marginRight: 20 }}");
   expect(stylex).toContain('progressMeta: { marginRight: "20px" }');
+  expect(stylex).toContain('borderRadius: "5px"');
+  expect(stylex).toContain('width: "30px"');
+  expect(stylex).toContain('height: "100%"');
 
   await mockPopulatedPullRequests(page);
   for (const viewport of [
@@ -31,9 +35,17 @@ test("moves static review progress spacing and dynamic width into StyleX", async
     await page.setViewportSize(viewport);
     await page.goto(`${basePath}/organizations/weblabs/pullrequests`);
     const progress = owner(page, "organization-pullrequests-row-progress");
+    const progressTrack = owner(page, "organization-pullrequests-row-progress-track");
     const progressFill = owner(page, "organization-pullrequests-row-progress-fill");
     await expect(progress).toBeVisible();
+    await expect(progressTrack).toHaveCSS("display", "inline-block");
+    await expect(progressTrack).toHaveCSS("width", "30px");
+    await expect(progressTrack).toHaveCSS("vertical-align", "middle");
+    await expect(progressTrack).toHaveCSS("overflow", "hidden");
+    await expect(progressTrack).toHaveCSS("margin-top", "3px");
+    await expect(progressTrack).toHaveCSS("border-radius", "5px");
     await expect(progress).toHaveCSS("margin-right", "20px");
+    await expect(progressFill).toHaveCSS("height", "7px");
     await expect(progressFill).toHaveCSS("width", "15px");
     const inlineStyle = await progressFill.getAttribute("style");
     expect(inlineStyle).toContain("--x-width: 50%");

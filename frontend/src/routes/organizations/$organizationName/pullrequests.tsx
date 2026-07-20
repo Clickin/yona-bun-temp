@@ -509,7 +509,11 @@ function OrganizationPullRequestItem({
               data-stylex-owner="organization-pullrequests-row-progress"
             >
               <i className="infos-icon yobicon-post2 vmiddle"></i>
-              <div className="upload-progress">
+              <div
+                {...sx.progress}
+                className={`${sx.progress.className} upload-progress`}
+                data-stylex-owner="organization-pullrequests-row-progress-track"
+              >
                 <div
                   {...progressFill}
                   className={`${progressFill.className} bar orange`}

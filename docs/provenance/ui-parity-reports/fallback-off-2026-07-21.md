@@ -36,3 +36,14 @@ Do not unlink `legacy-fallback.css`, delete shared selector families, or claim f
 The next wave must select a bounded 2–6-owner state from the classified artifacts, identify the
 exact frozen Scala/LESS/CSS source, add focused normal and fallback-off evidence, and update the
 ledger and Scala audit in the same commit when route TSX changes.
+
+## First bounded repair wave
+
+The organization pull-request review-progress artifact was repaired without changing the
+fallback boundary. The route-local owner now carries the exact emitted `.upload-progress`
+track geometry (`display:inline-block`, `width:30px`, `height:7px`, `vertical-align:middle`,
+`overflow:hidden`, `margin-top:3px`, `border-radius:5px`) and inner `.bar { height:100% }`;
+the API-derived percentage remains the dynamic StyleX width carrier. The focused test passed
+`1/1` with the fallback enabled and `1/1` with `VITE_DISABLE_LEGACY_FALLBACK=1`, covering
+desktop and mobile viewports. The remaining global baseline is still red, so fallback removal
+and shared-selector retirement remain deferred.
