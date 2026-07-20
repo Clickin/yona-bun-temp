@@ -1,5 +1,7 @@
 # Frontend StyleX Migration Ledger
 
+| 2026-07-20 | Source-less `.mt4` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `mt4`; frozen legacy utility definitions remain historical evidence. | `frontend/src/app.css` removes only `.mt4 { margin-top: 4px; }`; neighboring margin utilities and frozen/generated CSS remain unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact app.css absence and current no-emitter in normal/fallback-off static modes; no route DOM or behavior changes. |
+
 | 2026-07-20 | Source-less `.mr6` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `mr6`; frozen legacy utility definitions remain historical evidence. | `frontend/src/app.css` removes only `.mr6 { margin-right: 6px; }`; neighboring margin utilities and frozen/generated CSS remain unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact app.css absence and current no-emitter in normal/fallback-off static modes; no route DOM or behavior changes. |
 
 | 2026-07-20 | Source-less `.ml20` utility-arm retirement | Current `frontend/src/**/*.{ts,tsx}` inventory emits no `ml20`; frozen legacy utility definitions remain historical evidence. | `frontend/src/app.css` removes only `.ml20 { margin-left: 20px; }`; neighboring utility arms and frozen/generated CSS remain unchanged. | `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact app.css absence and current no-emitter in normal/fallback-off static modes; no route DOM or behavior changes. |

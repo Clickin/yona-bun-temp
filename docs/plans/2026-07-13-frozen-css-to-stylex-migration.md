@@ -4492,6 +4492,14 @@ remain historical evidence. Keep neighboring margin utilities unchanged and
 update the formal fallback-off static contract. Do not change route TSX or
 frozen/generated CSS.
 
+## Batch 617
+
+Retire only the source-less `.mt4` utility arm from `frontend/src/app.css`.
+The current React/TSX inventory emits no `mt4`; frozen legacy utility sources
+remain historical evidence. Keep neighboring margin utilities unchanged and
+update the formal fallback-off static contract. Do not change route TSX or
+frozen/generated CSS.
+
 ## Batch 596
 
 Retire only the source-less issue-form picker compatibility family from
