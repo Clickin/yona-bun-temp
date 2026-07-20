@@ -621,6 +621,15 @@ inner `.bar { height:100% }` now live in route-local StyleX; the API-derived per
 continues through the dynamic StyleX width carrier. Focused normal and fallback-off checks pass
 1/1 each at desktop and mobile viewports. The global fallback remains enabled by default.
 
+### 2026-07-21 Batch 690 organization-members responsive row owner repair
+
+The organization-members fallback-off owner now carries the exact frozen responsive
+`.span-hard-wrap { min-width:95%; width:100vw; }` cascade alongside the existing desktop row
+width and legacy `margin-left:5px`. The focused list test verifies populated/empty output,
+desktop/mobile row/list geometry, source mapping, and six existing owner boundaries; normal and
+fallback-off checks pass 3/3 each. The remaining outer document overflow is not assigned to this
+route owner and remains part of the global/shared bridge classification.
+
 ### 2026-07-21 Batch 679 organization home search-shell owner proof
 
 ORG-02 search output now owns the frozen `.search-bar`, `.textbox.full`, and

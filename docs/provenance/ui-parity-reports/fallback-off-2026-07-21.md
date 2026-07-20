@@ -47,3 +47,13 @@ the API-derived percentage remains the dynamic StyleX width carrier. The focused
 `1/1` with the fallback enabled and `1/1` with `VITE_DISABLE_LEGACY_FALLBACK=1`, covering
 desktop and mobile viewports. The remaining global baseline is still red, so fallback removal
 and shared-selector retirement remain deferred.
+
+## Second bounded repair wave
+
+The organization-members mobile row owner was repaired from the frozen responsive cascade. The
+existing member-row StyleX owner now carries the exact `width:100vw` mobile declaration beside
+the existing `min-width:95%`, desktop span width, and `margin-left:5px`; legacy member DOM,
+classes, and role/delete behavior remain unchanged. The focused list test passes `3/3` with the
+fallback enabled and `3/3` with `VITE_DISABLE_LEGACY_FALLBACK=1`, covering populated/empty
+desktop/mobile row and list geometry. The remaining outer document-width difference is not
+assigned to this route owner and remains in the global/shared bridge lane.

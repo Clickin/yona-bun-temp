@@ -5302,6 +5302,15 @@ from the frozen LESS/CSS into the existing route-local StyleX owner, preserving 
 focused normal and fallback-off desktop/mobile checks; leave the global fallback and shared
 selectors unchanged.
 
+## Batch 690
+
+Repair the organization-members mobile row owner exposed by fallback-off discovery. Move the
+frozen responsive `.span-hard-wrap { width:100vw; }` declaration into the existing member-row
+StyleX owner while preserving the exact `margin-left:5px`, `min-width:95%`, row geometry, member
+DOM/classes, and role/delete behavior. Prove the route-local row/list geometry in focused normal
+and fallback-off desktop/mobile checks; retain unrelated shell overflow as a documented global
+bridge candidate.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count

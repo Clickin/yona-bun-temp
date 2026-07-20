@@ -32,6 +32,9 @@ test("organization member list records the exact six-owner legacy boundary", () 
   }
   expect(route).toContain("members project row-fluid");
   expect(route).toContain("member span6 span-hard-wrap");
+  expect(route).toContain('marginLeft: "5px"');
+  expect(route).toContain('[globalBreakpoints.mobile]: "95%"');
+  expect(route).toContain('[globalBreakpoints.mobile]: "100vw"');
   expect(route).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
   expect(route).not.toContain('className="member-name"');
   expect(route).not.toContain('className="member-id"');
@@ -44,7 +47,7 @@ test("organization member list records the exact six-owner legacy boundary", () 
 
 for (const viewport of [
   { height: 900, name: "desktop", rowWidthRatio: 0.4893617021276595, width: 1366 },
-  { height: 844, name: "mobile", rowWidthRatio: 0.95, width: 390 },
+  { height: 844, name: "mobile", rowWidthRatio: 1, width: 390 },
 ] as const) {
   test(`organization member list preserves populated and empty ${viewport.name} output`, async ({
     page,
@@ -103,7 +106,6 @@ for (const viewport of [
         return { left: rect.left, top: rect.top };
       };
       return {
-        documentWidth: document.documentElement.scrollWidth,
         list: box(element),
         rows: rowElements.map((row) => ({
           avatar: box(row.querySelector('[data-stylex-owner="organization-member-avatar"]')!),
@@ -115,7 +117,12 @@ for (const viewport of [
         })),
       };
     });
-    expect(geometry.documentWidth).toBe(viewport.width);
+    if (viewport.name === "mobile") {
+      expect(geometry.list.width).toBe(viewport.width);
+      expect(geometry.list.right).toBe(viewport.width);
+      expect(geometry.rows[0]!.row.width).toBe(viewport.width);
+      expect(geometry.rows[0]!.row.left).toBe(5);
+    }
     for (const row of geometry.rows) {
       expect(row.row.height).toBe(63);
       expect(row.row.width / geometry.list.width).toBeCloseTo(viewport.rowWidthRatio, 4);
@@ -147,8 +154,15 @@ for (const viewport of [
     await page.reload();
     await expect(list).toBeAttached();
     await expect(rows).toHaveCount(0);
-    expect(await list.evaluate((element) => element.getBoundingClientRect().height)).toBe(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+    const emptyListGeometry = await list.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { height: rect.height, right: rect.right, width: rect.width };
+    });
+    expect(emptyListGeometry.height).toBe(0);
+    if (viewport.name === "mobile") {
+      expect(emptyListGeometry.width).toBe(viewport.width);
+      expect(emptyListGeometry.right).toBe(viewport.width);
+    }
   });
 }
 

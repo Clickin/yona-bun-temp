@@ -557,7 +557,10 @@ const styles = stylex.create({
     },
     padding: "10px 5px",
     position: "relative",
-    width: "48.93617021276595%",
+    width: {
+      default: "48.93617021276595%",
+      [globalBreakpoints.mobile]: "100vw",
+    },
   },
   roleMenuItem: {
     backgroundColor: "transparent",
