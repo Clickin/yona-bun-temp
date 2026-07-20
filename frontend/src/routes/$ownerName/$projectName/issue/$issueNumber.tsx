@@ -967,7 +967,7 @@ function IssueDetailBody({
               <AttachedFiles attachments={issue.attachments} basePath={basePath} />
             </div>
             <div
-              className={`${stylex.props(styles.actions).className} board-actrow right-txt`}
+              className={`${stylex.props(styles.actions).className} board-actrow`}
               data-stylex-owner="project-issue-detail-actions"
             >
               <div className="pull-left">
@@ -2892,7 +2892,10 @@ function IssueCommentForm({
               data-stylex-owner="issue-detail-disabled-comment-secondary"
             ></textarea>
           </div>
-          <div className="right-txt mt10">
+          <div
+            className={`${stylex.props(styles.disabledCommentActions).className} mt10`}
+            data-stylex-owner="project-issue-detail-disabled-comment-actions"
+          >
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
           </div>
         </div>
@@ -2918,7 +2921,10 @@ function IssueCommentForm({
           <MarkdownEditor editorMode="comment-body" name="contents" value="" wrapId="contents" />
           <UploadForm resourceType="ISSUE_COMMENT" />
           <div className="write-comment-wrap">
-            <div className="right-txt">
+            <div
+              className={stylex.props(styles.commentFormActions).className}
+              data-stylex-owner="project-issue-detail-comment-actions"
+            >
               <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
               <button type="submit" className="ybtn ybtn-success">
                 {t("button.comment.new")}
@@ -2947,7 +2953,10 @@ function UploadForm({ resourceType }: { resourceType: string }) {
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p
+        className={`${stylex.props(styles.uploadHelp).className} help`}
+        data-stylex-owner="project-issue-detail-upload-help"
+      >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
@@ -3971,7 +3980,10 @@ function CommentUpdateForm({
                 <div className="msg">Drag &amp; Drop files here to upload.</div>
               </div>
             </div>
-            <div className="right-txt comment-update-button upload-button-line">
+            <div
+              className={`${stylex.props(styles.commentUpdateActions).className} comment-update-button upload-button-line`}
+              data-stylex-owner="project-issue-detail-comment-update-actions"
+            >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
                   File upload

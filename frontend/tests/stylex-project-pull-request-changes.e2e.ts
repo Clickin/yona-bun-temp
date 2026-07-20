@@ -37,3 +37,39 @@ test("pull request change commit hashes replace the legacy blue text consumer", 
   expect(route).toContain('data-stylex-owner="pull-request-changes-commit-hash"');
   expect(route).toContain("styles.commitHash");
 });
+
+test("pull request changes owns right-aligned review actions and upload help", () => {
+  const route = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/changes.tsx",
+    "utf8",
+  );
+  const theme = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/-pull-request-changes.stylex.ts",
+    "utf8",
+  );
+  const legacy = readFileSync("../yona-original/app/views/git/viewChanges.scala.html", "utf8");
+  const threadForm = readFileSync(
+    "../yona-original/app/views/partial_comment_form_on_thread.scala.html",
+    "utf8",
+  );
+  const uploadForm = readFileSync(
+    "../yona-original/app/views/common/uploadForm.scala.html",
+    "utf8",
+  );
+  const common = readFileSync("../yona-original/app/assets/stylesheets/less/_common.less", "utf8");
+
+  expect(legacy).toContain('class="author-info right-txt"');
+  expect(threadForm).toContain('<div class="right-txt">');
+  expect(uploadForm).toContain('<p class="right-txt help">');
+  expect(common).toContain(".right-txt     { text-align:right; }");
+  expect(route).not.toContain('className="right-txt"');
+  expect(route).not.toContain('className="right-txt help"');
+  expect(route).toContain('data-stylex-owner="pull-request-changes-thread-actions"');
+  expect(route).toContain('data-stylex-owner="pull-request-changes-comment-actions"');
+  expect(route).toContain('data-stylex-owner="pull-request-changes-review-actions"');
+  expect(route).toContain('data-stylex-owner="pull-request-changes-upload-help"');
+  expect(theme).toContain('threadActions: { textAlign: "right" }');
+  expect(theme).toContain('commentActions: { textAlign: "right" }');
+  expect(theme).toContain('reviewActions: { textAlign: "right" }');
+  expect(theme).toContain('uploadHelp: { textAlign: "right" }');
+});

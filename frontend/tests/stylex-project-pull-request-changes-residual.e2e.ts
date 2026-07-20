@@ -39,6 +39,20 @@ test("pull request changes inline review form keeps its legacy visible display o
   expect(ROUTE_SOURCE).not.toContain('style={visible ? { display: "block" } : undefined}');
 });
 
+test("pull request changes keeps right-aligned action and upload geometry", async ({ page }) => {
+  await mockChanges(page);
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+
+  for (const owner of [
+    "pull-request-changes-comment-actions",
+    "pull-request-changes-review-actions",
+    "pull-request-changes-upload-help",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner='${owner}']`)).toHaveCSS("text-align", "right");
+  }
+});
+
 async function mockChanges(page: Page, options: { files?: unknown[] } = {}) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

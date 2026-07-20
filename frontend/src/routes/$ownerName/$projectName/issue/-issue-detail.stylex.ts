@@ -169,7 +169,12 @@ export const styles = stylex.create({
     paddingRight: "15px",
     margin: "20px 0",
     overflow: "auto",
+    textAlign: "right",
   },
+  disabledCommentActions: { textAlign: "right" },
+  commentFormActions: { textAlign: "right" },
+  uploadHelp: { textAlign: "right" },
+  commentUpdateActions: { textAlign: "right" },
   sidebar: {
     minWidth: 0,
   },

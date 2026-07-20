@@ -37,6 +37,10 @@ const sx = {
   browse: stylex.props(styles.browse),
   author: stylex.props(styles.author),
   diffs: stylex.props(styles.diffs),
+  threadActions: stylex.props(styles.threadActions),
+  commentActions: stylex.props(styles.commentActions),
+  reviewActions: stylex.props(styles.reviewActions),
+  uploadHelp: stylex.props(styles.uploadHelp),
   commentDeleteModalVisible: stylex.props(styles.commentDeleteModalVisible),
 } as const;
 
@@ -519,7 +523,7 @@ function ThreadReplyFormBody({
         <div className="write-comment-wrap">
           <Editor editorMode="code-review-body" wrapId={wrapId} />
           <UploadForm />
-          <div className="right-txt">
+          <div {...sx.threadActions} data-stylex-owner="pull-request-changes-thread-actions">
             <button
               type="button"
               className="ybtn ybtn-default ybtn-small"
@@ -1645,7 +1649,7 @@ function CommentForm({ action }: { action: string }) {
         <Editor editorMode="comment-body" wrapId="comment" />
         <UploadForm formId="upload" />
         <div className="write-comment-wrap">
-          <div className="right-txt">
+          <div {...sx.commentActions} data-stylex-owner="pull-request-changes-comment-actions">
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1712,7 +1716,7 @@ function ReviewForm({
             </div>
             <Editor editorMode="code-review-body" wrapId="review" />
             <UploadForm />
-            <div className="right-txt">
+            <div {...sx.reviewActions} data-stylex-owner="pull-request-changes-review-actions">
               <button type="submit" className="ybtn ybtn-success ybtn-small">
                 {t("button.comment.new")}
               </button>
@@ -1825,7 +1829,10 @@ function UploadForm({ formId }: { formId?: string }) {
         <span className="help help-pastable">{t("common.attach.pastehere")}</span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p
+        className={`help ${sx.uploadHelp.className ?? ""}`.trim()}
+        data-stylex-owner="pull-request-changes-upload-help"
+      >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>

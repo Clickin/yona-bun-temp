@@ -44,15 +44,28 @@ test("issue detail populated body/sidebar owns route-scoped StyleX geometry", ()
   for (const owner of ["author", "content", "actions", "boardFooter", "issueInfo"]) {
     expect(styleSource).toContain(`${owner}:`);
   }
+  for (const owner of [
+    "disabledCommentActions",
+    "commentFormActions",
+    "uploadHelp",
+    "commentUpdateActions",
+  ]) {
+    expect(styleSource).toContain(`${owner}: { textAlign: "right" }`);
+  }
   for (const marker of [
     "project-issue-detail-author",
     "project-issue-detail-content",
     "project-issue-detail-actions",
+    "project-issue-detail-disabled-comment-actions",
+    "project-issue-detail-comment-actions",
+    "project-issue-detail-upload-help",
+    "project-issue-detail-comment-update-actions",
     "project-issue-detail-board-footer",
     "project-issue-detail-sidebar-meta",
   ]) {
     expect(routeSource).toContain(`data-stylex-owner="${marker}"`);
   }
+  expect(routeSource).not.toContain("right-txt");
   expect(routeSource).toContain('data-stylex-owner-issue-info="project-issue-detail-issue-info"');
   for (const declaration of [
     'display: "block"',
@@ -99,6 +112,14 @@ test("issue detail body/sidebar geometry stays contained on desktop and mobile",
   await expect(author).toHaveCSS("display", "block");
   await expect(content).toHaveCSS("min-height", "150px");
   await expect(actions).toHaveCSS("overflow", "auto");
+  await expect(actions).toHaveCSS("text-align", "right");
+  await expect(
+    page.locator('[data-stylex-owner="project-issue-detail-comment-actions"]'),
+  ).toHaveCSS("text-align", "right");
+  await expect(page.locator('[data-stylex-owner="project-issue-detail-upload-help"]')).toHaveCSS(
+    "text-align",
+    "right",
+  );
   await expect(footer).toHaveCSS("text-align", "right");
   await expect(sidebar).toHaveCSS("padding-top", "15px");
   // `_page.less` uses the 52px desktop metadata gutter; `_responsive.less`

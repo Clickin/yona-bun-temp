@@ -4916,3 +4916,9 @@ geometry, icon/copy, button behavior, and help-modal interaction.
 Migrate post-edit options and issue-edit attachment-help `right-txt` consumers
 into route-local StyleX owners, preserving `mt10 mb10`, `help`, icon/copy, and
 uploader/form behavior.
+
+## Batch 647
+
+Migrate pull-request changes thread/comment/review/upload alignment and issue
+detail action/comment/upload alignment into route-local StyleX owners,
+preserving button/copy/forms, help text, and existing interaction geometry.
