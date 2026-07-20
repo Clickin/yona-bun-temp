@@ -143,6 +143,15 @@ export const styles = stylex.create({
     margin: "0px 0px 0px 10px",
   },
   empty: { padding: "100px 0px", textAlign: "center" },
+  emptyIcon: (backgroundImage: string) => ({
+    backgroundImage,
+    backgroundPosition: "-5px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "82px",
+    verticalAlign: "middle",
+    width: "62px",
+  }),
   emptyMessage: {
     color: organizationDirectoryColors.emptyText,
     fontSize: "16px",

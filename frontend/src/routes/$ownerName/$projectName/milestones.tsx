@@ -10,6 +10,7 @@ import type {
   YoramLabel,
 } from "../../../api/types";
 import { listProjectMilestones } from "../../../auth-workspace-client";
+import legacySpriteUrl from "../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-milestones.stylex";
@@ -17,6 +18,9 @@ import { styles } from "./-milestones.stylex";
 const milestoneListStyles = stylex.create({ hiddenIssueLink: { display: "none" } });
 
 const sx = {
+  errorWrap: stylex.props(styles.errorWrap),
+  errorIcon: (spriteUrl: string) => stylex.props(styles.errorIcon(spriteUrl)),
+  errorMessage: stylex.props(styles.errorMessage),
   page: stylex.props(styles.page),
   tabWrap: stylex.props(styles.tabWrap),
   tabs: stylex.props(styles.tabs),
@@ -128,6 +132,7 @@ function ProjectMilestonesBody({
   const { ownerName, projectName } = Route.useParams();
   const [filter, setFilter] = useState("");
   const currentState = search.state ?? "open";
+  const emptyIcon = sx.errorIcon(legacySpriteUrl);
 
   return (
     <div
@@ -184,9 +189,19 @@ function ProjectMilestonesBody({
         </div>
 
         {milestones.length === 0 ? (
-          <div data-stylex-owner="project-milestones-empty">
-            <i className="ico ico-err1"></i>
-            <p>{t("milestone.is.empty")}</p>
+          <div
+            {...sx.errorWrap}
+            className={`${sx.errorWrap.className} error-wrap`}
+            data-stylex-owner="project-milestones-empty"
+          >
+            <i
+              {...emptyIcon}
+              className={`${emptyIcon.className ?? ""} ico ico-err1`.trim()}
+              data-stylex-owner="project-milestones-empty-icon"
+            ></i>
+            <p {...sx.errorMessage} data-stylex-owner="project-milestones-empty-message">
+              {t("milestone.is.empty")}
+            </p>
           </div>
         ) : (
           <>

@@ -5128,3 +5128,11 @@ project issue-labels empty, and project webhooks empty owners. Preserve the
 existing global/project shells, legacy DOM/classes/copy, settings navigation,
 and responsive geometry; keep the shared fallback for all other error
 consumers.
+
+## Batch 667
+
+Move the frozen `.error-wrap` geometry, `ico-err1` sprite positioning, and
+message typography into the project milestones empty and organization
+directory empty owners. Preserve the existing project/global shells, tabs,
+search/navigation, legacy DOM/classes/copy, and responsive geometry; keep the
+shared fallback for all other error consumers.

@@ -5,6 +5,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { restFetch } from "../api/rest-client";
 import type { ListOrganizationsResponse, YoramRecord } from "../api/types";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -40,6 +41,7 @@ const sx = {
   description: stylex.props(styles.description),
   nameTag: stylex.props(styles.nameTag),
   empty: stylex.props(styles.empty),
+  emptyIcon: (backgroundImage: string) => stylex.props(styles.emptyIcon(backgroundImage)),
   emptyMessage: stylex.props(styles.emptyMessage),
   pagination: stylex.props(styles.pagination),
   paginationList: stylex.props(styles.paginationList),
@@ -200,7 +202,11 @@ function OrgsScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
             </div>
             {organizations.length === 0 ? (
               <div {...sx.empty} data-stylex-owner="organization-directory-empty">
-                <i className="ico ico-err1"></i>
+                <i
+                  {...sx.emptyIcon(`url(${legacySpriteUrl})`)}
+                  className={`${sx.emptyIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err1`.trim()}
+                  data-stylex-owner="organization-directory-empty-icon"
+                ></i>
                 <p {...sx.emptyMessage} data-stylex-owner="organization-directory-empty-message">
                   {t("organization.is.empty")}
                 </p>
