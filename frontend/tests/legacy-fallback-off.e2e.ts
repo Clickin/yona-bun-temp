@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
@@ -531,6 +531,13 @@ test("dead label-info and badge-info bridges have no app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".label-info {");
   expect(appCss).not.toContain(".badge-info");
+});
+
+test("source-less sr-only bridge has no app.css arm", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".sr-only {");
+  const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
+  expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("sr-only"))).toBe(false);
 });
 
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {

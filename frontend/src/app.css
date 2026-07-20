@@ -1495,18 +1495,6 @@ h1 {
   vertical-align: middle;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .markdown-wrap h1 .head-anchor,
 .markdown-wrap h2 .head-anchor,
 .markdown-wrap h3 .head-anchor,

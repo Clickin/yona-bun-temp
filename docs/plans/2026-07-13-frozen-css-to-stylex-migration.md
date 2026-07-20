@@ -4672,3 +4672,12 @@ legacy `yobi.code.Diff.js` remain historical output/behavior evidence. Keep the
 frozen/generated `.thread-actrow` declaration, the active `.actions` sibling,
 and all comment-thread geometry unchanged. Update commit/PR focused contracts
 and formal fallback-off static/browser checks.
+
+## Batch 614
+
+Retire only the source-less `.sr-only` block from `frontend/src/app.css`.
+Current React and legacy inventories have no emitter; the only remaining
+mention is a stale historical progress note about an earlier generated heading.
+Keep all frozen/generated sources unchanged and do not alter route DOM or
+accessibility behavior. Update the formal fallback-off static contract and
+record the stale-note boundary in provenance.
