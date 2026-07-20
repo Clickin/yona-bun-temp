@@ -4281,15 +4281,6 @@ rule remains active. The focused project-issues static contract verifies exact
 scoped absence plus generic-rule retention; no TSX, frozen source, generated
 fallback, or geometry baseline changes are allowed.
 
-## Batch 584
-
-Retire only the unreachable `.issue-list-page .issue-item-row` display/margin
-bridge. Active project and milestone rows retain their raw `issue-item-row`
-class without that ancestor; frozen `label.issue-item-row` evidence and
-browser defaults establish geometry neutrality. Update the focused static and
-fallback-off contracts, run each in normal/fallback-off mode, and preserve all
-remaining issue-list fallback selectors.
-
 ## Batch 576
 
 Retire only the redundant `.pull-request-wrap .select2-container >
@@ -4384,3 +4375,14 @@ class without that ancestor; frozen `label.issue-item-row` evidence and
 browser defaults establish geometry neutrality. Update the focused static and
 fallback-off contracts, run each in normal/fallback-off mode, and preserve all
 remaining issue-list fallback selectors.
+
+## Batch 585
+
+Retire only the unreachable sidebar refresh plugin bridge from
+`frontend/src/app.css`: `.sidebar .nav-tabs li > .refresh-button` and its
+hover/focus block. Legacy `sidebar.scala.html` emitted the jQuery-bound
+`refresh-button` icon, while current React owns the refresh interaction with
+`leftSidebarTabStyles.refreshButton` and a typed button. Retain all generic and
+active sidebar tab rules, frozen legacy CSS, generated fallback, and geometry
+baselines. Verify exact absence and StyleX ownership in normal and fallback-off
+static contracts.

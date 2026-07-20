@@ -207,6 +207,26 @@ test("dead syntax selector family has no app.css arms", () => {
   }
 });
 
+test("sidebar refresh plugin bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".sidebar .nav-tabs li > .refresh-button {",
+    ".sidebar .refresh-button:hover,",
+    ".sidebar .refresh-button:focus {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  for (const retainedSelector of [
+    ".sidebar .nav-tabs li a,",
+    ".sidebar .nav-tabs .active a,",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+  const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
+  expect(source).toContain("leftSidebarTabStyles.refreshButton");
+  expect(source).not.toContain("refresh-button");
+});
+
 test("issueform legacy insert bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

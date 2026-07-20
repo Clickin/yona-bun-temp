@@ -1848,3 +1848,16 @@ not an unlinking or live-legacy visual-parity claim.
   `<div>` elements; display block and zero margin are their defaults. Focused
   static and fallback-off contracts assert exact absence and raw row ownership.
   No TSX, frozen source, generated fallback CSS, or baseline changed.
+
+## Batch 585
+
+- Sidebar refresh plugin bridge retirement: legacy
+  `yona-original/app/views/sidebar.scala.html:58-60` emits the
+  `yobicon-refresh refresh-button` icon and legacy JS binds that class. Current
+  React uses a `button[aria-label="Refresh"]` with
+  `leftSidebarTabStyles.refreshButton`; no hyphenated `refresh-button` emitter
+  remains. `frontend/src/app.css` removes only the base and hover/focus
+  `.refresh-button` arms while retaining generic/active sidebar tab rules and
+  frozen/generated fallback assets. The formal fallback-off contract asserts
+  exact selector absence and StyleX ownership; geometry and frozen sources are
+  unchanged.
