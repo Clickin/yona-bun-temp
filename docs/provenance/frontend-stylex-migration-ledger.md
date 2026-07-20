@@ -1834,6 +1834,6 @@ not an unlinking or live-legacy visual-parity claim.
   the unreachable `.posting-history > button[data-toggle="modal"]`,
   `.voter-list li > button[data-toggle="modal"]`, and
   `.vote-description-people[data-toggle="modal"]` arms from `frontend/src/app.css`.
-  Generic modal/voter/posting-history rules and frozen/generated assets remain.
+  Generic modal rules and frozen/generated voter/posting-history styling remain.
   Focused modal contracts and the formal fallback-off contract assert exact
   selector absence in normal and fallback-off runs.

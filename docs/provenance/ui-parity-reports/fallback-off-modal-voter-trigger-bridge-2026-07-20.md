@@ -10,8 +10,8 @@ This wave removes the unreachable plugin-trigger block from `frontend/src/app.cs
 
 Current React issue/post detail controls use stateful `button[type="button"]`
 and emit no `data-toggle="modal"`; the legacy Scala plugin anchors are retained
-only as output/UX evidence. Generic modal, voter-list, and posting-history rules,
-frozen sources, and generated fallback assets remain unchanged.
+only as output/UX evidence. Generic modal rules and the frozen/generated
+voter-list and posting-history styling remain unchanged.
 
 ## Evidence
 
