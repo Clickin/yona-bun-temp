@@ -323,7 +323,12 @@ function ProjectCreateScreen({
                 data-stylex-owner="project-form-advanced"
               >
                 <div className="row-fluid">
-                  <div className="span2 right-txt mt10">{t("project.shareOption")}</div>
+                  <div
+                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2 mt10`}
+                    data-stylex-owner="project-form-share-option-label"
+                  >
+                    {t("project.shareOption")}
+                  </div>
                   <div className="span10">
                     <ul
                       className={`${stylex.props(styles.scopes).className} unstyled project-scopes mt10`}
@@ -403,7 +408,10 @@ function ProjectCreateScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div className="span2 right-txt mt10">
+                  <div
+                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2 mt10`}
+                    data-stylex-owner="project-form-vcs-label"
+                  >
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
@@ -438,7 +446,12 @@ function ProjectCreateScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div className="span2 right-txt">{t("project.menu.setting")}</div>
+                  <div
+                    className={`${stylex.props(projectFormLayout.fieldLabel).className} span2`}
+                    data-stylex-owner="project-form-menu-setting-label"
+                  >
+                    {t("project.menu.setting")}
+                  </div>
                   <div className="span10">
                     <MenuCheckbox
                       id="menuSettingCode"

@@ -507,7 +507,13 @@ function ProjectImportScreen({
                 data-stylex-owner="project-import-advanced"
               >
                 <div className="row-fluid">
-                  <div className="span2 right-txt mt10">{t("project.shareOption")}</div>
+                  <div
+                    {...stylex.props(styles.rightLabel)}
+                    className={`${stylex.props(styles.rightLabel).className} span2 mt10`}
+                    data-stylex-owner="project-import-right-label"
+                  >
+                    {t("project.shareOption")}
+                  </div>
                   <div className="span10">
                     <ul className="unstyled project-scopes mt10">
                       <li>
@@ -568,7 +574,11 @@ function ProjectImportScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div className="span2 right-txt mt10">
+                  <div
+                    {...stylex.props(styles.rightLabel)}
+                    className={`${stylex.props(styles.rightLabel).className} span2 mt10`}
+                    data-stylex-owner="project-import-right-label"
+                  >
                     <label htmlFor="vcs">{t("project.vcs")}</label>
                   </div>
                   <div className="span10 cu-desc">
@@ -611,7 +621,13 @@ function ProjectImportScreen({
                 <hr />
 
                 <div className="row-fluid">
-                  <div className="span2 right-txt">{t("project.menu.setting")}</div>
+                  <div
+                    {...stylex.props(styles.rightLabel)}
+                    className={`${stylex.props(styles.rightLabel).className} span2`}
+                    data-stylex-owner="project-import-right-label"
+                  >
+                    {t("project.menu.setting")}
+                  </div>
                   <div className="span10 cu-desc">
                     <MenuCheckbox
                       id="menuSettingCode"

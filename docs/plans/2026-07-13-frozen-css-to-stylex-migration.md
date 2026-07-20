@@ -4880,3 +4880,9 @@ preserving the legacy centered copy and DOM.
 Migrate the milestone create and milestone edit action-row `right-txt`
 consumers into their route-local StyleX owners, preserving `actrow`, button
 order, and form geometry.
+
+## Batch 641
+
+Migrate the project create and project import advanced-form field-label
+`right-txt` consumers into route-local StyleX owners, preserving the three
+`span2` labels, `mt10` spacing, and legacy form layout.

@@ -12,6 +12,9 @@ export const projectFormTheme = stylex.defineVars({
 });
 
 export const projectFormLayout = stylex.create({
+  fieldLabel: {
+    textAlign: "right",
+  },
   select: {
     minWidth: "220px",
   },

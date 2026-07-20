@@ -25,6 +25,11 @@ test("project import renders legacy form skeleton and stays contained", async ({
   await expect(page.locator('[data-stylex-owner="project-import-heading"]')).toContainText("Git");
   await expect(page.locator("#url")).toBeVisible();
   await expect(page.locator('[data-stylex-owner="project-import-advanced"]')).toBeVisible();
+  const rightLabels = page.locator('[data-stylex-owner="project-import-right-label"]');
+  await expect(rightLabels).toHaveCount(3);
+  await expect(rightLabels).toHaveClass(/span2/);
+  await expect(rightLabels.first()).not.toHaveClass(/right-txt/);
+  await expect(rightLabels.first()).toHaveCSS("text-align", "right");
   for (const viewport of [{ width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     const metrics = await page

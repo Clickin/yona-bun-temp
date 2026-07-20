@@ -51,6 +51,28 @@ test("project create select controls own the legacy 220px inline widths", async 
   }
 });
 
+test("project create advanced field labels own legacy right alignment", async ({ page }) => {
+  const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
+  const styleSource = readFileSync("src/routes/-projectform.stylex.ts", "utf8");
+  const legacySource = readFileSync("../yona-original/app/views/project/create.scala.html", "utf8");
+  expect(legacySource.match(/span2 right-txt(?: mt10)?/gu)).toHaveLength(3);
+  expect(routeSource).not.toContain("right-txt");
+  expect(routeSource).toContain('data-stylex-owner="project-form-share-option-label"');
+  expect(routeSource).toContain('data-stylex-owner="project-form-vcs-label"');
+  expect(routeSource).toContain('data-stylex-owner="project-form-menu-setting-label"');
+  expect(styleSource).toContain('fieldLabel: {\n    textAlign: "right",\n  },');
+
+  await mockProjectCreate(page);
+  await page.goto(`${basePath}/projectform`, { waitUntil: "domcontentloaded" });
+  for (const owner of [
+    "project-form-share-option-label",
+    "project-form-vcs-label",
+    "project-form-menu-setting-label",
+  ]) {
+    await expect(page.locator(`[data-stylex-owner="${owner}"]`)).toHaveCSS("text-align", "right");
+  }
+});
+
 async function mockProjectCreate(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {

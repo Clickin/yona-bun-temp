@@ -35,4 +35,5 @@ export const styles = stylex.create({
   },
   selectDropOpen: { display: "block", width: "220px" },
   advanced: { color: projectImportColors.accentText },
+  rightLabel: { textAlign: "right" },
 });
