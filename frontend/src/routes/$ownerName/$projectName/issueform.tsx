@@ -1194,7 +1194,7 @@ function ProjectIssueFormBody({
                     onRemove={(row) => void removeAttachment(row)}
                   />
                   <div
-                    className={`${stylex.props(styles.actions).className} actrow right-txt`}
+                    className={`${stylex.props(styles.actions).className} actrow`}
                     data-stylex-owner="project-issue-form-actions"
                   >
                     <button

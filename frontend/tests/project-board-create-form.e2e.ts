@@ -23,7 +23,7 @@ const POSTFORM_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 const EXPECTED_CREATE_FORM_BODY = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="right-txt mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><form action="__BASE_PATH__/admin/sample/posts" method="post" enctype="multipart/form-data" class="nm"><div class="content-wrap frm-wrap"><dl><dd><input type="text" id="title" autocomplete="off" name="title" class="zen-mode text title " maxlength="250" tabindex="1" value="" placeholder="Title"></dd><dd></dd><dd style="position:relative"><div data-toggle="markdown-editor" class="markdown-editor-wrap"><textarea id="editor-body-content-body" name="body" data-editor-mode="content-body" tabindex="3"></textarea><div id="preview-content-body" class="preview markdown-wrap"></div></div></dd></dl><div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div><div class="mt10 mb10"><label class="checkbox"><input type="checkbox" id="notice" name="notice">Set this post as notice.</label><input type="hidden" id="issueTemplate" name="issueTemplate" value=""><input type="hidden" id="branch" name="branch" value=""><input type="hidden" id="path" name="path" value=""><input type="hidden" id="lineEnding" name="lineEnding" value=""></div><div class="actions"><button class="ybtn ybtn-success" tabindex="3">Save</button><button type="button" class="ybtn" tabindex="4">Cancel</button></div></div></form></div></div>
 `;
 
 function withLegacyEditor(html: string) {
@@ -36,7 +36,7 @@ function withLegacyEditor(html: string) {
 function withLegacyFileUploader(html: string) {
   return html.replace(
     `<div class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><div class="attachments" id="attachments"></div></div></div>`,
-    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
+    `<div id="upload" class="upload-wrap content-footer" data-resource-type="BOARD_POST"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable" style="display:block">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div>`,
   );
 }
 
@@ -376,6 +376,57 @@ test("project board create form preserves uploader and zero-gap actions on mobil
   expect(await boardCreateActionWhitespace(page)).toEqual({ gap: 0, whitespaceNode: false });
 });
 
+test("project board postform right-aligned options and attachment help retain legacy alignment", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectBoardCreateForm(page, []);
+
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/postform`);
+    const optionsLocator = page.locator("[data-stylex-owner=project-postform-options]");
+    const helpLocator = page.locator(
+      "[data-stylex-owner=project-postform-upload-attach-save-help]",
+    );
+    await expect(optionsLocator).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
+    await expect(helpLocator).not.toHaveClass(/(?:^|\s)right-txt(?:\s|$)/u);
+    const metrics = await optionsLocator.evaluate((options) => {
+      const upload = document.querySelector("#upload") as HTMLElement;
+      const help = upload.querySelector(
+        "[data-stylex-owner=project-postform-upload-attach-save-help]",
+      ) as HTMLElement;
+      const optionsStyle = window.getComputedStyle(options);
+      const helpStyle = window.getComputedStyle(help);
+      const optionsBox = options.getBoundingClientRect();
+      const uploadBox = upload.getBoundingClientRect();
+      const helpBox = help.getBoundingClientRect();
+      return {
+        helpDisplay: helpStyle.display,
+        helpTextAlign: helpStyle.textAlign,
+        helpRightWithinUpload: helpBox.right <= uploadBox.right + 1,
+        optionsMarginBottom: optionsStyle.marginBottom,
+        optionsMarginTop: optionsStyle.marginTop,
+        optionsTextAlign: optionsStyle.textAlign,
+        optionsRightWithinForm:
+          optionsBox.right <= options.parentElement!.getBoundingClientRect().right + 1,
+      };
+    });
+    expect(metrics).toEqual({
+      helpDisplay: "block",
+      helpTextAlign: "right",
+      helpRightWithinUpload: true,
+      optionsMarginBottom: "10px",
+      optionsMarginTop: "10px",
+      optionsTextAlign: "right",
+      optionsRightWithinForm: true,
+    });
+  }
+});
+
 test("project board create README state preserves legacy query-owned form and deep links", async ({
   page,
 }) => {
@@ -705,7 +756,9 @@ async function readBoardCreateFormMetrics(page: Page) {
     const title = contentWrap.querySelector<HTMLElement>("#title");
     const editorDd = contentWrap.querySelector<HTMLElement>('dd[style*="position"]');
     const upload = contentWrap.querySelector<HTMLElement>(".upload-wrap.content-footer");
-    const noticeRow = contentWrap.querySelector<HTMLElement>(".right-txt.mt10.mb10");
+    const noticeRow = contentWrap.querySelector<HTMLElement>(
+      "[data-stylex-owner=project-postform-options]",
+    );
     const actions = contentWrap.querySelector<HTMLElement>(".actions");
     const missing = Object.entries({ actions, editorDd, firstDd, form, noticeRow, title, upload })
       .filter(([, element]) => !element)

@@ -4844,3 +4844,15 @@ consumers into the existing project-history StyleX owners. Preserve the
 Migrate all three pull-request changes commit-hash `blue-txt` consumers into
 the route-local semantic commit-hash color owner. Preserve `mr10`,
 `commit-hash`, dropdown copy, and commit navigation.
+
+## Batch 635
+
+Migrate the issue creation submit action row's `right-txt` alignment into its
+existing route StyleX action owner, retaining the `actrow` structure and
+button behavior.
+
+## Batch 636
+
+Migrate the board post creation options and attachment-help `right-txt`
+consumers into route-local StyleX owners, retaining `mt10 mb10`, `help`, copy,
+and upload geometry.

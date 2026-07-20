@@ -255,7 +255,11 @@ function ProjectBoardCreateFormBody({ runtimeConfig }: { runtimeConfig: RuntimeC
               </div>
             ) : null}
 
-            <div className="right-txt mt10 mb10" data-stylex-owner="project-postform-options">
+            <div
+              {...stylex.props(styles.options)}
+              className={`mt10 mb10 ${stylex.props(styles.options).className ?? ""}`.trim()}
+              data-stylex-owner="project-postform-options"
+            >
               {canShowNotice ? (
                 <label className="checkbox">
                   <input type="checkbox" id="notice" name="notice" />
@@ -452,7 +456,11 @@ function BoardPostFileUploader() {
         </span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p
+        {...stylex.props(styles.uploadAttachSaveHelp)}
+        className={`help ${stylex.props(styles.uploadAttachSaveHelp).className ?? ""}`.trim()}
+        data-stylex-owner="project-postform-upload-attach-save-help"
+      >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>

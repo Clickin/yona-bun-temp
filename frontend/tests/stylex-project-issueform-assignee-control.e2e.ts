@@ -84,6 +84,51 @@ test("issueform assignee control keeps route-local StyleX geometry", async ({ pa
   expect(mobile.bottom).toBeLessThanOrEqual(844);
 });
 
+test("issueform submit actions keep legacy right alignment in StyleX on desktop and mobile", async ({
+  page,
+}) => {
+  const [route, create] = await Promise.all([
+    readFile(routeSource, "utf8"),
+    readFile(legacyCreate, "utf8"),
+  ]);
+  expect(create).toContain('<div class="actrow right-txt">');
+  expect(route).toContain('data-stylex-owner="project-issue-form-actions"');
+  expect(route).toContain("actrow`");
+  expect(route).not.toContain("actrow right-txt");
+
+  await mockIssueForm(page);
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/issueform`, { waitUntil: "commit" });
+    const actions = page.locator('[data-stylex-owner="project-issue-form-actions"]');
+    await expect(actions).toBeVisible();
+    await expect(actions).toHaveClass(/actrow/);
+    await expect(actions).not.toHaveClass(/right-txt/);
+    await expect(actions).toHaveCSS("text-align", "right");
+
+    const geometry = await actions.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const lastButton = element.querySelector<HTMLElement>(
+        "#button-save ~ button.issue-form-cancel",
+      );
+      const lastRect = lastButton?.getBoundingClientRect();
+      return {
+        actionsRight: rect.right,
+        lastButtonRight: lastRect?.right ?? 0,
+        viewport: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(geometry.actionsRight).toBeLessThanOrEqual(geometry.viewport);
+    expect(geometry.lastButtonRight).toBeGreaterThan(0);
+    expect(geometry.lastButtonRight).toBeLessThanOrEqual(geometry.actionsRight + 1);
+    expect(geometry.scrollWidth).toBe(geometry.viewport);
+  }
+});
+
 async function mockIssueForm(page: Page) {
   await page.route("**/api/v1/session", async (route) => {
     await route.fulfill({

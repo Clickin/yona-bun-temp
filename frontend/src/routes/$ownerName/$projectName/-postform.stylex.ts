@@ -29,8 +29,14 @@ export const styles = stylex.create({
     minHeight: "300px",
     width: "100%",
   },
+  options: {
+    marginBottom: "10px",
+    marginTop: "10px",
+    textAlign: "right",
+  },
   actions: { margin: "10px 0px", textAlign: "right" },
   pasteHelpVisible: { display: "block" },
+  uploadAttachSaveHelp: { display: "block", textAlign: "right" },
   save: {
     backgroundColor: postFormColors.action,
     borderColor: postFormColors.action,
