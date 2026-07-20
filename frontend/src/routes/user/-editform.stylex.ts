@@ -16,6 +16,7 @@ export const userSettingsTabColors = stylex.defineVars({
 });
 
 export const userSettingsProfileColors = stylex.defineVars({
+  avatarSurface: "#dddddd",
   fieldBorder: "#cccccc",
   fieldFocusBorder: "#ff7332",
   fieldSurface: "#ffffff",
@@ -61,6 +62,15 @@ export const userSettingsProfileStyles = stylex.create({
 });
 
 export const userSettingsAvatarStyles = stylex.create({
+  wrap: {
+    backgroundColor: userSettingsProfileColors.avatarSurface,
+    borderRadius: "3px",
+    display: "inline-block",
+    height: "128px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "128px",
+  },
   form: {
     borderLeftColor: userSettingsProfileColors.divider,
     borderLeftStyle: "solid",

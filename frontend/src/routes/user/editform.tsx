@@ -449,7 +449,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
         <input type="hidden" name="email" value={email} />
 
         <div className="avatar-frm">
-          <div className="avatar-wrap xlarge">
+          <div
+            className={`avatar-wrap xlarge ${stylex.props(userSettingsAvatarStyles.wrap).className}`}
+            data-stylex-owner="user-settings-avatar-wrap"
+          >
             {/* min-width in the colocated StyleX owner preserves the legacy 128px contract against `.avatar-wrap img { width: 100%; }`. */}
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the profile avatar without an alt attribute. */}
             <img
@@ -527,7 +530,10 @@ function UserProfileSettingsScreen({ runtimeConfig }: { runtimeConfig: RuntimeCo
           className={`modal-header ${stylex.props(userSettingsAvatarStyles.cropHeader).className}`}
           data-stylex-owner="user-settings-avatar-crop-header"
         >
-          <div className="avatar-wrap xlarge">
+          <div
+            className={`avatar-wrap xlarge ${stylex.props(userSettingsAvatarStyles.wrap).className}`}
+            data-stylex-owner="user-settings-avatar-crop-wrap"
+          >
             {/* oxlint-disable-next-line jsx-a11y/alt-text -- legacy user/edit.scala.html renders the crop header avatar without an alt attribute. */}
             <img
               src={avatarPreviewUrl || undefined}

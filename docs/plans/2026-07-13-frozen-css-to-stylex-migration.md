@@ -4990,3 +4990,10 @@ classes, uploader DOM, copy, and fallback-only declarations.
 Migrate authenticated issue-detail child-comment gutter, content, delete
 action, and reply-row declarations into route-local StyleX owners while
 preserving legacy classes, DOM, copy, and React-owned interactions.
+
+## Batch 650
+
+Migrate the authenticated `/user/editform` profile and crop avatar wrappers'
+legacy `.avatar-wrap.xlarge` geometry into one route-local StyleX owner per
+visible wrapper. Preserve the legacy wrapper classes, image/upload behavior,
+and shared fallback declarations for unrelated avatar consumers.
