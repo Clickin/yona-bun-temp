@@ -32,6 +32,7 @@ const sx = {
   progressMeta: stylex.props(styles.progress, styles.progressMeta),
   progressFill: (width: string) => stylex.props(styles.progressFill(width)),
   headerLogo: (backgroundImage: string) => stylex.props(styles.headerLogo(backgroundImage)),
+  grayTextSeparator: stylex.props(styles.grayTextSeparator),
 } as const;
 
 type LegacyListItemHrefAttrs = HTMLAttributes<HTMLLIElement> & { href: string };
@@ -508,7 +509,12 @@ function OrganizationPullRequestItem({
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
-                <span className="gray-txt">/</span>
+                <span
+                  {...sx.grayTextSeparator}
+                  data-stylex-owner="organization-pullrequests-review-separator"
+                >
+                  /
+                </span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
               </Link>
             </div>

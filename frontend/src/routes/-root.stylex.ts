@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 export const rootColors = stylex.defineVars({
+  grayText: "#ccc",
   loginDialogBorder: "rgba(0, 0, 0, 0.3)",
   loginDialogShadow: "0 3px 7px rgba(0, 0, 0, 0.3)",
   loginDialogSurface: "#ffffff",

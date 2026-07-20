@@ -4795,3 +4795,10 @@ remain historical evidence. Keep the neighboring `.ml10`, `.mr*`, and other
 utility declarations unchanged. Update the formal fallback-off static contract
 and record the bounded utility-family scope in provenance; do not change route
 TSX or frozen/generated CSS.
+
+## Batch 627
+
+Retire the shared `.gray-txt` fallback for the login-dialog `|` separator and the
+project/organization pull-request review `/` separators. Preserve the separator
+spans and frozen `#ccc` paint through route-owned StyleX owners; leave frozen
+legacy/generated CSS untouched.

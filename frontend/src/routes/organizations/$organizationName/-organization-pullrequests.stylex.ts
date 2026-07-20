@@ -11,6 +11,7 @@ export const organizationPullRequestColors = stylex.defineVars({
   stateText: "#555555",
   progressSurface: "#f5f5f5",
   progressFill: "#f0ad4e",
+  grayText: "#ccc",
 });
 
 export const styles = stylex.create({
@@ -72,4 +73,5 @@ export const styles = stylex.create({
     backgroundColor: organizationPullRequestColors.progressFill,
     width,
   }),
+  grayTextSeparator: { color: organizationPullRequestColors.grayText },
 });

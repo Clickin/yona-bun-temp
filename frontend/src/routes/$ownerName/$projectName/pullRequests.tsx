@@ -38,6 +38,7 @@ const sx = {
   content: stylex.props(styles.content),
   twoColumnPopover: stylex.props(styles.twoColumnPopover),
   rowPointer: stylex.props(styles.rowPointer),
+  grayTextSeparator: stylex.props(styles.grayTextSeparator),
 } as const;
 
 const LEGACY_LIST_LINK_PROPS = {
@@ -828,7 +829,12 @@ function ProjectPullRequestRow({
                 title={`${t("pullRequest.review.closed")} / ${t("pullRequest.review.total")}`}
               >
                 <span>{pullRequest.closedCommentThreadCount}</span>
-                <span className="gray-txt">/</span>
+                <span
+                  {...sx.grayTextSeparator}
+                  data-stylex-owner="project-pullrequests-review-separator"
+                >
+                  /
+                </span>
                 <span className="size total">{pullRequest.commentThreadCount}</span>
               </Link>
             </div>

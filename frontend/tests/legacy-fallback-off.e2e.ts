@@ -556,6 +556,27 @@ test("orange text required markers have StyleX ownership", () => {
   }
 });
 
+test("gray text separators have StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".gray-txt {");
+  const sourceContracts = [
+    ["src/routes/__root.tsx", "root-login-dialog-separator"],
+    [
+      "src/routes/$ownerName/$projectName/pullRequests.tsx",
+      "project-pullrequests-review-separator",
+    ],
+    [
+      "src/routes/organizations/$organizationName/pullrequests.tsx",
+      "organization-pullrequests-review-separator",
+    ],
+  ] as const;
+  for (const [sourcePath, owner] of sourceContracts) {
+    const source = readFileSync(sourcePath, "utf8");
+    expect(source).not.toContain("gray-txt");
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+  }
+});
+
 test("pull-request tab button bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

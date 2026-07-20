@@ -6,6 +6,7 @@ export const pullRequestColors = stylex.defineVars({
   inputBorder: "#ccc",
   inputText: "#555",
   link: "#3592b5",
+  grayText: "#ccc",
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
@@ -49,4 +50,5 @@ export const styles = stylex.create({
   content: { clear: "both", paddingTop: "15px" },
   twoColumnPopover: { display: "block", left: "-75px", top: "-74px" },
   rowPointer: { cursor: "pointer" },
+  grayTextSeparator: { color: pullRequestColors.grayText },
 });
