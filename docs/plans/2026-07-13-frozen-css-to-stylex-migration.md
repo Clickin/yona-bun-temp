@@ -4213,3 +4213,17 @@ this is not generated-fallback unlinking or live-legacy visual-parity proof.
   plus mobile 390px geometry. Managed normal and fallback-off runs each pass
   3/3. No frozen source, theme, app.css, or generated fallback asset changes;
   other breadcrumb consumers remain outside this wave.
+
+## Batch 570
+
+- `/sites/mail` site-management breadcrumb ownership: frozen
+  `yona-original/app/views/site/siteMngLayout.scala.html:34-38` retains the
+  outer > inner > `h3` DOM and `site.sidebar` copy; frozen `_page.less:743-753`
+  and `_responsive.less:349-351,627-631` establish inner auto margin, heading
+  line-height/padding, and responsive outer geometry. The mail route replaces
+  only its raw breadcrumb classes with three inline StyleX owners; mail behavior
+  is unchanged. `stylex-site-mail-breadcrumb.e2e.ts` verifies source evidence,
+  exact class retirement, owner/order/copy, and desktop 1366px plus mobile
+  390px geometry. Managed normal and fallback-off runs each pass 3/3. No frozen
+  source, theme, app.css, or generated fallback asset changes; other consumers
+  remain outside this wave.

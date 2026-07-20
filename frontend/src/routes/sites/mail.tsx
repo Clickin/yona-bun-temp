@@ -12,10 +12,22 @@ import {
 import { LegacyI18nProvider, useLegacyMessages } from "../../i18n";
 import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
+import { globalBreakpoints } from "../../theme.stylex";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { siteMailColors } from "./-mail.stylex";
 
 const styles = stylex.create({
+  breadcrumbOuter: {
+    boxSizing: "border-box",
+    minWidth: { default: null, [globalBreakpoints.mobile]: "10px" },
+    padding: "0px 10px",
+    width: "100%",
+  },
+  breadcrumbInner: { margin: "0px auto" },
+  breadcrumbHeading: {
+    lineHeight: "30px",
+    padding: "10px 10px 5px",
+  },
   page: {
     marginTop: "10px",
     minHeight: "450px",
@@ -257,6 +269,10 @@ const legacySiteSidebarLinkProps = {
   activeProps: { "aria-current": undefined, className: undefined, "data-status": undefined },
 };
 
+const breadcrumbOuterStyleProps = stylex.props(styles.breadcrumbOuter);
+const breadcrumbInnerStyleProps = stylex.props(styles.breadcrumbInner);
+const breadcrumbHeadingStyleProps = stylex.props(styles.breadcrumbHeading);
+
 export const Route = createFileRoute("/sites/mail")({
   component: SiteMailRoute,
   validateSearch: (search: Record<string, unknown>): SiteMailRouteSearch => ({
@@ -306,9 +322,9 @@ function SiteMailScreen({
   return (
     <>
       <title>{t("title.sendMail")}</title>
-      <div className="site-breadcrumb-outer">
-        <div className="site-breadcrumb-inner">
-          <h3>
+      <div {...breadcrumbOuterStyleProps} data-stylex-owner="site-mail-breadcrumb-outer">
+        <div {...breadcrumbInnerStyleProps} data-stylex-owner="site-mail-breadcrumb-inner">
+          <h3 {...breadcrumbHeadingStyleProps} data-stylex-owner="site-mail-breadcrumb-heading">
             <LegacyMessage messageKey="site.sidebar" />
           </h3>
         </div>

@@ -3676,3 +3676,21 @@ Manual multi-screen exception note, 2026-07-19:
   desktop 1366px, and mobile 390px tests pass 3/3 in normal and fallback-off
   managed runs, each exit 0. No frozen source, app.css, theme, or generated
   fallback asset changed; global fallback discovery remains incomplete/non-green.
+
+## Batch 570 — `/sites/mail` breadcrumb
+
+- Legacy source: `yona-original/app/views/site/siteMngLayout.scala.html:34-38`
+  supplies the outer > inner > `h3` boundary and `site.sidebar` copy; frozen
+  `_page.less:743-753` and `_responsive.less:349-351,627-631` supply the
+  margin, heading padding/line-height, and responsive outer box rules.
+- Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다.
+- `frontend/src/routes/sites/mail.tsx` now owns only the three breadcrumb
+  presentation boundaries with route-local StyleX. Raw breadcrumb classes are
+  removed from this route; mail form, alerts, page/grid/title/sidebar, and query
+  behavior are unchanged.
+- Evidence: `frontend/tests/stylex-site-mail-breadcrumb.e2e.ts` static, desktop
+  1366px, and mobile 390px tests pass 3/3 in normal and fallback-off managed
+  runs, each exit 0. No frozen source, app.css, theme, or generated fallback
+  asset changed; global fallback discovery remains incomplete/non-green.
+
+| 2026-07-20 | `/sites/mail` site-management breadcrumb StyleX ownership wave | `yona-original/app/views/site/siteMngLayout.scala.html:34-38` and `yona-original/app/views/site/mail.scala.html:23` establish the outer > inner > `h3` DOM and `site.sidebar` copy; frozen `_page.less:743-753` and `_responsive.less:349-351,627-631` establish inner margin, heading line-height/padding, and responsive outer geometry. Legacy Scala HTML/JS는 출력 DOM/UX 근거이며 내부 동작은 React state/events/components + TanStack Router/Query로 번역한다. | `frontend/src/routes/sites/mail.tsx` replaces only the route's raw breadcrumb classes with three route-local StyleX owners, preserving mail form/alert/sidebar/query behavior and DOM order. | `frontend/tests/stylex-site-mail-breadcrumb.e2e.ts` verifies source mapping, exact class retirement, owner/order/copy, and desktop 1366px/mobile 390px geometry; managed normal and fallback-off runs each exit 0 with 3 passed. |
