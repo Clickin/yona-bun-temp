@@ -42,6 +42,10 @@ export const styles = stylex.create({
   author: { display: "block", margin: "10px 20px" },
   content: { backgroundColor: postDetailColors.surface },
   actions: { margin: "10px 0px", textAlign: "right" },
+  disabledCommentActions: { textAlign: "right" },
+  commentUploadHelp: { textAlign: "right" },
+  commentActions: { textAlign: "right" },
+  commentUpdateActions: { textAlign: "right" },
   comments: {
     clear: "both",
     display: "block",

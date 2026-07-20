@@ -11,6 +11,22 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   );
   const template = readFileSync("../yona-original/app/views/common/editor.scala.html", "utf8");
   const boardTemplate = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const commentTemplate = readFileSync(
+    "../yona-original/app/views/common/commentForm.scala.html",
+    "utf8",
+  );
+  const commentUpdateTemplate = readFileSync(
+    "../yona-original/app/views/common/commentUpdateForm.scala.html",
+    "utf8",
+  );
+  const uploadTemplate = readFileSync(
+    "../yona-original/app/views/common/uploadForm.scala.html",
+    "utf8",
+  );
+  const commonStyles = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
   const selectedLabelPartial = readFileSync(
     "../yona-original/app/views/issue/partial_show_selected_label.scala.html",
     "utf8",
@@ -34,6 +50,14 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(boardTemplate).toContain(
     '<div class="pull-right hide show-in-mobile" style="font-size: 0.7em">',
   );
+  expect(boardTemplate).toContain('<div class="board-actrow right-txt">');
+  expect(commentTemplate).toContain('<div class="right-txt">');
+  expect(commentTemplate).toContain('<div class="right-txt mt10">');
+  expect(commentUpdateTemplate).toContain(
+    '<div class="right-txt comment-update-button upload-button-line">',
+  );
+  expect(uploadTemplate).toContain('<p class="right-txt help">');
+  expect(commonStyles).toContain(".right-txt     { text-align:right; }");
   expect(boardTemplate).toContain('class="board-id">#@post.getNumber</strong>');
   expect(boardTemplate).toContain(
     'class="date" title="@JodaDateUtil.getDateString(post.createdDate)">',
@@ -61,6 +85,21 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   expect(route).toContain('data-stylex-owner="post-detail-title"');
   expect(route).toContain('data-stylex-owner="post-detail-board-id"');
   expect(route).toContain('data-stylex-owner="post-detail-date"');
+  expect(route).not.toContain("right-txt");
+  for (const owner of [
+    "post-detail-actions",
+    "post-detail-disabled-comment-actions",
+    "post-detail-comment-upload-help",
+    "post-detail-comment-actions",
+    "post-detail-comment-update-actions",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(theme).toContain('actions: { margin: "10px 0px", textAlign: "right" }');
+  expect(theme).toContain('disabledCommentActions: { textAlign: "right" }');
+  expect(theme).toContain('commentUploadHelp: { textAlign: "right" }');
+  expect(theme).toContain('commentActions: { textAlign: "right" }');
+  expect(theme).toContain('commentUpdateActions: { textAlign: "right" }');
   expect(theme).toContain("title: {");
   expect(theme).toContain("boardId: {");
   expect(theme).toContain("date: {");
@@ -81,6 +120,17 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
   await mockPost(page);
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/weblabs/demo/post/1`);
+
+  for (const owner of [
+    "post-detail-actions",
+    "post-detail-comment-upload-help",
+    "post-detail-comment-actions",
+  ]) {
+    const element = page.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(element).toHaveCount(1);
+    await expect(element).not.toHaveAttribute("style", /text-align/i);
+    await expect(element).toHaveCSS("text-align", "right");
+  }
 
   const label = page.locator('[data-stylex-owner="post-detail-label-background"]');
   await expect(label).toHaveCount(1);
@@ -176,6 +226,25 @@ test("moves board post detail static residuals to route-local StyleX", async ({ 
     expect(wrapperBox).not.toBeNull();
     expect(wrapperBox!.x).toBeGreaterThanOrEqual(0);
     expect(wrapperBox!.x + wrapperBox!.width).toBeLessThanOrEqual(viewport.width);
+  }
+});
+
+test("post detail right alignment owners are route-local StyleX", () => {
+  const route = readFileSync("src/routes/$ownerName/$projectName/post/$postNumber.tsx", "utf8");
+  const theme = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  expect(route).not.toContain("right-txt");
+  expect(theme).toContain('actions: { margin: "10px 0px", textAlign: "right" }');
+  for (const owner of [
+    "post-detail-actions",
+    "post-detail-disabled-comment-actions",
+    "post-detail-comment-upload-help",
+    "post-detail-comment-actions",
+    "post-detail-comment-update-actions",
+  ]) {
+    expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
 });
 

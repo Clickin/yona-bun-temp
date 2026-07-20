@@ -9,6 +9,14 @@ the frozen `.right-txt` utility. Its display and right alignment now belong to
 the issue-form StyleX owner while the upload/help DOM and behavior remain
 unchanged. Focused coverage is `frontend/tests/stylex-project-issueform.e2e.ts`.
 
+## 2026-07-20 — Project post-detail comment alignment
+
+The populated project post detail route now owns its board action, disabled
+comment action, comment upload help, comment submit action, and comment update
+action alignment in route-local StyleX. The legacy comment/upload DOM and
+behavior remain unchanged. Focused coverage is
+`frontend/tests/stylex-project-post-detail-inline-residual.e2e.ts`.
+
 ## 2026-07-20 — `.orange-txt` retirement
 
 The frozen `_common.less` `.orange-txt` paint (`@orange`, `#f36c22`) is now

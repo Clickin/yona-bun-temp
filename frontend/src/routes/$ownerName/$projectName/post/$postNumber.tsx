@@ -492,7 +492,7 @@ function ProjectPostDetailBody({
             </div>
             <div
               {...sx.actions}
-              className={`${sx.actions.className} board-actrow right-txt`}
+              className={`${sx.actions.className} board-actrow`}
               data-stylex-owner="post-detail-actions"
             >
               <div className="pull-left">
@@ -1212,7 +1212,11 @@ function PostCommentForm({
               data-stylex-owner="post-detail-disabled-comment"
             ></textarea>
           </div>
-          <div className="right-txt mt10">
+          <div
+            {...stylex.props(styles.disabledCommentActions)}
+            className="mt10"
+            data-stylex-owner="post-detail-disabled-comment-actions"
+          >
             <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
           </div>
         </div>
@@ -1262,12 +1266,19 @@ function PostCommentForm({
             <span className="help help-pastable">{t("common.attach.pastehere")}</span>
           </div>
           <ul className="attached-files unstyled"></ul>
-          <p className="right-txt help">
+          <p
+            {...stylex.props(styles.commentUploadHelp)}
+            className="help"
+            data-stylex-owner="post-detail-comment-upload-help"
+          >
             <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
           </p>
         </div>
         <div className="write-comment-wrap">
-          <div className="right-txt">
+          <div
+            {...stylex.props(styles.commentActions)}
+            data-stylex-owner="post-detail-comment-actions"
+          >
             <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
             <button type="submit" className="ybtn ybtn-success">
               {t("button.comment.new")}
@@ -1590,7 +1601,11 @@ function PostCommentUpdateForm({
                 <div className="msg">{t("common.attach.dropFilesHere")}</div>
               </div>
             </div>
-            <div className="right-txt comment-update-button upload-button-line">
+            <div
+              {...stylex.props(styles.commentUpdateActions)}
+              className="comment-update-button upload-button-line"
+              data-stylex-owner="post-detail-comment-update-actions"
+            >
               <span className="file-upload">
                 <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
                   {t("button.upload")}
