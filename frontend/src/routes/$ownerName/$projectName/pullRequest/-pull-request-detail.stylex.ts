@@ -9,6 +9,22 @@ export const pullRequestDetailColors = stylex.defineVars({
 export const styles = stylex.create({
   page: { minHeight: "100%" },
   body: { minWidth: 0 },
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: {
+    display: "inline-block",
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    width: "50px",
+    height: "80px",
+    verticalAlign: "middle",
+  },
+  errorIconSprite: (backgroundImage: string) => ({ backgroundImage }),
+  errorMessage: {
+    fontWeight: "bold",
+    fontSize: "16px",
+    color: "#898989",
+    margin: "30px 0px",
+  },
   badge: {
     display: "inline-block",
     padding: "5px 15px",

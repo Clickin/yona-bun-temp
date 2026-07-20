@@ -43,6 +43,16 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Normal and fallback-off focused Playwright checks pass 3/3 for the three
   owners at desktop and mobile viewports.
 
+### 2026-07-21 Batch 662 project detail error-wrap owner proof
+
+- [x] Project issue-detail not-found, pull-request detail error, and
+  pull-request changes error states own the frozen `.error-wrap`, `ico-err2`,
+  and message declarations through colocated StyleX.
+- [x] Legacy DOM/classes/copy, list navigation, and 403/404 branches remain
+  intact; the shared fallback remains for other error consumers.
+- [x] Serial managed Playwright checks pass 3/3 in normal and 3/3 with
+  `VITE_DISABLE_LEGACY_FALLBACK=1`, covering desktop/mobile geometry.
+
 이 문서는 매 turn의 대상 화면 재탐색을 없애는 실행 source of truth다. 다음 작업은 아래 ID 중 미완료 항목에서만 고른다. route 전체 검색은 `Refresh trigger`가 발생할 때만 수행한다.
 
 ## Completion model

@@ -9,6 +9,22 @@ export const pullRequestChangesColors = stylex.defineVars({
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
+  errorWrap: { padding: "100px 0px", textAlign: "center" },
+  errorIcon: (backgroundImage: string) => ({
+    backgroundImage,
+    backgroundPosition: "-80px -160px",
+    backgroundRepeat: "no-repeat",
+    display: "inline-block",
+    height: "80px",
+    verticalAlign: "middle",
+    width: "50px",
+  }),
+  errorMessage: {
+    color: "#898989",
+    fontSize: "16px",
+    fontWeight: "bold",
+    margin: "30px 0px",
+  },
   browse: { width: "100%" },
   author: { color: pullRequestChangesColors.meta, marginTop: "20px" },
   commitHash: { color: pullRequestChangesColors.commitHash },

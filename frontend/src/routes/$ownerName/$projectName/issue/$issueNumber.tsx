@@ -42,6 +42,7 @@ import {
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import { styles } from "./-issue-detail.stylex";
 
 const issueSharerStyles = stylex.create({ visible: { display: "block" } });
@@ -474,9 +475,22 @@ function ProjectIssueNotFoundBody({
       data-stylex-owner="project-issue-detail-page"
     >
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t("error.notfound.issue_post")}</p>
+        <div
+          {...stylex.props(styles.errorWrap)}
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`}
+          data-stylex-owner="project-issue-detail-error-wrap"
+        >
+          <i
+            {...stylex.props(styles.errorIcon(legacySpriteUrl))}
+            className={`${stylex.props(styles.errorIcon(legacySpriteUrl)).className} ico ico-err2`}
+            data-stylex-owner="project-issue-detail-error-icon"
+          ></i>
+          <p
+            {...stylex.props(styles.errorMessage)}
+            data-stylex-owner="project-issue-detail-error-message"
+          >
+            {t("error.notfound.issue_post")}
+          </p>
           <Link
             to="/$ownerName/$projectName/issues"
             params={{ ownerName, projectName }}

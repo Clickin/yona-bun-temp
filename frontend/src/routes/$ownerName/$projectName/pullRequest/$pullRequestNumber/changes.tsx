@@ -22,6 +22,7 @@ import { currentSessionQueryOptions } from "../../../../../api/session";
 import { readProjectContainerQueryOptions } from "../../../../../api/org-project";
 import type { ProjectContainer } from "../../../../../api/types";
 import { readSessionBootstrap } from "../../../../../auth-workspace-client";
+import legacySpriteUrl from "../../../../../assets/legacy/sprite.png";
 import { useLegacyMessages } from "../../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../../runtime-config";
 import {
@@ -34,6 +35,9 @@ import { styles as detailStyles } from "../-pull-request-detail.stylex";
 
 const sx = {
   page: stylex.props(styles.page),
+  errorWrap: stylex.props(styles.errorWrap),
+  errorIcon: (backgroundImage: string) => stylex.props(styles.errorIcon(backgroundImage)),
+  errorMessage: stylex.props(styles.errorMessage),
   browse: stylex.props(styles.browse),
   author: stylex.props(styles.author),
   diffs: stylex.props(styles.diffs),
@@ -214,11 +218,25 @@ function ProjectPullRequestChangesScreen({
 function ProjectPullRequestChangesErrorBody({ status }: { status: 403 | 404 }) {
   const { t } = useLegacyMessages();
   return (
-    <div className="page-wrap-outer">
+    <div className="page-wrap-outer" data-stylex-owner="pull-request-changes-error-page">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+        <div
+          {...sx.errorWrap}
+          className={`${sx.errorWrap.className ?? ""} error-wrap`.trim()}
+          data-stylex-owner="pull-request-changes-error-wrap"
+        >
+          <i
+            {...sx.errorIcon(`url(${legacySpriteUrl})`)}
+            className={`${sx.errorIcon(`url(${legacySpriteUrl})`).className ?? ""} ico ico-err2`.trim()}
+            data-stylex-owner="pull-request-changes-error-icon"
+          ></i>
+          <p
+            {...sx.errorMessage}
+            className={sx.errorMessage.className}
+            data-stylex-owner="pull-request-changes-error-message"
+          >
+            {t(status === 404 ? "error.notfound" : "error.forbidden")}
+          </p>
         </div>
       </div>
     </div>

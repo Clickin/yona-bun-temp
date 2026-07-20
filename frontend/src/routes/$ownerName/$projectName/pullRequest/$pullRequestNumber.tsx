@@ -4,6 +4,7 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Fragment, useState, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
 import {
   acceptPullRequestRest,
   closePullRequestRest,
@@ -146,12 +147,28 @@ function PullRequestOverviewErrorBody({
   status: 401 | 403 | 404;
 }) {
   const { t } = useLegacyMessages();
+  const errorIconStyleProps = stylex.props(
+    styles.errorIcon,
+    styles.errorIconSprite(`url(${legacySpriteUrl})`),
+  );
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
-        <div className="error-wrap">
-          <i className="ico ico-err2"></i>
-          <p>{t(status === 404 ? "error.notfound" : "error.forbidden")}</p>
+        <div
+          className={`${stylex.props(styles.errorWrap).className} error-wrap`.trim()}
+          data-stylex-owner="pull-request-detail-error-wrap"
+        >
+          <i
+            {...errorIconStyleProps}
+            className={`${errorIconStyleProps.className ?? ""} ico ico-err2`.trim()}
+            data-stylex-owner="pull-request-detail-error-icon"
+          ></i>
+          <p
+            className={stylex.props(styles.errorMessage).className}
+            data-stylex-owner="pull-request-detail-error-message"
+          >
+            {t(status === 404 ? "error.notfound" : "error.forbidden")}
+          </p>
           {status === 404 ? (
             <Link
               to="/$ownerName/$projectName/pullRequests"
