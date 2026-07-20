@@ -3,10 +3,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
 
-async function expectClassFreeSiteLayout(
-  page: Page,
-  owners: readonly string[],
-) {
+async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
   for (const owner of owners) {
     const locator = page.locator(`[data-stylex-owner="${owner}"]`);
     await expect(locator).toBeVisible();
@@ -162,6 +159,17 @@ test("posting-history modal trigger bridge has no remaining selector arm", () =>
   }
 });
 
+test("commit-message wrapper fallback arms have no app.css consumer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {");
+  expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {");
+  expect(appCss).toContain(".code-browse-wrap .commitInfo {");
+  expect(appCss).toContain(".commitMsg");
+  expect(
+    readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8"),
+  ).not.toContain("commitMsg-wrap");
+});
+
 test("row-fluid controls-row fallback bridge has no app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain('.row-fluid .controls-row [class*="span"] + [class*="span"] {');
@@ -216,10 +224,7 @@ test("sidebar refresh plugin bridge has no app.css arms", () => {
   ]) {
     expect(appCss).not.toContain(selector);
   }
-  for (const retainedSelector of [
-    ".sidebar .nav-tabs li a,",
-    ".sidebar .nav-tabs .active a,",
-  ]) {
+  for (const retainedSelector of [".sidebar .nav-tabs li a,", ".sidebar .nav-tabs .active a,"]) {
     expect(appCss).toContain(retainedSelector);
   }
   const source = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
@@ -263,23 +268,28 @@ test("issueform legacy picker bridge has no app.css arms", () => {
 
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
-  for (const selector of [
-    ".post-row {",
-    ".post-row-main {",
-    ".post-title {",
-    ".post-row-meta {",
-  ]) {
+  for (const selector of [".post-row {", ".post-row-main {", ".post-title {", ".post-row-meta {"]) {
     expect(appCss).not.toContain(selector);
   }
 
   for (const [route, owners] of [
     [
       "src/routes/sites/postList.tsx",
-      ["site-post-list-row", "site-post-list-info", "site-post-list-title-link", "site-post-list-metadata"],
+      [
+        "site-post-list-row",
+        "site-post-list-info",
+        "site-post-list-title-link",
+        "site-post-list-metadata",
+      ],
     ],
     [
       "src/routes/sites/issueList.tsx",
-      ["site-issue-list-row", "site-issue-list-info", "site-issue-list-title-link", "site-issue-list-metadata"],
+      [
+        "site-issue-list-row",
+        "site-issue-list-info",
+        "site-issue-list-title-link",
+        "site-issue-list-metadata",
+      ],
     ],
   ] as const) {
     const source = readFileSync(route, "utf8");
@@ -346,10 +356,7 @@ test("board-actions fallback bridge has no remaining selector", () => {
 
   for (const [route, owner] of [
     ["src/routes/$ownerName/$projectName/postform.tsx", "project-postform-actions"],
-    [
-      "src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx",
-      "post-edit-form-actions",
-    ],
+    ["src/routes/$ownerName/$projectName/post/$postNumber/editform.tsx", "post-edit-form-actions"],
   ]) {
     const source = readFileSync(route, "utf8");
     expect(source).not.toContain("board-actions");
@@ -451,9 +458,15 @@ test("codediff markdown-editor plugin bridge has no app.css arms", () => {
     expect(appCss).not.toContain(selector);
   }
   expect(appCss).toContain(".codediff-wrap .review-container .nav-tabs > li > button");
-  expect(appCss).toContain(
-    ".codediff-wrap .review-container .nav-tabs > li.active > button",
-  );
+  expect(appCss).toContain(".codediff-wrap .review-container .nav-tabs > li.active > button");
+});
+
+test("commit-message wrapper fallback arms have no current React producer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {");
+  expect(appCss).not.toContain(".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {");
+  expect(appCss).toContain(".code-browse-wrap .commitInfo {");
+  expect(appCss).toContain(".commitMsg");
 });
 
 test("pull-request tab button bridge has no app.css arms", () => {
@@ -536,12 +549,12 @@ test("project-home status bridge has no React-side app.css arms", () => {
   ]) {
     expect(appCss).not.toContain(selector);
   }
-  expect(
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
-  ).toContain(".project-home .inner header .project-status {");
-  expect(
-    readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8"),
-  ).not.toContain("project-status");
+  expect(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
+    ".project-home .inner header .project-status {",
+  );
+  expect(readFileSync("src/routes/$ownerName/$projectName.tsx", "utf8")).not.toContain(
+    "project-status",
+  );
 });
 
 test("issue detail event-index bridge has no React-side app.css arms", () => {
@@ -550,7 +563,10 @@ test("issue detail event-index bridge has no React-side app.css arms", () => {
   expect(appCss).not.toContain(".issue-detail-page .comments .event.event-index .state {");
   expect(appCss).toContain(".issue-detail-page .comments .event .state i {");
   expect(
-    readFileSync("../yona-original/app/views/issue/partial_index_event_timeline.scala.html", "utf8"),
+    readFileSync(
+      "../yona-original/app/views/issue/partial_index_event_timeline.scala.html",
+      "utf8",
+    ),
   ).toContain('class="event event-index"');
 });
 
@@ -559,12 +575,12 @@ test("authenticated user-menu dropdown declaration bridge has no app.css arms", 
   expect(appCss).not.toContain(".gnb-usermenu-dropdown {\n");
   expect(appCss).not.toContain(".gnb-usermenu-item,\n  .gnb-usermenu-dropdown {");
   expect(appCss).toContain(".gnb-usermenu-item {\n    color: #5dbbe0 !important;");
-  expect(
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
-  ).toContain(".gnb-usermenu-dropdown {");
-  expect(
-    readFileSync("src/routes/-home-route-screen.tsx", "utf8"),
-  ).toContain('data-stylex-owner="authenticated-site-user-menu"');
+  expect(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
+    ".gnb-usermenu-dropdown {",
+  );
+  expect(readFileSync("src/routes/-home-route-screen.tsx", "utf8")).toContain(
+    'data-stylex-owner="authenticated-site-user-menu"',
+  );
 });
 
 test("authenticated user-menu item bridge keeps only the live standalone arm", () => {
@@ -587,12 +603,12 @@ test("site mail form-horizontal bridge has no app.css arms", () => {
 test("email verification helper bridge has no React-side app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".login-form-wrap .email-verification-help");
-  expect(
-    readFileSync("src/routes/users/loginform.tsx", "utf8"),
-  ).not.toContain('className="email-verification-help"');
-  expect(
-    readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8"),
-  ).toContain(".login-form-wrap .email-verification-help");
+  expect(readFileSync("src/routes/users/loginform.tsx", "utf8")).not.toContain(
+    'className="email-verification-help"',
+  );
+  expect(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8")).toContain(
+    ".login-form-wrap .email-verification-help",
+  );
 });
 
 test("board toolbar bridge has no current producer", () => {
@@ -696,9 +712,7 @@ async function mockSecretSetup(page: Page) {
   await page.route("**/api/v1/auth/capabilities", (route) =>
     route.fulfill({ json: { secretSetupRequired: true } }),
   );
-  await page.route("**/api/v1/session", (route) =>
-    route.fulfill({ json: { isAnonymous: true } }),
-  );
+  await page.route("**/api/v1/session", (route) => route.fulfill({ json: { isAnonymous: true } }));
 }
 
 async function mockProjectListSession(page: Page) {
@@ -887,7 +901,14 @@ async function mockBoardEditFormSession(page: Page) {
         isPrivate: false,
         isProtected: false,
         logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: { board: true, code: true, issue: true, milestone: true, pullRequest: true, review: true },
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
@@ -914,7 +935,15 @@ async function mockBoardEditFormSession(page: Page) {
         labels: [],
         notice: false,
         ownerName: "admin",
-        permissions: { canComment: true, canCreate: true, canDelete: true, canRead: true, canSetNotice: true, canUpdate: true, canWatch: true },
+        permissions: {
+          canComment: true,
+          canCreate: true,
+          canDelete: true,
+          canRead: true,
+          canSetNotice: true,
+          canUpdate: true,
+          canWatch: true,
+        },
         postNumber: "3",
         projectName: "sample",
         readme: false,
@@ -954,7 +983,14 @@ async function mockPullRequestEditFormSession(page: Page) {
         isPrivate: false,
         isProtected: false,
         logoUrl: "/assets/images/project_default_logo.png",
-        menuSetting: { board: true, code: true, issue: true, milestone: true, pullRequest: true, review: true },
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
         ownerName: "admin",
         projectName: "sample",
         vcs: "GIT",
@@ -1267,7 +1303,9 @@ async function mockGlobalSearchSession(page: Page) {
     preferredLanguage: "en",
   };
   for (const url of ["**/api/v1/session", "**/api/auth/session", "**/api/v1/auth/session"])
-    await page.route(url, (route) => route.fulfill({ contentType: "application/json", json: session }));
+    await page.route(url, (route) =>
+      route.fulfill({ contentType: "application/json", json: session }),
+    );
   await page.route("**/api/v1/search**", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -1313,10 +1351,7 @@ async function mockGlobalSearchSession(page: Page) {
 }
 
 test("generated fallback excludes only proven dead Yobi selectors", async ({ page }) => {
-  test.skip(
-    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1",
-    "normal runtime asset contract",
-  );
+  test.skip(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1", "normal runtime asset contract");
 
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const basePath = configuredBasePath.endsWith("/") ? configuredBasePath : `${configuredBasePath}/`;
@@ -1351,9 +1386,7 @@ test("generated fallback excludes only proven dead Yobi selectors", async ({ pag
 
   expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members {");
   expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members ul li {");
-  expect(fallbackCss).toContain(
-    ".all-projects .project .stats-wrap .members ul li .avatar-wrap {",
-  );
+  expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members ul li .avatar-wrap {");
   expect(fallbackCss).toContain(".profile-frmwrap dl {");
   expect(fallbackCss).toContain(".profile-frmwrap form {");
   expect(fallbackCss).toContain(".milestones .milestone .infos .progress-wrap {");
@@ -1371,13 +1404,13 @@ test("fallback-off discovery mode removes the generated legacy stylesheet", asyn
   const basePath = configuredBasePath.endsWith("/") ? configuredBasePath : `${configuredBasePath}/`;
   await page.goto(basePath, { waitUntil: "commit" });
 
-  await expect(
-    page.locator(`link[href$="${generatedFallbackHref}"]`),
-  ).toHaveCount(0);
+  await expect(page.locator(`link[href$="${generatedFallbackHref}"]`)).toHaveCount(0);
   await expect(page.locator("#root")).toHaveCount(1);
 });
 
-test("massmail default and selected-project output retain the runtime fallback boundary", async ({ page }) => {
+test("massmail default and selected-project output retain the runtime fallback boundary", async ({
+  page,
+}) => {
   const configuredBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const basePath = configuredBasePath.endsWith("/")
     ? configuredBasePath.slice(0, -1)
@@ -1420,9 +1453,9 @@ test("project-list output retains the runtime fallback boundary without its dead
   );
   const container = page.locator('[data-stylex-owner="site-project-list-container"]');
   await expect(container).toBeVisible();
-  await expect(container.locator('[data-stylex-owner="site-project-list-project-name"]')).toHaveText(
-    "acme/roadmap",
-  );
+  await expect(
+    container.locator('[data-stylex-owner="site-project-list-project-name"]'),
+  ).toHaveText("acme/roadmap");
   await expect(page.locator(".site-admin-page, .project-list-wrap")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-project-list-page-wrap-outer",
@@ -1478,22 +1511,37 @@ test("post-list output retains the runtime fallback boundary without its dead br
   await expect(container).toBeVisible();
   const row = container.locator('[data-stylex-owner="site-post-list-row"]');
   await expect(row).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-project-avatar"]')).toHaveCount(1);
+  await expect(
+    row.locator(':scope > [data-stylex-owner="site-post-list-project-avatar"]'),
+  ).toHaveCount(1);
   await expect(row.locator(':scope > [data-stylex-owner="site-post-list-info"]')).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-metadata"]')).toHaveCount(1);
-  await expect(row.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveText("Release checklist");
-  expect(await row.evaluate((element) => {
-    const [avatar, info, metadata] = Array.from(element.children).map((child) =>
-      child.getBoundingClientRect(),
-    );
-    const rowBox = element.getBoundingClientRect();
-    return {
-      avatarLeft: avatar.left,
-      infoTop: info.top,
-      metadataTop: metadata.top,
-      rowBottom: rowBox.bottom,
-    };
-  })).toEqual(expect.objectContaining({ avatarLeft: expect.any(Number), infoTop: expect.any(Number), metadataTop: expect.any(Number), rowBottom: expect.any(Number) }));
+  await expect(row.locator(':scope > [data-stylex-owner="site-post-list-metadata"]')).toHaveCount(
+    1,
+  );
+  await expect(row.locator('[data-stylex-owner="site-post-list-title-link"]')).toHaveText(
+    "Release checklist",
+  );
+  expect(
+    await row.evaluate((element) => {
+      const [avatar, info, metadata] = Array.from(element.children).map((child) =>
+        child.getBoundingClientRect(),
+      );
+      const rowBox = element.getBoundingClientRect();
+      return {
+        avatarLeft: avatar.left,
+        infoTop: info.top,
+        metadataTop: metadata.top,
+        rowBottom: rowBox.bottom,
+      };
+    }),
+  ).toEqual(
+    expect.objectContaining({
+      avatarLeft: expect.any(Number),
+      infoTop: expect.any(Number),
+      metadataTop: expect.any(Number),
+      rowBottom: expect.any(Number),
+    }),
+  );
   await expect(page.locator(".site-admin-page, .post-list-wrap")).toHaveCount(0);
   await expectClassFreeSiteLayout(page, [
     "site-post-list-page-wrap-outer",
@@ -1506,7 +1554,9 @@ test("post-list output retains the runtime fallback boundary without its dead br
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileRow = await row.evaluate((element) => {
     const rowBox = element.getBoundingClientRect();
-    const titleBox = element.querySelector('[data-stylex-owner="site-post-list-title-link"]')?.getBoundingClientRect();
+    const titleBox = element
+      .querySelector('[data-stylex-owner="site-post-list-title-link"]')
+      ?.getBoundingClientRect();
     return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
   });
   expect(mobileRow.titleBox).not.toBeNull();
@@ -1529,10 +1579,16 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   );
   const row = page.locator('[data-stylex-owner="site-issue-list-row"]');
   await expect(row).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-project-avatar"]')).toHaveCount(1);
+  await expect(
+    row.locator(':scope > [data-stylex-owner="site-issue-list-project-avatar"]'),
+  ).toHaveCount(1);
   await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-info"]')).toHaveCount(1);
-  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-metadata"]')).toHaveCount(1);
-  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText("Fix release blocker");
+  await expect(row.locator(':scope > [data-stylex-owner="site-issue-list-metadata"]')).toHaveCount(
+    1,
+  );
+  await expect(row.locator('[data-stylex-owner="site-issue-list-title-link"]')).toHaveText(
+    "Fix release blocker",
+  );
   const desktop = await row.evaluate((element) => {
     const rowBox = element.getBoundingClientRect();
     const avatarBox = element.children[0]?.getBoundingClientRect();
@@ -1547,7 +1603,9 @@ test("issue-list output retains StyleX row ownership without the dead post-row b
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await row.evaluate((element) => {
     const rowBox = element.getBoundingClientRect();
-    const titleBox = element.querySelector('[data-stylex-owner="site-issue-list-title-link"]')?.getBoundingClientRect();
+    const titleBox = element
+      .querySelector('[data-stylex-owner="site-issue-list-title-link"]')
+      ?.getBoundingClientRect();
     return { rowBox, titleBox, scrollWidth: document.documentElement.scrollWidth };
   });
   expect(mobile.titleBox).not.toBeNull();
@@ -1692,9 +1750,9 @@ test("project home retains the legacy right rail without the dead runtime-grid b
   await expect(rail).toBeVisible();
   await expect(rail.locator('[data-stylex-owner="project-home-side-panel"]')).toBeVisible();
   await expect(rail.locator('[data-stylex-owner="project-home-member-inner"]')).toBeVisible();
-  await expect(rail.locator(".project-btn-wrap + .milestone-info + .inner.member-info")).toHaveCount(
-    1,
-  );
+  await expect(
+    rail.locator(".project-btn-wrap + .milestone-info + .inner.member-info"),
+  ).toHaveCount(1);
   await expect(page.locator(".runtime-grid")).toHaveCount(0);
 });
 

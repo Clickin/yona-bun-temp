@@ -4627,3 +4627,15 @@ directly in StyleX. Update the focused organization-issues and post-detail
 contracts and provenance. Do not modify frozen CSS, global app.css, or
 unrelated routes. Normal and fallback-off desktop/mobile browser replay is
 required before wave acceptance.
+
+## Batch 610
+
+Retire only the unreachable React-side commit-message wrapper arms
+`.code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short` and
+`.desc` from `frontend/src/app.css`. Frozen
+`yona-original/app/views/code/diff.scala.html` and
+`common/commitMsg.scala.html` remain output/UX evidence. Preserve the
+parent `.code-browse-wrap .commitInfo` and generic `.commitMsg`
+declarations, and do not modify frozen or generated CSS or route TSX.
+The focused project-code contract must pass in normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` modes.

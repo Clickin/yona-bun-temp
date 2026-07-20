@@ -17,6 +17,14 @@ const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const LEGACY_CODE_DIFF_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_COMMIT_MSG_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/commitMsg.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_MESSAGES_SOURCE = readFileSync(
   new URL("../../yona-original/conf/messages", import.meta.url),
   "utf8",
@@ -28,6 +36,21 @@ function withLegacyMarkdownHelp(html: string) {
     `<div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-`,
   );
 }
+
+test("project commit detail retires the unreachable commit-message wrapper fallback arms", () => {
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('class="commitMsg-wrap"');
+  expect(LEGACY_COMMIT_MSG_SOURCE).toContain('class="commitMsg short"');
+  expect(LEGACY_COMMIT_MSG_SOURCE).toContain('class="commitMsg desc');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
+  expect(APP_CSS_SOURCE).not.toContain(
+    ".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {",
+  );
+  expect(APP_CSS_SOURCE).not.toContain(
+    ".code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {",
+  );
+  expect(APP_CSS_SOURCE).toContain(".code-browse-wrap .commitInfo {");
+  expect(APP_CSS_SOURCE).toContain(".commitMsg");
+});
 
 function withReactOwnedTabButtons(html: string) {
   return html
@@ -370,9 +393,7 @@ test("project code diff retains review tabs without the removed markdown-editor 
   expect(APP_CSS_SOURCE).not.toContain(
     '.codediff-wrap [data-toggle="markdown-editor"] > .nav-tabs > li.active > button',
   );
-  expect(APP_CSS_SOURCE).toContain(
-    ".codediff-wrap .review-container .nav-tabs > li > button",
-  );
+  expect(APP_CSS_SOURCE).toContain(".codediff-wrap .review-container .nav-tabs > li > button");
   expect(APP_CSS_SOURCE).toContain(
     ".codediff-wrap .review-container .nav-tabs > li.active > button",
   );

@@ -4004,16 +4004,6 @@ div.markdown-preview {
   margin-right: 5px;
 }
 
-.code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.short {
-  font-size: 18px;
-  white-space: normal;
-}
-
-.code-browse-wrap .commitInfo .commitMsg-wrap .commitMsg.desc {
-  margin: 5px;
-  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace;
-}
-
 .code-browse-wrap .commitInfo .commitId-wrap {
   padding: 10px 5px;
 }
