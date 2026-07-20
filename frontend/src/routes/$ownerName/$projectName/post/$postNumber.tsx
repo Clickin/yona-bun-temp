@@ -575,7 +575,10 @@ function ProjectPostDetailBody({
                   projectName={projectName}
                 />
               )}
-              <div className="right-menu-icons">
+              <div
+                className="act-row right-menu-icons"
+                data-stylex-owner="post-detail-sidebar-actions"
+              >
                 <PostActionButtons
                   canDelete={canDelete}
                   canUpdate={canUpdate}

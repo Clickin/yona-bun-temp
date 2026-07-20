@@ -4997,3 +4997,11 @@ Migrate the authenticated `/user/editform` profile and crop avatar wrappers'
 legacy `.avatar-wrap.xlarge` geometry into one route-local StyleX owner per
 visible wrapper. Preserve the legacy wrapper classes, image/upload behavior,
 and shared fallback declarations for unrelated avatar consumers.
+
+## Batch 651
+
+Restore the authenticated project post detail right-rail action-row wrapper
+to the legacy `act-row right-menu-icons` DOM contract used by issue detail.
+Keep the board-specific action buttons, labels, copy, and React interactions
+unchanged; this bounded parity fix addresses the post-vs-issue right-menu
+rendering difference without changing frozen or shared CSS.

@@ -16,17 +16,20 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   expect(template).toContain('class="content markdown-wrap"');
   expect(template).toContain('class="board-actrow right-txt"');
   expect(template).toContain('class="span3 span-right-pane mb20"');
-  expect(template).toContain('@if(project.menuSetting.board)');
+  expect(template).toContain("@if(project.menuSetting.board)");
   expect(template).toContain('@Messages("post.write")');
   expect(template).toContain('class="right-menu-icons"');
 
   // These exact wrappers keep the board rail in the same row-fluid layout as
   // the issue detail without importing issue-only metadata controls.
   expect(route).toContain('className="project-page-wrap board-view"');
-  expect(route).toContain('board-header issue');
-  expect(route).toContain('board-body row-fluid');
-  expect(route).toContain('content markdown-wrap');
-  expect(route).toContain('board-actrow right-txt');
+  expect(route).toContain("board-header issue");
+  expect(route).toContain("board-body row-fluid");
+  expect(route).toContain("content markdown-wrap");
+  expect(route).toContain("board-actrow");
+  expect(route).not.toContain("right-txt");
+  expect(route).toContain('className="act-row right-menu-icons"');
+  expect(route).toContain('data-stylex-owner="post-detail-sidebar-actions"');
 
   // The legacy template keys this link to the enabled board menu, rather than
   // post.permissions.canCreate. The destination performs its own authorization.
@@ -48,6 +51,9 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
   await expect(sidebar.locator("dt")).toHaveText("Label [Edit]");
   await expect(sidebar.locator(".right-menu-icons button[title=Edit]")).toHaveCount(1);
   await expect(sidebar.locator(".right-menu-icons button[title=Delete]")).toHaveCount(1);
+  await expect(sidebar.locator('[data-stylex-owner="post-detail-sidebar-actions"]')).toHaveClass(
+    /act-row/,
+  );
   await expect(comment).toBeVisible();
 
   const desktop = await page.evaluate(() => {
@@ -55,9 +61,17 @@ test("board post keeps the legacy full-width right menu shell and comment hash t
       const element = document.querySelector<HTMLElement>(selector);
       if (!element) throw new Error(`missing ${selector}`);
       const rect = element.getBoundingClientRect();
-      return { bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top, width: rect.width };
+      return {
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        width: rect.width,
+      };
     };
-    const sidebar = document.querySelector<HTMLElement>('[data-stylex-owner="post-detail-sidebar"]');
+    const sidebar = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-sidebar"]',
+    );
     if (!sidebar) throw new Error("missing post sidebar");
     return {
       body: get(".board-body.row-fluid"),
@@ -121,7 +135,14 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
         ownerName: "admin",
         projectName: "sample",
         projectScope: "PUBLIC",
-        menuSetting: { board: true, code: true, issue: true, milestone: true, pullRequest: true, review: true },
+        menuSetting: {
+          board: true,
+          code: true,
+          issue: true,
+          milestone: true,
+          pullRequest: true,
+          review: true,
+        },
         vcs: "GIT",
         viewerCanUpdate: true,
         showBoard: true,
@@ -135,11 +156,30 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
         canAttachFiles: true,
         canMarkNotice: true,
         canMarkReadme: true,
-        defaultPermissions: { canAttachFiles: true, canCreate: true, canMarkNotice: true, canMarkReadme: true },
+        defaultPermissions: {
+          canAttachFiles: true,
+          canCreate: true,
+          canMarkNotice: true,
+          canMarkReadme: true,
+        },
         labels: [
-          { categoryId: "category-1", categoryIsExclusive: false, categoryName: "Type", color: "#51aacc", id: "label-1", name: "parity" },
+          {
+            categoryId: "category-1",
+            categoryIsExclusive: false,
+            categoryName: "Type",
+            color: "#51aacc",
+            id: "label-1",
+            name: "parity",
+          },
         ],
-        onlineCommit: { branch: "", edit: false, issueTemplate: false, path: "", preparedBodyMarkdown: "", title: "" },
+        onlineCommit: {
+          branch: "",
+          edit: false,
+          issueTemplate: false,
+          path: "",
+          preparedBodyMarkdown: "",
+          title: "",
+        },
         readme: false,
       },
     }),
@@ -159,7 +199,20 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
         createdLabel: "Jul 1, 2026",
         updatedLabel: "Jul 1, 2026",
         attachments: [],
-        comments: [{ id: "1", authorId: "reviewer-id", authorLabel: "reviewer", authorLoginId: "reviewer", contentsHtml: "Comment", contentsMarkdown: "Comment", createdLabel: "Jul 2, 2026", attachments: [], parentCommentId: "", viaEmail: false }],
+        comments: [
+          {
+            id: "1",
+            authorId: "reviewer-id",
+            authorLabel: "reviewer",
+            authorLoginId: "reviewer",
+            contentsHtml: "Comment",
+            contentsMarkdown: "Comment",
+            createdLabel: "Jul 2, 2026",
+            attachments: [],
+            parentCommentId: "",
+            viaEmail: false,
+          },
+        ],
         historyHtml: "",
         historyMarkdown: "",
         isWatching: false,
@@ -167,8 +220,25 @@ async function mockPost(page: Page, { canCreate = true }: { canCreate?: boolean 
         notice: false,
         readme: false,
         commentCount: 1,
-        labels: [{ categoryId: "category-1", categoryIsExclusive: false, categoryName: "Type", color: "#51aacc", id: "label-1", name: "parity" }],
-        permissions: { canComment: true, canCreate, canDelete: true, canRead: true, canSetNotice: true, canUpdate: true, canWatch: true },
+        labels: [
+          {
+            categoryId: "category-1",
+            categoryIsExclusive: false,
+            categoryName: "Type",
+            color: "#51aacc",
+            id: "label-1",
+            name: "parity",
+          },
+        ],
+        permissions: {
+          canComment: true,
+          canCreate,
+          canDelete: true,
+          canRead: true,
+          canSetNotice: true,
+          canUpdate: true,
+          canWatch: true,
+        },
       },
     }),
   );
