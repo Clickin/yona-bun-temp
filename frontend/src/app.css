@@ -2706,37 +2706,6 @@ h1 {
   vertical-align: top;
 }
 
-.badge[class*="badge-issue-"] {
-  display: inline-block;
-  padding: 5px 15px;
-  margin-right: 25px;
-  color: #fff;
-  background: #777;
-  border-radius: 15px;
-  font-weight: bold;
-  line-height: 20px;
-}
-
-.badge.badge-issue-open {
-  background: #b6da54;
-}
-
-.badge.badge-issue-closed {
-  background: #fd6956;
-}
-
-.badge.badge-issue-rejected {
-  background: #fd8658;
-}
-
-.badge.badge-issue-merged {
-  background: #65c9df;
-}
-
-.badge.badge-issue-conflict {
-  background: #c0392b;
-}
-
 div.markdown-preview {
   padding: 15px 20px;
   background: #fafafa;

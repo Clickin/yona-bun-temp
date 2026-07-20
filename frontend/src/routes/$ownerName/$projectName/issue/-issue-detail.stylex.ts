@@ -76,6 +76,7 @@ export const styles = stylex.create({
     padding: "5px 15px",
     marginRight: "25px",
     color: "#ffffff",
+    backgroundColor: "#777",
     borderRadius: "15px",
     fontWeight: "bold",
     lineHeight: "20px",

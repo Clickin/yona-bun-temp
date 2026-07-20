@@ -16,7 +16,15 @@ const MILESTONE_LEGACY_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/milestone/view.scala.html", import.meta.url),
   "utf8",
 );
-const MILESTONE_FALLBACK_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const MILESTONE_APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const MILESTONE_PAGE_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
+const MILESTONE_GENERATED_FALLBACK_SOURCE = readFileSync(
+  new URL("../public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+  "utf8",
+);
 
 const MILESTONE_DETAIL_CHILD_ISSUES = `
 <div class="child-issues">
@@ -220,9 +228,41 @@ test("milestone state badge keeps the legacy owner and StyleX declarations", asy
   }
   expect(MILESTONE_STYLEX_SOURCE).toContain('badgeOpen: "#b6da54"');
   expect(MILESTONE_STYLEX_SOURCE).toContain('badgeClosed: "#fd6956"');
-  expect(MILESTONE_FALLBACK_SOURCE).toContain('.badge[class*="badge-issue-"]');
-  expect(MILESTONE_FALLBACK_SOURCE).toContain(".badge.badge-issue-open");
-  expect(MILESTONE_FALLBACK_SOURCE).toContain(".badge.badge-issue-closed");
+  for (const selector of [
+    '.badge[class*="badge-issue-"] {',
+    ".badge.badge-issue-open {",
+    ".badge.badge-issue-closed {",
+    ".badge.badge-issue-rejected {",
+    ".badge.badge-issue-merged {",
+    ".badge.badge-issue-conflict {",
+  ]) {
+    expect(MILESTONE_APP_CSS_SOURCE).not.toContain(selector);
+  }
+  expect(MILESTONE_APP_CSS_SOURCE).toContain(".badge {");
+  for (const declaration of [
+    ".badge {",
+    "margin-right:25px;",
+    "padding:5px 15px;",
+    "line-height:20px;",
+    "&.badge-issue-open",
+    "&.badge-issue-closed",
+    "&.badge-issue-rejected",
+    "&.badge-issue-merged",
+    "&.badge-issue-conflict",
+  ]) {
+    expect(MILESTONE_PAGE_LESS_SOURCE).toContain(declaration);
+  }
+  for (const declaration of [
+    ".badge {",
+    "padding: 5px 15px;",
+    ".badge.badge-issue-open {",
+    ".badge.badge-issue-closed {",
+    ".badge.badge-issue-rejected {",
+    ".badge.badge-issue-merged {",
+    ".badge.badge-issue-conflict {",
+  ]) {
+    expect(MILESTONE_GENERATED_FALLBACK_SOURCE).toContain(declaration);
+  }
 
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 

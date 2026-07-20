@@ -1656,6 +1656,43 @@ test("fallback-off discovery mode removes the generated legacy stylesheet", asyn
   await expect(page.locator("#root")).toHaveCount(1);
 });
 
+test("issue-state badge fallback has no exact app.css family and has route owners", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    '.badge[class*="badge-issue-"] {',
+    ".badge.badge-issue-open {",
+    ".badge.badge-issue-closed {",
+    ".badge.badge-issue-rejected {",
+    ".badge.badge-issue-merged {",
+    ".badge.badge-issue-conflict {",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+  expect(appCss).toContain(".badge {");
+
+  for (const [route, owner, badgeClass] of [
+    [
+      "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+      "project-issue-detail-state-badge",
+      "badge badge-issue-${issueState}",
+    ],
+    [
+      "src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx",
+      "milestone-detail-state-badge",
+      'badge badge-issue-${isClosed ? "closed" : "open"}',
+    ],
+    [
+      "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+      "pull-request-detail-badge",
+      "badge nm badge-issue-${stateKey}",
+    ],
+  ] as const) {
+    const source = readFileSync(route, "utf8");
+    expect(source).toContain(`data-stylex-owner="${owner}"`);
+    expect(source).toContain(badgeClass);
+  }
+});
+
 test("massmail default and selected-project output retain the runtime fallback boundary", async ({
   page,
 }) => {

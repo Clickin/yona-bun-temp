@@ -56,6 +56,8 @@ test("issue detail header owns the populated title metadata state", () => {
   expect(legacy).toContain('<div class="board-header issue">');
   expect(legacy).toContain('class="board-id"');
   expect(legacy).toContain("badge badge-issue-@issue.state.state.toLowerCase");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-state-badge"');
+  expect(routeSource).toContain("badge badge-issue-${issueState}");
   for (const declaration of [
     'padding: "10px 20px"',
     'wordBreak: "break-all"',
@@ -65,6 +67,7 @@ test("issue detail header owns the populated title metadata state", () => {
     'marginRight: "20px"',
     'verticalAlign: "top"',
     'padding: "5px 15px"',
+    'backgroundColor: "#777"',
   ])
     expect(styleSource).toContain(declaration);
   expect(less).toContain(".board-header {");
@@ -76,7 +79,6 @@ test("issue detail header owns the populated title metadata state", () => {
   expect(appCss).not.toContain(".issue-detail-page .board-id {");
   expect(appCss).not.toContain(".issue-detail-page .board-header .date {");
   expect(appCss).toContain(".board-header .title {");
-  expect(appCss).toContain(".badge.badge-issue-open {");
 });
 
 test("issue detail renders legacy header, markdown body, and action owners", async ({ page }) => {

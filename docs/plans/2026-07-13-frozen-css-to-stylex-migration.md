@@ -5040,3 +5040,12 @@ element/classes, copy, order, and surrounding geometry. The shared app.css
 badge family remains fallback-owned for this wave; retirement requires a
 separate exact consumer proof after these two owners and the existing
 issue-detail owner are assembled.
+
+## Batch 656
+
+Retire the React-side shared `app.css` issue-state badge family after proving
+the complete current consumer graph: issue detail, milestone detail, and
+pull-request overview. The colocated StyleX owners carry the exact base and
+state declarations; retain the generic `.badge` rule, responsive
+`.badge-small` fallback, frozen LESS, and generated legacy fallback for
+historical/plugin consumers.

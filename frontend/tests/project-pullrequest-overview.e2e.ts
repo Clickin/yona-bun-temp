@@ -584,7 +584,15 @@ test("project pull request overview badge maps the legacy partial to a condition
     "../yona-original/app/views/git/partial_info.scala.html",
     "utf8",
   );
-  const fallbackSource = readFileSync("src/app.css", "utf8");
+  const appCssSource = readFileSync("src/app.css", "utf8");
+  const pageLessSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const generatedFallbackSource = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
 
   expect(legacySource).toContain(
     '<span class="badge nm @if(pull.isConflict == true) {badge-issue-conflict} else {badge-issue-@pull.state.state.toLowerCase}">',
@@ -601,8 +609,41 @@ test("project pull request overview badge maps the legacy partial to a condition
   expect(styleSource).toContain('backgroundColor: "#fd8658"');
   expect(styleSource).toContain('backgroundColor: "#65c9df"');
   expect(styleSource).toContain('backgroundColor: "#c0392b"');
-  expect(fallbackSource).toContain('.badge[class*="badge-issue-"]');
-  expect(fallbackSource).toContain(".badge.badge-issue-conflict");
+  for (const selector of [
+    '.badge[class*="badge-issue-"] {',
+    ".badge.badge-issue-open {",
+    ".badge.badge-issue-closed {",
+    ".badge.badge-issue-rejected {",
+    ".badge.badge-issue-merged {",
+    ".badge.badge-issue-conflict {",
+  ]) {
+    expect(appCssSource).not.toContain(selector);
+  }
+  expect(appCssSource).toContain(".badge {");
+  for (const declaration of [
+    ".badge {",
+    "margin-right:25px;",
+    "padding:5px 15px;",
+    "line-height:20px;",
+    "&.badge-issue-open",
+    "&.badge-issue-closed",
+    "&.badge-issue-rejected",
+    "&.badge-issue-merged",
+    "&.badge-issue-conflict",
+  ]) {
+    expect(pageLessSource).toContain(declaration);
+  }
+  for (const declaration of [
+    ".badge {",
+    "padding: 5px 15px;",
+    ".badge.badge-issue-open {",
+    ".badge.badge-issue-closed {",
+    ".badge.badge-issue-rejected {",
+    ".badge.badge-issue-merged {",
+    ".badge.badge-issue-conflict {",
+  ]) {
+    expect(generatedFallbackSource).toContain(declaration);
+  }
 });
 
 test("project pull request overview badge keeps exact legacy declarations in every visible state", async ({

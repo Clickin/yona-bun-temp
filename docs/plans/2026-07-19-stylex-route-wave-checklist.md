@@ -240,6 +240,15 @@ shared-fallback retirement batch with an exact consumer graph that names every a
 or a deferred-scope decision for a plugin/global rule. A route TSX/E2E/audit row may be changed
 only when that graph identifies an actual missing visible owner.
 
+### 2026-07-20 Batch 656 issue-state badge C/R proof
+
+The complete current React production emitter graph is exactly the issue-detail,
+milestone-detail, and pull-request-overview state badges. Each keeps the legacy
+badge element/classes and has a colocated StyleX base/state owner with the exact
+frozen declarations, including the `#777` base. Retire only the React-side
+`app.css` badge family; retain generic `.badge`, responsive `.badge-small`,
+frozen LESS, and generated fallback evidence.
+
 ## Non-screen route files
 
 다음은 별도 migration target으로 세지 않는다. 해당 owner screen의 state로만 추적한다.
