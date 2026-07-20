@@ -26,4 +26,6 @@ export const styles = stylex.create({
   editorTabContent: { position: "relative", overflow: "visible" },
   conflictModalOpen: { display: "block" },
   conflictModalClosed: { display: "none" },
+  conflictMessage: { textAlign: "center" },
+  conflictActions: { textAlign: "center" },
 });

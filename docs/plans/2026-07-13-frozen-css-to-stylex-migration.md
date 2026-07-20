@@ -4887,6 +4887,12 @@ Migrate the project create and project import advanced-form field-label
 `right-txt` consumers into route-local StyleX owners, preserving the three
 `span2` labels, `mt10` spacing, and legacy form layout.
 
+## Batch 643
+
+Migrate issue-label dialog center alignment and new pull-request conflict
+modal center alignment into route-local StyleX owners, preserving dialog
+buttons, spacing, copy, and React interactions.
+
 ## Batch 642
 
 Migrate the user profile avatar upload/crop center alignment and pull-request

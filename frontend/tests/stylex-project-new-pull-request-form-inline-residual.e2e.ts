@@ -52,7 +52,40 @@ test("new pull request form owns legacy inline layout and preserves Select2 clos
   expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
 });
 
-async function mockNewPullRequestForm(page: Page) {
+test("new pull request conflict modal owns legacy center-txt alignment", async ({ page }) => {
+  const source = readFileSync("src/routes/$ownerName/$projectName/newPullRequestForm.tsx", "utf8");
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/-new-pull-request.stylex.ts",
+    "utf8",
+  );
+  const legacy = readFileSync("../yona-original/app/views/common/scripts.scala.html", "utf8");
+  const commonLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  expect(legacy).toContain('<div class="center-txt buttons">');
+  expect(commonLess).toContain(".center-txt    { text-align:center; }");
+  expect(source).not.toContain('className="center-txt"');
+  expect(source).not.toContain('className="center-txt buttons mt20 mb20"');
+  expect(styleSource).toContain('conflictMessage: { textAlign: "center" }');
+  expect(styleSource).toContain('conflictActions: { textAlign: "center" }');
+
+  await mockNewPullRequestForm(page, { conflict: true });
+  await page.goto(`${basePath}/admin/sample/newPullRequestForm`, { waitUntil: "commit" });
+  await page.locator('form button[type="submit"]').click();
+
+  const message = page.locator('[data-stylex-owner="new-pull-request-conflict-message"]');
+  const actions = page.locator('[data-stylex-owner="new-pull-request-conflict-actions"]');
+  await expect(message).toBeVisible();
+  await expect(message).toHaveCSS("text-align", "center");
+  await expect(actions).toBeVisible();
+  await expect(actions).toHaveCSS("text-align", "center");
+  await expect(actions).toHaveClass(/buttons/u);
+  await expect(actions).toHaveClass(/mt20/u);
+  await expect(actions).toHaveClass(/mb20/u);
+});
+
+async function mockNewPullRequestForm(page: Page, options: { conflict?: boolean } = {}) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {
       basePath: runtimeBasePath,
@@ -124,7 +157,7 @@ async function mockNewPullRequestForm(page: Page) {
               commitShortId: "abcdef1",
             },
           ],
-          conflict: false,
+          conflict: options.conflict ?? false,
         },
       }),
   );

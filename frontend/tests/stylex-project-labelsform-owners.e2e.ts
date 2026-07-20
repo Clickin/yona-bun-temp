@@ -16,8 +16,13 @@ const styleSource = readFileSync(
 );
 const owners = [
   "project-labels-category-list",
+  "project-labels-confirm-actions",
   "project-labels-edit-category-modal",
+  "project-labels-edit-category-fields",
+  "project-labels-edit-category-actions",
   "project-labels-edit-label-modal",
+  "project-labels-edit-label-fields",
+  "project-labels-edit-label-actions",
   "project-labels-preset-color",
 ] as const;
 
@@ -171,6 +176,7 @@ test("labels form source exposes residual StyleX owners", () => {
     expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
   }
   expect(routeSource).toContain('from "./-labelsform.stylex"');
+  expect(routeSource).not.toContain("center-txt");
   expect(styleSource).toContain("stylex.defineVars({");
   expect(routeSource).not.toContain("document.querySelector");
   expect(routeSource).not.toContain("addEventListener");
@@ -193,13 +199,36 @@ test("populated labels form keeps category and edit modal owners within the view
   await expect(
     page.locator('[data-stylex-owner="project-labels-edit-category-modal"]'),
   ).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-labels-edit-category-fields"]')).toHaveCSS(
+    "text-align",
+    "center",
+  );
+  await expect(
+    page.locator('[data-stylex-owner="project-labels-edit-category-actions"]'),
+  ).toHaveCSS("text-align", "center");
   await page.locator("#editCategory button.ybtn-default").click();
+
+  await category.locator("button.ybtn-danger").first().click();
+  await expect(page.locator('[data-stylex-owner="project-labels-confirm-actions"]')).toBeVisible();
+  await expect(page.locator('[data-stylex-owner="project-labels-confirm-actions"]')).toHaveCSS(
+    "text-align",
+    "center",
+  );
+  await page.locator("#deleteLabelConfirm button.ybtn-default").click();
 
   await category.locator("button.ybtn-small").last().click();
   const editLabel = page.locator('[data-stylex-owner="project-labels-edit-label-modal"]');
   await expect(editLabel).toBeVisible();
   await expect(editLabel.locator('[data-stylex-owner="project-labels-preset-color"]')).toHaveCount(
     12,
+  );
+  await expect(page.locator('[data-stylex-owner="project-labels-edit-label-fields"]')).toHaveCSS(
+    "text-align",
+    "center",
+  );
+  await expect(page.locator('[data-stylex-owner="project-labels-edit-label-actions"]')).toHaveCSS(
+    "text-align",
+    "center",
   );
   const box = await editLabel.boundingBox();
   expect(box).not.toBeNull();

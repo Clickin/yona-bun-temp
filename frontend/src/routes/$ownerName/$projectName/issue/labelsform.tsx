@@ -66,6 +66,7 @@ const styles = stylex.create({
     textAlign: "center",
     verticalAlign: "top",
   },
+  confirmActions: { textAlign: "center" },
   list: { margin: "0 auto" },
   listHead: {
     backgroundColor: labelsFormColors.listSurface,
@@ -98,6 +99,8 @@ const styles = stylex.create({
     width: "150px",
   },
   editCategoryForm: { marginTop: "20px" },
+  editCategoryFields: { textAlign: "center" },
+  editCategoryActions: { textAlign: "center" },
   editCategoryName: {
     display: "block",
     fontSize: "15px",
@@ -106,6 +109,8 @@ const styles = stylex.create({
     width: "68%",
   },
   editLabelForm: { marginTop: "20px" },
+  editLabelFields: { textAlign: "center" },
+  editLabelActions: { textAlign: "center" },
   editLabelName: { marginBottom: "0", marginLeft: "20px" },
   editPresetColors: { display: "block", marginTop: "10px" },
   presetColorButton: {
@@ -1250,7 +1255,11 @@ function IssueLabelConfirmModal({
             <LegacyDialogText className="msg" text={message} />
             <LegacyDialogText className="desc" text={description} />
           </div>
-          <div className="center-txt buttons">
+          <div
+            {...stylex.props(styles.confirmActions)}
+            className={`${stylex.props(styles.confirmActions).className} buttons`}
+            data-stylex-owner="project-labels-confirm-actions"
+          >
             {buttons.map((button) => (
               <button
                 type="button"
@@ -1306,7 +1315,11 @@ function EditCategoryModal({
           className={`${stylex.props(styles.editCategoryForm).className} message edit-label-category-form`}
           data-stylex-owner="project-labels-edit-category-modal"
         >
-          <div className="center-txt">
+          <div
+            {...stylex.props(styles.editCategoryFields)}
+            className={stylex.props(styles.editCategoryFields).className}
+            data-stylex-owner="project-labels-edit-category-fields"
+          >
             <input
               key={category ? `category-name-${category.id}` : "category-name-empty"}
               type="text"
@@ -1430,7 +1443,11 @@ function EditCategoryModal({
             </div>
           </div>
 
-          <div className="center-txt buttons mt20 mb20">
+          <div
+            {...stylex.props(styles.editCategoryActions)}
+            className={`${stylex.props(styles.editCategoryActions).className} buttons mt20 mb20`}
+            data-stylex-owner="project-labels-edit-category-actions"
+          >
             <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
               {t("button.save")}
             </button>
@@ -1500,7 +1517,11 @@ function EditLabelModal({
           className={`${stylex.props(styles.editLabelForm).className} message edit-label-form`}
           data-stylex-owner="project-labels-edit-label-modal"
         >
-          <div className="center-txt">
+          <div
+            {...stylex.props(styles.editLabelFields)}
+            className={stylex.props(styles.editLabelFields).className}
+            data-stylex-owner="project-labels-edit-label-fields"
+          >
             <select
               key={label ? `label-category-${label.id}` : "label-category-empty"}
               name="category.id"
@@ -1632,7 +1653,11 @@ function EditLabelModal({
               />
             </div>
           </div>
-          <div className="center-txt buttons mt20 mb20">
+          <div
+            {...stylex.props(styles.editLabelActions)}
+            className={`${stylex.props(styles.editLabelActions).className} buttons mt20 mb20`}
+            data-stylex-owner="project-labels-edit-label-actions"
+          >
             <button type="button" className="ybtn ybtn-info btnSubmit" onClick={onSubmit}>
               {t("button.save")}
             </button>
