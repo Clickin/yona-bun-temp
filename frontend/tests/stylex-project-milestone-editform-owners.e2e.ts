@@ -12,6 +12,10 @@ const LEGACY_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/milestone/edit.scala.html", import.meta.url),
   "utf8",
 );
+const UPLOAD_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/uploadForm.scala.html", import.meta.url),
+  "utf8",
+);
 
 test("milestone edit form keeps StyleX owners across editor, options, upload, and datepicker", async ({
   page,
@@ -29,6 +33,9 @@ test("milestone edit form keeps StyleX owners across editor, options, upload, an
   await expect(
     page.locator('[data-stylex-owner="milestone-edit-form-upload-controls"]'),
   ).toHaveCount(1);
+  const uploadSaveHelp = page.locator('[data-stylex-owner="milestone-edit-form-upload-save-help"]');
+  await expect(uploadSaveHelp).toHaveCount(1);
+  await expect(uploadSaveHelp).toHaveCSS("text-align", "right");
   await expect(page.locator('[data-stylex-owner="milestone-edit-form-state-options"]')).toHaveCount(
     1,
   );
@@ -58,7 +65,12 @@ test("milestone edit form keeps StyleX owners across editor, options, upload, an
   expect(LEGACY_SOURCE).toContain('id -> "milestone-form"');
   expect(LEGACY_SOURCE).toContain('@common.editor("contents"');
   expect(LEGACY_SOURCE).toContain("@common.fileUploader(ResourceType.MILESTONE");
+  expect(UPLOAD_SOURCE).toContain('<p class="right-txt help">');
+  expect(UPLOAD_SOURCE).toContain("common.attach.attachIfYouSave");
   expect(ROUTE_SOURCE).toContain('data-stylex-owner="milestone-edit-form-datepicker"');
+  expect(ROUTE_SOURCE).toContain('data-stylex-owner="milestone-edit-form-upload-save-help"');
+  expect(ROUTE_SOURCE).not.toContain('<p className="right-txt help">');
+  expect(ROUTE_SOURCE).toContain("milestoneEditFormStyles.uploadSaveHelp");
   expect(ROUTE_SOURCE).not.toContain("$yobi.loadModule");
   expect(ROUTE_SOURCE).not.toMatch(/href="javascript:/u);
 });

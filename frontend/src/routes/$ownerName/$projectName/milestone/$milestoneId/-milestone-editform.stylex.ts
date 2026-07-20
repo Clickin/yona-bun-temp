@@ -13,6 +13,7 @@ export const milestoneEditFormTheme = stylex.defineVars({
 
 export const milestoneEditFormStyles = stylex.create({
   pasteHelpVisible: { display: "block" },
+  uploadSaveHelp: { textAlign: "right" },
   editorWrapper: { position: "relative" },
   editorContent: {
     backgroundColor: milestoneEditFormTheme.editorSurface,

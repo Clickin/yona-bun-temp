@@ -438,7 +438,10 @@ function MilestoneFileUploader({ resourceId }: { resourceId: string }) {
         </span>
       </div>
       <ul className="attached-files unstyled"></ul>
-      <p className="right-txt help">
+      <p
+        className={`${stylex.props(milestoneEditFormStyles.uploadSaveHelp).className} help`}
+        data-stylex-owner="milestone-edit-form-upload-save-help"
+      >
         <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
       </p>
     </div>
