@@ -602,7 +602,10 @@ function ProjectMembersBody({
                     <p className="msg">{t("project.member.deleteConfirm")}</p>
                     <p className="desc"></p>
                   </div>
-                  <div className="center-txt buttons">
+                  <div
+                    className={`${stylex.props(styles.deleteConfirmActions).className} buttons`}
+                    data-stylex-owner="project-members-delete-confirm-actions"
+                  >
                     <button
                       type="button"
                       className="ybtn ybtn-default"
@@ -891,6 +894,10 @@ const styles = stylex.create({
   // Legacy project/members.scala.html enrolled-user details column.
   enrollmentDetails: {
     width: "60px",
+  },
+  // Frozen _common.less `.center-txt` rule for the member delete confirmation actions.
+  deleteConfirmActions: {
+    textAlign: "center",
   },
 });
 

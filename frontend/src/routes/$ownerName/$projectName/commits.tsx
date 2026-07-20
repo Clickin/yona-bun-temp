@@ -401,7 +401,7 @@ export function ProjectCodeHistoryBody({
                           >
                             {commit.commentCount > 0 ? (
                               <span
-                                className={`${stylex.props(styles.commentCount).className} number-of-comments`}
+                                className={stylex.props(styles.commentCount).className}
                                 data-stylex-owner="project-commits-comment-count"
                               >
                                 <i className="yobicon-comments"></i> {commit.commentCount}

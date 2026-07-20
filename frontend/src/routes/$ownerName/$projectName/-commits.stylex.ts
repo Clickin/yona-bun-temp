@@ -53,7 +53,9 @@ export const styles = stylex.create({
     wordBreak: "break-word",
   },
   commentCount: {
+    float: "right",
     marginRight: "8px",
+    position: "relative",
     color: commitsTheme.commentText,
   },
 });

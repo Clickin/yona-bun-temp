@@ -269,6 +269,29 @@ test("project members four StyleX list row setting owners preserve the owner-onl
   });
 });
 
+test("project members delete confirmation keeps centered actions through StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectMembers(page);
+
+  await page.goto(`${basePath}/admin/sample/members`);
+  await page.locator(".member-setting .ybtn-danger").first().click();
+
+  const actions = page.locator('[data-stylex-owner="project-members-delete-confirm-actions"]');
+  await expect(actions).toBeVisible();
+  await expect(actions).toHaveClass(/\bbuttons\b/u);
+  await expect(actions).not.toHaveClass(/(?:^|\s)center-txt(?:\s|$)/u);
+  await expect
+    .poll(() => actions.evaluate((element) => getComputedStyle(element).textAlign))
+    .toBe("center");
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  await expect
+    .poll(() => actions.evaluate((element) => getComputedStyle(element).textAlign))
+    .toBe("center");
+});
+
 test("project members mention stylesheet keeps the configured base path", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const mentionStylesheetHref = legacyMentionStylesheetHref(basePath);

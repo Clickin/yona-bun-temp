@@ -4820,3 +4820,15 @@ fallback consumers outside this route.
 Migrate the branches route pull-request state link's `blue-txt` color into its
 route-local theme variable. Preserve the branch table structure and shared
 `.blue-txt` fallback for unrelated consumers.
+
+## Batch 631
+
+Migrate the project commits list comment-count wrapper's legacy float, relative
+position, margin, and color declarations into its existing route StyleX owner.
+Retain `.number-of-comments` fallback for the separate file/merge consumers.
+
+## Batch 632
+
+Migrate the project members delete-confirmation action row's `center-txt`
+alignment into the route-local StyleX owner while preserving the legacy modal
+message, buttons class, and interaction.

@@ -85,10 +85,19 @@ test("project commits owns inline selectors, tabs, and populated row typography 
     "margin-right",
     "8px",
   );
+  const commentCount = page.locator('[data-stylex-owner="project-commits-comment-count"]');
+  await expect(commentCount).toHaveCSS("color", "rgb(102, 102, 102)");
+  await expect(commentCount).toHaveCSS("float", "right");
+  await expect(commentCount).toHaveCSS("position", "relative");
+  await expect(commentCount).not.toHaveClass(/number-of-comments/u);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: "commit" });
   const mobileTabs = page.locator('[data-stylex-owner="project-commits-tabs"]');
+  const mobileCommentCount = page.locator('[data-stylex-owner="project-commits-comment-count"]');
+  await expect(mobileCommentCount).toBeVisible();
+  await expect(mobileCommentCount).toHaveCSS("margin-right", "8px");
+  await expect(mobileCommentCount).toHaveCSS("float", "right");
   const metrics = await mobileTabs.evaluate((element) => ({
     right: element.getBoundingClientRect().right,
     viewport: window.innerWidth,
@@ -117,6 +126,11 @@ test("project commits owns inline selectors, tabs, and populated row typography 
   expect(STYLE_SOURCE).toContain('width: "40px"');
   expect(STYLE_SOURCE).toContain('padding: "5px"');
   expect(STYLE_SOURCE).toContain('marginRight: "8px"');
+  expect(STYLE_SOURCE).toContain('float: "right"');
+  expect(STYLE_SOURCE).toContain('position: "relative"');
+  expect(SOURCE).not.toContain(
+    "className={`${stylex.props(styles.commentCount).className} number-of-comments`}",
+  );
   expect(LEGACY_SOURCE).toContain('class="commit-wrap"');
   expect(LEGACY_SOURCE).toContain('class="code-table commits');
   expect(LEGACY_SOURCE).toContain('class="number-of-comments"');
