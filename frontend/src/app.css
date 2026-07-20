@@ -1851,15 +1851,6 @@ h1 {
   overflow: hidden;
 }
 
-.all-projects .project .stats-wrap .members ul li {
-  float: right;
-}
-
-.all-projects .project .stats-wrap .members ul li .avatar-wrap {
-  margin-right: 3px;
-  margin-bottom: 3px;
-}
-
 .all-projects .project .stats-wrap .members strong {
   color: #51aacc;
 }

@@ -13,9 +13,17 @@ test("records organization directory StyleX ownership and responsive geometry", 
   const theme = readFileSync("src/routes/-orgs.stylex.ts", "utf8");
   const template = readFileSync("../yona-original/app/views/organization/list.scala.html", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const appCss = readFileSync("src/app.css", "utf8");
   expect(template).toContain('<ul class="all-projects">');
   expect(template).toContain('placeholder="@Messages("site.organization.filter")"');
   expect(pageLess).toContain(".all-projects {");
+  expect(pageLess).toContain("float:right;");
+  expect(pageLess).toContain("margin-right:3px; margin-bottom:3px;");
+  expect(appCss).not.toContain(".all-projects .project .stats-wrap .members ul li {");
+  expect(appCss).not.toContain(
+    ".all-projects .project .stats-wrap .members ul li .avatar-wrap {",
+  );
+  expect(route).not.toContain('className="avatar-wrap"');
   expect(route).toContain('data-stylex-owner="organization-directory-search-input"');
   expect(route).toContain('data-stylex-owner="organization-directory-title-area"');
   expect(route).toContain('data-stylex-owner="organization-directory-list"');

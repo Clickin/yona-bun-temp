@@ -1314,6 +1314,10 @@ test("generated fallback excludes only proven dead Yobi selectors", async ({ pag
   }
 
   expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members {");
+  expect(fallbackCss).toContain(".all-projects .project .stats-wrap .members ul li {");
+  expect(fallbackCss).toContain(
+    ".all-projects .project .stats-wrap .members ul li .avatar-wrap {",
+  );
   expect(fallbackCss).toContain(".profile-frmwrap dl {");
   expect(fallbackCss).toContain(".profile-frmwrap form {");
   expect(fallbackCss).toContain(".milestones .milestone .infos .progress-wrap {");

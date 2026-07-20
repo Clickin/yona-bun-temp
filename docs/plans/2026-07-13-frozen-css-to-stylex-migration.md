@@ -4542,3 +4542,12 @@ generated fallback remain as historical evidence. Preserve unrelated generic
 rules and geometry baselines. Update the project-home and formal fallback-off
 static contracts in normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not
 change TSX, frozen/generated CSS, or baselines.
+
+## Batch 601
+
+Retire only the unreachable organization-directory member list-item float and
+avatar spacing arms from `frontend/src/app.css`. Current React organization
+directory output has no member list-item/avatar consumer; frozen Scala/LESS
+and generated fallback remain historical evidence. Preserve the parent members
+layout and verify organization-directory plus formal fallback-off contracts in
+normal and `VITE_DISABLE_LEGACY_FALLBACK=1` modes.
