@@ -15,6 +15,7 @@ const LEGACY_THREAD_FORM_SOURCE = readFileSync(
   ),
   "utf8",
 );
+const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
 
 test("pull request changes owns static review and editor declarations in StyleX", async ({
   page,
@@ -79,6 +80,13 @@ test("pull request changes static residual source owners preserve legacy values"
   expect(LEGACY_THREAD_FORM_SOURCE).toContain(
     '<form action="@urlToPostNewComment(thread)" method="post" enctype="multipart/form-data" class="review-form" style="display:block;">',
   );
+});
+
+test("pull request changes retains actions while retiring the React-only thread-actrow arm", () => {
+  expect(ROUTE_SOURCE).not.toContain("thread-actrow");
+  expect(APP_CSS_SOURCE).not.toContain(".thread-actrow,");
+  expect(APP_CSS_SOURCE).toContain(".actions {");
+  expect(LEGACY_THREAD_FORM_SOURCE).toContain('class="thread-actrow"');
 });
 
 async function mockChanges(page: Page) {

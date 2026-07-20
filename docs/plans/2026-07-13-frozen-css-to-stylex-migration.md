@@ -4652,3 +4652,13 @@ classes as historical evidence. Keep shared `.search`, `.search-bar`, and
 focused tests and run normal/fallback-off desktop/mobile checks.
 The existing StyleX action owner also keeps the legacy 12px icon-action hit
 area when the optional fallback stylesheet's icon font is disabled.
+
+## Batch 612
+
+Retire only the source-less React-side `.thread-actrow` arm from the grouped
+flex rule in `frontend/src/app.css`. Current React production TS/TSX emits no
+`thread-actrow`; the frozen `partial_comment_form_on_thread.scala.html` and
+legacy `yobi.code.Diff.js` remain historical output/behavior evidence. Keep the
+frozen/generated `.thread-actrow` declaration, the active `.actions` sibling,
+and all comment-thread geometry unchanged. Update commit/PR focused contracts
+and formal fallback-off static/browser checks.

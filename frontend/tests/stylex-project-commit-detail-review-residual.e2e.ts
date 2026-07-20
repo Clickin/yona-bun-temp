@@ -2,8 +2,26 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const APP_CSS_SOURCE = readFileSync("src/app.css", "utf8");
+const LEGACY_DIFF_JS_SOURCE = readFileSync(
+  "../yona-original/public/javascripts/service/yobi.code.Diff.js",
+  "utf8",
+);
 
 test.use({ locale: "ko-KR" });
+
+test("commit review retires the React-only thread-actrow flex arm", () => {
+  const legacyThreadForm = readFileSync(
+    "../yona-original/app/views/partial_comment_form_on_thread.scala.html",
+    "utf8",
+  );
+  const route = readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8");
+  expect(legacyThreadForm).toContain('class="thread-actrow"');
+  expect(LEGACY_DIFF_JS_SOURCE).toContain('.closest(".thread-actrow")');
+  expect(route).not.toContain("thread-actrow");
+  expect(APP_CSS_SOURCE).not.toContain(".thread-actrow,");
+  expect(APP_CSS_SOURCE).toContain(".actions {");
+});
 
 test("commit detail owns static review form and original-message styles", async ({ page }) => {
   const route = readFileSync("src/routes/$ownerName/$projectName/commit/$commitId.tsx", "utf8");

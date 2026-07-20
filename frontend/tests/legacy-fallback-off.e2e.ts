@@ -368,7 +368,7 @@ test("pull-request action and branch fallback bridges have no remaining selector
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".pull-request-actions");
   expect(appCss).not.toContain(".pull-request-branches");
-  expect(appCss).toContain(".thread-actrow,");
+  expect(appCss).not.toContain(".thread-actrow,");
   expect(appCss).toContain(".actions {");
 
   for (const route of [
