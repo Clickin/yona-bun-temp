@@ -5049,3 +5049,11 @@ pull-request overview. The colocated StyleX owners carry the exact base and
 state declarations; retain the generic `.badge` rule, responsive
 `.badge-small` fallback, frozen LESS, and generated legacy fallback for
 historical/plugin consumers.
+
+## Batch 657
+
+Retire the React-side shared `.empty-result` app.css arm after proving the
+complete current consumer graph: global, project, and organization search.
+Their colocated StyleX owners carry the legacy empty-state geometry and paint;
+retain the frozen search partial/LESS declarations and generated fallback as
+historical evidence.

@@ -249,6 +249,14 @@ frozen declarations, including the `#777` base. Retire only the React-side
 `app.css` badge family; retain generic `.badge`, responsive `.badge-small`,
 frozen LESS, and generated fallback evidence.
 
+### 2026-07-20 Batch 657 search empty-result C/R proof
+
+The complete current React production emitter graph for `.empty-result` is
+global search, project search, and organization search. Each visible empty
+state has a stable StyleX owner and preserves the legacy class/DOM. Retire
+only the React-side `app.css` arm; retain frozen search partial/LESS and
+generated fallback evidence.
+
 ## Non-screen route files
 
 다음은 별도 migration target으로 세지 않는다. 해당 owner screen의 state로만 추적한다.

@@ -3528,12 +3528,6 @@ div.markdown-preview {
   color: #666;
 }
 
-.empty-result {
-  min-height: 32px;
-  padding: 10px 0;
-  color: #777;
-}
-
 .code-browse-wrap {
   position: relative;
 }

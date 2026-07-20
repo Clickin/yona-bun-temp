@@ -17,6 +17,15 @@ const styleSource = readFileSync(
   ),
   "utf8",
 );
+const appCss = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+const fallbackCss = readFileSync(
+  new URL("../public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+  "utf8",
+);
+const frozenPageLess = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
 
 const counts = {
   issueComments: 0,
@@ -130,6 +139,31 @@ test("organization search maps the frozen result family to six route-local owner
     expect(themeBlock).not.toContain(geometry);
   }
   expect(routeSource).not.toContain("document.querySelector");
+  expect(appCss).not.toMatch(/(?:^|\n)\.empty-result\s*\{/u);
+  for (const retainedSelector of [
+    ".search-box-wrap {",
+    ".search-result-title {",
+    ".search-list-wrap {",
+    ".search-content-body {",
+    ".search-meta-info {",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+  for (const [source, declarations] of [
+    [frozenPageLess, [".empty-result {", "padding:0 20px;", "min-height: 250px;"]],
+    [
+      fallbackCss,
+      [
+        ".empty-result {",
+        "padding: 0 20px;",
+        "margin: 20px 0;",
+        "min-height: 250px;",
+        'background-image: url(\"../images/no_contents.jpg\");',
+      ],
+    ],
+  ] as const) {
+    for (const declaration of declarations) expect(source).toContain(declaration);
+  }
 });
 
 test("organization search preserves populated desktop owners, geometry, and navigation", async ({

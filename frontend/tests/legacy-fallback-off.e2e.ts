@@ -768,6 +768,74 @@ test("search result owners have no shared app.css bridge arms", () => {
   }
 });
 
+test("search empty-result fallback arm is retired while legacy declarations remain", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const fallbackCss = readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css", "utf8");
+  const frozenPageLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+
+  expect(appCss).not.toMatch(/(?:^|\n)\.empty-result\s*\{/u);
+  for (const retainedSelector of [
+    ".search-box-wrap {",
+    ".search-result-title {",
+    ".search-list-wrap {",
+    ".search-content-body {",
+    ".search-meta-info {",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+
+  for (const declaration of [
+    ".empty-result {",
+    "padding:0 20px;",
+    "margin: 20px 0;",
+    "text-align: center;",
+    "min-height: 250px;",
+    'background-image:url("@{base-image-path}/no_contents.jpg");',
+    "background-repeat: no-repeat;",
+    "background-position: center 50%;",
+  ]) {
+    expect(frozenPageLess).toContain(declaration);
+  }
+  for (const declaration of [
+    ".empty-result {",
+    "padding: 0 20px;",
+    "margin: 20px 0;",
+    "text-align: center;",
+    "min-height: 250px;",
+    'background-image: url("../images/no_contents.jpg");',
+    "background-repeat: no-repeat;",
+    "background-position: center 50%;",
+  ]) {
+    expect(fallbackCss).toContain(declaration);
+  }
+
+  for (const partial of [
+    "partial_issues.scala.html",
+    "partial_users.scala.html",
+    "partial_posts.scala.html",
+    "partial_projects.scala.html",
+    "partial_milestones.scala.html",
+    "partial_issue_comments.scala.html",
+    "partial_post_comments.scala.html",
+    "partial_reviews.scala.html",
+  ]) {
+    expect(readFileSync(`../yona-original/app/views/search/${partial}`, "utf8")).toContain(
+      "empty-result",
+    );
+  }
+
+  for (const [route, owner] of [
+    ["src/routes/search.tsx", "global-search-empty-result"],
+    ["src/routes/$ownerName/$projectName/search.tsx", "project-search-empty-result"],
+    ["src/routes/organizations/$organizationName/search.tsx", "organization-search-empty"],
+  ] as const) {
+    expect(readFileSync(route, "utf8")).toContain(`data-stylex-owner=\"${owner}\"`);
+  }
+});
+
 test("search keyword owners have no generic app.css bridge arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".keyword {");

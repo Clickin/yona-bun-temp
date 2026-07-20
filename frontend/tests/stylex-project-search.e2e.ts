@@ -4,33 +4,43 @@ import { expect, test, type Page } from "@playwright/test";
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 test("project search StyleX owners preserve populated and empty result contracts", async () => {
-  const [route, style, legacy, issues, users, posts, less] = await Promise.all([
-    readFile(new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url), "utf8"),
-    readFile(
-      new URL("../src/routes/$ownerName/$projectName/-project-search.stylex.ts", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/search/partial_search.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/search/partial_issues.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/search/partial_users.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/views/search/partial_posts.scala.html", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
-      "utf8",
-    ),
-  ]);
+  const [route, style, legacy, issues, users, posts, less, appCss, fallbackCss] = await Promise.all(
+    [
+      readFile(
+        new URL("../src/routes/$ownerName/$projectName/search.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../src/routes/$ownerName/$projectName/-project-search.stylex.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../yona-original/app/views/search/partial_search.scala.html", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../yona-original/app/views/search/partial_issues.scala.html", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../yona-original/app/views/search/partial_users.scala.html", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../yona-original/app/views/search/partial_posts.scala.html", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../src/app.css", import.meta.url), "utf8"),
+      readFile(
+        new URL("../public/legacy-assets/stylesheets/legacy-fallback.css", import.meta.url),
+        "utf8",
+      ),
+    ],
+  );
   expect(legacy).toContain("search-category-wrap");
   expect(issues).toContain("search-list-wrap");
   expect(users).toContain("search-list-item");
@@ -38,6 +48,40 @@ test("project search StyleX owners preserve populated and empty result contracts
   expect(less).toContain(".search-box-wrap");
   expect(less).toContain(".search-category-wrap");
   expect(less).toContain(".search-list-wrap");
+  expect(less).toContain(".empty-result {");
+  for (const declaration of [
+    "padding:0 20px;",
+    "margin: 20px 0;",
+    "text-align: center;",
+    "min-height: 250px;",
+    'background-image:url("@{base-image-path}/no_contents.jpg");',
+    "background-repeat: no-repeat;",
+    "background-position: center 50%;",
+  ]) {
+    expect(less).toContain(declaration);
+  }
+  expect(appCss).not.toMatch(/(?:^|\n)\.empty-result\s*\{/u);
+  for (const retainedSelector of [
+    ".search-box-wrap {",
+    ".search-result-title {",
+    ".search-list-wrap {",
+    ".search-content-body {",
+    ".search-meta-info {",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+  for (const declaration of [
+    ".empty-result {",
+    "padding: 0 20px;",
+    "margin: 20px 0;",
+    "text-align: center;",
+    "min-height: 250px;",
+    'background-image: url(\"../images/no_contents.jpg\");',
+    "background-repeat: no-repeat;",
+    "background-position: center 50%;",
+  ]) {
+    expect(fallbackCss).toContain(declaration);
+  }
   for (const owner of [
     "project-search-category-item",
     "project-search-box",
@@ -154,7 +198,12 @@ test("project search populated and empty states keep responsive bounds and links
       .locator('[data-stylex-owner="project-search-results"]')
       .evaluate((element) => {
         const box = element.getBoundingClientRect();
-        return { left: box.left, right: box.right, width: box.width, viewportWidth: window.innerWidth };
+        return {
+          left: box.left,
+          right: box.right,
+          width: box.width,
+          viewportWidth: window.innerWidth,
+        };
       });
     expect(bounds.width).toBeGreaterThan(0);
     // The shared Bootstrap span grid can retain page-level mobile overflow;
