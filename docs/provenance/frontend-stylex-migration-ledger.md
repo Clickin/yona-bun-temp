@@ -1811,3 +1811,17 @@ not an unlinking or live-legacy visual-parity claim.
   prove exact app.css absence and frozen/generated retention in normal and
   fallback-off modes; no TSX, frozen source, generated fallback, or baseline
   changed.
+
+## Batch 582
+
+- Dead syntax selector-family bridge retirement: current React and legacy
+  inventories use Highlight.js `hljs-*` token classes and have no
+  `.syntax-comment`, `.syntax-quote`, `.syntax-keyword`, `.syntax-title`,
+  `.syntax-params`, `.syntax-string`, `.syntax-number`, `.syntax-punctuation`,
+  `.syntax-meta`, or `.syntax-identifier` consumer. `frontend/src/app.css`
+  removes only those unreachable selector arms; all `hljs-*` rules and frozen
+  or generated fallback assets remain unchanged.
+- `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact syntax-family
+  absence plus retained Highlight.js selectors in normal and fallback-off
+  modes. No TSX, frozen source, generated fallback, or geometry baseline
+  changed; global fallback discovery remains incomplete/non-green.

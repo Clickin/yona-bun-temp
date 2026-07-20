@@ -4343,3 +4343,13 @@ branches from `frontend/src/app.css`. Current React translates the insertion
 control to `btn-insert-copy` and owns it with StyleX; frozen file-uploader and
 generated fallback rules remain unchanged. Verify the attachment-row and
 formal fallback-off contracts in both modes without changing geometry baselines.
+
+## Batch 582
+
+Retire only the unreachable `.syntax-*` selector family from `frontend/src/app.css`:
+comment/quote, keyword, title, params, string, number, punctuation, meta, and
+identifier arms. Current React and legacy inventories emit Highlight.js
+`.hljs-*` classes instead; retain those rules and frozen/generated fallback
+assets. Verify exact app.css absence plus retained `hljs-*` selectors with the
+static contract in normal and fallback-off modes. Do not edit TSX, frozen
+source, generated fallback, or geometry baselines.

@@ -172,6 +172,37 @@ test("alert-danger fallback bridge has no app.css arms", () => {
   expect(appCss).toContain(".alert-error h4 {");
 });
 
+test("dead syntax selector family has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".syntax-comment",
+    ".syntax-quote",
+    ".syntax-keyword",
+    ".syntax-title",
+    ".syntax-params",
+    ".syntax-string",
+    ".syntax-number",
+    ".syntax-punctuation",
+    ".syntax-meta",
+    ".syntax-identifier",
+  ]) {
+    expect(appCss).not.toContain(selector);
+  }
+
+  for (const retainedSelector of [
+    ".hljs-comment,",
+    ".hljs-keyword,",
+    ".hljs-title,",
+    ".hljs-params {",
+    ".hljs-string,",
+    ".hljs-number {",
+    ".hljs-punctuation {",
+    ".hljs-meta {",
+  ]) {
+    expect(appCss).toContain(retainedSelector);
+  }
+});
+
 test("issueform legacy insert bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

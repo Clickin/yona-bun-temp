@@ -4610,17 +4610,14 @@ div.markdown-preview {
 }
 
 .hljs-comment,
-.hljs-quote,
-.syntax-comment,
-.syntax-quote {
+.hljs-quote {
   color: #7a7a7a;
 }
 
 .hljs-built_in,
 .hljs-keyword,
 .hljs-literal,
-.hljs-section,
-.syntax-keyword {
+.hljs-section {
   color: #005cc5;
   font-weight: 600;
 }
@@ -4628,38 +4625,31 @@ div.markdown-preview {
 .hljs-title,
 .hljs-title.class,
 .hljs-title.function,
-.hljs-title.function.invoke,
-.syntax-title {
+.hljs-title.function.invoke {
   color: #900;
   font-weight: 600;
 }
 
-.hljs-params,
-.syntax-params {
+.hljs-params {
   color: #555;
 }
 
 .hljs-regexp,
 .hljs-string,
 .hljs-subst,
-.hljs-symbol,
-.syntax-string {
+.hljs-symbol {
   color: #9a4a00;
 }
 
-.hljs-number,
-.syntax-number {
+.hljs-number {
   color: #6f42c1;
 }
 
-.hljs-punctuation,
-.syntax-punctuation {
+.hljs-punctuation {
   color: #555;
 }
 
-.hljs-meta,
-.syntax-meta,
-.syntax-identifier {
+.hljs-meta {
   color: inherit;
 }
 
