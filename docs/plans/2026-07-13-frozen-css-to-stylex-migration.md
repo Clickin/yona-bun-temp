@@ -4617,11 +4617,13 @@ change frozen CSS or add geometry compensation.
 
 Extend the organization issues populated-row owner in
 `organizations/$organizationName/issues` with the legacy post-item, avatar,
-title-wrap, title, post-id, and metadata declarations. Use the frozen
-organization issue partial and `_page.less` as output/style evidence; keep
-legacy classes and shared fallback intact, and keep route semantic colors in
-the route theme while writing geometry/typography directly in StyleX. Update
-one focused populated organization-issues contract and provenance. Do not
-modify frozen CSS, global app.css, or unrelated routes. Live browser replay is
-required before wave acceptance; this worker only completed static/typecheck
-validation.
+title-wrap, title, post-id, and metadata declarations, and move the
+authenticated project post-detail title, board-id, date, mobile metadata, and
+original-message toggle declarations into its colocated StyleX owner. Use the
+frozen organization issue and board partials plus `_page.less`/responsive LESS
+as output/style evidence; keep legacy classes and shared fallback intact, and
+keep route semantic colors in route themes while writing geometry/typography
+directly in StyleX. Update the focused organization-issues and post-detail
+contracts and provenance. Do not modify frozen CSS, global app.css, or
+unrelated routes. Normal and fallback-off desktop/mobile browser replay is
+required before wave acceptance.
