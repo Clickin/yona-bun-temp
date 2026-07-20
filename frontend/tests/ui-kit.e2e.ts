@@ -16,6 +16,10 @@ const UIKIT_ROUTE_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/[_]UIKit.tsx", import.meta.url)),
   "utf8",
 );
+const APP_CSS_SOURCE = readFileSync(
+  fileURLToPath(new URL("../src/app.css", import.meta.url)),
+  "utf8",
+);
 const UIKIT_STYLEX_SOURCE = readFileSync(
   fileURLToPath(new URL("../src/routes/-UIKit.stylex.ts", import.meta.url)),
   "utf8",
@@ -131,6 +135,11 @@ test("standalone UI kit route renders JSX without raw legacy body injection", as
   );
   expect(routeSourceOutsideCodeSamples).not.toMatch(/href=["']#/);
   expect(routeSourceOutsideCodeSamples).not.toContain('href="javascript:void(0)"');
+});
+
+test("standalone UI kit keeps the unreachable experimental-help action bridge out of app.css", () => {
+  expect(APP_CSS_SOURCE).not.toContain("#experimentalHelp .actrow");
+  expect(UIKIT_ROUTE_SOURCE).not.toContain("#experimentalHelp");
 });
 
 test("standalone UI kit dropdown stays on React handlers without route document listeners", async () => {

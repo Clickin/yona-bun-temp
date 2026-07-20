@@ -792,10 +792,6 @@ body:has([data-stylex-owner="framed-site-shell"][data-sidebar-open="true"]) {
   text-align: center;
 }
 
-#experimentalHelp .actrow {
-  display: block;
-}
-
 .center-wrap {
   text-align: center;
 }

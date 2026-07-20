@@ -4592,3 +4592,12 @@ inventories emit no `.board-comments` consumer; retain live
 with frozen/generated fallback evidence and geometry. Update the project-posts
 and formal fallback-off static contracts in normal and
 `VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX or frozen CSS.
+
+## Batch 606
+
+Retire only the unreachable `#experimentalHelp .actrow` compatibility rule
+from `frontend/src/app.css`. Current UI-kit React output emits no
+`#experimentalHelp` consumer; the legacy help/experimental template and
+frozen/generated assets remain historical evidence. Update the UI-kit and
+formal fallback-off static contracts in normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX or frozen CSS.

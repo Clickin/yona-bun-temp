@@ -603,6 +603,12 @@ test("board toolbar bridge has no current producer", () => {
   );
 });
 
+test("experimental-help action bridge has no current producer", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain("#experimentalHelp .actrow");
+  expect(readFileSync("src/routes/[_]UIKit.tsx", "utf8")).not.toContain("#experimentalHelp");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");
