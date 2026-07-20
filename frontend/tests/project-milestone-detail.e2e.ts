@@ -1,6 +1,23 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+const MILESTONE_ROUTE_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/milestone/$milestoneId.tsx", import.meta.url),
+  "utf8",
+);
+const MILESTONE_STYLEX_SOURCE = readFileSync(
+  new URL(
+    "../src/routes/$ownerName/$projectName/milestone/-milestone-detail.stylex.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const MILESTONE_LEGACY_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/milestone/view.scala.html", import.meta.url),
+  "utf8",
+);
+const MILESTONE_FALLBACK_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
+
 const MILESTONE_DETAIL_CHILD_ISSUES = `
 <div class="child-issues">
   <div class="issue-item child-issue">
@@ -181,6 +198,66 @@ const EXPECTED_PROJECT_MILESTONE_DETAIL_NOT_FOUND_ERROR_WRAP = `
   <p>Milestone does not exist</p>
   <a class="ybtn ybtn-primary" href="__BASE_PATH__/admin/sample/milestones">List</a>
 </div>`;
+
+test("milestone state badge keeps the legacy owner and StyleX declarations", async ({ page }) => {
+  expect(MILESTONE_LEGACY_SOURCE).toContain(
+    '<span class="badge badge-issue-@milestone.state.state.toLowerCase margin-left-5">',
+  );
+  expect(MILESTONE_ROUTE_SOURCE).toContain('data-stylex-owner="milestone-detail-state-badge"');
+  expect(MILESTONE_ROUTE_SOURCE).toContain("styles.badgeClosed");
+  expect(MILESTONE_ROUTE_SOURCE).toContain("styles.badgeOpen");
+  for (const declaration of [
+    'display: "inline-block"',
+    'padding: "5px 15px"',
+    'marginRight: "25px"',
+    'color: "#ffffff"',
+    'backgroundColor: "#777"',
+    'borderRadius: "15px"',
+    'fontWeight: "bold"',
+    'lineHeight: "20px"',
+  ]) {
+    expect(MILESTONE_STYLEX_SOURCE).toContain(declaration);
+  }
+  expect(MILESTONE_STYLEX_SOURCE).toContain('badgeOpen: "#b6da54"');
+  expect(MILESTONE_STYLEX_SOURCE).toContain('badgeClosed: "#fd6956"');
+  expect(MILESTONE_FALLBACK_SOURCE).toContain('.badge[class*="badge-issue-"]');
+  expect(MILESTONE_FALLBACK_SOURCE).toContain(".badge.badge-issue-open");
+  expect(MILESTONE_FALLBACK_SOURCE).toContain(".badge.badge-issue-closed");
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    const viewportPage = await page.context().newPage();
+    const stateRequests: unknown[] = [];
+    try {
+      await viewportPage.setViewportSize(viewport);
+      await mockProjectMilestoneDetail(viewportPage, stateRequests, []);
+      await viewportPage.goto(`${basePath}/admin/sample/milestone/5?state=open`);
+      const badge = viewportPage.locator('[data-stylex-owner="milestone-detail-state-badge"]');
+      await expect(badge).toHaveClass(/badge badge-issue-open margin-left-5/u);
+      await expect(badge).toHaveText("Open");
+      await expect(badge).toHaveCSS("display", "inline-block");
+      await expect(badge).toHaveCSS("padding", "5px 15px");
+      await expect(badge).toHaveCSS("margin-right", "25px");
+      await expect(badge).toHaveCSS("color", "rgb(255, 255, 255)");
+      await expect(badge).toHaveCSS("background-color", "rgb(182, 218, 84)");
+      await expect(badge).toHaveCSS("border-radius", "15px");
+      await expect(badge).toBeVisible();
+
+      await viewportPage.getByRole("button", { name: "Close milestone" }).click();
+      await expect(badge).toHaveClass(/badge badge-issue-closed margin-left-5/u);
+      await expect(badge).toHaveText("Closed");
+      await expect(badge).toHaveCSS("background-color", "rgb(253, 105, 86)");
+      await expect(badge).toBeVisible();
+      expect(stateRequests).toEqual([{ state: "closed" }]);
+    } finally {
+      await viewportPage.close();
+    }
+  }
+});
 
 test("project milestone detail keeps the legacy project shell and title for /admin/sample/milestone/1 when session data is unavailable", async ({
   page,

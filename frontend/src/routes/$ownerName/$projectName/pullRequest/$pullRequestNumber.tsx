@@ -687,6 +687,18 @@ export function PullRequestHeader({
   const { t } = useLegacyMessages();
   const queryClient = useQueryClient();
   const stateKey = pullRequest.conflict ? "conflict" : pullRequest.state.toLowerCase();
+  const badgeStyle =
+    stateKey === "open"
+      ? styles.badgeOpen
+      : stateKey === "closed"
+        ? styles.badgeClosed
+        : stateKey === "rejected"
+          ? styles.badgeRejected
+          : stateKey === "merged"
+            ? styles.badgeMerged
+            : stateKey === "conflict"
+              ? styles.badgeConflict
+              : undefined;
   const pullRequestInput = {
     ownerName: pullRequest.ownerName,
     projectName: pullRequest.projectName,
@@ -737,7 +749,10 @@ export function PullRequestHeader({
           <div className="date" title={pullRequest.createdLabel}>
             {pullRequest.createdLabel}
           </div>
-          <span className={`badge nm badge-issue-${stateKey}`}>
+          <span
+            className={`${stylex.props(styles.badge, badgeStyle).className} badge nm badge-issue-${stateKey}`}
+            data-stylex-owner="pull-request-detail-badge"
+          >
             {t(`pullRequest.state.${stateKey}`)}
           </span>
         </div>

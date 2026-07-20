@@ -222,10 +222,11 @@ and `.vertical-top` were retired in bounded waves through commits `d06928c0a`, `
 consumer graph or an explicit deferred-scope decision; do not repeat route discovery or remove
 plugin/global rules without that evidence.
 
-The issue-state badge family is not a dead-arm candidate: `issue/$issueNumber.tsx`, milestone,
-pull-request, and frozen `git/partial_info.scala.html` consumers still emit the shared
-`badge-issue-*` classes. Only the issue-detail owner has complete colocated state-color StyleX;
-the cross-route family therefore remains C/R work until every consumer has equivalent ownership.
+The issue-state badge family is not a dead-arm candidate: issue/$issueNumber.tsx, milestone,
+pull-request, and frozen git/partial_info.scala.html consumers emit the shared badge-issue-*
+classes. Batch 655 now gives the milestone and pull-request owners the same base/state StyleX
+declarations as the existing issue-detail owner; the shared family remains C/R work until an
+exact all-consumer retirement proof is assembled.
 
 | Classification | IDs |
 | --- | --- |

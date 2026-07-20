@@ -9,6 +9,21 @@ export const pullRequestDetailColors = stylex.defineVars({
 export const styles = stylex.create({
   page: { minHeight: "100%" },
   body: { minWidth: 0 },
+  badge: {
+    display: "inline-block",
+    padding: "5px 15px",
+    marginRight: "25px",
+    color: "#fff",
+    backgroundColor: "#777",
+    borderRadius: "15px",
+    fontWeight: "bold",
+    lineHeight: "20px",
+  },
+  badgeOpen: { backgroundColor: "#b6da54" },
+  badgeClosed: { backgroundColor: "#fd6956" },
+  badgeRejected: { backgroundColor: "#fd8658" },
+  badgeMerged: { backgroundColor: "#65c9df" },
+  badgeConflict: { backgroundColor: "#c0392b" },
   author: {
     color: pullRequestDetailColors.accentText,
     marginTop: "20px",

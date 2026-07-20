@@ -3,6 +3,8 @@ import * as stylex from "@stylexjs/stylex";
 export const milestoneDetailColors = stylex.defineVars({
   action: "#51a351",
   badge: "#51aacc",
+  badgeOpen: "#b6da54",
+  badgeClosed: "#fd6956",
   bodyText: "#333333",
   descriptionBorder: "#dddddd",
   descriptionSurface: "#f7f7f7",
@@ -13,6 +15,18 @@ export const milestoneDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  badge: {
+    display: "inline-block",
+    padding: "5px 15px",
+    marginRight: "25px",
+    color: "#ffffff",
+    backgroundColor: "#777",
+    borderRadius: "15px",
+    fontWeight: "bold",
+    lineHeight: "20px",
+  },
+  badgeOpen: { backgroundColor: milestoneDetailColors.badgeOpen },
+  badgeClosed: { backgroundColor: milestoneDetailColors.badgeClosed },
   labelColor: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   wrap: { color: milestoneDetailColors.bodyText },

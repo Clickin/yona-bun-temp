@@ -305,6 +305,10 @@ function ProjectMilestoneDetailBody({
     : deleteConfirmWasShown
       ? sx.deleteModalHidden
       : undefined;
+  const milestoneBadgeProps = stylex.props(
+    styles.badge,
+    isClosed ? styles.badgeClosed : styles.badgeOpen,
+  );
 
   return (
     <div {...sx.page} data-stylex-owner="milestone-detail-page">
@@ -333,7 +337,11 @@ function ProjectMilestoneDetailBody({
                   ) : null}
                 </>
               ) : null}
-              <span className={`badge badge-issue-${isClosed ? "closed" : "open"} margin-left-5`}>
+              <span
+                {...milestoneBadgeProps}
+                className={`${milestoneBadgeProps.className} badge badge-issue-${isClosed ? "closed" : "open"} margin-left-5`}
+                data-stylex-owner="milestone-detail-state-badge"
+              >
                 {t(`milestone.state.${isClosed ? "closed" : "open"}`)}
               </span>
             </small>

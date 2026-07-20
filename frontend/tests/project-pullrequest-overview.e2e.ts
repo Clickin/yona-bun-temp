@@ -571,6 +571,99 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
 });
 
+test("project pull request overview badge maps the legacy partial to a conditional StyleX owner", () => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
+    "utf8",
+  );
+  const legacySource = readFileSync(
+    "../yona-original/app/views/git/partial_info.scala.html",
+    "utf8",
+  );
+  const fallbackSource = readFileSync("src/app.css", "utf8");
+
+  expect(legacySource).toContain(
+    '<span class="badge nm @if(pull.isConflict == true) {badge-issue-conflict} else {badge-issue-@pull.state.state.toLowerCase}">',
+  );
+  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-badge"');
+  expect(routeSource).toContain("stylex.props(styles.badge, badgeStyle).className");
+  expect(styleSource).toContain('display: "inline-block"');
+  expect(styleSource).toContain('padding: "5px 15px"');
+  expect(styleSource).toContain('marginRight: "25px"');
+  expect(styleSource).toContain('backgroundColor: "#777"');
+  expect(styleSource).toContain('lineHeight: "20px"');
+  expect(styleSource).toContain('backgroundColor: "#b6da54"');
+  expect(styleSource).toContain('backgroundColor: "#fd6956"');
+  expect(styleSource).toContain('backgroundColor: "#fd8658"');
+  expect(styleSource).toContain('backgroundColor: "#65c9df"');
+  expect(styleSource).toContain('backgroundColor: "#c0392b"');
+  expect(fallbackSource).toContain('.badge[class*="badge-issue-"]');
+  expect(fallbackSource).toContain(".badge.badge-issue-conflict");
+});
+
+test("project pull request overview badge keeps exact legacy declarations in every visible state", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const states = [
+    ["open", false, "badge-issue-open", "Open", "rgb(182, 218, 84)"],
+    ["closed", false, "badge-issue-closed", "Closed", "rgb(253, 105, 86)"],
+    ["open", true, "badge-issue-conflict", "Conflict", "rgb(192, 57, 43)"],
+    ["merged", false, "badge-issue-merged", "Merged", "rgb(101, 201, 223)"],
+  ] as const;
+
+  for (const [state, conflict, stateClass, copy, backgroundColor] of states) {
+    const statePage = await page.context().newPage();
+    await mockPullRequestOverview(statePage, { detail: { conflict, state } });
+    await statePage.setViewportSize({ width: 1280, height: 900 });
+    await statePage.goto(`${basePath}/admin/sample/pullRequest/9`);
+
+    const badge = statePage.locator(`.${stateClass}`);
+    await expect(badge).toHaveText(copy);
+    await expect(badge).toHaveAttribute("data-stylex-owner", "pull-request-detail-badge");
+    await expect
+      .poll(() =>
+        badge.evaluate((element) => {
+          const style = window.getComputedStyle(element);
+          return {
+            backgroundColor: style.backgroundColor,
+            borderRadius: style.borderRadius,
+            color: style.color,
+            display: style.display,
+            fontWeight: style.fontWeight,
+            lineHeight: style.lineHeight,
+            marginRight: style.marginRight,
+            padding: style.padding,
+          };
+        }),
+      )
+      .toEqual({
+        backgroundColor,
+        borderRadius: "15px",
+        color: "rgb(255, 255, 255)",
+        display: "inline-block",
+        fontWeight: "700",
+        lineHeight: "20px",
+        marginRight: "0px",
+        padding: "5px 15px",
+      });
+
+    await statePage.setViewportSize({ width: 390, height: 844 });
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveCSS("background-color", backgroundColor);
+    await expect(badge).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(badge).toHaveCSS("display", "inline-block");
+    await expect(badge).toHaveCSS("font-weight", "700");
+    await expect(badge).toHaveCSS("margin-right", "0px");
+    await expect(badge).toHaveCSS("padding", "5px 15px");
+    await statePage.close();
+  }
+});
+
 test("project pull request overview help modal source insulates delegated modal bridge", async () => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",

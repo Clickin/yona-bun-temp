@@ -5031,3 +5031,12 @@ frozen legacy selector/declaration evidence. Keep both fallback families
 deferred; do not remove or migrate them without new producer/source evidence.
 This is a scope decision only: no route, frozen source, generated fallback, or
 StyleX owner changes.
+
+## Batch 655
+
+Move the remaining milestone-detail and pull-request-overview badge-issue-*
+state consumers into route-local StyleX. Preserve the legacy badge
+element/classes, copy, order, and surrounding geometry. The shared app.css
+badge family remains fallback-owned for this wave; retirement requires a
+separate exact consumer proof after these two owners and the existing
+issue-detail owner are assembled.
