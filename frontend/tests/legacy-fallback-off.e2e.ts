@@ -316,6 +316,15 @@ test("search-page fallback bridge has no React or legacy producer", () => {
   }
 });
 
+test("project-issues dead list-reset bridge is retired", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
+  expect(appCss).toContain(".post-list-wrap {");
+  expect(readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8")).not.toContain(
+    'className="issue-list-page',
+  );
+});
+
 async function mockMassMailSession(page: Page) {
   const fulfill = async (route: Route) => {
     await route.fulfill({

@@ -4271,3 +4271,12 @@ search partials and Bootstrap responsive ratios. Preserve raw grid classes for
 shared consumers, verify row/category/content owners at 1366px and 390px in
 normal and fallback-off managed runs, and keep shared fallback outside this
 route/state. Focused organization search checks pass 3/3 in both modes.
+
+## Batch 575
+
+Retire only the unreachable `.issue-list-page .post-list-wrap { list-style:
+none; }` bridge from `frontend/src/app.css`. No current React route emits the
+`issue-list-page` ancestor class, and the frozen unscoped `.post-list-wrap`
+rule remains active. The focused project-issues static contract verifies exact
+scoped absence plus generic-rule retention; no TSX, frozen source, generated
+fallback, or geometry baseline changes are allowed.

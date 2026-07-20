@@ -1731,3 +1731,16 @@ not an unlinking or live-legacy visual-parity claim.
   columns with stable owners while retaining raw grid classes. The focused
   organization search contract passes 3/3 normal and 3/3 fallback-off tests;
   no frozen source, theme, app.css, or generated fallback asset changed.
+
+## Batch 575
+
+- Dead bridge retirement: `frontend/src/app.css:2970-2972` previously scoped
+  `list-style: none` to `.issue-list-page .post-list-wrap`, but no current
+  React consumer emits the `issue-list-page` ancestor class. Frozen
+  `yona-original/app/assets/stylesheets/less/_page.less:3827` and the retained
+  unscoped `frontend/src/app.css:2811-2814` rule provide the same list reset for
+  active `.post-list-wrap` consumers. The exact scoped block is removed; no
+  TSX, frozen source, generated fallback, or baseline changed. The focused
+  `stylex-project-issues-static-owners-wave.e2e.ts` contract asserts scoped
+  absence and generic-rule retention; global fallback discovery remains
+  incomplete/non-green.
