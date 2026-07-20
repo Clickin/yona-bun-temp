@@ -71,7 +71,8 @@ export const styles = stylex.create({
     padding: "0 10px",
   },
   overviewTitle: { fontSize: "14px", fontWeight: "normal", lineHeight: "30px" },
-  projects: { minWidth: 0 },
+  // yona-original/app/assets/stylesheets/less/_page.less .all-projects.
+  projects: { clear: "both", listStyle: "none", margin: "0 0 20px", minWidth: 0 },
   // organization/view.scala.html + yona-common item-search: an empty query shows every project.
   project: { display: "list-item" },
   projectInfo: { float: "left" },

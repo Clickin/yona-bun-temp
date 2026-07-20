@@ -84,6 +84,16 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(route).toContain('data-stylex-owner="organization-home-project-card-members"');
   expect(route).toContain('data-stylex-owner="organization-home-project-card-members-list"');
   expect(route).toContain('data-stylex-owner="organization-home-project-card-count"');
+  expect(legacy).toContain('<ul class="all-projects">');
+  expect(pageLess).toContain(".all-projects {");
+  expect(pageLess).toContain("margin: 0 0 20px;");
+  expect(pageLess).toContain("list-style: none;");
+  expect(pageLess).toContain("clear:both;");
+  expect(style).toContain(
+    'projects: { clear: "both", listStyle: "none", margin: "0 0 20px", minWidth: 0 }',
+  );
+  expect(route).toContain("className={`${stylex.props(styles.projects).className} all-projects`}");
+  expect(route).toContain('data-stylex-owner="organization-home-projects"');
 });
 
 async function mockOrganizationHome(page: Page) {
@@ -259,6 +269,21 @@ for (const viewport of [
         ),
       };
     });
+    const listMetrics = await list.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      return {
+        bottom: box.bottom,
+        clear: style.clear,
+        listStyle: style.listStyleType,
+        margin: style.margin,
+        top: box.top,
+      };
+    });
+    expect(listMetrics.clear).toBe("both");
+    expect(listMetrics.listStyle).toBe("none");
+    expect(listMetrics.margin).toBe("0px 0px 20px");
+    expect(listMetrics.bottom).toBeGreaterThan(listMetrics.top);
     expect(metrics.padding).toBe("15px 0px 10px");
     expect(metrics.overflow).toBe("hidden");
     expect(metrics.borderBottom).toBe("1px solid rgb(220, 220, 220)");

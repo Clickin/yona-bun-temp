@@ -278,6 +278,7 @@ function OrganizationHomeScreen({
                 ) : null}
               </div>
               <ul
+                {...stylex.props(styles.projects)}
                 className={`${stylex.props(styles.projects).className} all-projects`}
                 data-stylex-owner="organization-home-projects"
               >

@@ -514,6 +514,15 @@ normal and fallback-off checks pass 3/3 each, covering source mapping, all
 inner owners, desktop/mobile computed geometry, visible content, and filter
 interaction.
 
+### 2026-07-21 Batch 678 organization home project-list outer owner proof
+
+ORG-02 project-list output now owns the frozen `.all-projects` margin,
+list-style, and clear declarations through the existing route-local StyleX
+owner. Legacy list/card classes, DOM order, links, filtering, and responsive
+containment remain unchanged. Focused normal and fallback-off checks pass
+3/3 each, covering source mapping, computed list geometry, visible projects,
+and filter interaction.
+
 ### 2026-07-21 Batch 677 organization home project-card stats owner proof
 
 ORG-02 project-card stats now own the emitted `.members`, member-list `ul`,

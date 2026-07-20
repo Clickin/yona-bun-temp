@@ -5207,6 +5207,13 @@ LESS into the existing route-local StyleX owner. Preserve project card DOM,
 links, filtering, visibility branches, and responsive behavior; retain
 unrelated frozen fallback consumers.
 
+## Batch 678
+
+Move the organization home emitted `.all-projects` outer margin, list-style,
+and clear declarations into the existing route-local StyleX owner. Preserve
+the legacy list class, project card DOM/order, links, filtering, and
+responsive containment; retain unrelated frozen fallback consumers.
+
 ## Batch 677
 
 Move the emitted organization home project-card stats member shell and count
