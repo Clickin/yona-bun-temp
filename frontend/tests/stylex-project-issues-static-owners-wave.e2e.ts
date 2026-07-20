@@ -46,4 +46,7 @@ test("project issues static owners use route-local StyleX", async () => {
   expect(route).not.toContain("SHOW_SUBTASKS_POPOVER_STYLE");
   expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
   expect(appCss).toContain(".post-list-wrap {");
+  expect(appCss).not.toContain(".issue-list-page .issue-item-row {");
+  expect(route).toContain('className="issue-item-row"');
+  expect(route).not.toContain('className="issue-list-page');
 });

@@ -1837,3 +1837,14 @@ not an unlinking or live-legacy visual-parity claim.
   Generic modal rules and frozen/generated voter/posting-history styling remain.
   Focused modal contracts and the formal fallback-off contract assert exact
   selector absence in normal and fallback-off runs.
+
+## Batch 584
+
+- Dead issue-row bridge retirement: remove only
+  `frontend/src/app.css:2938-2941` (`.issue-list-page .issue-item-row {
+  display: block; margin: 0; }`). Current project and milestone issue rows
+  emit `.issue-item-row` without an `issue-list-page` ancestor. Frozen
+  `_page.less:3846` targets `label.issue-item-row`, while React rows are
+  `<div>` elements; display block and zero margin are their defaults. Focused
+  static and fallback-off contracts assert exact absence and raw row ownership.
+  No TSX, frozen source, generated fallback CSS, or baseline changed.

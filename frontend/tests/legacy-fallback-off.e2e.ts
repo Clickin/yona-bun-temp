@@ -423,6 +423,7 @@ test("project-issues dead list-reset bridge is retired", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".issue-list-page .post-list-wrap {");
   expect(appCss).toContain(".post-list-wrap {");
+  expect(appCss).not.toContain(".issue-list-page .issue-item-row {");
   expect(readFileSync("src/routes/$ownerName/$projectName/issues.tsx", "utf8")).not.toContain(
     'className="issue-list-page',
   );

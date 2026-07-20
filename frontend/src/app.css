@@ -2935,11 +2935,6 @@ h1 {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-.issue-list-page .issue-item-row {
-  display: block;
-  margin: 0;
-}
-
 .issue-list-page .mass-update-form .btn-group {
   position: relative;
   display: inline-block;

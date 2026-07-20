@@ -4281,6 +4281,15 @@ rule remains active. The focused project-issues static contract verifies exact
 scoped absence plus generic-rule retention; no TSX, frozen source, generated
 fallback, or geometry baseline changes are allowed.
 
+## Batch 584
+
+Retire only the unreachable `.issue-list-page .issue-item-row` display/margin
+bridge. Active project and milestone rows retain their raw `issue-item-row`
+class without that ancestor; frozen `label.issue-item-row` evidence and
+browser defaults establish geometry neutrality. Update the focused static and
+fallback-off contracts, run each in normal/fallback-off mode, and preserve all
+remaining issue-list fallback selectors.
+
 ## Batch 576
 
 Retire only the redundant `.pull-request-wrap .select2-container >
@@ -4366,3 +4375,12 @@ posting-history rules and all frozen/generated fallback assets. Verify focused
 post-detail and issue-detail modal contracts plus the formal fallback-off
 contract in normal and fallback-off modes; do not edit TSX, frozen source,
 generated fallback, or geometry baselines.
+
+## Batch 584
+
+Retire only the unreachable `.issue-list-page .issue-item-row` display/margin
+bridge. Active project and milestone rows retain their raw `issue-item-row`
+class without that ancestor; frozen `label.issue-item-row` evidence and
+browser defaults establish geometry neutrality. Update the focused static and
+fallback-off contracts, run each in normal/fallback-off mode, and preserve all
+remaining issue-list fallback selectors.
