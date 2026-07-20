@@ -4753,6 +4753,13 @@ author row. The route-local `styles.author` owner now carries the frozen
 layout, and immutable legacy LESS/generated fallback evidence. No other text utility
 family is included in this wave.
 
+## Batch 625
+
+Retire the single-consumer `.secondary-txt` arm from the project issue edit form.
+The existing issue-number owner now carries the frozen `#51aacc` color directly;
+preserve the label/strong DOM and immutable legacy LESS/generated fallback evidence.
+No other text utility family is included in this wave.
+
 ## Batch 621
 
 Retire the shared `.search-category-wrap` fallback family after confirming its three current

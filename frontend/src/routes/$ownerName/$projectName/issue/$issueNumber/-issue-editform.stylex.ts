@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 
 export const issueEditColors = stylex.defineVars({
   action: "#49afcd",
+  issueNumber: "#51aacc",
   inputBorder: "#cccccc",
   inputText: "#555555",
   editorBorder: "#dddddd",
@@ -9,6 +10,7 @@ export const issueEditColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  issueNumber: { color: issueEditColors.issueNumber },
   labelBackground: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },

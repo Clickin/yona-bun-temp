@@ -501,6 +501,24 @@ test("pull request author left alignment has StyleX ownership", () => {
   expect(stylexSource).toContain('textAlign: "left"');
 });
 
+test("issue edit number secondary color has StyleX ownership", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const route = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber/editform.tsx",
+    "utf8",
+  );
+  const stylexSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber/-issue-editform.stylex.ts",
+    "utf8",
+  );
+
+  expect(appCss).not.toContain(".secondary-txt {");
+  expect(route).not.toContain('className="secondary-txt"');
+  expect(route).toContain('data-stylex-owner="issue-editform-issue-number"');
+  expect(stylexSource).toContain('issueNumber: "#51aacc"');
+  expect(stylexSource).toContain("issueNumber: { color: issueEditColors.issueNumber }");
+});
+
 test("pull-request tab button bridge has no app.css arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

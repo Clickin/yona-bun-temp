@@ -29,6 +29,7 @@ const sx = {
   page: stylex.props(styles.page),
   form: stylex.props(styles.form),
   title: stylex.props(styles.title),
+  issueNumber: stylex.props(styles.issueNumber),
   editor: stylex.props(styles.editor),
   editorPositioned: stylex.props(styles.editorPositioned),
   editorTabContent: stylex.props(styles.editorTabContent),
@@ -316,7 +317,9 @@ function ProjectIssueEditFormBody({
                       <span className="draft">{t("issue.state.draft")}</span>
                     ) : (
                       <label htmlFor="title">
-                        <strong className="secondary-txt">#{issueNumber}</strong>
+                        <strong {...sx.issueNumber} data-stylex-owner="issue-editform-issue-number">
+                          #{issueNumber}
+                        </strong>
                       </label>
                     )}
                   </dt>
