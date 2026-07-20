@@ -107,6 +107,15 @@ export const styles = stylex.create({
     marginLeft: "10px",
   },
   projectCardStats: { marginTop: "0", textAlign: "right" },
+  // yona-original/app/assets/stylesheets/less/_page.less .all-projects .project .stats-wrap .members.
+  projectCardMembers: { width: "100%" },
+  projectCardMembersList: {
+    display: "inline-block",
+    overflow: "hidden",
+    paddingLeft: "50px",
+  },
+  // @secondary -> @blue2 in _variables.less.
+  projectCardStatsCount: { color: "#51AACC" },
   members: { backgroundColor: organizationHomeColors.panelSurface },
   // yona-original/app/assets/stylesheets/less/_page.less .project-home/.inner.
   memberPanel: { padding: "10px" },

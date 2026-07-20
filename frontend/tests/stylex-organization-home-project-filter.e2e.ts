@@ -14,13 +14,18 @@ const pageLessSource = new URL(
   "../../yona-original/app/assets/stylesheets/less/_page.less",
   import.meta.url,
 );
+const variablesSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_variables.less",
+  import.meta.url,
+);
 
 test("organization home project filter uses conditional StyleX visibility", async () => {
-  const [route, style, legacy, pageLess] = await Promise.all([
+  const [route, style, legacy, pageLess, variables] = await Promise.all([
     readFile(routeSource, "utf8"),
     readFile(styleSource, "utf8"),
     readFile(legacySource, "utf8"),
     readFile(pageLessSource, "utf8"),
+    readFile(variablesSource, "utf8"),
   ]);
   expect(legacy).toContain("project");
   expect(route).toContain('data-stylex-owner="organization-home-project-filter-item"');
@@ -64,6 +69,21 @@ test("organization home project filter uses conditional StyleX visibility", asyn
   expect(pageLess).toContain("padding: 15px 0 10px 0;");
   expect(pageLess).toContain("overflow: hidden;");
   expect(pageLess).toContain("border-bottom: 1px solid #DCDCDC;");
+  expect(pageLess).toContain(".members {");
+  expect(pageLess).toContain("width:100%;");
+  expect(pageLess).toContain("display:inline-block;");
+  expect(pageLess).toContain("padding-left: 50px;");
+  expect(pageLess).toContain("strong { color:@secondary; }");
+  expect(variables).toContain("@blue2  : #51AACC;");
+  expect(variables).toContain("@secondary       : @blue2;");
+  expect(style).toContain('projectCardMembers: { width: "100%" }');
+  expect(style).toContain('display: "inline-block"');
+  expect(style).toContain('paddingLeft: "50px"');
+  expect(style).toContain('overflow: "hidden"');
+  expect(style).toContain('projectCardStatsCount: { color: "#51AACC" }');
+  expect(route).toContain('data-stylex-owner="organization-home-project-card-members"');
+  expect(route).toContain('data-stylex-owner="organization-home-project-card-members-list"');
+  expect(route).toContain('data-stylex-owner="organization-home-project-card-count"');
 });
 
 async function mockOrganizationHome(page: Page) {
@@ -91,6 +111,9 @@ async function mockOrganizationHome(page: Page) {
             overview: "Sample project",
             projectScope: "PUBLIC",
             createdLabel: "today",
+            memberCount: 3,
+            watchCount: 4,
+            isWatching: true,
             labels: [],
           },
           {
@@ -99,6 +122,9 @@ async function mockOrganizationHome(page: Page) {
             overview: "Other project",
             projectScope: "PUBLIC",
             createdLabel: "yesterday",
+            memberCount: 1,
+            watchCount: 2,
+            isWatching: false,
             labels: [],
           },
         ],
@@ -144,6 +170,15 @@ for (const viewport of [
       const stats = node.querySelector(
         '[data-stylex-owner="organization-home-project-card-stats"]',
       );
+      const members = node.querySelector(
+        '[data-stylex-owner="organization-home-project-card-members"]',
+      );
+      const memberList = node.querySelector(
+        '[data-stylex-owner="organization-home-project-card-members-list"]',
+      );
+      const counts = node.querySelectorAll(
+        '[data-stylex-owner="organization-home-project-card-count"]',
+      );
       const style = getComputedStyle(node);
       const cardBox = node.getBoundingClientRect();
       const listBox = node.parentElement?.getBoundingClientRect();
@@ -152,6 +187,8 @@ for (const viewport of [
       const descriptionStyle = description ? getComputedStyle(description) : null;
       const nameTagStyle = nameTag ? getComputedStyle(nameTag) : null;
       const statsStyle = stats ? getComputedStyle(stats) : null;
+      const membersStyle = members ? getComputedStyle(members) : null;
+      const memberListStyle = memberList ? getComputedStyle(memberList) : null;
       return {
         borderBottom: `${style.borderBottomWidth} ${style.borderBottomStyle} ${style.borderBottomColor}`,
         cardBottom: cardBox.bottom,
@@ -198,8 +235,28 @@ for (const viewport of [
             }
           : null,
         stats: statsStyle
-          ? { marginTop: statsStyle.marginTop, textAlign: statsStyle.textAlign }
+          ? {
+              marginTop: statsStyle.marginTop,
+              textAlign: statsStyle.textAlign,
+              width: statsStyle.width,
+            }
           : null,
+        members: membersStyle ? { width: membersStyle.width } : null,
+        memberList: memberListStyle
+          ? {
+              display: memberListStyle.display,
+              overflow: memberListStyle.overflow,
+              paddingLeft: memberListStyle.paddingLeft,
+            }
+          : null,
+        counts: Array.from(counts, (count) => ({
+          color: getComputedStyle(count).color,
+          text: count.textContent?.trim() ?? "",
+        })),
+        icons: Array.from(
+          node.querySelectorAll(".stats-wrap .members i"),
+          (icon) => icon.className,
+        ),
       };
     });
     expect(metrics.padding).toBe("15px 0px 10px");
@@ -235,7 +292,23 @@ for (const viewport of [
       margin: "0px 0px 0px 10px",
       marginLeft: "10px",
     });
-    expect(metrics.stats).toEqual({ marginTop: "0px", textAlign: "right" });
+    expect(metrics.stats?.marginTop).toBe("0px");
+    expect(metrics.stats?.textAlign).toBe("right");
+    expect(metrics.members?.width).toBe(metrics.stats?.width);
+    expect(metrics.memberList).toEqual({
+      display: "inline-block",
+      overflow: "hidden",
+      paddingLeft: "50px",
+    });
+    expect(metrics.counts).toEqual([
+      { color: "rgb(81, 170, 204)", text: "3" },
+      { color: "rgb(81, 170, 204)", text: "4" },
+    ]);
+    expect(metrics.icons).toEqual([
+      "yobicon-friends yobicon-middle",
+      "yobicon-eye",
+      "yobicon-lightbulb ramp-on",
+    ]);
     expect(metrics.cardTop).toBeGreaterThanOrEqual(0);
     expect(metrics.cardBottom).toBeLessThanOrEqual(metrics.listBottom);
 

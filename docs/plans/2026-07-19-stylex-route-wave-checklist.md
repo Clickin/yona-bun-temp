@@ -513,3 +513,12 @@ visibility branches, and responsive containment remain unchanged. Focused
 normal and fallback-off checks pass 3/3 each, covering source mapping, all
 inner owners, desktop/mobile computed geometry, visible content, and filter
 interaction.
+
+### 2026-07-21 Batch 677 organization home project-card stats owner proof
+
+ORG-02 project-card stats now own the emitted `.members`, member-list `ul`,
+and count `strong` declarations through route-local StyleX, resolving the
+frozen `@secondary -> @blue2 -> #51AACC` chain. The non-emitted member-avatar
+`li` rule remains fallback-owned. Focused normal and fallback-off checks pass
+3/3 each, covering source/variable mapping, counts/icons/watch state,
+desktop/mobile geometry, and filtering.

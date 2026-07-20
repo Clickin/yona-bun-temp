@@ -521,12 +521,31 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
         className={`${stylex.props(styles.projectCardStats).className} stats-wrap pull-right`}
         data-stylex-owner="organization-home-project-card-stats"
       >
-        <div className="members">
-          <ul className="unstyled"></ul>
+        <div
+          {...stylex.props(styles.projectCardMembers)}
+          className={`members ${stylex.props(styles.projectCardMembers).className ?? ""}`.trim()}
+          data-stylex-owner="organization-home-project-card-members"
+        >
+          <ul
+            {...stylex.props(styles.projectCardMembersList)}
+            className={`unstyled ${stylex.props(styles.projectCardMembersList).className ?? ""}`.trim()}
+            data-stylex-owner="organization-home-project-card-members-list"
+          ></ul>
           <p>
             <i className="yobicon-friends yobicon-middle"></i>
-            <strong>{numberField(project.memberCount)}</strong>
-            <i className="yobicon-eye"></i> <strong>{numberField(project.watchCount)}</strong>
+            <strong
+              {...stylex.props(styles.projectCardStatsCount)}
+              data-stylex-owner="organization-home-project-card-count"
+            >
+              {numberField(project.memberCount)}
+            </strong>
+            <i className="yobicon-eye"></i>{" "}
+            <strong
+              {...stylex.props(styles.projectCardStatsCount)}
+              data-stylex-owner="organization-home-project-card-count"
+            >
+              {numberField(project.watchCount)}
+            </strong>
             <i
               className={`yobicon-lightbulb ${booleanField(project.isWatching) ? "ramp-on" : "ramp-off"}`}
               title={

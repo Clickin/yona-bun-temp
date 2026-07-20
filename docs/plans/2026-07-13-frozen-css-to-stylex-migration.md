@@ -5206,3 +5206,11 @@ name-tag, and stats declarations from the frozen `all-projects .project`
 LESS into the existing route-local StyleX owner. Preserve project card DOM,
 links, filtering, visibility branches, and responsive behavior; retain
 unrelated frozen fallback consumers.
+
+## Batch 677
+
+Move the emitted organization home project-card stats member shell and count
+color declarations from the frozen LESS into the existing route-local StyleX
+owner. Preserve counts, icons, watch state/title, card links/filtering, and
+responsive behavior; retain non-emitted avatar-list rules and unrelated
+frozen fallback consumers.
