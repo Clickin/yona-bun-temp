@@ -4653,6 +4653,16 @@ focused tests and run normal/fallback-off desktop/mobile checks.
 The existing StyleX action owner also keeps the legacy 12px icon-action hit
 area when the optional fallback stylesheet's icon font is disabled.
 
+## Batch 613
+
+Retire only the source-less React-side `.label-info` paint arm from
+`frontend/src/app.css`. Current React production TS/TSX emits no runtime
+`label-info`; massmail and site-user-list owners already translate the legacy
+paint into StyleX. Keep frozen Scala/legacy JS/Bootstrap and generated fallback
+evidence unchanged, and preserve all unrelated `.label`/`.badge` consumers.
+Update the massmail focused source contract and formal fallback-off static
+contract; no DOM or behavior changes.
+
 ## Batch 612
 
 Retire only the source-less React-side `.thread-actrow` arm from the grouped

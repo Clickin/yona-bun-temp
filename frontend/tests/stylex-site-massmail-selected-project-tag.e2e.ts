@@ -5,6 +5,11 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const ownerSelector = '[data-stylex-owner="site-massmail-selected-project-tag"]';
 const routeSource = new URL("../src/routes/sites/massmail.tsx", import.meta.url);
 const themeSource = new URL("../src/routes/sites/-massmail.stylex.ts", import.meta.url);
+const appCssSource = new URL("../src/app.css", import.meta.url);
+const legacyMassMailScript = new URL(
+  "../../yona-original/public/javascripts/service/yobi.site.MassMail.js",
+  import.meta.url,
+);
 
 async function mockSession(page: Page) {
   const fulfill = (route: Route) =>
@@ -47,13 +52,17 @@ test.describe("StyleX site massmail selected-project tag", () => {
   test("retires only the generated label fallback classes and keeps tags absent until added", async ({
     page,
   }) => {
-    const [route, theme] = await Promise.all([
+    const [route, theme, appCss, legacyScript] = await Promise.all([
       readFile(routeSource, "utf8"),
       readFile(themeSource, "utf8"),
+      readFile(appCssSource, "utf8"),
+      readFile(legacyMassMailScript, "utf8"),
     ]);
     expect(route).toContain('data-stylex-owner="site-massmail-selected-project-tag"');
     expect(route).toContain("styles.selectedProjectTag");
     expect(route).not.toContain('className="label label-info"');
+    expect(appCss).not.toContain(".label-info {");
+    expect(legacyScript).toContain('<span class="label label-info">');
     const tagStyle = route.slice(
       route.indexOf("selectedProjectTag: {"),
       route.indexOf("});", route.indexOf("selectedProjectTag: {")),
