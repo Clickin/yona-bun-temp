@@ -4725,6 +4725,14 @@ deferred-scope decision; do not perform another broad route scan.
 
 ## Batch 621
 
+Retire the shared `.search-category-wrap` family and the exact `.search-list-item` arm after
+proving global, project, and organization search owners. Keep `.search-box-wrap`,
+`.search-result-title`, `.search-list-wrap`, content/meta, and empty-result declarations until
+their route-specific geometry and consumer graph are separately verified. Frozen legacy LESS and
+generated fallback remain immutable.
+
+## Batch 621
+
 Retire the shared `.search-category-wrap` fallback family after confirming its three current
 consumers: global search, project search, and organization search. Each route already owns the
 list, item, link, active, and empty declarations through colocated StyleX. Remove only the

@@ -600,6 +600,33 @@ test("search category owners have no app.css bridge arms", () => {
   }
 });
 
+test("search result owners have no shared app.css bridge arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".search-list-item {");
+  expect(appCss).toContain(".search-list-wrap {");
+  expect(appCss).toContain(".search-content-body {");
+  expect(appCss).toContain(".search-meta-info {");
+  expect(appCss).toContain(".search-box-wrap {");
+  expect(appCss).toContain(".search-result-title {");
+  expect(appCss).toContain(".title-wrap {");
+  expect(appCss).toContain(".post-id {");
+  const sourceContracts = [
+    ["src/routes/search.tsx", ["styles.searchBox", "styles.resultHeading", "styles.resultList"]],
+    [
+      "src/routes/$ownerName/$projectName/search.tsx",
+      ["sx.searchBox", "sx.searchResultTitle", "sx.searchList"],
+    ],
+    [
+      "src/routes/organizations/$organizationName/search.tsx",
+      ["styles.searchBox", "styles.resultTitle", "styles.list"],
+    ],
+  ] as const;
+  for (const [sourcePath, owners] of sourceContracts) {
+    const source = readFileSync(sourcePath, "utf8");
+    for (const owner of owners) expect(source).toContain(owner);
+  }
+});
+
 test("project-home issue-wrap bridge has no React-side fallback arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".project-home .issue-wrap {");
