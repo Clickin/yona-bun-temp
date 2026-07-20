@@ -370,8 +370,7 @@ select:focus {
 }
 
 .ybtn-primary,
-.ybtn-success,
-.btn-primary {
+.ybtn-success {
   color: #fff;
   background-color: #ff7332;
   border-color: #e95e01;
@@ -380,9 +379,7 @@ select:focus {
 .ybtn-primary:hover,
 .ybtn-primary:focus,
 .ybtn-success:hover,
-.ybtn-success:focus,
-.btn-primary:hover,
-.btn-primary:focus {
+.ybtn-success:focus {
   color: #fff;
   background-color: #e95e01;
 }

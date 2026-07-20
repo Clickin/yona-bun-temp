@@ -465,6 +465,15 @@ test("uneditable-input width bridge has no current React consumer", () => {
   expect(appCss).toContain("input,\ntextarea {\n  width: 206px;\n}");
 });
 
+test("dead Bootstrap btn-primary bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  expect(appCss).not.toContain(".btn-primary {");
+  expect(appCss).not.toContain(".btn-primary:hover,");
+  expect(appCss).not.toContain(".btn-primary:focus");
+  expect(appCss).toContain(".ybtn-primary,\n.ybtn-success {");
+  expect(appCss).toContain(".ybtn-success:focus {");
+});
+
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");

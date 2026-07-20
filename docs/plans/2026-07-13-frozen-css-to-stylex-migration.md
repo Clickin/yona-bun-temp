@@ -4442,3 +4442,12 @@ consumer; retain the `input, textarea` width declaration and frozen Bootstrap
 source. Update the formal fallback-off contract and record this as a React-side
 dead bridge removal. No frozen source, generated fallback, or geometry baseline
 changes are permitted.
+
+## Batch 591
+
+Retire only the unreachable `.btn-primary` selector arms from the grouped
+primary base and hover/focus rules in `frontend/src/app.css`. Current React
+sources emit no literal `.btn-primary` class; retain active `.ybtn-primary` and
+`.ybtn-success` shared Yobi declarations, frozen Bootstrap, generated fallback,
+and geometry baselines. Update the formal fallback-off contract and record the
+bounded React-side bridge retirement. No TSX or frozen/generated CSS changes.

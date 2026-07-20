@@ -1923,3 +1923,13 @@ contracts in normal and fallback-off modes; no TSX changed.
   generic width, frozen source, generated fallback, and geometry remain unchanged.
   `frontend/tests/legacy-fallback-off.e2e.ts` asserts exact absence and retained
   generic width in normal/fallback-off contract runs.
+
+## Batch 591
+
+- Dead `.btn-primary` bridge retirement: current React sources emit no literal
+  `.btn-primary` consumer, while `.ybtn-primary` and `.ybtn-success` remain
+  active shared Yobi primitives. `frontend/src/app.css` removes only the
+  `.btn-primary` arms from the grouped primary base and hover/focus rules;
+  active Yobi selectors, frozen Bootstrap, generated fallback, and geometry
+  remain unchanged. `legacy-fallback-off.e2e.ts` asserts exact absence and
+  neighboring Yobi selector retention in normal and fallback-off modes.
