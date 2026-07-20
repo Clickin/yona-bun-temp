@@ -49,7 +49,7 @@ test("issueform select controls own route-scoped StyleX geometry", async () => {
   for (const marker of [
     "project-issue-form-title-field",
     "project-issue-form-title-head-options",
-    "project-issueform-title-suggestion-category",
+    "project-issue-form-title-suggestion-category",
     "project-issue-form-assignee-dropdown-search",
     "project-issue-form-label-token",
     "project-issue-form-label-token-close",
@@ -64,6 +64,12 @@ test("issueform select controls own route-scoped StyleX geometry", async () => {
     ".issue-form-page-wrap .issue-assignee-dropdown-search",
     ".issue-form-page-wrap .issue-label-token",
     ".issue-form-page-wrap .issue-label-token .btn-transparent",
+    ".issue-form-page-wrap .issue-label-trigger",
+    ".issue-form-page-wrap .issue-assignee-selection",
+    ".issue-form-page-wrap .issue-assignee-arrow",
+    ".issue-form-page-wrap .issue-label-selection",
+    ".issue-form-page-wrap .issue-label-color",
+    ".issue-project-utility-menu",
   ]) {
     expect(css).not.toContain(`${retiredSelector} {`);
   }

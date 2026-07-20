@@ -4484,6 +4484,19 @@ fallback, and geometry baselines. Update the project-posts and formal
 fallback-off static contracts in normal and fallback-off modes; do not change
 TSX or frozen/generated CSS.
 
+## Batch 596
+
+Retire only the source-less issue-form picker compatibility family from
+`frontend/src/app.css`: `.issue-form-page-wrap .issue-label-trigger`, the
+custom assignee selection/arrow rules, label selection/color rules, and
+`.issue-project-utility-menu`. Remove the `.issue-label-trigger` arm from the
+grouped width rule while retaining shared combobox input/options geometry.
+Current React issueform emits StyleX/generic combobox controls and none of the
+retired classes. Frozen legacy source and generated fallback remain unchanged.
+Update the issueform and formal fallback-off static contracts in normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` modes; do not change TSX or frozen/generated
+CSS.
+
 ## Batch 595
 
 Retire only the unreachable `.badge-info` arm from the grouped `.label-info,

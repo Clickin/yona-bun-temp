@@ -242,6 +242,25 @@ test("issueform legacy insert bridge has no app.css arms", () => {
   );
 });
 
+test("issueform legacy picker bridge has no app.css arms", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  for (const selector of [
+    ".issue-form-page-wrap .issue-label-trigger",
+    ".issue-form-page-wrap .issue-assignee-selection",
+    ".issue-form-page-wrap .issue-assignee-arrow",
+    ".issue-form-page-wrap .issue-label-selection",
+    ".issue-form-page-wrap .issue-label-color",
+    ".issue-project-utility-menu",
+  ]) {
+    expect(appCss).not.toContain(`${selector} {`);
+  }
+  expect(appCss).toContain(".issue-form-page-wrap .issue-combobox > input {");
+  expect(appCss).toContain(".issue-form-page-wrap .issue-combobox-options {");
+  expect(readFileSync("src/routes/$ownerName/$projectName/issueform.tsx", "utf8")).not.toContain(
+    "issue-assignee-selection",
+  );
+});
+
 test("site post-row fallback bridges have no remaining selectors", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   for (const selector of [

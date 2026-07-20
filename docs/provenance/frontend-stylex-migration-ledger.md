@@ -1976,5 +1976,18 @@ contracts in normal and fallback-off modes; no TSX changed.
   has no `.badge-info` producer. `frontend/src/app.css` removes only the
   `.badge-info` arm from the shared `.label-info, .badge-info` paint rule;
   `.label-info`, frozen Bootstrap, generated fallback, and geometry remain
-  unchanged. The formal fallback-off contract asserts exact absence and
-  retained label paint in normal and fallback-off modes. No TSX changed.
+unchanged. The formal fallback-off contract asserts exact absence and
+retained label paint in normal and fallback-off modes. No TSX changed.
+
+## Batch 596
+
+- Dead issue-form picker compatibility bridge retirement: current React
+  issueform emits StyleX/generic combobox controls and no
+  `.issue-label-trigger`, `.issue-assignee-selection`, `.issue-assignee-arrow`,
+  `.issue-label-selection`, `.issue-label-color`, or
+  `.issue-project-utility-menu` consumers. `frontend/src/app.css` removes
+  only those picker arms and the `.issue-label-trigger` arm from the grouped
+  width rule; shared combobox geometry, frozen source, generated fallback, and
+  baselines remain unchanged. The issueform and formal fallback-off contracts
+  assert exact absence and retained shared combobox rules in normal and
+  fallback-off modes. No TSX changed.
