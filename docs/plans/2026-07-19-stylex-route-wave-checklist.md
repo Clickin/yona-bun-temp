@@ -1066,3 +1066,7 @@ desktop/mobile geometry, and filtering.
   mapping, exact longhand border geometry, desktop/390px computed coverage, and
   independent fallback-off focused contract pass 1/1 each; unrelated consumers
   remain scoped.
+- [x] Batch 751 emitted inline comment row/cell owners: frozen Scala/LESS mapping,
+  exact row/cell declarations, desktop/390px geometry, visible thread copy, and
+  independent fallback-off focused contract pass 1/1 each; nested li width,
+  non-emitted selectors, ranges/colors, and unrelated comments remain scoped.

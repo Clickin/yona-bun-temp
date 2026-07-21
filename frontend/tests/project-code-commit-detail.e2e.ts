@@ -52,6 +52,10 @@ const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_DIFF_LINE_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/partial_diff_line.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_FILE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
   "utf8",
@@ -2434,6 +2438,110 @@ index 1234567..abcdef1 100644
       page,
       `<div class="diff-body">${EXPECTED_FILE_DIFF.replace('</tr><tr class="add" data-line="3"', `</tr>${withCommentUpdateForm(withThreadUploadForm(withThreadTextareaStyle(withThreadReplyAuthorInfo(EXPECTED_INLINE_THREAD_ROW, 77), 77)), basePath, 501, "Line **note**")}<tr class="add" data-line="3"`).replaceAll("__BASE_PATH__", basePath)}<div class="btnPop"><button type="button" class="ybtn ybtn-info ybtn-small"><i class="yobicon-post2"></i></button></div></div>`,
     ),
+  );
+});
+
+test("project commit detail owns the emitted inline comment row and cell visibility", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_DIFF_LINE_SOURCE).toContain('<tr class="@klass" data-line="@num"');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&.comments {\n                            display: none;\n                            td {\n                                padding:0;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&.show-comments {\n                        tr.comments {\n                            display: table-row;",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-inline-comment-row"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-inline-comment-cell"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentRow: { display: "table-row" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentCell: { padding: "0px" }');
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1 +1,2 @@
+ fn main() {
++    println!("new");`,
+      },
+    ],
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorAvatarUrl: "/avatars/dev.png",
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: false,
+            contentsHtml: "<p>Server HTML should not render</p>",
+            contentsMarkdown: "Inline **note**",
+            createdLabel: "Jul 1, 2026",
+            id: 501,
+            threadId: 77,
+            viaEmail: false,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        endLine: 2,
+        id: 77,
+        path: "src/main.rs",
+        prevCommitId: "1234567890abcdef",
+        startLine: 2,
+        state: "open",
+      },
+    ],
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+    const row = page.locator('[data-stylex-owner="commit-detail-inline-comment-row"]');
+    const cell = page.locator('[data-stylex-owner="commit-detail-inline-comment-cell"]');
+    await expect(row).toBeVisible();
+    await expect(cell).toBeVisible();
+    await expect(row).toHaveClass(/comments/);
+    await expect(row).toHaveClass(/board-comment-wrap/);
+    await expect(row).toHaveCSS("display", "table-row");
+    await expect(cell).toHaveCSS("padding", "0px");
+    await expect(row).toContainText("Inline note");
+    await expect(page.locator("#thread-77")).toBeVisible();
+
+    const geometry = await row.evaluate((element) => {
+      const rowBox = element.getBoundingClientRect();
+      const cellBox = element.querySelector("td")!.getBoundingClientRect();
+      return {
+        cellHeight: cellBox.height,
+        cellWidth: cellBox.width,
+        rowHeight: rowBox.height,
+        rowWidth: rowBox.width,
+      };
+    });
+    expect(geometry.rowWidth).toBeGreaterThan(0);
+    expect(geometry.rowHeight).toBeGreaterThan(0);
+    expect(geometry.cellWidth).toBeCloseTo(geometry.rowWidth, 0);
+    expect(geometry.cellHeight).toBeGreaterThan(0);
+  }
+
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
 });
 

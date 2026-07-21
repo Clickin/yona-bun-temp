@@ -10,6 +10,8 @@ export const commitDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  inlineCommentRow: { display: "table-row" },
+  inlineCommentCell: { padding: "0px" },
   blockReviewButtonHidden: { display: "none" },
   blockReviewButtonVisible: { display: "block" },
   commentBodyHidden: { display: "none" },

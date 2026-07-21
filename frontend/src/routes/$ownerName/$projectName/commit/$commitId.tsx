@@ -29,6 +29,8 @@ import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { styles } from "./-commit-detail.stylex";
 
 const sx = {
+  inlineCommentRow: stylex.props(styles.inlineCommentRow),
+  inlineCommentCell: stylex.props(styles.inlineCommentCell),
   codediffLayout: stylex.props(styles.codediffLayout),
   diffsLayout: stylex.props(styles.diffsLayout),
   reviewPanel: stylex.props(styles.reviewPanel),
@@ -1149,8 +1151,18 @@ function InlineCommentRow({
   );
 
   return (
-    <tr className="comments board-comment-wrap" data-commit-id={threads[0]?.commitId || commitId}>
-      <td colSpan={3}>
+    <tr
+      {...sx.inlineCommentRow}
+      className={`${sx.inlineCommentRow.className} comments board-comment-wrap`}
+      data-commit-id={threads[0]?.commitId || commitId}
+      data-stylex-owner="commit-detail-inline-comment-row"
+    >
+      <td
+        {...sx.inlineCommentCell}
+        className={`${sx.inlineCommentCell.className}`}
+        colSpan={3}
+        data-stylex-owner="commit-detail-inline-comment-cell"
+      >
         {threads.map((thread, index) => {
           const previousThread = threads[index - 1];
           const previousThreadFolded = previousThread

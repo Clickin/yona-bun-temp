@@ -5652,6 +5652,17 @@ overflow/margin/radius/background declarations while retaining generic shell
 fallback consumers and verifying desktop/mobile computed output in normal and
 fallback-off focused tests.
 
+## Batch 751
+
+Complete the authenticated commit-detail emitted partial-diff inline comments
+row/cell visible state through route-local StyleX owners. Preserve the Scala
+`tr.comments`/`td` DOM, `show-comments` visibility, thread copy, and fold
+interaction while carrying only the frozen row `display:table-row` and cell
+`padding:0` declarations. Keep nested comment `li` width, non-emitted utility or
+comment-box selectors, range/colors, and unrelated `.comments` consumers outside
+this owner scope, and verify desktop/390px computed geometry and visible copy in
+normal and fallback-off focused tests.
+
 ## Batch 750
 
 Repair the authenticated commit-detail partial-filediff outer/meta/code-line
