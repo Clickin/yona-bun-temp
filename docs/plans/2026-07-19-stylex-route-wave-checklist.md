@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 778 child notification receiver proof
+
+- [x] The authorized child notification receiver preserves DOM, title/list
+  copy/order, focus behavior, hidden/focused-visible state, and child scope
+  while StyleX owns the frozen `_page.less:7805-7817` wrapper declarations;
+  parent/edit receivers, nested generic rules, and broad fallback remain
+  excluded.
+- [x] Focused normal/fallback-off child-reply suites pass 5/5, covering source
+  roots/imports, all moved computed declarations, no inline style, direct child
+  scope, copy/order, interaction, and desktop/390px geometry. Screenshot
+  parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 777 child-comment form proof
 
 - [x] The authorized child reply form preserves legacy action/encoding, hidden

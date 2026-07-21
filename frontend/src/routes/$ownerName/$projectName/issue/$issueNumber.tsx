@@ -3916,8 +3916,14 @@ function ChildComments({
                 </button>
               </div>
               <div
-                {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
-                className={`${notificationVisible ? stylex.props(styles.notificationVisible).className : ""} notification-receiver`}
+                {...stylex.props(styles.childCommentNotificationReceiver)}
+                {...stylex.props(
+                  notificationVisible
+                    ? styles.childCommentNotificationReceiverVisible
+                    : styles.childCommentNotificationReceiverHidden,
+                )}
+                data-stylex-owner="project-issue-detail-child-comment-notification-receiver"
+                className={`${stylex.props(styles.childCommentNotificationReceiver).className} ${stylex.props(notificationVisible ? styles.childCommentNotificationReceiverVisible : styles.childCommentNotificationReceiverHidden).className} notification-receiver`}
               >
                 <span className="notification-receiver-title">Notification receivers </span>
                 <span className="notification-receiver-list"></span>

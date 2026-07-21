@@ -350,6 +350,20 @@ export const styles = stylex.create({
   childCommentFormSubmit: {
     display: "inline-block",
   },
+  childCommentNotificationReceiver: {
+    marginLeft: "12px",
+    borderBottomLeftRadius: "3px",
+    borderBottomRightRadius: "3px",
+    backgroundColor: "#F7F7F7",
+    textAlign: "start",
+    padding: "5px 5px 5px 10px",
+  },
+  childCommentNotificationReceiverHidden: {
+    display: "none",
+  },
+  childCommentNotificationReceiverVisible: {
+    display: "block",
+  },
   sidebarMetaDl: { marginBottom: "20px" },
   sidebarMetaDd: { padding: "5px 0px" },
   sidebarMetaAssigneeName: { fontSize: "11px" },

@@ -2009,6 +2009,155 @@ test("project issue detail owns the child reply form declarations and geometry",
   }
 });
 
+test("project issue detail owns the child notification receiver declarations and geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const legacyForm = readFileSync(
+    new URL("../../yona-original/app/views/common/child_commentForm.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyChildComments = readFileSync(
+    new URL("../../yona-original/app/views/common/childComments.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
+    "utf8",
+  );
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(legacyForm).toContain('<div class="notification-receiver">');
+  expect(legacyChildComments).toContain('<div class="child-comment-input-form">');
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  const childReceiverSelector = ".child-comment-input-form {\n    .notification-receiver {";
+  const childReceiverStart = legacyPage.indexOf(childReceiverSelector);
+  expect(childReceiverStart).toBeGreaterThanOrEqual(0);
+  const childReceiverLess = legacyPage.slice(childReceiverStart, childReceiverStart + 260);
+  const receiverLess = legacyPage.slice(
+    legacyPage.indexOf(".notification-receiver {"),
+    legacyPage.indexOf(".notification-receiver {") + 450,
+  );
+  for (const declaration of [
+    "margin-left: 12px;",
+    "border-bottom-left-radius: 3px;",
+    "border-bottom-right-radius: 3px;",
+  ]) {
+    expect(childReceiverLess).toContain(declaration);
+  }
+  for (const declaration of [
+    "background-color: #F7F7F7;",
+    "display: none;",
+    "text-align: start;",
+    "padding: 5px 5px 5px 10px;",
+  ]) {
+    expect(receiverLess).toContain(declaration);
+  }
+  expect(routeSource).toContain(
+    'data-stylex-owner="project-issue-detail-child-comment-notification-receiver"',
+  );
+  expect(routeSource).toContain("styles.childCommentNotificationReceiver");
+  expect(routeSource).toContain("styles.childCommentNotificationReceiverHidden");
+  expect(routeSource).toContain("styles.childCommentNotificationReceiverVisible");
+  expect(styleSource).toMatch(
+    /childCommentNotificationReceiver:\s*\{[\s\S]*marginLeft:\s*["']12px["'][\s\S]*borderBottomLeftRadius:\s*["']3px["'][\s\S]*borderBottomRightRadius:\s*["']3px["'][\s\S]*backgroundColor:\s*["']#F7F7F7["'][\s\S]*textAlign:\s*["']start["'][\s\S]*padding:\s*["']5px 5px 5px 10px["']/u,
+  );
+  expect(styleSource).toMatch(
+    /childCommentNotificationReceiverHidden:\s*\{\s*display:\s*["']none["']/u,
+  );
+  expect(styleSource).toMatch(
+    /childCommentNotificationReceiverVisible:\s*\{\s*display:\s*["']block["']/u,
+  );
+
+  await mockProjectIssueDetail(page);
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/issue/11`);
+    const comment = page.locator(".span-left-pane #comment-77");
+    const form = comment.locator(":scope > .subcomment-media-body > .child-comment-input-form");
+    const receiver = form.locator(":scope > form > .notification-receiver");
+    const parentReceiver = page.locator("#comment-form .notification-receiver");
+
+    await expect(receiver).toHaveCount(1);
+    await expect(receiver).toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-child-comment-notification-receiver",
+    );
+    await expect(parentReceiver).toHaveCount(1);
+    await expect(parentReceiver).not.toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-child-comment-notification-receiver",
+    );
+    await expect(form).toBeHidden();
+    await expect(receiver).toBeHidden();
+    await expect(receiver).not.toHaveAttribute("style");
+
+    await comment.hover();
+    await comment.locator(":scope > .add-a-comment").click();
+    await expect(form).toBeVisible();
+    await expect(receiver).toBeVisible();
+    await expect(comment.locator(".child-comment-input-form .editorSeries")).toBeFocused();
+    await expect(receiver.locator(":scope > .notification-receiver-title")).toHaveText(
+      "Notification receivers",
+    );
+    await expect(receiver.locator(":scope > .notification-receiver-list")).toHaveCount(1);
+    await expect(receiver.locator(":scope > span")).toHaveCount(2);
+    await expect(receiver).not.toHaveAttribute("style");
+    await expect(parentReceiver).toBeHidden();
+
+    const metrics = await receiver.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const formRect = element.closest(".child-comment-input-form")?.getBoundingClientRect();
+      if (!formRect) throw new Error("child notification receiver form is missing");
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        formLeft: formRect.left,
+        formRight: formRect.right,
+        marginLeft: style.marginLeft,
+        borderBottomLeftRadius: style.borderBottomLeftRadius,
+        borderBottomRightRadius: style.borderBottomRightRadius,
+        backgroundColor: style.backgroundColor,
+        display: style.display,
+        textAlign: style.textAlign,
+        padding: style.padding,
+        inlineStyle: element.getAttribute("style"),
+      };
+    });
+    expect(metrics.marginLeft).toBe("12px");
+    expect(metrics.borderBottomLeftRadius).toBe("3px");
+    expect(metrics.borderBottomRightRadius).toBe("3px");
+    expect(metrics.backgroundColor).toBe("rgb(247, 247, 247)");
+    expect(metrics.display).toBe("block");
+    expect(metrics.textAlign).toBe("start");
+    expect(metrics.padding).toBe("5px 5px 5px 10px");
+    expect(metrics.inlineStyle).toBeNull();
+    expect(metrics.left).toBeGreaterThanOrEqual(metrics.formLeft - 1);
+    expect(metrics.right).toBeLessThanOrEqual(metrics.formRight + 1);
+    expect(metrics.bottom).toBeGreaterThanOrEqual(metrics.top);
+
+    await comment.locator(".child-comment-input-form .editorSeries").press("Escape");
+    await expect(receiver).toBeHidden();
+  }
+});
+
 test("project issue detail owns the child reply float across desktop and mobile", async ({
   page,
 }) => {
