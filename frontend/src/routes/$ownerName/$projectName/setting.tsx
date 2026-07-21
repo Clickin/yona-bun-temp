@@ -1147,10 +1147,15 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const enrolledMemberCount = enrolledUserCount(project);
+  const submenuItemClassName = stylex.props(styles.projectSettingSubmenuItem).className;
 
   return (
     <ul className="nav nav-tabs">
-      <li id="subMenuProjectSetting" className={active === "setting" ? "active" : ""}>
+      <li
+        id="subMenuProjectSetting"
+        className={`${submenuItemClassName} ${active === "setting" ? "active" : ""}`.trim()}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1161,7 +1166,11 @@ function ProjectSettingMenu({
           {t("project.setting")}
         </Link>
       </li>
-      <li id="subMenuProjectMember" className="">
+      <li
+        id="subMenuProjectMember"
+        className={submenuItemClassName}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1173,7 +1182,11 @@ function ProjectSettingMenu({
           <CountBadge count={enrolledMemberCount} className="num-badge" />
         </Link>
       </li>
-      <li id="subMenuIssueLabel" className="">
+      <li
+        id="subMenuIssueLabel"
+        className={submenuItemClassName}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1184,7 +1197,11 @@ function ProjectSettingMenu({
           {t("issue.label")}
         </Link>
       </li>
-      <li id="subMenuWebhook" className="">
+      <li
+        id="subMenuWebhook"
+        className={submenuItemClassName}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1195,7 +1212,11 @@ function ProjectSettingMenu({
           {t("project.webhook")}
         </Link>
       </li>
-      <li id="subMenuProjectTransfer" className="">
+      <li
+        id="subMenuProjectTransfer"
+        className={submenuItemClassName}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1206,7 +1227,11 @@ function ProjectSettingMenu({
           {t("project.transfer")}
         </Link>
       </li>
-      <li id="subMenuProjectDelete" className="">
+      <li
+        id="subMenuProjectDelete"
+        className={submenuItemClassName}
+        data-stylex-owner="project-setting-submenu-item"
+      >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}
           activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -1219,10 +1244,11 @@ function ProjectSettingMenu({
       </li>
       <li
         id="subMenuProjectChangeVCS"
-        className={
+        className={`${submenuItemClassName} ${
           stylex.props(showCode ? styles.changeVcsMenuVisible : styles.changeVcsMenuHidden)
             .className
-        }
+        }`}
+        data-stylex-owner="project-setting-submenu-item"
       >
         <Link
           activeOptions={legacyProjectSettingsLinkActiveOptions}

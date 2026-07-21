@@ -864,3 +864,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves the legacy class/copy/target/issue-template
   URL, default and interaction paint, desktop/mobile geometry, and viewport
   containment in normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 723 project-settings subnavigation proof
+
+- [x] All seven settings subnavigation `li` owners carry only the frozen
+  route-specific `margin-bottom:-2px` declaration; Bootstrap’s generic
+  `.nav-tabs` fallback and unrelated consumers remain.
+- [x] The focused contract preserves tab DOM/order/copy, Link hrefs, active
+  state, count badge, conditional Change VCS visibility, desktop/mobile
+  containment, and computed margin in normal and fallback-off runs (1/1 each).

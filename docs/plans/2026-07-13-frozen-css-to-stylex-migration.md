@@ -5579,3 +5579,14 @@ only the exact frozen generic `.ybtn` base and hover/focus/active declarations
 with their resolved legacy values. Keep generic `.ybtn` fallback consumers
 unchanged; verify desktop/mobile geometry, interaction paint, link contract,
 and viewport containment in normal and fallback-off focused tests.
+
+## Batch 723
+
+Complete the authenticated project-settings subnavigation visible state through
+the existing route-local StyleX boundary. Preserve all seven tab `li`/anchor
+elements, IDs, copy/order, active state, Link routes, count badge, and
+conditional Change VCS visibility, and carry only the exact route-specific
+`.project-page-wrap .nav-tabs > li { margin-bottom:-2px; }` declaration. Keep
+Bootstrap and generic `.nav-tabs` fallback consumers unchanged; verify desktop
+and mobile geometry, active/navigation contracts, and conditional visibility in
+normal and fallback-off focused tests.

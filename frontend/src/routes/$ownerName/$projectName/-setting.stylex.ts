@@ -15,6 +15,7 @@ export const projectSettingColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  projectSettingSubmenuItem: { marginBottom: "-2px" },
   issueTemplateEdit: {
     backgroundColor: projectSettingColors.buttonSurface,
     borderColor: projectSettingColors.buttonBorder,

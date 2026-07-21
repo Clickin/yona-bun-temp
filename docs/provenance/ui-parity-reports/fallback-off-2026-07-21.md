@@ -363,3 +363,12 @@ geometry, legacy `ybtn` class, Edit copy, new-tab target, issue-template URL,
 and desktop/mobile containment through route-local StyleX. Generic `.ybtn`
 consumers retain the legacy fallback. Focused normal and fallback-off runs pass
 1/1 each.
+
+## Follow-up — authenticated project-settings subnavigation owner
+
+Fallback-off evidence confirmed that all seven project-settings subnavigation
+items retain the frozen route-specific `margin-bottom:-2px` geometry, tab
+DOM/order/copy, Link hrefs, active state, member count badge, conditional
+Change VCS visibility, and desktop/mobile containment through route-local
+StyleX. Generic Bootstrap/nav-tabs consumers retain the legacy fallback.
+Focused normal and fallback-off runs pass 1/1 each.

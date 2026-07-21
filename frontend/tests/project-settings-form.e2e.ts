@@ -598,7 +598,7 @@ test("project settings menu links preserve legacy hrefs with SPA transition", as
     { ariaCurrent: null, className: null, dataStatus: null },
     { ariaCurrent: null, className: null, dataStatus: null },
   ]);
-  await expect(page.locator("#subMenuProjectSetting")).toHaveClass("active");
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
   await expect(page.locator(".project-setting li")).toHaveClass("active");
   await expect(page.locator(".project-setting li.active a")).toHaveAttribute(
     "href",
@@ -947,6 +947,107 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(source).toContain("selfRoutePath={LEGACY_PROJECT_SETTINGS_ROUTE}");
   expect(settingFormSource).toContain('createFileRoute("/$ownerName/$projectName/settingform")');
   expect(settingFormSource).toContain("ProjectSettingRouteScreen");
+});
+
+test("project settings submenu owns the frozen route-specific tab margin", async ({ page }) => {
+  const [legacy, less, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/partial_settingmenu.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<ul class="nav nav-tabs">');
+  expect(less).toContain(".project-page-wrap");
+  expect(less).toContain("margin-bottom: -2px");
+  expect(route).toContain("styles.projectSettingSubmenuItem");
+  expect(route).toContain('data-stylex-owner="project-setting-submenu-item"');
+  expect(style).toContain("projectSettingSubmenuItem:");
+  expect(style).toContain('marginBottom: "-2px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: {
+      enrolledUsers: [{ id: 1 }, { id: 2 }],
+      menuSetting: { code: true },
+    },
+  });
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const items = page.locator('[data-stylex-owner="project-setting-submenu-item"]');
+  const submenu = items.first().locator("..");
+  const links = items.locator("a");
+  await expect(items).toHaveCount(7);
+  expect(
+    await items.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-stylex-owner"))),
+  ).toEqual(Array(7).fill("project-setting-submenu-item"));
+  await expect(links).toHaveText([
+    "Settings",
+    "Member2",
+    "Issue Label",
+    "Webhooks",
+    "Transfer",
+    "Delete project",
+    "Repository Type Change",
+  ]);
+  await expect(page.locator("#subMenuProjectSetting")).toHaveClass(/\bactive\b/);
+  expect(await links.evaluateAll((nodes) => nodes.map((node) => node.tagName))).toEqual(
+    Array(7).fill("A"),
+  );
+  expect(
+    await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href"))),
+  ).toEqual([
+    `${basePath}/admin/sample/settingform`,
+    `${basePath}/admin/sample/members`,
+    `${basePath}/admin/sample/issue/labelsform`,
+    `${basePath}/admin/sample/webhooks`,
+    `${basePath}/admin/sample/transfer`,
+    `${basePath}/admin/sample/deleteform`,
+    `${basePath}/admin/sample/changeVCS`,
+  ]);
+
+  const desktop = await submenu.evaluate((element) => {
+    const ul = element.getBoundingClientRect();
+    const tabs = Array.from(element.querySelectorAll<HTMLElement>("li"));
+    return {
+      ul: { left: ul.left, right: ul.right, top: ul.top, bottom: ul.bottom },
+      items: tabs.map((tab) => {
+        const box = tab.getBoundingClientRect();
+        return {
+          marginBottom: getComputedStyle(tab).marginBottom,
+          inside: box.left >= ul.left && box.right <= ul.right && box.top >= ul.top,
+        };
+      }),
+    };
+  });
+  expect(desktop.items).toHaveLength(7);
+  expect(desktop.items.every((item) => item.marginBottom === "-2px")).toBe(true);
+  expect(desktop.items.every((item) => item.inside)).toBe(true);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  const mobile = await submenu.evaluate((element) => {
+    const ul = element.getBoundingClientRect();
+    return Array.from(element.querySelectorAll<HTMLElement>("li")).map((tab) => {
+      const box = tab.getBoundingClientRect();
+      return {
+        marginBottom: getComputedStyle(tab).marginBottom,
+        inside: box.left >= ul.left && box.right <= ul.right && box.top >= ul.top,
+      };
+    });
+  });
+  expect(mobile).toHaveLength(7);
+  expect(mobile.every((item) => item.marginBottom === "-2px")).toBe(true);
+  expect(mobile.every((item) => item.inside)).toBe(true);
+
+  await mockProjectSettings(page, { project: { menuSetting: { code: false } } });
+  await page.reload();
+  await expect(items).toHaveCount(7);
+  await expect(page.locator("#subMenuProjectChangeVCS")).toBeHidden();
+  await expect(page.locator("#subMenuProjectChangeVCS")).toHaveAttribute(
+    "data-stylex-owner",
+    "project-setting-submenu-item",
+  );
 });
 
 test("issue template edit preserves the legacy ybtn contract through its route-local StyleX owner", async ({
