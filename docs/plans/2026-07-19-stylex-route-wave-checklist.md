@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 772 parent issue-comment action spacing proof
+
+- [x] The parent comment edit/delete buttons preserve legacy DOM, comment
+  identity/title, order, and React interactions while route-local StyleX owns
+  frozen `.ml10`/`.ml6` margins; translation and child-comment controls stay
+  separately scoped.
+- [x] Owner-focused normal and fallback-off Playwright checks pass 2/2,
+  covering source/import mapping, owners/declarations, computed margins,
+  no-inline-style, direct parent-row scope/order, and interaction ownership.
+- [x] The broader focused run passed the two new owner assertions; two
+  unrelated existing geometry expectations remain failing in the edit-form and
+  delete-modal metric checks.
+
 ### 2026-07-22 Batch 771 issue-comment translation spacing proof
 
 - [x] The configured issue-comment translation button preserves the legacy

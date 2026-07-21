@@ -6078,3 +6078,16 @@ and keep issue-body translation and other comment actions separately scoped. The
 focused issue-detail test verifies source/import mapping, computed margin,
 no-inline-style, visible interaction, request payload/result, and scope
 boundaries in normal and fallback-disabled modes.
+
+## Batch 772
+
+Move the parent issue-comment edit `.ml10` and delete `.ml6` spacing into
+separate route-local StyleX owners using the frozen `margin-left:10px` and
+`margin-left:6px` declarations from `_common.less:206,216`. Preserve the
+parent button DOM, comment id/title, order, and React edit/delete behavior;
+scope selectors directly to the parent comment row so child-comment controls
+remain excluded. Comment translation remains separately owned. The focused
+issue-detail test verifies source/import mapping, StyleX owners/declarations,
+computed margins, no-inline-style, order/scope, and interactions. Owner-focused
+normal and fallback-disabled runs pass 2/2 each; two unrelated legacy geometry
+expectations remain failing in the broader run.

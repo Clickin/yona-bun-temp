@@ -1866,12 +1866,72 @@ test("project issue detail toggles legacy comment update form through React-owne
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyComment = readFileSync(
+    "../yona-original/app/views/issue/partial_comment.scala.html",
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  const legacyEdit = legacyComment.slice(
+    legacyComment.indexOf(
+      '<button type="button" class="btn-transparent-with-fontsize-lineheight ml10" data-toggle="comment-edit"',
+    ),
+    legacyComment.indexOf("</button>", legacyComment.indexOf('data-toggle="comment-edit"')) +
+      "</button>".length,
+  );
+  const legacyDelete = legacyComment.slice(
+    legacyComment.indexOf(
+      '<button type="button" class="btn-transparent-with-fontsize-lineheight ml6" data-toggle="comment-delete"',
+    ),
+    legacyComment.indexOf("</button>", legacyComment.indexOf('data-toggle="comment-delete"')) +
+      "</button>".length,
+  );
+  expect(legacyEdit).toContain('class="btn-transparent-with-fontsize-lineheight ml10"');
+  expect(legacyDelete).toContain('class="btn-transparent-with-fontsize-lineheight ml6"');
+  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
+  expect(legacyCommon).toContain(".ml6 { margin-left:6px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  const parentActionEmitter = routeSource.slice(
+    routeSource.lastIndexOf(
+      "<button",
+      routeSource.indexOf('data-stylex-owner="project-issue-detail-comment-action-edit"'),
+    ),
+    routeSource.indexOf(
+      "</button>",
+      routeSource.indexOf('data-stylex-owner="project-issue-detail-comment-action-delete"'),
+    ) + "</button>".length,
+  );
+  expect(parentActionEmitter).toContain("styles.commentActionEdit");
+  expect(parentActionEmitter).toContain("styles.commentActionDelete");
+  expect(parentActionEmitter).toContain(
+    'data-stylex-owner="project-issue-detail-comment-action-edit"',
+  );
+  expect(parentActionEmitter).toContain(
+    'data-stylex-owner="project-issue-detail-comment-action-delete"',
+  );
+  expect(parentActionEmitter).not.toContain("ml10");
+  expect(parentActionEmitter).not.toContain("ml6");
+  expect(styleSource).toMatch(/commentActionEdit:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
+  expect(styleSource).toMatch(/commentActionDelete:\s*\{[\s\S]*?marginLeft:\s*["']6px["']/u);
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   const initialUrl = page.url();
   const comment = page.locator(".span-left-pane #comment-77");
-  const editButton = comment.locator('button[title="Edit comment"][data-comment-id="77"]');
+  const parentActionRow = comment.locator(":scope > .media-body > .meta-info > .act-row");
+  const editButton = parentActionRow.locator('button[title="Edit comment"][data-comment-id="77"]');
+  const deleteButton = parentActionRow.locator('button[title="Delete comment"]');
   const cancelButton = comment.locator('.comment-update-form .ybtn-cancel[data-comment-id="77"]');
   const updateForm = comment.locator("#comment-editform-77");
   const updateEditor = updateForm.locator(".mt10:has(#editor-contents-77)");
@@ -1882,7 +1942,26 @@ test("project issue detail toggles legacy comment update form through React-owne
   await expect(comment.locator("#comment-editform-77")).toBeHidden();
   await expect(comment.locator("#comment-body-77")).toBeVisible();
   await expect(editButton).toHaveClass(/btn-transparent-with-fontsize-lineheight/);
-  await expect(editButton).toHaveClass(/ml10/);
+  await expect(deleteButton).toHaveCount(1);
+  await expect(editButton).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-comment-action-edit",
+  );
+  await expect(deleteButton).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-comment-action-delete",
+  );
+  await expect(editButton).not.toHaveClass(/\bml10\b/u);
+  await expect(deleteButton).not.toHaveClass(/\bml6\b/u);
+  await expect(editButton).not.toHaveAttribute("style", /.+/u);
+  await expect(deleteButton).not.toHaveAttribute("style", /.+/u);
+  await expect(editButton).toHaveCSS("margin-left", "10px");
+  await expect(deleteButton).toHaveCSS("margin-left", "6px");
+  await expect(
+    parentActionRow.locator(
+      '[data-stylex-owner="project-issue-detail-comment-action-edit"] ~ [data-stylex-owner="project-issue-detail-comment-action-delete"]',
+    ),
+  ).toHaveCount(1);
   await expect(editButton).not.toHaveAttribute("data-toggle", "comment-edit");
   await expect(cancelButton).toHaveText("Cancel");
   await expect(updateEditor).toHaveCount(1);
@@ -1990,7 +2069,10 @@ test("project issue detail matches authored comment edit branch from legacy part
   const comment = page.locator(".span-left-pane #comment-77");
   expect(await comment.getAttribute("class")).toContain("author");
 
-  await comment.locator('button[title="Edit comment"][data-comment-id="77"]').click();
+  await comment
+    .locator(":scope > .media-body > .meta-info > .act-row")
+    .locator('button[title="Edit comment"][data-comment-id="77"]')
+    .click();
 
   const updateForm = comment.locator("#comment-editform-77");
   const notification = updateForm.locator(".send-notification-check");
@@ -2035,9 +2117,17 @@ test("project issue detail keeps React-owned comment edit button for readable co
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   const comment = page.locator(".span-left-pane #comment-77");
-  const editButton = comment.locator('button[title="Edit comment"][data-comment-id="77"]');
+  const editButton = comment
+    .locator(":scope > .media-body > .meta-info > .act-row")
+    .locator('button[title="Edit comment"][data-comment-id="77"]');
   await expect(editButton).toHaveCount(1);
-  await expect(editButton).toHaveClass("btn-transparent-with-fontsize-lineheight ml10");
+  await expect(editButton).toHaveClass(/btn-transparent-with-fontsize-lineheight/);
+  await expect(editButton).not.toHaveClass(/\bml10\b/u);
+  await expect(editButton).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-comment-action-edit",
+  );
+  await expect(editButton).toHaveCSS("margin-left", "10px");
   await expect(editButton).toHaveAttribute("title", "Edit comment");
   await expect(editButton).not.toHaveAttribute("data-toggle", "comment-edit");
   await expect(editButton.locator("i.yobicon-edit-2")).toHaveCount(1);
@@ -2421,7 +2511,10 @@ test("project issue detail renders React-owned top hover popover for notificatio
   });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  await page.locator('#comment-77 button[title="Edit comment"][data-comment-id="77"]').click();
+  await page
+    .locator("#comment-77 > .media-body > .meta-info > .act-row")
+    .locator('button[title="Edit comment"][data-comment-id="77"]')
+    .click();
 
   await expectLegacyTopHoverPopover(
     page,
@@ -2619,13 +2712,15 @@ test("project issue detail renders legacy comment translation button when transl
     "project-issue-detail-translation-button",
   );
   await expect(
-    page.locator('#comment-77 > .media-body > .meta-info > .act-row button[title="Edit comment"]'),
-  ).toHaveClass(/\bml10\b/u);
+    page.locator(
+      '#comment-77 > .media-body > .meta-info > .act-row [data-stylex-owner="project-issue-detail-comment-action-edit"]',
+    ),
+  ).toHaveCSS("margin-left", "10px");
   await expect(
     page.locator(
-      '#comment-77 > .media-body > .meta-info > .act-row button[title="Delete comment"]',
+      '#comment-77 > .media-body > .meta-info > .act-row [data-stylex-owner="project-issue-detail-comment-action-delete"]',
     ),
-  ).toHaveClass(/\bml6\b/u);
+  ).toHaveCSS("margin-left", "6px");
 
   await translateButton.click();
 
@@ -3107,7 +3202,7 @@ test("project issue detail deletes comments through legacy confirmation modal", 
   });
   await armRootModalBridgeTrap(page);
   const commentDeleteButton = page.locator(
-    '#comment-77 .media-body > .meta-info button[title="Delete comment"].ml6',
+    '#comment-77 > .media-body > .meta-info > .act-row [data-stylex-owner="project-issue-detail-comment-action-delete"]',
   );
   await expect(commentDeleteButton).not.toHaveAttribute("data-toggle", "comment-delete");
   await commentDeleteButton.click();

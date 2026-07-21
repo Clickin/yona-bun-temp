@@ -3643,7 +3643,9 @@ function IssueCommentRow({
             {canRead ? (
               <button
                 type="button"
-                className="btn-transparent-with-fontsize-lineheight ml10"
+                {...stylex.props(styles.commentActionEdit)}
+                className={`${stylex.props(styles.commentActionEdit).className} btn-transparent-with-fontsize-lineheight`}
+                data-stylex-owner="project-issue-detail-comment-action-edit"
                 data-comment-id={commentId}
                 title="Edit comment"
                 onClick={(event) => {
@@ -3660,7 +3662,9 @@ function IssueCommentRow({
             {canDelete ? (
               <button
                 type="button"
-                className="btn-transparent-with-fontsize-lineheight ml6"
+                {...stylex.props(styles.commentActionDelete)}
+                className={`${stylex.props(styles.commentActionDelete).className} btn-transparent-with-fontsize-lineheight`}
+                data-stylex-owner="project-issue-detail-comment-action-delete"
                 title="Delete comment"
                 onClick={(event) => {
                   insulateModalButtonClick(event);
