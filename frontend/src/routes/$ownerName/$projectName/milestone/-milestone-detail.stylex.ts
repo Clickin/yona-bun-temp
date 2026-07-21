@@ -84,6 +84,7 @@ export const styles = stylex.create({
     padding: "10px 0px",
   },
   issueMeta: { lineHeight: "20px" },
+  dueDateIcon: { marginRight: "3px" },
   dueDateClosed: { color: milestoneDetailColors.dueDateClosedText },
   massUpdate: { position: "relative", transitionDuration: "0.5s", transitionProperty: "padding" },
   massUpdateButton: {

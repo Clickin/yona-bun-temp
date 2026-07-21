@@ -40,6 +40,7 @@ const sx = {
   issueList: stylex.props(styles.issueList),
   issueRow: stylex.props(styles.issueRow),
   issueMeta: stylex.props(styles.issueMeta),
+  dueDateIcon: stylex.props(styles.dueDateIcon),
   dueDateClosed: stylex.props(styles.dueDateClosed),
   massUpdate: stylex.props(styles.massUpdate),
   search: stylex.props(styles.search),
@@ -1297,7 +1298,10 @@ function MilestoneIssueRow({
             } ${state === "closed" ? sx.dueDateClosed.className : ""}`}
             {...dueDateAttrs}
           >
-            <i className="yobicon-clock2 mr3 vmiddle"></i>
+            <i
+              className={`${sx.dueDateIcon.className} yobicon-clock2 vmiddle`}
+              data-stylex-owner="milestone-detail-issue-due-date-icon"
+            ></i>
             <span className="vmiddle">
               {state === "open" && booleanField(issue.dueDateOverdue)
                 ? t("issue.dueDate.overdue")

@@ -5978,3 +5978,14 @@ and responsive behavior; keep the generic `.mr3` fallback for unrelated
 consumers. The focused project-issues test verifies source mapping, computed
 margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
 normal and fallback-disabled modes.
+
+## Batch 763
+
+Move the authenticated milestone-detail issue-row due-date clock's active
+`.mr3` spacing into the existing milestone-detail StyleX owner using the frozen
+`margin-right:3px` declaration from `_common.less:221`. Preserve the icon/
+`vmiddle` classes, due-date wrapper/copy/title, overdue/closed state, and
+responsive behavior; remove `mr3` only from this React emitter and keep the
+generic fallback for unrelated consumers. The focused milestone-detail test
+verifies source mapping, computed margin, no-inline-style, visible due-date
+state, and desktop/mobile geometry in normal and fallback-disabled modes.
