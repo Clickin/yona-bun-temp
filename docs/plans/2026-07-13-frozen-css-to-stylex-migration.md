@@ -5744,3 +5744,13 @@ thread wrapper and fold interaction while carrying only the frozen sibling
 margin declarations: `10px` after a normal thread and `0px` after a folded
 thread. Verify desktop/390px computed spacing and live fold transition in
 normal and fallback-off focused tests.
+
+## Batch 741
+
+Complete the authenticated commit-detail review-form shell visible state
+through existing route-local StyleX owners. Preserve the Scala review-form,
+author-info, write-comment-box, block-review button, and open/close behavior
+while carrying only the frozen form padding/font/radius, author-row and
+write-box geometry, block-button hidden/visible display state, and the exact
+720px responsive write-box margin override. Verify desktop/390px computed
+geometry and interaction in normal and fallback-off focused tests.

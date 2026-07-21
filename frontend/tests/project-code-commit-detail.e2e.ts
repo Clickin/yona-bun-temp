@@ -31,6 +31,18 @@ const LEGACY_THREAD_FORM_SOURCE = readFileSync(
   ),
   "utf8",
 );
+const LEGACY_REVIEW_FORM_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/common/reviewForm.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_VARIABLES_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_variables.less", import.meta.url),
+  "utf8",
+);
+const LEGACY_RESPONSIVE_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
+  "utf8",
+);
 const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
@@ -970,12 +982,66 @@ index 1234567..abcdef1 100644
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("onClose={() => setBlockReviewFormOpen(false)}");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormHidden");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormVisible");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.blockReviewButtonHidden");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.blockReviewButtonVisible");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewFormShell");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewAuthorInfoWrap");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewWriteCommentBox");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "0px 10px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('paddingRight: "6px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderRadius: "6px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginBottom: "10px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('height: "35px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginLeft: "46px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    '"@media all and (max-width: 720px)": { marginLeft: "0px" }',
+  );
+  expect(LEGACY_REVIEW_FORM_SOURCE).toContain('<div id="review-form" class="review-form">');
+  expect(LEGACY_REVIEW_FORM_SOURCE).toContain(
+    '<div class="author-info-wrap pull-left hide-in-mobile">',
+  );
+  expect(LEGACY_REVIEW_FORM_SOURCE).toContain('<div class="write-comment-box">');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".review-form {\n    display: none;\n    padding: 0px 10px; padding-right:6px;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".author-info-wrap {\n        padding: 0px; margin-bottom: 10px;\n        display: block; clear: both;\n        height: 35px;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".write-comment-box {\n        padding:0;\n        margin:0;\n        margin-left:46px;",
+  );
+  expect(LEGACY_VARIABLES_SOURCE).toContain(
+    '@base-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";',
+  );
+  expect(LEGACY_RESPONSIVE_SOURCE).toContain(
+    ".review-form .write-comment-box {\n    margin-left: 0 !important;\n  }",
+  );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("CodeCommentBox");
   await expect(popButton).toHaveCount(1);
   await expect(popButton).toBeHidden();
   await expect(reviewForm).toBeHidden();
   await expect(reviewForm).toHaveAttribute("data-stylex-owner", "commit-detail-review-form");
   await expect(reviewForm).toHaveCSS("display", "none");
+  await expect(reviewForm).toHaveCSS("padding", "0px 6px 0px 10px");
+  await expect(reviewForm).toHaveCSS("padding-right", "6px");
+  await expect(reviewForm).toHaveCSS(
+    "font-family",
+    '-apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+  );
+  await expect(reviewForm).toHaveCSS("border-radius", "6px");
+  const authorInfoWrap = reviewForm.locator(":scope > form > .author-info-wrap");
+  const writeCommentBox = reviewForm.locator(":scope > form > .write-comment-box");
+  await expect(authorInfoWrap).toHaveCSS("padding", "0px");
+  await expect(reviewForm.locator(":scope > form > .author-info-wrap")).toHaveCSS("height", "35px");
+  await expect(authorInfoWrap).toHaveCSS("margin-bottom", "10px");
+  await expect(authorInfoWrap).toHaveCSS("display", "block");
+  await expect(authorInfoWrap).toHaveCSS("clear", "both");
+  await expect(writeCommentBox).toHaveCSS("padding", "0px");
+  await expect(writeCommentBox).toHaveCSS("margin", "0px 0px 0px 46px");
+  await expect(writeCommentBox).toHaveCSS("margin-left", "46px");
 
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker =
@@ -989,6 +1055,15 @@ index 1234567..abcdef1 100644
 
   await expect(reviewForm).toBeVisible();
   await expect(popButton).toBeHidden();
+  await expect(reviewForm).toHaveCSS("display", "block");
+  await expect(reviewForm.locator(":scope > form > .author-info-wrap")).toHaveCSS(
+    "display",
+    "block",
+  );
+  await expect(reviewForm.locator(":scope > form > .write-comment-box")).toHaveCSS(
+    "padding",
+    "0px",
+  );
   expect(await blockReviewFormMetrics(page)).toEqual({
     authorAvatarVisible: true,
     authorDataOriginalTitle: null,
@@ -1002,6 +1077,10 @@ index 1234567..abcdef1 100644
   });
   expect(page.url()).toBe(initialUrl);
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(reviewForm).toHaveCSS("display", "block");
+  await expect(authorInfoWrap).toHaveCSS("height", "35px");
+  await expect(authorInfoWrap).toHaveCSS("margin-bottom", "10px");
+  await expect(writeCommentBox).toHaveCSS("margin-left", "0px");
   const mobileReviewBox = await reviewForm.evaluate((form) => {
     const box = form.getBoundingClientRect();
     return { left: box.left, right: box.right, viewportWidth: window.innerWidth };

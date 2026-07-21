@@ -1021,3 +1021,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, computed spacing at
   desktop/390px, and live fold transition in normal and fallback-off runs
   (1/1 each).
+
+### 2026-07-21 Batch 741 commit-detail review-form shell proof
+
+- [x] The block review form preserves the Scala review-form, author-info,
+  write-comment-box, and block-button DOM/interaction while route-local
+  StyleX carries exact form shell, author-row, write-box, display, and
+  720px responsive margin declarations; fallback consumers remain retained.
+- [x] The focused contract passes source mapping, hidden/visible interaction,
+  desktop/390px computed geometry, and viewport containment in normal and
+  fallback-off runs (1/1 each).

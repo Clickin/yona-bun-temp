@@ -43,6 +43,9 @@ const sx = {
   reviewTabs: stylex.props(styles.reviewTabs),
   editorTabContent: stylex.props(styles.editorTabContent),
   reviewTextarea: stylex.props(styles.reviewTextarea),
+  reviewFormShell: stylex.props(styles.reviewFormShell),
+  reviewAuthorInfoWrap: stylex.props(styles.reviewAuthorInfoWrap),
+  reviewWriteCommentBox: stylex.props(styles.reviewWriteCommentBox),
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
   rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
@@ -200,6 +203,9 @@ function ProjectCommitDetailBody({
   const [reviewCardsCollapsed, setReviewCardsCollapsed] = useState(false);
   const [blockReviewFormOpen, setBlockReviewFormOpen] = useState(false);
   const [blockReviewButtonVisible, setBlockReviewButtonVisible] = useState(false);
+  const blockReviewButtonProps = stylex.props(
+    blockReviewButtonVisible ? styles.blockReviewButtonVisible : styles.blockReviewButtonHidden,
+  );
   const [commentDeleteCommentId, setCommentDeleteCommentId] = useState<number | null>(null);
   const nonRangedThreads = detail.threads.filter(isNonRangedThread);
   const isSvn = project.vcs === "SVN" || project.vcs === "SUBVERSION";
@@ -354,6 +360,7 @@ function ProjectCommitDetailBody({
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
                   {...sx.diffBody}
+                  className={`diff-body ${sx.diffBody.className}`}
                   data-stylex-owner="commit-detail-diff-body"
                   onMouseUp={() => {
                     const selection = globalThis.getSelection?.();
@@ -388,8 +395,8 @@ function ProjectCommitDetailBody({
                     />
                   ))}
                   <div
-                    className="btnPop"
-                    {...stylex.props(blockReviewButtonVisible && styles.blockReviewButtonVisible)}
+                    {...blockReviewButtonProps}
+                    className={`btnPop ${blockReviewButtonProps.className ?? ""}`.trim()}
                     data-stylex-owner="commit-detail-block-review-button"
                   >
                     <button
@@ -1362,9 +1369,10 @@ function CodeCommentThreadView({
           action={action}
           method="post"
           encType="multipart/form-data"
+          {...sx.reviewFormShell}
           {...sx.threadReviewForm}
           {...threadFoldHiddenProps}
-          className={`review-form ${sx.threadReviewForm.className} ${threadFoldHiddenProps.className ?? ""}`}
+          className={`review-form ${sx.reviewFormShell.className} ${sx.threadReviewForm.className} ${threadFoldHiddenProps.className ?? ""}`}
           data-stylex-owner="commit-detail-thread-review-form"
           onSubmit={(event) => {
             event.preventDefault();
@@ -1372,7 +1380,10 @@ function CodeCommentThreadView({
           }}
         >
           <input type="hidden" name="thread.id" value={thread.id} />
-          <div className="author-info-wrap pull-left hide-in-mobile">
+          <div
+            {...sx.reviewAuthorInfoWrap}
+            className={`${sx.reviewAuthorInfoWrap.className} author-info-wrap pull-left hide-in-mobile`}
+          >
             <div className="author-info">
               <Link
                 to="/$user"
@@ -1385,7 +1396,10 @@ function CodeCommentThreadView({
               </Link>
             </div>
           </div>
-          <div className="write-comment-box">
+          <div
+            {...sx.reviewWriteCommentBox}
+            className={`${sx.reviewWriteCommentBox.className} write-comment-box`}
+          >
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
               <UploadForm resourceType="COMMIT_COMMENT" />
@@ -1718,15 +1732,22 @@ function ReviewForm({
   onClose?: () => void;
 }) {
   const { t } = useLegacyMessages();
+  const reviewFormVisibilityProps = stylex.props(
+    isOpen ? styles.reviewFormVisible : styles.reviewFormHidden,
+  );
   return (
     <div
       id="review-form"
-      className="review-form"
-      {...stylex.props(isOpen ? styles.reviewFormVisible : styles.reviewFormHidden)}
+      {...sx.reviewFormShell}
+      {...reviewFormVisibilityProps}
+      className={`review-form ${sx.reviewFormShell.className} ${reviewFormVisibilityProps.className ?? ""}`}
       data-stylex-owner="commit-detail-review-form"
     >
       <form action={action} method="post" encType="multipart/form-data">
-        <div className="author-info-wrap pull-left hide-in-mobile">
+        <div
+          {...sx.reviewAuthorInfoWrap}
+          className={`${sx.reviewAuthorInfoWrap.className} author-info-wrap pull-left hide-in-mobile`}
+        >
           <div className="author-info">
             <Link
               to="/$user"
@@ -1739,7 +1760,10 @@ function ReviewForm({
             </Link>
           </div>
         </div>
-        <div className="write-comment-box">
+        <div
+          {...sx.reviewWriteCommentBox}
+          className={`${sx.reviewWriteCommentBox.className} write-comment-box`}
+        >
           <div className="write-comment-wrap">
             <div className="pull-right">
               <button

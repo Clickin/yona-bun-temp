@@ -10,6 +10,7 @@ export const commitDetailColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  blockReviewButtonHidden: { display: "none" },
   blockReviewButtonVisible: { display: "block" },
   commentBodyHidden: { display: "none" },
   commentUpdateFormHidden: { display: "none" },
@@ -20,6 +21,26 @@ export const styles = stylex.create({
   reviewTextarea: { height: "100px" },
   reviewFormHidden: { display: "none" },
   reviewFormVisible: { display: "block" },
+  reviewFormShell: {
+    padding: "0px 10px",
+    paddingRight: "6px",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    borderRadius: "6px",
+  },
+  reviewAuthorInfoWrap: {
+    padding: "0px",
+    marginBottom: "10px",
+    display: "block",
+    clear: "both",
+    height: "35px",
+  },
+  reviewWriteCommentBox: {
+    padding: "0px",
+    margin: "0px",
+    marginLeft: "46px",
+    "@media all and (max-width: 720px)": { marginLeft: "0px" },
+  },
   rightText: { textAlign: "right" },
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
