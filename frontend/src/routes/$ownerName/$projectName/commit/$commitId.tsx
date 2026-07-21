@@ -1932,42 +1932,50 @@ function ReviewCards({
 
   return (
     <div id={id} className={`tab-pane${isActive ? " active" : ""}`}>
-      {threads.map((thread) => (
-        <Link
-          to="."
-          hash={`thread-${thread.id}`}
-          search={hashSearch}
-          activeOptions={{ includeHash: true }}
-          activeProps={{
-            "aria-current": undefined,
-            className: undefined,
-            "data-status": undefined,
-          }}
-          className={`review-card ${thread.state.toLowerCase()}`}
-          key={thread.id}
-        >
-          <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
-          <span className="date" title={thread.createdLabel}>
-            <span className="comments">
-              {thread.comments.length > 1 ? (
-                <>
-                  <i className="yobicon-comments"></i> {thread.comments.length}
-                </>
-              ) : null}
+      {threads.map((thread) => {
+        const cardStyleProps = stylex.props(
+          styles.reviewCard,
+          thread.state.toLowerCase() === "open" ? styles.reviewCardOpen : styles.reviewCardClosed,
+        );
+        return (
+          <Link
+            {...cardStyleProps}
+            to="."
+            hash={`thread-${thread.id}`}
+            search={hashSearch}
+            activeOptions={{ includeHash: true }}
+            activeProps={{
+              "aria-current": undefined,
+              className: undefined,
+              "data-status": undefined,
+            }}
+            className={`${cardStyleProps.className} review-card ${thread.state.toLowerCase()}`}
+            data-stylex-owner="commit-detail-review-card"
+            key={thread.id}
+          >
+            <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
+            <span className="date" title={thread.createdLabel}>
+              <span className="comments">
+                {thread.comments.length > 1 ? (
+                  <>
+                    <i className="yobicon-comments"></i> {thread.comments.length}
+                  </>
+                ) : null}
+              </span>
+              <span className="avatar-wrap smaller margin-right-5">
+                <img
+                  src={
+                    thread.comments[0]?.authorAvatarUrl ||
+                    prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
+                  }
+                  alt={thread.comments[0]?.authorLabel ?? ""}
+                />
+              </span>
+              {thread.createdLabel}
             </span>
-            <span className="avatar-wrap smaller margin-right-5">
-              <img
-                src={
-                  thread.comments[0]?.authorAvatarUrl ||
-                  prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")
-                }
-                alt={thread.comments[0]?.authorLabel ?? ""}
-              />
-            </span>
-            {thread.createdLabel}
-          </span>
-        </Link>
-      ))}
+          </Link>
+        );
+      })}
     </div>
   );
 }

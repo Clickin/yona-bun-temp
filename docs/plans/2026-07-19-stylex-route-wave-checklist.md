@@ -1031,3 +1031,6 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, hidden/visible interaction,
   desktop/390px computed geometry, and viewport containment in normal and
   fallback-off runs (1/1 each).
+- [ ] Batch 742 review-card rail: verify source mapping, desktop/390px computed
+  geometry, hover, state rail, and hash interaction in normal and fallback-off
+  runs.

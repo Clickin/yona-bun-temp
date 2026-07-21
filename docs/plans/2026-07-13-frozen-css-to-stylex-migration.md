@@ -5754,3 +5754,12 @@ while carrying only the frozen form padding/font/radius, author-row and
 write-box geometry, block-button hidden/visible display state, and the exact
 720px responsive write-box margin override. Verify desktop/390px computed
 geometry and interaction in normal and fallback-off focused tests.
+## Batch 742
+
+Complete the authenticated commit-detail review-card rail shell and open/closed
+state through route-local StyleX owners. Preserve the legacy review-card Link,
+classes, hash navigation, content/date/avatar order, hover behavior, and open or
+closed inset rail while carrying only the frozen display, border, padding,
+radius, margin, hover, and state-shadow declarations. Retain generic fallback
+consumers and verify desktop/390px computed geometry and hash interaction in
+normal and fallback-off focused tests.

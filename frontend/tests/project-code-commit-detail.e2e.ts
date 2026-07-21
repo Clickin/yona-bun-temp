@@ -52,6 +52,10 @@ const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_REVIEWLIST_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_COMMIT_MSG_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/common/commitMsg.scala.html", import.meta.url),
   "utf8",
@@ -2281,6 +2285,38 @@ index 1234567..abcdef1 100644
 
 test("project commit detail renders legacy non-ranged comment thread", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain(
+    '<a href="@DiffRenderer.urlToCommentThread(thread)" class="review-card @thread.state.toString().toLowerCase()',
+  );
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<a href="#thread-@thread.id" class="review-card');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".review-card {\n    display:block;\n    border: 1px solid #ddd;\n    padding: 10px;\n    padding-left: 15px;\n    margin-bottom: 5px;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".border-radius(0 3px 3px 0);\n\n    &:last-of-type { margin-bottom:0; }",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&:hover {\n        text-decoration:none;\n        background-color:#fafafa;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&.open {\n        .box-shadow(inset 5px 0px 0px @state-open);",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&.closed {\n        .box-shadow(inset 5px 0px 0px @state-closed);",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCard");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCardOpen");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.reviewCardClosed");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-review-card"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'reviewCard: {\n    display: "block",\n    borderWidth: "1px",\n    borderStyle: "solid",\n    borderColor: "#ddd",\n    padding: "10px",\n    paddingLeft: "15px",\n    marginBottom: "5px",\n    borderRadius: "0px 3px 3px 0px",\n    ":last-of-type": { marginBottom: "0px" },\n    ":hover": { textDecoration: "none", backgroundColor: "#fafafa" },\n  },',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'reviewCardOpen: { boxShadow: "inset 5px 0px 0px #b6da54" },',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'reviewCardClosed: { boxShadow: "inset 5px 0px 0px #fd6956" },',
+  );
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
     threads: [
@@ -2316,9 +2352,24 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     ],
   });
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".non-ranged-threads-wrap #thread-88")).toBeVisible();
-  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveCount(1);
+  const reviewCard = page.locator("#reviewcards-open .review-card.open");
+  await expect(reviewCard).toHaveCount(1);
+  await expect(reviewCard).toHaveCSS("display", "block");
+  await expect(reviewCard).toHaveCSS("border", "1px solid rgb(221, 221, 221)");
+  await expect(reviewCard).toHaveCSS("padding", "10px 10px 10px 15px");
+  await expect(reviewCard).toHaveCSS("margin-bottom", "0px");
+  await expect(reviewCard).toHaveCSS("border-radius", "0px 3px 3px 0px");
+  await expect(reviewCard).toHaveCSS("box-shadow", "rgb(182, 218, 84) 5px 0px 0px 0px inset");
+  const desktopCardBox = await reviewCard.boundingBox();
+  expect(desktopCardBox).not.toBeNull();
+  expect(desktopCardBox!.x).toBeGreaterThanOrEqual(0);
+  expect(desktopCardBox!.x + desktopCardBox!.width).toBeLessThanOrEqual(1366);
+  await reviewCard.hover();
+  await expect(reviewCard).toHaveCSS("text-decoration-line", "none");
+  await expect(reviewCard).toHaveCSS("background-color", "rgb(250, 250, 250)");
   await expect(
     page.locator("#reviewcards-open .review-card.open .avatar-wrap.smaller.margin-right-5 img"),
   ).toHaveAttribute("alt", "Dev User");
@@ -2349,10 +2400,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await expect(
     page.locator("#thread-88 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toBeVisible();
-  await expect(page.locator("#editor-contents-thread-88")).toHaveAttribute(
-    "style",
-    /height:\s*100px/,
-  );
+  await expect(page.locator("#editor-contents-thread-88")).toHaveCSS("height", "100px");
   await expect(page.locator("#comment-601 .comment-avatar img")).toHaveAttribute("alt", "dev");
   await expect(page.locator("#comment-601 .comment-avatar a")).toHaveAttribute(
     "href",
@@ -2390,30 +2438,16 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("class", /.+/);
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("aria-current", /.+/);
   await expect(page.locator("#comment-601 .ago a")).not.toHaveAttribute("data-status", /.+/);
-  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
+  await expect(reviewCard).toHaveAttribute(
     "href",
     `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#thread-88`,
   );
-  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveAttribute(
-    "class",
-    "review-card open",
-  );
-  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
-    "title",
-    /.+/,
-  );
-  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
-    "aria-current",
-    /.+/,
-  );
-  await expect(page.locator("#reviewcards-open .review-card.open")).not.toHaveAttribute(
-    "data-status",
-    /.+/,
-  );
-  await expect(page.locator("#reviewcards-open .review-card.open .date")).toHaveAttribute(
-    "title",
-    "Jul 1, 2026",
-  );
+  await expect(reviewCard).toHaveClass(/review-card/);
+  await expect(reviewCard).toHaveClass(/\bopen\b/);
+  await expect(reviewCard).not.toHaveAttribute("title", /.+/);
+  await expect(reviewCard).not.toHaveAttribute("aria-current", /.+/);
+  await expect(reviewCard).not.toHaveAttribute("data-status", /.+/);
+  await expect(reviewCard.locator(".date")).toHaveAttribute("title", "Jul 1, 2026");
   expect(await readNonRangedThreadMetrics(page)).toEqual({
     commentPadding: "2px 0px",
     commentsMargin: "0px 5px",
@@ -2433,6 +2467,15 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
     threadPosition: "relative",
   });
   expect(detailRequests).toEqual(["branch=main"]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(reviewCard).toBeVisible();
+  await expect(reviewCard).toHaveCSS("display", "block");
+  await expect(reviewCard).toHaveCSS("padding", "10px 10px 10px 15px");
+  await expect(reviewCard).toHaveCSS("margin-bottom", "0px");
+  const mobileCardBox = await reviewCard.boundingBox();
+  expect(mobileCardBox).not.toBeNull();
+  expect(mobileCardBox!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileCardBox!.x + mobileCardBox!.width).toBeLessThanOrEqual(390);
   expect(await canonicalize(page, ".board-comment-wrap")).toEqual(
     await canonicalizeHtml(
       page,
@@ -2450,7 +2493,7 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
       () => (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker,
     ),
   ).toBe("commit-comment-hash");
-  await page.locator("#reviewcards-open .review-card.open").click();
+  await reviewCard.click();
   await expect(page).toHaveURL(/#thread-88$/);
   expect(
     await page.evaluate(
@@ -3021,7 +3064,8 @@ async function canonicalize(page: Page, selector: string) {
         return "";
       }
       const attrs = Array.from(node.attributes)
-        .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+        .filter((attr) => !isNormalizedRuntimeAttr(attr))
+        .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
         .join(" ");
@@ -3034,7 +3078,27 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter((token) => !isGeneratedStyleXToken(token))
+          .join(" ")
+          .trim();
+      }
       return attr.name === "style" ? attr.value.replace(/\s+/g, "").replace(/;$/u, "") : attr.value;
+    }
+
+    function isNormalizedRuntimeAttr(attr: Attr) {
+      return (
+        attr.name.startsWith("data-v-") ||
+        attr.name === "alt" ||
+        attr.name === "data-style-src" ||
+        attr.name === "data-stylex-owner"
+      );
+    }
+
+    function isGeneratedStyleXToken(token: string) {
+      return /^-[\w-]+__styles\.[\w-]+$/u.test(token) || /^x[\w-]+$/u.test(token);
     }
   });
 }
@@ -3056,7 +3120,8 @@ async function canonicalizeHtml(page: Page, html: string) {
           return "";
         }
         const attrs = Array.from(node.attributes)
-          .filter((attr) => !attr.name.startsWith("data-v-") && attr.name !== "alt")
+          .filter((attr) => !isNormalizedRuntimeAttr(attr))
+          .filter((attr) => !(attr.name === "class" && normalizeAttr(attr) === ""))
           .sort((left, right) => left.name.localeCompare(right.name))
           .map((attr) => `${attr.name}=${JSON.stringify(normalizeAttr(attr))}`)
           .join(" ");
@@ -3069,9 +3134,29 @@ async function canonicalizeHtml(page: Page, html: string) {
       }
 
       function normalizeAttr(attr: Attr) {
+        if (attr.name === "class") {
+          return attr.value
+            .split(/\s+/u)
+            .filter((token) => !isGeneratedStyleXToken(token))
+            .join(" ")
+            .trim();
+        }
         return attr.name === "style"
           ? attr.value.replace(/\s+/g, "").replace(/;$/u, "")
           : attr.value;
+      }
+
+      function isNormalizedRuntimeAttr(attr: Attr) {
+        return (
+          attr.name.startsWith("data-v-") ||
+          attr.name === "alt" ||
+          attr.name === "data-style-src" ||
+          attr.name === "data-stylex-owner"
+        );
+      }
+
+      function isGeneratedStyleXToken(token: string) {
+        return /^-[\w-]+__styles\.[\w-]+$/u.test(token) || /^x[\w-]+$/u.test(token);
       }
     },
     withReactOwnedTabButtons(withLegacyMarkdownHelp(html)),
