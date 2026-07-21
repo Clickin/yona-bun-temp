@@ -1109,3 +1109,8 @@ desktop/mobile geometry, and filtering.
   removed, generated legacy fallback retention is asserted, and the focused
   fallback-off static contract passes 1/1. Frozen legacy utility sources remain
   unchanged.
+- [x] Batch 759 source-less React-side `.blue-txt` fallback bridge retirement:
+  current `frontend/src` has no React emitter, only the exact `app.css` color arm
+  is removed, generated legacy fallback retention is asserted, and the focused
+  normal/fallback-off static contracts pass 1/1 each. Frozen legacy color
+  consumers remain unchanged.

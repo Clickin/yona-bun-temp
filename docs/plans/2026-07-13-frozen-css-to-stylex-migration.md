@@ -5935,3 +5935,13 @@ the historical utility, so the generated legacy fallback remains unchanged.
 Do not change route DOM, behavior, frozen sources, or unrelated text utilities.
 Verify exact app.css absence and generated-fallback retention in the focused
 fallback-off static contract.
+
+## Batch 759
+
+Retire only the source-less React-side `.blue-txt { color:#5dbbe0; }` bridge
+from `frontend/src/app.css`. The complete current React source graph emits no
+`.blue-txt`; frozen legacy views and `_common.less:165` still retain historical
+consumers, so the generated legacy fallback remains unchanged. Do not change
+route DOM, behavior, frozen sources, or unrelated color utilities. Verify exact
+app.css absence and generated-fallback retention in the focused normal and
+fallback-off static contracts.

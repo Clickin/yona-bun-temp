@@ -716,7 +716,7 @@ test("source-less number-of-comments bridge has no app.css arm", () => {
   );
 });
 
-test("right-txt bridge is retired while the generated legacy fallback remains intact", () => {
+test("shared text utility bridges are retired while the generated legacy fallback remains intact", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const generatedFallback = readFileSync(
     "public/legacy-assets/stylesheets/legacy-fallback.css",
@@ -724,7 +724,9 @@ test("right-txt bridge is retired while the generated legacy fallback remains in
   );
 
   expect(appCss).not.toContain(".right-txt {");
+  expect(appCss).not.toContain(".blue-txt {");
   expect(generatedFallback).toContain(".right-txt {");
+  expect(generatedFallback).toContain(".blue-txt {");
 });
 
 test("source-less mr6 utility bridge has no app.css arm", () => {
