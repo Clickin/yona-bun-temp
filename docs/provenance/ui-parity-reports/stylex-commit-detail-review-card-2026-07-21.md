@@ -10,4 +10,8 @@ Evidence: `yona-original/app/views/git/partial_reviewlist.scala.html:27-45`,
 The React `Link` keeps the legacy classes, hash navigation, content/date/avatar
 order, and hover interaction. StyleX carries only the exact card geometry,
 hover, and open/closed inset-shadow declarations; shared fallback consumers
-remain enabled.
+remain enabled. The adjacent commit-detail comment form also preserves its
+legacy class when composing conditional StyleX visibility.
+
+The focused Playwright contract passed 1/1 in both normal and
+fallback-disabled modes at desktop and 390px viewports.

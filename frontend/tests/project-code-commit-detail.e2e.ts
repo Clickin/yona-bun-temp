@@ -2558,6 +2558,67 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
   expect(mobileUpdateBox.right).toBeLessThanOrEqual(mobileUpdateBox.viewportWidth);
 });
 
+test("project commit detail review cards own legacy rail geometry and hash", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  await mockProjectCommitDetail(page, detailRequests, {
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        endLine: null,
+        id: 88,
+        path: "",
+        prevCommitId: "1234567890abcdef",
+        startLine: null,
+        state: "open",
+      },
+    ],
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  const reviewCard = page.locator("#reviewcards-open .review-card.open");
+  await expect(reviewCard).toBeVisible();
+  await expect(reviewCard).toHaveCSS("display", "block");
+  await expect(reviewCard).toHaveCSS("border", "1px solid rgb(221, 221, 221)");
+  await expect(reviewCard).toHaveCSS("padding", "10px 10px 10px 15px");
+  await expect(reviewCard).toHaveCSS("margin-bottom", "0px");
+  await expect(reviewCard).toHaveCSS("border-radius", "0px 3px 3px 0px");
+  await expect(reviewCard).toHaveCSS("box-shadow", "rgb(182, 218, 84) 5px 0px 0px 0px inset");
+  const desktopCardBox = await reviewCard.boundingBox();
+  expect(desktopCardBox).not.toBeNull();
+  expect(desktopCardBox!.x).toBeGreaterThanOrEqual(0);
+  expect(desktopCardBox!.x + desktopCardBox!.width).toBeLessThanOrEqual(1366);
+  await reviewCard.hover();
+  await expect(reviewCard).toHaveCSS("text-decoration-line", "none");
+  await expect(reviewCard).toHaveCSS("background-color", "rgb(250, 250, 250)");
+  await expect(reviewCard).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#thread-88`,
+  );
+  await reviewCard.click();
+  await expect(page).toHaveURL(/#thread-88$/);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(reviewCard).toBeVisible();
+  await expect(reviewCard).toHaveCSS("display", "block");
+  await expect(reviewCard).toHaveCSS("padding", "10px 10px 10px 15px");
+  await expect(reviewCard).toHaveCSS("margin-bottom", "0px");
+  const mobileCardBox = await reviewCard.boundingBox();
+  expect(mobileCardBox).not.toBeNull();
+  expect(mobileCardBox!.x).toBeGreaterThanOrEqual(0);
+  expect(mobileCardBox!.x + mobileCardBox!.width).toBeLessThanOrEqual(390);
+  await expect(reviewCard).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef1234567890?branch=main#thread-88`,
+  );
+});
+
 test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];

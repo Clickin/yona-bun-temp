@@ -1495,14 +1495,15 @@ function CodeCommentUpdateForm({
 }) {
   const { t } = useLegacyMessages();
   const commentId = String(comment.id);
+  const commentUpdateFormStyleProps = stylex.props(
+    isEditing ? styles.commentUpdateFormVisible : styles.commentUpdateFormHidden,
+  );
 
   return (
     <div
       id={`comment-editform-${commentId}`}
-      className="comment-update-form"
-      {...stylex.props(
-        isEditing ? styles.commentUpdateFormVisible : styles.commentUpdateFormHidden,
-      )}
+      {...commentUpdateFormStyleProps}
+      className={`${commentUpdateFormStyleProps.className ?? ""} comment-update-form`.trim()}
       data-stylex-owner="commit-detail-comment-update-form"
     >
       <form
