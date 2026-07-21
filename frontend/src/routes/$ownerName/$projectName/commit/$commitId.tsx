@@ -50,6 +50,7 @@ const sx = {
   threadComment: stylex.props(styles.threadComment),
   threadMediaBody: stylex.props(styles.threadMediaBody),
   rangedThreadMinimize: stylex.props(styles.rangedThreadMinimize),
+  threadActions: stylex.props(styles.threadActions),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
 
@@ -1312,7 +1313,12 @@ function CodeCommentThreadView({
             <div className="write-comment-wrap">
               <Editor editorMode="code-review-body" wrapId={`thread-${thread.id}`} />
               <UploadForm resourceType="COMMIT_COMMENT" />
-              <div {...sx.rightText} data-stylex-owner="commit-detail-thread-actions">
+              <div
+                {...sx.rightText}
+                {...sx.threadActions}
+                className={`${sx.rightText.className} ${sx.threadActions.className}`}
+                data-stylex-owner="commit-detail-thread-actions"
+              >
                 <button
                   type="button"
                   className="ybtn ybtn-default ybtn-small"

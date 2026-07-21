@@ -38,6 +38,7 @@ export const styles = stylex.create({
   threadComment: { padding: "2px 0px" },
   threadMediaBody: { backgroundColor: "#fff" },
   rangedThreadMinimize: { position: "absolute", right: "10px", top: "8px" },
+  threadActions: { padding: "5px 5px 10px" },
   rangedThreadHeader: { padding: "5px 10px 10px 10px" },
   rangedThreadBadge: { margin: "0px", padding: "2px 10px" },
   originalMessageToggle: {

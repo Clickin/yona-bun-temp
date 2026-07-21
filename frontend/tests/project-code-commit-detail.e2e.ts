@@ -24,6 +24,13 @@ const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_THREAD_FORM_SOURCE = readFileSync(
+  new URL(
+    "../../yona-original/app/views/partial_comment_form_on_thread.scala.html",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
@@ -1585,6 +1592,14 @@ test("project commit detail ranged thread header and badge own frozen geometry",
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadMediaBody");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadMinimize");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("btn-thread-here");
+  expect(LEGACY_THREAD_FORM_SOURCE).toContain('<div class="right-txt">');
+  expect(LEGACY_THREAD_FORM_SOURCE).toContain('<p class="thread-actrow">');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-actrow {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("text-align:right;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 5px 10px;");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadActions: { padding: "5px 5px 10px" }');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadActions");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-thread-actions"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShell:");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('backgroundColor: "#fefefe"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('border: "1px solid #e5e5e5"');
@@ -1665,6 +1680,7 @@ index 1234567..abcdef1 100644
   const comment = comments.locator(":scope > li.comment");
   const mediaBody = comment.locator(":scope > .media-body");
   const minimize = header.locator(":scope > .btn-thread-minimize");
+  const threadActions = page.locator('[data-stylex-owner="commit-detail-thread-actions"]');
   const assertBadgeMetrics = async () => {
     await expect(thread).toHaveAttribute("data-stylex-owner", "commit-detail-thread-shell");
     await expect(thread).toHaveCSS("border-top-width", "1px");
@@ -1683,6 +1699,8 @@ index 1234567..abcdef1 100644
     await expect(minimize).toHaveCSS("position", "absolute");
     await expect(minimize).toHaveCSS("top", "8px");
     await expect(minimize).toHaveCSS("right", "10px");
+    await expect(threadActions).toHaveCSS("padding", "5px 5px 10px");
+    await expect(threadActions).toHaveCSS("text-align", "right");
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText("Open");
     await expect(header).toHaveCSS("padding", "5px 10px 10px");

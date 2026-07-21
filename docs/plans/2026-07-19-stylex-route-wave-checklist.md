@@ -991,3 +991,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, computed declarations,
   desktop/390px containment, and visible minimize geometry in normal and
   fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 738 commit-detail thread-action proof
+
+- [x] The commit-route thread reply action container preserves its React
+  buttons/copy/order and toggle/submit behavior while carrying only frozen
+  `thread-actrow` padding plus existing right alignment; shared fallback and
+  fold behavior remain intact.
+- [x] The focused contract passes partial/source mapping, computed padding and
+  alignment, desktop/390px containment, and visible action geometry in normal
+  and fallback-off runs (1/1 each).

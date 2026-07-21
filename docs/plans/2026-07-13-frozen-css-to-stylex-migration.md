@@ -5716,3 +5716,12 @@ ranged minimize DOM/classes and fold affordance while carrying only frozen
 comments margin, comment-row padding, media background, and ranged minimize
 position declarations. Verify desktop/390px computed geometry in normal and
 fallback-off focused tests.
+
+## Batch 738
+
+Complete the authenticated commit-detail thread reply action row through a
+route-local StyleX owner. Preserve the existing React action container,
+buttons, copy, order, and toggle/submit behavior while carrying only the
+legacy `thread-actrow` padding and right alignment declarations. Verify
+desktop/390px computed action geometry in normal and fallback-off focused
+tests.
