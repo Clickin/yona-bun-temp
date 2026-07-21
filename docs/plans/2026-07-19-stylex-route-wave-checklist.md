@@ -1114,4 +1114,5 @@ desktop/mobile geometry, and filtering.
   is removed, generated legacy fallback retention is asserted, and the focused
   normal/fallback-off static contracts pass 1/1 each. Frozen legacy color
   consumers remain unchanged.
+- [x] Batch 761 authenticated project-posts two-column checkbox label StyleX ownership: frozen `twoColumnModeCheckboxArea.scala.html` and `_page.less:835-839` remain unchanged, the shared `.checkbox` fallback stays for unrelated consumers, and normal/fallback-off focused parity verifies declarations, geometry, no-inline-style, toggle, and popover interaction 1/1 each.
 - [x] Batch 760 authenticated profile/organization `.yobicon-middle` StyleX ownership and React-side fallback bridge retirement: frozen legacy icon consumers and `_common.less:191-194` remain unchanged, while normal/fallback-off static contracts verify StyleX ownership and generated fallback retention.

@@ -5956,3 +5956,14 @@ Retire only the React-side `frontend/src/app.css` bridge; generated
 `legacy-fallback.css` remains available for the frozen legacy project-list and
 fork views. Focused normal and fallback-off static contracts prove StyleX
 ownership and generated fallback retention.
+
+## Batch 761
+
+Move the authenticated project-posts two-column mode `label.checkbox` wrapper
+into the existing route-local StyleX owner using only the frozen
+`display:inline-block`, `vertical-align:top`, and `margin:2px !important`
+declarations from `_page.less:835-839`. Preserve the checkbox class for the
+shared fallback boundary, input state/copy, hover/focus popover, and responsive
+parent hiding. The focused project-posts test verifies source mapping,
+computed desktop/mobile geometry, no-inline-style, and interaction in normal
+and fallback-disabled modes.

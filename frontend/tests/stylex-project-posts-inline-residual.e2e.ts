@@ -6,6 +6,11 @@ const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 test("project posts owns the board controls' former inline declarations", async ({ page }) => {
   const source = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
   const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
+  const twoColumnLegacy = readFileSync(
+    "../yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html",
+    "utf8",
+  );
+  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
   const legacy = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
   const labelLegacy = readFileSync(
     "../yona-original/app/views/common/issueLabelColor.scala.html",
@@ -14,15 +19,27 @@ test("project posts owns the board controls' former inline declarations", async 
   const keymapLegacy = readFileSync("../yona-original/app/views/help/keymap.scala.html", "utf8");
   expect(legacy).toContain('<div class="page-wrap-outer">');
   expect(legacy).toContain("@common.twoColumnModeCheckboxArea(false)");
+  expect(twoColumnLegacy).toContain('<label class="checkbox">');
+  expect(twoColumnLegacy).toContain('id="two-column-mode"');
+  expect(pageLess).toContain(".checkbox {");
+  expect(pageLess).toContain(".inline-block;");
+  expect(pageLess).toContain("vertical-align:top;");
+  expect(pageLess).toContain("margin:2px !important;");
   expect(keymapLegacy).toContain('style="padding:10px 0; margin-left: 55px;"');
   expect(labelLegacy).toContain("background-color: @label.color");
   expect(source).toContain('data-stylex-owner="project-posts-two-column-mode"');
+  expect(source).toContain('data-stylex-owner="project-posts-two-column-mode-label"');
+  expect(source).toContain("styles.twoColumnModeLabel");
+  expect(source).toMatch(/className=.*checkbox/u);
   expect(source).toContain('data-stylex-owner="project-posts-keymap"');
-  expect(source).toContain('data-stylex-owner="project-posts-label-paint"');
+  expect(source).toContain('data-stylex-owner="project-posts-label-button"');
   expect(source).not.toContain("style={issueLabelStyle(label.color)}");
   expect(source).not.toContain('style={{ position: "relative" }}');
   expect(source).not.toContain('style={{ padding: "10px 0", marginLeft: "55px" }}');
   expect(styleSource).toContain('twoColumnMode: { position: "relative" }');
+  expect(styleSource).toContain('display: "inline-block"');
+  expect(styleSource).toContain('margin: "2px !important"');
+  expect(styleSource).toContain('verticalAlign: "top"');
   expect(styleSource).toContain('keymap: { marginLeft: "55px", padding: "10px 0" }');
   expect(styleSource).toContain("labelPaint:");
 
@@ -31,8 +48,18 @@ test("project posts owns the board controls' former inline declarations", async 
   await page.goto(`${basePath}/admin/sample/posts`, { waitUntil: "commit" });
 
   const twoColumn = page.locator('[data-stylex-owner="project-posts-two-column-mode"]');
+  const twoColumnLabel = page.locator('[data-stylex-owner="project-posts-two-column-mode-label"]');
   const keymapOwner = page.locator('[data-stylex-owner="project-posts-keymap"]');
   await expect(twoColumn).toBeVisible();
+  await expect(twoColumnLabel).toBeVisible();
+  await expect(twoColumnLabel).toHaveClass(/checkbox/u);
+  await expect(twoColumnLabel).toHaveCSS("display", "inline-block");
+  await expect(twoColumnLabel).toHaveCSS("vertical-align", "top");
+  await expect(twoColumnLabel).toHaveCSS("margin-top", "2px");
+  await expect(twoColumnLabel).toHaveCSS("margin-right", "2px");
+  await expect(twoColumnLabel).toHaveCSS("margin-bottom", "2px");
+  await expect(twoColumnLabel).toHaveCSS("margin-left", "2px");
+  expect(await twoColumnLabel.getAttribute("style")).toBeNull();
   await expect(keymapOwner).toBeVisible();
   await expect(twoColumn).toHaveCSS("position", "relative");
   await expect(keymapOwner).toHaveCSS("padding-top", "10px");
@@ -48,10 +75,15 @@ test("project posts owns the board controls' former inline declarations", async 
     };
     return {
       twoColumn: read('[data-stylex-owner="project-posts-two-column-mode"]'),
+      twoColumnLabel: read('[data-stylex-owner="project-posts-two-column-mode-label"]'),
       keymap: read('[data-stylex-owner="project-posts-keymap"]'),
     };
   });
   expect(desktop.twoColumn).not.toBeNull();
+  expect(desktop.twoColumnLabel).not.toBeNull();
+  expect(desktop.twoColumnLabel!.width).toBeGreaterThan(0);
+  expect(desktop.twoColumnLabel!.left).toBeGreaterThanOrEqual(desktop.twoColumn!.left);
+  expect(desktop.twoColumnLabel!.right).toBeLessThanOrEqual(desktop.twoColumn!.right);
   expect(desktop.keymap).not.toBeNull();
   expect(desktop.keymap!.left).toBeGreaterThan(0);
   expect(desktop.keymap!.right).toBeLessThanOrEqual(1366);
@@ -61,7 +93,18 @@ test("project posts owns the board controls' former inline declarations", async 
   await page.locator("#two-column-mode").uncheck();
   await expect(page.locator("#two-column-mode")).not.toBeChecked();
 
-  const label = page.locator('[data-stylex-owner="project-posts-label-paint"]').first();
+  await twoColumn.hover();
+  await expect(
+    page.locator('[data-stylex-owner="project-posts-two-column-popover"]'),
+  ).toBeVisible();
+  await twoColumnLabel.focus();
+  await expect(
+    page.locator('[data-stylex-owner="project-posts-two-column-popover"]'),
+  ).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(page.locator('[data-stylex-owner="project-posts-two-column-popover"]')).toBeHidden();
+
+  const label = page.locator('[data-stylex-owner="project-posts-label-button"]').first();
   await expect(label).toBeVisible();
   await expect(label).toHaveCSS("background-color", "rgb(225, 29, 72)");
   await expect(label).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -80,6 +123,16 @@ test("project posts owns the board controls' former inline declarations", async 
   await expect(page.locator("#helpKeys")).toHaveClass(/hide/u);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(twoColumn).toBeHidden();
+  const mobile = await page.evaluate(() => {
+    const element = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="project-posts-two-column-mode-label"]',
+    );
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+  expect(mobile).toEqual({ width: 0, height: 0 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
     .toBe(true);

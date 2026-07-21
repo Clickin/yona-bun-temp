@@ -85,6 +85,11 @@ export const styles = stylex.create({
   filterActive: { color: postsTheme.filterActive, fontWeight: "700" },
   filterIcon: { marginRight: "5px" },
   twoColumnMode: { position: "relative" },
+  twoColumnModeLabel: {
+    display: "inline-block",
+    margin: "2px !important",
+    verticalAlign: "top",
+  },
   keymap: { marginLeft: "55px", padding: "10px 0" },
   labelPaint: (backgroundColor: string, boxShadow: string, color: string) => ({
     backgroundColor,

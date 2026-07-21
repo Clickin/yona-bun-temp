@@ -763,7 +763,10 @@ function TwoColumnModeCheckbox() {
       onMouseLeave={hideDelayedPopover}
     >
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template wraps the checkbox this way. */}
-      <label className="checkbox">
+      <label
+        className={`${stylex.props(styles.twoColumnModeLabel).className} checkbox`.trim()}
+        data-stylex-owner="project-posts-two-column-mode-label"
+      >
         <div className="two-column-icon-border">
           <input
             id="two-column-mode"
