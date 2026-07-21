@@ -16,6 +16,18 @@ const COMMIT_DETAIL_ROUTE_SOURCE = readFileSync(
   new URL("../src/routes/$ownerName/$projectName/commit/$commitId.tsx", import.meta.url),
   "utf8",
 );
+const COMMIT_DETAIL_STYLEX_SOURCE = readFileSync(
+  new URL("../src/routes/$ownerName/$projectName/commit/-commit-detail.stylex.ts", import.meta.url),
+  "utf8",
+);
+const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/partial_comment_thread.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+  "utf8",
+);
 const APP_CSS_SOURCE = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
 const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
@@ -1539,8 +1551,102 @@ async function readNonRangedThreadMetrics(page: Page) {
   });
 }
 
+test("project commit detail ranged thread badge owns frozen margin and padding", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('<div class="thread-header">');
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
+    '<span class="badge state @thread.state.toString().toLowerCase()">',
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'rangedThreadBadge: { margin: "0px", padding: "2px 10px" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadBadge");
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,1 +1,2 @@
+ fn main() {
++    println!("new");`,
+      },
+    ],
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorAvatarUrl: "/avatars/dev.png",
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: false,
+            contentsHtml: "<p>Server HTML should not render</p>",
+            contentsMarkdown: "Line **note**",
+            createdLabel: "Jul 1, 2026",
+            id: 501,
+            threadId: 77,
+            viaEmail: false,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        endLine: 2,
+        id: 77,
+        path: "src/main.rs",
+        prevCommitId: "1234567890abcdef",
+        startLine: 2,
+        state: "open",
+      },
+    ],
+  });
+
+  const badge = page.locator("#thread-77 .thread-header .badge");
+  const header = page.locator("#thread-77 .thread-header");
+  const assertBadgeMetrics = async () => {
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveText("Open");
+    await expect(badge).toHaveCSS("margin", "0px");
+    await expect(badge).toHaveCSS("padding", "2px 10px");
+    const badgeBox = await badge.boundingBox();
+    const headerBox = await header.boundingBox();
+    expect(badgeBox).not.toBeNull();
+    expect(headerBox).not.toBeNull();
+    expect(badgeBox!.x).toBeGreaterThanOrEqual(headerBox!.x);
+    expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(headerBox!.x + headerBox!.width);
+  };
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await assertBadgeMetrics();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await assertBadgeMetrics();
+});
+
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('<div class="thread-header">');
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
+    '<span class="badge state @thread.state.toString().toLowerCase()">',
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'rangedThreadBadge: { margin: "0px", padding: "2px 10px" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadBadge");
   const detailRequests: string[] = [];
   const mutationRequests: Array<{ body: unknown; method: string; pathname: string }> = [];
   await mockProjectCommitDetail(
@@ -1596,6 +1702,7 @@ index 1234567..abcdef1 100644
     mutationRequests,
   );
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(
     page.locator("tr.comments.board-comment-wrap[data-commit-id='abcdef1234567890']"),
@@ -1604,10 +1711,7 @@ index 1234567..abcdef1 100644
   await expect(
     page.locator("#thread-77 .upload-wrap.content-footer[data-resource-type='COMMIT_COMMENT']"),
   ).toBeVisible();
-  await expect(page.locator("#editor-contents-thread-77")).toHaveAttribute(
-    "style",
-    /height:\s*100px/,
-  );
+  await expect(page.locator("#editor-contents-thread-77")).toHaveCSS("height", "100px");
   expect(await readInlineDiffCommentRowMetrics(page)).toEqual({
     badgeMargin: "0px",
     badgePadding: "2px 10px",
@@ -1632,6 +1736,29 @@ index 1234567..abcdef1 100644
     threadPadding: "5px 5px 0px",
     threadPosition: "relative",
   });
+  const badge = page.locator("#thread-77 .thread-header .badge");
+  await expect(badge).toHaveCSS("margin", "0px");
+  await expect(badge).toHaveCSS("padding", "2px 10px");
+  const desktopBadgeBox = await badge.boundingBox();
+  const desktopHeaderBox = await page.locator("#thread-77 .thread-header").boundingBox();
+  expect(desktopBadgeBox).not.toBeNull();
+  expect(desktopHeaderBox).not.toBeNull();
+  expect(desktopBadgeBox!.x).toBeGreaterThanOrEqual(desktopHeaderBox!.x);
+  expect(desktopBadgeBox!.x + desktopBadgeBox!.width).toBeLessThanOrEqual(
+    desktopHeaderBox!.x + desktopHeaderBox!.width,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(badge).toHaveCSS("margin", "0px");
+  await expect(badge).toHaveCSS("padding", "2px 10px");
+  const mobileBadgeBox = await badge.boundingBox();
+  const mobileHeaderBox = await page.locator("#thread-77 .thread-header").boundingBox();
+  expect(mobileBadgeBox).not.toBeNull();
+  expect(mobileHeaderBox).not.toBeNull();
+  expect(mobileBadgeBox!.x).toBeGreaterThanOrEqual(mobileHeaderBox!.x);
+  expect(mobileBadgeBox!.x + mobileBadgeBox!.width).toBeLessThanOrEqual(
+    mobileHeaderBox!.x + mobileHeaderBox!.width,
+  );
+  await page.setViewportSize({ width: 1366, height: 900 });
   await expect(page.locator("#comment-501 .comment-avatar img")).toHaveAttribute("alt", "dev");
   await expect(page.locator("#thread-77")).not.toHaveAttribute("data-toggle");
   await expect(page.locator("#thread-77")).toHaveAttribute("data-range-path", "src/main.rs");
@@ -1640,7 +1767,10 @@ index 1234567..abcdef1 100644
   await expect(page.locator('#comment-501 [data-toggle="comment-delete"]')).toHaveCount(0);
   const deleteButton = page.locator('#comment-501 button[title="Delete comment"]');
   await deleteButton.click();
-  await expect(page.locator("#comment-delete-modal")).toHaveClass("modal hide fade in");
+  await expect(page.locator("#comment-delete-modal")).toHaveAttribute(
+    "data-stylex-owner",
+    "commit-detail-comment-delete-modal",
+  );
   await expect(page.locator("#comment-delete-modal")).toHaveCSS("display", "block");
   await expect(page.locator(".modal-backdrop.fade.in")).toHaveCount(1);
   await expect(page.locator('#comment-delete-modal [data-dismiss="modal"]')).toHaveCount(0);
@@ -1671,7 +1801,6 @@ index 1234567..abcdef1 100644
   expect(await commentDeleteModalMetrics(page)).toEqual({
     backdropDisplay: "block",
     bodyDisplay: "block",
-    className: "modal hide fade in",
     confirmMethod: null,
     confirmText: "Yes",
     confirmUri: null,
@@ -2414,7 +2543,6 @@ async function commentDeleteModalMetrics(page: Page) {
     return {
       backdropDisplay: backdrop ? window.getComputedStyle(backdrop).display : null,
       bodyDisplay: body ? window.getComputedStyle(body).display : null,
-      className: modal.className,
       confirmMethod: confirm?.dataset.requestMethod ?? null,
       confirmText: confirm?.textContent?.trim() ?? null,
       confirmUri: confirm?.dataset.requestUri ?? null,

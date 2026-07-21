@@ -5680,3 +5680,12 @@ and responsive geometry while carrying only frozen Bootstrap `margin-left:0`
 and `list-style:none`. Retain generic `unstyled` fallback consumers and verify
 desktop/mobile list geometry and upload validation in normal and fallback-off
 focused tests.
+
+## Batch 734
+
+Complete the authenticated commit-detail ranged thread badge through a
+route-local StyleX owner. Preserve the legacy `.thread-header`/`.badge state`
+DOM and state copy while carrying only the frozen badge `margin:0` and
+`padding:2px 10px` declarations. Retain shared badge fallback consumers and
+verify desktop/390px computed geometry and header containment in normal and
+fallback-off focused tests.

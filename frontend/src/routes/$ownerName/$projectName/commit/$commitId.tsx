@@ -1121,7 +1121,11 @@ function CodeCommentThreadView({
 
       {isNonRanged ? null : (
         <div className="thread-header">
-          <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
+          <span
+            className={`${stylex.props(styles.rangedThreadBadge).className} badge state ${state}`}
+          >
+            {t(`issue.state.${state}`)}
+          </span>
           <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
             <i className="yobicon-maximize"></i>
           </button>
@@ -1849,12 +1853,13 @@ function CommentDeleteModal({
   onConfirm: () => void;
 }) {
   const { t } = useLegacyMessages();
+  const modalStyleProps = stylex.props(isOpen && styles.commentDeleteModalVisible);
   return (
     <>
       <div
         id="comment-delete-modal"
-        className={isOpen ? "modal hide fade in" : "modal hide fade"}
-        {...stylex.props(isOpen && styles.commentDeleteModalVisible)}
+        {...modalStyleProps}
+        className={`${isOpen ? "modal hide fade in" : "modal hide fade"} ${modalStyleProps.className ?? ""}`.trim()}
         data-stylex-owner="commit-detail-comment-delete-modal"
       >
         <div className="modal-header">

@@ -957,3 +957,7 @@ desktop/mobile geometry, and filtering.
 - [x] Desktop/mobile computed anchor geometry/interaction, SPA navigation,
   and containment pass in normal and fallback-off runs (1/1 each); generic tab
   fallback consumers remain.
+- [x] Batch 734: commit-detail ranged thread badge preserves the legacy
+  `.thread-header`/`.badge state` DOM and owns only frozen `margin:0` and
+  `padding:2px 10px`; focused desktop/390px normal and fallback-off runs pass
+  1/1 each.
