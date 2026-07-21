@@ -5428,6 +5428,16 @@ existing StyleX owner. Verify unchanged desktop/mobile geometry, conditional
 visibility, external navigation, and paint isolation in focused normal/fallback-off
 tests.
 
+## Batch 709
+
+Clean the global GNB List All link owner against the frozen `.gnb-nav a`
+declaration boundary. The legacy link explicitly supplies `float:none`,
+padding, line-height, color, text decoration, and transition, but does not
+declare `display`; remove only the redundant browser-default declaration from
+the existing StyleX owner. Verify unchanged active state, conditional
+visibility, desktop/mobile geometry, SPA navigation, and paint isolation in
+focused normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

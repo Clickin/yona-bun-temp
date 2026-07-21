@@ -729,3 +729,12 @@ desktop/mobile geometry, and filtering.
   line-height, padding, transition, and external navigation remain.
 - [x] The focused contract preserves conditional visibility, desktop/mobile
   geometry, and paint isolation in normal and fallback-off modes (10/10 each).
+
+### 2026-07-21 Batch 709 global GNB project-list link browser-default proof
+
+- [x] The existing List All link owner removes only redundant `display` absent
+  from frozen `.gnb-nav a`; source-backed `float:none`, active triangle,
+  navigation, visibility, and link paint remain.
+- [x] The focused contract preserves active state, conditional visibility,
+  desktop/mobile geometry, SPA navigation, and paint isolation in normal and
+  fallback-off modes (8/8 each).

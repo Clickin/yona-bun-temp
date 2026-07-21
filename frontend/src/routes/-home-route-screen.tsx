@@ -1409,7 +1409,6 @@ const globalGnbProjectListStyles = stylex.create({
   },
   link: {
     color: "inherit",
-    display: "inline",
     float: "none",
     lineHeight: "40px",
     padding: "10px",

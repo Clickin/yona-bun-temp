@@ -250,3 +250,12 @@ StyleX declarations. The frozen `.gnb-nav a` rule does not declare either
 property; source-backed color, line-height, padding, transition, external
 navigation, and conditional visibility remain intact. Focused normal and
 fallback-off runs pass 10/10.
+
+## Follow-up — global GNB project-list link browser-default cleanup
+
+Fallback-off evidence confirmed that the List All link retains its legacy
+geometry and active triangle after removing only the explicit `display:inline`
+StyleX declaration. Frozen `.gnb-nav a` continues to provide `float:none`,
+padding, line-height, color, text decoration, and transition; conditional
+visibility and SPA navigation remain intact. Focused normal and fallback-off
+runs pass 8/8.

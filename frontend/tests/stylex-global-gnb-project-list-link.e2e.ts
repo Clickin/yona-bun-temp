@@ -20,6 +20,11 @@ test("List All source has complete global-theme StyleX ownership", () => {
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
+  const linkStyleStart = styles.indexOf("link: {");
+  const linkStyles = styles.slice(linkStyleStart);
+  expect(linkStyleStart).toBeGreaterThanOrEqual(0);
+  expect(linkStyles).not.toContain('display: "inline"');
+  expect(linkStyles).toContain('float: "none"');
   for (const token of [
     "globalGnbBrandHeight",
     "globalGnbBrandPaddingInline",
