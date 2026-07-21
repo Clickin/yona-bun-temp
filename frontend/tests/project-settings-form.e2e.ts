@@ -1755,6 +1755,118 @@ test("project settings save validates legacy project name rules before update", 
   expect(updateRequests).toEqual([]);
 });
 
+test("project settings Save owns the legacy success button visible state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const updateRequests: { body: Record<string, unknown>; hasCsrfToken: boolean; method: string }[] =
+    [];
+  await mockProjectSettings(page, { updateRequests });
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const save = page.locator("#save");
+  await expect(save).toHaveAttribute("type", "submit");
+  await expect(save).toHaveClass(/\bybtn\b/);
+  await expect(save).toHaveClass(/\bybtn-success\b/);
+  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(save).toHaveText("Save");
+
+  const defaultState = await save.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    const footer = element.parentElement!.getBoundingClientRect();
+    return {
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
+      borderRadius: style.borderRadius,
+      boxShadow: style.boxShadow,
+      color: style.color,
+      cursor: style.cursor,
+      display: style.display,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+      marginLeft: style.marginLeft,
+      padding: style.padding,
+      textAlign: style.textAlign,
+      transition: style.transition,
+      verticalAlign: style.verticalAlign,
+      whiteSpace: style.whiteSpace,
+      insideFooter: box.left >= footer.left && box.right <= footer.right,
+    };
+  });
+  expect(defaultState).toMatchObject({
+    backgroundColor: "rgb(255, 115, 50)",
+    borderColor: "rgb(233, 94, 1)",
+    borderRadius: "3px",
+    color: "rgb(255, 255, 255)",
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    padding: "4px 12px",
+    textAlign: "center",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    insideFooter: true,
+  });
+
+  await save.hover();
+  await expect
+    .poll(() => save.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(233, 94, 1)");
+
+  await save.focus();
+  expect(
+    await save.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return {
+        backgroundColor: style.backgroundColor,
+        borderColor: style.borderColor,
+        width: box.width,
+        height: box.height,
+      };
+    }),
+  ).toMatchObject({
+    backgroundColor: "rgb(233, 94, 1)",
+    borderColor: "rgb(233, 94, 1)",
+    width: 58,
+    height: 30,
+  });
+
+  const saveBox = await save.boundingBox();
+  expect(saveBox).not.toBeNull();
+  await page.mouse.move(saveBox!.x + saveBox!.width / 2, saveBox!.y + saveBox!.height / 2);
+  await page.mouse.down();
+  await expect
+    .poll(() => save.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe("rgb(233, 94, 1)");
+  await page.mouse.up();
+
+  const invalidNameDialog = new Promise<string>((resolve) => {
+    page.once("dialog", async (dialog) => {
+      resolve(dialog.message());
+      await dialog.accept();
+    });
+  });
+  await page.locator("#project-name").fill("sample!");
+  await save.click();
+  await expect(invalidNameDialog).resolves.toBe(
+    "Enter name in alphabetnumerical or symbol characters(_-.)",
+  );
+  expect(updateRequests).toEqual([]);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileContainment = await save.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const footer = element.parentElement!.getBoundingClientRect();
+    return {
+      insideFooter: box.left >= footer.left && box.right <= footer.right,
+      insideViewport: box.left >= 0 && box.right <= window.innerWidth,
+    };
+  });
+  expect(mobileContainment).toEqual({ insideFooter: true, insideViewport: true });
+});
+
 test("project settings logo input validates image files and auto-submits like legacy", async ({
   page,
 }) => {

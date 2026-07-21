@@ -846,3 +846,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves owner/order, checked state,
   desktop/mobile containment, and reviewer enable/disable panel behavior in
   normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 721 project-settings Save button proof
+
+- [x] The existing Save owner carries only frozen `.ybtn` base,
+  `.ybtn-success`, and hover/focus/active declarations with resolved legacy
+  values; generic `.ybtn` fallback consumers remain.
+- [x] The focused contract preserves legacy classes/type/copy, default and
+  interaction paint, desktop/mobile containment, and validation submit
+  behavior in normal and fallback-off runs (1/1 each).

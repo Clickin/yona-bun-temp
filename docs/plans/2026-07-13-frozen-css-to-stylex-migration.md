@@ -5559,3 +5559,13 @@ behavior; keep the organization-only protected input as a raw fallback
 consumer for this fixture/state. Carry only the frozen `.radio-btn`
 `vertical-align:top` and `margin:2px` declarations, and verify desktop/mobile
 geometry and reviewer interaction in normal and fallback-off focused tests.
+
+## Batch 721
+
+Complete the authenticated project-settings Save button visible state through
+the existing route-local StyleX owner. Preserve the legacy `ybtn ybtn-success`
+button DOM and submit behavior, and carry the exact frozen `.ybtn` base,
+`.ybtn-success`, and hover/focus/active declarations with their resolved
+legacy values. Keep generic `.ybtn` fallback consumers unchanged; verify
+desktop/mobile geometry, interaction paint, and validation submit behavior in
+normal and fallback-off focused tests.

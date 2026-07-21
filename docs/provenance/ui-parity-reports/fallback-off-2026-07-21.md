@@ -346,3 +346,11 @@ geometry, DOM order, checked state, reviewer enable/disable behavior, and
 desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
+
+## Follow-up — authenticated project-settings Save button owner
+
+Fallback-off evidence confirmed that the existing `#save.ybtn.ybtn-success`
+button retains frozen default, hover/focus/active paint, geometry, submit type,
+validation behavior, and desktop/mobile containment through route-local StyleX.
+Generic `.ybtn` consumers retain the legacy fallback. Focused normal and
+fallback-off runs pass 1/1 each.

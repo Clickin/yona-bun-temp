@@ -56,7 +56,6 @@ const sx = {
   defaultBranchResultItem: stylex.props(styles.defaultBranchResultItem),
   defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
-  save: stylex.props(styles.save),
 } as const;
 
 const textareaStaticStyles = stylex.create({
@@ -943,7 +942,12 @@ function ProjectSettingBody({
           </div>
 
           <div className="box-wrap bottom">
-            <button {...sx.save} data-stylex-owner="project-setting-save" id="save" type="submit">
+            <button
+              {...stylex.props(styles.save)}
+              data-stylex-owner="project-setting-save"
+              id="save"
+              type="submit"
+            >
               {t("button.save")}
             </button>
           </div>
