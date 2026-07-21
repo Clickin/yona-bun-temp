@@ -828,7 +828,11 @@ function IssueDetailBody({
           className={`${stylex.props(styles.header).className} board-header issue`}
           data-stylex-owner="project-issue-detail-header"
         >
-          <div className="pull-right mr10 mt10 hide-in-mobile">
+          <div
+            {...stylex.props(styles.desktopMetadata)}
+            className={`${stylex.props(styles.desktopMetadata).className} pull-right hide-in-mobile`}
+            data-stylex-owner="project-issue-detail-desktop-metadata"
+          >
             <div
               {...stylex.props(styles.date)}
               className={`${stylex.props(styles.date).className} date`}

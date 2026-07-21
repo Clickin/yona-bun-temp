@@ -194,6 +194,10 @@ export const styles = stylex.create({
   mobileNewSubtask: {
     marginLeft: "4px",
   },
+  desktopMetadata: {
+    marginRight: "10px",
+    marginTop: "10px",
+  },
   disabledCommentActions: { textAlign: "right" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },

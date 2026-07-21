@@ -1060,6 +1060,80 @@ test("project issue detail owns mobile new-subtask spacing with route StyleX", a
   await expect(link).toHaveAttribute("href", `${basePath}/admin/sample/issueform?parentIssueId=42`);
 });
 
+test("project issue detail owns desktop header metadata spacing with route StyleX", async ({
+  page,
+}) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyView).toContain('<div class="pull-right mr10 mt10 hide-in-mobile">');
+  expect(legacyCommon).toContain(".mr10 { margin-right:10px; }");
+  expect(legacyCommon).toContain(".mt10 { margin-top:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-desktop-metadata"');
+  expect(routeSource).toContain("styles.desktopMetadata");
+  expect(routeSource).not.toContain("pull-right mr10 mt10 hide-in-mobile");
+  expect(styleSource).toMatch(
+    /desktopMetadata:\s*\{[\s\S]*?marginRight:\s*["']10px["'][\s\S]*?marginTop:\s*["']10px["']/u,
+  );
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  await mockProjectIssueDetail(page);
+  const metadata = page.locator('[data-stylex-owner="project-issue-detail-desktop-metadata"]');
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(metadata).toHaveCount(1);
+  await expect(metadata).not.toHaveAttribute("style", /.+/u);
+  await expect(metadata).toHaveClass(/pull-right/);
+  await expect(metadata).toHaveClass(/hide-in-mobile/);
+  await expect(metadata.locator(".date")).toHaveText("Jul 1, 2026");
+  await expect(metadata.locator(".badge")).toHaveText("Open");
+  await expect(metadata).toHaveCSS("margin-right", "10px");
+  await expect(metadata).toHaveCSS("margin-top", "10px");
+
+  const desktopGeometry = await metadata.evaluate((element) => {
+    const header = element.closest<HTMLElement>(".board-header.issue");
+    const date = element.querySelector<HTMLElement>(".date");
+    const badge = element.querySelector<HTMLElement>(".badge");
+    if (!header || !date || !badge) return null;
+    const wrapper = element.getBoundingClientRect();
+    const headerBox = header.getBoundingClientRect();
+    return {
+      badgeContained: badge.getBoundingClientRect().bottom <= wrapper.bottom,
+      dateContained: date.getBoundingClientRect().left >= wrapper.left,
+      headerContained: wrapper.right <= headerBox.right,
+      visible: wrapper.width > 0 && wrapper.height > 0,
+    };
+  });
+  expect(desktopGeometry).toEqual({
+    badgeContained: true,
+    dateContained: true,
+    headerContained: true,
+    visible: true,
+  });
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  if (fallbackOff) {
+    await expect(metadata).toHaveCSS("margin-right", "10px");
+    await expect(metadata).toHaveCSS("margin-top", "10px");
+  } else {
+    await expect(metadata).toBeHidden();
+  }
+});
+
 test("project issue detail owns sidebar bottom spacing with route StyleX", async ({ page }) => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",

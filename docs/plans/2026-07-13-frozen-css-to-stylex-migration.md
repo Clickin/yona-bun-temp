@@ -5979,6 +5979,18 @@ consumers. The focused project-issues test verifies source mapping, computed
 margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
 normal and fallback-disabled modes.
 
+## Batch 766
+
+Move the authenticated issue-detail desktop date/state metadata wrapper's
+active `.mr10` and `.mt10` spacing into a route-local StyleX owner using the
+frozen `margin-right:10px` and `margin-top:10px` declarations from
+`_common.less:207-208`. Preserve the `pull-right hide-in-mobile` wrapper,
+date/state DOM and copy, badge behavior, and responsive visibility; remove the
+two utility classes only from this React emitter and keep their generic
+fallbacks for unrelated consumers. The focused issue-detail test verifies
+source/import mapping, computed margins, no-inline-style, desktop geometry,
+content, and mobile behavior in normal and fallback-disabled modes.
+
 ## Batch 765
 
 Move the authenticated issue-detail sidebar wrapper's active `.mb20` spacing
