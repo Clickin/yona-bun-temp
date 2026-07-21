@@ -319,3 +319,12 @@ URL/session stability, and mobile containment after moving only the exact
 frozen `_yobiUI.less` and Bootstrap declarations into route-local StyleX.
 Generic dropdown fallback consumers remain untouched. Isolated normal and
 fallback-off reviewer-dropdown runs pass 1/1 each.
+
+## Follow-up — authenticated project-settings default-branch Select2 owner
+
+Fallback-off evidence confirmed that the existing default-branch Select2
+container, choice, caret, search, drop, results, result-label geometry, branch
+filter interaction, selected-value synchronization, and mobile containment are
+owned by route-local StyleX from the frozen Select2 and `_override.less`
+declarations. Unrelated Select2 consumers retain the legacy fallback. Focused
+normal and fallback-off runs pass 1/1 each.

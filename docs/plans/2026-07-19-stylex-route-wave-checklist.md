@@ -815,3 +815,14 @@ desktop/mobile geometry, and filtering.
 - [x] The focused project-settings contract preserves desktop/mobile closed
   and open geometry, copy/order, selection state, URL/session stability, and
   viewport containment in isolated normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 718 project-settings default-branch Select2 proof
+
+- [x] The existing default-branch Select2 container, choice, chosen label,
+  arrow/glyph, search, drop, results, result items, and result labels own only
+  frozen Select2/`_override.less` declarations through route-local StyleX;
+  unrelated Select2 fallback consumers remain.
+- [x] The focused contract preserves desktop/mobile closed/open geometry,
+  computed ownership, branch search/filter interaction, selected-value
+  synchronization, and viewport containment in normal and fallback-off runs
+  (1/1 each).

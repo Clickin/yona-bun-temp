@@ -42,8 +42,17 @@ const sx = {
   oldPlace: stylex.props(styles.oldPlace),
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
+  defaultBranchDropHidden: stylex.props(styles.defaultBranchDropHidden),
   defaultBranchDropVisible: stylex.props(styles.defaultBranchDropVisible),
   defaultBranchChoice: stylex.props(styles.defaultBranchChoice),
+  defaultBranchChosen: stylex.props(styles.defaultBranchChosen),
+  defaultBranchLabel: stylex.props(styles.defaultBranchLabel),
+  defaultBranchArrow: stylex.props(styles.defaultBranchArrow),
+  defaultBranchArrowGlyph: stylex.props(styles.defaultBranchArrowGlyph),
+  defaultBranchSearch: stylex.props(styles.defaultBranchSearch),
+  defaultBranchSearchInput: stylex.props(styles.defaultBranchSearchInput),
+  defaultBranchResults: stylex.props(styles.defaultBranchResults),
+  defaultBranchResultItem: stylex.props(styles.defaultBranchResultItem),
   defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   save: stylex.props(styles.save),
@@ -952,6 +961,10 @@ function DefaultBranchSelect2({
 }) {
   const [open, setOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(defaultBranch);
+  const [searchTerm, setSearchTerm] = useState("");
+  const visibleBranches = branches.filter((branchName) =>
+    branchName.toLowerCase().includes(searchTerm.trim().toLowerCase()),
+  );
 
   return (
     <>
@@ -962,32 +975,61 @@ function DefaultBranchSelect2({
       >
         <button
           type="button"
-          className="select2-choice"
           {...sx.defaultBranchChoice}
+          className={`${sx.defaultBranchChoice.className ?? ""} select2-choice`.trim()}
+          data-stylex-owner="project-setting-default-branch-choice"
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
         >
-          <span className="select2-chosen">
-            <strong className="branch-label branch">branch</strong> {selectedBranch}
+          <span
+            className={`select2-chosen ${sx.defaultBranchChosen.className ?? ""}`.trim()}
+            data-stylex-owner="project-setting-default-branch-chosen"
+          >
+            <strong
+              className={`branch-label branch ${sx.defaultBranchLabel.className ?? ""}`.trim()}
+              data-stylex-owner="project-setting-default-branch-label"
+            >
+              branch
+            </strong>{" "}
+            {selectedBranch}
           </span>
-          <span className="select2-arrow" aria-hidden="true">
-            <b></b>
+          <span
+            className={`select2-arrow ${sx.defaultBranchArrow.className ?? ""}`.trim()}
+            data-stylex-owner="project-setting-default-branch-arrow"
+            aria-hidden="true"
+          >
+            <b
+              className={sx.defaultBranchArrowGlyph.className}
+              data-stylex-owner="project-setting-default-branch-arrow-glyph"
+            ></b>
           </span>
         </button>
         <input className="select2-focusser select2-offscreen" type="text" />
         <div
-          className={`${sx.defaultBranchDrop.className} select2-drop select2-display-none select2-with-searchbox branches${open ? " select2-drop-active" : ""}`}
+          className={`${sx.defaultBranchDrop.className} select2-drop select2-display-none select2-with-searchbox branches ${open ? `select2-drop-active ${sx.defaultBranchDropVisible.className ?? ""}` : (sx.defaultBranchDropHidden.className ?? "")}`.trim()}
           data-stylex-owner="project-setting-default-branch-drop"
-          {...(open ? sx.defaultBranchDropVisible : {})}
         >
-          <div className="select2-search">
-            <input className="select2-input" type="text" />
+          <div
+            className={`select2-search ${sx.defaultBranchSearch.className ?? ""}`.trim()}
+            data-stylex-owner="project-setting-default-branch-search"
+          >
+            <input
+              className={`select2-input ${sx.defaultBranchSearchInput.className ?? ""}`.trim()}
+              data-stylex-owner="project-setting-default-branch-search-input"
+              onChange={(event) => setSearchTerm(event.currentTarget.value)}
+              type="text"
+              value={searchTerm}
+            />
           </div>
-          <ul className="select2-results">
-            {branches.map((branchName) => (
+          <ul
+            className={`select2-results ${sx.defaultBranchResults.className ?? ""}`.trim()}
+            data-stylex-owner="project-setting-default-branch-results"
+          >
+            {visibleBranches.map((branchName) => (
               <li
                 key={branchName}
-                className={`select2-results-dept-0 select2-result select2-result-selectable${branchName === selectedBranch ? " select2-selected" : ""}`}
+                className={`select2-results-dept-0 select2-result select2-result-selectable ${sx.defaultBranchResultItem.className ?? ""}${branchName === selectedBranch ? " select2-selected" : ""}`.trim()}
+                data-stylex-owner="project-setting-default-branch-result-item"
               >
                 <button
                   type="button"
@@ -997,9 +1039,16 @@ function DefaultBranchSelect2({
                   onClick={() => {
                     setSelectedBranch(branchName);
                     setOpen(false);
+                    setSearchTerm("");
                   }}
                 >
-                  <strong className="branch-label branch">branch</strong> {branchName}
+                  <strong
+                    className={`branch-label branch ${sx.defaultBranchLabel.className ?? ""}`.trim()}
+                    data-stylex-owner="project-setting-default-branch-result-label"
+                  >
+                    branch
+                  </strong>{" "}
+                  {branchName}
                 </button>
               </li>
             ))}

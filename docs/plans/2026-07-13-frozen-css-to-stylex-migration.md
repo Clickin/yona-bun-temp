@@ -5528,3 +5528,14 @@ and generic fallback for unrelated dropdown consumers. Carry only the exact
 frozen `_yobiUI.less` and Bootstrap toggle/menu/caret/item declarations into
 the existing route; verify desktop/mobile closed/open/selection behavior in
 normal and fallback-off focused project-settings tests.
+
+## Batch 718
+
+Migrate the authenticated project-settings default-branch Select2 closed/open
+visible state into the existing route-local StyleX owners. Preserve the
+`project-default-branch` select contract, branch label/caret DOM, search and
+result interaction, selected-value synchronization, and generic fallback for
+unrelated Select2 consumers. Carry only the exact frozen Select2 and
+`_override.less` container, choice, arrow, drop, search, results, result-label,
+and branch-menu declarations; verify desktop/mobile closed/open geometry and
+branch selection in normal and fallback-off focused tests.
