@@ -224,6 +224,9 @@ export const styles = stylex.create({
   commentAttachments: {
     float: "left",
   },
+  childCommentReply: {
+    float: "right",
+  },
   disabledCommentActions: { textAlign: "right" },
   unauthorizedComment: { marginTop: "20px" },
   commentFormActions: { textAlign: "right" },

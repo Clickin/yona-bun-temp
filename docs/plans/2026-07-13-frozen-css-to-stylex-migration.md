@@ -6116,3 +6116,18 @@ and broad fallback remain excluded. The focused issue-detail tests verify
 source/import mapping, owner/declaration, computed float, no-inline-style,
 direct parent scope, attachment order/content, download link, and desktop/390px
 geometry in normal and fallback-disabled modes, 2/2 each.
+
+## Batch 775
+
+Move the child issue-comment reply control's active `.pull-right` float into
+a route-local StyleX owner using the frozen Bootstrap `float:right` declaration
+from `yona-original/public/bootstrap/css/bootstrap.css:6093-6098`, with output
+DOM evidence from `yona-original/app/views/common/childComments.scala.html:60`.
+Preserve the `add-a-comment pull-right` div, legacy reply copy/order, React
+toggle/focus behavior, and child form behavior; parent action rows,
+parent attachments, child contents/delete, and broad fallback remain excluded.
+Focused E2E verifies source/import mapping, owner/declaration, computed float,
+no-inline-style, direct child scope, and desktop/390px containment in
+normal/fallback-off runs, 1/1 each. The adjacent existing reply-focus test
+continues to cover click/focus behavior; no child attachment owner is added
+because the legacy child-comments template has no attachment wrapper.

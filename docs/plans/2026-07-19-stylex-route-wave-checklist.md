@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 775 child-comment reply float proof
+
+- [x] Child reply `add-a-comment pull-right` preserves copy/order and the
+  existing toggle/focus behavior while StyleX owns frozen Bootstrap
+  `float:right`; no child attachment owner was added because legacy
+  `childComments.scala.html` has no attachment wrapper; parent/contents/delete
+  consumers remain excluded.
+- [x] Focused normal/fallback-off Playwright checks pass 1/1 covering
+  source/import, owner/declaration, computed float, no inline style, child
+  scope, and desktop/390px geometry; the adjacent reply-focus test covers
+  visible interaction/focus.
+
 ### 2026-07-22 Batch 774 parent issue-comment attachment float proof
 
 - [x] The authenticated parent comment attachment wrapper preserves its

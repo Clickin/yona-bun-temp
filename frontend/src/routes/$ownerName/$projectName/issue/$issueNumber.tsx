@@ -3841,14 +3841,16 @@ function ChildComments({
     <>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
-        className="add-a-comment pull-right"
+        {...stylex.props(styles.childCommentReply)}
+        {...(replyVisible ? stylex.props(styles.replyVisible) : {})}
+        data-stylex-owner="project-issue-detail-child-comment-reply"
         onClick={() => {
           toggleForm();
           if (!formOpen) {
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         }}
-        {...(replyVisible ? stylex.props(styles.replyVisible) : {})}
+        className={`${stylex.props(styles.childCommentReply).className} ${replyVisible ? stylex.props(styles.replyVisible).className : ""} add-a-comment pull-right`}
       >
         Reply
       </div>
@@ -3870,8 +3872,8 @@ function ChildComments({
         </div>
         {booleanField(issue.viewerCanComment) ? (
           <div
-            className="child-comment-input-form"
             {...(formOpen ? stylex.props(styles.childCommentFormVisible) : {})}
+            className={`${formOpen ? stylex.props(styles.childCommentFormVisible).className : ""} child-comment-input-form`}
           >
             <form action={newCommentAction} method="post" encType="multipart/form-data">
               <input
@@ -3904,8 +3906,8 @@ function ChildComments({
                 </button>
               </div>
               <div
-                className="notification-receiver"
                 {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
+                className={`${notificationVisible ? stylex.props(styles.notificationVisible).className : ""} notification-receiver`}
               >
                 <span className="notification-receiver-title">Notification receivers </span>
                 <span className="notification-receiver-list"></span>

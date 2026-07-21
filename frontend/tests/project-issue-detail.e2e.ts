@@ -1836,6 +1836,91 @@ test("project issue detail focuses child reply editor after legacy reply click",
   );
 });
 
+test("project issue detail owns the child reply float across desktop and mobile", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const legacyChildComments = readFileSync(
+    new URL("../../yona-original/app/views/common/childComments.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyBootstrap = readFileSync(
+    new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+    "utf8",
+  );
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(legacyChildComments).toContain(
+    '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
+  );
+  expect(legacyBootstrap).toContain(".pull-right {");
+  expect(legacyBootstrap).toContain("  float: right;");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-child-comment-reply"');
+  expect(routeSource).toContain("styles.childCommentReply");
+  expect(styleSource).toMatch(/childCommentReply:\s*\{\s*float:\s*["']right["']/u);
+  expect(routeSource).not.toContain("childAttachment");
+
+  await mockProjectIssueDetail(page);
+  await page.setViewportSize({ height: 900, width: 1366 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  const comment = page.locator(".span-left-pane #comment-77");
+  const reply = comment.locator(".add-a-comment").first();
+  const parentActionRow = comment.locator(":scope > .media-body > .meta-info > .act-row");
+  await expect(reply).toHaveCount(1);
+  await expect(reply).toHaveText("Reply");
+  await expect(reply).toHaveClass(/add-a-comment/);
+  await expect(reply).toHaveClass(/pull-right/);
+  await expect(reply).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-child-comment-reply",
+  );
+  expect(await reply.evaluate((element) => element.closest("#comment-77") !== null)).toBe(true);
+  await expect(reply).not.toHaveAttribute("style");
+  await expect(parentActionRow).not.toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-child-comment-reply",
+  );
+
+  const readReplyMetrics = () =>
+    reply.evaluate((element) => {
+      const replyRect = element.getBoundingClientRect();
+      const commentRect = element.closest("li.comment")?.getBoundingClientRect();
+      if (!commentRect) throw new Error("parent comment target is missing");
+      return {
+        float: window.getComputedStyle(element).float,
+        inlineStyle: element.getAttribute("style"),
+        replyLeft: replyRect.left,
+        replyRight: replyRect.right,
+        commentLeft: commentRect.left,
+        commentRight: commentRect.right,
+      };
+    });
+  await comment.hover();
+  await expect(reply).toBeVisible();
+  const desktopMetrics = await readReplyMetrics();
+  expect(desktopMetrics.float).toBe("right");
+  expect(desktopMetrics.inlineStyle).toBeNull();
+  expect(desktopMetrics.replyRight).toBeLessThanOrEqual(desktopMetrics.commentRight + 1);
+  expect(desktopMetrics.replyLeft).toBeGreaterThanOrEqual(desktopMetrics.commentLeft - 1);
+
+  await page.setViewportSize({ height: 844, width: 390 });
+  await comment.hover();
+  await expect(reply).toBeVisible();
+  const mobileMetrics = await readReplyMetrics();
+  expect(mobileMetrics.float).toBe("right");
+  expect(mobileMetrics.inlineStyle).toBeNull();
+  expect(mobileMetrics.replyRight).toBeLessThanOrEqual(mobileMetrics.commentRight + 1);
+  expect(mobileMetrics.replyLeft).toBeGreaterThanOrEqual(mobileMetrics.commentLeft - 1);
+  await expect(reply).toHaveText("Reply");
+});
+
 async function childReplyPlaceholder(page: Page) {
   return page.evaluate(() =>
     navigator.userAgent.toLowerCase().includes("macintosh")
