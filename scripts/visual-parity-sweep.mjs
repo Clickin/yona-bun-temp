@@ -1314,10 +1314,12 @@ async function inspectPage(page, baseUrl, path, label) {
       stylesheetCount: stylesheets.length,
       stylesheetRules: stylesheets.reduce((sum, sheet) => sum + Math.max(0, sheet.rules), 0),
       hasStylesheetError: stylesheets.some((sheet) => sheet.rules === -1),
-      gnb: selectorState(".gnb-outer"),
-      gnbInner: selectorState(".gnb-inner"),
-      gnbPin: selectorState(".gnb-inner > .pin"),
-      gnbLogoLetter: selectorState(".logo-letter"),
+      gnb: selectorState(".gnb-outer, [data-stylex-owner='global-gnb-outer']"),
+      gnbInner: selectorState(".gnb-inner, [data-stylex-owner='global-gnb-inner']"),
+      gnbPin: selectorState(
+        ".gnb-inner > .pin, [data-stylex-owner='global-sidebar-open-pin']",
+      ),
+      gnbLogoLetter: selectorState(".logo-letter, [data-stylex-owner='global-gnb-brand-link']"),
       gnbSearchForm: selectorState(".gnb-search-form"),
       gnbUsermenu: selectorState(".gnb-usermenu"),
       sidenav: selectorState("#mySidenav"),
@@ -1357,7 +1359,7 @@ async function inspectPage(page, baseUrl, path, label) {
       siteintroCover: selectorState(".siteintro-cover"),
       siteHeading: selectorState(".site-heading"),
       signupButton: selectorState(".signup-btn"),
-      footer: selectorState("footer.page-footer-outer"),
+      footer: selectorState("footer.page-footer-outer, [data-stylex-owner='site-footer']"),
       userProfile: selectorState(".user-profile-page"),
       isErrorPage: [document.title, body.innerText].some(
         (text) =>

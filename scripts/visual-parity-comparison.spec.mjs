@@ -537,9 +537,10 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   );
   assert.match(source, /page\.waitForSelector\("a\[href\]", \{ timeout: 10_000 \}\)/u);
   assert.match(source, /await page\.waitForSelector\(localSettledSelector/u);
-  assert.match(source, /gnbInner: selectorState\("\.gnb-inner"\)/u);
-  assert.match(source, /gnbPin: selectorState\("\.gnb-inner > \.pin"\)/u);
-  assert.match(source, /gnbLogoLetter: selectorState\("\.logo-letter"\)/u);
+  assert.match(source, /gnbInner: selectorState\("\.gnb-inner, \[data-stylex-owner='global-gnb-inner'\]"\)/u);
+  assert.match(source, /gnbPin: selectorState\(/u);
+  assert.match(source, /global-sidebar-open-pin/u);
+  assert.match(source, /gnbLogoLetter: selectorState\("\.logo-letter, \[data-stylex-owner='global-gnb-brand-link'\]"\)/u);
   assert.match(source, /gnbSearchForm: selectorState\("\.gnb-search-form"\)/u);
   assert.match(source, /gnbPin: metrics\.gnbPin/u);
   assert.match(source, /gnbLogoLetter: metrics\.gnbLogoLetter/u);
@@ -556,7 +557,7 @@ test("visual sweep records P0 global shell computed-style metrics", () => {
   assert.match(source, /siteintroCover: metrics\.siteintroCover/u);
   assert.match(source, /siteHeading: metrics\.siteHeading/u);
   assert.match(source, /signupButton: metrics\.signupButton/u);
-  assert.match(source, /footer: selectorState\("footer\.page-footer-outer"\)/u);
+  assert.match(source, /footer: selectorState\("footer\.page-footer-outer, \[data-stylex-owner='site-footer'\]"\)/u);
   assert.match(source, /"\/admin\/sample\/settingform"/u);
   assert.match(source, /"\/admin\/sample\/issue\/1"/u);
   assert.match(source, /#issue-body-\$\{issueDetailMatch\[1\]\} \.content\.markdown-wrap`/u);

@@ -14,13 +14,12 @@
   no-inline-style, active/disabled visibility, and the fallback cascade.
 - Scope exclusion: comment hearts, voter modal icons, and unrelated icon
   consumers remain unchanged.
-- Visual recheck: the managed legacy port is now prepared and seeded with
-  Java 8; `PW_CHANNEL=chrome YORAM_SWEEP_TARGET=legacy
-  YORAM_SWEEP_PATHS=/admin/sample/issue/1` passed 1/1 and wrote
-  `output/playwright/visual-sweep/legacy-_admin_sample_issue_1.png`.
-  A paired local comparison remains open: Vite dev hit the existing StyleX
-  `Invalid empty selector` middleware error, while the production preview
-  served nested-route assets as relative `/admin/sample/issue/assets/*`
-  requests and rendered blank. Therefore the legacy screenshot is confirmed,
-  but paired visual parity is not claimed yet.
+- Visual recheck: the managed legacy port is prepared and seeded with Java 8;
+  the legacy issue screenshot sweep passes 1/1. Paired local comparison now
+  runs against the root-base Vite dev server with system Chrome; both sides
+  render successfully and remaining geometry findings are tracked separately.
+- Intentional product-identity deviation: the Yoram footer omits legacy
+  NAVER/NAVER LABS provider links, and the developer-contact link uses the
+  Yoram repository URL. These are explicit product changes, not parity gaps,
+  and must not be restored to legacy copy.
 - Frozen `yona-original/**` sources remained unchanged.

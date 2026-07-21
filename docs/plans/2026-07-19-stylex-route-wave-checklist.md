@@ -6,6 +6,11 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 
 ### 2026-07-22 Batch 783 issue vote heart glyph proof
 
+- [x] Intentional product-copy deviation recorded: Yoram's footer omits the
+  legacy NAVER/NAVER LABS provider links, and the developer-contact link uses
+  the Yoram repository URL. This is an approved identity/link change, not a
+  parity gap or follow-up item.
+
 - [x] Active and disabled issue vote hearts preserve the `yobicon-hearts`
   element/class while the route-local StyleX owner carries the frozen yobicon
   font/glyph contract; comment hearts, modal icons, and unrelated consumers
@@ -13,10 +18,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Focused normal/fallback-off suites pass 2/2, covering Scala/icon source
   mapping, owner/declaration, computed font/display/pseudo-content, no inline
   style, active/disabled visibility, and the fallback cascade difference in
-  line-height. The managed legacy issue screen now has a real 1/1 desktop
-  screenshot sweep; paired local comparison remains open because the local
-  dev StyleX middleware errors and the production preview has nested-route
-  asset resolution failures.
+  line-height. The managed legacy issue screen has a real 1/1 desktop
+  screenshot sweep, and paired local comparison runs through root-base Vite
+  dev with system Chrome. Footer/provider and developer-contact differences
+  are the approved Yoram identity deviation recorded above.
 
 ### 2026-07-22 Batch 782 vote and voter-list proof
 

@@ -303,7 +303,6 @@ export const styles = stylex.create({
   commentUpdateActions: { textAlign: "right" },
   sidebar: {
     marginBottom: "20px",
-    minWidth: 0,
   },
   emptyContent: {
     backgroundColor: issueDetailColors.emptySurface,
