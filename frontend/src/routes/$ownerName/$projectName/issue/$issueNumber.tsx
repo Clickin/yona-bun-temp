@@ -3629,7 +3629,9 @@ function IssueCommentRow({
             {translationApiEnabled ? (
               <button
                 type="button"
-                className="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"
+                {...stylex.props(styles.commentTranslationButton)}
+                className={`${stylex.props(styles.commentTranslationButton).className} icon btn-transparent-with-fontsize-lineheight comment-translate`}
+                data-stylex-owner="project-issue-detail-comment-translation-button"
                 data-comment-id={commentId}
                 title="Translation"
                 disabled={translatePending || translatedContentsMarkdown !== null}

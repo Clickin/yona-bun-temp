@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 771 issue-comment translation spacing proof
+
+- [x] The configured issue-comment translation button preserves the legacy
+  icon/button DOM, data-comment-id, title, pending/disabled behavior, request
+  result, and adjacent edit/delete controls while route-local StyleX owns
+  frozen `.ml10` `margin-left:10px`.
+- [x] Focused normal and fallback-off Playwright checks pass 1/1, covering
+  source/import mapping, owner/declaration, computed margin, no-inline-style,
+  visible interaction, request payload/result, and scope boundaries.
+
 ### 2026-07-22 Batch 770 unauthorized issue-comment wrapper spacing proof
 
 - [x] The unauthorized issue-comment state preserves the legacy wrapper,

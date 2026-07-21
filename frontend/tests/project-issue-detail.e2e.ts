@@ -2528,6 +2528,51 @@ test("project issue detail renders legacy comment translation button when transl
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyComment = readFileSync(
+    "../yona-original/app/views/issue/partial_comment.scala.html",
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  const legacyEmitter = legacyComment.slice(
+    legacyComment.indexOf(
+      '<button type="button" class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
+    ),
+    legacyComment.indexOf("</button>", legacyComment.indexOf("comment-translate")) +
+      "</button>".length,
+  );
+  const routeEmitter = routeSource.slice(
+    routeSource.lastIndexOf(
+      "<button",
+      routeSource.indexOf('data-stylex-owner="project-issue-detail-comment-translation-button"'),
+    ),
+    routeSource.indexOf("</button>", routeSource.indexOf("comment-translate")) + "</button>".length,
+  );
+  expect(legacyEmitter).toContain(
+    'class="icon btn-transparent-with-fontsize-lineheight ml10 comment-translate"',
+  );
+  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(routeEmitter).toContain("styles.commentTranslationButton");
+  expect(routeEmitter).toContain(
+    'data-stylex-owner="project-issue-detail-comment-translation-button"',
+  );
+  expect(routeEmitter).not.toContain("ml10");
+  expect(styleSource).toMatch(/commentTranslationButton:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-translation-button"');
+  expect(routeSource).toContain('title="Edit comment"');
+  expect(routeSource).toContain('title="Delete comment"');
   const translationRequests: Array<{
     body: unknown;
     csrfToken: string | null;
@@ -2552,16 +2597,39 @@ test("project issue detail renders legacy comment translation button when transl
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const translateButton = page.locator("#comment-77 .comment-translate");
-  await expect(translateButton).toHaveClass(
-    "icon btn-transparent-with-fontsize-lineheight ml10 comment-translate",
+  await expect(translateButton).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-comment-translation-button",
   );
+  await expect(translateButton).toHaveClass(/(?:^|\s)icon(?:\s|$)/u);
+  await expect(translateButton).toHaveClass(
+    /(?:^|\s)btn-transparent-with-fontsize-lineheight(?:\s|$)/u,
+  );
+  await expect(translateButton).not.toHaveClass(/(?:^|\s)ml10(?:\s|$)/u);
+  await expect(translateButton).toHaveCSS("margin-left", "10px");
+  await expect(translateButton).not.toHaveAttribute("style", /.+/u);
+  await expect(translateButton).toBeVisible();
+  await expect(translateButton).not.toBeDisabled();
   await expect(translateButton).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(translateButton).toHaveAttribute("data-comment-id", "77");
   await expect(translateButton).toHaveAttribute("title", "Translation");
   await expect(translateButton.locator("i.yobicon-lang")).toHaveCount(1);
+  await expect(page.locator(".board-actrow > #translate")).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-translation-button",
+  );
+  await expect(
+    page.locator('#comment-77 > .media-body > .meta-info > .act-row button[title="Edit comment"]'),
+  ).toHaveClass(/\bml10\b/u);
+  await expect(
+    page.locator(
+      '#comment-77 > .media-body > .meta-info > .act-row button[title="Delete comment"]',
+    ),
+  ).toHaveClass(/\bml6\b/u);
 
   await translateButton.click();
 
+  await expect(page.locator("#issue-body-11 .markdown-wrap")).toContainText("Body markdown");
   await expect(page.locator(".span-left-pane #comment-body-77 .comment-body")).toContainText(
     "Translated comment",
   );

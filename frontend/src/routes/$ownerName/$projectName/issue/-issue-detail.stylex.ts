@@ -209,6 +209,9 @@ export const styles = stylex.create({
   issueTranslationButton: {
     marginLeft: "10px",
   },
+  commentTranslationButton: {
+    marginLeft: "10px",
+  },
   disabledCommentActions: { textAlign: "right" },
   unauthorizedComment: { marginTop: "20px" },
   commentFormActions: { textAlign: "right" },

@@ -6067,3 +6067,14 @@ emitter and leave all other comment/action consumers separately scoped. The
 focused issue-detail test covers source/import mapping, computed margin,
 no-inline-style, desktop/mobile geometry, disabled controls, and legacy script
 absence in normal and fallback-disabled modes.
+## Batch 771
+
+Move the configured issue-comment translation button's active `.ml10` spacing
+into a route-local StyleX owner using the frozen `margin-left:10px` declaration
+from `_common.less:206`. Preserve the legacy icon/button DOM, data-comment-id,
+title, pending/disabled behavior, translation request/result, and adjacent
+edit/delete controls; remove `ml10` only from this comment translation emitter
+and keep issue-body translation and other comment actions separately scoped. The
+focused issue-detail test verifies source/import mapping, computed margin,
+no-inline-style, visible interaction, request payload/result, and scope
+boundaries in normal and fallback-disabled modes.
