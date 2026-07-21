@@ -78,6 +78,15 @@ export const styles = stylex.create({
   },
   textareaHeight: (height: string) => ({ height }),
   oldPlace: { color: "red" },
+  menuCheckboxInput: {
+    margin: "2px",
+    verticalAlign: "top",
+  },
+  menuCheckboxLabel: {
+    marginLeft: "15px",
+    verticalAlign: "middle",
+  },
+  menuCheckboxLabelFirst: { marginLeft: "0px" },
   defaultBranchContainer: {
     backgroundColor: "#fff",
     borderColor: "rgba(0,0,0,0.15)",

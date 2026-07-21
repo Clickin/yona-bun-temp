@@ -1509,6 +1509,121 @@ test("project settings menu checkboxes mirror legacy dependency behavior", async
   await expect(page.locator("#menuSettingCode")).toBeChecked();
 });
 
+test("project settings menu checkbox owners preserve legacy labels and geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const labels = page.locator(
+    '[data-stylex-owner^="project-menu-checkbox-"][data-stylex-owner$="-label"]',
+  );
+  const inputs = page.locator(
+    '[data-stylex-owner^="project-menu-checkbox-"][data-stylex-owner$="-input"]',
+  );
+  const ids = [
+    "menuSettingCode",
+    "menuSettingIssue",
+    "menuSettingPullRequest",
+    "menuSettingReview",
+    "menuSettingMilestone",
+    "menuSettingBoard",
+  ];
+
+  await expect(labels).toHaveCount(6);
+  await expect(inputs).toHaveCount(6);
+  await expect(labels).toHaveText([
+    "Code",
+    "Issue",
+    "Pull request",
+    "Review",
+    "Milestone",
+    "Board",
+  ]);
+  await expect(labels.evaluateAll((nodes) => nodes.map((node) => node.htmlFor))).resolves.toEqual(
+    ids,
+  );
+  for (const id of ids) {
+    await expect(page.locator(`#${id}`)).toBeChecked();
+  }
+
+  const readOwners = () =>
+    labels.evaluateAll((nodes) =>
+      nodes.map((label) => {
+        const input = label.querySelector<HTMLInputElement>("input");
+        const labelBox = label.getBoundingClientRect();
+        const inputBox = input?.getBoundingClientRect();
+        const parentBox = label.parentElement?.getBoundingClientRect();
+        const labelStyle = getComputedStyle(label);
+        const inputStyle = input ? getComputedStyle(input) : null;
+        if (!input || !inputBox || !parentBox || !inputStyle) {
+          throw new Error("Missing menu checkbox owner");
+        }
+        return {
+          labelMarginLeft: labelStyle.marginLeft,
+          labelVerticalAlign: labelStyle.verticalAlign,
+          inputMargin: inputStyle.margin,
+          inputVerticalAlign: inputStyle.verticalAlign,
+          contained: inputBox.left >= labelBox.left && inputBox.right <= labelBox.right,
+          withinDescription: labelBox.left >= parentBox.left && labelBox.right <= parentBox.right,
+        };
+      }),
+    );
+
+  await expect.poll(readOwners).toEqual([
+    {
+      labelMarginLeft: "0px",
+      labelVerticalAlign: "middle",
+      inputMargin: "2px",
+      inputVerticalAlign: "top",
+      contained: true,
+      withinDescription: true,
+    },
+    ...Array.from({ length: 5 }, () => ({
+      labelMarginLeft: "15px",
+      labelVerticalAlign: "middle",
+      inputMargin: "2px",
+      inputVerticalAlign: "top",
+      contained: true,
+      withinDescription: true,
+    })),
+  ]);
+
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator("#menuSettingCode")).not.toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).not.toBeChecked();
+  await expect(page.locator("#menuSettingReview")).not.toBeChecked();
+  await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
+
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+  await expect(page.locator("#menuSettingPullRequest")).toBeChecked();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(readOwners).toEqual([
+    {
+      labelMarginLeft: "0px",
+      labelVerticalAlign: "middle",
+      inputMargin: "2px",
+      inputVerticalAlign: "top",
+      contained: true,
+      withinDescription: true,
+    },
+    ...Array.from({ length: 5 }, () => ({
+      labelMarginLeft: "15px",
+      labelVerticalAlign: "middle",
+      inputMargin: "2px",
+      inputVerticalAlign: "top",
+      contained: true,
+      withinDescription: true,
+    })),
+  ]);
+});
+
 test("project settings save validates legacy project name rules before update", async ({
   page,
 }) => {

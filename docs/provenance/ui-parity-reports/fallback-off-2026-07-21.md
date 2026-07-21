@@ -328,3 +328,12 @@ filter interaction, selected-value synchronization, and mobile containment are
 owned by route-local StyleX from the frozen Select2 and `_override.less`
 declarations. Unrelated Select2 consumers retain the legacy fallback. Focused
 normal and fallback-off runs pass 1/1 each.
+
+## Follow-up — authenticated project-settings MenuCheckbox owners
+
+Fallback-off evidence confirmed that all six project menu-setting label/input
+pairs retain frozen `.radio-btn` and `label.inline-list` alignment and spacing,
+copy/order, checked state, code-dependent visibility, and desktop/mobile
+containment through route-local StyleX. Unrelated radio and inline-list
+consumers retain the legacy fallback. Focused normal and fallback-off runs
+pass 1/1 each.

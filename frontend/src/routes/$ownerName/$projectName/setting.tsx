@@ -868,6 +868,7 @@ function ProjectSettingBody({
                 <MenuCheckbox
                   id="menuSettingCode"
                   name="code"
+                  first
                   checked={menuCodeChecked}
                   label={t("menu.code")}
                   onChange={(checked) => {
@@ -1080,6 +1081,7 @@ function DefaultBranchSelect2({
 function MenuCheckbox({
   checked,
   defaultChecked,
+  first = false,
   id,
   label,
   name,
@@ -1087,16 +1089,22 @@ function MenuCheckbox({
 }: {
   checked?: boolean;
   defaultChecked?: boolean;
+  first?: boolean;
   id: string;
   label: string;
   name: string;
   onChange?: (checked: boolean) => void;
 }) {
   return (
-    <label htmlFor={id} className="bg-radiobtn label-public inline-list">
+    <label
+      className={`${stylex.props(styles.menuCheckboxLabel, first && styles.menuCheckboxLabelFirst).className} bg-radiobtn label-public inline-list`}
+      htmlFor={id}
+      data-stylex-owner={`project-menu-checkbox-${name}-label`}
+    >
       <input
         type="checkbox"
-        className="radio-btn"
+        className={`${stylex.props(styles.menuCheckboxInput).className} radio-btn`}
+        data-stylex-owner={`project-menu-checkbox-${name}-input`}
         id={id}
         name={name}
         value="true"

@@ -826,3 +826,13 @@ desktop/mobile geometry, and filtering.
   computed ownership, branch search/filter interaction, selected-value
   synchronization, and viewport containment in normal and fallback-off runs
   (1/1 each).
+
+### 2026-07-21 Batch 719 project-settings MenuCheckbox proof
+
+- [x] The six menu-setting label/input pairs own only frozen `.radio-btn` and
+  `label.inline-list` declarations through route-local StyleX, including the
+  first-label margin rule; unrelated radio/inline-list fallback consumers
+  remain.
+- [x] The focused contract preserves label/input order and copy, checked
+  state, desktop/mobile containment, and code-dependent visibility behavior in
+  normal and fallback-off runs (1/1 each).

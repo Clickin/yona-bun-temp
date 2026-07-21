@@ -5539,3 +5539,13 @@ unrelated Select2 consumers. Carry only the exact frozen Select2 and
 `_override.less` container, choice, arrow, drop, search, results, result-label,
 and branch-menu declarations; verify desktop/mobile closed/open geometry and
 branch selection in normal and fallback-off focused tests.
+
+## Batch 719
+
+Migrate the authenticated project-settings MenuCheckbox visible state into the
+existing route-local StyleX owners. Preserve all six label/input pairs, order,
+copy, checked state, and code-dependent visibility behavior. Carry only the
+frozen `.radio-btn` and `label.inline-list` declarations, including the first
+label margin rule, while retaining fallback styling for unrelated radio and
+inline-list consumers; verify desktop/mobile geometry and dependency
+interaction in normal and fallback-off focused tests.
