@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 774 parent issue-comment attachment float proof
+
+- [x] The authenticated parent comment attachment wrapper preserves its
+  `attachments pull-left` class, payload, AttachedFiles DOM/order, empty and
+  populated behavior, and download link while route-local StyleX owns frozen
+  Bootstrap `float:left`; issue-level, edit-form, and child-comment consumers
+  remain excluded.
+- [x] Focused normal and fallback-off Playwright checks pass 2/2, covering
+  source/import mapping, stable owner/declaration, computed float,
+  no-inline-style, direct parent scope, attachment content/order/download, and
+  desktop/390px geometry.
+
 ### 2026-07-22 Batch 773 parent issue-comment action-row float proof
 
 - [x] The parent comment `act-row pull-right` retains its legacy classes,

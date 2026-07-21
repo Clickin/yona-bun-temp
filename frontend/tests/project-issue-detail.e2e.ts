@@ -3849,7 +3849,72 @@ test("project issue detail renders legacy voter overflow link", async ({ page })
   await expect(page.locator(".modal-backdrop")).toHaveCount(0);
 });
 
-test("project issue detail renders legacy readonly attachment downloader lists", async ({
+test("project issue detail owns the authenticated parent comment attachment float with StyleX", async ({
+  page,
+}) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyComment = readFileSync(
+    "../yona-original/app/views/issue/partial_comment.scala.html",
+    "utf8",
+  );
+  const legacyBootstrap = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  expect(legacyComment.split(/\r?\n/u)[112]).toContain(
+    '<div class="attachments pull-left" data-attachments=',
+  );
+  expect(legacyBootstrap).toContain(".pull-left {\n  float: left;\n}");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(routeSource).toContain("styles.commentAttachments");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-comment-attachments"');
+  expect(styleSource).toMatch(/commentAttachments:\s*\{[\s\S]*?float:\s*["']left["']/u);
+  expect(styleSource).not.toContain('commentAttachments: {\n    float: "right"');
+
+  await mockProjectIssueDetail(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+  const emptyAttachments = page.locator(
+    '#comment-77 > .media-body > #comment-body-77 > [data-stylex-owner="project-issue-detail-comment-attachments"]',
+  );
+  await expect(emptyAttachments).toHaveCount(1);
+  await expect(emptyAttachments).toHaveClass(/(?:^|\s)attachments(?:\s|$)/u);
+  await expect(emptyAttachments).toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+  await expect(emptyAttachments).toHaveCSS("float", "left");
+  await expect(emptyAttachments).not.toHaveAttribute("style", /.+/u);
+  await expect(emptyAttachments.locator(".attach")).toHaveCount(0);
+  await expect(page.locator("#attachments .attach")).toHaveCount(0);
+  await expect(page.locator("#comment-editform-77 .attachment-files .attach")).toHaveCount(0);
+
+  const emptyGeometry = await emptyAttachments.evaluate((element) => {
+    const body = element.parentElement?.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return body
+      ? {
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          body: { bottom: body.bottom, left: body.left, right: body.right, top: body.top },
+        }
+      : null;
+  });
+  expect(emptyGeometry).not.toBeNull();
+  expect(emptyGeometry!.left).toBeGreaterThanOrEqual(emptyGeometry!.body.left);
+  expect(emptyGeometry!.right).toBeLessThanOrEqual(emptyGeometry!.body.right);
+  expect(emptyGeometry!.top).toBeGreaterThanOrEqual(emptyGeometry!.body.top);
+  expect(emptyGeometry!.bottom - emptyGeometry!.top).toBeGreaterThanOrEqual(0);
+});
+
+test("project issue detail preserves parent comment attachment DOM and download behavior", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -3926,13 +3991,87 @@ test("project issue detail renders legacy readonly attachment downloader lists",
     page.locator("#comment-body-77 > .attachments > ul.attaches.wm > li.attach"),
   ).toHaveCount(1);
   await expect(page.locator("#comment-body-77 > .attachments > .attached-file")).toHaveCount(0);
+  const commentAttachmentsOwner = page.locator(
+    '#comment-77 > .media-body > #comment-body-77 > [data-stylex-owner="project-issue-detail-comment-attachments"]',
+  );
+  await expect(commentAttachmentsOwner).toHaveCount(1);
+  await expect(commentAttachmentsOwner).toHaveClass(/(?:^|\s)attachments(?:\s|$)/u);
+  await expect(commentAttachmentsOwner).toHaveClass(/(?:^|\s)pull-left(?:\s|$)/u);
+  await expect(commentAttachmentsOwner).toHaveAttribute(
+    "data-attachments",
+    JSON.stringify(commentAttachments),
+  );
+  await expect(commentAttachmentsOwner).toHaveCSS("float", "left");
+  await expect(commentAttachmentsOwner).not.toHaveAttribute("style", /.+/u);
+  await expect(commentAttachmentsOwner.locator(":scope > ul.attaches.wm > li.attach")).toHaveCount(
+    1,
+  );
+  await expect(
+    commentAttachmentsOwner.locator(":scope > ul.attaches.wm > li.attach .filename"),
+  ).toHaveText("comment-shot.png");
+  await expect(
+    commentAttachmentsOwner.locator('a.download[title="Download a file comment-shot.png"]'),
+  ).toHaveAttribute("href", `${basePath}/files/502?action=download`);
+  await expect(page.locator("#attachments .attach")).toHaveCount(1);
+  await expect(page.locator("#comment-editform-77 .attachment-files .attach")).toHaveCount(0);
+  const attachmentOrder = await commentAttachmentsOwner
+    .locator(":scope > *")
+    .evaluateAll((nodes) => nodes.map((node) => node.tagName.toLowerCase()));
+  expect(attachmentOrder).toEqual(["ul"]);
+
+  const desktopAttachmentGeometry = await commentAttachmentsOwner.evaluate((element) => {
+    const body = element.parentElement?.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return body
+      ? {
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          body: { bottom: body.bottom, left: body.left, right: body.right, top: body.top },
+        }
+      : null;
+  });
+  expect(desktopAttachmentGeometry).not.toBeNull();
+  expect(desktopAttachmentGeometry!.left).toBeGreaterThanOrEqual(
+    desktopAttachmentGeometry!.body.left,
+  );
+  expect(desktopAttachmentGeometry!.right).toBeLessThanOrEqual(
+    desktopAttachmentGeometry!.body.right,
+  );
+  expect(desktopAttachmentGeometry!.right - desktopAttachmentGeometry!.left).toBeGreaterThan(0);
+  expect(desktopAttachmentGeometry!.bottom - desktopAttachmentGeometry!.top).toBeGreaterThan(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(commentAttachmentsOwner).toHaveCSS("float", "left");
+  const mobileAttachmentGeometry = await commentAttachmentsOwner.evaluate((element) => {
+    const body = element.parentElement?.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return body
+      ? {
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          body: { bottom: body.bottom, left: body.left, right: body.right, top: body.top },
+        }
+      : null;
+  });
+  expect(mobileAttachmentGeometry).not.toBeNull();
+  expect(mobileAttachmentGeometry!.left).toBeGreaterThanOrEqual(
+    mobileAttachmentGeometry!.body.left,
+  );
+  expect(mobileAttachmentGeometry!.right).toBeLessThanOrEqual(mobileAttachmentGeometry!.body.right);
+  expect(mobileAttachmentGeometry!.top).toBeGreaterThanOrEqual(mobileAttachmentGeometry!.body.top);
+  expect(mobileAttachmentGeometry!.right - mobileAttachmentGeometry!.left).toBeGreaterThan(0);
+  expect(mobileAttachmentGeometry!.bottom - mobileAttachmentGeometry!.top).toBeGreaterThan(0);
 
   const expectedCommentAttachments =
-    `<div class="attachments pull-left" data-attachments='${JSON.stringify(commentAttachments)}'><ul class="attaches wm"><li class="attach"><a href="__BASE_PATH__/files/502?action=download" class="download ybtn ybtn-mini" title="Download a file comment-shot.png"><i class="yobicon-download"></i></a><a href="__BASE_PATH__/files/502" class="vmiddle" target="_blank"><i class="yobicon-paperclip"></i><span class="filename">comment-shot.png</span><span class="filesize">(4.1 kB)</span></a></li></ul></div>`.replaceAll(
+    `<ul class="attaches wm"><li class="attach"><a href="__BASE_PATH__/files/502?action=download" class="download ybtn ybtn-mini" title="Download a file comment-shot.png"><i class="yobicon-download"></i></a><a href="__BASE_PATH__/files/502" class="vmiddle" target="_blank"><i class="yobicon-paperclip"></i><span class="filename">comment-shot.png</span><span class="filesize">(4.1 kB)</span></a></li></ul>`.replaceAll(
       "__BASE_PATH__",
       basePath,
     );
-  expect(await canonicalize(page, "#comment-body-77 > .attachments")).toEqual(
+  expect(await canonicalize(page, "#comment-body-77 > .attachments > ul")).toEqual(
     await canonicalizeHtml(page, expectedCommentAttachments),
   );
 

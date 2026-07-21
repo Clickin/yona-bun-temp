@@ -6103,3 +6103,16 @@ attachment `.pull-left`, and unrelated route consumers remain excluded. The
 focused issue-detail test verifies legacy source/import mapping, owner and
 declaration, computed float, no-inline-style, direct parent scope, ordering,
 and desktop/390px containment in normal and fallback-disabled modes, 1/1 each.
+
+## Batch 774
+
+Move the authenticated parent issue-comment attachment wrapper's active
+`.pull-left` float into a route-local StyleX owner using the frozen Bootstrap
+`float:left` declaration from `yona-original/public/bootstrap/css/bootstrap.css:6093-6098`.
+Preserve the `attachments pull-left` wrapper, `data-attachments` payload,
+AttachedFiles DOM/order, empty/populated rendering, and download behavior;
+issue-level attachments, edit-form attachment-files, child-comment consumers,
+and broad fallback remain excluded. The focused issue-detail tests verify
+source/import mapping, owner/declaration, computed float, no-inline-style,
+direct parent scope, attachment order/content, download link, and desktop/390px
+geometry in normal and fallback-disabled modes, 2/2 each.

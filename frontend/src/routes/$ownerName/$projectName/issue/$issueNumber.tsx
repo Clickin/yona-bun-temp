@@ -3708,7 +3708,9 @@ function IssueCommentRow({
             <OriginalMessageMarkdown contentsMarkdown={contentsMarkdown} viaEmail={viaEmail} />
           </div>
           <div
-            className="attachments pull-left"
+            {...stylex.props(styles.commentAttachments)}
+            className={`${stylex.props(styles.commentAttachments).className} attachments pull-left`}
+            data-stylex-owner="project-issue-detail-comment-attachments"
             data-attachments={JSON.stringify(comment.attachments ?? [])}
           >
             <AttachedFiles attachments={comment.attachments} basePath={basePath} />

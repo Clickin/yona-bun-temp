@@ -221,6 +221,9 @@ export const styles = stylex.create({
   commentActionDelete: {
     marginLeft: "6px",
   },
+  commentAttachments: {
+    float: "left",
+  },
   disabledCommentActions: { textAlign: "right" },
   unauthorizedComment: { marginTop: "20px" },
   commentFormActions: { textAlign: "right" },
