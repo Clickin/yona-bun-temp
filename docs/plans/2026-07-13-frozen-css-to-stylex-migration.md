@@ -6046,3 +6046,13 @@ behavior; remove `ml4` only from this React emitter and keep the generic
 fallback for unrelated consumers. The focused issue-detail test verifies source
 mapping, computed margin, no-inline-style, desktop/mobile behavior, and href in
 normal and fallback-disabled modes.
+## Batch 769
+
+Move the authenticated issue-detail sharer title's active `.mb10` spacing into
+the route-local StyleX owner using the frozen `margin-bottom:10px` declaration
+from `_common.less:212`. Preserve the `issue-share-title` `<dt>`, title/count
+copy, sharer reveal/read-only states, list interaction, and DOM order; remove
+`mb10` only from this React emitter and retain the generic fallback for other
+consumers. The focused issue-detail tests cover source/import mapping, computed
+spacing, no-inline-style, reveal/open behavior, and read-only sharer copy/order/
+links in normal and fallback-disabled modes.

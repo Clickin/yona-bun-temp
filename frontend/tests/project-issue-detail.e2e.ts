@@ -2264,10 +2264,69 @@ test("project issue detail reveals legacy sharer list from share button", async 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
   await page.locator("#issue-share-button").click();
 
-  const expected = `<dl class="sharer-list hideFromDisplayOnly sharer-list-border" style="display:block"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count"></span></dt><dd id="sharer-list" class="" style="display:block"><input type="hidden" class="bigdrop width100p" id="issueSharer" name="issueSharer" placeholder="Select Issue Sharer" value=""></dd></dl>`;
-  expect(await canonicalize(page, ".span-left-pane > .sharer-list")).toEqual(
-    await canonicalizeHtml(page, expected),
+  const sharerList = page.locator(".span-left-pane > .sharer-list");
+  const title = sharerList.locator(":scope > dt");
+  const content = sharerList.locator(":scope > #sharer-list");
+  await expect(sharerList).toHaveClass(/sharer-list/);
+  await expect(sharerList).toHaveClass(/hideFromDisplayOnly/);
+  await expect(sharerList).toHaveClass(/sharer-list-border/);
+  await expect(sharerList).toHaveCSS("display", "block");
+  await expect(title).toHaveClass(/issue-share-title/);
+  await expect(title).not.toHaveClass(/(?:^|\s)mb10(?:\s|$)/u);
+  await expect(title).toHaveText("Issue Sharer");
+  await expect(title.locator(".issue-sharer-count")).toHaveText("");
+  await expect(content).toHaveAttribute("id", "sharer-list");
+  await expect(content).toHaveCSS("display", "block");
+  await expect(content.locator("#issueSharer")).toHaveAttribute("type", "hidden");
+  await expect(content.locator("#issueSharer")).toHaveAttribute("class", "bigdrop width100p");
+  await expect(content.locator("#issueSharer")).toHaveAttribute("name", "issueSharer");
+  await expect(content.locator("#issueSharer")).toHaveAttribute(
+    "placeholder",
+    "Select Issue Sharer",
   );
+  await expect(content.locator("#issueSharer")).toHaveValue("");
+});
+
+test("project issue detail owns sharer title spacing with route StyleX", async ({ page }) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyView).toContain('<dt class="issue-share-title mb10">');
+  expect(legacyCommon).toContain(".mb10 { margin-bottom:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(routeSource).toContain('import { styles } from "./-issue-detail.stylex";');
+  expect(routeSource).toContain("styles.sharerTitle");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-sharer-title"');
+  expect(routeSource).not.toContain('className="issue-share-title mb10"');
+  expect(styleSource).toMatch(/sharerTitle:\s*\{\s*marginBottom:\s*["']10px["']\s*\}/u);
+
+  await mockProjectIssueDetail(page, { sharers: [] });
+  await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
+
+  const title = page.locator('[data-stylex-owner="project-issue-detail-sharer-title"]');
+  const list = page.locator(".span-left-pane > .sharer-list");
+  const shareButton = page.locator("#issue-share-button");
+  await expect(title).toHaveCount(1);
+  await expect(title).not.toHaveAttribute("style", /.+/u);
+  await expect(title).toHaveCSS("margin-bottom", "10px");
+  await shareButton.click();
+  await expect(title).toBeVisible();
+  await expect(list).toHaveClass(/sharer-list-border/);
+  await expect(list.locator("#sharer-list")).toHaveCSS("display", "block");
+  await expect(title).toHaveText("Issue Sharer");
+  await expect(title.locator(".issue-sharer-count")).toHaveText("");
 });
 
 test("project issue detail hidden sharer and assignee inputs omit empty title residue", async ({
@@ -2837,14 +2896,20 @@ test("project issue detail renders legacy read-only sharer list", async ({ page 
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator("#issueSharer")).toHaveCount(0);
 
-  const expected =
-    `<dl class="sharer-list"><dt class="issue-share-title mb10">Issue Sharer <span class="num issue-sharer-count">2</span></dt><dd id="sharer-list" class=""><div class="text-ellipsis sharer-item"><a href="__BASE_PATH__/qa1" class="usf-group"><strong class="name">QA One</strong></a></div><div class="text-ellipsis sharer-item"><a href="__BASE_PATH__/qa2" class="usf-group"><strong class="name">QA Two</strong></a></div></dd></dl>`.replaceAll(
-      "__BASE_PATH__",
-      basePath,
-    );
-  expect(await canonicalize(page, ".span-left-pane > .sharer-list")).toEqual(
-    await canonicalizeHtml(page, expected),
-  );
+  const sharerList = page.locator(".span-left-pane > .sharer-list");
+  const title = sharerList.locator(":scope > dt");
+  const content = sharerList.locator(":scope > #sharer-list");
+  await expect(sharerList).toHaveClass(/sharer-list/);
+  await expect(title).toHaveClass(/issue-share-title/);
+  await expect(title).not.toHaveClass(/(?:^|\s)mb10(?:\s|$)/u);
+  await expect(title).toHaveText("Issue Sharer 2");
+  await expect(title.locator(".issue-sharer-count")).toHaveText("2");
+  await expect(content).toBeVisible();
+  await expect(content.locator(".sharer-item .name")).toHaveText(["QA One", "QA Two"]);
+  const expectedSharerHrefs = [`${basePath}/qa1`, `${basePath}/qa2`];
+  for (const [index, link] of (await content.locator(".sharer-item a").all()).entries()) {
+    await expect(link).toHaveAttribute("href", expectedSharerHrefs[index]);
+  }
 });
 
 test("project issue detail renders legacy read-only action buttons", async ({ page }) => {

@@ -1072,7 +1072,10 @@ function IssueDetailBody({
               className={`${sharerListClassName} ${sharerListStyleProps?.className ?? ""}`.trim()}
               data-stylex-owner="issue-detail-sharer-list"
             >
-              <dt className="issue-share-title mb10">
+              <dt
+                className={`issue-share-title ${stylex.props(styles.sharerTitle).className}`}
+                data-stylex-owner="project-issue-detail-sharer-title"
+              >
                 {t("issue.sharer")}{" "}
                 <span className="num issue-sharer-count">
                   {sharers.length ? ` ${String(sharers.length)}` : ""}

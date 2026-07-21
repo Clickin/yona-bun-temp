@@ -198,6 +198,7 @@ export const styles = stylex.create({
     marginRight: "10px",
     marginTop: "10px",
   },
+  sharerTitle: { marginBottom: "10px" },
   issueActionEdit: {
     marginLeft: "10px",
     paddingTop: "5px",

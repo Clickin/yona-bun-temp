@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 769 issue-detail sharer title spacing proof
+
+- [x] The authenticated issue-detail sharer title preserves the legacy
+  `issue-share-title` `<dt>`, copy/count, reveal/read-only branches, and list
+  interaction while route-local StyleX owns frozen `.mb10` `margin-bottom:10px`.
+- [x] Focused normal and fallback-off Playwright checks pass 3/3, covering
+  source/import mapping, owner/declaration, computed spacing, no-inline-style,
+  reveal/open state, and read-only sharer copy/order/links.
+
 ### 2026-07-20 Batch 658 search empty-result image-owner proof
 
 - [x] Global, project, and organization search empty-result owners emit the
