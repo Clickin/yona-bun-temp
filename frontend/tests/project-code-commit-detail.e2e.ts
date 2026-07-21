@@ -52,6 +52,10 @@ const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_FILE_DIFF_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_REVIEWLIST_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
   "utf8",
@@ -3446,3 +3450,80 @@ async function canonicalizeHtml(page: Page, html: string) {
     withReactOwnedTabButtons(withLegacyMarkdownHelp(html)),
   );
 }
+
+test("project commit detail file header owns the legacy visible StyleX state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain("partial_diff");
+  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-file">');
+  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<span class="filename" >');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-file {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px 10px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-right: 115px;");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-header"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-file-header-filename"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffPartialFile: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffPartialFilename: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px 10px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginRight: "115px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("color: commitDetailColors.commitText");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('fontSize: "13px"');
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1 +1 @@
+-old
++new`,
+      },
+    ],
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+    const header = page.locator('[data-stylex-owner="commit-detail-file-header"]');
+    const filename = page.locator('[data-stylex-owner="commit-detail-file-header-filename"]');
+    await expect(header).toBeVisible();
+    await expect(filename).toBeVisible();
+    await expect(filename).toHaveText("src/main.rs");
+    await expect(header).toHaveCSS("padding", "5px 10px");
+    await expect(header).toHaveCSS("font-weight", "700");
+    await expect(header).toHaveCSS("overflow", "hidden");
+    await expect(header).toHaveCSS("white-space", "nowrap");
+    await expect(header).toHaveCSS("word-break", "break-all");
+    await expect(header).toHaveCSS("margin-right", "115px");
+    await expect(filename).toHaveCSS("color", "rgb(51, 51, 51)");
+    await expect(filename).toHaveCSS("font-size", "13px");
+    expect(
+      await header.evaluate((element) => element.getBoundingClientRect().width),
+    ).toBeGreaterThan(0);
+
+    const links = page.locator("#src-main-rs .diff-partial-commit-id a");
+    await expect(links).toHaveCount(2);
+    await expect(links.nth(0)).toHaveAttribute(
+      "href",
+      `${basePath}/admin/sample/code/1234567890abcdef/src/main.rs`,
+    );
+    await expect(links.nth(1)).toHaveAttribute(
+      "href",
+      `${basePath}/admin/sample/code/abcdef1234567890/src/main.rs`,
+    );
+    await expect(links.nth(0)).toHaveAttribute("target", "_blank");
+    await expect(links.nth(1)).toHaveAttribute("target", "_blank");
+  }
+
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});

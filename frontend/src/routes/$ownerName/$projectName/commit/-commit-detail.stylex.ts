@@ -72,6 +72,18 @@ export const styles = stylex.create({
     fontSize: "12px",
     whiteSpace: "pre",
   },
+  diffPartialFile: {
+    padding: "5px 10px",
+    fontWeight: "bold",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    wordBreak: "break-all",
+    marginRight: "115px",
+  },
+  diffPartialFilename: {
+    color: commitDetailColors.commitText,
+    fontSize: "13px",
+  },
   reviewCard: {
     display: "block",
     borderWidth: "1px",

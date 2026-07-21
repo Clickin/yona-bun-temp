@@ -50,6 +50,8 @@ const sx = {
   diffLineNumberMarker: stylex.props(styles.diffLineNumberMarker),
   diffCodeCell: stylex.props(styles.diffCodeCell),
   diffCodeLine: stylex.props(styles.diffCodeLine),
+  diffPartialFile: stylex.props(styles.diffPartialFile),
+  diffPartialFilename: stylex.props(styles.diffPartialFilename),
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
   rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
@@ -782,8 +784,18 @@ function FileDiffView({
               )}
             </div>
           </div>
-          <div className="diff-partial-file">
-            <span className="filename">{fileHeader}</span>
+          <div
+            {...sx.diffPartialFile}
+            className={`${sx.diffPartialFile.className} diff-partial-file`}
+            data-stylex-owner="commit-detail-file-header"
+          >
+            <span
+              {...sx.diffPartialFilename}
+              className={`${sx.diffPartialFilename.className} filename`}
+              data-stylex-owner="commit-detail-file-header-filename"
+            >
+              {fileHeader}
+            </span>
           </div>
         </div>
         <div

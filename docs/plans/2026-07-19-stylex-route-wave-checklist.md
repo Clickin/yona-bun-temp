@@ -1048,3 +1048,7 @@ desktop/mobile geometry, and filtering.
   line-number/code-cell/code-line declarations, desktop/390px computed coverage,
   and independent fallback-off focused contract pass 1/1 each; outer file/meta
   and other nested partial-diff declarations remain separately scoped.
+- [x] Batch 747 partial-filediff file-header owners: frozen source mapping, exact
+  header/filename declarations, desktop/390px computed coverage, preserved commit
+  links, and independent fallback-off focused contract pass 1/1 each; commit-id,
+  utility, comments, range/color, and other nested declarations remain scoped.
