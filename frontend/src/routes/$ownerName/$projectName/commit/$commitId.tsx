@@ -39,6 +39,11 @@ const sx = {
   browse: stylex.props(styles.browse),
   diffWrap: stylex.props(styles.diffWrap),
   commitInfo: stylex.props(styles.commitInfo),
+  commitAuthor: stylex.props(styles.commitAuthor),
+  commitAuthorAgo: stylex.props(styles.commitAuthorAgo),
+  commitAuthorAvatar: stylex.props(styles.commitAuthorAvatar),
+  commitIdWrap: stylex.props(styles.commitIdWrap),
+  commitId: stylex.props(styles.commitId),
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
   diffBody: stylex.props(styles.diffBody),
@@ -361,9 +366,18 @@ function ProjectCommitDetailBody({
                 data-stylex-owner="commit-detail-diffs"
               >
                 <div {...sx.commitInfo} data-stylex-owner="commit-detail-info">
-                  <div className="commitAuthor">
+                  <div
+                    {...sx.commitAuthor}
+                    className={`${sx.commitAuthor.className} commitAuthor`}
+                    data-stylex-owner="commit-detail-author"
+                  >
                     <CommitAuthor detail={detail} />
-                    <span className="ago" title={commit?.authorDate ?? ""}>
+                    <span
+                      {...sx.commitAuthorAgo}
+                      className={`${sx.commitAuthorAgo.className} ago`}
+                      data-stylex-owner="commit-detail-author-ago"
+                      title={commit?.authorDate ?? ""}
+                    >
                       {commit?.authorDate ?? ""}
                     </span>
                   </div>
@@ -373,8 +387,18 @@ function ProjectCommitDetailBody({
                       shortMessage={commit?.shortMessage ?? ""}
                     />
                   </div>
-                  <div className="commitId-wrap">
-                    <strong className="commitId">@{commit?.commitId ?? commitId}</strong>
+                  <div
+                    {...sx.commitIdWrap}
+                    className={`${sx.commitIdWrap.className} commitId-wrap`}
+                    data-stylex-owner="commit-detail-id-wrap"
+                  >
+                    <strong
+                      {...sx.commitId}
+                      className={`${sx.commitId.className} commitId`}
+                      data-stylex-owner="commit-detail-id"
+                    >
+                      @{commit?.commitId ?? commitId}
+                    </strong>
                   </div>
                 </div>
 
@@ -1766,7 +1790,9 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
           to="/$user"
           params={{ user: commit.authorLoginId }}
           activeOptions={{ exact: true }}
-          className="avatar-wrap smaller"
+          {...sx.commitAuthorAvatar}
+          className={`${sx.commitAuthorAvatar.className} avatar-wrap smaller`}
+          data-stylex-owner="commit-detail-author-avatar"
         >
           <img
             src={
@@ -1785,7 +1811,11 @@ function CommitAuthor({ detail }: { detail: CodeCommitDetailResponse }) {
 
   return (
     <>
-      <span className="avatar-wrap smaller">
+      <span
+        {...sx.commitAuthorAvatar}
+        className={`${sx.commitAuthorAvatar.className} avatar-wrap smaller`}
+        data-stylex-owner="commit-detail-author-avatar"
+      >
         <img
           src={
             commit.authorAvatarUrl ||

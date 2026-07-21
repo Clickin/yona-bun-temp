@@ -1092,3 +1092,9 @@ desktop/mobile geometry, and filtering.
   desktop/390px owner-relative geometry, and independent normal/fallback-off
   focused runs pass 1/1 each; Git diff wrappers and unrelated fallback
   consumers remain scoped.
+- [x] Batch 756 authenticated Git commit-detail metadata owners: frozen
+  Scala/LESS/variable mapping, exact author/avatar/id declarations, fixed-font
+  computed proof, preserved copy/link behavior, no-inline-style and
+  owner-relative desktop/390px geometry, plus independent normal/fallback-off
+  focused runs pass 1/1 each; `commitMsg-wrap` remains retired and SVN state
+  stays separately scoped.

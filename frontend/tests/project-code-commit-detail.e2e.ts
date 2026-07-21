@@ -868,6 +868,12 @@ test("project commit detail matches legacy code/diff.scala.html empty discussion
     codediffPosition: "relative",
     commitAuthorFloat: "right",
     commitAuthorMarginTop: "5px",
+    commitAuthorAgoColor: "rgb(187, 187, 187)",
+    commitAuthorAgoMarginLeft: "5px",
+    commitAuthorAvatarMarginRight: "5px",
+    commitIdColor: "rgb(81, 170, 204)",
+    commitIdFontFamily: 'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    commitIdMarginTop: "5px",
     commitIdWrapDisplay: "block",
     commitIdWrapFontSize: "13px",
     commitIdWrapMargin: "0px",
@@ -1151,6 +1157,140 @@ test("project commit detail links known commit author avatar like legacy diff.sc
   await expect(authorAvatar.locator("img")).toHaveAttribute("height", "32");
   await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
   expect(detailRequests).toEqual(["branch=main"]);
+});
+
+test("project commit detail Batch 756 owns Git metadata with StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitInfo">');
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitAuthor">');
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<span class="ago"');
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitMsg-wrap">');
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<div class="commitId-wrap">');
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain('<strong class="commitId">');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".commitId {\n        color:@secondary;\n        margin-top:5px;\n        font-family: @fixed-font-family;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".ago { margin-left:5px; color:#bbb; }");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".commitAuthor {\n            float:right; margin-top:5px;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".avatar-wrap { margin-right:5px; }");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".commitId-wrap { padding:10px 5px; }");
+  expect(LEGACY_VARIABLES_SOURCE).toContain(
+    '@fixed-font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono",  "source-code-pro", monospace;',
+  );
+  expect(LEGACY_VARIABLES_SOURCE).toContain("@secondary       : @blue2;");
+  expect(LEGACY_VARIABLES_SOURCE).toContain("@blue2  : #51AACC;");
+  for (const owner of [
+    "commit-detail-author",
+    "commit-detail-author-ago",
+    "commit-detail-author-avatar",
+    "commit-detail-id-wrap",
+    "commit-detail-id",
+  ]) {
+    expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'commitAuthor: { float: "right", marginTop: "5px" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'commitAuthorAgo: { marginLeft: "5px", color: "#bbb" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('commitAuthorAvatar: { marginRight: "5px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('commitIdWrap: { padding: "10px 5px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#51aacc"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "5px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
+  );
+
+  await mockProjectCommitDetail(page, [], {
+    commit: {
+      authorAvatarUrl: "/avatars/dev.png",
+      authorDate: "Jul 1, 2026",
+      authorEmail: "dev@example.com",
+      authorLoginId: "dev",
+      authorName: "Dev Author",
+      commentCount: 0,
+      commitId: "abcdef1234567890",
+      commitShortId: "abcdef1",
+      message: "Initial commit\nAdd README",
+      shortMessage: "Initial commit",
+    },
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    if (viewport.width === 1366) {
+      await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+    }
+
+    const info = page.locator('[data-stylex-owner="commit-detail-info"]');
+    const author = page.locator('[data-stylex-owner="commit-detail-author"]');
+    const ago = page.locator('[data-stylex-owner="commit-detail-author-ago"]');
+    const avatar = page.locator('[data-stylex-owner="commit-detail-author-avatar"]');
+    const idWrap = page.locator('[data-stylex-owner="commit-detail-id-wrap"]');
+    const id = page.locator('[data-stylex-owner="commit-detail-id"]');
+    await expect(info).toBeVisible();
+    await expect(author).toBeVisible();
+    await expect(ago).toHaveText("Jul 1, 2026");
+    await expect(avatar).toBeVisible();
+    await expect(page.locator(".commitMsg-wrap")).toHaveCount(0);
+    await expect(page.locator(".commitAuthor > strong")).toHaveText("Dev Author");
+    await expect(id).toHaveText("@abcdef1234567890");
+    await expect(author).toHaveCSS("float", "right");
+    await expect(author).toHaveCSS("margin-top", "5px");
+    await expect(ago).toHaveCSS("margin-left", "5px");
+    await expect(ago).toHaveCSS("color", "rgb(187, 187, 187)");
+    await expect(avatar).toHaveCSS("margin-right", "5px");
+    await expect(idWrap).toHaveCSS("padding", "10px 5px");
+    await expect(id).toHaveCSS("color", "rgb(81, 170, 204)");
+    await expect(id).toHaveCSS("margin-top", "5px");
+    await expect(id).toHaveCSS(
+      "font-family",
+      'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    );
+
+    const geometry = await page.evaluate(() => {
+      const read = (owner: string) => {
+        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        if (!element) throw new Error(`Missing ${owner}`);
+        const box = element.getBoundingClientRect();
+        return {
+          bottom: box.bottom,
+          height: box.height,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          width: box.width,
+        };
+      };
+      const infoBox = read("commit-detail-info");
+      const authorBox = read("commit-detail-author");
+      const idWrapBox = read("commit-detail-id-wrap");
+      const idBox = read("commit-detail-id");
+      return {
+        authorWithinInfo: authorBox.left >= infoBox.left && authorBox.right <= infoBox.right + 1,
+        authorHeight: authorBox.height,
+        idStartsWithinWrap: idBox.left >= idWrapBox.left,
+        idWrapHeight: idWrapBox.height,
+        infoHeight: infoBox.height,
+      };
+    });
+    expect(geometry.infoHeight).toBeGreaterThan(0);
+    expect(geometry.authorHeight).toBeGreaterThan(0);
+    expect(geometry.idWrapHeight).toBeGreaterThan(0);
+    expect(geometry.authorWithinInfo).toBe(true);
+    expect(geometry.idStartsWithinWrap).toBe(true);
+  }
+
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
 });
 
 test("project commit detail renders no-author commit with legacy anonymous author copy", async ({
@@ -3318,12 +3458,22 @@ async function readCommitDiffShellMetrics(page: Page) {
     const reviewContainer = document.querySelector<HTMLElement>(".review-container");
     const commitInfo = document.querySelector<HTMLElement>(".diffs-wrap .commitInfo");
     const commitAuthor = document.querySelector<HTMLElement>(".commitAuthor");
+    const commitAuthorAgo = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-author-ago"]',
+    );
+    const commitAuthorAvatar = document.querySelector<HTMLElement>(
+      '[data-stylex-owner="commit-detail-author-avatar"]',
+    );
+    const commitId = document.querySelector<HTMLElement>('[data-stylex-owner="commit-detail-id"]');
     const shortMessage = document.querySelector<HTMLElement>(".commitMsg.short");
     const descMessage = document.querySelector<HTMLElement>(".commitMsg.desc");
     const commitIdWrap = document.querySelector<HTMLElement>(".commitId-wrap");
     const missing = Object.entries({
+      commitAuthorAgo,
+      commitAuthorAvatar,
       codediff,
       commitAuthor,
+      commitId,
       commitIdWrap,
       commitInfo,
       descMessage,
@@ -3343,6 +3493,9 @@ async function readCommitDiffShellMetrics(page: Page) {
 
     const codediffStyle = getComputedStyle(codediff);
     const commitAuthorStyle = getComputedStyle(commitAuthor);
+    const commitAuthorAgoStyle = getComputedStyle(commitAuthorAgo);
+    const commitAuthorAvatarStyle = getComputedStyle(commitAuthorAvatar);
+    const commitIdStyle = getComputedStyle(commitId);
     const commitIdWrapStyle = getComputedStyle(commitIdWrap);
     const commitInfoStyle = getComputedStyle(commitInfo);
     const descStyle = getComputedStyle(descMessage);
@@ -3356,6 +3509,12 @@ async function readCommitDiffShellMetrics(page: Page) {
       codediffPosition: codediffStyle.position,
       commitAuthorFloat: commitAuthorStyle.cssFloat,
       commitAuthorMarginTop: commitAuthorStyle.marginTop,
+      commitAuthorAgoColor: commitAuthorAgoStyle.color,
+      commitAuthorAgoMarginLeft: commitAuthorAgoStyle.marginLeft,
+      commitAuthorAvatarMarginRight: commitAuthorAvatarStyle.marginRight,
+      commitIdColor: commitIdStyle.color,
+      commitIdFontFamily: commitIdStyle.fontFamily,
+      commitIdMarginTop: commitIdStyle.marginTop,
       commitIdWrapDisplay: commitIdWrapStyle.display,
       commitIdWrapFontSize: commitIdWrapStyle.fontSize,
       commitIdWrapMargin: commitIdWrapStyle.margin,

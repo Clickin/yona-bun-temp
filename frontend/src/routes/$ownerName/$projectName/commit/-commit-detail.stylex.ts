@@ -211,6 +211,15 @@ export const styles = stylex.create({
   browse: { width: "100%" },
   diffWrap: { width: "100%", overflow: "auto", marginBottom: "20px" },
   commitInfo: { color: commitDetailColors.commitText, margin: "10px 0px" },
+  commitAuthor: { float: "right", marginTop: "5px" },
+  commitAuthorAgo: { marginLeft: "5px", color: "#bbb" },
+  commitAuthorAvatar: { marginRight: "5px" },
+  commitIdWrap: { padding: "10px 5px" },
+  commitId: {
+    color: "#51aacc",
+    marginTop: "5px",
+    fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',
+  },
   commitMessage: { color: commitDetailColors.commitText },
   commitDescription: {
     backgroundColor: commitDetailColors.diffSurface,

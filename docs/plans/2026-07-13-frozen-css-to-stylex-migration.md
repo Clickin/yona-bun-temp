@@ -5899,3 +5899,16 @@ from `_page.less:4613-4615`. Keep Git diff wrappers and unrelated fallback
 consumers outside this owner scope, and verify desktop/390px computed geometry,
 visible patch text, and no-inline-style ownership in normal and fallback-off
 focused tests.
+
+## Batch 756
+
+Complete the authenticated commit-detail Git metadata visible state through
+route-local StyleX owners. Preserve the Scala `.commitInfo`/author/avatar/id
+DOM, legacy classes, copy, and links while carrying only the frozen author
+float/spacing, avatar spacing, commit-id wrapper padding, and commit-id
+color/margin/fixed-font declarations from `code/diff.scala.html:50-84`,
+`_page.less:4598-4610`, and `_variables.less:13,28,108`. Keep the already
+retired `commitMsg-wrap` fallback arm, SVN metadata, and unrelated fallback
+consumers outside this owner scope. Verify source mapping, no-inline-style,
+computed declarations, and desktop/390px geometry independently in normal and
+fallback-off focused tests.
