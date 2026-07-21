@@ -1027,24 +1027,48 @@ function InlineCommentRow({
   toggleThreadState: (threadId: number, state: string) => void;
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
+  const [foldedThreadIds, setFoldedThreadIds] = useState(() =>
+    threads.reduce((closedIds, thread) => {
+      if (thread.state.toLowerCase() === "closed") closedIds.add(thread.id);
+      return closedIds;
+    }, new Set<number>()),
+  );
+
   return (
     <tr className="comments board-comment-wrap" data-commit-id={threads[0]?.commitId || commitId}>
       <td colSpan={3}>
-        {threads.map((thread) => (
-          <CodeCommentThreadView
-            currentUser={currentUser}
-            deleteComment={deleteComment}
-            openCommentDeleteModal={openCommentDeleteModal}
-            key={thread.id}
-            ownerName={ownerName}
-            projectName={projectName}
-            runtimeConfig={runtimeConfig}
-            submitReply={submitReply}
-            thread={thread}
-            toggleThreadState={toggleThreadState}
-            updateComment={updateComment}
-          />
-        ))}
+        {threads.map((thread, index) => {
+          const previousThread = threads[index - 1];
+          const previousThreadFolded = previousThread
+            ? !isNonRangedThread(previousThread) && foldedThreadIds.has(previousThread.id)
+            : false;
+          return (
+            <CodeCommentThreadView
+              currentUser={currentUser}
+              deleteComment={deleteComment}
+              hasPreviousThread={index > 0}
+              isFolded={foldedThreadIds.has(thread.id)}
+              onFoldChange={(isFolded) =>
+                setFoldedThreadIds((current) => {
+                  const next = new Set(current);
+                  if (isFolded) next.add(thread.id);
+                  else next.delete(thread.id);
+                  return next;
+                })
+              }
+              previousThreadFolded={previousThreadFolded}
+              openCommentDeleteModal={openCommentDeleteModal}
+              key={thread.id}
+              ownerName={ownerName}
+              projectName={projectName}
+              runtimeConfig={runtimeConfig}
+              submitReply={submitReply}
+              thread={thread}
+              toggleThreadState={toggleThreadState}
+              updateComment={updateComment}
+            />
+          );
+        })}
       </td>
     </tr>
   );
@@ -1057,10 +1081,14 @@ function isNonRangedThread(thread: CodeReviewThread) {
 function CodeCommentThreadView({
   currentUser,
   deleteComment,
+  hasPreviousThread = false,
   isNonRanged = false,
+  isFolded: controlledIsFolded,
+  onFoldChange,
   openCommentDeleteModal,
   ownerName,
   projectName,
+  previousThreadFolded,
   runtimeConfig,
   submitReply,
   thread,
@@ -1074,6 +1102,10 @@ function CodeCommentThreadView({
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
+  hasPreviousThread?: boolean;
+  isFolded?: boolean;
+  onFoldChange?: (isFolded: boolean) => void;
+  previousThreadFolded?: boolean;
   submitReply: (threadId: number, contentsMarkdown: string) => void;
   thread: CodeReviewThread;
   toggleThreadState: (threadId: number, state: string) => void;
@@ -1093,8 +1125,16 @@ function CodeCommentThreadView({
     thread.commitId,
   );
   const [editingCommentIds, setEditingCommentIds] = useState<Set<number>>(() => new Set());
-  const [isFolded, setIsFolded] = useState(() => !isNonRanged && state === "closed");
+  const [localIsFolded, setLocalIsFolded] = useState(() => !isNonRanged && state === "closed");
+  const isFolded = controlledIsFolded ?? localIsFolded;
   const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;
+  const threadSpacingProps = stylex.props(
+    hasPreviousThread
+      ? previousThreadFolded
+        ? styles.threadAfterFoldedThread
+        : styles.threadAfterThread
+      : null,
+  );
   const threadShellProps = stylex.props(
     styles.threadShell,
     state === "closed" ? styles.threadShellClosed : styles.threadShellOpen,
@@ -1127,7 +1167,7 @@ function CodeCommentThreadView({
       id={`thread-${thread.id}`}
       data-state={isNonRanged ? undefined : state}
       {...threadShellProps}
-      className={`${threadShellProps.className} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
+      className={`${threadShellProps.className} ${threadSpacingProps.className ?? ""} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
       data-stylex-owner="commit-detail-thread-shell"
       data-range-path={isNonRanged ? undefined : thread.path}
       data-range-startside={isNonRanged ? undefined : thread.startSide}
@@ -1145,7 +1185,11 @@ function CodeCommentThreadView({
           type="button"
           {...threadFoldButtonProps}
           className={`${threadFoldButtonProps.className ?? ""} ybtn ybtn-default ybtn-small`}
-          onClick={() => setIsFolded((current) => !current)}
+          onClick={() => {
+            const next = !isFolded;
+            setLocalIsFolded(next);
+            onFoldChange?.(next);
+          }}
         >
           <i className={isNonRanged ? "yobicon-comments" : "yobicon-post2"}></i>
         </button>
@@ -1167,7 +1211,11 @@ function CodeCommentThreadView({
             {...threadFoldHiddenProps}
             type="button"
             className={`${sx.rangedThreadMinimize.className} ${threadFoldHiddenProps.className ?? ""} ybtn ybtn-default ybtn-small btn-thread-minimize`}
-            onClick={() => setIsFolded((current) => !current)}
+            onClick={() => {
+              const next = !isFolded;
+              setLocalIsFolded(next);
+              onFoldChange?.(next);
+            }}
           >
             <i className="yobicon-maximize"></i>
           </button>

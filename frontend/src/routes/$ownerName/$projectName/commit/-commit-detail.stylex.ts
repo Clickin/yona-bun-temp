@@ -44,6 +44,8 @@ export const styles = stylex.create({
     borderStyle: "none",
     boxShadow: "none",
   },
+  threadAfterThread: { marginTop: "10px" },
+  threadAfterFoldedThread: { marginTop: "0px" },
   threadFoldHidden: { display: "none" },
   threadFoldHere: {
     position: "absolute",

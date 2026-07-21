@@ -1011,3 +1011,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, computed fold geometry,
   desktop/390px containment, and fold/unfold interaction in normal and
   fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 740 commit-detail adjacent ranged-thread spacing proof
+
+- [x] Adjacent ranged review threads preserve the legacy sibling spacing:
+  `margin-top:10px` after a normal thread and `margin-top:0` after a folded
+  thread, with React fold state updating the existing DOM and no legacy DOM
+  control script copied.
+- [x] The focused contract passes source mapping, computed spacing at
+  desktop/390px, and live fold transition in normal and fallback-off runs
+  (1/1 each).

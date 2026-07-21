@@ -1743,6 +1743,12 @@ test("project commit detail folds closed ranged threads with frozen StyleX geome
   expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
     'class="comment-thread-wrap @thread.state.toString().toLowerCase()\n     @if(thread.isInstanceOf[CodeCommentThread] && thread.state == CommentThread.ThreadState.CLOSED){fold}"',
   );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".comment-thread-wrap + .comment-thread-wrap {\n    margin-top:10px;\n}",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".comment-thread-wrap.fold + .comment-thread-wrap {\n    margin-top:0;\n}",
+  );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;',
   );
@@ -1758,6 +1764,8 @@ test("project commit detail folds closed ranged threads with frozen StyleX geome
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftWidth: "3px"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftStyle: "solid"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftColor: "#fd6956"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadAfterThread: { marginTop: "10px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadAfterFoldedThread: { marginTop: "0px" }');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -1801,6 +1809,33 @@ index 1234567..abcdef1 100644
         startLine: 2,
         state: "closed",
       },
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorAvatarUrl: "/avatars/dev.png",
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: false,
+            contentsHtml: "<p>Server HTML should not render</p>",
+            contentsMarkdown: "Second ranged note",
+            createdLabel: "Jul 1, 2026",
+            id: 505,
+            threadId: 80,
+            viaEmail: false,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        endLine: 2,
+        id: 80,
+        path: "src/main.rs",
+        prevCommitId: "1234567890abcdef",
+        startLine: 2,
+        state: "open",
+      },
     ],
   });
 
@@ -1811,6 +1846,7 @@ index 1234567..abcdef1 100644
   const comments = thread.locator(":scope > ul.comments");
   const replyForm = thread.locator(":scope > .write-comment-form");
   const headerMinimize = header.locator(":scope > .btn-thread-minimize");
+  const nextThread = page.locator("#thread-80.comment-thread-wrap");
 
   const assertClosedFold = async () => {
     await expect(thread).toHaveClass(/closed fold/);
@@ -1833,12 +1869,18 @@ index 1234567..abcdef1 100644
     await expect(foldedButton).toHaveCSS("border-left", "3px solid rgb(253, 105, 86)");
   };
 
+  const assertAdjacentMargin = async (margin: string) => {
+    await expect(nextThread).toHaveCSS("margin-top", margin);
+  };
+
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await assertClosedFold();
+  await assertAdjacentMargin("0px");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await assertClosedFold();
+  await assertAdjacentMargin("0px");
 
   await foldedButton.click();
   await expect(thread).not.toHaveClass(/fold/);
@@ -1847,6 +1889,7 @@ index 1234567..abcdef1 100644
   await expect(replyForm).toBeVisible();
   await expect(foldedHere).toBeHidden();
   await expect(headerMinimize).toBeVisible();
+  await assertAdjacentMargin("10px");
 });
 
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {

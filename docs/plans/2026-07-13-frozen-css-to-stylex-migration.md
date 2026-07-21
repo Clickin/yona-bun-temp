@@ -5735,3 +5735,12 @@ interaction while carrying only the frozen `.fold`, hidden-content, and
 folded-here declarations. Retain generic fallback consumers and verify
 desktop/390px computed geometry and fold/unfold interaction in normal and
 fallback-off focused tests.
+
+## Batch 740
+
+Complete the authenticated commit-detail adjacent ranged review-thread spacing
+state through the existing route-local StyleX owners. Preserve the legacy
+thread wrapper and fold interaction while carrying only the frozen sibling
+margin declarations: `10px` after a normal thread and `0px` after a folded
+thread. Verify desktop/390px computed spacing and live fold transition in
+normal and fallback-off focused tests.
