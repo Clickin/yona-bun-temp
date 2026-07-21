@@ -5598,3 +5598,13 @@ conditional Change VCS visibility, and carry only the exact route-specific
 Bootstrap and generic `.nav-tabs` fallback consumers unchanged; verify desktop
 and mobile geometry, active/navigation contracts, and conditional visibility in
 normal and fallback-off focused tests.
+
+## Batch 725
+
+Complete the authenticated project-settings middle-row shell visible state
+through six route-local StyleX owners. Carry the exact frozen `.box-wrap`
+border/padding declarations, its `:last-of-type` border removal, and the frozen
+responsive mobile padding override. Preserve row DOM/classes/order and
+menu/reviewer/default-branch dependencies; retain generic `.box-wrap` fallback
+consumers and verify desktop/mobile computed geometry in normal and fallback-off
+focused tests.

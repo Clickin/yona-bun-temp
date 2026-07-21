@@ -347,6 +347,15 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings middle-row shell owners
+
+Fallback-off evidence confirmed six middle-row owners retain the frozen
+`.box-wrap` border/padding declarations on desktop, the frozen responsive
+`padding:10px 0` override on mobile, and the frozen last-of-type border removal
+for Menu Setting. Row DOM/classes/order and menu/reviewer/default-branch
+dependencies remain intact; generic `.box-wrap` consumers retain the fallback.
+Focused normal and fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings middle-row owners
 
 Fallback-off evidence confirmed six `.cu-label`, six `.cu-desc`, and three

@@ -1631,6 +1631,128 @@ test("project settings middle rows own the frozen cu label, description, and not
   );
 });
 
+test("project settings middle row shells own the frozen box-wrap middle declarations", async ({
+  page,
+}) => {
+  const [legacy, frozenStyles, responsiveStyles, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<div class="box-wrap middle">');
+  expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
+  expect(frozenStyles).toContain("padding: 10px 20px;");
+  expect(responsiveStyles).toContain(".box-wrap {");
+  expect(responsiveStyles).toContain("padding: 10px 0 !important;");
+  expect(route).toContain("styles.middleBox");
+  expect(route).toContain('data-stylex-owner="project-setting-middle-reviewer"');
+  expect(style).toContain("middleBox:");
+  expect(style).toContain('borderBottom: "1px solid #E9E9E9"');
+  expect(style).toContain('default: "10px 20px"');
+  expect(style).toContain("globalBreakpoints.mobile");
+  expect(style).toContain('"10px 0px"');
+  expect(style).toContain('borderBottom: "none"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: { isUsingReviewerCount: true, menuSetting: { code: true } },
+  });
+  const owners = [
+    "project-setting-middle-share",
+    "project-setting-middle-issue-template",
+    "project-setting-middle-code-accessible",
+    "project-setting-middle-reviewer",
+    "project-setting-middle-default-branch",
+    "project-setting-middle-menu",
+  ];
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const rows = page.locator('[data-stylex-owner^="project-setting-middle-"]');
+    await expect(rows).toHaveCount(6);
+    await expect(
+      rows.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+    ).resolves.toEqual(owners);
+    expect(
+      await rows.evaluateAll((elements) =>
+        elements.every((element) => element.classList.contains("box-wrap")),
+      ),
+    ).toBe(true);
+    expect(
+      await rows.evaluateAll((elements) =>
+        elements.every((element) => element.classList.contains("middle")),
+      ),
+    ).toBe(true);
+    expect(
+      await rows.evaluateAll((elements) =>
+        elements.every((element) => {
+          const style = getComputedStyle(element);
+          return style.visibility !== "hidden" && style.display !== "none";
+        }),
+      ),
+    ).toBe(true);
+
+    const metrics = await rows.evaluateAll((elements) =>
+      elements.map((element) => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return {
+          owner: element.dataset.stylexOwner,
+          borderBottom: style.borderBottom,
+          padding: style.padding,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+        };
+      }),
+    );
+    expect(
+      metrics.slice(0, 5).every((metric) => metric.borderBottom === "1px solid rgb(233, 233, 233)"),
+    ).toBe(true);
+    expect(metrics[5]).toMatchObject({
+      owner: "project-setting-middle-menu",
+      borderBottom: "0px none rgb(119, 119, 119)",
+    });
+    expect(
+      metrics.every(
+        (metric) =>
+          metric.padding === (viewport.width === 390 ? "10px 0px" : "10px 20px") &&
+          metric.right - metric.left > 0 &&
+          metric.bottom >= metric.top,
+      ),
+      JSON.stringify({ viewport, metrics }),
+    ).toBe(true);
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator('[data-stylex-owner="project-setting-middle-reviewer"]')).toBeHidden();
+  await expect(
+    page.locator('[data-stylex-owner="project-setting-middle-default-branch"]'),
+  ).toBeHidden();
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+  await expect(page.locator('[data-stylex-owner="project-setting-middle-reviewer"]')).toBeVisible();
+  await expect(
+    page.locator('[data-stylex-owner="project-setting-middle-default-branch"]'),
+  ).toBeVisible();
+  await page.locator("#reviewerCountDisable").check();
+  await expect(page.locator("#welReviewerCount")).toBeHidden();
+  await page.locator("#reviewerCountEnable").check();
+  await expect(page.locator("#welReviewerCount")).toBeVisible();
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

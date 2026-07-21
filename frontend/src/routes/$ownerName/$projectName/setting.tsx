@@ -57,6 +57,7 @@ const sx = {
   defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   issueTemplateEdit: stylex.props(styles.issueTemplateEdit),
+  middleBox: stylex.props(styles.middleBox),
   cuLabel: stylex.props(styles.cuLabel),
   cuDesc: stylex.props(styles.cuDesc),
   cuNote: stylex.props(styles.cuNote),
@@ -637,7 +638,11 @@ function ProjectSettingBody({
               </dl>
             </div>
 
-            <div className="box-wrap middle">
+            <div
+              {...sx.middleBox}
+              className={`${sx.middleBox.className} box-wrap middle`}
+              data-stylex-owner="project-setting-middle-share"
+            >
               <div
                 {...sx.cuLabel}
                 className={`${sx.cuLabel.className} cu-label`}
@@ -700,7 +705,11 @@ function ProjectSettingBody({
             </div>
 
             {isGit ? (
-              <div className="box-wrap middle">
+              <div
+                {...sx.middleBox}
+                className={`${sx.middleBox.className} box-wrap middle`}
+                data-stylex-owner="project-setting-middle-issue-template"
+              >
                 <div
                   {...sx.cuLabel}
                   className={`${sx.cuLabel.className} cu-label`}
@@ -729,7 +738,11 @@ function ProjectSettingBody({
               </div>
             ) : null}
 
-            <div className="box-wrap middle">
+            <div
+              {...sx.middleBox}
+              className={`${sx.middleBox.className} box-wrap middle`}
+              data-stylex-owner="project-setting-middle-code-accessible"
+            >
               <div
                 {...sx.cuLabel}
                 className={`${sx.cuLabel.className} cu-label`}
@@ -777,7 +790,7 @@ function ProjectSettingBody({
             {isGit ? (
               <>
                 <div
-                  className={`box-wrap middle reviewer-count-wrap ${
+                  className={`${sx.middleBox.className} box-wrap middle reviewer-count-wrap ${
                     stylex.props(
                       reviewerCountPanelVisible
                         ? styles.reviewerCountPanelVisible
@@ -785,6 +798,7 @@ function ProjectSettingBody({
                     ).className
                   }`}
                   id="reviewerCountSettingPanel"
+                  data-stylex-owner="project-setting-middle-reviewer"
                 >
                   <div
                     {...sx.cuLabel}
@@ -912,7 +926,7 @@ function ProjectSettingBody({
                 </div>
 
                 <div
-                  className={`box-wrap middle ${
+                  className={`${sx.middleBox.className} box-wrap middle ${
                     stylex.props(
                       menuCodeChecked
                         ? styles.defaultBranchPanelVisible
@@ -920,6 +934,7 @@ function ProjectSettingBody({
                     ).className
                   }`}
                   id="defaultBranceSettingPanel"
+                  data-stylex-owner="project-setting-middle-default-branch"
                 >
                   <div
                     {...sx.cuLabel}
@@ -939,7 +954,11 @@ function ProjectSettingBody({
               </>
             ) : null}
 
-            <div className="box-wrap middle">
+            <div
+              {...sx.middleBox}
+              className={`${sx.middleBox.className} box-wrap middle`}
+              data-stylex-owner="project-setting-middle-menu"
+            >
               <div
                 {...sx.cuLabel}
                 className={`${sx.cuLabel.className} cu-label vmiddle`}

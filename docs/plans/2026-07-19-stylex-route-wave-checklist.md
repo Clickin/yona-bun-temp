@@ -881,3 +881,12 @@ desktop/mobile geometry, and filtering.
   legacy `vmiddle` and empty-note behavior remain intact.
 - [x] Desktop/mobile computed declarations and menu/reviewer dependencies pass
   in normal and fallback-off runs (1/1 each); generic `.cu-*` fallback remains.
+
+### 2026-07-21 Batch 725 project-settings middle-row shell proof
+
+- [x] Six middle-row shell owners carry frozen `.box-wrap` border/padding,
+  `:last-of-type` border removal, and responsive mobile padding declarations;
+  legacy classes, order, and conditional panels remain intact.
+- [x] Desktop/mobile computed declarations, row geometry, and dependency
+  interaction pass in normal and fallback-off runs (1/1 each); generic
+  `.box-wrap` fallback consumers remain.

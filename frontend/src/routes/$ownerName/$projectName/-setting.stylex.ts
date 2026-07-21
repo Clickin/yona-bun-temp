@@ -16,6 +16,16 @@ export const projectSettingColors = stylex.defineVars({
 
 export const styles = stylex.create({
   projectSettingSubmenuItem: { marginBottom: "-2px" },
+  middleBox: {
+    borderBottom: "1px solid #E9E9E9",
+    padding: {
+      default: "10px 20px",
+      [globalBreakpoints.mobile]: "10px 0px",
+    },
+    ":last-of-type": {
+      borderBottom: "none",
+    },
+  },
   cuLabel: {
     display: "inline-block",
     width: "160px",
