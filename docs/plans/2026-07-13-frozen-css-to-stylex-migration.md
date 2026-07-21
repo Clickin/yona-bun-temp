@@ -5646,3 +5646,13 @@ submission, and logo behavior while carrying the exact frozen `.nbtn`,
 `.white`, `.medium`, `.fake-file-wrap`, and nested `.file` declarations. Retain
 generic upload fallback consumers and verify desktop/mobile computed upload
 geometry and invalid-file interaction in normal and fallback-off focused tests.
+
+## Batch 730
+
+Complete the authenticated project-settings top-left logo-description list
+reset through a route-local StyleX owner. Preserve the native `ul.unstyled
+descs` DOM, item copy/order, existing item spacing, point text, upload control,
+and responsive geometry while carrying only frozen Bootstrap `margin-left:0`
+and `list-style:none`. Retain generic `unstyled` fallback consumers and verify
+desktop/mobile list geometry and upload validation in normal and fallback-off
+focused tests.

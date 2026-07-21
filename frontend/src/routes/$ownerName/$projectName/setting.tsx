@@ -38,6 +38,7 @@ const sx = {
   settingBoxRight: stylex.props(styles.settingBoxRight),
   logo: stylex.props(styles.logo),
   logoDesc: stylex.props(styles.logoDesc),
+  descsList: stylex.props(styles.descsList),
   logoUploadButton: stylex.props(styles.logoUploadButton),
   logoUploadInput: stylex.props(styles.logoUploadInput),
   descsItem: stylex.props(styles.descsItem),
@@ -539,7 +540,11 @@ function ProjectSettingBody({
                   className={`${sx.logoDesc.className} logo-desc`}
                   data-stylex-owner="project-setting-logo-desc"
                 >
-                  <ul className="unstyled descs" data-stylex-owner="project-setting-descs">
+                  <ul
+                    {...sx.descsList}
+                    className={`${sx.descsList.className} unstyled descs`}
+                    data-stylex-owner="project-setting-descs-list"
+                  >
                     <li
                       className={sx.descsItem.className}
                       data-stylex-owner="project-setting-descs-item"

@@ -148,6 +148,7 @@ export const styles = stylex.create({
     verticalAlign: "top",
     width: "120px",
   },
+  descsList: { listStyle: "none", marginLeft: "0px" },
   logoUploadButton: {
     backgroundColor: "#ffffff",
     border: "0px",

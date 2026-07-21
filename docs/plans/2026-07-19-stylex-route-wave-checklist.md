@@ -923,3 +923,12 @@ desktop/mobile geometry, and filtering.
 - [x] Desktop/mobile computed upload geometry, viewport containment, and
   invalid-image validation/reset pass in normal and fallback-off runs (1/1
   each); generic upload fallback consumers remain.
+
+### 2026-07-21 Batch 730 project-settings logo-description list proof
+
+- [x] The native top-left `ul.unstyled descs` owner carries only frozen
+  Bootstrap `margin-left:0` and `list-style:none`; item spacing, copy/order,
+  points, and upload owners remain intact.
+- [x] Desktop/mobile computed list reset, item containment, and upload
+  validation pass in normal and fallback-off runs (1/1 each); generic
+  `unstyled` fallback consumers remain.

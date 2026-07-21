@@ -422,3 +422,11 @@ DOM/order/copy, Link hrefs, active state, member count badge, conditional
 Change VCS visibility, and desktop/mobile containment through route-local
 StyleX. Generic Bootstrap/nav-tabs consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
+
+## Follow-up — authenticated project-settings logo-description list owner
+
+Fallback-off evidence confirmed the top-left native `ul.unstyled descs` list
+retains frozen Bootstrap `margin-left:0` and `list-style:none` across
+desktop/mobile while preserving item copy/order, existing spacing, upload
+validation, and containment. Generic `unstyled` fallback consumers remain.
+Focused normal and fallback-off runs pass 1/1 each.

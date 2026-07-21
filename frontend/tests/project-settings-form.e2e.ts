@@ -2910,6 +2910,76 @@ test("project settings owns the legacy left-column logo upload surface", async (
   }
 });
 
+test("project settings resets the legacy logo description list only", async ({ page }) => {
+  const [legacy, bootstrap, less, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<ul class="unstyled descs">');
+  expect(legacy).toContain('<li><strong>@Messages("project.logo")</strong></li>');
+  expect(bootstrap).toContain("ul.unstyled,");
+  expect(bootstrap).toContain("  margin-left: 0;");
+  expect(bootstrap).toContain("  list-style: none;");
+  expect(less).toContain(".descs li {");
+  expect(route).toContain('data-stylex-owner="project-setting-descs-list"');
+  expect(style).toContain('descsList: { listStyle: "none", marginLeft: "0px" }');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const list = page.locator('[data-stylex-owner="project-setting-descs-list"]');
+    await expect(list).toBeVisible();
+    await expect(list.locator(":scope > li")).toHaveText([
+      "Project logo",
+      "File type: bmp, jpg, gif, png bmp, jpg, gif, png",
+      "Maximum file size 5MB",
+      " File upload",
+    ]);
+
+    const computed = await list.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const listBox = element.getBoundingClientRect();
+      const columnBox = element.closest(".setting-box.left")!.getBoundingClientRect();
+      return {
+        marginLeft: style.marginLeft,
+        listStyleType: style.listStyleType,
+        contained: listBox.left >= columnBox.left && listBox.right <= columnBox.right,
+      };
+    });
+    expect(computed).toEqual({
+      marginLeft: "0px",
+      listStyleType: "none",
+      contained: true,
+    });
+
+    const upload = page.locator('[data-stylex-owner="project-setting-logo-upload-button"]');
+    const input = page.locator('[data-stylex-owner="project-setting-logo-upload-input"]');
+    await expect(upload).toHaveText(/File upload/);
+    await expect(input).toHaveAttribute("accept", "image/*");
+    const invalidFileDialog = new Promise<string>((resolve) => {
+      page.once("dialog", async (dialog) => {
+        resolve(dialog.message());
+        await dialog.accept();
+      });
+    });
+    await input.setInputFiles({
+      name: "logo.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("x"),
+    });
+    await expect(invalidFileDialog).resolves.toBe("This is not an image file.");
+    await expect(input).toHaveValue("");
+  }
+});
+
 async function mockProjectSettings(
   page: Page,
   overrides: Partial<{
