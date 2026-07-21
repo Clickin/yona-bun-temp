@@ -665,3 +665,11 @@ desktop/mobile geometry, and filtering.
   existing React icon boundary without invented geometry or changed GET behavior.
 - [x] Focused source, frozen-hash, desktop/mobile geometry, scope interaction,
   and GET payload checks pass 10/10 in normal and fallback-off modes.
+
+### 2026-07-21 Batch 702 global GNB search icon declaration proof
+
+- [x] The existing search-icon owner uses the frozen Yobicon `font-weight:normal`
+  declaration without changing DOM, geometry, glyph, or GET behavior.
+- [x] Adjacent input and submit focused contracts accept the current generated
+  fallback hash and StyleX semantic class composition.
+- [x] Normal and fallback-off input/submit checks pass 8/8 and 9/9.

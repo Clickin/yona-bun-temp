@@ -929,7 +929,7 @@ const globalGnbSearchSubmitStyles = stylex.create({
     fontFamily: "yobicon",
     fontStyle: "normal",
     fontVariant: "normal",
-    fontWeight: "400",
+    fontWeight: "normal",
     lineHeight: 1,
     textDecoration: "none",
     verticalAlign: "baseline",

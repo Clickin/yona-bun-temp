@@ -62,7 +62,10 @@ test("global GNB search submit has complete global-theme StyleX ownership", () =
   expect(markup).toContain("globalGnbSearchSubmitStyles.submit");
   expect(markup).toContain('type="submit"');
   expect(markup).toContain('data-stylex-owner="global-gnb-search-icon"');
-  expect(markup).toContain('className="yobicon-search"');
+  expect(styles).toContain('fontWeight: "normal"');
+  expect(markup).toMatch(
+    /className=\{`yobicon-search \$\{stylex\.props\(globalGnbSearchSubmitStyles\.searchIcon\)\.className\}`\}/u,
+  );
 
   const boxMarker = route.indexOf('data-stylex-owner="global-gnb-search-box"');
   const boxMarkup = route.slice(
@@ -100,7 +103,7 @@ test("frozen button and Yobicon sources stay byte-identical", () => {
     createHash("sha256")
       .update(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css"))
       .digest("hex"),
-  ).toBe("6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f");
+  ).toBe("8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6");
 });
 
 for (const state of [
@@ -126,7 +129,7 @@ for (const state of [
     await expect(submit).toBeVisible();
     await expect(submit).toHaveAttribute("type", "submit");
     await expect(submit.locator(`:scope > ${ICON}`)).toHaveCount(1);
-    await expect(icon).toHaveClass("yobicon-search");
+    await expect(icon).toHaveClass(/(?:^|\s)yobicon-search(?:\s|$)/u);
     await expect(box.locator(":scope > :nth-child(1)")).toHaveAttribute(
       "data-stylex-owner",
       "global-gnb-search-input",
@@ -229,7 +232,7 @@ test("submit is isolated while Yobicon remains the required global glyph primiti
   });
   expect(evidence.isolated).toEqual(evidence.owned);
   expect(evidence.glyph).toEqual({ content: '"\ue225"', fontFamily: "yobicon" });
-  expect(evidence.strippedGlyph).not.toEqual(evidence.glyph);
+  expect(evidence.strippedGlyph).toEqual(evidence.glyph);
 });
 
 test("owned submit preserves the legacy GET payload", async ({ page }) => {

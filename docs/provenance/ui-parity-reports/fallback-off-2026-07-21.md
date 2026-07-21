@@ -173,3 +173,14 @@ search glyph declarations are applied to the existing icon owner through
 StyleX. Normal and fallback-off focused checks pass 10/10, including desktop
 and mobile outer geometry, scope switching, and the legacy GET payload. No
 offset, timeout workaround, or UX change was added.
+
+## Follow-up — adjacent GNB input/submit contracts
+
+The next GNB probes found no additional geometry or behavior gap. The input
+contract failed only on an obsolete generated-fallback hash, and the submit
+contract still expected the pre-StyleX exact `yobicon-search` class string and
+treated the now StyleX-owned glyph as if removing the semantic class removed
+its presentation. The focused contracts now assert the current artifact hash,
+semantic class composition, and StyleX-owned glyph behavior while retaining
+frozen source, computed desktop/mobile geometry, isolation, hover/focus, and
+GET assertions. Normal and fallback-off runs pass input 8/8 and submit 9/9.

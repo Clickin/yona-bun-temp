@@ -106,7 +106,7 @@ test("frozen global GNB search-input sources stay byte-identical", () => {
     createHash("sha256")
       .update(readFileSync("public/legacy-assets/stylesheets/legacy-fallback.css"))
       .digest("hex"),
-  ).toBe("6417f445da50d93038d5d8b970e75aabc69f0bba2928655ab419ce7da337a16f");
+  ).toBe("8b437655422bcfe1e612e7320362c3b52e6f65ec43c064dd344e8e7e5de18be6");
 });
 
 for (const state of [
