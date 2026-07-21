@@ -713,3 +713,11 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract records the current `.gnb-nav > li {` fallback bridge,
   preserves conditional visibility and DOM order, and passes desktop/mobile
   geometry and paint isolation 10/10 in normal and fallback-off modes.
+
+### 2026-07-21 Batch 707 global GNB nav browser-default proof
+
+- [x] The existing nav owner carries only frozen `.gnb-nav` declarations;
+  unsupported `boxSizing` and `position` declarations are removed while the
+  Bootstrap-backed `lineHeight:20px` baseline remains.
+- [x] The focused source contract and computed desktop/mobile/consumer-isolation
+  checks preserve the legacy nav geometry and raw-class fallback boundary.

@@ -5409,6 +5409,15 @@ The existing header, description, name-tag, and stats owners now carry exact `li
 declarations; no DOM, spacing offset, or interaction behavior changed. The focused row-content
 contract passes 3/3 in normal and fallback-off desktop/mobile states.
 
+## Batch 707
+
+Clean the global GNB nav owner against the frozen `.gnb-nav` declaration boundary. The legacy
+nav source provides display/float/margin/list/font-size/color and item float/position, but does
+not declare `box-sizing` or `position` on the nav itself; frozen Bootstrap supplies the inherited
+20px line-height baseline. Remove only those two browser-default declarations from the existing
+StyleX owner and verify unchanged desktop/mobile geometry, consumer split, and paint isolation in
+focused normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

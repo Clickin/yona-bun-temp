@@ -232,3 +232,12 @@ float/position, font-size, line-height, and `|` pseudo-element paint; the stale
 `.gnb-nav > li,` assertion was corrected to the current `.gnb-nav > li {` bridge.
 Focused normal and fallback-off runs pass 10/10 with desktop/mobile geometry,
 conditional visibility, and paint isolation.
+
+## Follow-up — global GNB nav browser-default owner boundary
+
+The global nav owner contained two declarations absent from frozen `.gnb-nav`:
+`box-sizing:content-box` and `position:static`. They were removed from the
+existing StyleX owner. The `line-height:20px` declaration remains because frozen
+Bootstrap `bootstrap.css:176-181` supplies that inherited baseline and fallback-off
+body otherwise computes 18px. Focused normal/fallback-off contracts preserve the
+desktop/mobile geometry, consumer split, and paint isolation.

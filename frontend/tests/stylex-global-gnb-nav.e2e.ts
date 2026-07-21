@@ -19,6 +19,11 @@ test("global GNB nav and brand item have complete global-theme StyleX ownership"
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
+  const navStyleStart = styles.indexOf("nav: {");
+  const brandItemStart = styles.indexOf("brandItem: {", navStyleStart);
+  const navStyles = styles.slice(navStyleStart, brandItemStart);
+  expect(navStyles).not.toContain("boxSizing:");
+  expect(navStyles).not.toContain("position:");
   for (const token of [
     "globalGnbNavDisplay",
     "globalGnbNavFloat",

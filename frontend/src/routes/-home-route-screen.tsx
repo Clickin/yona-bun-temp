@@ -1465,7 +1465,6 @@ const globalGnbInnerStyles = stylex.create({
 
 const globalGnbNavStyles = stylex.create({
   nav: {
-    boxSizing: "content-box",
     color: homeColors.globalGnbNavText,
     display: "block",
     float: "left",
@@ -1477,7 +1476,6 @@ const globalGnbNavStyles = stylex.create({
     marginRight: "0px",
     marginTop: "0px",
     padding: "0px",
-    position: "static",
   },
   brandItem: {
     float: "left",
