@@ -1003,6 +1003,63 @@ test("project issue detail new subtask link preserves legacy href with SPA trans
   await expect(page.locator('#parentId option[selected][value="42"]')).toHaveCount(1);
 });
 
+test("project issue detail owns mobile new-subtask spacing with route StyleX", async ({ page }) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+
+  expect(legacyView).toContain('<span class="project-btn-item hide show-in-mobile-inline ml4">');
+  expect(legacyCommon).toContain(".ml4 { margin-left:4px; }");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-mobile-new-subtask"');
+  expect(routeSource).toContain("styles.mobileNewSubtask");
+  expect(routeSource).not.toContain("show-in-mobile-inline ml4");
+  expect(styleSource).toMatch(/mobileNewSubtask:\s*\{[\s\S]*?marginLeft:\s*['"]4px['"]/u);
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  await mockProjectIssueDetail(page);
+  const mobile = page.locator('[data-stylex-owner="project-issue-detail-mobile-new-subtask"]');
+  const link = mobile.locator("a").filter({ hasText: "New subtask" });
+
+  await page.setViewportSize({ width: fallbackOff ? 390 : 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(mobile).toHaveCount(1);
+  await expect(mobile).not.toHaveAttribute("style", /.+/u);
+
+  if (fallbackOff) {
+    await expect(mobile).toHaveCSS("margin-left", "4px");
+    const rect = await mobile.evaluate((element) => {
+      const { bottom, left, right, top } = element.getBoundingClientRect();
+      return { bottom, left, right, top };
+    });
+    expect(rect.bottom).toBeGreaterThanOrEqual(0);
+    expect(rect.left).toBeGreaterThanOrEqual(0);
+    expect(rect.right).toBeGreaterThanOrEqual(0);
+    expect(rect.top).toBeGreaterThanOrEqual(0);
+  } else {
+    await expect(mobile).toBeHidden();
+    await page.setViewportSize({ width: 390, height: 900 });
+    await expect(mobile).toBeVisible();
+    await expect(mobile).toHaveClass(/project-btn-item/);
+    await expect(mobile).toHaveClass(/hide/);
+    await expect(mobile).toHaveClass(/show-in-mobile-inline/);
+    await expect(mobile).not.toHaveClass(/ml4/);
+    await expect(mobile).toHaveCSS("margin-left", "4px");
+    await expect(mobile).toHaveCSS("display", "inline-block");
+  }
+  await expect(link).toHaveAttribute("href", `${basePath}/admin/sample/issueform?parentIssueId=42`);
+});
+
 test("project issue detail renders protected org-owned localhost shell state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {

@@ -1013,7 +1013,10 @@ function IssueDetailBody({
                       )}
                     </LegacyHoverPopover>
                   ) : null}
-                  <span className="project-btn-item hide show-in-mobile-inline ml4">
+                  <span
+                    className={`${stylex.props(styles.mobileNewSubtask).className} project-btn-item hide show-in-mobile-inline`}
+                    data-stylex-owner="project-issue-detail-mobile-new-subtask"
+                  >
                     <Link to={newSubtaskPath} className="ybtn ybtn-success">
                       {t("button.newSubtask")}
                     </Link>

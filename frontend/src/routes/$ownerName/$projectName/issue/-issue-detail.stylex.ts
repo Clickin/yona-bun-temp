@@ -191,6 +191,9 @@ export const styles = stylex.create({
     overflow: "auto",
     textAlign: "right",
   },
+  mobileNewSubtask: {
+    marginLeft: "4px",
+  },
   disabledCommentActions: { textAlign: "right" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },

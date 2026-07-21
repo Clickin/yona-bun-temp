@@ -5989,3 +5989,14 @@ responsive behavior; remove `mr3` only from this React emitter and keep the
 generic fallback for unrelated consumers. The focused milestone-detail test
 verifies source mapping, computed margin, no-inline-style, visible due-date
 state, and desktop/mobile geometry in normal and fallback-disabled modes.
+
+## Batch 764
+
+Move the authenticated issue-detail mobile-only new-subtask wrapper's active
+`.ml4` spacing into a route-local StyleX owner using the frozen
+`margin-left:4px` declaration from `_common.less:214`. Preserve the
+`project-btn-item hide show-in-mobile-inline` classes, link/copy, href, and SPA
+behavior; remove `ml4` only from this React emitter and keep the generic
+fallback for unrelated consumers. The focused issue-detail test verifies source
+mapping, computed margin, no-inline-style, desktop/mobile behavior, and href in
+normal and fallback-disabled modes.
