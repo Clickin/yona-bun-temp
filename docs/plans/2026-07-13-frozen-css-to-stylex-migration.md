@@ -5372,3 +5372,15 @@ generated StyleX class, and provide the frozen Yobicon `@font-face` through Vite
 assets so fallback-off retains intrinsic icon geometry. Prove normal/fallback-off filter interaction
 and mobile containment, record the route audit/ledger evidence, and retain the legacy fallback for
 all other consumers.
+
+## Batch 697
+
+Repair the `/projects` directory tab/search candidate with exact frozen declarations. The
+project-specific tab override is now `margin-bottom:-2px`, the frozen form-control baseline is
+now `font-size:12px` on the input and submit button, and the route imports the Vite-owned frozen
+Yobicon font boundary. Source and filter interaction checks pass with fallback enabled and
+disabled, and icon/control dimensions are exact. Normal desktop/mobile search geometry still has
+a uniform 1px upward shift; fallback-off geometry has a 3px upward shift after the complete
+identified tab, title-area, Bootstrap, page-wrapper, and responsive cascade was mapped. Do not
+add a compensating offset; retain this route state as a documented gap for a future source-backed
+explanation.

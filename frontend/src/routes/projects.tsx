@@ -7,6 +7,7 @@ import { apiQueryKeys } from "../api/query-keys";
 import { restFetch } from "../api/rest-client";
 import type { ListProjectsResponse, YoramRecord } from "../api/types";
 import legacySpriteUrl from "../assets/legacy/sprite.png";
+import "../yobicon-font.css";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
@@ -96,7 +97,7 @@ const styles = stylex.create({
     float: "left",
     fontSize: "16px",
     fontWeight: "400",
-    marginBottom: "-1px",
+    marginBottom: "-2px",
   },
   directoryTabsLink: {
     backgroundColor: {
@@ -186,6 +187,7 @@ const styles = stylex.create({
     boxShadow: "none",
     color: projectsDirectoryColors.searchText,
     fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontSize: "12px",
     height: "20px",
     margin: "0px -5px",
     outlineStyle: "none",
@@ -203,6 +205,7 @@ const styles = stylex.create({
     borderStyle: "none",
     borderWidth: "0px",
     boxShadow: "none",
+    fontSize: "12px",
     height: "20px",
     outlineStyle: "none",
     outlineWidth: "0px",

@@ -88,6 +88,10 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   for (const imported of ["_page.less", "_responsive.less", "_yobiUI.less"])
     expect(yobi).toContain(imported);
   expect(pageLess).toContain(".search-wrap {");
+  expect(pageLess).toContain(".nav-tabs > li {");
+  expect(pageLess).toContain("margin-bottom: -2px;");
+  expect(ui).toContain("label, input, button, select, textarea {");
+  expect(ui).toContain("font-size:12px;");
   expect(ui).toContain("padding:4px 25px 4px 5px;");
   expect(ui).toContain("width:350px;");
   expect(ui).toContain("position:absolute;");
@@ -98,10 +102,12 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   expect(messages).toContain("site.project.filter = 키워드로 프로젝트 찾기");
   for (const owner of Object.values(owners))
     expect(route).toContain(`data-stylex-owner="${owner}"`);
+  expect(route).toContain('import "../yobicon-font.css";');
   for (const token of ["search-wrap", "pull-left", "search-bar", "textbox", "search-btn"])
     expect(route).not.toContain(`className="${token}"`);
   for (const paint of ["searchBorder", "searchSurface", "searchText"])
     expect(route).toContain(`projectsDirectoryColors.${paint}`);
+  expect(route).toContain('marginBottom: "-2px"');
   expect(route).toContain('directorySearchForm: { margin: "0px 0px 2px" }');
   expect(route).toContain("fontFamily: '\"Helvetica Neue\", Helvetica, Arial, sans-serif'");
   // StyleX 0.19 omits color for a non-rendering 0/none border; do not claim dead ownership.
@@ -115,6 +121,12 @@ test("search strip records frozen sources and six ownership boundaries", () => {
     route.indexOf("directorySearchButton: {"),
     route.indexOf("});", route.indexOf("directorySearchButton: {")),
   );
+  const inputStyle = route.slice(
+    route.indexOf("directorySearchInput: {"),
+    route.indexOf("},\n  directorySearchButton:", route.indexOf("directorySearchInput: {")),
+  );
+  expect(inputStyle).toContain('fontSize: "12px"');
+  expect(buttonStyle).toContain('fontSize: "12px"');
   expect(buttonStyle).toContain('boxShadow: "none"');
   expect(buttonStyle).toContain('outlineStyle: "none"');
   expect(buttonStyle).toContain('outlineWidth: "0px"');

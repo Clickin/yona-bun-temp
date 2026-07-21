@@ -117,3 +117,16 @@ test creates a new unstyled `<ul>` whose browser default `list-style: disc` is c
 StyleX-owned `none`; it is not a rendered route mismatch. The site data page/grid/column contract
 passed all fallback-off desktop/mobile checks (`3/3`). No implementation or focused E2E files were
 changed, and the fallback remains enabled by default.
+
+## Candidate review — `/projects` directory search
+
+The focused `/projects` source and filter-interaction checks pass with the legacy fallback
+disabled. Exact frozen declarations now cover the project tab `margin-bottom:-2px`, the shared
+form-control `font-size:12px`, the responsive search-wrap/search-bar cascade, and the Vite-owned
+Yobicon font boundary; control/icon widths and heights match the expected output.
+
+Desktop and mobile fallback-off geometry still reports a uniform 3px upward shift for the search
+wrap and all descendants. The normal fallback-enabled run retains a uniform 1px upward shift.
+The frozen project-page, title-area, Bootstrap nav-tab, and responsive declarations were inspected
+and are already represented; no remaining declaration explains the shift. The fallback remains
+enabled by default for this state, and no invented offset or weakened assertion was retained.
