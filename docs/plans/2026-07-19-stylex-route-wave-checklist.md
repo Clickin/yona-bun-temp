@@ -1070,3 +1070,8 @@ desktop/mobile geometry, and filtering.
   exact row/cell declarations, desktop/390px geometry, visible thread copy, and
   independent fallback-off focused contract pass 1/1 each; nested li width,
   non-emitted selectors, ranges/colors, and unrelated comments remain scoped.
+- [x] Batch 752 emitted inline-comment nested list-item owner: frozen Scala/LESS
+  mapping, conditional `max-width:1150px`, owner/no-inline-style proof,
+  desktop/390px containment, visible thread copy, and independent normal and
+  fallback-off focused runs pass 1/1 each; shared thread padding, non-emitted
+  selectors, ranges/colors, and unrelated consumers remain scoped.

@@ -5854,3 +5854,14 @@ React diff/comment behavior while carrying only the frozen `.linenum`,
 outer file/meta, range colors, and other partial-diff consumers outside this owner
 scope, and verify desktop/390px computed declarations independently in normal and
 fallback-off focused tests.
+
+## Batch 752
+
+Complete the authenticated commit-detail emitted inline-comment nested list-item
+visible state through a conditional route-local StyleX owner. Preserve the Scala
+`ul.comments`/`li.comment` DOM and comment copy while carrying only the frozen
+`max-width:1150px` declaration scoped under the emitted `tr.comments` row. Keep
+the shared thread-comment padding owner, non-emitted utility/comment-box
+selectors, range/colors, and unrelated comment consumers outside this owner
+scope, and verify desktop/390px computed containment and fallback-off ownership
+in focused normal and fallback-off tests.

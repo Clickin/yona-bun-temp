@@ -65,6 +65,7 @@ const sx = {
   rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
   threadComments: stylex.props(styles.threadComments),
   threadComment: stylex.props(styles.threadComment),
+  inlineCommentItem: stylex.props(styles.inlineCommentItem),
   threadMediaBody: stylex.props(styles.threadMediaBody),
   rangedThreadMinimize: stylex.props(styles.rangedThreadMinimize),
   threadActions: stylex.props(styles.threadActions),
@@ -1173,6 +1174,7 @@ function InlineCommentRow({
               currentUser={currentUser}
               deleteComment={deleteComment}
               hasPreviousThread={index > 0}
+              commentItemVariant="inline"
               isFolded={foldedThreadIds.has(thread.id)}
               onFoldChange={(isFolded) =>
                 setFoldedThreadIds((current) => {
@@ -1208,6 +1210,7 @@ function CodeCommentThreadView({
   currentUser,
   deleteComment,
   hasPreviousThread = false,
+  commentItemVariant = "default",
   isNonRanged = false,
   isFolded: controlledIsFolded,
   onFoldChange,
@@ -1229,6 +1232,7 @@ function CodeCommentThreadView({
   projectName: string;
   runtimeConfig: RuntimeConfig;
   hasPreviousThread?: boolean;
+  commentItemVariant?: "inline" | "default";
   isFolded?: boolean;
   onFoldChange?: (isFolded: boolean) => void;
   previousThreadFolded?: boolean;
@@ -1237,6 +1241,7 @@ function CodeCommentThreadView({
   toggleThreadState: (threadId: number, state: string) => void;
   updateComment: (commentId: number, contentsMarkdown: string) => void;
 }) {
+  const isInlineComment = commentItemVariant === "inline";
   const { t } = useLegacyMessages();
   const { branch, path } = Route.useSearch();
   const hashSearch = {
@@ -1358,8 +1363,10 @@ function CodeCommentThreadView({
           return (
             <li
               {...sx.threadComment}
+              {...(isInlineComment ? sx.inlineCommentItem : {})}
               id={`comment-${comment.id}`}
-              className={`${sx.threadComment.className} comment`}
+              className={`${sx.threadComment.className} ${isInlineComment ? sx.inlineCommentItem.className : ""} comment`}
+              data-stylex-owner={isInlineComment ? "commit-detail-inline-comment-item" : undefined}
               key={comment.id}
             >
               <div className="comment-avatar">

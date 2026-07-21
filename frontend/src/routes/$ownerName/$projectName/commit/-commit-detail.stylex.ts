@@ -177,6 +177,7 @@ export const styles = stylex.create({
   },
   threadComments: { margin: "0px 5px" },
   threadComment: { padding: "2px 0px" },
+  inlineCommentItem: { maxWidth: "1150px" },
   threadMediaBody: { backgroundColor: "#fff" },
   rangedThreadMinimize: { position: "absolute", right: "10px", top: "8px" },
   threadActions: { padding: "5px 5px 10px" },

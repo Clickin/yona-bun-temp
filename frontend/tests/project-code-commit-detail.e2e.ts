@@ -52,10 +52,6 @@ const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
 );
-const LEGACY_DIFF_LINE_SOURCE = readFileSync(
-  new URL("../../yona-original/app/views/partial_diff_line.scala.html", import.meta.url),
-  "utf8",
-);
 const LEGACY_FILE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
   "utf8",
@@ -2441,11 +2437,16 @@ index 1234567..abcdef1 100644
   );
 });
 
-test("project commit detail owns the emitted inline comment row and cell visibility", async ({
+test("project commit detail owns the emitted inline comment row, cell, and nested comment item", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
-  expect(LEGACY_DIFF_LINE_SOURCE).toContain('<tr class="@klass" data-line="@num"');
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
+    '<ul class="comments">\n        @for(comment: ReviewComment <- thread.reviewComments.sortBy(c => c.createdDate)) {\n        <li id="comment-@comment.id" class="comment">',
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "&.comments {\n                            display: none;\n                            td {\n                                padding:0;\n\n                                li {\n                                    max-width: 1150px;\n                                }",
+  );
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     "&.comments {\n                            display: none;\n                            td {\n                                padding:0;",
   );
@@ -2458,8 +2459,11 @@ test("project commit detail owns the emitted inline comment row and cell visibil
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'data-stylex-owner="commit-detail-inline-comment-cell"',
   );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('commentItemVariant="inline"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentRow: { display: "table-row" }');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentCell: { padding: "0px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComment: { padding: "2px 0px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('inlineCommentItem: { maxWidth: "1150px" }');
 
   await mockProjectCommitDetail(page, [], {
     files: [
@@ -2515,25 +2519,41 @@ index 1234567..abcdef1 100644
 
     const row = page.locator('[data-stylex-owner="commit-detail-inline-comment-row"]');
     const cell = page.locator('[data-stylex-owner="commit-detail-inline-comment-cell"]');
+    const item = page.locator('[data-stylex-owner="commit-detail-inline-comment-item"]');
     await expect(row).toBeVisible();
     await expect(cell).toBeVisible();
+    await expect(item).toBeVisible();
+    expect(await item.getAttribute("style")).toBeNull();
     await expect(row).toHaveClass(/comments/);
     await expect(row).toHaveClass(/board-comment-wrap/);
     await expect(row).toHaveCSS("display", "table-row");
     await expect(cell).toHaveCSS("padding", "0px");
+    await expect(item).toHaveCSS("max-width", "1150px");
     await expect(row).toContainText("Inline note");
     await expect(page.locator("#thread-77")).toBeVisible();
 
-    const geometry = await row.evaluate((element) => {
-      const rowBox = element.getBoundingClientRect();
-      const cellBox = element.querySelector("td")!.getBoundingClientRect();
+    const geometry = await item.evaluate((element) => {
+      const itemBox = element.getBoundingClientRect();
+      const rowBox = element.closest("tr")!.getBoundingClientRect();
+      const cellBox = element.closest("td")!.getBoundingClientRect();
       return {
         cellHeight: cellBox.height,
+        cellLeft: cellBox.left,
+        cellRight: cellBox.right,
         cellWidth: cellBox.width,
+        itemBottom: itemBox.bottom,
+        itemLeft: itemBox.left,
+        itemRight: itemBox.right,
+        itemTop: itemBox.top,
+        itemWidth: itemBox.width,
         rowHeight: rowBox.height,
         rowWidth: rowBox.width,
       };
     });
+    expect(geometry.itemWidth).toBeLessThanOrEqual(1150);
+    expect(geometry.itemLeft).toBeGreaterThanOrEqual(geometry.cellLeft);
+    expect(geometry.itemRight).toBeLessThanOrEqual(geometry.cellRight + 1);
+    expect(geometry.itemBottom).toBeGreaterThan(geometry.itemTop);
     expect(geometry.rowWidth).toBeGreaterThan(0);
     expect(geometry.rowHeight).toBeGreaterThan(0);
     expect(geometry.cellWidth).toBeCloseTo(geometry.rowWidth, 0);
