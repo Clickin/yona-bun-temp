@@ -19,6 +19,11 @@ test("global GNB brand link has complete global-theme StyleX ownership", () => {
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
+  const rootStyleStart = styles.indexOf("root: {");
+  const rootStyles = styles.slice(rootStyleStart);
+  expect(rootStyleStart).toBeGreaterThanOrEqual(0);
+  expect(rootStyles).not.toContain('display: "inline"');
+  expect(rootStyles).not.toContain('float: "none"');
   for (const token of [
     "globalGnbBrandSurface",
     "globalGnbBrandText",

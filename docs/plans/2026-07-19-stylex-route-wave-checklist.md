@@ -738,3 +738,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves active state, conditional visibility,
   desktop/mobile geometry, SPA navigation, and paint isolation in normal and
   fallback-off modes (8/8 each).
+
+### 2026-07-21 Batch 710 global GNB brand-link browser-default proof
+
+- [x] The existing brand owner removes only redundant `display` and `float`
+  declarations absent from the brand-specific legacy source; background,
+  padding, typography, pseudo-elements, and responsive state remain.
+- [x] The focused contract preserves active routing, desktop/mobile home and
+  project-header geometry, interaction, and pseudo isolation in normal and
+  fallback-off modes (6/6 each).

@@ -259,3 +259,11 @@ StyleX declaration. Frozen `.gnb-nav a` continues to provide `float:none`,
 padding, line-height, color, text decoration, and transition; conditional
 visibility and SPA navigation remain intact. Focused normal and fallback-off
 runs pass 8/8.
+
+## Follow-up — global GNB brand-link browser-default cleanup
+
+Fallback-off evidence confirmed that the brand link retains its legacy home and
+project-header geometry, hover/focus behavior, and pseudo-element isolation
+after removing only explicit `display:inline` and `float:none` StyleX
+declarations. The frozen logo-specific and generic nav-anchor declarations
+remain represented by the owner. Focused normal and fallback-off runs pass 6/6.

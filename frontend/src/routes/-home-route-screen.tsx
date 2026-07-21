@@ -1487,8 +1487,6 @@ const globalGnbBrandLinkStyles = stylex.create({
     backgroundRepeat: "no-repeat",
     borderRadius: "2px",
     color: homeColors.globalGnbBrandText,
-    display: "inline",
-    float: "none",
     fontSize: "14px",
     fontWeight: "700",
     height: "40px",

@@ -5438,6 +5438,16 @@ the existing StyleX owner. Verify unchanged active state, conditional
 visibility, desktop/mobile geometry, SPA navigation, and paint isolation in
 focused normal/fallback-off tests.
 
+## Batch 710
+
+Clean the global GNB brand-link owner against the frozen logo and generic
+`.gnb-nav a` declaration boundary. The legacy brand source provides its
+background, padding, color, typography, pseudo-elements, and responsive/project
+header behavior, but no brand-specific `display` or `float`; remove only those
+redundant declarations from the existing StyleX owner. Verify unchanged active
+routing, desktop/mobile geometry, interaction, and pseudo isolation in focused
+normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.
