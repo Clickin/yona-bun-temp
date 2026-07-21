@@ -2040,6 +2040,141 @@ test("project issue detail toggles legacy comment update form through React-owne
   });
 });
 
+test("project issue detail owns the parent comment action-row float with StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyComment = readFileSync(
+    "../yona-original/app/views/issue/partial_comment.scala.html",
+    "utf8",
+  );
+  const legacyBootstrap = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  expect(legacyComment).toContain('<span class="act-row pull-right">');
+  expect(legacyBootstrap).toContain(".pull-right {\n  float: right;\n}");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(routeSource).toContain("styles.commentActionRow");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-comment-action-row"');
+  expect(styleSource).toMatch(/commentActionRow:\s*\{[\s\S]*?float:\s*["']right["']/u);
+  expect(styleSource).not.toContain("pull-right");
+
+  await mockProjectIssueDetail(page);
+  const issueUrl = `${basePath}/admin/sample/issue/11`;
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(issueUrl);
+
+  const comment = page.locator(".span-left-pane #comment-77");
+  const parentActionRow = comment.locator(":scope > .media-body > .meta-info > .act-row");
+  const childActionRows = comment.locator(":scope .child-comments .act-row");
+  await expect(parentActionRow).toHaveCount(1);
+  await expect(parentActionRow).toHaveAttribute(
+    "data-stylex-owner",
+    "project-issue-detail-comment-action-row",
+  );
+  await expect(parentActionRow).toHaveClass(/(?:^|\s)act-row(?:\s|$)/u);
+  await expect(parentActionRow).toHaveClass(/(?:^|\s)pull-right(?:\s|$)/u);
+  await expect(parentActionRow).toHaveCSS("float", "right");
+  await expect(parentActionRow).not.toHaveAttribute("style", /.+/u);
+  await expect(childActionRows).toHaveCount(0);
+
+  const order = await parentActionRow
+    .locator(":scope > *")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.className || node.getAttribute("title") || node.tagName),
+    );
+  expect(order[0]).toBe("new-issue-by");
+  expect(order[1]).toContain("btn-transparent-with-fontsize-lineheight");
+  await expect(
+    parentActionRow.locator('[data-stylex-owner="project-issue-detail-comment-action-edit"]'),
+  ).toHaveCount(1);
+  await expect(
+    parentActionRow.locator('[data-stylex-owner="project-issue-detail-comment-action-delete"]'),
+  ).toHaveCount(1);
+  await expect(parentActionRow.locator("button[title='Edit comment']")).toBeVisible();
+  await expect(parentActionRow.locator("button[title='Delete comment']")).toBeVisible();
+
+  const desktopGeometry = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>(
+      "#comment-77 > .media-body > .meta-info > .act-row",
+    );
+    const meta = row?.parentElement;
+    if (!row || !meta) return null;
+    const rowBox = row.getBoundingClientRect();
+    const metaBox = meta.getBoundingClientRect();
+    return {
+      row: {
+        bottom: rowBox.bottom,
+        left: rowBox.left,
+        right: rowBox.right,
+        top: rowBox.top,
+      },
+      meta: {
+        bottom: metaBox.bottom,
+        left: metaBox.left,
+        right: metaBox.right,
+        top: metaBox.top,
+      },
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+  expect(desktopGeometry).not.toBeNull();
+  expect(desktopGeometry!.row.left).toBeGreaterThanOrEqual(desktopGeometry!.meta.left);
+  expect(desktopGeometry!.row.right).toBeLessThanOrEqual(desktopGeometry!.meta.right);
+  expect(desktopGeometry!.row.top).toBeGreaterThanOrEqual(desktopGeometry!.meta.top);
+  expect(desktopGeometry!.row.bottom).toBeLessThanOrEqual(desktopGeometry!.meta.bottom);
+  expect(desktopGeometry!.row.right).toBeLessThanOrEqual(desktopGeometry!.viewportWidth);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(issueUrl);
+  const mobileComment = page.locator(".span-left-pane #comment-77");
+  const mobileActionRow = mobileComment.locator(":scope > .media-body > .meta-info > .act-row");
+  await expect(mobileActionRow).toHaveCount(1);
+  await expect(mobileActionRow).toHaveCSS("float", "right");
+  await expect(mobileActionRow).not.toHaveAttribute("style", /.+/u);
+  const mobileGeometry = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>(
+      "#comment-77 > .media-body > .meta-info > .act-row",
+    );
+    const meta = row?.parentElement;
+    if (!row || !meta) return null;
+    const rowBox = row.getBoundingClientRect();
+    const metaBox = meta.getBoundingClientRect();
+    return {
+      row: {
+        bottom: rowBox.bottom,
+        left: rowBox.left,
+        right: rowBox.right,
+        top: rowBox.top,
+      },
+      meta: {
+        bottom: metaBox.bottom,
+        left: metaBox.left,
+        right: metaBox.right,
+        top: metaBox.top,
+      },
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+  expect(mobileGeometry).not.toBeNull();
+  expect(mobileGeometry!.row.left).toBeGreaterThanOrEqual(mobileGeometry!.meta.left);
+  expect(mobileGeometry!.row.right).toBeLessThanOrEqual(mobileGeometry!.meta.right);
+  expect(mobileGeometry!.row.top).toBeGreaterThanOrEqual(mobileGeometry!.meta.top);
+  expect(mobileGeometry!.row.bottom).toBeLessThanOrEqual(mobileGeometry!.meta.bottom);
+  expect(mobileGeometry!.row.right).toBeLessThanOrEqual(mobileGeometry!.viewportWidth);
+  await page.setViewportSize({ width: 1366, height: 900 });
+});
+
 test("project issue detail matches authored comment edit branch from legacy partial_comment/commentUpdateForm", async ({
   page,
 }) => {

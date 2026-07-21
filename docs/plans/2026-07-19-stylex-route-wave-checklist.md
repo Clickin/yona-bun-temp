@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 773 parent issue-comment action-row float proof
+
+- [x] The parent comment `act-row pull-right` retains its legacy classes,
+  children, order, copy, and interactions while route-local StyleX owns the
+  frozen Bootstrap `float:right`; child rows, attachment `.pull-left`, and
+  unrelated route consumers remain excluded.
+- [x] Focused normal and fallback-off Playwright checks pass 1/1, covering
+  source/import mapping, stable owner/declaration, computed float,
+  no-inline-style, direct parent scope/order, and desktop/390px containment.
+
 ### 2026-07-22 Batch 772 parent issue-comment action spacing proof
 
 - [x] The parent comment edit/delete buttons preserve legacy DOM, comment

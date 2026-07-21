@@ -6091,3 +6091,15 @@ issue-detail test verifies source/import mapping, StyleX owners/declarations,
 computed margins, no-inline-style, order/scope, and interactions. Owner-focused
 normal and fallback-disabled runs pass 2/2 each; two unrelated legacy geometry
 expectations remain failing in the broader run.
+
+## Batch 773
+
+Move the parent issue-comment action row's active `.pull-right` float into a
+route-local StyleX owner using the frozen Bootstrap `float:right` declaration
+from `yona-original/public/bootstrap/css/bootstrap.css:6093-6098`. Preserve
+the `act-row pull-right` fallback classes, all voter/translation/edit/delete
+children, order, copy, and parent-only ownership; child comment rows,
+attachment `.pull-left`, and unrelated route consumers remain excluded. The
+focused issue-detail test verifies legacy source/import mapping, owner and
+declaration, computed float, no-inline-style, direct parent scope, ordering,
+and desktop/390px containment in normal and fallback-disabled modes, 1/1 each.

@@ -3592,7 +3592,11 @@ function IssueCommentRow({
               [Link]
             </Link>
           </span>
-          <span className="act-row pull-right">
+          <span
+            {...stylex.props(styles.commentActionRow)}
+            className={`${stylex.props(styles.commentActionRow).className} act-row pull-right`}
+            data-stylex-owner="project-issue-detail-comment-action-row"
+          >
             <span className="new-issue-by">
               <Link {...LEGACY_LINK_PROPS} to="/user/issues/new" search={{ commentId }}>
                 Reference in new issue

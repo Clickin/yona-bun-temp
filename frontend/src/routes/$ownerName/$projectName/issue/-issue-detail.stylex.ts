@@ -212,6 +212,9 @@ export const styles = stylex.create({
   commentTranslationButton: {
     marginLeft: "10px",
   },
+  commentActionRow: {
+    float: "right",
+  },
   commentActionEdit: {
     marginLeft: "10px",
   },
