@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 779 child notification receiver title proof
+
+- [x] The child notification receiver title preserves its legacy class, copy,
+  and order while the child-scoped StyleX owner carries the frozen
+  `_page.less:7819-7821` color; parent/edit titles and notification-list badge
+  rules remain excluded because there is no current child badge consumer.
+- [x] Focused normal/fallback-off child-reply suites pass 5/5, covering source
+  roots/imports, owner and computed `rgb(153, 153, 153)`, no inline style,
+  child-vs-parent scope, copy/order, and desktop/390px geometry. Screenshot
+  parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 778 child notification receiver proof
 
 - [x] The authorized child notification receiver preserves DOM, title/list

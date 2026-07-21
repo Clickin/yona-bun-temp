@@ -1874,7 +1874,9 @@ test("project issue detail owns the child reply form declarations and geometry",
   );
   expect(legacyForm).toContain('<button type="submit" class="ybtn ybtn-success">OK</button>');
   expect(legacyForm).toContain('<div class="notification-receiver">');
+  expect(legacyForm).toContain('<span class="notification-receiver-title">');
   expect(legacyChildComments).toContain('<div class="child-comment-input-form">');
+  expect(legacyChildComments).toContain("@common.child_commentForm(");
   expect(legacyYobi).toContain('@import "less/_page.less";');
   const formLess = legacyPage.slice(
     legacyPage.indexOf("                .child-comment-input-form {"),
@@ -2064,12 +2066,20 @@ test("project issue detail owns the child notification receiver declarations and
   ]) {
     expect(receiverLess).toContain(declaration);
   }
+  const titleSelector = ".notification-receiver-title {";
+  const titleStart = legacyPage.indexOf(titleSelector);
+  expect(titleStart).toBeGreaterThanOrEqual(0);
+  expect(legacyPage.slice(titleStart, titleStart + 100)).toContain("color: #999;");
   expect(routeSource).toContain(
     'data-stylex-owner="project-issue-detail-child-comment-notification-receiver"',
+  );
+  expect(routeSource).toContain(
+    'data-stylex-owner="project-issue-detail-child-comment-notification-receiver-title"',
   );
   expect(routeSource).toContain("styles.childCommentNotificationReceiver");
   expect(routeSource).toContain("styles.childCommentNotificationReceiverHidden");
   expect(routeSource).toContain("styles.childCommentNotificationReceiverVisible");
+  expect(routeSource).toContain("styles.childCommentNotificationReceiverTitle");
   expect(styleSource).toMatch(
     /childCommentNotificationReceiver:\s*\{[\s\S]*marginLeft:\s*["']12px["'][\s\S]*borderBottomLeftRadius:\s*["']3px["'][\s\S]*borderBottomRightRadius:\s*["']3px["'][\s\S]*backgroundColor:\s*["']#F7F7F7["'][\s\S]*textAlign:\s*["']start["'][\s\S]*padding:\s*["']5px 5px 5px 10px["']/u,
   );
@@ -2078,6 +2088,9 @@ test("project issue detail owns the child notification receiver declarations and
   );
   expect(styleSource).toMatch(
     /childCommentNotificationReceiverVisible:\s*\{\s*display:\s*["']block["']/u,
+  );
+  expect(styleSource).toMatch(
+    /childCommentNotificationReceiverTitle:\s*\{\s*color:\s*["']#999["']/u,
   );
 
   await mockProjectIssueDetail(page);
@@ -2111,8 +2124,17 @@ test("project issue detail owns the child notification receiver declarations and
     await expect(form).toBeVisible();
     await expect(receiver).toBeVisible();
     await expect(comment.locator(".child-comment-input-form .editorSeries")).toBeFocused();
-    await expect(receiver.locator(":scope > .notification-receiver-title")).toHaveText(
-      "Notification receivers",
+    const childTitle = receiver.locator(":scope > .notification-receiver-title");
+    const parentTitle = parentReceiver.locator(":scope > .notification-receiver-title");
+    await expect(childTitle).toHaveText("Notification receivers");
+    await expect(childTitle).toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-child-comment-notification-receiver-title",
+    );
+    await expect(parentTitle).toHaveCount(1);
+    await expect(parentTitle).not.toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-child-comment-notification-receiver-title",
     );
     await expect(receiver.locator(":scope > .notification-receiver-list")).toHaveCount(1);
     await expect(receiver.locator(":scope > span")).toHaveCount(2);
@@ -2121,9 +2143,13 @@ test("project issue detail owns the child notification receiver declarations and
 
     const metrics = await receiver.evaluate((element) => {
       const rect = element.getBoundingClientRect();
+      const titleElement = element.querySelector(":scope > .notification-receiver-title");
       const style = getComputedStyle(element);
       const formRect = element.closest(".child-comment-input-form")?.getBoundingClientRect();
-      if (!formRect) throw new Error("child notification receiver form is missing");
+      if (!formRect || !titleElement)
+        throw new Error("child notification receiver nodes are missing");
+      const titleRect = titleElement.getBoundingClientRect();
+      const titleStyle = getComputedStyle(titleElement);
       return {
         left: rect.left,
         right: rect.right,
@@ -2139,6 +2165,10 @@ test("project issue detail owns the child notification receiver declarations and
         textAlign: style.textAlign,
         padding: style.padding,
         inlineStyle: element.getAttribute("style"),
+        titleColor: titleStyle.color,
+        titleInlineStyle: titleElement.getAttribute("style"),
+        titleLeft: titleRect.left,
+        titleRight: titleRect.right,
       };
     });
     expect(metrics.marginLeft).toBe("12px");
@@ -2149,6 +2179,10 @@ test("project issue detail owns the child notification receiver declarations and
     expect(metrics.textAlign).toBe("start");
     expect(metrics.padding).toBe("5px 5px 5px 10px");
     expect(metrics.inlineStyle).toBeNull();
+    expect(metrics.titleColor).toBe("rgb(153, 153, 153)");
+    expect(metrics.titleInlineStyle).toBeNull();
+    expect(metrics.titleLeft).toBeGreaterThanOrEqual(metrics.left - 1);
+    expect(metrics.titleRight).toBeLessThanOrEqual(metrics.right + 1);
     expect(metrics.left).toBeGreaterThanOrEqual(metrics.formLeft - 1);
     expect(metrics.right).toBeLessThanOrEqual(metrics.formRight + 1);
     expect(metrics.bottom).toBeGreaterThanOrEqual(metrics.top);

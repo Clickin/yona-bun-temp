@@ -3925,7 +3925,13 @@ function ChildComments({
                 data-stylex-owner="project-issue-detail-child-comment-notification-receiver"
                 className={`${stylex.props(styles.childCommentNotificationReceiver).className} ${stylex.props(notificationVisible ? styles.childCommentNotificationReceiverVisible : styles.childCommentNotificationReceiverHidden).className} notification-receiver`}
               >
-                <span className="notification-receiver-title">Notification receivers </span>
+                <span
+                  {...stylex.props(styles.childCommentNotificationReceiverTitle)}
+                  data-stylex-owner="project-issue-detail-child-comment-notification-receiver-title"
+                  className={`${stylex.props(styles.childCommentNotificationReceiverTitle).className} notification-receiver-title`}
+                >
+                  {"Notification receivers "}
+                </span>
                 <span className="notification-receiver-list"></span>
               </div>
             </form>

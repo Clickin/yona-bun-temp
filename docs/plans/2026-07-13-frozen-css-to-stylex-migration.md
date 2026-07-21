@@ -6146,6 +6146,19 @@ separation. Focused normal/fallback-off child-reply suites pass 5/5 each;
 live legacy screenshot parity remains the documented gap because port 9000 was
 unavailable.
 
+## Batch 779
+
+Move the rendered child notification receiver title color into the existing
+child-scoped StyleX owner. Use `yona-original/app/views/common/child_commentForm.scala.html:17-27`
+and `yona-original/app/views/common/childComments.scala.html:70-74` for output
+DOM, and frozen `yona-original/app/assets/stylesheets/less/_page.less:7819-7821`
+through `yobi.less` for `.notification-receiver-title { color:#999; }`.
+Preserve title class/copy/order and parent/edit receiver separation. Do not add
+the frozen notification-receiver-list badge rules because the current React
+child DOM has no badge consumer. Focused normal/fallback-off child-reply suites
+pass 5/5 each; live legacy screenshot parity remains the documented gap because
+port 9000 was unavailable.
+
 ## Batch 777
 
 Move the authorized child issue-comment form's remaining frozen declarations
