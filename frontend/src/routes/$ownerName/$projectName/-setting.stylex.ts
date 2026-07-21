@@ -83,7 +83,35 @@ export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },
   frame: { overflow: "visible" },
-  topBox: { paddingTop: "20px" },
+  topBox: {
+    borderBottom: "1px solid #E9E9E9",
+    padding: {
+      default: "0px 20px",
+      [globalBreakpoints.mobile]: "10px 0px",
+    },
+    paddingTop: {
+      default: "20px",
+      [globalBreakpoints.mobile]: "10px",
+    },
+    paddingBottom: {
+      default: "20px",
+      [globalBreakpoints.mobile]: "10px",
+    },
+    ":last-of-type": { borderBottom: "none" },
+  },
+  bottomBox: {
+    borderBottom: "0 none",
+    padding: {
+      default: "20px 0px",
+      [globalBreakpoints.mobile]: "10px 0px",
+    },
+    paddingBottom: {
+      default: "12px",
+      [globalBreakpoints.mobile]: "10px",
+    },
+    textAlign: "center",
+    ":last-of-type": { borderBottom: "none" },
+  },
   settingBox: { float: "left", width: "399px" },
   settingBoxLeft: { borderRight: "1px solid #ffffff", paddingRight: "20px" },
   settingBoxRight: {

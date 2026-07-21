@@ -5608,3 +5608,12 @@ responsive mobile padding override. Preserve row DOM/classes/order and
 menu/reviewer/default-branch dependencies; retain generic `.box-wrap` fallback
 consumers and verify desktop/mobile computed geometry in normal and fallback-off
 focused tests.
+
+## Batch 726
+
+Complete the authenticated project-settings top and bottom shell visible state
+through two route-local StyleX owners. Preserve the Scala shell classes, top
+inline padding semantics, Save button classes/submit behavior, and exact frozen
+`.box-wrap` base/top/bottom, last-of-type, and responsive declarations. Retain
+generic shell fallback consumers and verify desktop/mobile computed geometry and
+Save contract in normal and fallback-off focused tests.

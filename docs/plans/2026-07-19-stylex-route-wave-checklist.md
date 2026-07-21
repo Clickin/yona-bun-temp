@@ -890,3 +890,11 @@ desktop/mobile geometry, and filtering.
 - [x] Desktop/mobile computed declarations, row geometry, and dependency
   interaction pass in normal and fallback-off runs (1/1 each); generic
   `.box-wrap` fallback consumers remain.
+
+### 2026-07-21 Batch 726 project-settings top/bottom shell proof
+
+- [x] Top and bottom shell owners preserve Scala classes/order, top padding
+  semantics, Save classes/submit behavior, and frozen desktop/mobile
+  border/padding/alignment declarations.
+- [x] The focused contract passes desktop/mobile geometry and Save ownership in
+  normal and fallback-off runs (1/1 each); generic shell fallback remains.

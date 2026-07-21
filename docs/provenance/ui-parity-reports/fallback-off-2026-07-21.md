@@ -347,6 +347,14 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings top/bottom shell owners
+
+Fallback-off evidence confirmed the top and bottom shell owners preserve the
+Scala shell classes, desktop/mobile border and padding cascade, top responsive
+padding, bottom alignment, and Save `ybtn ybtn-success` submit contract.
+Generic shell consumers retain the legacy fallback. Focused normal and
+fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings middle-row shell owners
 
 Fallback-off evidence confirmed six middle-row owners retain the frozen

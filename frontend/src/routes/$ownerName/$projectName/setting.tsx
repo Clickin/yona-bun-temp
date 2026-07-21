@@ -28,6 +28,7 @@ const sx = {
   form: stylex.props(styles.form),
   frame: stylex.props(styles.frame),
   topBox: stylex.props(styles.topBox),
+  bottomBox: stylex.props(styles.bottomBox),
   settingBox: stylex.props(styles.settingBox),
   settingBoxLeft: stylex.props(styles.settingBoxLeft),
   settingBoxRight: stylex.props(styles.settingBoxRight),
@@ -504,7 +505,11 @@ function ProjectSettingBody({
               name="watchingCount"
               value={numberField(recordField(project).watchCount)}
             />
-            <div {...sx.topBox} data-stylex-owner="project-setting-top-box">
+            <div
+              {...sx.topBox}
+              className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}
+              data-stylex-owner="project-setting-top-box"
+            >
               <div
                 className={`${sx.settingBox.className} ${sx.settingBoxLeft.className} setting-box left`}
                 data-stylex-owner="project-setting-setting-box-left"
@@ -1041,9 +1046,13 @@ function ProjectSettingBody({
             </div>
           </div>
 
-          <div className="box-wrap bottom">
+          <div
+            {...sx.bottomBox}
+            className={`${sx.bottomBox.className} box-wrap bottom`}
+            data-stylex-owner="project-setting-bottom-box"
+          >
             <button
-              {...stylex.props(styles.save)}
+              className={`${stylex.props(styles.save).className} ybtn ybtn-success`}
               data-stylex-owner="project-setting-save"
               id="save"
               type="submit"

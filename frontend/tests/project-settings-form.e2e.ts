@@ -1753,6 +1753,133 @@ test("project settings middle row shells own the frozen box-wrap middle declarat
   );
 });
 
+test("project settings top and bottom shells own the frozen box-wrap boundaries", async ({
+  page,
+}) => {
+  const [legacy, frozenStyles, responsiveStyles, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_responsive.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain(
+    '<div class="box-wrap top clearfix frm-wrap" style="padding-top:20px;">',
+  );
+  expect(legacy).toContain('<div class="box-wrap bottom">');
+  expect(frozenStyles).toContain("border-bottom: 1px solid #E9E9E9;");
+  expect(frozenStyles).toContain("padding-bottom: 20px;");
+  expect(frozenStyles).toContain("padding: 20px 0;");
+  expect(frozenStyles).toContain("padding-bottom:12px;");
+  expect(frozenStyles).toContain("border-bottom: 0 none;");
+  expect(frozenStyles).toContain("text-align: center;");
+  expect(responsiveStyles).toContain("padding: 10px 0 !important;");
+  expect(route).toContain('data-stylex-owner="project-setting-top-box"');
+  expect(route).toContain('data-stylex-owner="project-setting-bottom-box"');
+  expect(route).toContain("className={`${sx.topBox.className} box-wrap top clearfix frm-wrap`}");
+  expect(route).not.toContain('style={{ paddingTop: "20px" }}');
+  expect(route).toContain("onSubmit={onSubmit}");
+  expect(style).toContain("topBox:");
+  expect(style).toContain("bottomBox:");
+  expect(style).toContain('borderBottom: "1px solid #E9E9E9"');
+  expect(style).toContain('borderBottom: "0 none"');
+  expect(style).toContain('textAlign: "center"');
+  expect(style).toContain("paddingTop:");
+  expect(style).toContain('"20px 0px"');
+  expect(style).toContain('"10px 0px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  const owners = ["project-setting-top-box", "project-setting-bottom-box"];
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const form = page.locator("#saveSetting");
+    const top = page.locator('[data-stylex-owner="project-setting-top-box"]');
+    const bottom = page.locator('[data-stylex-owner="project-setting-bottom-box"]');
+    await expect(top).toHaveCount(1);
+    await expect(bottom).toHaveCount(1);
+    await expect(top).toHaveClass(/\bbox-wrap\b/);
+    await expect(top).toHaveClass(/\btop\b/);
+    await expect(top).toHaveClass(/\bclearfix\b/);
+    await expect(top).toHaveClass(/\bfrm-wrap\b/);
+    await expect(bottom).toHaveClass(/\bbox-wrap\b/);
+    await expect(bottom).toHaveClass(/\bbottom\b/);
+    expect(
+      await form.evaluate((element) =>
+        Array.from(
+          element.querySelectorAll<HTMLElement>(
+            '[data-stylex-owner="project-setting-top-box"], [data-stylex-owner="project-setting-bottom-box"]',
+          ),
+        ).map((owner) => owner.dataset.stylexOwner),
+      ),
+    ).toEqual(owners);
+
+    const metrics = await page.evaluate(() => {
+      const top = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-top-box"]',
+      );
+      const bottom = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-bottom-box"]',
+      );
+      if (!top || !bottom) return null;
+      const read = (element: HTMLElement) => {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return {
+          borderBottom: style.borderBottom,
+          paddingTop: style.paddingTop,
+          paddingRight: style.paddingRight,
+          paddingBottom: style.paddingBottom,
+          paddingLeft: style.paddingLeft,
+          textAlign: style.textAlign,
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+        };
+      };
+      return { top: read(top), bottom: read(bottom) };
+    });
+    expect(metrics).not.toBeNull();
+    const mobile = viewport.width === 390;
+    expect(metrics!.top).toMatchObject({
+      borderBottom: "1px solid rgb(233, 233, 233)",
+      paddingTop: mobile ? "10px" : "20px",
+      paddingRight: mobile ? "0px" : "20px",
+      paddingBottom: mobile ? "10px" : "20px",
+      paddingLeft: mobile ? "0px" : "20px",
+    });
+    expect(metrics!.bottom).toMatchObject({
+      borderBottom: "0px none rgb(119, 119, 119)",
+      paddingTop: mobile ? "10px" : "20px",
+      paddingRight: "0px",
+      paddingBottom: mobile ? "10px" : "12px",
+      paddingLeft: "0px",
+      textAlign: "center",
+    });
+    expect(metrics!.top.right - metrics!.top.left).toBeGreaterThan(0);
+    expect(metrics!.top.bottom).toBeGreaterThanOrEqual(metrics!.top.top);
+    expect(metrics!.bottom.right - metrics!.bottom.left).toBeGreaterThan(0);
+    expect(metrics!.bottom.bottom).toBeGreaterThanOrEqual(metrics!.bottom.top);
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  const save = page.locator("#save");
+  await expect(save).toHaveAttribute("type", "submit");
+  await expect(save).toHaveClass(/\bybtn\b/);
+  await expect(save).toHaveClass(/\bybtn-success\b/);
+  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(save).toHaveText("Save");
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
