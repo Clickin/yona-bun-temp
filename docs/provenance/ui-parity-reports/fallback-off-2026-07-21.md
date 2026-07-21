@@ -212,3 +212,13 @@ The unsupported `.gnb-inner` fallback bridge was also retired from
 `frontend/src/app.css`; the focused source contract now asserts that only the
 source-backed declarations remain and that adding the retained legacy class
 does not change the StyleX-owned computed state.
+## Follow-up — global GNB outer responsive padding
+
+The GNB-outer fallback-off probe exposed a desktop-only declaration gap: the
+existing StyleX owner used `padding:0`, while frozen `_responsive.less:600-603`
+applies `padding:0 10px` under the legacy `@media all` cascade. The existing
+owner now carries `10px` for default/mobile states and keeps the frozen
+project-header override at `0px`; no offsets or DOM changes were added.
+Normal and fallback-off focused checks pass 9/9, including source hashes,
+consumer ownership, all home/project/organization desktop/mobile geometry, and
+paint isolation.

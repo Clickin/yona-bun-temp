@@ -696,3 +696,11 @@ desktop/mobile geometry, and filtering.
 - [x] The unsupported `.gnb-inner` fallback `box-sizing` bridge is retired;
   source-backed width/height/margin/color and neighboring pseudo-element rules
   remain retained for non-migrated consumers.
+### 2026-07-21 Batch 705 global GNB outer responsive-padding proof
+
+- [x] The existing outer owner carries the frozen `padding:0 10px` cascade;
+  mobile remains `10px` and project-header remains `0px`.
+- [x] The focused contract distinguishes the migrated restricted outer owner
+  from retained raw-class consumers and preserves frozen source hashes.
+- [x] Normal and fallback-off outer checks pass 9/9 with desktop/mobile
+  geometry, responsive padding, and paint-isolation coverage.

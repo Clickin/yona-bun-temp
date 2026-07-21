@@ -1443,9 +1443,8 @@ const globalGnbOuterStyles = stylex.create({
       "@media (max-width: 720px)": "10px",
     },
     paddingBlock: "0px",
-    // Frozen _page.less leaves desktop GNB flush; _responsive.less adds 10px only at 720px.
     paddingInline: {
-      default: "0px",
+      default: "10px",
       "@media (max-width: 720px)": "10px",
     },
   },

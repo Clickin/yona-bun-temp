@@ -55,13 +55,10 @@ test("global GNB outer has complete global-theme StyleX ownership", () => {
   expect(appCss).not.toContain(".gnb-outer.project-header {");
   expect(appCss).not.toContain(".gnb-outer.project-header .gnb-inner .logo::before");
   expect(appCss).not.toContain(".gnb-outer.project-header .gnb-inner .logo::after");
-  for (const consumer of [
-    "restricted.tsx",
-    "secret.tsx",
-    "$user.tsx",
-    "__root.tsx",
-    "[_]UIKit.tsx",
-  ]) {
+  expect(readFileSync("src/routes/restricted.tsx", "utf8")).toContain(
+    'data-stylex-owner="restricted-gnb-outer"',
+  );
+  for (const consumer of ["secret.tsx", "$user.tsx", "__root.tsx", "[_]UIKit.tsx"]) {
     expect(readFileSync(`src/routes/${consumer}`, "utf8")).toContain('className="gnb-outer"');
   }
 });
