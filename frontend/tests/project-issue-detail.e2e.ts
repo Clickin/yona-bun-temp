@@ -1141,6 +1141,91 @@ test("project issue detail owns edit/delete action spacing in both legacy rows",
   await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete issue");
 });
 
+test("project issue detail owns board action group float with route StyleX", async ({ page }) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyBootstrap = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  const actionStart = legacyView.indexOf('<div class="board-actrow right-txt">');
+  const actionEnd = legacyView.indexOf('<div id="vote"', actionStart);
+  expect(actionStart).toBeGreaterThanOrEqual(0);
+  expect(actionEnd).toBeGreaterThan(actionStart);
+  const actionSource = legacyView.slice(actionStart, actionEnd);
+  expect(actionSource).toContain('<div class="pull-left">');
+  expect(actionSource.indexOf("watch-button")).toBeLessThan(
+    actionSource.indexOf("issue-share-button"),
+  );
+  expect(actionSource.indexOf("issue-share-button")).toBeLessThan(
+    actionSource.indexOf("newSubtask"),
+  );
+  expect(actionSource.indexOf("newSubtask")).toBeLessThan(actionSource.indexOf("issue-weight"));
+  expect(legacyBootstrap).toContain(".pull-left {\n  float: left;\n}");
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(routeSource).toContain("styles.boardActionGroup");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-board-action-group"');
+  expect(styleSource).toMatch(/boardActionGroup:\s*\{\s*float:\s*["']left["']\s*,?\s*\}/u);
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  await mockProjectIssueDetail(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/issue/11`);
+    const actions = page.locator('[data-stylex-owner="project-issue-detail-actions"]');
+    const group = actions.locator('[data-stylex-owner="project-issue-detail-board-action-group"]');
+    await expect(actions).toHaveCount(1);
+    await expect(group).toHaveCount(1);
+    await expect(group).toHaveClass(/pull-left/);
+    await expect(group).not.toHaveAttribute("style", /.+/u);
+    await expect(group.locator("#watch-button")).toHaveText("Subscribe");
+    await expect(group.locator("#issue-share-button")).toHaveText("Issue Sharing");
+    await expect(group.locator(".project-btn-item a")).toHaveText("New subtask");
+    await expect(group.locator("#upvote-issue-weight")).toHaveCount(1);
+    await expect(group.locator("#down-vote-issue-weight")).toHaveCount(1);
+    await expect(group.locator(".weight-number")).toHaveText("2");
+    expect(await group.evaluate((element) => getComputedStyle(element).float)).toBe("left");
+    const metrics = await group.evaluate((element) => {
+      const parent = element.parentElement;
+      if (!parent) return null;
+      const groupBox = element.getBoundingClientRect();
+      const parentBox = parent.getBoundingClientRect();
+      return {
+        contained: groupBox.left >= parentBox.left && groupBox.right <= parentBox.right,
+        parentOwner: parent.getAttribute("data-stylex-owner"),
+        childOrder: [...element.querySelectorAll("button, a")]
+          .map((child) => child.id || child.textContent?.trim() || "")
+          .filter(Boolean),
+      };
+    });
+    expect(metrics).toEqual({
+      contained: true,
+      parentOwner: "project-issue-detail-actions",
+      childOrder: [
+        "watch-button",
+        "issue-share-button",
+        "New subtask",
+        "upvote-issue-weight",
+        "down-vote-issue-weight",
+      ],
+    });
+    if (fallbackOff) await expect(group).toHaveCSS("float", "left");
+  }
+});
+
 test("project issue detail owns mobile new-subtask spacing with route StyleX", async ({ page }) => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",

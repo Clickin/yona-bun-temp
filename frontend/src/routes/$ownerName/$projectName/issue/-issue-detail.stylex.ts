@@ -192,6 +192,9 @@ export const styles = stylex.create({
     overflow: "auto",
     textAlign: "right",
   },
+  boardActionGroup: {
+    float: "left",
+  },
   mobileNewSubtask: {
     marginLeft: "4px",
   },

@@ -988,7 +988,11 @@ function IssueDetailBody({
               className={`${stylex.props(styles.actions).className} board-actrow`}
               data-stylex-owner="project-issue-detail-actions"
             >
-              <div className="pull-left">
+              <div
+                {...stylex.props(styles.boardActionGroup)}
+                className={`${stylex.props(styles.boardActionGroup).className} pull-left`}
+                data-stylex-owner="project-issue-detail-board-action-group"
+              >
                 <div>
                   {canWatch ? (
                     <button

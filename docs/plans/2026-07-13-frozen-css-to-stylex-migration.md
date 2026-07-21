@@ -6174,6 +6174,18 @@ normal/fallback-off suites pass 7/7 each, including visible focus state and
 desktop/390px geometry. Live legacy screenshot parity remains the documented
 gap because port 9000 was unavailable.
 
+## Batch 781
+
+Move the issue-detail board action control group's active `.pull-left` float
+into a route-local StyleX owner. Use
+`yona-original/app/views/issue/view.scala.html:187-201` for the legacy action
+DOM and frozen `yona-original/public/bootstrap/css/bootstrap.css:6093-6098`
+for `float:left`. Preserve the inner `pull-left` class, watch/share/new-subtask/
+weight controls, copy/order, and responsive behavior; unrelated action groups
+and comment attachment floats remain separately scoped. Focused
+normal/fallback-off suites pass 1/1 each; live legacy screenshot parity remains
+the documented gap because port 9000 was unavailable.
+
 ## Batch 777
 
 Move the authorized child issue-comment form's remaining frozen declarations

@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 781 board action group float proof
+
+- [x] The issue-detail board action group preserves its inner `pull-left`
+  structure, watch/share/new-subtask/weight controls, copy/order, and responsive
+  behavior while the route-local StyleX owner carries frozen Bootstrap
+  `float:left`; unrelated action groups and attachment floats remain excluded.
+- [x] Focused normal/fallback-off checks pass 1/1, covering source/import
+  mapping, owner/declaration, computed float, no inline style, control order,
+  direct scope, and desktop/390px containment. Screenshot parity remains a
+  live-legacy gap.
+
 ### 2026-07-22 Batch 780 generic MarkdownEditor receiver-title proof
 
 - [x] New-comment and comment-edit MarkdownEditor receivers preserve title
