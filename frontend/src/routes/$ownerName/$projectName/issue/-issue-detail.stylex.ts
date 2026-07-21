@@ -198,6 +198,13 @@ export const styles = stylex.create({
     marginRight: "10px",
     marginTop: "10px",
   },
+  issueActionEdit: {
+    marginLeft: "10px",
+    paddingTop: "5px",
+  },
+  issueActionDelete: {
+    marginLeft: "6px",
+  },
   disabledCommentActions: { textAlign: "right" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },

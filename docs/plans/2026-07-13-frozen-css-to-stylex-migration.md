@@ -5979,6 +5979,18 @@ consumers. The focused project-issues test verifies source mapping, computed
 margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
 normal and fallback-disabled modes.
 
+## Batch 767
+
+Move the authenticated issue-detail edit/delete action spacing from both
+legacy action rows into two route-local StyleX owners: edit buttons use the
+frozen `margin-left:10px` and `padding-top:5px` declarations, while delete
+buttons use `margin-left:6px`. Preserve both row wrappers, button/link DOM,
+titles, icons, enabled/disabled state, edit navigation, and delete modal
+behavior; leave translation/comment controls and generic fallback consumers
+outside scope. The focused issue-detail test verifies both rows, computed
+spacing, no-inline-style, row geometry/order, and interactions in normal and
+fallback-disabled modes.
+
 ## Batch 766
 
 Move the authenticated issue-detail desktop date/state metadata wrapper's

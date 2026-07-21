@@ -1003,6 +1003,145 @@ test("project issue detail new subtask link preserves legacy href with SPA trans
   await expect(page.locator('#parentId option[selected][value="42"]')).toHaveCount(1);
 });
 
+test("project issue detail owns edit/delete action spacing in both legacy rows", async ({
+  page,
+}) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const componentSource = routeSource.slice(
+    routeSource.indexOf("function IssueActionButtons"),
+    routeSource.indexOf("type IssueComment"),
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  const leftRowStart = legacyView.indexOf('<span class="act-row">');
+  const rightRowStart = legacyView.indexOf('<div class="act-row right-menu-icons">');
+  expect(leftRowStart).toBeGreaterThanOrEqual(0);
+  expect(rightRowStart).toBeGreaterThan(leftRowStart);
+  expect(legacyView.slice(leftRowStart, rightRowStart)).toContain(
+    'class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"',
+  );
+  expect(legacyView.slice(leftRowStart, rightRowStart)).toContain(
+    'class="icon btn-transparent-with-fontsize-lineheight ml6"',
+  );
+  expect(legacyView.slice(rightRowStart)).toContain(
+    'class="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"',
+  );
+  expect(legacyView.slice(rightRowStart)).toContain(
+    'class="icon btn-transparent-with-fontsize-lineheight ml6"',
+  );
+  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
+  expect(legacyCommon).toContain(".ml6 { margin-left:6px; }");
+  expect(legacyPage).toContain(".pt5px {");
+  expect(legacyPage).toContain("padding-top: 5px;");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(componentSource).toContain("styles.issueActionEdit");
+  expect(componentSource).toContain("styles.issueActionDelete");
+  expect(componentSource).toContain('data-stylex-owner="project-issue-detail-action-edit"');
+  expect(componentSource).toContain('data-stylex-owner="project-issue-detail-action-delete"');
+  expect(componentSource).not.toContain("ml10");
+  expect(componentSource).not.toContain("pt5px");
+  expect(componentSource).not.toContain("ml6");
+  expect(styleSource).toMatch(
+    /issueActionEdit:\s*\{[\s\S]*?marginLeft:\s*["']10px["'][\s\S]*?paddingTop:\s*["']5px["']/u,
+  );
+  expect(styleSource).toMatch(/issueActionDelete:\s*\{[\s\S]*?marginLeft:\s*["']6px["']/u);
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  await mockProjectIssueDetail(page);
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+
+  const editButtons = page.locator('[data-stylex-owner="project-issue-detail-action-edit"]');
+  const deleteButtons = page.locator('[data-stylex-owner="project-issue-detail-action-delete"]');
+  await expect(editButtons).toHaveCount(2);
+  await expect(deleteButtons).toHaveCount(2);
+  for (const button of await editButtons.all()) await expect(button).toBeVisible();
+  for (const button of await deleteButtons.all()) await expect(button).toBeVisible();
+  for (const button of await editButtons.all()) {
+    await expect(button).toHaveClass(/icon/);
+    await expect(button).not.toHaveAttribute("style", /.+/u);
+  }
+  for (const button of await deleteButtons.all()) {
+    await expect(button).toHaveClass(/icon/);
+    await expect(button).not.toHaveAttribute("style", /.+/u);
+  }
+  expect(
+    await editButtons.evaluateAll((buttons) =>
+      buttons.map((button) => getComputedStyle(button).marginLeft),
+    ),
+  ).toEqual(["10px", "10px"]);
+  expect(
+    await editButtons.evaluateAll((buttons) =>
+      buttons.map((button) => getComputedStyle(button).paddingTop),
+    ),
+  ).toEqual(["5px", "5px"]);
+  expect(
+    await deleteButtons.evaluateAll((buttons) =>
+      buttons.map((button) => getComputedStyle(button).marginLeft),
+    ),
+  ).toEqual(["6px", "6px"]);
+
+  const rowMetrics = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".board-actrow .act-row, .right-menu-icons")].map(
+      (row) => {
+        const edit = row.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-issue-detail-action-edit"]',
+        );
+        const remove = row.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-issue-detail-action-delete"]',
+        );
+        if (!edit || !remove) return null;
+        const rowBox = row.getBoundingClientRect();
+        const editBox = edit.getBoundingClientRect();
+        const removeBox = remove.getBoundingClientRect();
+        return {
+          editContained: editBox.left >= rowBox.left && editBox.right <= rowBox.right,
+          deleteContained: removeBox.left >= rowBox.left && removeBox.right <= rowBox.right,
+          ordered: editBox.left <= removeBox.left,
+        };
+      },
+    ),
+  );
+  expect(rowMetrics).toEqual([
+    { editContained: true, deleteContained: true, ordered: true },
+    { editContained: true, deleteContained: true, ordered: true },
+  ]);
+
+  if (fallbackOff) {
+    for (const button of await editButtons.all()) {
+      await expect(button).toHaveCSS("margin-left", "10px");
+    }
+    for (const button of await deleteButtons.all()) {
+      await expect(button).toHaveCSS("margin-left", "6px");
+    }
+  }
+  await editButtons.first().click();
+  await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11/editform`);
+
+  await mockProjectIssueDetail(page);
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await deleteButtons.first().click();
+  await expect(page.locator("#deleteConfirm")).toBeVisible();
+  await expect(page.locator("#deleteConfirm .modal-header h3")).toHaveText("Delete issue");
+});
+
 test("project issue detail owns mobile new-subtask spacing with route StyleX", async ({ page }) => {
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",

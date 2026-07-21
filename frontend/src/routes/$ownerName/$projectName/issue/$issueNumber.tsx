@@ -2753,7 +2753,9 @@ function IssueActionButtons({
       {canUpdate ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+          {...stylex.props(styles.issueActionEdit)}
+          className={`${stylex.props(styles.issueActionEdit).className} icon btn-transparent-with-fontsize-lineheight`}
+          data-stylex-owner="project-issue-detail-action-edit"
           title={t("button.edit")}
           onClick={onEditClick}
         >
@@ -2767,7 +2769,9 @@ function IssueActionButtons({
         >
           <button
             type="button"
-            className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+            {...stylex.props(styles.issueActionEdit)}
+            className={`${stylex.props(styles.issueActionEdit).className} icon btn-transparent-with-fontsize-lineheight`}
+            data-stylex-owner="project-issue-detail-action-edit"
             title={t("button.show.original")}
           >
             <i className="yobicon-edit-2"></i>
@@ -2777,7 +2781,9 @@ function IssueActionButtons({
       {canBeDeleted && canDelete ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight ml6"
+          {...stylex.props(styles.issueActionDelete)}
+          className={`${stylex.props(styles.issueActionDelete).className} icon btn-transparent-with-fontsize-lineheight`}
+          data-stylex-owner="project-issue-detail-action-delete"
           title={t("button.delete")}
           onClick={onDeleteClick}
         >
@@ -2789,7 +2795,9 @@ function IssueActionButtons({
           {(popoverProps) => (
             <button
               type="button"
-              className="icon disabled btn-transparent-with-fontsize-lineheight ml6"
+              {...stylex.props(styles.issueActionDelete)}
+              className={`${stylex.props(styles.issueActionDelete).className} icon disabled btn-transparent-with-fontsize-lineheight`}
+              data-stylex-owner="project-issue-detail-action-delete"
               {...popoverProps}
             >
               <i className="yobicon-trash"></i>
