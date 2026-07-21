@@ -23,6 +23,7 @@ export const styles = stylex.create({
   rightText: { textAlign: "right" },
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
+  rangedThreadHeader: { padding: "5px 10px 10px 10px" },
   rangedThreadBadge: { margin: "0px", padding: "2px 10px" },
   originalMessageToggle: {
     borderWidth: "0px",

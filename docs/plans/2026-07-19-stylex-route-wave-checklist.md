@@ -961,3 +961,13 @@ desktop/mobile geometry, and filtering.
   `.thread-header`/`.badge state` DOM and owns only frozen `margin:0` and
   `padding:2px 10px`; focused desktop/390px normal and fallback-off runs pass
   1/1 each.
+
+### 2026-07-21 Batch 735 commit-detail ranged thread header/badge proof
+
+- [x] The ranged commit discussion header and badge preserve the Scala
+  `.thread-header`/`.badge state` DOM, state copy, and controls while owning
+  only frozen header padding and badge margin/padding through route-local
+  StyleX; shared thread/badge fallback consumers remain.
+- [x] The focused contract passes source mapping, computed declarations,
+  desktop/390px geometry, and containment in normal and fallback-off runs
+  (1/1 each).

@@ -1551,7 +1551,7 @@ async function readNonRangedThreadMetrics(page: Page) {
   });
 }
 
-test("project commit detail ranged thread badge owns frozen margin and padding", async ({
+test("project commit detail ranged thread header and badge own frozen geometry", async ({
   page,
 }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
@@ -1561,7 +1561,12 @@ test("project commit detail ranged thread badge owns frozen margin and padding",
   );
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding: 5px 10px 10px 10px;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'rangedThreadHeader: { padding: "5px 10px 10px 10px" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadHeader");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
     'rangedThreadBadge: { margin: "0px", padding: "2px 10px" }',
   );
@@ -1614,15 +1619,21 @@ index 1234567..abcdef1 100644
 
   const badge = page.locator("#thread-77 .thread-header .badge");
   const header = page.locator("#thread-77 .thread-header");
+  const thread = page.locator("#thread-77.comment-thread-wrap");
   const assertBadgeMetrics = async () => {
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText("Open");
+    await expect(header).toHaveCSS("padding", "5px 10px 10px");
     await expect(badge).toHaveCSS("margin", "0px");
     await expect(badge).toHaveCSS("padding", "2px 10px");
     const badgeBox = await badge.boundingBox();
     const headerBox = await header.boundingBox();
+    const threadBox = await thread.boundingBox();
     expect(badgeBox).not.toBeNull();
     expect(headerBox).not.toBeNull();
+    expect(threadBox).not.toBeNull();
+    expect(headerBox!.x).toBeGreaterThanOrEqual(threadBox!.x);
+    expect(headerBox!.x + headerBox!.width).toBeLessThanOrEqual(threadBox!.x + threadBox!.width);
     expect(badgeBox!.x).toBeGreaterThanOrEqual(headerBox!.x);
     expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(headerBox!.x + headerBox!.width);
   };

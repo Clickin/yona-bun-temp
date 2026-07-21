@@ -45,6 +45,7 @@ const sx = {
   reviewTextarea: stylex.props(styles.reviewTextarea),
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
+  rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
 
@@ -1120,7 +1121,10 @@ function CodeCommentThreadView({
       </div>
 
       {isNonRanged ? null : (
-        <div className="thread-header">
+        <div
+          {...sx.rangedThreadHeader}
+          className={`${sx.rangedThreadHeader.className} thread-header`}
+        >
           <span
             className={`${stylex.props(styles.rangedThreadBadge).className} badge state ${state}`}
           >

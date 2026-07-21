@@ -5689,3 +5689,12 @@ DOM and state copy while carrying only the frozen badge `margin:0` and
 `padding:2px 10px` declarations. Retain shared badge fallback consumers and
 verify desktop/390px computed geometry and header containment in normal and
 fallback-off focused tests.
+
+## Batch 735
+
+Complete the authenticated commit-detail ranged review-thread header and
+badge visible state through route-local StyleX owners. Preserve the legacy
+`.thread-header`/`.badge state` DOM, state copy, controls, and shared fallback
+consumers while carrying only frozen header `padding: 5px 10px 10px 10px` and
+badge `margin:0; padding:2px 10px`. Verify desktop/390px computed geometry and
+containment in normal and fallback-off focused tests.
