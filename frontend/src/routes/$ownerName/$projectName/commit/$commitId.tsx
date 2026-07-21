@@ -39,6 +39,9 @@ const sx = {
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
   diffBody: stylex.props(styles.diffBody),
+  file: stylex.props(styles.file),
+  fileMeta: stylex.props(styles.fileMeta),
+  fileCode: stylex.props(styles.fileCode),
   browseTabs: stylex.props(styles.browseTabs),
   reviewTabs: stylex.props(styles.reviewTabs),
   editorTabContent: stylex.props(styles.editorTabContent),
@@ -750,13 +753,13 @@ function FileDiffView({
   return (
     <div
       id={fileId}
-      className={`${stylex.props(styles.file).className} diff-partial-outer`}
+      className={`${sx.file.className} diff-partial-outer`}
       data-stylex-owner="commit-detail-file"
     >
       <div className="diff-partial-inner">
         <div
-          {...stylex.props(styles.fileMeta)}
-          className={`${stylex.props(styles.fileMeta).className} diff-partial-meta`}
+          {...sx.fileMeta}
+          className={`${sx.fileMeta.className} diff-partial-meta`}
           data-stylex-owner="commit-detail-file-meta"
         >
           <div
@@ -814,8 +817,8 @@ function FileDiffView({
           </div>
         </div>
         <div
-          {...stylex.props(styles.fileCode)}
-          className={`${stylex.props(styles.fileCode).className} diff-partial-code`}
+          {...sx.fileCode}
+          className={`${sx.fileCode.className} diff-partial-code`}
           data-hashcode={filePath}
           data-stylex-owner="commit-detail-file-code"
         >

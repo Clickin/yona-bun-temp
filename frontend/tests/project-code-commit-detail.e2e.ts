@@ -3655,3 +3655,93 @@ index 1234567..abcdef1 100644
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
 });
+
+test("project commit detail Batch 750 partial-filediff border owners preserve legacy longhands", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-partial-outer {\n        border: 1px solid #bbb;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-partial-meta {\n                background-color: #eee;\n                border-bottom: 1px solid #bbb;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;\n                                    border:none;",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-file-meta"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-pre"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.file");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.fileMeta");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeLine");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "1px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderStyle: "solid"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("borderColor: commitDetailColors.diffBorder");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderBottomWidth: "1px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderBottomStyle: "solid"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("borderBottomColor: commitDetailColors.diffBorder");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "0px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderStyle: "none"');
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1 +1 @@
+-old
++new`,
+      },
+    ],
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+    await expect(page.locator('[data-stylex-owner="commit-detail-file"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-owner="commit-detail-file-meta"]')).toHaveCount(1);
+    await expect(page.locator('[data-stylex-owner="commit-detail-diff-code-pre"]')).toHaveCount(2);
+
+    const borders = await page.locator("#src-main-rs").evaluate((file) => {
+      const meta = file.querySelector<HTMLElement>(".diff-partial-meta")!;
+      const codeLine = file.querySelector<HTMLElement>(".diff-partial-codeline")!;
+      const styles = (element: Element) => {
+        const computed = getComputedStyle(element);
+        return {
+          color: computed.borderTopColor,
+          style: computed.borderTopStyle,
+          width: computed.borderTopWidth,
+        };
+      };
+      const metaStyles = getComputedStyle(meta);
+      return {
+        outer: styles(file),
+        meta: {
+          color: metaStyles.borderBottomColor,
+          style: metaStyles.borderBottomStyle,
+          width: metaStyles.borderBottomWidth,
+        },
+        codeLine: {
+          style: getComputedStyle(codeLine).borderTopStyle,
+          width: getComputedStyle(codeLine).borderTopWidth,
+        },
+      };
+    });
+    expect(borders).toEqual({
+      outer: { color: "rgb(187, 187, 187)", style: "solid", width: "1px" },
+      meta: { color: "rgb(187, 187, 187)", style: "solid", width: "1px" },
+      codeLine: { style: "none", width: "0px" },
+    });
+  }
+
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});

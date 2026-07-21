@@ -1062,3 +1062,7 @@ desktop/mobile geometry, and filtering.
   independent fallback-off focused contract pass 1/1 each; non-emitted utility,
   btnPop, outer/meta, comments, ranges/colors, and unrelated consumers remain
   scoped.
+- [x] Batch 750 partial-filediff border repair: frozen outer/meta/code-line source
+  mapping, exact longhand border geometry, desktop/390px computed coverage, and
+  independent fallback-off focused contract pass 1/1 each; unrelated consumers
+  remain scoped.

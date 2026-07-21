@@ -66,7 +66,8 @@ export const styles = stylex.create({
   diffCodeLine: {
     fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',
     backgroundColor: "transparent",
-    border: "none",
+    borderWidth: "0px",
+    borderStyle: "none",
     margin: "0px",
     padding: "0px",
     fontSize: "12px",
@@ -214,12 +215,16 @@ export const styles = stylex.create({
     minHeight: "30px",
   },
   file: {
-    border: `1px solid ${commitDetailColors.diffBorder}`,
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: commitDetailColors.diffBorder,
     marginBottom: "20px",
   },
   fileMeta: {
     backgroundColor: commitDetailColors.diffMetaSurface,
-    borderBottom: `1px solid ${commitDetailColors.diffBorder}`,
+    borderBottomWidth: "1px",
+    borderBottomStyle: "solid",
+    borderBottomColor: commitDetailColors.diffBorder,
     height: "30px",
     position: "relative",
   },

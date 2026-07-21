@@ -5652,6 +5652,17 @@ overflow/margin/radius/background declarations while retaining generic shell
 fallback consumers and verifying desktop/mobile computed output in normal and
 fallback-off focused tests.
 
+## Batch 750
+
+Repair the authenticated commit-detail partial-filediff outer/meta/code-line
+StyleX owners for fallback-off parity. Preserve the existing DOM and owner
+boundaries while expressing the frozen outer `1px solid #bbb`, meta bottom
+`1px solid #bbb`, and code-line `border:none` declarations as exact longhands so
+the lower-priority fallback cannot reintroduce Bootstrap border defaults. Keep
+all other partial-diff declarations and consumers outside this repair scope, and
+verify desktop/390px computed border geometry in normal and fallback-off focused
+tests.
+
 ## Batch 749
 
 Complete the authenticated commit-detail partial-filediff file-mode/binary
