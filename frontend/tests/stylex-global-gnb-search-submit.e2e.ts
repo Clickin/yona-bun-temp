@@ -23,6 +23,14 @@ test("global GNB search submit has complete global-theme StyleX ownership", () =
   expect(start).toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   const styles = route.slice(start, end);
+  const boxStyleStart = route.indexOf("const globalGnbSearchBoxStyles");
+  const boxStyleEnd = route.indexOf("const globalGnbSearchScopeStyles", boxStyleStart);
+  const boxStyles = route.slice(boxStyleStart, boxStyleEnd);
+  expect(boxStyleStart).toBeGreaterThanOrEqual(0);
+  expect(boxStyleEnd).toBeGreaterThan(boxStyleStart);
+  expect(boxStyles).not.toContain('borderStyle: "none"');
+  expect(boxStyles).not.toContain('borderWidth: "0px"');
+  expect(boxStyles).not.toContain('boxSizing: "content-box"');
   for (const token of [
     "globalGnbSearchSubmitAppearance",
     "globalGnbSearchSubmitBackground",

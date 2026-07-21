@@ -5448,6 +5448,16 @@ redundant declarations from the existing StyleX owner. Verify unchanged active
 routing, desktop/mobile geometry, interaction, and pseudo isolation in focused
 normal/fallback-off tests.
 
+## Batch 711
+
+Clean the global GNB search-box owner against the frozen `.search-box`
+declaration boundary. The legacy source provides radius, background, height,
+inline-block display, and vertical alignment, but not `border-style`,
+`border-width`, or `box-sizing`; remove only those browser-default declarations
+from the existing StyleX owner. Verify unchanged submit/input/scope behavior,
+responsive hiding, desktop/project/organization geometry, and paint isolation in
+focused normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

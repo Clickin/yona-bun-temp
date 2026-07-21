@@ -267,3 +267,11 @@ project-header geometry, hover/focus behavior, and pseudo-element isolation
 after removing only explicit `display:inline` and `float:none` StyleX
 declarations. The frozen logo-specific and generic nav-anchor declarations
 remain represented by the owner. Focused normal and fallback-off runs pass 6/6.
+
+## Follow-up — global GNB search-box browser-default cleanup
+
+Fallback-off evidence confirmed that the shared search box retains its legacy
+radius, background, height, display, vertical alignment, submit/input geometry,
+and scope-menu behavior after removing only explicit `border-style:none`,
+`border-width:0px`, and `box-sizing:content-box` StyleX declarations. Paired
+submit and scope-menu runs pass 16/16 in normal and fallback-off modes.

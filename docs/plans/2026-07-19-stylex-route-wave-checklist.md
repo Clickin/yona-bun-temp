@@ -747,3 +747,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves active routing, desktop/mobile home and
   project-header geometry, interaction, and pseudo isolation in normal and
   fallback-off modes (6/6 each).
+
+### 2026-07-21 Batch 711 global GNB search-box browser-default proof
+
+- [x] The existing search-box owner removes only redundant `borderStyle`,
+  `borderWidth`, and `boxSizing` declarations absent from frozen `.search-box`;
+  radii, background, height, display, and vertical alignment remain.
+- [x] Paired submit/scope-menu contracts preserve desktop/project/organization
+  geometry, menu interaction, GET behavior, responsive hiding, and paint
+  isolation in normal and fallback-off modes (16/16 each).
