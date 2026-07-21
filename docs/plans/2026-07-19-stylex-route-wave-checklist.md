@@ -948,3 +948,12 @@ desktop/mobile geometry, and filtering.
   declarations and `clear:both` on `::after`.
 - [x] Desktop/mobile computed pseudo styles, tab geometry, navigation, and
   conditional state pass in normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 733 project-settings tab-anchor proof
+
+- [x] Seven native tab anchors preserve Scala DOM/copy/order/hrefs, count,
+  active/conditional state, and carry exact Bootstrap base/hover/focus/active
+  declarations through route-local StyleX owners.
+- [x] Desktop/mobile computed anchor geometry/interaction, SPA navigation,
+  and containment pass in normal and fallback-off runs (1/1 each); generic tab
+  fallback consumers remain.

@@ -1298,6 +1298,15 @@ function ProjectSettingMenu({
   const enrolledMemberCount = enrolledUserCount(project);
   const submenuListProps = stylex.props(styles.projectSettingSubmenuList);
   const submenuItemClassName = stylex.props(styles.projectSettingSubmenuItem).className;
+  const submenuLinkProps = (isActive: boolean) =>
+    stylex.props(
+      styles.projectSettingSubmenuLink,
+      isActive && styles.projectSettingSubmenuLinkActive,
+    );
+  const submenuActiveProps = {
+    ...legacyProjectSettingsLinkSuppressActiveProps,
+    className: submenuLinkProps(true).className,
+  };
 
   return (
     <ul
@@ -1311,11 +1320,16 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(active === "setting").className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to={selfRoutePath}
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
+          data-stylex-owner-active={
+            active === "setting" ? "project-setting-submenu-link-active" : undefined
+          }
         >
           {t("project.setting")}
         </Link>
@@ -1326,11 +1340,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/members"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("project.member")}
           <CountBadge count={enrolledMemberCount} className="num-badge" />
@@ -1342,11 +1358,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/issue/labelsform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("issue.label")}
         </Link>
@@ -1357,11 +1375,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/webhooks"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("project.webhook")}
         </Link>
@@ -1372,11 +1392,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/transfer"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("project.transfer")}
         </Link>
@@ -1387,11 +1409,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/deleteform"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("project.delete")}
         </Link>
@@ -1405,11 +1429,13 @@ function ProjectSettingMenu({
         data-stylex-owner="project-setting-submenu-item"
       >
         <Link
+          className={submenuLinkProps(false).className}
           activeOptions={legacyProjectSettingsLinkActiveOptions}
-          activeProps={legacyProjectSettingsLinkSuppressActiveProps}
+          activeProps={submenuActiveProps}
           to="/$ownerName/$projectName/changeVCS"
           search={() => ({ tabId: undefined })}
           params={{ ownerName, projectName }}
+          data-stylex-owner="project-setting-submenu-link"
         >
           {t("project.changeVCS")}
         </Link>

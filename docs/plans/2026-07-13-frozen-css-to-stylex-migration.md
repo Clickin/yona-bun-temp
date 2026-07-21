@@ -5609,6 +5609,10 @@ menu/reviewer/default-branch dependencies; retain generic `.box-wrap` fallback
 consumers and verify desktop/mobile computed geometry in normal and fallback-off
 focused tests.
 
+## Batch 733
+
+Complete the authenticated project-settings seven tab anchors through route-local StyleX owners. Preserve native Scala Link DOM, copy/order/hrefs, count badge, active/conditional state, and responsive containment while carrying exact frozen Bootstrap `.nav` anchor display, padding, margin, line-height, border/radius, hover/focus, and active declarations. Retain generic tab fallback consumers and verify desktop/mobile computed interaction in normal and fallback-off focused tests.
+
 ## Batch 731
 
 Complete the authenticated project-settings subnavigation `ul.nav.nav-tabs`

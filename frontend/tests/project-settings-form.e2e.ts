@@ -1124,6 +1124,102 @@ test("project settings submenu owns the frozen clearfix and route-specific tab m
     }),
   ).toEqual(["20px", "0px", "none"]);
 
+  const [linkStyleSource, linkRouteSource] = await Promise.all([
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+  ]);
+  expect(linkStyleSource).toContain("projectSettingSubmenuLink:");
+  expect(linkStyleSource).toContain("projectSettingSubmenuLinkActive:");
+  expect(linkStyleSource).toContain('display: "block"');
+  expect(linkStyleSource).toContain('borderRadius: "4px 4px 0 0"');
+  expect(linkStyleSource).toContain('backgroundColor: "#eeeeee"');
+  expect(linkStyleSource).toContain('borderColor: "#eeeeee #eeeeee #dddddd"');
+  expect(linkStyleSource).toContain('color: "#555555"');
+  expect(linkStyleSource).toContain('borderBottomColor: "transparent"');
+  expect(linkRouteSource).toContain('data-stylex-owner="project-setting-submenu-link"');
+  expect(linkRouteSource).toContain("styles.projectSettingSubmenuLinkActive");
+
+  const linksByOwner = page.locator('[data-stylex-owner="project-setting-submenu-link"]');
+  await expect(linksByOwner).toHaveCount(7);
+  await expect(
+    page.locator('[data-stylex-owner-active="project-setting-submenu-link-active"]'),
+  ).toHaveCount(1);
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  const base = await linksByOwner.nth(1).evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      display: style.display,
+      paddingLeft: style.paddingLeft,
+      paddingRight: style.paddingRight,
+      marginRight: style.marginRight,
+      lineHeight: style.lineHeight,
+      paddingTop: style.paddingTop,
+      paddingBottom: style.paddingBottom,
+      border: [style.borderTopWidth, style.borderTopStyle, style.borderTopColor],
+      radius: style.borderRadius,
+    };
+  });
+  expect(base).toEqual({
+    display: "block",
+    paddingLeft: "12px",
+    paddingRight: "12px",
+    marginRight: "2px",
+    lineHeight: "20px",
+    paddingTop: "8px",
+    paddingBottom: "8px",
+    border: ["1px", "solid", "rgba(0, 0, 0, 0)"],
+    radius: "4px 4px 0px 0px",
+  });
+  await linksByOwner.nth(1).hover();
+  await expect(linksByOwner.nth(1)).toHaveCSS("text-decoration-line", "none");
+  await expect(linksByOwner.nth(1)).toHaveCSS("background-color", "rgb(238, 238, 238)");
+  await expect(linksByOwner.nth(1)).toHaveCSS("border-top-color", "rgb(238, 238, 238)");
+  await expect(linksByOwner.nth(1)).toHaveCSS("border-bottom-color", "rgb(221, 221, 221)");
+  await linksByOwner.nth(2).focus();
+  await expect(linksByOwner.nth(2)).toHaveCSS("text-decoration-line", "none");
+  await expect(linksByOwner.nth(2)).toHaveCSS("background-color", "rgb(238, 238, 238)");
+  await expect(linksByOwner.nth(2)).toHaveCSS("border-bottom-color", "rgb(221, 221, 221)");
+
+  const active = linksByOwner.nth(0);
+  await expect(active).toHaveCSS("color", "rgb(85, 85, 85)");
+  await expect(active).toHaveCSS("cursor", "default");
+  await expect(active).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(active).toHaveCSS("border-top-color", "rgb(221, 221, 221)");
+  await expect(active).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
+  await active.hover();
+  await expect(active).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await active.focus();
+  await expect(active).toHaveCSS("background-color", "rgb(255, 255, 255)");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await expect(linksByOwner.nth(1)).toHaveCSS("padding-left", "5px");
+  await expect(linksByOwner.nth(1)).toHaveCSS("padding-right", "5px");
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const containment = await submenu.evaluate((element) => {
+      const list = element.getBoundingClientRect();
+      return Array.from(element.querySelectorAll<HTMLElement>(":scope > li")).map((item) => {
+        const box = item.getBoundingClientRect();
+        return box.left >= list.left && box.right <= list.right && box.top >= list.top;
+      });
+    });
+    expect(containment).toEqual(Array(7).fill(true));
+  }
+
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await linksByOwner.nth(1).click();
+  await expect(page).toHaveURL(new RegExp(`${basePath}/admin/sample/members$`));
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
   await mockProjectSettings(page, { project: { menuSetting: { code: false } } });
   await page.reload();
   await expect(items).toHaveCount(7);

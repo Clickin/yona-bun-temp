@@ -347,6 +347,15 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings tab-anchor owners
+
+Fallback-off evidence confirmed the seven native subnavigation anchors retain
+frozen Bootstrap display, padding, margin, line-height, border/radius,
+hover/focus, and active declarations across desktop/mobile while preserving
+Link navigation, copy/order/hrefs, count badge, active/conditional state, and
+containment. Generic tab fallback consumers remain. Focused normal and
+fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings subnavigation list owner
 
 Fallback-off evidence confirmed the native seven-item `ul.nav.nav-tabs` retains
