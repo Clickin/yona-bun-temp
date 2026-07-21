@@ -906,3 +906,11 @@ desktop/mobile geometry, and filtering.
   carrying exact frozen margin/radius/background declarations.
 - [x] Desktop/mobile computed output and fallback boundary pass in normal and
   fallback-off runs (1/1 each); generic shell fallback remains.
+
+### 2026-07-21 Batch 728 project-settings definition-list field proof
+
+- [x] The top `dl`, two `dt` rows, two `dd` rows, and two labels preserve
+  native DOM/copy/order and carry exact frozen `.frm-wrap` declarations.
+- [x] Desktop/mobile computed margin/padding/label geometry, popover/textarea
+  behavior, and fallback-off ownership pass in normal and fallback-off runs
+  (1/1 each).

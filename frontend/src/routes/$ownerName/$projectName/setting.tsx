@@ -29,6 +29,10 @@ const sx = {
   frame: stylex.props(styles.frame),
   topBox: stylex.props(styles.topBox),
   bottomBox: stylex.props(styles.bottomBox),
+  settingFields: stylex.props(styles.settingBox, styles.settingBoxRight, styles.settingFields),
+  settingFieldTerm: stylex.props(styles.settingFieldTerm),
+  settingFieldDescription: stylex.props(styles.settingFieldDescription),
+  settingFieldLabel: stylex.props(styles.settingFieldLabel),
   settingBox: stylex.props(styles.settingBox),
   settingBoxLeft: stylex.props(styles.settingBoxLeft),
   settingBoxRight: stylex.props(styles.settingBoxRight),
@@ -589,13 +593,24 @@ function ProjectSettingBody({
                 </div>
               </div>
               <dl
-                className={`${sx.settingBox.className} ${sx.settingBoxRight.className} setting-box right`}
+                {...sx.settingFields}
+                className={`${sx.settingFields.className} setting-box right`}
                 data-stylex-owner="project-setting-setting-box-right"
               >
-                <dt>
-                  <label htmlFor="project-name">{t("project.name.placeholder")}</label>
+                <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-name-term">
+                  <label
+                    {...sx.settingFieldLabel}
+                    data-stylex-owner="project-setting-name-label"
+                    htmlFor="project-name"
+                  >
+                    {t("project.name.placeholder")}
+                  </label>
                 </dt>
-                <dd {...sx.nameField} data-stylex-owner="project-setting-name-field">
+                <dd
+                  {...sx.nameField}
+                  className={`${sx.nameField.className} ${sx.settingFieldDescription.className}`}
+                  data-stylex-owner="project-setting-name-field"
+                >
                   <input
                     {...sx.input}
                     data-stylex-owner="project-setting-name-input"
@@ -630,10 +645,19 @@ function ProjectSettingBody({
                   ) : null}
                   <br />
                 </dd>
-                <dt>
-                  <label htmlFor="project-desc">{t("project.description.placeholder")}</label>
+                <dt {...sx.settingFieldTerm} data-stylex-owner="project-setting-description-term">
+                  <label
+                    {...sx.settingFieldLabel}
+                    data-stylex-owner="project-setting-description-label"
+                    htmlFor="project-desc"
+                  >
+                    {t("project.description.placeholder")}
+                  </label>
                 </dt>
-                <dd>
+                <dd
+                  {...sx.settingFieldDescription}
+                  data-stylex-owner="project-setting-description-field"
+                >
                   <textarea
                     ref={overviewRef}
                     id="project-desc"

@@ -347,6 +347,14 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings definition-list field owners
+
+Fallback-off evidence confirmed the top settings `dl`, `dt`, `dd`, and label
+owners retain frozen `.frm-wrap` margin/padding, term spacing, bold labels, and
+label right margin across desktop/mobile while preserving the right-column
+layout, popover, textarea, and Save behavior. Generic field fallback remains.
+Focused normal and fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings form/frame shell owners
 
 Fallback-off evidence confirmed the form `nm` margin and frame

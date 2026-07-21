@@ -1978,6 +1978,138 @@ test("project settings form and frame own the frozen shell declarations", async 
   );
 });
 
+test("project settings definition-list fields own the frozen frm-wrap declarations", async ({
+  page,
+}) => {
+  const [legacy, frozenStyles, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<dl class="setting-box right">');
+  expect(legacy).toContain("<dt>");
+  expect(legacy).toContain("<dd>");
+  expect(frozenStyles).toContain("dl, dt, dd { margin:0; padding:0; }");
+  expect(frozenStyles).toContain("margin:3px 0px 1px 0px;");
+  expect(frozenStyles).toContain("font-weight:bold;");
+  expect(frozenStyles).toContain("margin-right:5px;");
+  expect(route).toContain('data-stylex-owner="project-setting-name-term"');
+  expect(route).toContain('data-stylex-owner="project-setting-description-term"');
+  expect(route).toContain('data-stylex-owner="project-setting-name-label"');
+  expect(route).toContain('data-stylex-owner="project-setting-description-label"');
+  expect(route).toContain("styles.settingBox, styles.settingBoxRight, styles.settingFields");
+  expect(style).toContain("settingFields:");
+  expect(style).toContain("settingFieldTerm:");
+  expect(style).toContain("settingFieldDescription:");
+  expect(style).toContain("settingFieldLabel:");
+  expect(style).toContain('fontWeight: "bold"');
+  expect(style).toContain('marginRight: "5px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const fields = page.locator('[data-stylex-owner="project-setting-setting-box-right"]');
+    const terms = fields.locator('[data-stylex-owner$="-term"]');
+    const descriptions = fields.locator('[data-stylex-owner$="-field"]');
+    const labels = fields.locator('[data-stylex-owner$="-label"]');
+    await expect(fields).toHaveCount(1);
+    await expect(terms).toHaveCount(2);
+    await expect(descriptions).toHaveCount(2);
+    await expect(labels).toHaveCount(2);
+    await expect(
+      terms.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+    ).resolves.toEqual(["project-setting-name-term", "project-setting-description-term"]);
+    await expect(labels).toHaveText([
+      "Enter project name in alphabetnumerical or symbol characters(_-.)",
+      "Enter project description",
+    ]);
+
+    const metrics = await page.evaluate(() => {
+      const fields = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-setting-box-right"]',
+      );
+      const terms = Array.from(
+        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-term"]'),
+      );
+      const descriptions = Array.from(
+        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-field"]'),
+      );
+      const labels = Array.from(
+        fields.querySelectorAll<HTMLElement>('[data-stylex-owner$="-label"]'),
+      );
+      if (!fields || terms.length !== 2 || descriptions.length !== 2 || labels.length !== 2) {
+        return null;
+      }
+      const readBox = (element: HTMLElement) => {
+        const box = element.getBoundingClientRect();
+        return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+      };
+      return {
+        fields: {
+          ...readBox(fields),
+          margin: getComputedStyle(fields).margin,
+          padding: getComputedStyle(fields).padding,
+        },
+        terms: terms.map((element) => {
+          const style = getComputedStyle(element);
+          return { ...readBox(element), margin: style.margin, padding: style.padding };
+        }),
+        descriptions: descriptions.map((element) => {
+          const style = getComputedStyle(element);
+          return { ...readBox(element), margin: style.margin, padding: style.padding };
+        }),
+        labels: labels.map((element) => {
+          const style = getComputedStyle(element);
+          return {
+            ...readBox(element),
+            fontWeight: style.fontWeight,
+            marginRight: style.marginRight,
+          };
+        }),
+      };
+    });
+    expect(metrics).not.toBeNull();
+    expect(metrics!.fields.margin).toBe("0px");
+    expect(metrics!.fields.padding).toBe("0px");
+    expect(
+      metrics!.terms.every((term) => term.margin === "3px 0px 1px" && term.padding === "0px"),
+    ).toBe(true);
+    expect(
+      metrics!.descriptions.every(
+        (description) => description.margin === "0px" && description.padding === "0px",
+      ),
+    ).toBe(true);
+    expect(
+      metrics!.labels.every((label) => label.fontWeight === "700" && label.marginRight === "5px"),
+    ).toBe(true);
+    expect(
+      metrics!.terms.every((term) => term.right - term.left > 0 && term.bottom >= term.top),
+    ).toBe(true);
+    expect(
+      metrics!.descriptions.every(
+        (description) =>
+          description.right - description.left > 0 && description.bottom >= description.top,
+      ),
+    ).toBe(true);
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await expect(page.locator("#saveSetting")).toHaveAttribute("method", "post");
+  await expect(page.locator("#saveSetting")).toHaveAttribute("enctype", "multipart/form-data");
+  await expect(page.locator("#save")).toHaveAttribute("type", "submit");
+  await expect(page.locator("#save")).toHaveText("Save");
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

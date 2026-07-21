@@ -117,6 +117,9 @@ export const styles = stylex.create({
     textAlign: "center",
     ":last-of-type": { borderBottom: "none" },
   },
+  settingFieldTerm: { margin: "3px 0px 1px 0px", padding: "0px" },
+  settingFieldDescription: { margin: "0px", padding: "0px" },
+  settingFieldLabel: { fontWeight: "bold", marginRight: "5px" },
   settingBox: { float: "left", width: "399px" },
   settingBoxLeft: { borderRight: "1px solid #ffffff", paddingRight: "20px" },
   settingBoxRight: {
@@ -127,6 +130,7 @@ export const styles = stylex.create({
     margin: "0px",
     paddingLeft: { default: "20px", [globalBreakpoints.mobile]: "0px" },
   },
+  settingFields: { margin: "0px", padding: "0px", paddingLeft: "0px" },
   logo: {
     backgroundColor: projectSettingColors.logoSurface,
     backgroundPosition: "center",

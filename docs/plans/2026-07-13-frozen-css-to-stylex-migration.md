@@ -5627,3 +5627,12 @@ geometry, and Save interaction. Carry only the frozen form margin and frame
 overflow/margin/radius/background declarations while retaining generic shell
 fallback consumers and verifying desktop/mobile computed output in normal and
 fallback-off focused tests.
+
+## Batch 728
+
+Complete the authenticated project-settings top definition-list field state
+through route-local StyleX owners. Preserve native `dl/dt/dd/label` DOM,
+copy/order, name popover, and description textarea behavior while carrying the
+exact frozen `.frm-wrap` margin, padding, term, and label declarations. Retain
+the existing right-column layout and generic fallback consumers; verify
+desktop/mobile computed field geometry in normal and fallback-off focused tests.
