@@ -5506,3 +5506,15 @@ Remove the existing owner’s unsupported background, auto-size, and image decla
 changing the list-item DOM, conditional visibility, or fallback boundary. The focused normal and
 fallback-off contract passes 10/10 with desktop/mobile geometry, conditional visibility, and paint
 isolation.
+
+## Batch 716
+
+Complete a declaration-level shared fallback consumer-graph refresh before
+selecting another route-local wave. The generic `.dropdown-menu` bridge still
+has live project/org member, settings/form, issue/milestone mass-update,
+pull-request changes, commit-selector, home user-menu, typeahead, and Select2
+consumers. The remaining `.ybtn`, `.label`/`.badge`, `.alert`, `.nav-tabs`,
+`.modal`, grid, and pagination families likewise have multiple incomplete
+consumers; plugin-generated `.hljs-*` remains deferred. No safe complete
+retirement group is proven, so retain the fallback and do not change route
+TSX, focused E2E, frozen sources, or shared selectors in this batch.

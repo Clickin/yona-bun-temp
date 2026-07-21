@@ -793,3 +793,15 @@ desktop/mobile geometry, and filtering.
 - [x] The focused scope-menu contract preserves computed open-menu behavior,
   copy/order, interaction, mobile hiding, and isolation in normal and
   fallback-off modes (7/7 each).
+
+### 2026-07-21 Batch 716 shared fallback consumer-graph refresh
+
+- [x] The generic `.dropdown-menu` bridge is confirmed to have live consumers
+  across project/org members, settings/forms, issue/milestone mass-update,
+  pull-request changes, commit selectors, home user-menu, typeahead, and
+  Select2 surfaces.
+- [x] Remaining `.ybtn`, `.label`/`.badge`, `.alert`, `.nav-tabs`, `.modal`,
+  grid, and pagination families are multi-consumer or incomplete; `.hljs-*`
+  remains plugin-generated and deferred.
+- [x] No complete safe retirement group is proven. Fallback remains enabled;
+  no route TSX, focused E2E, frozen source, or shared selector changed.

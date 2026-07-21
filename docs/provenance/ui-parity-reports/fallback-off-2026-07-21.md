@@ -299,3 +299,14 @@ frozen Bootstrap `float:left` and removing only the unsupported
 `box-sizing:content-box` plus the redundant item `float:none` declarations.
 The absolutely positioned menu still computes to `float:none`; focused normal
 and fallback-off scope-menu runs pass 7/7.
+
+## Follow-up — Batch 716 shared fallback consumer-graph refresh
+
+The current React inventory confirms that the generic `.dropdown-menu` bridge
+still serves project/org members, settings/forms, issue/milestone mass-update,
+pull-request changes, commit selectors, the home user-menu, typeahead, and
+Select2 surfaces. `.ybtn`, `.label`/`.badge`, `.alert`, `.nav-tabs`, `.modal`,
+grid, and pagination families also retain multiple incomplete consumers;
+plugin-generated `.hljs-*` remains deferred. No complete safe retirement group
+was proven, so the fallback remains enabled and no route, focused E2E, frozen
+source, or shared selector was changed.
