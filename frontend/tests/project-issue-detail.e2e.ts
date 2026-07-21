@@ -1060,6 +1060,79 @@ test("project issue detail owns mobile new-subtask spacing with route StyleX", a
   await expect(link).toHaveAttribute("href", `${basePath}/admin/sample/issueform?parentIssueId=42`);
 });
 
+test("project issue detail owns sidebar bottom spacing with route StyleX", async ({ page }) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+
+  expect(legacyView.split(/\r?\n/u)[292]).toContain('<div class="span3 span-right-pane mb20">');
+  expect(legacyCommon.split(/\r?\n/u)[211]).toContain(".mb20 { margin-bottom:20px; }");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-sidebar"');
+  expect(routeSource).toContain("span3 span-right-pane");
+  expect(routeSource).not.toContain("span3 span-right-pane mb20");
+  expect(styleSource).toMatch(/sidebar:\s*\{[\s\S]*?marginBottom:\s*["']20px["']/u);
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  await mockProjectIssueDetail(page);
+  const sidebar = page.locator('[data-stylex-owner="project-issue-detail-sidebar"]');
+  const issueInfo = sidebar.locator(".issue-info");
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await expect(sidebar).toHaveCount(1);
+  await expect(sidebar).toBeVisible();
+  await expect(sidebar).not.toHaveAttribute("style", /.+/u);
+  await expect(sidebar).toHaveCSS("margin-bottom", "20px");
+  await expect(issueInfo).toBeVisible();
+  await expect(issueInfo).toContainText("Assignee");
+  await expect(sidebar.locator(".project-btn-item a")).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/issueform?parentIssueId=42`,
+  );
+
+  const assertContained = async () => {
+    const metrics = await sidebar.evaluate((element) => {
+      const sidebarRect = element.getBoundingClientRect();
+      const boardRect = element.parentElement?.getBoundingClientRect();
+      if (!boardRect) throw new Error("issue detail sidebar has no board-body parent");
+      return {
+        bottom: sidebarRect.bottom,
+        boardBottom: boardRect.bottom,
+        boardLeft: boardRect.left,
+        boardRight: boardRect.right,
+        left: sidebarRect.left,
+        right: sidebarRect.right,
+        top: sidebarRect.top,
+      };
+    });
+    expect(metrics.left).toBeGreaterThanOrEqual(metrics.boardLeft);
+    expect(metrics.right).toBeLessThanOrEqual(metrics.boardRight);
+    expect(metrics.top).toBeGreaterThanOrEqual(0);
+    expect(metrics.bottom).toBeGreaterThanOrEqual(metrics.top);
+    if (!fallbackOff) expect(metrics.bottom).toBeLessThanOrEqual(metrics.boardBottom);
+  };
+
+  await assertContained();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(sidebar).not.toHaveAttribute("style", /.+/u);
+  if (fallbackOff) {
+    await expect(sidebar).toHaveCSS("margin-bottom", "20px");
+    await assertContained();
+  } else {
+    await expect(sidebar).toBeHidden();
+  }
+});
+
 test("project issue detail renders protected org-owned localhost shell state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectIssueDetail(page, {

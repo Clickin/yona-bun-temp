@@ -199,6 +199,7 @@ export const styles = stylex.create({
   uploadHelp: { textAlign: "right" },
   commentUpdateActions: { textAlign: "right" },
   sidebar: {
+    marginBottom: "20px",
     minWidth: 0,
   },
   emptyContent: {

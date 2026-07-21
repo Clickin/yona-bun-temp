@@ -1123,7 +1123,7 @@ function IssueDetailBody({
             ) : null}
           </div>
           <div
-            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane mb20`}
+            className={`${stylex.props(styles.sidebar).className} span3 span-right-pane`}
             data-stylex-owner="project-issue-detail-sidebar"
           >
             <div

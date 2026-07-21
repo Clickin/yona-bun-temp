@@ -5979,6 +5979,17 @@ consumers. The focused project-issues test verifies source mapping, computed
 margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
 normal and fallback-disabled modes.
 
+## Batch 765
+
+Move the authenticated issue-detail sidebar wrapper's active `.mb20` spacing
+into the existing route-local sidebar StyleX owner using the frozen
+`margin-bottom:20px` declaration from `_common.less:212`. Preserve the
+`span3 span-right-pane` wrapper, sidebar content/links, and responsive behavior;
+remove `mb20` only from this React emitter and keep the generic fallback for
+unrelated consumers. The focused issue-detail test verifies source mapping,
+computed margin, no-inline-style, content/link behavior, and desktop/mobile
+containment in normal and fallback-disabled modes.
+
 ## Batch 763
 
 Move the authenticated milestone-detail issue-row due-date clock's active
