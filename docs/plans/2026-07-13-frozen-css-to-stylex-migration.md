@@ -5636,3 +5636,13 @@ copy/order, name popover, and description textarea behavior while carrying the
 exact frozen `.frm-wrap` margin, padding, term, and label declarations. Retain
 the existing right-column layout and generic fallback consumers; verify
 desktop/mobile computed field geometry in normal and fallback-off focused tests.
+
+## Batch 729
+
+Complete the authenticated project-settings left-column logo upload control
+through route-local StyleX owners. Preserve the native `nbtn medium white
+fake-file-wrap` DOM, upload icon/copy, file-input identity, validation, reset,
+submission, and logo behavior while carrying the exact frozen `.nbtn`,
+`.white`, `.medium`, `.fake-file-wrap`, and nested `.file` declarations. Retain
+generic upload fallback consumers and verify desktop/mobile computed upload
+geometry and invalid-file interaction in normal and fallback-off focused tests.

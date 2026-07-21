@@ -914,3 +914,12 @@ desktop/mobile geometry, and filtering.
 - [x] Desktop/mobile computed margin/padding/label geometry, popover/textarea
   behavior, and fallback-off ownership pass in normal and fallback-off runs
   (1/1 each).
+
+### 2026-07-21 Batch 729 project-settings logo upload proof
+
+- [x] The left-column upload button and transparent file input preserve native
+  classes, icon/copy, identity, and exact frozen `.nbtn`/`.fake-file-wrap`/
+  `.file` geometry through route-local StyleX owners.
+- [x] Desktop/mobile computed upload geometry, viewport containment, and
+  invalid-image validation/reset pass in normal and fallback-off runs (1/1
+  each); generic upload fallback consumers remain.

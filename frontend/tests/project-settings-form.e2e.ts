@@ -2784,6 +2784,132 @@ test("project settings logo input validates image files and auto-submits like le
     .toBeNull();
 });
 
+test("project settings owns the legacy left-column logo upload surface", async ({ page }) => {
+  const [legacy, less, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_yobiUI.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<div class="nbtn medium white fake-file-wrap">');
+  expect(legacy).toContain('<i class="yobicon-upload"></i> @Messages("button.upload")');
+  expect(legacy).toContain(
+    '<input id="logoPath" type="file" class="file" name="logoPath" accept="image/*">',
+  );
+  expect(less).toContain(".nbtn {");
+  expect(less).toContain("&.white {");
+  expect(less).toContain("&.medium { padding: 6px 20px; }");
+  expect(less).toContain(".fake-file-wrap {");
+  expect(less).toContain("top:0; left: 5px;");
+  expect(route).toContain('data-stylex-owner="project-setting-logo-upload-button"');
+  expect(route).toContain('data-stylex-owner="project-setting-logo-upload-input"');
+  expect(style).toContain("logoUploadButton:");
+  expect(style).toContain("logoUploadInput:");
+  expect(style).toContain('boxShadow: "inset 0px -1px 1px rgba(0,0,0,0.3)"');
+  expect(style).toContain('padding: "6px 20px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+
+    const upload = page.locator('[data-stylex-owner="project-setting-logo-upload-button"]');
+    const input = page.locator('[data-stylex-owner="project-setting-logo-upload-input"]');
+    await expect(upload).toBeVisible();
+    await expect(upload).toHaveText(/File upload/);
+    await expect(input).toHaveAttribute("id", "logoPath");
+    await expect(input).toHaveAttribute("name", "logoPath");
+    await expect(input).toHaveAttribute("type", "file");
+    await expect(input).toHaveAttribute("accept", "image/*");
+
+    const computed = await page.evaluate(() => {
+      const button = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-logo-upload-button"]',
+      );
+      const input = document.querySelector<HTMLInputElement>(
+        '[data-stylex-owner="project-setting-logo-upload-input"]',
+      );
+      if (!button || !input) return null;
+      const buttonStyle = getComputedStyle(button);
+      const inputStyle = getComputedStyle(input);
+      const buttonBox = button.getBoundingClientRect();
+      const columnBox = document
+        .querySelector<HTMLElement>('[data-stylex-owner="project-setting-setting-box-left"]')!
+        .getBoundingClientRect();
+      return {
+        button: {
+          backgroundColor: buttonStyle.backgroundColor,
+          borderRadius: buttonStyle.borderRadius,
+          boxShadow: buttonStyle.boxShadow,
+          color: buttonStyle.color,
+          display: buttonStyle.display,
+          fontSize: buttonStyle.fontSize,
+          lineHeight: buttonStyle.lineHeight,
+          marginRight: buttonStyle.marginRight,
+          overflow: buttonStyle.overflow,
+          padding: buttonStyle.padding,
+          position: buttonStyle.position,
+          width: Math.round(buttonBox.width),
+        },
+        input: {
+          left: inputStyle.left,
+          minWidth: inputStyle.minWidth,
+          opacity: inputStyle.opacity,
+          position: inputStyle.position,
+          top: inputStyle.top,
+          width: inputStyle.width,
+          zIndex: inputStyle.zIndex,
+        },
+        contained: buttonBox.left >= columnBox.left && buttonBox.right <= columnBox.right,
+      };
+    });
+    expect(computed).toEqual({
+      button: {
+        backgroundColor: "rgb(255, 255, 255)",
+        borderRadius: "2px",
+        boxShadow: "rgba(0, 0, 0, 0.3) 0px -1px 1px 0px inset",
+        color: "rgb(34, 34, 34)",
+        display: "block",
+        fontSize: "11px",
+        lineHeight: "18px",
+        marginRight: "5px",
+        overflow: "hidden",
+        padding: "6px 20px",
+        position: "relative",
+        width: 115,
+      },
+      input: {
+        left: "5px",
+        minWidth: "100px",
+        opacity: "0",
+        position: "absolute",
+        top: "0px",
+        width: "115px",
+        zIndex: "2",
+      },
+      contained: true,
+    });
+
+    const invalidFileDialog = new Promise<string>((resolve) => {
+      page.once("dialog", async (dialog) => {
+        resolve(dialog.message());
+        await dialog.accept();
+      });
+    });
+    await input.setInputFiles({
+      buffer: Buffer.from("not an image"),
+      mimeType: "text/plain",
+      name: "not-image.txt",
+    });
+    await expect(invalidFileDialog).resolves.toBe("This is not an image file.");
+    await expect(input).toHaveValue("");
+  }
+});
+
 async function mockProjectSettings(
   page: Page,
   overrides: Partial<{

@@ -355,6 +355,15 @@ label right margin across desktop/mobile while preserving the right-column
 layout, popover, textarea, and Save behavior. Generic field fallback remains.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings logo upload owners
+
+Fallback-off evidence confirmed the left-column logo upload button and
+transparent file input retain frozen `.nbtn`, `.white`, `.medium`,
+`.fake-file-wrap`, and `.file` geometry across desktop/mobile while preserving
+file identity, invalid-image validation/reset, and logo submission behavior.
+Generic upload fallback consumers remain. Focused normal and fallback-off runs
+pass 1/1 each.
+
 ## Follow-up — authenticated project-settings form/frame shell owners
 
 Fallback-off evidence confirmed the form `nm` margin and frame

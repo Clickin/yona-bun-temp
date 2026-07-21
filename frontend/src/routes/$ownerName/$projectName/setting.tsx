@@ -38,6 +38,8 @@ const sx = {
   settingBoxRight: stylex.props(styles.settingBoxRight),
   logo: stylex.props(styles.logo),
   logoDesc: stylex.props(styles.logoDesc),
+  logoUploadButton: stylex.props(styles.logoUploadButton),
+  logoUploadInput: stylex.props(styles.logoUploadInput),
   descsItem: stylex.props(styles.descsItem),
   descsLast: stylex.props(styles.descsLast),
   input: stylex.props(styles.input),
@@ -575,15 +577,21 @@ function ProjectSettingBody({
                       data-stylex-owner="project-setting-descs-last"
                     >
                       <div className="btn-wrap">
-                        <div className="nbtn medium white fake-file-wrap">
+                        <div
+                          {...sx.logoUploadButton}
+                          className={`${sx.logoUploadButton.className} nbtn medium white fake-file-wrap`}
+                          data-stylex-owner="project-setting-logo-upload-button"
+                        >
                           <i className="yobicon-upload"></i> {t("button.upload")}
                           <input
                             key={logoInputResetKey}
+                            {...sx.logoUploadInput}
                             id="logoPath"
                             type="file"
-                            className="file"
+                            className={`${sx.logoUploadInput.className} file`}
                             name="logoPath"
                             accept="image/*"
+                            data-stylex-owner="project-setting-logo-upload-input"
                             onChange={onChangeLogoPath}
                           />
                         </div>
