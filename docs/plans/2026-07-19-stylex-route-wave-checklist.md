@@ -648,3 +648,11 @@ frozen `@secondary -> @blue2 -> #51AACC` chain. The non-emitted member-avatar
 `li` rule remains fallback-owned. Focused normal and fallback-off checks pass
 3/3 each, covering source/variable mapping, counts/icons/watch state,
 desktop/mobile geometry, and filtering.
+
+### 2026-07-21 Batch 700 projects populated row-content line-box proof
+
+- [x] The existing projects directory header, description, name-tag, and stats
+  owners carry the frozen Bootstrap 20px body line-height without adding offsets
+  or changing the legacy row DOM.
+- [x] Focused source, computed declaration, containment, and desktop/mobile row
+  geometry checks pass 3/3 in normal and fallback-off modes.

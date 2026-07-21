@@ -262,11 +262,13 @@ const styles = stylex.create({
   directoryHeader: {
     fontSize: "20px",
     fontWeight: "700",
+    lineHeight: "20px",
     marginBottom: "5px",
     marginLeft: "10px",
   },
   directoryDescription: {
     color: projectsDirectoryColors.descriptionText,
+    lineHeight: "20px",
     marginLeft: "10px",
     maxHeight: "100px",
     maxWidth: "647px",
@@ -276,6 +278,7 @@ const styles = stylex.create({
   directoryNameTag: {
     color: projectsDirectoryColors.metadataText,
     fontSize: "11px",
+    lineHeight: "20px",
     margin: "0px 0px 0px 10px",
   },
   directoryTitleLink: {
@@ -344,6 +347,7 @@ const styles = stylex.create({
   },
   directoryStats: {
     float: "right",
+    lineHeight: "20px",
     marginTop: "0px",
     textAlign: "right",
   },

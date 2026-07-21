@@ -7,6 +7,7 @@ const avatarOwner = "projects-directory-owner-avatar";
 const descriptionOwner = "projects-directory-description";
 const headerOwner = "projects-directory-header";
 const nameTagOwner = "projects-directory-name-tag";
+const statsOwner = "projects-directory-stats";
 const memberAvatarDataUrl = `data:image/png;base64,${readFileSync(
   resolve("src/assets/legacy/default-avatar-34.png"),
 ).toString("base64")}`;
@@ -115,6 +116,7 @@ test("row content records exactly four owners and the fallback boundaries", () =
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
   const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const bootstrap = readFileSync("../yona-original/public/bootstrap/css/bootstrap.css", "utf8");
   const messages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
   const allProjectsBlock = pageLess.slice(
     pageLess.indexOf(".all-projects {"),
@@ -137,7 +139,8 @@ test("row content records exactly four owners and the fallback boundaries", () =
     /img\s*\{\s*vertical-align:\s*top;\s*width:\s*100%;\s*height:\s*100%;/u,
   );
   expect(pageLess).toContain(".yobicon-lock { color:#7F8C8D;}");
-  for (const owner of [avatarOwner, headerOwner, descriptionOwner, nameTagOwner])
+  expect(bootstrap).toMatch(/body\s*\{[\s\S]*?line-height:\s*20px;/u);
+  for (const owner of [avatarOwner, headerOwner, descriptionOwner, nameTagOwner, statsOwner])
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(route).not.toContain("owner-avatar-wrap");
   expect(route).not.toContain("className={`header ");
@@ -182,11 +185,11 @@ for (const viewport of [
     await expect(nameTag).toContainText("by alice at 07-07");
 
     const actual = await page.evaluate(
-      ({ avatarOwner, descriptionOwner, headerOwner, nameTagOwner }) => {
-        const elements = [avatarOwner, headerOwner, descriptionOwner, nameTagOwner].map(
+      ({ avatarOwner, descriptionOwner, headerOwner, nameTagOwner, statsOwner }) => {
+        const elements = [avatarOwner, headerOwner, descriptionOwner, nameTagOwner, statsOwner].map(
           (owner) => document.querySelectorAll<HTMLElement>(`[data-stylex-owner="${owner}"]`)[1]!,
         );
-        const [avatar, header, description, nameTag] = elements;
+        const [avatar, header, description, nameTag, stats] = elements;
         const box = (element: HTMLElement) => {
           const rect = element.getBoundingClientRect();
           return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
@@ -195,6 +198,7 @@ for (const viewport of [
         const headerStyle = getComputedStyle(header!);
         const descriptionStyle = getComputedStyle(description!);
         const nameTagStyle = getComputedStyle(nameTag!);
+        const statsStyle = getComputedStyle(stats!);
         const row = avatar!.closest<HTMLElement>('[data-stylex-owner="projects-directory-row"]')!;
         const rowBox = box(row);
         return {
@@ -215,6 +219,7 @@ for (const viewport of [
           },
           description: {
             color: descriptionStyle.color,
+            lineHeight: descriptionStyle.lineHeight,
             marginLeft: descriptionStyle.marginLeft,
             maxHeight: descriptionStyle.maxHeight,
             maxWidth: descriptionStyle.maxWidth,
@@ -224,17 +229,20 @@ for (const viewport of [
           header: {
             fontSize: headerStyle.fontSize,
             fontWeight: headerStyle.fontWeight,
+            lineHeight: headerStyle.lineHeight,
             margin: headerStyle.margin,
           },
           nameTag: {
             color: nameTagStyle.color,
             fontSize: nameTagStyle.fontSize,
+            lineHeight: nameTagStyle.lineHeight,
             margin: nameTagStyle.margin,
           },
+          stats: { lineHeight: statsStyle.lineHeight },
           scrollWidth: document.documentElement.scrollWidth,
         };
       },
-      { avatarOwner, descriptionOwner, headerOwner, nameTagOwner },
+      { avatarOwner, descriptionOwner, headerOwner, nameTagOwner, statsOwner },
     );
     const contentWidth = viewport.name === "desktop" ? 257.65625 : 257.65625;
     expect(actual.boxes).toEqual({
@@ -280,10 +288,12 @@ for (const viewport of [
     expect(actual.header).toEqual({
       fontSize: "20px",
       fontWeight: "700",
+      lineHeight: "20px",
       margin: "0px 0px 5px 10px",
     });
     expect(actual.description).toEqual({
       color: "rgb(186, 186, 186)",
+      lineHeight: "20px",
       marginLeft: "10px",
       maxHeight: "100px",
       maxWidth: "647px",
@@ -293,8 +303,10 @@ for (const viewport of [
     expect(actual.nameTag).toEqual({
       color: "rgb(153, 153, 153)",
       fontSize: "11px",
+      lineHeight: "20px",
       margin: "0px 0px 0px 10px",
     });
+    expect(actual.stats).toEqual({ lineHeight: "20px" });
     expect(actual.scrollWidth).toBe(viewport.width);
     expect(actual.boxes.avatar.y).toBe(actual.boxes.header.y);
     expect(actual.boxes.description.y).toBe(actual.boxes.header.y + actual.boxes.header.height + 5);

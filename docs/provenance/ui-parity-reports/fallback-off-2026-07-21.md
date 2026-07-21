@@ -153,3 +153,11 @@ requires the authenticated admin affix to use a 20px line height, while Bootstra
 pointer cursor defaults. Existing StyleX owners now carry those exact declarations. Normal and
 `VITE_DISABLE_LEGACY_FALLBACK=1` focused runs cover source, desktop/mobile geometry, and filter
 submission; no offset or assertion relaxation was added.
+
+## Follow-up — `/projects` populated row-content line boxes
+
+The focused row-content candidate initially passed with the fallback enabled but fallback-off
+exposed 18px header/description line boxes and a two-pixel mobile row-height deficit. The
+existing header, description, name-tag, and stats owners now carry the frozen Bootstrap body
+`line-height:20px` declaration. Normal and `VITE_DISABLE_LEGACY_FALLBACK=1` runs pass source,
+desktop/mobile geometry, and containment checks 3/3 each; no compensating offset was added.

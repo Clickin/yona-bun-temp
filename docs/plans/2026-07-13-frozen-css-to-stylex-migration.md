@@ -5401,3 +5401,10 @@ Correct the `/projects` directory tab margin scope. The breadcrumb tabs are emit
 `margin-bottom:-1px`; the frozen `-2px` rule remains scoped evidence for other project-page tabs.
 The full normal focused contract is green (4/4). Fallback-off source/interaction remains green,
 while a uniform 2px ancestor shift remains at the fallback boundary; do not compensate locally.
+
+## Batch 700
+
+Repair the populated `/projects` row-content line boxes from the frozen Bootstrap body baseline.
+The existing header, description, name-tag, and stats owners now carry exact `line-height:20px`
+declarations; no DOM, spacing offset, or interaction behavior changed. The focused row-content
+contract passes 3/3 in normal and fallback-off desktop/mobile states.
