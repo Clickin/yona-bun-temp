@@ -1044,3 +1044,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 745 diff-body layout owner: frozen source mapping, exact relative
   position/radius/min-height, desktop/390px computed coverage, and independent
   fallback-off focused contract pass 1/1 each.
+- [x] Batch 746 partial-filediff row/cell owners: frozen source mapping, exact
+  line-number/code-cell/code-line declarations, desktop/390px computed coverage,
+  and independent fallback-off focused contract pass 1/1 each; outer file/meta
+  and other nested partial-diff declarations remain separately scoped.

@@ -46,6 +46,10 @@ const sx = {
   reviewFormShell: stylex.props(styles.reviewFormShell),
   reviewAuthorInfoWrap: stylex.props(styles.reviewAuthorInfoWrap),
   reviewWriteCommentBox: stylex.props(styles.reviewWriteCommentBox),
+  diffLineNumber: stylex.props(styles.diffLineNumber),
+  diffLineNumberMarker: stylex.props(styles.diffLineNumberMarker),
+  diffCodeCell: stylex.props(styles.diffCodeCell),
+  diffCodeLine: stylex.props(styles.diffCodeLine),
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
   rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
@@ -814,13 +818,31 @@ function FileDiffView({
 
                     return line.kind === "range" ? (
                       <tr className="range" key={diffLineKey(line)}>
-                        <td className="linenum">
-                          <div className="line-number" data-line-num="...">
+                        <td
+                          {...sx.diffLineNumber}
+                          data-stylex-owner="commit-detail-diff-line-number-cell"
+                          className={`${sx.diffLineNumber.className} linenum`}
+                        >
+                          <div
+                            {...sx.diffLineNumberMarker}
+                            data-stylex-owner="commit-detail-diff-line-number"
+                            className={`${sx.diffLineNumberMarker.className} line-number`}
+                            data-line-num="..."
+                          >
                             <span className="hidden">...</span>
                           </div>
                         </td>
-                        <td className="linenum">
-                          <div className="line-number" data-line-num="...">
+                        <td
+                          {...sx.diffLineNumber}
+                          data-stylex-owner="commit-detail-diff-line-number-cell"
+                          className={`${sx.diffLineNumber.className} linenum`}
+                        >
+                          <div
+                            {...sx.diffLineNumberMarker}
+                            data-stylex-owner="commit-detail-diff-line-number"
+                            className={`${sx.diffLineNumberMarker.className} line-number`}
+                            data-line-num="..."
+                          >
                             <span className="hidden">...</span>
                           </div>
                         </td>
@@ -859,12 +881,30 @@ function FileModeChangedRow({ modeChange }: { modeChange: { newMode: string; old
 
   return (
     <tr>
-      <td className="linenum">
-        <div className="line-number" data-line-num={modeChange.oldMode}></div>
+      <td
+        {...sx.diffLineNumber}
+        data-stylex-owner="commit-detail-diff-line-number-cell"
+        className={`${sx.diffLineNumber.className} linenum`}
+      >
+        <div
+          {...sx.diffLineNumberMarker}
+          data-stylex-owner="commit-detail-diff-line-number"
+          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-line-num={modeChange.oldMode}
+        ></div>
         <span className="hidden">{modeChange.oldMode}</span>
       </td>
-      <td className="linenum">
-        <div className="line-number" data-line-num={modeChange.newMode}></div>
+      <td
+        {...sx.diffLineNumber}
+        data-stylex-owner="commit-detail-diff-line-number-cell"
+        className={`${sx.diffLineNumber.className} linenum`}
+      >
+        <div
+          {...sx.diffLineNumberMarker}
+          data-stylex-owner="commit-detail-diff-line-number"
+          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-line-num={modeChange.newMode}
+        ></div>
         <span className="hidden">{modeChange.newMode}</span>
       </td>
       <td className="isBinary">{t("code.fileModeChanged")}</td>
@@ -977,17 +1017,45 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
       data-line={line.lineNumber}
       data-side={line.type === "remove" ? "A" : "B"}
     >
-      <td className="linenum">
+      <td
+        {...sx.diffLineNumber}
+        data-stylex-owner="commit-detail-diff-line-number-cell"
+        className={`${sx.diffLineNumber.className} linenum`}
+      >
         <i className="yobicon-comments"></i>
-        <div className="line-number" data-line-num={oldLine}></div>
+        <div
+          {...sx.diffLineNumberMarker}
+          data-stylex-owner="commit-detail-diff-line-number"
+          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-line-num={oldLine}
+        ></div>
         <span className="hidden">{oldLine}</span>
       </td>
-      <td className="linenum">
-        <div className="line-number" data-line-num={newLine}></div>
+      <td
+        {...sx.diffLineNumber}
+        data-stylex-owner="commit-detail-diff-line-number-cell"
+        className={`${sx.diffLineNumber.className} linenum`}
+      >
+        <div
+          {...sx.diffLineNumberMarker}
+          data-stylex-owner="commit-detail-diff-line-number"
+          className={`${sx.diffLineNumberMarker.className} line-number`}
+          data-line-num={newLine}
+        ></div>
         <span className="hidden">{newLine}</span>
       </td>
-      <td className="code">
-        <pre className="diff-partial-codeline">{`${line.prefix}${line.text}`}</pre>
+      <td
+        {...sx.diffCodeCell}
+        data-stylex-owner="commit-detail-diff-code-cell"
+        className={`${sx.diffCodeCell.className} code`}
+      >
+        <pre
+          {...sx.diffCodeLine}
+          data-stylex-owner="commit-detail-diff-code-pre"
+          className={`${sx.diffCodeLine.className} diff-partial-codeline`}
+        >
+          {`${line.prefix}${line.text}`}
+        </pre>
       </td>
     </tr>
   );

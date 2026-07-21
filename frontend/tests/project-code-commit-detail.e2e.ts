@@ -1208,6 +1208,22 @@ test("project commit detail renders legacy partial_filediff rows", async ({ page
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".linenum {\n                                text-align: right;\n                                color: rgba(0, 0, 0, 0.3);",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".line-number {\n                                    width: 50px;\n                                    height: 20px;\n                                    position: relative;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".code {\n                                white-space: nowrap;\n                                padding:0 5px;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-partial-codeline {\n                                    font-family: @fixed-font-family;\n                                    background-color: transparent;",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffLineNumber");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffLineNumberMarker");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeCell");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.diffCodeLine");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
   );
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
@@ -1285,6 +1301,95 @@ index 1234567..abcdef1 100644
     "font-family",
     '"monospace", Consolas, Tahoma',
   );
+});
+
+test("project commit detail Batch 746 partial diff row and cell owners keep legacy declarations", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const detailRequests: string[] = [];
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.linenum {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".line-number {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".code {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-codeline {");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-line-number-cell"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-line-number"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-cell"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-pre"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textAlign: "right"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "50px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('whiteSpace: "nowrap"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "0px 5px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('fontSize: "12px"');
+
+  await mockProjectCommitDetail(page, detailRequests, {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1 +1 @@
+-old
++new`,
+      },
+    ],
+  });
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  for (const width of [1366, 390]) {
+    if (width === 390) await page.setViewportSize({ width, height: 844 });
+    const styles = await page.locator("#src-main-rs tr.remove").evaluate((row) => {
+      const lineNumberCell = row.querySelector<HTMLElement>(".linenum")!;
+      const lineNumber = row.querySelector<HTMLElement>(".line-number")!;
+      const code = row.querySelector<HTMLElement>(".code")!;
+      const codeLine = row.querySelector<HTMLElement>(".diff-partial-codeline")!;
+      return {
+        code: {
+          padding: getComputedStyle(code).padding,
+          whiteSpace: getComputedStyle(code).whiteSpace,
+        },
+        codeLine: {
+          backgroundColor: getComputedStyle(codeLine).backgroundColor,
+          fontSize: getComputedStyle(codeLine).fontSize,
+          margin: getComputedStyle(codeLine).margin,
+          padding: getComputedStyle(codeLine).padding,
+          whiteSpace: getComputedStyle(codeLine).whiteSpace,
+        },
+        lineNumber: {
+          height: getComputedStyle(lineNumber).height,
+          position: getComputedStyle(lineNumber).position,
+          width: getComputedStyle(lineNumber).width,
+        },
+        lineNumberCell: {
+          padding: getComputedStyle(lineNumberCell).padding,
+          textAlign: getComputedStyle(lineNumberCell).textAlign,
+          whiteSpace: getComputedStyle(lineNumberCell).whiteSpace,
+        },
+      };
+    });
+    expect(styles).toEqual({
+      code: { padding: "0px 5px", whiteSpace: "nowrap" },
+      codeLine: {
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        fontSize: "12px",
+        margin: "0px",
+        padding: "0px",
+        whiteSpace: "pre",
+      },
+      lineNumber: { height: "20px", position: "relative", width: "50px" },
+      lineNumberCell: { padding: "0px 3px", textAlign: "right", whiteSpace: "nowrap" },
+    });
+  }
+  expect(detailRequests).toEqual(["branch=main"]);
+  const fallback = page.locator('link[href*="legacy-fallback.css"]');
+  await expect(fallback).toHaveCount(process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1);
 });
 
 test("project commit detail owns diff-body font family", async ({ page }) => {

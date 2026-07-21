@@ -5790,3 +5790,13 @@ relative positioning, 3px radius, and 30px minimum-height declarations from
 the codediff layout. Keep nested partial-diff rows and fallback consumers
 outside this owner scope, and verify desktop/390px geometry independently in
 normal and fallback-off focused tests.
+
+## Batch 746
+
+Complete the authenticated commit-detail partial-filediff row/cell visible state
+through route-local StyleX owners. Preserve the Scala partial diff DOM/classes and
+React diff/comment behavior while carrying only the frozen `.linenum`,
+`.line-number`, `.code`, and `.diff-partial-codeline` declarations. Keep comments,
+outer file/meta, range colors, and other partial-diff consumers outside this owner
+scope, and verify desktop/390px computed declarations independently in normal and
+fallback-off focused tests.
