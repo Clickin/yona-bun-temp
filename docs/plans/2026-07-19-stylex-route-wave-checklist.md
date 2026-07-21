@@ -783,3 +783,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused scope-menu contract preserves closed/hover/focus/open paint,
   copy/order, interaction, mobile hiding, and isolation in normal and
   fallback-off modes (7/7 each).
+
+### 2026-07-21 Batch 715 global GNB search-scope menu float proof
+
+- [x] The existing menu owner maps frozen Bootstrap `float:left`, while the
+  emitted menu-item owner drops only its redundant browser-default
+  `float:none`; menu position, dimensions, paint, DOM/order, and responsive
+  behavior remain unchanged.
+- [x] The focused scope-menu contract preserves computed open-menu behavior,
+  copy/order, interaction, mobile hiding, and isolation in normal and
+  fallback-off modes (7/7 each).

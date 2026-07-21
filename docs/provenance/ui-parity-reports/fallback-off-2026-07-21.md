@@ -290,3 +290,12 @@ their legacy closed/hover/focus/open paint, caret/menu geometry, copy/order,
 interaction, mobile hiding, and isolation after removing only explicit
 `box-sizing:border-box` declarations. Focused normal and fallback-off scope
 menu runs pass 7/7.
+
+## Follow-up — global GNB search-scope menu container float and box-model ownership
+
+Fallback-off evidence confirmed that the scope menu retains its legacy
+positioning, dimensions, paint, pseudo-elements, and interaction after mapping
+frozen Bootstrap `float:left` and removing only the unsupported
+`box-sizing:content-box` plus the redundant item `float:none` declarations.
+The absolutely positioned menu still computes to `float:none`; focused normal
+and fallback-off scope-menu runs pass 7/7.

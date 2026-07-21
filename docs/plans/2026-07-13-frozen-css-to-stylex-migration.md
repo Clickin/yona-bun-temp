@@ -5488,6 +5488,15 @@ existing StyleX owner. Verify unchanged closed/hover/focus/open paint,
 copy/order, interaction, mobile hiding, and isolation in focused
 normal/fallback-off tests.
 
+## Batch 715
+
+Clean the global GNB search-scope menu float declarations against the frozen
+dropdown boundary. Bootstrap explicitly supplies `float:left` for the menu;
+the emitted menu-item `<li>` has no explicit float and keeps the browser
+default. Map the menu float and remove only the redundant item float while
+preserving computed open-menu behavior, copy/order, interaction, responsive
+hiding, and isolation in focused normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

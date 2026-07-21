@@ -27,16 +27,22 @@ test("global GNB search scope menu has complete global-theme StyleX ownership", 
   const toggleEnd = styles.indexOf("openToggle: {", toggleStart);
   const menuStart = styles.indexOf("menu: {");
   const menuEnd = styles.indexOf("openMenu: {", menuStart);
+  const itemStart = styles.indexOf("item: {", menuEnd);
+  const itemEnd = styles.indexOf("button: {", itemStart);
   const buttonStart = styles.indexOf("button: {");
   const buttonEnd = styles.indexOf("middleButton: {", buttonStart);
   expect(toggleStart).toBeGreaterThanOrEqual(0);
   expect(toggleEnd).toBeGreaterThan(toggleStart);
   expect(menuStart).toBeGreaterThanOrEqual(0);
   expect(menuEnd).toBeGreaterThan(menuStart);
+  expect(itemStart).toBeGreaterThan(menuEnd);
+  expect(itemEnd).toBeGreaterThan(itemStart);
   expect(buttonStart).toBeGreaterThanOrEqual(0);
   expect(buttonEnd).toBeGreaterThan(buttonStart);
   expect(styles.slice(toggleStart, toggleEnd)).not.toContain('boxSizing: "border-box"');
+  expect(styles.slice(menuStart, menuEnd)).toContain('float: "left"');
   expect(styles.slice(menuStart, menuEnd)).not.toContain('boxSizing: "content-box"');
+  expect(styles.slice(itemStart, itemEnd)).not.toContain("float:");
   expect(styles.slice(buttonStart, buttonEnd)).not.toContain('boxSizing: "border-box"');
   for (const token of [
     "globalGnbSearchScopeZero",
