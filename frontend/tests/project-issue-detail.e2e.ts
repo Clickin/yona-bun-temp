@@ -4443,6 +4443,12 @@ test("project issue detail owns active vote controls and voter list declarations
   expect(styleSource).toContain("issueVoterListItem:");
   expect(styleSource).toContain("issueVoterAvatar:");
   expect(styleSource).toContain("issueVoteIcon:");
+  expect(styleSource).toContain('fontFamily: "yobicon"');
+  expect(styleSource).toContain('fontStyle: "normal"');
+  expect(styleSource).toContain('fontVariant: "normal"');
+  expect(styleSource).toContain("fontWeight: 400");
+  expect(styleSource).toContain("lineHeight: 1");
+  expect(styleSource).toContain('display: "inline-block"');
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-vote-wrap"');
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list-wrap"');
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list"');
@@ -4562,8 +4568,8 @@ test("project issue detail owns active vote controls and voter list declarations
       fontStyle: "normal",
       fontVariant: "normal",
       fontWeight: "400",
-      // Legacy fallback `.heart` wins in normal mode; fallback-off exposes StyleX's unitless `1`.
-      lineHeight: fallbackOff ? "1" : "17px",
+      // CSSOM exposes the used pixel value for the unitless frozen line-height: 1 in both modes.
+      lineHeight: "17px",
       inlineStyle: null,
     },
     listDisplay: "block",

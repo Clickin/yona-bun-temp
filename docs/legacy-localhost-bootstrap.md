@@ -38,6 +38,39 @@ wrappers only when you intentionally want an extra localhost legacy process on
 Use the parity-targeted wrappers below, or pass `--port 9000 --instance parity`,
 when you want to prepare the canonical verification target.
 
+## Browser prerequisite for bootstrap and screenshots
+
+The legacy seed commands and visual-parity scripts use the repository's
+`frontend` Playwright dependency. Run the browser install outside the Codex
+sandbox, from the frontend workspace; running `pnpm exec playwright` at the
+repository root does not resolve this dependency:
+
+```bash
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
+  --dir frontend exec playwright --version
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
+  --dir frontend exec playwright install chromium --only-shell
+```
+
+`--only-shell` is intentional: the headless legacy seed/screenshot harness
+requires Playwright's `chromium_headless_shell-*` executable. Confirm the
+browser before running `seed-admin`, `seed-foundation`,
+`seed-content`, or screenshot parity. For `scripts/visual-parity-sweep.mjs`,
+set `PW_CHANNEL=chrome` when the system Google Chrome is available (or
+`PW_CHANNEL=chromium` after the headless-shell install); its historical default
+is `msedge`, which is not guaranteed to be installed. The expected Playwright version is the
+one declared in `frontend/package.json`; the browser cache is user-scoped and
+is not supplied by the Codex sandbox.
+
+When a system Chrome is available, the managed seed commands can use it
+without the Playwright browser cache:
+
+```bash
+PW_CHANNEL=chrome pnpm legacy:localhost:seed-admin:parity
+PW_CHANNEL=chrome pnpm legacy:localhost:seed-foundation:parity
+PW_CHANNEL=chrome pnpm legacy:localhost:seed-content:parity
+```
+
 ## Commands
 
 ```bash

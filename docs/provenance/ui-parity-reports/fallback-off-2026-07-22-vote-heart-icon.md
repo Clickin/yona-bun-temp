@@ -14,6 +14,13 @@
   no-inline-style, active/disabled visibility, and the fallback cascade.
 - Scope exclusion: comment hearts, voter modal icons, and unrelated icon
   consumers remain unchanged.
-- Visual gap: legacy port `127.0.0.1:9000` was unavailable, so screenshot-level
-  parity is not claimed.
+- Visual recheck: the managed legacy port is now prepared and seeded with
+  Java 8; `PW_CHANNEL=chrome YORAM_SWEEP_TARGET=legacy
+  YORAM_SWEEP_PATHS=/admin/sample/issue/1` passed 1/1 and wrote
+  `output/playwright/visual-sweep/legacy-_admin_sample_issue_1.png`.
+  A paired local comparison remains open: Vite dev hit the existing StyleX
+  `Invalid empty selector` middleware error, while the production preview
+  served nested-route assets as relative `/admin/sample/issue/assets/*`
+  requests and rendered blank. Therefore the legacy screenshot is confirmed,
+  but paired visual parity is not claimed yet.
 - Frozen `yona-original/**` sources remained unchanged.

@@ -54,6 +54,7 @@ const issueInlineOwners = stylex.create({
 });
 
 const disabledVoteStyleProps = stylex.props(styles.disabledVote);
+const issueVoteIconStyleProps = stylex.props(styles.issueVoteIcon);
 
 const LEGACY_LINK_PROPS = {
   activeOptions: { exact: true, explicitUndefined: true, includeHash: true, includeSearch: true },
@@ -1553,8 +1554,8 @@ function IssueVote({
               data-stylex-owner="project-issue-detail-vote-heart"
             >
               <i
-                {...stylex.props(styles.issueVoteIcon)}
-                className={`${stylex.props(styles.issueVoteIcon).className} yobicon-hearts`}
+                {...issueVoteIconStyleProps}
+                className={`${issueVoteIconStyleProps.className} yobicon-hearts`}
                 data-stylex-owner="project-issue-detail-vote-heart-icon"
                 data-stylex-owner-instance="active"
               ></i>
@@ -1574,8 +1575,8 @@ function IssueVote({
               data-stylex-owner="project-issue-detail-vote-heart-disabled"
             >
               <i
-                {...stylex.props(styles.issueVoteIcon)}
-                className={`${stylex.props(styles.issueVoteIcon).className} yobicon-hearts`}
+                {...issueVoteIconStyleProps}
+                className={`${issueVoteIconStyleProps.className} yobicon-hearts`}
                 data-stylex-owner="project-issue-detail-vote-heart-icon"
                 data-stylex-owner-instance="disabled"
               ></i>

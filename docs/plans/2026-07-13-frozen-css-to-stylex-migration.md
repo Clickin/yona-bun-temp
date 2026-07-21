@@ -2,6 +2,35 @@
 
 Status: Wave 1 active; batch-worktree execution enabled after slice 224; theme-boundary correction complete. Latest focused fallback-off repairs: shared GNB responsive outer padding and root login-dialog lower rows (2026-07-20).
 
+## Screenshot parity environment prerequisite
+
+Legacy screenshot parity is a required gate, not an optional gap. Before
+running legacy seed/bootstrap or `scripts/visual-parity-sweep.mjs`, verify the
+managed legacy server and install the browser from the `frontend` workspace in
+an escalated (outside-sandbox) command:
+
+```bash
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
+  --dir frontend exec playwright --version
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
+  --dir frontend exec playwright install chromium --only-shell
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store legacy:localhost:prepare:parity
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store legacy:localhost:start:parity
+pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store legacy:localhost:status:parity
+# visual-parity-sweep.mjs defaults to msedge; use installed Chromium or system Chrome
+PW_CHANNEL=chrome pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
+  node scripts/visual-parity-sweep.mjs
+```
+
+The root workspace does not expose the frontend-only Playwright binary. The
+`--only-shell` flag is required for the headless executable used by the seed
+and screenshot harness. `visual-parity-sweep.mjs` historically defaults to
+`msedge`, so set `PW_CHANNEL=chrome` when the system Google Chrome is present
+(or use `PW_CHANNEL=chromium` after the headless-shell install). A missing
+browser executable is an environment failure that must be repaired before
+recording screenshot parity as unavailable. The legacy server itself uses the
+harness-managed Java 8 runtime; the host Java version is not a valid substitute.
+
 ## 2026-07-20 — Project issue-form attachment-help alignment
 
 The issue-form upload attachment-save help remains a route-local consumer of

@@ -543,6 +543,14 @@ async function status(layout) {
   );
 }
 
+function playwrightLaunchOptions() {
+  const channel = process.env.PW_CHANNEL ?? "";
+  return {
+    ...(channel ? { channel } : {}),
+    headless: true,
+  };
+}
+
 async function seedAdmin(layout, options) {
   const { chromium } = frontendRequire("@playwright/test");
   const name = stringValue(options.name, defaultAdminName);
@@ -550,7 +558,7 @@ async function seedAdmin(layout, options) {
   const password = stringValue(options.password, defaultAdminPassword);
   const restartAfterSeed = Boolean(options.restart);
   const secretPageUrl = `http://${layout.host}:${layout.port}/secret`;
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(playwrightLaunchOptions());
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   await page.goto(secretPageUrl, { waitUntil: "networkidle", timeout: 30_000 });
@@ -576,7 +584,8 @@ async function seedAdmin(layout, options) {
   const bodyText = await page.locator("body").innerText();
   await browser.close();
 
-  if (!bodyText.includes("Server needs to be restarted")) {
+  const bootstrapState = await probeSecretBootstrap(secretPageUrl);
+  if (!bodyText.includes("Server needs to be restarted") && !bootstrapState.restartPending) {
     throw new Error("Expected restart notice after site-admin setup");
   }
   if (!hasRotatedSecret(layout)) {
@@ -607,7 +616,7 @@ async function seedParityFoundation(layout, options) {
     seededAt: new Date().toISOString(),
     users: [],
   };
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(playwrightLaunchOptions());
   try {
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,
@@ -753,7 +762,7 @@ async function seedParityContent(layout, options) {
     verificationPages: [],
     watchers: [],
   };
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch(playwrightLaunchOptions());
   try {
     const adminSession = await createAuthenticatedSession(browser, baseUrl, {
       loginId: defaultAdminLoginId,

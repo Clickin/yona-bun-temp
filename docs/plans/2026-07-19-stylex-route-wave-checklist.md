@@ -13,7 +13,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Focused normal/fallback-off suites pass 2/2, covering Scala/icon source
   mapping, owner/declaration, computed font/display/pseudo-content, no inline
   style, active/disabled visibility, and the fallback cascade difference in
-  line-height. Screenshot parity remains a live-legacy gap.
+  line-height. The managed legacy issue screen now has a real 1/1 desktop
+  screenshot sweep; paired local comparison remains open because the local
+  dev StyleX middleware errors and the production preview has nested-route
+  asset resolution failures.
 
 ### 2026-07-22 Batch 782 vote and voter-list proof
 
