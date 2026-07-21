@@ -5925,3 +5925,13 @@ SVN diff wrapper, and unrelated fallback consumers outside this owner scope.
 Verify source mapping, no-inline-style, computed declarations, visible copy,
 and desktop/390px geometry independently in normal and fallback-off focused
 tests.
+
+## Batch 758
+
+Retire only the source-less React-side `.right-txt { text-align:right; }`
+bridge from `frontend/src/app.css`. The complete current React source graph
+emits no `.right-txt`; frozen legacy views and `_common.less:163` still retain
+the historical utility, so the generated legacy fallback remains unchanged.
+Do not change route DOM, behavior, frozen sources, or unrelated text utilities.
+Verify exact app.css absence and generated-fallback retention in the focused
+fallback-off static contract.

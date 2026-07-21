@@ -716,6 +716,17 @@ test("source-less number-of-comments bridge has no app.css arm", () => {
   );
 });
 
+test("right-txt bridge is retired while the generated legacy fallback remains intact", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+
+  expect(appCss).not.toContain(".right-txt {");
+  expect(generatedFallback).toContain(".right-txt {");
+});
+
 test("source-less mr6 utility bridge has no app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".mr6 {");

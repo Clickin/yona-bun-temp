@@ -1104,3 +1104,8 @@ desktop/mobile geometry, and filtering.
   plus independent normal/fallback-off focused runs pass 1/1 each; plain
   `.commitMsg`, generic avatar styling, and the already-owned diff wrapper stay
   fallback- or separately-owned.
+- [x] Batch 758 source-less React-side `.right-txt` fallback bridge retirement:
+  current `frontend/src` has no React emitter, only the exact `app.css` arm is
+  removed, generated legacy fallback retention is asserted, and the focused
+  fallback-off static contract passes 1/1. Frozen legacy utility sources remain
+  unchanged.
