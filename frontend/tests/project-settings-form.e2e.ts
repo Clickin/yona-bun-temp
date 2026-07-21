@@ -1880,6 +1880,104 @@ test("project settings top and bottom shells own the frozen box-wrap boundaries"
   );
 });
 
+test("project settings form and frame own the frozen shell declarations", async ({ page }) => {
+  const [legacy, commonStyles, pageStyles, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_common.less", "utf8"),
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('<form id="saveSetting" method="post"');
+  expect(legacy).toContain('<div class="bubble-wrap gray" style="overflow: visible">');
+  expect(commonStyles).toContain(".nm { margin: 0 !important; }");
+  expect(pageStyles).toContain("overflow: hidden;");
+  expect(pageStyles).toContain("margin-bottom: 20px;");
+  expect(pageStyles).toContain(".border-radius(5px);");
+  expect(pageStyles).toContain("background-color: #F7F7F7;");
+  expect(route).toContain("className={`${sx.form.className} nm`}");
+  expect(route).toContain("className={`${sx.frame.className} bubble-wrap gray`}");
+  expect(route).toContain('data-stylex-owner="project-setting-form"');
+  expect(route).toContain('data-stylex-owner="project-setting-frame"');
+  expect(style).toContain('margin: "0px"');
+  expect(style).toContain('backgroundColor: "#F7F7F7"');
+  expect(style).toContain('borderRadius: "5px"');
+  expect(style).toContain('marginBottom: "20px"');
+  expect(style).toContain('overflow: "visible"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const form = page.locator('[data-stylex-owner="project-setting-form"]');
+    const frame = page.locator('[data-stylex-owner="project-setting-frame"]');
+    await expect(form).toHaveClass(/\bnm\b/);
+    await expect(frame).toHaveClass(/\bbubble-wrap\b/);
+    await expect(frame).toHaveClass(/\bgray\b/);
+    const metrics = await page.evaluate(() => {
+      const form = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-form"]',
+      );
+      const frame = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="project-setting-frame"]',
+      );
+      if (!form || !frame) return null;
+      const formStyle = getComputedStyle(form);
+      const frameStyle = getComputedStyle(frame);
+      const formBox = form.getBoundingClientRect();
+      const frameBox = frame.getBoundingClientRect();
+      return {
+        form: {
+          margin: formStyle.margin,
+          left: formBox.left,
+          right: formBox.right,
+          top: formBox.top,
+          bottom: formBox.bottom,
+        },
+        frame: {
+          backgroundColor: frameStyle.backgroundColor,
+          borderRadius: frameStyle.borderTopLeftRadius,
+          marginBottom: frameStyle.marginBottom,
+          overflow: frameStyle.overflow,
+          left: frameBox.left,
+          right: frameBox.right,
+          top: frameBox.top,
+          bottom: frameBox.bottom,
+        },
+      };
+    });
+    expect(metrics).not.toBeNull();
+    expect(metrics!.form.margin).toBe("0px");
+    expect(metrics!.frame).toMatchObject({
+      backgroundColor: "rgb(247, 247, 247)",
+      borderRadius: "5px",
+      marginBottom: "20px",
+      overflow: "visible",
+    });
+    expect(metrics!.form.right - metrics!.form.left).toBeGreaterThan(0);
+    expect(metrics!.form.bottom - metrics!.form.top).toBeGreaterThan(0);
+    expect(metrics!.frame.right - metrics!.frame.left).toBeGreaterThan(0);
+    expect(metrics!.frame.bottom - metrics!.frame.top).toBeGreaterThan(0);
+    expect(metrics!.frame.left).toBeGreaterThanOrEqual(metrics!.form.left);
+    expect(metrics!.frame.right).toBeLessThanOrEqual(metrics!.form.right);
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  const save = page.locator("#save");
+  await expect(save).toHaveAttribute("type", "submit");
+  await expect(save).toHaveClass(/\bybtn\b/);
+  await expect(save).toHaveClass(/\bybtn-success\b/);
+  await expect(save).toHaveAttribute("data-stylex-owner", "project-setting-save");
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

@@ -82,7 +82,12 @@ export const styles = stylex.create({
   logoBackground: (backgroundImage: string) => ({ backgroundImage }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },
-  frame: { overflow: "visible" },
+  frame: {
+    backgroundColor: "#F7F7F7",
+    borderRadius: "5px",
+    marginBottom: "20px",
+    overflow: "visible",
+  },
   topBox: {
     borderBottom: "1px solid #E9E9E9",
     padding: {

@@ -495,10 +495,15 @@ function ProjectSettingBody({
           action={prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}/setting`)}
           encType="multipart/form-data"
           {...sx.form}
+          className={`${sx.form.className} nm`}
           data-stylex-owner="project-setting-form"
           onSubmit={onSubmit}
         >
-          <div {...sx.frame} data-stylex-owner="project-setting-frame">
+          <div
+            {...sx.frame}
+            className={`${sx.frame.className} bubble-wrap gray`}
+            data-stylex-owner="project-setting-frame"
+          >
             <input type="hidden" name="id" value={projectId(project)} />
             <input
               type="hidden"

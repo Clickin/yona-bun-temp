@@ -347,6 +347,14 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings form/frame shell owners
+
+Fallback-off evidence confirmed the form `nm` margin and frame
+`bubble-wrap gray` surface retain the frozen overflow-visible behavior,
+20px bottom margin, 5px radius, gray background, desktop/mobile geometry, and
+Save/form interaction through route-local StyleX. Generic shell consumers
+retain the legacy fallback. Focused normal and fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings top/bottom shell owners
 
 Fallback-off evidence confirmed the top and bottom shell owners preserve the

@@ -898,3 +898,11 @@ desktop/mobile geometry, and filtering.
   border/padding/alignment declarations.
 - [x] The focused contract passes desktop/mobile geometry and Save ownership in
   normal and fallback-off runs (1/1 each); generic shell fallback remains.
+
+### 2026-07-21 Batch 727 project-settings form/frame shell proof
+
+- [x] Form and frame owners preserve Scala `nm`/`bubble-wrap gray` classes,
+  overflow-visible behavior, shell geometry, and Save interaction while
+  carrying exact frozen margin/radius/background declarations.
+- [x] Desktop/mobile computed output and fallback boundary pass in normal and
+  fallback-off runs (1/1 each); generic shell fallback remains.

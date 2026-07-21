@@ -5617,3 +5617,13 @@ inline padding semantics, Save button classes/submit behavior, and exact frozen
 `.box-wrap` base/top/bottom, last-of-type, and responsive declarations. Retain
 generic shell fallback consumers and verify desktop/mobile computed geometry and
 Save contract in normal and fallback-off focused tests.
+
+## Batch 727
+
+Complete the authenticated project-settings form/frame shell visible state
+through route-local StyleX owners. Preserve the Scala `nm` form and
+`bubble-wrap gray` frame classes, inline overflow-visible behavior, shell
+geometry, and Save interaction. Carry only the frozen form margin and frame
+overflow/margin/radius/background declarations while retaining generic shell
+fallback consumers and verifying desktop/mobile computed output in normal and
+fallback-off focused tests.
