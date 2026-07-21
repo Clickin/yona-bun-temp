@@ -241,3 +241,12 @@ existing StyleX owner. The `line-height:20px` declaration remains because frozen
 Bootstrap `bootstrap.css:176-181` supplies that inherited baseline and fallback-off
 body otherwise computes 18px. Focused normal/fallback-off contracts preserve the
 desktop/mobile geometry, consumer split, and paint isolation.
+
+## Follow-up — global GNB feedback-link browser-default cleanup
+
+Fallback-off evidence confirmed that the feedback anchor retains its legacy
+geometry after removing only the explicit `display:inline` and `float:none`
+StyleX declarations. The frozen `.gnb-nav a` rule does not declare either
+property; source-backed color, line-height, padding, transition, external
+navigation, and conditional visibility remain intact. Focused normal and
+fallback-off runs pass 10/10.

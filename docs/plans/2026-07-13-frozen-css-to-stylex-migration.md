@@ -5418,6 +5418,16 @@ not declare `box-sizing` or `position` on the nav itself; frozen Bootstrap suppl
 StyleX owner and verify unchanged desktop/mobile geometry, consumer split, and paint isolation in
 focused normal/fallback-off tests.
 
+## Batch 708
+
+Clean the global GNB feedback-link owner against the frozen `.gnb-nav a`
+declaration boundary. The legacy link source provides padding, line-height,
+color, text decoration, and transition, but does not explicitly declare
+`display` or `float`; remove only those browser-default declarations from the
+existing StyleX owner. Verify unchanged desktop/mobile geometry, conditional
+visibility, external navigation, and paint isolation in focused normal/fallback-off
+tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

@@ -1350,8 +1350,6 @@ const globalGnbFeedbackStyles = stylex.create({
   },
   link: {
     color: homeColors.textMuted,
-    display: "inline",
-    float: "none",
     lineHeight: "40px",
     padding: "10px",
     textDecoration: "none",

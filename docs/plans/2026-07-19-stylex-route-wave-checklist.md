@@ -721,3 +721,11 @@ desktop/mobile geometry, and filtering.
   Bootstrap-backed `lineHeight:20px` baseline remains.
 - [x] The focused source contract and computed desktop/mobile/consumer-isolation
   checks preserve the legacy nav geometry and raw-class fallback boundary.
+
+### 2026-07-21 Batch 708 global GNB feedback-link browser-default proof
+
+- [x] The existing feedback-link owner removes only redundant `display` and
+  `float` declarations absent from frozen `.gnb-nav a`; source-backed paint,
+  line-height, padding, transition, and external navigation remain.
+- [x] The focused contract preserves conditional visibility, desktop/mobile
+  geometry, and paint isolation in normal and fallback-off modes (10/10 each).
