@@ -187,7 +187,7 @@ const styles = stylex.create({
     boxShadow: "none",
     color: projectsDirectoryColors.searchText,
     fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-    fontSize: "12px",
+    fontSize: { default: "12px", [globalBreakpoints.mobile]: "16px" },
     height: "20px",
     margin: "0px -5px",
     outlineStyle: "none",

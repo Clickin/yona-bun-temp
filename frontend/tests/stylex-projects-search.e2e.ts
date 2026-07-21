@@ -97,6 +97,8 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   expect(ui).toContain("position:absolute;");
   expect(responsive).toContain("height: inherit !important;");
   expect(responsive).toContain("width: inherit !important;");
+  expect(responsive).toContain('input[type="text"],');
+  expect(responsive).toContain("font-size: 16px !important;");
   expect(bootstrap).toContain(".pull-left {");
   expect(bootstrap).toContain('font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;');
   expect(messages).toContain("site.project.filter = 키워드로 프로젝트 찾기");
@@ -125,7 +127,7 @@ test("search strip records frozen sources and six ownership boundaries", () => {
     route.indexOf("directorySearchInput: {"),
     route.indexOf("},\n  directorySearchButton:", route.indexOf("directorySearchInput: {")),
   );
-  expect(inputStyle).toContain('fontSize: "12px"');
+  expect(inputStyle).toContain('fontSize: { default: "12px", [globalBreakpoints.mobile]: "16px" }');
   expect(buttonStyle).toContain('fontSize: "12px"');
   expect(buttonStyle).toContain('boxShadow: "none"');
   expect(buttonStyle).toContain('outlineStyle: "none"');

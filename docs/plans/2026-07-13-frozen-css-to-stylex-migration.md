@@ -5384,3 +5384,12 @@ a uniform 1px upward shift; fallback-off geometry has a 3px upward shift after t
 identified tab, title-area, Bootstrap, page-wrapper, and responsive cascade was mapped. Do not
 add a compensating offset; retain this route state as a documented gap for a future source-backed
 explanation.
+
+## Batch 698
+
+Complete the source-backed `/projects` search-input typography mapping by carrying the frozen
+mobile `input[type="text"]` `font-size:16px !important` rule into the existing StyleX input owner,
+while retaining the desktop `12px` baseline. Focused source, computed typography, and filter
+interaction checks pass in normal and fallback-off modes. The remaining uniform ancestor shift
+is unchanged (1px normal, 3px fallback-off) and is retained as a shell/fallback-boundary gap;
+do not add route-local compensation.

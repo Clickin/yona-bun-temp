@@ -130,3 +130,9 @@ wrap and all descendants. The normal fallback-enabled run retains a uniform 1px 
 The frozen project-page, title-area, Bootstrap nav-tab, and responsive declarations were inspected
 and are already represented; no remaining declaration explains the shift. The fallback remains
 enabled by default for this state, and no invented offset or weakened assertion was retained.
+
+The follow-up typography probe confirms the mobile input now computes to the frozen `16px` rule
+with fallback disabled while desktop remains `12px`. This removes the input-font consumer gap but
+does not move the search ancestor: the fallback-off wrap and descendants remain uniformly 3px
+high, so the residual is retained for shell/fallback-boundary investigation rather than patched
+with a route-local offset.
