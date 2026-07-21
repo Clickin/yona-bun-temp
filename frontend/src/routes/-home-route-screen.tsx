@@ -1102,7 +1102,6 @@ const globalGnbSearchScopeStyles = stylex.create({
     borderTopStyle: "solid",
     borderTopWidth: "1px",
     boxShadow: homeColors.globalGnbSearchScopeToggleShadow,
-    boxSizing: "border-box",
     color: {
       default: homeColors.globalGnbSearchScopeToggleText,
       ":hover": homeColors.globalGnbSearchScopeToggleInteractionText,
@@ -1283,7 +1282,6 @@ const globalGnbSearchScopeStyles = stylex.create({
     borderRightWidth: "0px",
     borderTopStyle: "none",
     borderTopWidth: "0px",
-    boxSizing: "border-box",
     color: {
       default: homeColors.globalGnbSearchScopeItemText,
       ":hover": homeColors.globalGnbSearchScopeMenuInteractionText,

@@ -5468,6 +5468,16 @@ owner. Verify unchanged desktop/project/organization geometry, hover/focus,
 responsive hiding, isolation, and GET behavior in focused normal/fallback-off
 tests.
 
+## Batch 713
+
+Clean the global GNB search-scope toggle and menu-button owners against the
+frozen dropdown/button boundary. The legacy `_yobiUI.less` and Bootstrap rules
+provide the visible control paint and geometry but do not declare `box-sizing`
+for these controls; remove only the redundant `boxSizing:"border-box"`
+declarations from the existing StyleX owners. Verify unchanged closed,
+hover/focus/open paint, copy/order, interaction, mobile hiding, and isolation in
+focused normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

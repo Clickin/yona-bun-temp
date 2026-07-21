@@ -282,3 +282,11 @@ Fallback-off evidence confirmed that the search submit retains its legacy
 geometry, hover/focus paint, responsive hiding, Yobicon isolation, and GET
 payload after removing only explicit `box-sizing:border-box` from its StyleX
 owner. Focused normal and fallback-off submit runs pass 9/9.
+
+## Follow-up — global GNB search-scope browser-default box-model cleanup
+
+Fallback-off evidence confirmed that the scope toggle and menu buttons retain
+their legacy closed/hover/focus/open paint, caret/menu geometry, copy/order,
+interaction, mobile hiding, and isolation after removing only explicit
+`box-sizing:border-box` declarations. Focused normal and fallback-off scope
+menu runs pass 7/7.

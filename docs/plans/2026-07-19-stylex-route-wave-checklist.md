@@ -765,3 +765,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused submit contract preserves desktop/project/organization
   geometry, hover/focus, responsive hiding, isolation, and GET behavior in
   normal and fallback-off modes (9/9 each).
+
+### 2026-07-21 Batch 713 global GNB search-scope browser-default proof
+
+- [x] The existing scope toggle and menu-button owners remove only unsupported
+  `boxSizing` declarations; frozen dropdown/button colors, borders, shadows,
+  typography, padding, caret, and positioning remain.
+- [x] The focused scope-menu contract preserves closed/hover/focus/open paint,
+  copy/order, interaction, mobile hiding, and isolation in normal and
+  fallback-off modes (7/7 each).
