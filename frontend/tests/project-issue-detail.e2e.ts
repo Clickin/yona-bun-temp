@@ -22,7 +22,6 @@ const EXPECTED_ISSUE_DETAIL = `
 const TASKLIST = `<div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div>`;
 const COMMENT_UPDATE_FORM = `<div id="comment-editform-77" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments/77" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="77"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-77" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-77">Comment **markdown**</textarea></div></div><div id="preview-77" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-77" class="file-upload__label ybtn">File upload</label><input id="upload-77" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="77">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-77"></div><div class="attachment-files"></div><div id="upload-77" data-resourcetype="ISSUE_COMMENT" data-resourceid="77"></div></div></form></div>`;
 const COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="ISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
-const COMMENT_FORM_UNAUTHORIZED = `<div class="write-comment-box mt20" title="You need to log in to add comments." data-login="required"><div class="write-comment-wrap"><div class="textarea-box"><textarea class="comment disabled" disabled="" style="cursor:text"></textarea></div><div class="right-txt mt10"><span class="ybtn ybtn-disabled">Add a comment</span></div></div></div>`;
 const CHILD_COMMENT_ANCHORS = `<div id="comment-78"></div>`;
 const CHILD_COMMENTS = `<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Child <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/qa1" class="usf-group" title="qa1"><strong>QA One</strong></a><a href="__BASE_PATH__/admin/sample/issue/11#comment-78" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/issue/11/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="77"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="__CHILD_REPLY_PLACEHOLDER__"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>`;
 const LEFT_COMMENT_TIMELINE = `<div id="comments" class="board-comment-wrap"><div id="timeline"><div class="timeline-list"><div class="comment-header"><i></i><strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment " id="comment-77">${CHILD_COMMENT_ANCHORS}<div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-placement="top" title="dev"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="Dev Member"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap" data-placement="top" title="Dev Member"><img src="/assets/images/default-avatar-32.png" width="32" height="32" alt="dev"></a></span><a href="__BASE_PATH__/dev" data-placement="top" title="dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/issue/11#comment-77" class="ago" title="Jul 2, 2026">Jul 2, 2026</a><a href="__BASE_PATH__/admin/sample/issue/11#comment-77" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><span class="new-issue-by"><a href="__BASE_PATH__/user/issues/new?commentId=77">Reference in new issue</a></span><button type="button" class="btn-transparent-with-fontsize-lineheight" title="Agree"><i class="yobicon-hearts vote-heart-off"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml10" data-comment-id="77" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent-with-fontsize-lineheight ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div>${COMMENT_UPDATE_FORM}<div id="comment-body-77">${TASKLIST}<div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>Comment <strong>markdown</strong></p></div><div class="attachments pull-left" data-attachments="[]"></div></div></div>${CHILD_COMMENTS}</li></ul></div></div>${COMMENT_FORM}</div>`;
@@ -3903,18 +3902,75 @@ test("project issue detail renders parent row and selected child on child issue 
 
 test("project issue detail renders legacy unauthorized comment form", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync(
+    "../yona-original/app/views/common/commentForm.scala.html",
+    "utf8",
+  );
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyView).toContain('<div class="write-comment-box mt20"');
+  expect(legacyView).toContain('data-login="required"');
+  expect(legacyCommon).toMatch(/\.mt20\s*\{\s*margin-top:\s*20px;\s*\}/u);
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  expect(styleSource).toContain('unauthorizedComment: { marginTop: "20px" }');
+  expect(routeSource).toContain("styles.unauthorizedComment");
+  expect(routeSource).not.toContain('className="write-comment-box mt20"');
+
   await mockProjectIssueDetail(page, { viewerCanComment: false });
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
+  const unauthorized = page.locator(
+    '.span-left-pane > #comments > [data-stylex-owner="project-issue-detail-unauthorized-comment"]',
+  );
   await expect(page.locator(".span-left-pane > #comments > #comment-form")).toHaveCount(0);
-  await expect(page.locator('.span-left-pane > #comments > [data-login="required"]')).toHaveCount(
-    1,
-  );
+  await expect(unauthorized).toHaveCount(1);
   await expect(page.locator("#comment-77 .child-comment-input-form")).toHaveCount(0);
-
-  expect(await canonicalize(page, '.span-left-pane > #comments > [data-login="required"]')).toEqual(
-    await canonicalizeHtml(page, COMMENT_FORM_UNAUTHORIZED),
+  await expect(unauthorized).toHaveClass(/write-comment-box/);
+  await expect(unauthorized).not.toHaveClass(/\bmt20\b/);
+  await expect(unauthorized).toHaveAttribute("title", "Please log in.");
+  await expect(unauthorized).toHaveAttribute("data-login", "required");
+  await expect(unauthorized).not.toHaveAttribute("style");
+  await expect(unauthorized.locator(".write-comment-wrap > .textarea-box > textarea")).toHaveClass(
+    /comment/,
   );
+  await expect(unauthorized.locator("textarea")).toHaveClass(/disabled/);
+  await expect(unauthorized.locator("textarea")).toBeDisabled();
+  await expect(unauthorized.locator("textarea")).not.toHaveAttribute("style");
+  await expect(
+    unauthorized.locator("[data-stylex-owner='project-issue-detail-disabled-comment-actions']"),
+  ).toHaveClass(/mt10/);
+  await expect(unauthorized.locator(".ybtn-disabled")).toHaveText("Add a comment");
+
+  const desktopMetrics = await unauthorized.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return { marginTop: style.marginTop, top: rect.top, height: rect.height };
+  });
+  expect(desktopMetrics.marginTop).toBe("20px");
+  expect(desktopMetrics.height).toBeGreaterThan(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const mobileMetrics = await page
+    .locator('[data-stylex-owner="project-issue-detail-unauthorized-comment"]')
+    .evaluate((element) => ({
+      marginTop: getComputedStyle(element).marginTop,
+      top: element.getBoundingClientRect().top,
+    }));
+  expect(mobileMetrics.marginTop).toBe("20px");
+  expect(mobileMetrics.top).toBeGreaterThan(0);
   await expect(
     page.locator(`script[src="${basePath}/assets/javascripts/common/yobi.CommentForm.js"]`),
   ).toHaveCount(0);

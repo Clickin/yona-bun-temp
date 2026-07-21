@@ -210,6 +210,7 @@ export const styles = stylex.create({
     marginLeft: "10px",
   },
   disabledCommentActions: { textAlign: "right" },
+  unauthorizedComment: { marginTop: "20px" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },
   commentUpdateActions: { textAlign: "right" },

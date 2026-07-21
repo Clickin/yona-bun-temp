@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 770 unauthorized issue-comment wrapper spacing proof
+
+- [x] The unauthorized issue-comment state preserves the legacy wrapper,
+  title/data-login, disabled textarea, action copy, and script-free behavior
+  while route-local StyleX owns frozen `.mt20` `margin-top:20px`; existing
+  `.mt10` action alignment remains separately owned.
+- [x] Focused normal and fallback-off Playwright checks pass 1/1, covering
+  source/import mapping, owner/declaration, computed desktop/mobile spacing,
+  no-inline-style, disabled controls, and legacy script absence.
+
 ### 2026-07-22 Batch 769 issue-detail sharer title spacing proof
 
 - [x] The authenticated issue-detail sharer title preserves the legacy

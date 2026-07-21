@@ -6056,3 +6056,14 @@ copy, sharer reveal/read-only states, list interaction, and DOM order; remove
 consumers. The focused issue-detail tests cover source/import mapping, computed
 spacing, no-inline-style, reveal/open behavior, and read-only sharer copy/order/
 links in normal and fallback-disabled modes.
+## Batch 770
+
+Move the unauthorized issue-detail comment wrapper's active `.mt20` spacing
+into a route-local StyleX owner using the frozen `margin-top:20px` declaration
+from `_common.less:208`. Preserve the `write-comment-box` wrapper,
+title/data-login contract, disabled textarea, existing `.mt10` action owner,
+button copy, and script-free behavior; remove `mt20` only from this React
+emitter and leave all other comment/action consumers separately scoped. The
+focused issue-detail test covers source/import mapping, computed margin,
+no-inline-style, desktop/mobile geometry, disabled controls, and legacy script
+absence in normal and fallback-disabled modes.

@@ -2917,7 +2917,12 @@ function IssueCommentForm({
 
   if (!booleanField(issue.viewerCanComment)) {
     return (
-      <div className="write-comment-box mt20" title={t("user.login.alert")} data-login="required">
+      <div
+        className={`${stylex.props(styles.unauthorizedComment).className} write-comment-box`}
+        title={t("user.login.alert")}
+        data-login="required"
+        data-stylex-owner="project-issue-detail-unauthorized-comment"
+      >
         <div className="write-comment-wrap">
           <div className="textarea-box">
             <textarea
