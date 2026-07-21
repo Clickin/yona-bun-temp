@@ -5619,6 +5619,16 @@ Bootstrap `.nav` `margin-bottom:20px`, `margin-left:0`, and `list-style:none`.
 Retain generic nav/tab fallback consumers and verify desktop/mobile computed
 reset and navigation behavior in normal and fallback-off focused tests.
 
+## Batch 732
+
+Complete the authenticated project-settings subnavigation clearfix state
+through the existing route-local list owner. Preserve the native Scala
+seven-item `ul.nav.nav-tabs` DOM, item/link behavior, and geometry while carrying
+only frozen Bootstrap `.nav-tabs` pseudo-element declarations: empty table
+`::before`/`::after` generated content with zero line-height and `clear:both` on
+`::after`. Retain generic tab fallback consumers and verify desktop/mobile
+pseudo styles and navigation behavior in normal and fallback-off focused tests.
+
 ## Batch 726
 
 Complete the authenticated project-settings top and bottom shell visible state

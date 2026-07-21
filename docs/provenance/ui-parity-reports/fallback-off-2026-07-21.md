@@ -356,6 +356,14 @@ active/conditional Change VCS state, and desktop/mobile containment. Generic
 nav/tab fallback consumers remain. Focused normal and fallback-off runs pass
 1/1 each.
 
+## Follow-up — authenticated project-settings subnavigation clearfix owner
+
+Fallback-off evidence confirmed the existing subnavigation list owner retains
+frozen Bootstrap `.nav-tabs` `::before`/`::after` table pseudo-elements,
+zero-line-height empty content, and `clear:both` on `::after` across
+desktop/mobile while preserving tab navigation and geometry. Generic tab
+fallback consumers remain. Focused normal and fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings definition-list field owners
 
 Fallback-off evidence confirmed the top settings `dl`, `dt`, `dd`, and label

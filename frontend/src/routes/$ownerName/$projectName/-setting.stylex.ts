@@ -16,6 +16,17 @@ export const projectSettingColors = stylex.defineVars({
 
 export const styles = stylex.create({
   projectSettingSubmenuList: {
+    "::before": {
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
+    "::after": {
+      clear: "both",
+      content: '""',
+      display: "table",
+      lineHeight: 0,
+    },
     marginBottom: "20px",
     marginLeft: "0px",
     listStyle: "none",

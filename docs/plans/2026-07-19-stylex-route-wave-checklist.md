@@ -940,3 +940,11 @@ desktop/mobile geometry, and filtering.
   active/count/conditional state, and tab fallback remain intact.
 - [x] Desktop/mobile computed reset, item containment, navigation, and Change
   VCS visibility pass in normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 732 project-settings subnavigation clearfix proof
+
+- [x] The existing subnavigation list owner carries only frozen Bootstrap
+  `.nav-tabs` `::before`/`::after` table/zero-line-height/empty-content
+  declarations and `clear:both` on `::after`.
+- [x] Desktop/mobile computed pseudo styles, tab geometry, navigation, and
+  conditional state pass in normal and fallback-off runs (1/1 each).

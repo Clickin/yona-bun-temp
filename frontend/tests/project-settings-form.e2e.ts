@@ -949,7 +949,9 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(settingFormSource).toContain("ProjectSettingRouteScreen");
 });
 
-test("project settings submenu owns the frozen route-specific tab margin", async ({ page }) => {
+test("project settings submenu owns the frozen clearfix and route-specific tab margin", async ({
+  page,
+}) => {
   const [legacy, bootstrap, less, route, style] = await Promise.all([
     readFile("../yona-original/app/views/project/partial_settingmenu.scala.html", "utf8"),
     readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
@@ -965,16 +967,29 @@ test("project settings submenu owns the frozen route-specific tab margin", async
   expect(bootstrap).toContain("list-style: none;");
   expect(bootstrap).toContain(".nav > li > a {");
   expect(bootstrap).toContain("display: block;");
+  expect(bootstrap).toContain(".nav-tabs:before,");
+  expect(bootstrap).toContain(".nav-pills:before,");
+  expect(bootstrap).toContain(".nav-tabs:after,");
+  expect(bootstrap).toContain(".nav-pills:after {");
+  expect(bootstrap).toContain('  display: table;\n  line-height: 0;\n  content: "";');
+  expect(bootstrap).toContain("  clear: both;");
   expect(less).toContain(".project-page-wrap");
   expect(less).toContain("margin-bottom: -2px");
   expect(route).toContain("styles.projectSettingSubmenuItem");
   expect(route).toContain("styles.projectSettingSubmenuList");
+  expect(route).toContain("{...submenuListProps}");
   expect(route).toContain('data-stylex-owner="project-setting-submenu-list"');
   expect(route).toContain('data-stylex-owner="project-setting-submenu-item"');
   expect(style).toContain("projectSettingSubmenuList:");
   expect(style).toContain('marginBottom: "20px"');
   expect(style).toContain('marginLeft: "0px"');
   expect(style).toContain('listStyle: "none"');
+  expect(style).toContain('"::before": {');
+  expect(style).toContain('"::after": {');
+  expect(style).toContain("content: " + "'\"\"'");
+  expect(style).toContain('display: "table"');
+  expect(style).toContain("lineHeight: 0");
+  expect(style).toContain('clear: "both"');
   expect(style).toContain("projectSettingSubmenuItem:");
   expect(style).toContain('marginBottom: "-2px"');
 
@@ -1025,8 +1040,23 @@ test("project settings submenu owns the frozen route-specific tab margin", async
   const desktop = await submenu.evaluate((element) => {
     const ul = element.getBoundingClientRect();
     const style = getComputedStyle(element);
+    const before = getComputedStyle(element, "::before");
+    const after = getComputedStyle(element, "::after");
     const tabs = Array.from(element.querySelectorAll<HTMLElement>("li"));
     return {
+      pseudo: {
+        before: {
+          content: before.content,
+          display: before.display,
+          lineHeight: before.lineHeight,
+        },
+        after: {
+          clear: after.clear,
+          content: after.content,
+          display: after.display,
+          lineHeight: after.lineHeight,
+        },
+      },
       reset: {
         marginBottom: style.marginBottom,
         marginLeft: style.marginLeft,
@@ -1047,6 +1077,10 @@ test("project settings submenu owns the frozen route-specific tab margin", async
     marginLeft: "0px",
     listStyleType: "none",
   });
+  expect(desktop.pseudo).toEqual({
+    before: { content: '""', display: "table", lineHeight: "0px" },
+    after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  });
   expect(desktop.items).toHaveLength(7);
   expect(desktop.items.every((item) => item.marginBottom === "-2px")).toBe(true);
   expect(desktop.items.every((item) => item.inside)).toBe(true);
@@ -1066,6 +1100,23 @@ test("project settings submenu owns the frozen route-specific tab margin", async
   expect(mobile).toHaveLength(7);
   expect(mobile.every((item) => item.marginBottom === "-2px")).toBe(true);
   expect(mobile.every((item) => item.inside)).toBe(true);
+  const mobilePseudo = await submenu.evaluate((element) => {
+    const before = getComputedStyle(element, "::before");
+    const after = getComputedStyle(element, "::after");
+    return {
+      before: { content: before.content, display: before.display, lineHeight: before.lineHeight },
+      after: {
+        clear: after.clear,
+        content: after.content,
+        display: after.display,
+        lineHeight: after.lineHeight,
+      },
+    };
+  });
+  expect(mobilePseudo).toEqual({
+    before: { content: '""', display: "table", lineHeight: "0px" },
+    after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  });
   expect(
     await submenu.evaluate((element) => {
       const style = getComputedStyle(element);

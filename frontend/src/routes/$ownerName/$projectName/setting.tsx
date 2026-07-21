@@ -1296,12 +1296,13 @@ function ProjectSettingMenu({
 }) {
   const { t } = useLegacyMessages();
   const enrolledMemberCount = enrolledUserCount(project);
-  const submenuListClassName = stylex.props(styles.projectSettingSubmenuList).className;
+  const submenuListProps = stylex.props(styles.projectSettingSubmenuList);
   const submenuItemClassName = stylex.props(styles.projectSettingSubmenuItem).className;
 
   return (
     <ul
-      className={`${submenuListClassName} nav nav-tabs`}
+      {...submenuListProps}
+      className={`${submenuListProps.className} nav nav-tabs`}
       data-stylex-owner="project-setting-submenu-list"
     >
       <li
