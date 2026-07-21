@@ -5518,3 +5518,13 @@ consumers. The remaining `.ybtn`, `.label`/`.badge`, `.alert`, `.nav-tabs`,
 consumers; plugin-generated `.hljs-*` remains deferred. No safe complete
 retirement group is proven, so retain the fallback and do not change route
 TSX, focused E2E, frozen sources, or shared selectors in this batch.
+
+## Batch 717
+
+Migrate the authenticated project-settings reviewer-count dropdown visible state
+into route-local StyleX. Preserve the existing `btn-group branches`, large
+dropdown toggle, label/caret DOM, option list, React open/selection behavior,
+and generic fallback for unrelated dropdown consumers. Carry only the exact
+frozen `_yobiUI.less` and Bootstrap toggle/menu/caret/item declarations into
+the existing route; verify desktop/mobile closed/open/selection behavior in
+normal and fallback-off focused project-settings tests.

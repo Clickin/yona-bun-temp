@@ -310,3 +310,12 @@ grid, and pagination families also retain multiple incomplete consumers;
 plugin-generated `.hljs-*` remains deferred. No complete safe retirement group
 was proven, so the fallback remains enabled and no route, focused E2E, frozen
 source, or shared selector was changed.
+
+## Follow-up — authenticated project-settings reviewer-count dropdown owner
+
+Fallback-off evidence confirmed that the existing reviewer-count dropdown now
+retains its legacy toggle/caret/menu geometry, open state, option selection,
+URL/session stability, and mobile containment after moving only the exact
+frozen `_yobiUI.less` and Bootstrap declarations into route-local StyleX.
+Generic dropdown fallback consumers remain untouched. Isolated normal and
+fallback-off reviewer-dropdown runs pass 1/1 each.

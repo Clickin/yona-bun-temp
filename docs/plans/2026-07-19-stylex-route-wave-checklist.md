@@ -805,3 +805,13 @@ desktop/mobile geometry, and filtering.
   remains plugin-generated and deferred.
 - [x] No complete safe retirement group is proven. Fallback remains enabled;
   no route TSX, focused E2E, frozen source, or shared selector changed.
+
+### 2026-07-21 Batch 717 project-settings reviewer-count dropdown proof
+
+- [x] The existing reviewer-count dropdown group, toggle/open state, label,
+  caret wrapper/glyph, menu visibility/geometry, and option-item margin own
+  only the exact frozen `_yobiUI.less`/Bootstrap declarations through
+  route-local StyleX; unrelated dropdown fallback consumers remain.
+- [x] The focused project-settings contract preserves desktop/mobile closed
+  and open geometry, copy/order, selection state, URL/session stability, and
+  viewport containment in isolated normal and fallback-off runs (1/1 each).

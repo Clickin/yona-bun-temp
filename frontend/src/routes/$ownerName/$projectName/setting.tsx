@@ -53,6 +53,89 @@ const textareaStaticStyles = stylex.create({
   overflow: { overflow: "hidden", overflowWrap: "break-word", resize: "none" },
 });
 
+const reviewerDropdownStyles = stylex.create({
+  group: {
+    display: "inline-block",
+    position: "relative",
+    verticalAlign: "middle",
+  },
+  toggle: {
+    backgroundColor: "#ffffff",
+    borderColor: "rgba(0,0,0,.15)",
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 1px 0 rgba(0,0,0,.05)",
+    color: "#333333",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginBottom: "0px",
+    marginLeft: ".3em",
+    outline: "0px",
+    padding: "0px",
+    paddingLeft: "12px",
+    position: "relative",
+    textAlign: "left",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+  },
+  toggleOpen: { backgroundColor: "#f2f2f2" },
+  label: {
+    display: "inline-block",
+    float: "left",
+    margin: "0px",
+    overflow: "hidden",
+    padding: "4px 0px",
+    paddingRight: "9px",
+    width: "116px",
+  },
+  caretWrap: {
+    float: "right",
+    margin: "0px",
+    padding: "4px 9px",
+  },
+  caret: {
+    borderLeftColor: "transparent",
+    borderLeftStyle: "solid",
+    borderLeftWidth: "4px",
+    borderRightColor: "transparent",
+    borderRightStyle: "solid",
+    borderRightWidth: "4px",
+    borderTopColor: "#4f4f4f",
+    borderTopStyle: "solid",
+    borderTopWidth: "4px",
+    display: "inline-block",
+    height: "0px",
+    verticalAlign: "top",
+    width: "0px",
+  },
+  menu: {
+    backgroundClip: "padding-box",
+    backgroundColor: "#ffffff",
+    borderColor: "rgba(0,0,0,0.2)",
+    borderRadius: "2px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "-2px 2px 1px rgba(0,0,0,0.1)",
+    float: "left",
+    left: "0px",
+    listStyle: "none",
+    margin: "2px 0px 0px",
+    minWidth: "160px",
+    overflow: "hidden",
+    padding: "0px",
+    position: "absolute",
+    top: "100%",
+    zIndex: "1000",
+  },
+  menuHidden: { display: "none" },
+  menuVisible: { display: "block" },
+  item: { marginBottom: "1px" },
+});
+
 const PROJECT_NAME_PATTERN = /^[0-9A-Za-z_.가-힣-]+$/;
 const RESERVED_PROJECT_NAMES = new Set([".", "..", ".git"]);
 const legacyProjectSettingsLinkActiveOptions = {
@@ -687,24 +770,51 @@ function ProjectSettingBody({
                         value={selectedDefaultReviewerCount}
                       />
                       <div
-                        className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""}`}
+                        className={`btn-group branches${reviewerCountDropdownOpen ? " open" : ""} ${stylex.props(reviewerDropdownStyles.group).className}`}
+                        data-stylex-owner="project-reviewer-count-dropdown"
                       >
                         <button
-                          className="btn dropdown-toggle large"
+                          className={`btn dropdown-toggle large ${
+                            stylex.props(
+                              reviewerDropdownStyles.toggle,
+                              reviewerCountDropdownOpen ? reviewerDropdownStyles.toggleOpen : null,
+                            ).className
+                          }`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
                             setReviewerCountDropdownOpen((open) => !open);
                           }}
                         >
-                          <span className="d-label">{selectedDefaultReviewerCount}</span>
-                          <span className="d-caret">
-                            <span className="caret"></span>
+                          <span
+                            className={`d-label ${stylex.props(reviewerDropdownStyles.label).className}`}
+                          >
+                            {selectedDefaultReviewerCount}
+                          </span>
+                          <span
+                            className={`d-caret ${stylex.props(reviewerDropdownStyles.caretWrap).className}`}
+                          >
+                            <span
+                              className={`caret ${stylex.props(reviewerDropdownStyles.caret).className}`}
+                            ></span>
                           </span>
                         </button>
-                        <ul className="dropdown-menu">
+                        <ul
+                          className={`dropdown-menu ${
+                            stylex.props(
+                              reviewerDropdownStyles.menu,
+                              reviewerCountDropdownOpen
+                                ? reviewerDropdownStyles.menuVisible
+                                : reviewerDropdownStyles.menuHidden,
+                            ).className
+                          }`}
+                        >
                           {reviewerPoints.map((point) => (
-                            <li data-value={point} key={point}>
+                            <li
+                              className={stylex.props(reviewerDropdownStyles.item).className}
+                              data-value={point}
+                              key={point}
+                            >
                               <button
                                 type="button"
                                 onClick={(event) => {

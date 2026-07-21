@@ -1185,6 +1185,7 @@ test("project settings reviewer count dropdown uses route-local open state", asy
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/settingform`);
   await page.evaluate(() => {
     (window as Window & typeof globalThis & { __yonaSpaMarker?: string }).__yonaSpaMarker = "kept";
@@ -1203,7 +1204,12 @@ test("project settings reviewer count dropdown uses route-local open state", asy
   await expect(defaultBranch).toHaveAttribute("data-format", "branch");
   await expect(defaultBranch).toHaveAttribute("data-dropdown-css-class", "branches");
   await expect(defaultBranch).toHaveValue("main");
-  await expect(reviewerDropdown).toHaveClass("btn-group branches");
+  await expect(reviewerDropdown).toHaveClass(/(^| )btn-group( |$)/);
+  await expect(reviewerDropdown).toHaveClass(/(^| )branches( |$)/);
+  await expect(reviewerDropdown).toHaveAttribute(
+    "data-stylex-owner",
+    "project-reviewer-count-dropdown",
+  );
   await expect(reviewerDropdown).not.toHaveAttribute("data-id", /.+/);
   await expect(reviewerDropdown).not.toHaveAttribute("data-name", /.+/);
   await expect(
@@ -1224,8 +1230,139 @@ test("project settings reviewer count dropdown uses route-local open state", asy
   await expect(reviewerDropdown.locator(".dropdown-menu a")).toHaveCount(0);
   await expect(reviewerDropdown.locator(".dropdown-menu button:not([type=button])")).toHaveCount(0);
 
+  await expect
+    .poll(() =>
+      reviewerDropdown.evaluate((element) => {
+        const toggle = element.querySelector<HTMLButtonElement>("button.dropdown-toggle");
+        const menu = element.querySelector<HTMLUListElement>(".dropdown-menu");
+        const item = element.querySelector<HTMLElement>(".dropdown-menu li");
+        const label = element.querySelector<HTMLElement>(".d-label");
+        const caretWrap = element.querySelector<HTMLElement>(".d-caret");
+        const caret = element.querySelector<HTMLElement>(".caret");
+        if (!toggle || !menu || !item || !label || !caretWrap || !caret) {
+          throw new Error("Missing reviewer dropdown owner");
+        }
+        const toggleStyle = getComputedStyle(toggle);
+        const menuStyle = getComputedStyle(menu);
+        const itemStyle = getComputedStyle(item);
+        const labelStyle = getComputedStyle(label);
+        const caretWrapStyle = getComputedStyle(caretWrap);
+        const caretStyle = getComputedStyle(caret);
+        return {
+          toggle: {
+            backgroundColor: toggleStyle.backgroundColor,
+            display: toggleStyle.display,
+            lineHeight: toggleStyle.lineHeight,
+            marginLeft: toggleStyle.marginLeft,
+            paddingLeft: toggleStyle.paddingLeft,
+            position: toggleStyle.position,
+            whiteSpace: toggleStyle.whiteSpace,
+          },
+          label: {
+            display: labelStyle.display,
+            float: labelStyle.float,
+            overflow: labelStyle.overflow,
+            paddingRight: labelStyle.paddingRight,
+            paddingTop: labelStyle.paddingTop,
+            width: labelStyle.width,
+          },
+          caretWrap: {
+            float: caretWrapStyle.float,
+            paddingRight: caretWrapStyle.paddingRight,
+            paddingTop: caretWrapStyle.paddingTop,
+          },
+          caret: {
+            borderTopColor: caretStyle.borderTopColor,
+            display: caretStyle.display,
+            height: caretStyle.height,
+            verticalAlign: caretStyle.verticalAlign,
+            width: caretStyle.width,
+          },
+          menu: {
+            borderRadius: menuStyle.borderRadius,
+            display: menuStyle.display,
+            float: menuStyle.float,
+            minWidth: menuStyle.minWidth,
+            overflow: menuStyle.overflow,
+            padding: menuStyle.padding,
+            position: menuStyle.position,
+          },
+          itemMarginBottom: itemStyle.marginBottom,
+        };
+      }),
+    )
+    .toEqual({
+      toggle: {
+        backgroundColor: "rgb(255, 255, 255)",
+        display: "inline-block",
+        lineHeight: "20px",
+        marginLeft: "4.2px",
+        paddingLeft: "12px",
+        position: "relative",
+        whiteSpace: "nowrap",
+      },
+      label: {
+        display: "block",
+        float: "left",
+        overflow: "hidden",
+        paddingRight: "9px",
+        paddingTop: "4px",
+        width: "116px",
+      },
+      caretWrap: {
+        float: "right",
+        paddingRight: "9px",
+        paddingTop: "4px",
+      },
+      caret: {
+        borderTopColor: "rgb(79, 79, 79)",
+        display: "inline-block",
+        height: "0px",
+        verticalAlign: "top",
+        width: "0px",
+      },
+      menu: {
+        borderRadius: "2px",
+        display: "none",
+        float: "none",
+        minWidth: "160px",
+        overflow: "hidden",
+        padding: "0px",
+        position: "absolute",
+      },
+      itemMarginBottom: "1px",
+    });
+
   await toggle.click();
-  await expect(reviewerDropdown).toHaveClass("btn-group branches open");
+  await expect(reviewerDropdown).toHaveClass(/(^| )btn-group( |$)/);
+  await expect(reviewerDropdown).toHaveClass(/(^| )branches( |$)/);
+  await expect(reviewerDropdown).toHaveClass(/(^| )open( |$)/);
+  await expect
+    .poll(() =>
+      reviewerDropdown.evaluate((element) => {
+        const toggle = element.querySelector<HTMLElement>("button.dropdown-toggle");
+        const menu = element.querySelector<HTMLElement>(".dropdown-menu");
+        if (!toggle || !menu) throw new Error("Missing reviewer dropdown geometry");
+        const toggleBox = toggle.getBoundingClientRect();
+        const menuBox = menu.getBoundingClientRect();
+        return {
+          menuDisplay: getComputedStyle(menu).display,
+          menuFloat: getComputedStyle(menu).float,
+          menuPosition: getComputedStyle(menu).position,
+          menuInsideGroup: menuBox.left >= element.getBoundingClientRect().left,
+          menuBelowToggle: menuBox.top >= toggleBox.bottom,
+          toggleOpenBackground: getComputedStyle(toggle).backgroundColor,
+        };
+      }),
+    )
+    .toEqual({
+      menuDisplay: "block",
+      menuFloat: "none",
+      menuPosition: "absolute",
+      menuInsideGroup: true,
+      menuBelowToggle: true,
+      toggleOpenBackground: "rgb(242, 242, 242)",
+    });
   await expect(page).toHaveURL(`${basePath}/admin/sample/settingform`);
   await expect
     .poll(() =>
@@ -1239,7 +1376,8 @@ test("project settings reviewer count dropdown uses route-local open state", asy
     .toBe("kept");
 
   await options.nth(2).locator("button").click();
-  await expect(reviewerDropdown).toHaveClass("btn-group branches");
+  await expect(reviewerDropdown).toHaveClass(/(^| )btn-group( |$)/);
+  await expect(reviewerDropdown).toHaveClass(/(^| )branches( |$)/);
   await expect(toggle.locator(".d-label")).toHaveText("3");
   await expect(page.locator('input[name="defaultReviewerCount"]')).toHaveValue("3");
   await expect(page).toHaveURL(`${basePath}/admin/sample/settingform`);
@@ -1253,6 +1391,26 @@ test("project settings reviewer count dropdown uses route-local open state", asy
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem("__yonaSessionMarker")))
     .toBe("kept");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const mobileReviewerDropdown = page.locator(
+    ".reviewer-count-wrap #welReviewerCount > .btn-group.branches",
+  );
+  await expect(mobileReviewerDropdown).toBeVisible();
+  await mobileReviewerDropdown.locator("button.btn.dropdown-toggle.large").click();
+  await expect(mobileReviewerDropdown.locator(".dropdown-menu")).toBeVisible();
+  await expect
+    .poll(() =>
+      mobileReviewerDropdown.evaluate((element) => {
+        const menu = element.querySelector<HTMLElement>(".dropdown-menu");
+        if (!menu) throw new Error("Missing mobile reviewer menu");
+        const menuBox = menu.getBoundingClientRect();
+        const viewportWidth = document.documentElement.clientWidth;
+        return { menuWithinViewport: menuBox.left >= 0 && menuBox.right <= viewportWidth };
+      }),
+    )
+    .toEqual({ menuWithinViewport: true });
 });
 
 test("project settings default branch uses the legacy Select2 shell and syncs its mutation", async ({
