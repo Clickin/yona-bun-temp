@@ -161,3 +161,15 @@ exposed 18px header/description line boxes and a two-pixel mobile row-height def
 existing header, description, name-tag, and stats owners now carry the frozen Bootstrap body
 `line-height:20px` declaration. Normal and `VITE_DISABLE_LEGACY_FALLBACK=1` runs pass source,
 desktop/mobile geometry, and containment checks 3/3 each; no compensating offset was added.
+
+## Follow-up — global GNB search-form class and icon boundary
+
+The focused GNB search-form candidate exposed two fallback-off-only gaps: the
+semantic `gnb-search-form` class was absent, and the search glyph had no
+React-owned font/glyph presentation when the legacy fallback stylesheet was
+disabled. The existing form now retains the semantic class while continuing to
+drop plugin-only `input-prepend`; the Vite-owned Yobicon font and exact frozen
+search glyph declarations are applied to the existing icon owner through
+StyleX. Normal and fallback-off focused checks pass 10/10, including desktop
+and mobile outer geometry, scope switching, and the legacy GET payload. No
+offset, timeout workaround, or UX change was added.

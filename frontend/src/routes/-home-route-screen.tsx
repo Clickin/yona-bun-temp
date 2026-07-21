@@ -7,6 +7,7 @@ import { toggleFavoriteOrganizationRest, toggleFavoriteProjectRest } from "../ap
 import { currentSessionQueryOptions } from "../api/session";
 import { readWorkspaceOverviewRest } from "../api/workspace";
 import type { YoramRecord } from "../api/types";
+import "../yobicon-font.css";
 import { readSessionBootstrap } from "../auth-workspace-client";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
 import { YoramQueryProvider } from "../query-client";
@@ -922,6 +923,20 @@ function LegacyNotificationMessage({ message }: { message: string }) {
 }
 
 const globalGnbSearchSubmitStyles = stylex.create({
+  searchIcon: {
+    backgroundImage: "none",
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: "400",
+    lineHeight: 1,
+    textDecoration: "none",
+    verticalAlign: "baseline",
+    WebkitFontSmoothing: "antialiased",
+    MozOsxFontSmoothing: "grayscale",
+    "::before": { content: '"\\e225"' },
+  },
   submit: {
     appearance: "button",
     backgroundColor: "transparent",
@@ -1783,6 +1798,7 @@ export function SiteLayoutShell({
                 <form
                   action={gnbSearchAction}
                   {...stylex.props(globalGnbSearchFormStyles.form)}
+                  className={`gnb-search-form ${stylex.props(globalGnbSearchFormStyles.form).className}`}
                   data-stylex-owner="global-gnb-search-form"
                   name="gnb-search-form"
                 >
@@ -1891,7 +1907,11 @@ export function SiteLayoutShell({
                       data-stylex-owner="global-gnb-search-submit"
                       type="submit"
                     >
-                      <i className="yobicon-search" data-stylex-owner="global-gnb-search-icon" />
+                      <i
+                        {...stylex.props(globalGnbSearchSubmitStyles.searchIcon)}
+                        className={`yobicon-search ${stylex.props(globalGnbSearchSubmitStyles.searchIcon).className}`}
+                        data-stylex-owner="global-gnb-search-icon"
+                      />
                     </button>
                   </div>
                 </form>

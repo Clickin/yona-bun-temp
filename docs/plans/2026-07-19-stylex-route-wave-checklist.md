@@ -656,3 +656,12 @@ desktop/mobile geometry, and filtering.
   or changing the legacy row DOM.
 - [x] Focused source, computed declaration, containment, and desktop/mobile row
   geometry checks pass 3/3 in normal and fallback-off modes.
+
+### 2026-07-21 Batch 701 global GNB search-form semantic/icon proof
+
+- [x] The existing GNB search form retains the semantic `gnb-search-form` class,
+  while plugin-only `input-prepend` remains removed.
+- [x] The frozen Yobicon font and search glyph declarations are owned at the
+  existing React icon boundary without invented geometry or changed GET behavior.
+- [x] Focused source, frozen-hash, desktop/mobile geometry, scope interaction,
+  and GET payload checks pass 10/10 in normal and fallback-off modes.

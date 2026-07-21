@@ -57,8 +57,10 @@ test("global GNB search outer item and form have global-theme StyleX ownership",
   expect(form).toContain("globalGnbSearchFormStyles.form");
   expect(form).toContain("`gnb-search-form ${stylex.props(");
   expect(form).not.toContain("input-prepend");
+  expect(form).toContain("globalGnbSearchSubmitStyles.searchIcon");
   expect(form).toContain('name="gnb-search-form"');
   expect(form).toContain('name="searchType" value="auto"');
+  expect(route).toContain('import "../yobicon-font.css";');
 
   expect(appCss).not.toMatch(/\.gnb-search-form\s*\{[^}]*\}/u);
   expect(appCss).not.toContain('.gnb-search-form input[type="text"] {');
