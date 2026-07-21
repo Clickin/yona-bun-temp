@@ -205,6 +205,9 @@ export const styles = stylex.create({
   issueActionDelete: {
     marginLeft: "6px",
   },
+  issueTranslationButton: {
+    marginLeft: "10px",
+  },
   disabledCommentActions: { textAlign: "right" },
   commentFormActions: { textAlign: "right" },
   uploadHelp: { textAlign: "right" },

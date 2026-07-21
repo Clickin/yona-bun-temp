@@ -1044,9 +1044,11 @@ function IssueDetailBody({
               />
               {translationApiEnabled ? (
                 <button
+                  {...stylex.props(styles.issueTranslationButton)}
                   type="button"
                   id="translate"
-                  className="icon btn-transparent-with-fontsize-lineheight ml10"
+                  className={`icon btn-transparent-with-fontsize-lineheight ${stylex.props(styles.issueTranslationButton).className}`}
+                  data-stylex-owner="project-issue-detail-translation-button"
                   title="Translation"
                   disabled={translatePending || translatedBodyMarkdown !== null}
                   onClick={() => void translateIssueBody()}

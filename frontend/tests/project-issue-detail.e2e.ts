@@ -2375,6 +2375,39 @@ test("project issue detail renders React-owned top hover popover for notificatio
 test("project issue detail renders legacy translation button when translation API is configured", async ({
   page,
 }) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+  const legacyTranslation = legacyView.slice(
+    legacyView.indexOf('<button type="button" id="translate"'),
+    legacyView.indexOf("</button>", legacyView.indexOf('id="translate"')) + "</button>".length,
+  );
+  expect(legacyTranslation).toContain('class="icon btn-transparent-with-fontsize-lineheight ml10"');
+  expect(legacyCommon).toContain(".ml10 { margin-left:10px; }");
+  expect(legacyYobi).toContain('@import "less/_common.less";');
+  const translationEmitter = routeSource.slice(
+    routeSource.indexOf('id="translate"'),
+    routeSource.indexOf("</button>", routeSource.indexOf('id="translate"')) + "</button>".length,
+  );
+  expect(routeSource).toContain('import { styles } from "./-issue-detail.stylex";');
+  expect(translationEmitter).toContain("styles.issueTranslationButton");
+  expect(translationEmitter).toContain(
+    'data-stylex-owner="project-issue-detail-translation-button"',
+  );
+  expect(translationEmitter).not.toContain("ml10");
+  expect(styleSource).toMatch(/issueTranslationButton:\s*\{[\s\S]*?marginLeft:\s*["']10px["']/u);
+
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const translationRequests: Array<{
     body: unknown;
@@ -2400,7 +2433,15 @@ test("project issue detail renders legacy translation button when translation AP
   await page.goto(`${basePath}/admin/sample/issue/11`);
 
   const translateButton = page.locator(".board-actrow > #translate");
-  await expect(translateButton).toHaveClass("icon btn-transparent-with-fontsize-lineheight ml10");
+  await expect(translateButton).toHaveClass(/(?:^|\s)icon(?:\s|$)/u);
+  await expect(translateButton).toHaveClass(
+    /(?:^|\s)btn-transparent-with-fontsize-lineheight(?:\s|$)/u,
+  );
+  await expect(translateButton).not.toHaveClass(/\bml10\b/u);
+  await expect(translateButton).not.toHaveAttribute("style", /.+/u);
+  await expect(translateButton).toHaveCSS("margin-left", "10px");
+  await expect(translateButton).toBeVisible();
+  await expect(translateButton).not.toBeDisabled();
   await expect(translateButton).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(translateButton).toHaveAttribute("title", "Translation");
   await expect(translateButton.locator("i.yobicon-lang")).toHaveCount(1);

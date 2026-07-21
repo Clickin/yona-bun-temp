@@ -5979,6 +5979,17 @@ consumers. The focused project-issues test verifies source mapping, computed
 margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
 normal and fallback-disabled modes.
 
+## Batch 768
+
+Move the configured issue-detail translation button's active `.ml10` spacing
+into a route-local StyleX owner using the frozen `margin-left:10px` declaration
+from `_common.less:206`. Preserve conditional rendering, button id/classes,
+icon/title, disabled state, and translation request behavior; remove `ml10`
+only from this emitter and keep comment-translation and unrelated fallback
+consumers outside scope. The focused issue-detail test verifies source/import
+mapping, computed margin, no-inline-style, disabled behavior, and translation
+interaction in normal and fallback-disabled modes.
+
 ## Batch 767
 
 Move the authenticated issue-detail edit/delete action spacing from both
