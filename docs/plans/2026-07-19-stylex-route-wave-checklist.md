@@ -1086,3 +1086,9 @@ desktop/mobile geometry, and filtering.
   desktop/390px geometry, and independent normal and fallback-off focused runs
   pass 1/1 each; patch-header paths, utility, range/colors, and unrelated table
   consumers remain scoped.
+- [x] Batch 755 authenticated SVN commit-detail `.diff-wrap` owner: frozen
+  Scala/LESS mapping, exact width/overflow/bottom-margin declarations,
+  StyleX/legacy class composition, visible patch text, no-inline-style proof,
+  desktop/390px owner-relative geometry, and independent normal/fallback-off
+  focused runs pass 1/1 each; Git diff wrappers and unrelated fallback
+  consumers remain scoped.

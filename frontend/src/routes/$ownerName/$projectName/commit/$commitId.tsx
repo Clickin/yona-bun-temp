@@ -37,6 +37,7 @@ const sx = {
   reviewContainer: stylex.props(styles.reviewContainer),
   page: stylex.props(styles.page),
   browse: stylex.props(styles.browse),
+  diffWrap: stylex.props(styles.diffWrap),
   commitInfo: stylex.props(styles.commitInfo),
   commitMessage: stylex.props(styles.commitMessage),
   commitDescription: stylex.props(styles.commitDescription),
@@ -666,7 +667,11 @@ function SvnCommitDetailBody({
             <strong className="commitId pull-right">@{commit?.commitId ?? commitId}</strong>
           </p>
           <pre className="commitMsg">{commit?.message ?? ""}</pre>
-          <div className="diff-wrap">
+          <div
+            {...sx.diffWrap}
+            className={`${sx.diffWrap.className} diff-wrap`}
+            data-stylex-owner="commit-detail-svn-diff-wrap"
+          >
             <div id="commit" data-commit-origin="true" className="diff-body hide">
               {patch}
             </div>

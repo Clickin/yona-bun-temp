@@ -209,6 +209,7 @@ export const styles = stylex.create({
   reviewContainer: { position: "relative", width: "260px" },
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   browse: { width: "100%" },
+  diffWrap: { width: "100%", overflow: "auto", marginBottom: "20px" },
   commitInfo: { color: commitDetailColors.commitText, margin: "10px 0px" },
   commitMessage: { color: commitDetailColors.commitText },
   commitDescription: {

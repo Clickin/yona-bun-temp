@@ -5888,3 +5888,14 @@ parent-hover opacity, add/remove/context row hover paint, `discommentable`, and
 other icon consumers fallback-owned. Verify source mapping, no inline style,
 desktop/390px computed geometry, and containment in normal and fallback-off
 focused tests.
+
+## Batch 755
+
+Complete the authenticated commit-detail SVN state `.diff-wrap` shell through a
+route-local StyleX owner. Preserve the Scala `diff-wrap`/hidden `diff-body`
+wrapper, patch text, class composition, and route behavior while carrying only
+the frozen `width:100%`, `overflow:auto`, and `margin-bottom:20px` declarations
+from `_page.less:4613-4615`. Keep Git diff wrappers and unrelated fallback
+consumers outside this owner scope, and verify desktop/390px computed geometry,
+visible patch text, and no-inline-style ownership in normal and fallback-off
+focused tests.

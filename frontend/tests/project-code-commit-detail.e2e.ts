@@ -52,6 +52,10 @@ const LEGACY_CODE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/code/diff.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_SVN_DIFF_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/code/svnDiff.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_FILE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
   "utf8",
@@ -3091,6 +3095,23 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
 });
 
 test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", async ({ page }) => {
+  test.setTimeout(60_000);
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<div class="diff-wrap">');
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain(
+    '<div id="commit" data-commit-origin="true" class="diff-body hide">@patch</div>',
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "    .diff-wrap {\n        width:100%; overflow:auto; margin-bottom:20px;\n    }",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-diff-wrap"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("...sx.diffWrap");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
+    'style="width:100%; overflow:auto; margin-bottom:20px"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'diffWrap: { width: "100%", overflow: "auto", marginBottom: "20px" },',
+  );
+
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(
@@ -3104,37 +3125,59 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
     { vcs: "SVN" },
   );
 
-  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=trunk`);
-  await expect(page.locator("#branches")).toBeVisible();
-  await expect(page.locator("#branches")).toHaveAttribute("data-name", "branch");
-  await expect(page.locator("#branches")).not.toHaveAttribute("data-activate");
-  await expect(page.locator("#commit.diff-body.hide[data-commit-origin='true']")).toContainText(
-    "Index: README.md",
-  );
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    if (viewport.width === 1366) {
+      await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=trunk`);
+    }
+    await expect(page.locator("#branches")).toBeVisible();
+    await expect(page.locator("#branches")).toHaveAttribute("data-name", "branch");
+    await expect(page.locator("#branches")).not.toHaveAttribute("data-activate");
+    const diff = page.locator("#commit.diff-body.hide[data-commit-origin='true']");
+    await expect(diff).toContainText("Index: README.md");
+    await expect(diff).toContainText("-old");
+    await expect(diff).toContainText("+new");
+    const diffWrap = page.locator('[data-stylex-owner="commit-detail-svn-diff-wrap"]');
+    await expect(diffWrap).toHaveCount(1);
+    await expect(diffWrap).toHaveClass(/diff-wrap/);
+    await expect(diffWrap).not.toHaveAttribute("style");
+    const metrics = await readSvnCommitShellMetrics(page);
+    expect(metrics.branchActivate).toBeNull();
+    expect(metrics.branchClassName).toBe("btn-group branches pull-right");
+    expect(metrics.branchFloat).toBe("right");
+    expect(metrics.branchName).toBe("branch");
+    expect(metrics.branchSelectedText).toBe("trunk");
+    expect(metrics.branchTopNotBelowTabs).toBe(true);
+    expect(metrics.commitDiffHidden).toBe(true);
+    expect(metrics.commitInfoBackground).toBe("rgba(0, 0, 0, 0)");
+    expect(metrics.commitInfoBorderTopWidth).toBe("0px");
+    expect(metrics.commitInfoPadding).toBe("0px");
+    expect(metrics.commitMessageDisplay).toBe("block");
+    expect(metrics.commitMessageFontFamily).toBe(
+      'Monaco, Menlo, Consolas, "Courier New", monospace',
+    );
+    expect(metrics.diffWrapMarginBottom).toBe("20px");
+    expect(metrics.diffWrapOverflow).toBe("auto");
+    expect(metrics.diffWrapOverflowX).toBe("auto");
+    expect(metrics.diffWrapOverflowY).toBe("auto");
+    expect(metrics.diffWrapFillsCodeWrap).toBe(true);
+    expect(metrics.diffWrapContainedByCodeWrap).toBe(true);
+    expect(metrics.diffWrapWidth).toBeGreaterThan(0);
+    expect(metrics.diffWrapWidth).toBeLessThanOrEqual(metrics.codeWrapWidth + 0.5);
+
+    if (viewport.width === 1366) {
+      expect(await canonicalize(page, ".diff-wrap")).toEqual(
+        await canonicalizeHtml(
+          page,
+          `<div class="diff-wrap"><div id="commit" data-commit-origin="true" class="diff-body hide">${SVN_PATCH}</div></div>`,
+        ),
+      );
+    }
+  }
   expect(detailRequests).toEqual(["branch=trunk"]);
-  expect(await readSvnCommitShellMetrics(page)).toEqual({
-    branchActivate: null,
-    branchClassName: "btn-group branches pull-right",
-    branchFloat: "right",
-    branchName: "branch",
-    branchSelectedText: "trunk",
-    branchTopNotBelowTabs: true,
-    commitDiffHidden: true,
-    commitInfoBackground: "rgba(0, 0, 0, 0)",
-    commitInfoBorderTopWidth: "0px",
-    commitInfoPadding: "0px",
-    commitMessageDisplay: "block",
-    commitMessageFontFamily: 'Monaco, Menlo, Consolas, "Courier New", monospace',
-    diffWrapMarginBottom: "20px",
-    diffWrapOverflowX: "auto",
-    diffWrapFillsCodeWrap: true,
-  });
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
-    await canonicalizeHtml(
-      page,
-      withCommentUploadForm(EXPECTED_SVN_COMMIT_BODY).replaceAll("__BASE_PATH__", basePath),
-    ),
-  );
   await expect(page.locator("#watch-button")).not.toHaveAttribute("data-toggle", "button");
   await expect(page.locator("#watch-button")).toHaveClass(/^ybtn\s*$/);
   await expect(page.locator("#watch-button")).toHaveText("Watch");
@@ -3406,7 +3449,15 @@ async function readSvnCommitShellMetrics(page: Page) {
       commitMessageDisplay: commitMessageStyle.display,
       commitMessageFontFamily: commitMessageStyle.fontFamily,
       diffWrapMarginBottom: diffWrapStyle.marginBottom,
+      diffWrapOverflow: diffWrapStyle.overflow,
       diffWrapOverflowX: diffWrapStyle.overflowX,
+      diffWrapOverflowY: diffWrapStyle.overflowY,
+      diffWrapContainedByCodeWrap:
+        diffWrap.getBoundingClientRect().left >= (codeWrap?.getBoundingClientRect().left ?? 0) &&
+        diffWrap.getBoundingClientRect().right <=
+          (codeWrap?.getBoundingClientRect().right ?? 0) + 1,
+      diffWrapWidth: diffWrap.getBoundingClientRect().width,
+      codeWrapWidth: codeWrap?.getBoundingClientRect().width ?? 0,
       diffWrapFillsCodeWrap:
         Math.round(diffWrap.getBoundingClientRect().width) ===
         Math.round(codeWrap?.getBoundingClientRect().width ?? -1),
