@@ -1114,3 +1114,4 @@ desktop/mobile geometry, and filtering.
   is removed, generated legacy fallback retention is asserted, and the focused
   normal/fallback-off static contracts pass 1/1 each. Frozen legacy color
   consumers remain unchanged.
+- [x] Batch 760 authenticated profile/organization `.yobicon-middle` StyleX ownership and React-side fallback bridge retirement: frozen legacy icon consumers and `_common.less:191-194` remain unchanged, while normal/fallback-off static contracts verify StyleX ownership and generated fallback retention.

@@ -716,13 +716,15 @@ test("source-less number-of-comments bridge has no app.css arm", () => {
   );
 });
 
-test("shared text utility bridges are retired while the generated legacy fallback remains intact", () => {
+test("yobicon-middle bridge is retired while the generated legacy fallback remains intact", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const generatedFallback = readFileSync(
     "public/legacy-assets/stylesheets/legacy-fallback.css",
     "utf8",
   );
 
+  expect(appCss).not.toContain(".yobicon-middle {");
+  expect(generatedFallback).toContain(".yobicon-middle {");
   expect(appCss).not.toContain(".right-txt {");
   expect(appCss).not.toContain(".blue-txt {");
   expect(generatedFallback).toContain(".right-txt {");

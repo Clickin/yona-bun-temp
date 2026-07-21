@@ -5945,3 +5945,14 @@ consumers, so the generated legacy fallback remains unchanged. Do not change
 route DOM, behavior, frozen sources, or unrelated color utilities. Verify exact
 app.css absence and generated-fallback retention in the focused normal and
 fallback-off static contracts.
+
+## Batch 760
+
+Move the three active profile and organization project `.yobicon-middle`
+consumers into route-local StyleX owners using the frozen
+`vertical-align:bottom` and `margin-bottom:3px` declarations from
+`yona-original/app/assets/stylesheets/less/_common.less:191-194`.
+Retire only the React-side `frontend/src/app.css` bridge; generated
+`legacy-fallback.css` remains available for the frozen legacy project-list and
+fork views. Focused normal and fallback-off static contracts prove StyleX
+ownership and generated fallback retention.

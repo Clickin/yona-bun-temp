@@ -36,6 +36,10 @@ const LEGACY_LINK_PROPS = {
 };
 
 const userProfileStaticStyles = stylex.create({
+  iconMiddle: {
+    verticalAlign: "bottom",
+    marginBottom: "3px",
+  },
   providerLogo: { fontFamily: "Roboto, sans-serif" },
   providerLogoSvg: { verticalAlign: "middle" },
   providerGithub: {
@@ -1182,7 +1186,9 @@ function ProfileProjectRow({
             className={`${stylex.props(styles.projectNameTag).className} name-tag`}
             data-stylex-owner="user-profile-project-name-tag"
           >
-            <i className="yobicon-friends yobicon-middle"></i>
+            <i
+              className={`${stylex.props(userProfileStaticStyles.iconMiddle).className} yobicon-friends`}
+            ></i>
             <strong>{project.memberCount}</strong>{" "}
             <Link {...LEGACY_LINK_PROPS} to={ownerPath} className="owner-name-small">
               {project.ownerName}
@@ -1205,7 +1211,7 @@ function ProfileProjectRow({
           {project.viewerCanWatch ? (
             <Link to={watchPath} reloadDocument className="ybtn watchBtn">
               <i
-                className={`yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-middle yobicon-white`}
+                className={`${stylex.props(userProfileStaticStyles.iconMiddle).className} yobicon-eye-${project.isWatching ? "open" : "close"} yobicon-white`}
               ></i>
               {t(project.isWatching ? "notification.unwatch" : "notification.watch")}
               <span className="num-badge">{project.watchCount}</span>

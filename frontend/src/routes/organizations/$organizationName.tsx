@@ -52,6 +52,10 @@ const organizationProjectCardMigrationStyles = stylex.create({
     overflow: "hidden",
     padding: "15px 0 10px 0",
   },
+  iconMiddle: {
+    verticalAlign: "bottom",
+    marginBottom: "3px",
+  },
 });
 
 export const Route = createFileRoute("/organizations/$organizationName")({
@@ -554,7 +558,9 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             data-stylex-owner="organization-home-project-card-members-list"
           ></ul>
           <p>
-            <i className="yobicon-friends yobicon-middle"></i>
+            <i
+              className={`${stylex.props(organizationProjectCardMigrationStyles.iconMiddle).className} yobicon-friends`}
+            ></i>
             <strong
               {...stylex.props(styles.projectCardStatsCount)}
               data-stylex-owner="organization-home-project-card-count"
