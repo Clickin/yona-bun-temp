@@ -6199,6 +6199,19 @@ separate voters modal out of scope. Focused normal/fallback-off suites pass 1/1
 each; live legacy screenshot parity remains the documented gap because port
 9000 was unavailable.
 
+## Batch 783
+
+Move the active issue vote heart's frozen yobicon glyph contract into the
+route-local StyleX owner so the icon remains rendered when the legacy fallback
+is disabled. Use `yona-original/app/views/issue/view.scala.html:210-224` and
+`issue/partial_voters.scala.html:11-39` for the current issue vote output, and
+frozen `yona-original/public/stylesheets/yobicon/style.css:12-25,3601-3603`
+for the icon font declarations and `.yobicon-hearts:before` glyph. Preserve
+the `yobicon-hearts` element/class and keep comment hearts and unrelated icon
+consumers excluded. Focused normal/fallback-off vote suites pass 2/2 each;
+live legacy screenshot parity remains the documented gap because port 9000 was
+unavailable.
+
 ## Batch 777
 
 Move the authorized child issue-comment form's remaining frozen declarations

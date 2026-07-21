@@ -73,6 +73,15 @@ export const styles = stylex.create({
     marginTop: "3px",
   },
   issueVoteHeartWatching: { color: "#f68c52" },
+  issueVoteIcon: {
+    display: "inline-block",
+    fontFamily: "yobicon",
+    fontStyle: "normal",
+    fontVariant: "normal",
+    fontWeight: 400,
+    lineHeight: 1,
+    "::before": { content: '"\\e4b0"' },
+  },
   issueVoterListWrap: {
     display: "inline-block",
     marginLeft: "0.3em",

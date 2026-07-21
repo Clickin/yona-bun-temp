@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 783 issue vote heart glyph proof
+
+- [x] Active and disabled issue vote hearts preserve the `yobicon-hearts`
+  element/class while the route-local StyleX owner carries the frozen yobicon
+  font/glyph contract; comment hearts, modal icons, and unrelated consumers
+  remain excluded.
+- [x] Focused normal/fallback-off suites pass 2/2, covering Scala/icon source
+  mapping, owner/declaration, computed font/display/pseudo-content, no inline
+  style, active/disabled visibility, and the fallback cascade difference in
+  line-height. Screenshot parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 782 vote and voter-list proof
 
 - [x] Active issue vote/heart and voter avatar/overflow consumers preserve

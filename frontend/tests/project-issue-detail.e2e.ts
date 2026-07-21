@@ -4356,10 +4356,26 @@ test("project issue detail renders legacy disabled vote action", async ({ page }
 
   await page.goto(`${process.env.YONA_DEV_BASE_PATH ?? "/yona"}/admin/sample/issue/11`);
 
-  const expected = `<span class="ybtn-disabled" style="color:rgb(119,119,119)" title="Please log in." data-login="required"><span class="heart"><i class="yobicon-hearts"></i></span></span>`;
-  expect(await canonicalize(page, "#vote > .ybtn-disabled")).toEqual(
-    await canonicalizeHtml(page, expected),
+  const disabledVote = page.locator("#vote > .ybtn-disabled");
+  await expect(disabledVote).toHaveClass(/ybtn-disabled/);
+  await expect(disabledVote).toHaveAttribute("title", "Please log in.");
+  await expect(disabledVote).toHaveAttribute("data-login", "required");
+  await expect(disabledVote.locator(":scope > .heart > i")).toHaveClass(/yobicon-hearts/);
+  const disabledIcon = page.locator(
+    '[data-stylex-owner="project-issue-detail-vote-heart-icon"][data-stylex-owner-instance="disabled"]',
   );
+  await expect(disabledIcon).toBeVisible();
+  await expect(disabledIcon).not.toHaveAttribute("style", /./u);
+  await expect
+    .poll(() => disabledIcon.evaluate((node) => getComputedStyle(node).fontFamily))
+    .toBe("yobicon");
+  await expect(disabledIcon.evaluate((node) => getComputedStyle(node).display)).resolves.toBe(
+    "inline-block",
+  );
+  const disabledIconContent = await disabledIcon.evaluate(
+    (node) => getComputedStyle(node, "::before").content,
+  );
+  expect(disabledIconContent).toContain(String.fromCodePoint(0xe4b0));
 });
 
 test("project issue detail owns active vote controls and voter list declarations", async ({
@@ -4388,6 +4404,7 @@ test("project issue detail owns active vote controls and voter list declarations
     "../yona-original/app/assets/stylesheets/less/_variables.less",
     "utf8",
   );
+  const legacyIcon = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
   const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
 
   expect(legacyView).toContain('<div id="vote" class="vote-wrap');
@@ -4410,6 +4427,14 @@ test("project issue detail owns active vote controls and voter list declarations
   expect(legacyPage).toContain("margin-top: -4px;");
   expect(legacyVariables).toContain("@base-font-size  : 13px;");
   expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(legacyIcon).toContain('[class^="yobicon-"]');
+  expect(legacyIcon).toContain("font-family: 'yobicon';");
+  expect(legacyIcon).toContain("font-style: normal;");
+  expect(legacyIcon).toContain("font-variant: normal;");
+  expect(legacyIcon).toContain("font-weight: normal;");
+  expect(legacyIcon).toContain("line-height: 1;");
+  expect(legacyIcon).toContain("display: inline-block;");
+  expect(legacyIcon).toContain('.yobicon-hearts:before {\n    content: "\\e4b0";\n}');
   expect(styleSource).toContain("issueVoteWrap:");
   expect(styleSource).toContain('issueVoteWrap: {\n    display: "inline-block"');
   expect(styleSource).toContain("issueVoteHeart:");
@@ -4417,9 +4442,11 @@ test("project issue detail owns active vote controls and voter list declarations
   expect(styleSource).toContain("issueVoterList:");
   expect(styleSource).toContain("issueVoterListItem:");
   expect(styleSource).toContain("issueVoterAvatar:");
+  expect(styleSource).toContain("issueVoteIcon:");
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-vote-wrap"');
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list-wrap"');
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list"');
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-vote-heart-icon"');
 
   await mockProjectIssueDetail(page, { issueVoters: commentVoters(), voterCount: 6 });
   await page.goto(`${basePath}/admin/sample/issue/11`);
@@ -4427,6 +4454,9 @@ test("project issue detail owns active vote controls and voter list declarations
 
   const vote = page.locator('[data-stylex-owner="project-issue-detail-vote-wrap"]');
   const heart = vote.locator('[data-stylex-owner="project-issue-detail-vote-heart"]');
+  const heartIcon = vote.locator(
+    '[data-stylex-owner="project-issue-detail-vote-heart-icon"][data-stylex-owner-instance="active"]',
+  );
   const listWrap = vote.locator('[data-stylex-owner="project-issue-detail-voter-list-wrap"]');
   const list = listWrap.locator('[data-stylex-owner="project-issue-detail-voter-list"]');
   const items = list.locator('[data-stylex-owner="project-issue-detail-voter-list-item"]');
@@ -4435,6 +4465,8 @@ test("project issue detail owns active vote controls and voter list declarations
 
   await expect(vote).toBeVisible();
   await expect(heart).toBeVisible();
+  await expect(heartIcon).toBeVisible();
+  await expect(heartIcon).not.toHaveAttribute("style", /./u);
   await expect(avatars).toHaveCount(3);
   await expect(overflow).toBeVisible();
   await expect(overflow).toHaveText("and 3 others");
@@ -4472,6 +4504,23 @@ test("project issue detail owns active vote controls and voter list declarations
       heartMarginRight: heartStyle?.marginRight ?? null,
       heartMarginTop: heartStyle?.marginTop ?? null,
       heartVerticalAlign: heartStyle?.verticalAlign ?? null,
+      icon: (() => {
+        const iconNode = node.querySelector<HTMLElement>(
+          '[data-stylex-owner="project-issue-detail-vote-heart-icon"][data-stylex-owner-instance="active"]',
+        );
+        if (!iconNode) return null;
+        const iconStyle = getComputedStyle(iconNode);
+        return {
+          display: iconStyle.display,
+          fontFamily: iconStyle.fontFamily,
+          fontStyle: iconStyle.fontStyle,
+          fontVariant: iconStyle.fontVariant,
+          fontWeight: iconStyle.fontWeight,
+          lineHeight: iconStyle.lineHeight,
+          pseudoContent: getComputedStyle(iconNode, "::before").content,
+          inlineStyle: iconNode.getAttribute("style"),
+        };
+      })(),
       itemFloat: itemStyle?.float ?? null,
       itemLineHeight: itemStyle?.lineHeight ?? null,
       itemMarginRight: itemStyle?.marginRight ?? null,
@@ -4507,6 +4556,16 @@ test("project issue detail owns active vote controls and voter list declarations
     itemLineHeight: "25px",
     itemMarginRight: "3px",
     itemMarginTop: "-4px",
+    icon: {
+      display: "inline-block",
+      fontFamily: "yobicon",
+      fontStyle: "normal",
+      fontVariant: "normal",
+      fontWeight: "400",
+      // Legacy fallback `.heart` wins in normal mode; fallback-off exposes StyleX's unitless `1`.
+      lineHeight: fallbackOff ? "1" : "17px",
+      inlineStyle: null,
+    },
     listDisplay: "block",
     listListStyle: "none",
     listWrapDisplay: "inline-block",
@@ -4521,6 +4580,7 @@ test("project issue detail owns active vote controls and voter list declarations
     voteMarginRight: "-3px",
     voteVerticalAlign: "middle",
   });
+  expect(metrics.icon?.pseudoContent).toContain(String.fromCodePoint(0xe4b0));
   expect(metrics.listWrapMarginLeft).toBe("3.9px");
   await expect(vote).not.toHaveAttribute("style", /./u);
   await expect(heart).not.toHaveAttribute("style", /./u);

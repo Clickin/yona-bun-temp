@@ -1552,7 +1552,12 @@ function IssueVote({
               className={`${stylex.props(styles.issueVoteHeart, hasVoted ? styles.issueVoteHeartWatching : undefined).className} heart`}
               data-stylex-owner="project-issue-detail-vote-heart"
             >
-              <i className="yobicon-hearts"></i>
+              <i
+                {...stylex.props(styles.issueVoteIcon)}
+                className={`${stylex.props(styles.issueVoteIcon).className} yobicon-hearts`}
+                data-stylex-owner="project-issue-detail-vote-heart-icon"
+                data-stylex-owner-instance="active"
+              ></i>
             </span>
           </button>
         ) : (
@@ -1568,7 +1573,12 @@ function IssueVote({
               className={`${stylex.props(styles.issueVoteHeart).className} heart`}
               data-stylex-owner="project-issue-detail-vote-heart-disabled"
             >
-              <i className="yobicon-hearts"></i>
+              <i
+                {...stylex.props(styles.issueVoteIcon)}
+                className={`${stylex.props(styles.issueVoteIcon).className} yobicon-hearts`}
+                data-stylex-owner="project-issue-detail-vote-heart-icon"
+                data-stylex-owner-instance="disabled"
+              ></i>
             </span>
           </span>
         )}
