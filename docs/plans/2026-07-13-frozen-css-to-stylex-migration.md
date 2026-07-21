@@ -5609,6 +5609,17 @@ menu/reviewer/default-branch dependencies; retain generic `.box-wrap` fallback
 consumers and verify desktop/mobile computed geometry in normal and fallback-off
 focused tests.
 
+## Batch 754
+
+Complete the authenticated commit-detail emitted partial-diff code/table shell
+through route-local StyleX owners. Preserve the Scala `.diff-partial-code` and
+`diff-container show-comments` DOM, hash metadata, rows, and scroll behavior
+while carrying the exact frozen overflow shorthand/longhands and table
+width/separation/spacing declarations. Keep non-emitted patch-header paths,
+utility, range/add/remove colors, and unrelated table consumers fallback-owned;
+the table may overflow its scroll shell by design. Verify desktop/390px computed
+owners, visible rows, and fallback-off ownership in focused tests.
+
 ## Batch 733
 
 Complete the authenticated project-settings seven tab anchors through route-local StyleX owners. Preserve native Scala Link DOM, copy/order/hrefs, count badge, active/conditional state, and responsive containment while carrying exact frozen Bootstrap `.nav` anchor display, padding, margin, line-height, border/radius, hover/focus, and active declarations. Retain generic tab fallback consumers and verify desktop/mobile computed interaction in normal and fallback-off focused tests.

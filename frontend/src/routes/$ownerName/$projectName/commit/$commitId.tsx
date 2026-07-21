@@ -44,6 +44,7 @@ const sx = {
   file: stylex.props(styles.file),
   fileMeta: stylex.props(styles.fileMeta),
   fileCode: stylex.props(styles.fileCode),
+  diffPartialTable: stylex.props(styles.diffPartialTable),
   browseTabs: stylex.props(styles.browseTabs),
   reviewTabs: stylex.props(styles.reviewTabs),
   editorTabContent: stylex.props(styles.editorTabContent),
@@ -831,7 +832,9 @@ function FileDiffView({
             {parsed.pathB ? <div className="path">{`+++ ${parsed.pathB}`}</div> : null}
           </div>
           <table
-            className="diff-container show-comments"
+            {...sx.diffPartialTable}
+            className={`${sx.diffPartialTable.className} diff-container show-comments`}
+            data-stylex-owner="commit-detail-diff-partial-table"
             data-path-a={parsed.pathA}
             data-path-b={parsed.pathB}
             data-commit-a={commitA}

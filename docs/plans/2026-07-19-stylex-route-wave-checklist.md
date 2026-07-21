@@ -1080,3 +1080,9 @@ desktop/mobile geometry, and filtering.
   declarations, no-inline-style proof, desktop/390px computed geometry and
   containment, and independent normal and fallback-off focused runs pass 1/1
   each; hover/discommentable and unrelated icon consumers remain fallback-owned.
+- [x] Batch 754 emitted partial-diff code/table shell owners: frozen
+  Scala/LESS mapping, exact overflow and table width/separation/spacing
+  declarations, StyleX/legacy class composition, visible rows, owner-relative
+  desktop/390px geometry, and independent normal and fallback-off focused runs
+  pass 1/1 each; patch-header paths, utility, range/colors, and unrelated table
+  consumers remain scoped.

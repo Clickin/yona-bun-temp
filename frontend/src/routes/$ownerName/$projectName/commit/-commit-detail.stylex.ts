@@ -239,5 +239,6 @@ export const styles = stylex.create({
     height: "30px",
     position: "relative",
   },
-  fileCode: { overflowX: "auto", overflowY: "hidden" },
+  fileCode: { overflow: "auto", overflowX: "auto", overflowY: "hidden" },
+  diffPartialTable: { width: "100%", borderCollapse: "separate", borderSpacing: "0px" },
 });

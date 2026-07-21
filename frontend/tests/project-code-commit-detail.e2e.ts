@@ -3939,3 +3939,107 @@ index 1234567..abcdef1 100644
     process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
   );
 });
+
+test("project commit detail Batch 754 owns the emitted partial-diff table shell", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<div class="diff-partial-code" data-hashcode=');
+  expect(LEGACY_FILE_DIFF_SOURCE).toContain('<table class="diff-container show-comments"');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-partial-code {\n                overflow: auto;\n                overflow-x: auto;\n                overflow-y: hidden;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "table {\n                    width: 100%;\n                    border-collapse: separate;\n                    border-spacing: 0;",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    "diffPartialTable: stylex.props(styles.diffPartialTable)",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-partial-table"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'fileCode: { overflow: "auto", overflowX: "auto", overflowY: "hidden" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'diffPartialTable: { width: "100%", borderCollapse: "separate", borderSpacing: "0px" }',
+  );
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1 +1 @@
+-old
++new`,
+      },
+    ],
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+
+    const code = page.locator('[data-stylex-owner="commit-detail-file-code"]');
+    const table = page.locator('[data-stylex-owner="commit-detail-diff-partial-table"]');
+    await expect(code).toHaveCount(1);
+    await expect(table).toHaveCount(1);
+    await expect(code).toHaveAttribute("data-hashcode", "src/main.rs");
+    await expect(code).not.toHaveAttribute("style");
+    await expect(table).not.toHaveAttribute("style");
+    await expect(table).toHaveClass(/diff-container/);
+    await expect(table).toContainText("@@ -1 +1 @@");
+    await expect(table).toContainText("-old");
+    await expect(table).toContainText("+new");
+    await expect(table.locator("tr.range")).toHaveCount(1);
+    await expect(table.locator("tr.remove")).toHaveCount(1);
+    await expect(table.locator("tr.add")).toHaveCount(1);
+
+    const shell = await code.evaluate((element) => {
+      const table = element.querySelector("table")!;
+      const codeStyle = getComputedStyle(element);
+      const tableStyle = getComputedStyle(table);
+      const tableBox = table.getBoundingClientRect();
+      return {
+        overflow: codeStyle.overflow,
+        overflowX: codeStyle.overflowX,
+        overflowY: codeStyle.overflowY,
+        tableBoxTop: tableBox.top,
+        tableBoxBottom: tableBox.bottom,
+        tableBoxWidth: Math.round(tableBox.width),
+        tableWidth: tableStyle.width,
+        table: {
+          borderCollapse: tableStyle.borderCollapse,
+          borderSpacing: tableStyle.borderSpacing,
+        },
+      };
+    });
+    expect(shell).toEqual({
+      overflow: "auto hidden",
+      overflowX: "auto",
+      overflowY: "hidden",
+      tableBoxTop: expect.any(Number),
+      tableBoxBottom: expect.any(Number),
+      tableBoxWidth: expect.any(Number),
+      tableWidth: expect.any(String),
+      table: {
+        borderCollapse: "separate",
+        borderSpacing: "0px",
+      },
+    });
+    expect(shell.tableBoxWidth).toBeGreaterThan(0);
+    expect(shell.tableBoxTop).toBeLessThan(shell.tableBoxBottom);
+    expect(Number.parseFloat(shell.tableWidth)).toBeCloseTo(shell.tableBoxWidth, 0);
+  }
+
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
