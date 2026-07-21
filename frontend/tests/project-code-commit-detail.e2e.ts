@@ -1569,6 +1569,22 @@ test("project commit detail ranged thread header and badge own frozen geometry",
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:relative;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.open");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.closed");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0 5px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment { padding: 2px 0; }");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".media-body { background: #fff; }");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:absolute;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("top:8px; right:10px;");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComments: { margin: "0px 5px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadComment: { padding: "2px 0px" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('threadMediaBody: { backgroundColor: "#fff" }');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'rangedThreadMinimize: { position: "absolute", right: "10px", top: "8px" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadComments");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadComment");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadMediaBody");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.rangedThreadMinimize");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("btn-thread-here");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShell:");
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('backgroundColor: "#fefefe"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('border: "1px solid #e5e5e5"');
@@ -1645,6 +1661,10 @@ index 1234567..abcdef1 100644
   const badge = page.locator("#thread-77 .thread-header .badge");
   const header = page.locator("#thread-77 .thread-header");
   const thread = page.locator("#thread-77.comment-thread-wrap");
+  const comments = thread.locator(":scope > ul.comments");
+  const comment = comments.locator(":scope > li.comment");
+  const mediaBody = comment.locator(":scope > .media-body");
+  const minimize = header.locator(":scope > .btn-thread-minimize");
   const assertBadgeMetrics = async () => {
     await expect(thread).toHaveAttribute("data-stylex-owner", "commit-detail-thread-shell");
     await expect(thread).toHaveCSS("border-top-width", "1px");
@@ -1657,6 +1677,12 @@ index 1234567..abcdef1 100644
     await expect(thread).toHaveCSS("max-width", "876px");
     await expect(thread).toHaveCSS("position", "relative");
     await expect(thread).toHaveCSS("box-shadow", "rgb(182, 218, 84) 5px 0px 0px 0px inset");
+    await expect(comments).toHaveCSS("margin", "0px 5px");
+    await expect(comment).toHaveCSS("padding", "2px 0px");
+    await expect(mediaBody).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(minimize).toHaveCSS("position", "absolute");
+    await expect(minimize).toHaveCSS("top", "8px");
+    await expect(minimize).toHaveCSS("right", "10px");
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText("Open");
     await expect(header).toHaveCSS("padding", "5px 10px 10px");

@@ -46,6 +46,10 @@ const sx = {
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
   rangedThreadHeader: stylex.props(styles.rangedThreadHeader),
+  threadComments: stylex.props(styles.threadComments),
+  threadComment: stylex.props(styles.threadComment),
+  threadMediaBody: stylex.props(styles.threadMediaBody),
+  rangedThreadMinimize: stylex.props(styles.rangedThreadMinimize),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
 } as const;
 
@@ -1136,17 +1140,26 @@ function CodeCommentThreadView({
           >
             {t(`issue.state.${state}`)}
           </span>
-          <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
+          <button
+            {...sx.rangedThreadMinimize}
+            type="button"
+            className={`${sx.rangedThreadMinimize.className} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+          >
             <i className="yobicon-maximize"></i>
           </button>
         </div>
       )}
 
-      <ul className="comments">
+      <ul {...sx.threadComments} className={`${sx.threadComments.className} comments`}>
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
           return (
-            <li id={`comment-${comment.id}`} className="comment" key={comment.id}>
+            <li
+              {...sx.threadComment}
+              id={`comment-${comment.id}`}
+              className={`${sx.threadComment.className} comment`}
+              key={comment.id}
+            >
               <div className="comment-avatar">
                 <Link
                   to="/$user"
@@ -1166,7 +1179,7 @@ function CodeCommentThreadView({
                   />
                 </Link>
               </div>
-              <div className="media-body">
+              <div {...sx.threadMediaBody} className={`${sx.threadMediaBody.className} media-body`}>
                 <div className="meta-info">
                   <span className="comment_author pull-left">
                     <Link

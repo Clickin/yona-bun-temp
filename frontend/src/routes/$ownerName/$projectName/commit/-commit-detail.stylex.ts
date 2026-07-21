@@ -34,6 +34,10 @@ export const styles = stylex.create({
   },
   threadShellOpen: { boxShadow: "inset 5px 0px 0px #b6da54" },
   threadShellClosed: { boxShadow: "inset 5px 0px 0px #fd6956" },
+  threadComments: { margin: "0px 5px" },
+  threadComment: { padding: "2px 0px" },
+  threadMediaBody: { backgroundColor: "#fff" },
+  rangedThreadMinimize: { position: "absolute", right: "10px", top: "8px" },
   rangedThreadHeader: { padding: "5px 10px 10px 10px" },
   rangedThreadBadge: { margin: "0px", padding: "2px 10px" },
   originalMessageToggle: {

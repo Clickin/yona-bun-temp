@@ -5707,3 +5707,12 @@ through route-local StyleX owners. Preserve the legacy
 while carrying only frozen border, padding, background, max-width, position,
 and open/closed inset shadow declarations. Verify desktop/390px computed shell
 geometry and containment in normal and fallback-off focused tests.
+
+## Batch 737
+
+Complete the authenticated commit-detail thread inner visible state through
+route-local StyleX owners. Preserve the Scala comments list/comment/media and
+ranged minimize DOM/classes and fold affordance while carrying only frozen
+comments margin, comment-row padding, media background, and ranged minimize
+position declarations. Verify desktop/390px computed geometry in normal and
+fallback-off focused tests.

@@ -981,3 +981,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, computed shell declarations,
   desktop/390px containment, and open-state interaction in normal and
   fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 737 commit-detail thread-inner proof
+
+- [x] Commit-route thread comments preserve the Scala list/row/media DOM and
+  the ranged minimize control while route-local StyleX carries only frozen
+  comments margin, comment padding, media background, and minimize position;
+  the folded here affordance and shared fallback remain intact.
+- [x] The focused contract passes source mapping, computed declarations,
+  desktop/390px containment, and visible minimize geometry in normal and
+  fallback-off runs (1/1 each).
