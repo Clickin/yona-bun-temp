@@ -1174,7 +1174,6 @@ const globalGnbSearchScopeStyles = stylex.create({
     borderTopStyle: "solid",
     borderTopWidth: "1px",
     boxShadow: homeColors.globalGnbSearchScopeMenuShadow,
-    boxSizing: "content-box",
     color: homeColors.globalGnbSearchScopeMenuText,
     display: "block",
     float: "none",

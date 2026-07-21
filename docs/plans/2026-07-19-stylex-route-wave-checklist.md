@@ -774,3 +774,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused scope-menu contract preserves closed/hover/focus/open paint,
   copy/order, interaction, mobile hiding, and isolation in normal and
   fallback-off modes (7/7 each).
+
+### 2026-07-21 Batch 714 global GNB search-scope menu browser-default proof
+
+- [x] The existing scope-menu owner removes only unsupported `boxSizing`;
+  frozen float/position, border, shadow, padding, opacity/transition,
+  pseudo-elements, z-index, DOM, and responsive behavior remain.
+- [x] The focused scope-menu contract preserves closed/hover/focus/open paint,
+  copy/order, interaction, mobile hiding, and isolation in normal and
+  fallback-off modes (7/7 each).

@@ -5478,6 +5478,16 @@ declarations from the existing StyleX owners. Verify unchanged closed,
 hover/focus/open paint, copy/order, interaction, mobile hiding, and isolation in
 focused normal/fallback-off tests.
 
+## Batch 714
+
+Clean the global GNB search-scope menu owner against the frozen `.dropdown-menu.flat`
+boundary. The legacy `_yobiUI.less` and Bootstrap rules provide the menu paint,
+positioning, padding, transition, and pseudo-elements but do not declare
+`box-sizing`; remove only the redundant `boxSizing:"content-box"` from the
+existing StyleX owner. Verify unchanged closed/hover/focus/open paint,
+copy/order, interaction, mobile hiding, and isolation in focused
+normal/fallback-off tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.
