@@ -56,6 +56,7 @@ const sx = {
   defaultBranchResultItem: stylex.props(styles.defaultBranchResultItem),
   defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
+  issueTemplateEdit: stylex.props(styles.issueTemplateEdit),
 } as const;
 
 const textareaStaticStyles = stylex.create({
@@ -689,7 +690,8 @@ function ProjectSettingBody({
                     to="/$ownerName/$projectName/postform"
                     params={{ ownerName, projectName }}
                     search={{ issueTemplate: true }}
-                    className="ybtn"
+                    className={`${sx.issueTemplateEdit.className} ybtn`}
+                    data-stylex-owner="project-setting-issue-template-edit"
                     target="_blank"
                   >
                     {t("issue.template.edit")}

@@ -2,6 +2,12 @@ import * as stylex from "@stylexjs/stylex";
 import { globalBreakpoints } from "../../../theme.stylex";
 
 export const projectSettingColors = stylex.defineVars({
+  buttonBorder: "rgba(0,0,0,0.15)",
+  buttonBorderInteractive: "rgba(0,0,0,0.25)",
+  buttonSurface: "#ffffff",
+  buttonSurfaceInteractive: "#f1f1f1",
+  buttonText: "#333333",
+  buttonTextInteractive: "#292929",
   inputBorder: "#cccccc",
   inputText: "#555555",
   logoSurface: "#eeeeee",
@@ -9,6 +15,51 @@ export const projectSettingColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  issueTemplateEdit: {
+    backgroundColor: projectSettingColors.buttonSurface,
+    borderColor: projectSettingColors.buttonBorder,
+    borderRadius: "3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 1px 0 rgba(0,0,0,0.05)",
+    color: projectSettingColors.buttonText,
+    cursor: "pointer",
+    display: "inline-block",
+    fontSize: "14px",
+    lineHeight: "20px",
+    marginBottom: "0px",
+    marginLeft: ".3em",
+    outline: "0px none",
+    padding: "4px 12px",
+    position: "relative",
+    textAlign: "center",
+    textShadow: "none",
+    transition: "all 0.3s ease",
+    verticalAlign: "middle",
+    whiteSpace: "nowrap",
+    zIndex: "2",
+    ":first-child": {
+      marginLeft: "0px",
+    },
+    ":hover": {
+      backgroundColor: projectSettingColors.buttonSurfaceInteractive,
+      borderColor: projectSettingColors.buttonBorderInteractive,
+      color: projectSettingColors.buttonTextInteractive,
+      textDecoration: "none",
+    },
+    ":focus": {
+      backgroundColor: projectSettingColors.buttonSurfaceInteractive,
+      borderColor: projectSettingColors.buttonBorderInteractive,
+      color: projectSettingColors.buttonTextInteractive,
+      textDecoration: "none",
+    },
+    ":active": {
+      backgroundColor: projectSettingColors.buttonSurfaceInteractive,
+      borderColor: projectSettingColors.buttonBorderInteractive,
+      color: projectSettingColors.buttonTextInteractive,
+      textDecoration: "none",
+    },
+  },
   logoBackground: (backgroundImage: string) => ({ backgroundImage }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   form: { margin: "0px" },

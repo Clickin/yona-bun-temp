@@ -354,3 +354,12 @@ button retains frozen default, hover/focus/active paint, geometry, submit type,
 validation behavior, and desktop/mobile containment through route-local StyleX.
 Generic `.ybtn` consumers retain the legacy fallback. Focused normal and
 fallback-off runs pass 1/1 each.
+
+## Follow-up — authenticated project-settings Issue Template Edit owner
+
+Fallback-off evidence confirmed that the Issue Template Edit anchor retains the
+frozen generic `.ybtn` default and hover/focus/active paint, 30px control
+geometry, legacy `ybtn` class, Edit copy, new-tab target, issue-template URL,
+and desktop/mobile containment through route-local StyleX. Generic `.ybtn`
+consumers retain the legacy fallback. Focused normal and fallback-off runs pass
+1/1 each.

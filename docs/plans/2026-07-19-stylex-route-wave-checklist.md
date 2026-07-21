@@ -855,3 +855,12 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves legacy classes/type/copy, default and
   interaction paint, desktop/mobile containment, and validation submit
   behavior in normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 722 project-settings Issue Template Edit proof
+
+- [x] The Issue Template Edit anchor owns only the frozen generic `.ybtn`
+  base and hover/focus/active declarations through a route-local StyleX owner;
+  generic `.ybtn` fallback consumers remain.
+- [x] The focused contract preserves the legacy class/copy/target/issue-template
+  URL, default and interaction paint, desktop/mobile geometry, and viewport
+  containment in normal and fallback-off runs (1/1 each).

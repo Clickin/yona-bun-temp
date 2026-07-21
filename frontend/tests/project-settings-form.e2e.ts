@@ -949,6 +949,99 @@ test("project settings route source keeps internal navigation on Link", async ()
   expect(settingFormSource).toContain("ProjectSettingRouteScreen");
 });
 
+test("issue template edit preserves the legacy ybtn contract through its route-local StyleX owner", async ({
+  page,
+}) => {
+  const [legacy, route, style] = await Promise.all([
+    readFile("../yona-original/app/views/project/setting.scala.html", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain('class="ybtn" target="_blank"');
+  expect(legacy).toContain("?issueTemplate=true");
+  expect(route).toContain('data-stylex-owner="project-setting-issue-template-edit"');
+  expect(route).toContain("className={`${sx.issueTemplateEdit.className} ybtn`}");
+  expect(style).toContain("issueTemplateEdit:");
+  expect(style).toContain('buttonSurfaceInteractive: "#f1f1f1"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+    const link = page.locator('[data-stylex-owner="project-setting-issue-template-edit"]');
+    await expect(link).toHaveClass(/\bybtn\b/);
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute(
+      "href",
+      `${basePath}/admin/sample/postform?issueTemplate=true`,
+    );
+    await expect(link).toHaveText("Edit");
+
+    const states = await link.evaluate((element) => {
+      const anchor = element as HTMLAnchorElement;
+      const read = () => {
+        const computed = getComputedStyle(anchor);
+        const box = anchor.getBoundingClientRect();
+        return {
+          backgroundColor: computed.backgroundColor,
+          borderColor: computed.borderTopColor,
+          color: computed.color,
+          display: computed.display,
+          height: Math.round(box.height),
+          marginLeft: computed.marginLeft,
+          padding: computed.padding,
+          width: Math.round(box.width),
+        };
+      };
+      return { default: read() };
+    });
+    expect(states.default).toMatchObject({
+      backgroundColor: "rgb(255, 255, 255)",
+      borderColor: "rgba(0, 0, 0, 0.15)",
+      color: "rgb(51, 51, 51)",
+      display: "inline-block",
+      marginLeft: "0px",
+      padding: "4px 12px",
+    });
+
+    await link.hover();
+    await expect
+      .poll(() => link.evaluate((element) => getComputedStyle(element).backgroundColor))
+      .toBe("rgb(241, 241, 241)");
+    await link.focus();
+    await expect
+      .poll(() => link.evaluate((element) => getComputedStyle(element).color))
+      .toBe("rgb(41, 41, 41)");
+    const linkBox = await link.boundingBox();
+    expect(linkBox).not.toBeNull();
+    await page.mouse.move(linkBox!.x + linkBox!.width / 2, linkBox!.y + linkBox!.height / 2);
+    await page.mouse.down();
+    await expect
+      .poll(() => link.evaluate((element) => getComputedStyle(element).borderTopColor))
+      .toBe("rgba(0, 0, 0, 0.25)");
+    await page.mouse.up();
+
+    const containment = await link.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const parent = element.parentElement!.getBoundingClientRect();
+      return {
+        insideDescription: box.left >= parent.left && box.right <= parent.right,
+        insideViewport: box.left >= 0 && box.right <= window.innerWidth,
+        height: Math.round(box.height),
+        width: Math.round(box.width),
+      };
+    });
+    expect(containment.insideDescription).toBe(true);
+    expect(containment.insideViewport).toBe(true);
+    expect(containment.height).toBe(30);
+    expect(containment.width).toBeGreaterThan(40);
+  }
+});
+
 test("project settings navbar search scope matches legacy projectLayout common navbar", async ({
   page,
 }) => {

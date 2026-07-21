@@ -5569,3 +5569,13 @@ button DOM and submit behavior, and carry the exact frozen `.ybtn` base,
 legacy values. Keep generic `.ybtn` fallback consumers unchanged; verify
 desktop/mobile geometry, interaction paint, and validation submit behavior in
 normal and fallback-off focused tests.
+
+## Batch 722
+
+Complete the authenticated project-settings Issue Template Edit link visible
+state through a separate route-local StyleX owner. Preserve the legacy plain
+`ybtn` anchor, target, issue-template URL, copy, and new-tab behavior, and carry
+only the exact frozen generic `.ybtn` base and hover/focus/active declarations
+with their resolved legacy values. Keep generic `.ybtn` fallback consumers
+unchanged; verify desktop/mobile geometry, interaction paint, link contract,
+and viewport containment in normal and fallback-off focused tests.
