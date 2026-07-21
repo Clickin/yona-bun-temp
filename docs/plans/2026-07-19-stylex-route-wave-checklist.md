@@ -673,3 +673,12 @@ desktop/mobile geometry, and filtering.
 - [x] Adjacent input and submit focused contracts accept the current generated
   fallback hash and StyleX semantic class composition.
 - [x] Normal and fallback-off input/submit checks pass 8/8 and 9/9.
+
+### 2026-07-21 Batch 703 global GNB nav inherited-font proof
+
+- [x] The existing global nav owner no longer introduces a font-weight absent
+  from frozen `.gnb-nav`; typography remains inherited from the legacy baseline.
+- [x] The focused contract distinguishes the migrated restricted nav from the
+  retained raw-class consumers without changing their DOM or fallback boundary.
+- [x] Normal and fallback-off nav checks pass 8/8 with desktop/mobile geometry
+  and paint-isolation coverage.

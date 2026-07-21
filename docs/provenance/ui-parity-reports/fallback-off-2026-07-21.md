@@ -184,3 +184,14 @@ its presentation. The focused contracts now assert the current artifact hash,
 semantic class composition, and StyleX-owned glyph behavior while retaining
 frozen source, computed desktop/mobile geometry, isolation, hover/focus, and
 GET assertions. Normal and fallback-off runs pass input 8/8 and submit 9/9.
+
+## Follow-up — global GNB nav inherited typography and consumer boundary
+
+The global nav focused probe passed all rendered desktop/mobile geometry and
+paint-isolation checks. Its source contract was stale in two ways: it expected
+an obsolete grouped `.gnb-nav > li,` app.css selector and treated the already
+migrated restricted-screen nav as if it still emitted the raw `gnb-nav` class.
+The test now records the current retained `.gnb-nav > li {` bridge and the
+actual migrated/retained consumer split. The global home nav also dropped an
+explicit `fontWeight:400` declaration not present in frozen `.gnb-nav`, leaving
+typography inherited as in legacy. Normal and fallback-off checks pass 8/8.

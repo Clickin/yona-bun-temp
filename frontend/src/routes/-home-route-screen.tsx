@@ -1476,7 +1476,6 @@ const globalGnbNavStyles = stylex.create({
     display: "block",
     float: "left",
     fontSize: "14px",
-    fontWeight: "400",
     lineHeight: "20px",
     listStyle: "none",
     marginBottom: "0px",

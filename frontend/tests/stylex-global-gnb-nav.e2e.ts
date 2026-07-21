@@ -57,9 +57,14 @@ test("global GNB nav and brand item have complete global-theme StyleX ownership"
   expect(item).toContain("...stylex.props(globalGnbNavStyles.brandItem)");
 
   expect(appCss).toContain(".gnb-nav {");
-  expect(appCss).toContain(".gnb-nav > li,");
+  expect(appCss).toContain(".gnb-nav > li {");
   for (const consumer of ["restricted.tsx", "secret.tsx", "$user.tsx", "__root.tsx"]) {
-    expect(readFileSync(`src/routes/${consumer}`, "utf8")).toContain('className="gnb-nav"');
+    const source = readFileSync(`src/routes/${consumer}`, "utf8");
+    expect(source).toContain(
+      consumer === "restricted.tsx"
+        ? 'data-stylex-owner="restricted-gnb-nav"'
+        : 'className="gnb-nav"',
+    );
   }
 });
 
