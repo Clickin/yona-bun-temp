@@ -950,17 +950,31 @@ test("project settings route source keeps internal navigation on Link", async ()
 });
 
 test("project settings submenu owns the frozen route-specific tab margin", async ({ page }) => {
-  const [legacy, less, route, style] = await Promise.all([
+  const [legacy, bootstrap, less, route, style] = await Promise.all([
     readFile("../yona-original/app/views/project/partial_settingmenu.scala.html", "utf8"),
+    readFile("../yona-original/public/bootstrap/css/bootstrap.css", "utf8"),
     readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
     readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
     readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
   ]);
   expect(legacy).toContain('<ul class="nav nav-tabs">');
+  expect(legacy).toContain('id="subMenuProjectChangeVCS"');
+  expect(bootstrap).toContain(".nav {");
+  expect(bootstrap).toContain("margin-bottom: 20px;");
+  expect(bootstrap).toContain("margin-left: 0;");
+  expect(bootstrap).toContain("list-style: none;");
+  expect(bootstrap).toContain(".nav > li > a {");
+  expect(bootstrap).toContain("display: block;");
   expect(less).toContain(".project-page-wrap");
   expect(less).toContain("margin-bottom: -2px");
   expect(route).toContain("styles.projectSettingSubmenuItem");
+  expect(route).toContain("styles.projectSettingSubmenuList");
+  expect(route).toContain('data-stylex-owner="project-setting-submenu-list"');
   expect(route).toContain('data-stylex-owner="project-setting-submenu-item"');
+  expect(style).toContain("projectSettingSubmenuList:");
+  expect(style).toContain('marginBottom: "20px"');
+  expect(style).toContain('marginLeft: "0px"');
+  expect(style).toContain('listStyle: "none"');
   expect(style).toContain("projectSettingSubmenuItem:");
   expect(style).toContain('marginBottom: "-2px"');
 
@@ -975,8 +989,10 @@ test("project settings submenu owns the frozen route-specific tab margin", async
   await page.goto(`${basePath}/admin/sample/settingform`);
 
   const items = page.locator('[data-stylex-owner="project-setting-submenu-item"]');
-  const submenu = items.first().locator("..");
+  const submenu = page.locator('[data-stylex-owner="project-setting-submenu-list"]');
   const links = items.locator("a");
+  await expect(submenu).toHaveClass(/\bnav\b/);
+  await expect(submenu).toHaveClass(/\bnav-tabs\b/);
   await expect(items).toHaveCount(7);
   expect(
     await items.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-stylex-owner"))),
@@ -1008,8 +1024,14 @@ test("project settings submenu owns the frozen route-specific tab margin", async
 
   const desktop = await submenu.evaluate((element) => {
     const ul = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
     const tabs = Array.from(element.querySelectorAll<HTMLElement>("li"));
     return {
+      reset: {
+        marginBottom: style.marginBottom,
+        marginLeft: style.marginLeft,
+        listStyleType: style.listStyleType,
+      },
       ul: { left: ul.left, right: ul.right, top: ul.top, bottom: ul.bottom },
       items: tabs.map((tab) => {
         const box = tab.getBoundingClientRect();
@@ -1019,6 +1041,11 @@ test("project settings submenu owns the frozen route-specific tab margin", async
         };
       }),
     };
+  });
+  expect(desktop.reset).toEqual({
+    marginBottom: "20px",
+    marginLeft: "0px",
+    listStyleType: "none",
   });
   expect(desktop.items).toHaveLength(7);
   expect(desktop.items.every((item) => item.marginBottom === "-2px")).toBe(true);
@@ -1039,6 +1066,12 @@ test("project settings submenu owns the frozen route-specific tab margin", async
   expect(mobile).toHaveLength(7);
   expect(mobile.every((item) => item.marginBottom === "-2px")).toBe(true);
   expect(mobile.every((item) => item.inside)).toBe(true);
+  expect(
+    await submenu.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return [style.marginBottom, style.marginLeft, style.listStyleType];
+    }),
+  ).toEqual(["20px", "0px", "none"]);
 
   await mockProjectSettings(page, { project: { menuSetting: { code: false } } });
   await page.reload();

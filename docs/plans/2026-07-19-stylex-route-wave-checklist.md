@@ -932,3 +932,11 @@ desktop/mobile geometry, and filtering.
 - [x] Desktop/mobile computed list reset, item containment, and upload
   validation pass in normal and fallback-off runs (1/1 each); generic
   `unstyled` fallback consumers remain.
+
+### 2026-07-21 Batch 731 project-settings subnavigation list proof
+
+- [x] The native seven-item `ul.nav.nav-tabs` owner carries only frozen
+  Bootstrap `.nav` margin/list reset declarations; item margin, Link routes,
+  active/count/conditional state, and tab fallback remain intact.
+- [x] Desktop/mobile computed reset, item containment, navigation, and Change
+  VCS visibility pass in normal and fallback-off runs (1/1 each).

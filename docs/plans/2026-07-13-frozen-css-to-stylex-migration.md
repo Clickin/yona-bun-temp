@@ -5609,6 +5609,16 @@ menu/reviewer/default-branch dependencies; retain generic `.box-wrap` fallback
 consumers and verify desktop/mobile computed geometry in normal and fallback-off
 focused tests.
 
+## Batch 731
+
+Complete the authenticated project-settings subnavigation `ul.nav.nav-tabs`
+base reset through a route-local StyleX owner. Preserve the native Scala
+seven-item list, Link navigation, active/count/conditional state, existing
+route-specific item margin, and responsive geometry while carrying only frozen
+Bootstrap `.nav` `margin-bottom:20px`, `margin-left:0`, and `list-style:none`.
+Retain generic nav/tab fallback consumers and verify desktop/mobile computed
+reset and navigation behavior in normal and fallback-off focused tests.
+
 ## Batch 726
 
 Complete the authenticated project-settings top and bottom shell visible state

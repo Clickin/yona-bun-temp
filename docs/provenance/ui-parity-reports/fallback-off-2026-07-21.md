@@ -347,6 +347,15 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings subnavigation list owner
+
+Fallback-off evidence confirmed the native seven-item `ul.nav.nav-tabs` retains
+frozen Bootstrap `.nav` `margin-bottom:20px`, `margin-left:0`, and
+`list-style:none` while preserving item margins, Link navigation, count badge,
+active/conditional Change VCS state, and desktop/mobile containment. Generic
+nav/tab fallback consumers remain. Focused normal and fallback-off runs pass
+1/1 each.
+
 ## Follow-up — authenticated project-settings definition-list field owners
 
 Fallback-off evidence confirmed the top settings `dl`, `dt`, `dd`, and label

@@ -15,6 +15,11 @@ export const projectSettingColors = stylex.defineVars({
 });
 
 export const styles = stylex.create({
+  projectSettingSubmenuList: {
+    marginBottom: "20px",
+    marginLeft: "0px",
+    listStyle: "none",
+  },
   projectSettingSubmenuItem: { marginBottom: "-2px" },
   middleBox: {
     borderBottom: "1px solid #E9E9E9",
