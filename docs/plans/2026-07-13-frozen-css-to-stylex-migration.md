@@ -5773,3 +5773,11 @@ commit diff markup. Keep `.info` and outdated-label declarations fallback-owned
 because this route does not emit those elements, and retain other review-card
 consumers in the fallback. Verify desktop/390px computed geometry in normal and
 fallback-off focused tests.
+## Batch 744
+
+Complete the authenticated commit-detail diff-body font owner through route-local
+StyleX. Preserve the `.diff-body` class, diff DOM/order, and selection-driven
+block-review interaction while carrying only the frozen monospace font-family
+declaration. Keep `.isBinary`, `.btnPop`, and nested partial-diff declarations
+fallback-owned, and verify the owner independently at desktop/390px in normal
+and fallback-off focused tests.

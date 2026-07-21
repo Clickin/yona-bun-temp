@@ -1037,3 +1037,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 743 review-card inner content/date/comments: source mapping,
   truncation, computed metadata colors/spacing, desktop/390px geometry, and
   hash interaction pass in normal and fallback-off runs (1/1 each).
+- [x] Batch 744 diff-body font owner: frozen source mapping, exact computed
+  monospace family, desktop/390px coverage, and fallback-off independent
+  focused contract pass 1/1 each; nested partial-diff fallback remains scoped
+  separately.

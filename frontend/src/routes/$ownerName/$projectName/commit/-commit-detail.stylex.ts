@@ -147,7 +147,7 @@ export const styles = stylex.create({
     padding: "10px",
     whiteSpace: "pre-wrap",
   },
-  diffBody: { overflowX: "auto" },
+  diffBody: { fontFamily: '"monospace", Consolas, Tahoma', overflowX: "auto" },
   file: {
     border: `1px solid ${commitDetailColors.diffBorder}`,
     marginBottom: "20px",

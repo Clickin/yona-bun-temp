@@ -363,7 +363,7 @@ function ProjectCommitDetailBody({
                 {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- legacy yobi.CodeCommentBlock opens block review controls from text selection inside .diff-body. */}
                 <div
                   {...sx.diffBody}
-                  className={`diff-body ${sx.diffBody.className}`}
+                  className={`${sx.diffBody.className} diff-body`}
                   data-stylex-owner="commit-detail-diff-body"
                   onMouseUp={() => {
                     const selection = globalThis.getSelection?.();

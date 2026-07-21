@@ -1207,6 +1207,12 @@ test("project commit detail submits watch and comment mutations through legacy c
 test("project commit detail renders legacy partial_filediff rows", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'diffBody: { fontFamily: \'"monospace", Consolas, Tahoma\', overflowX: "auto" }',
+  );
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
       {
@@ -1224,6 +1230,7 @@ index 1234567..abcdef1 100644
     ],
   });
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   await expect(page.locator(".diff-partial-outer#src-main-rs")).toBeVisible();
   await expect(page.locator("#src-main-rs .diff-partial-commit-id a").nth(0)).toHaveAttribute(
@@ -1259,6 +1266,7 @@ index 1234567..abcdef1 100644
     codeLineMargin: "0px",
     codeLinePadding: "0px",
     diffBodyMinHeight: "30px",
+    diffBodyFontFamily: '"monospace", Consolas, Tahoma',
     diffBodyPosition: "relative",
     diffOuterBorderColor: "rgb(187, 187, 187)",
     diffOuterMarginBottom: "20px",
@@ -1274,6 +1282,33 @@ index 1234567..abcdef1 100644
     metaBorderBottomColor: "rgb(187, 187, 187)",
     metaHeight: "30px",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".diff-body")).toHaveCSS(
+    "font-family",
+    '"monospace", Consolas, Tahoma',
+  );
+});
+
+test("project commit detail owns diff-body font family", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'diffBody: { fontFamily: \'"monospace", Consolas, Tahoma\', overflowX: "auto" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`diff-body ${sx.diffBody.className}`}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-body"');
+
+  await mockProjectCommitDetail(page, []);
+  const diffBody = page.locator(".diff-body");
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await expect(diffBody).toHaveCSS("font-family", '"monospace", Consolas, Tahoma');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(diffBody).toHaveCSS("font-family", '"monospace", Consolas, Tahoma');
 });
 
 test("project commit detail renders legacy added deleted and renamed filename headers", async ({
@@ -1473,6 +1508,7 @@ async function readPartialDiffMetrics(page: Page) {
       codeLineFontSize: codeLineStyle.fontSize,
       codeLineMargin: codeLineStyle.margin,
       codeLinePadding: codeLineStyle.padding,
+      diffBodyFontFamily: diffBodyStyle.fontFamily,
       diffBodyMinHeight: diffBodyStyle.minHeight,
       diffBodyPosition: diffBodyStyle.position,
       diffOuterBorderColor: diffOuterStyle.borderTopColor,
