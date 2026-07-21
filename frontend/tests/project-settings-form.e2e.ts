@@ -1471,6 +1471,166 @@ test("project settings visible radios use route-local StyleX ownership", async (
   expect(mobileMetrics.map((metric) => metric.id)).toEqual(metrics.map((metric) => metric.id));
 });
 
+test("project settings middle rows own the frozen cu label, description, and note rules", async ({
+  page,
+}) => {
+  const [legacy, route, style] = await Promise.all([
+    readFile("../yona-original/app/assets/stylesheets/less/_page.less", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/setting.tsx", "utf8"),
+    readFile("src/routes/$ownerName/$projectName/-setting.stylex.ts", "utf8"),
+  ]);
+  expect(legacy).toContain(".cu-label");
+  expect(legacy).toContain(".inline-block;");
+  expect(legacy).toContain("width: 160px;");
+  expect(legacy).toContain("padding-right: 45px;");
+  expect(legacy).toContain("vertical-align: top;");
+  expect(legacy).toContain(".cu-desc {");
+  expect(legacy).toContain(".note {");
+  expect(legacy).toContain("color: #777;");
+  expect(legacy).toContain("font-size: 12px;");
+  expect(route).toContain("styles.cuLabel");
+  expect(route).toContain("styles.cuDesc");
+  expect(route).toContain("styles.cuNote");
+  expect(route).toContain("className={`${sx.cuLabel.className} cu-label vmiddle`}");
+  expect(style).toContain('width: "160px"');
+  expect(style).toContain('paddingRight: "45px"');
+  expect(style).toContain('color: "#777"');
+  expect(style).toContain('fontSize: "12px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: { isUsingReviewerCount: true, menuSetting: { code: true } },
+  });
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/settingform`);
+
+    const labels = page.locator('[data-stylex-owner^="project-setting-cu-label-"]');
+    const descriptions = page.locator('[data-stylex-owner^="project-setting-cu-desc-"]');
+    const notes = page.locator('[data-stylex-owner^="project-setting-cu-note-"]');
+    await expect(labels).toHaveCount(6);
+    await expect(descriptions).toHaveCount(6);
+    await expect(notes).toHaveCount(3);
+    await expect(labels).toHaveText([
+      "Share Options",
+      "Issue Template",
+      "Only project members can access code or related menus",
+      "Reviewer",
+      "Default branch",
+      "Menu Setting",
+    ]);
+    await expect(notes.nth(0)).toHaveText(/Project access must be granted explicitly/);
+    await expect(notes.nth(1)).toHaveText("");
+    await expect(notes.nth(2)).toHaveText(/of reviewers is required to merge pull request/);
+
+    const geometry = await page.evaluate(() => {
+      const labels = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-label-"]'),
+      );
+      const descriptions = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-desc-"]'),
+      );
+      const notes = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-stylex-owner^="project-setting-cu-note-"]'),
+      );
+      const rows = labels
+        .map((element) => element.parentElement)
+        .filter((element): element is HTMLElement => Boolean(element));
+      if (labels.length !== descriptions.length) return null;
+      return {
+        rows: rows.map((element) => {
+          const box = element.getBoundingClientRect();
+          return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+        }),
+        labels: labels.map((element) => {
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return {
+            display: style.display,
+            width: style.width,
+            paddingRight: style.paddingRight,
+            verticalAlign: style.verticalAlign,
+            vmiddle: element.classList.contains("vmiddle"),
+            left: box.left,
+            right: box.right,
+            top: box.top,
+            bottom: box.bottom,
+          };
+        }),
+        descriptions: descriptions.map((element) => {
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return {
+            display: style.display,
+            left: box.left,
+            right: box.right,
+            top: box.top,
+            bottom: box.bottom,
+          };
+        }),
+        notes: notes.map((element) => {
+          const style = getComputedStyle(element);
+          return { color: style.color, fontSize: style.fontSize };
+        }),
+      };
+    });
+    expect(geometry).not.toBeNull();
+    expect(
+      geometry!.rows.every(
+        (row) => row.left >= 0 && row.right >= row.left && row.top >= 0 && row.bottom >= row.top,
+      ),
+    ).toBe(true);
+    geometry!.labels.forEach((label, index) => {
+      expect(label, `label ${index}: ${JSON.stringify(label)}`).toMatchObject({
+        display: "inline-block",
+        width: "160px",
+        paddingRight: "45px",
+        verticalAlign: label.vmiddle ? "middle" : "top",
+      });
+    });
+    expect(geometry!.labels.filter((label) => label.vmiddle)).toHaveLength(3);
+    expect(
+      geometry!.labels
+        .filter((label) => !label.vmiddle)
+        .every((label) => label.verticalAlign === "top"),
+    ).toBe(true);
+    expect(
+      geometry!.labels
+        .filter((label) => label.vmiddle)
+        .every((label) => label.verticalAlign === "middle"),
+    ).toBe(true);
+    expect(
+      geometry!.descriptions.every((description) => description.display === "inline-block"),
+    ).toBe(true);
+    expect(
+      geometry!.notes.every(
+        (note) => note.color === "rgb(119, 119, 119)" && note.fontSize === "12px",
+      ),
+    ).toBe(true);
+  }
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+  await page.locator("#menuSettingCode").uncheck();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeHidden();
+  await expect(page.locator("#defaultBranceSettingPanel")).toBeHidden();
+  await expect(page.locator('[data-stylex-owner="project-setting-cu-label-menu"]')).toBeVisible();
+  await page.locator("#menuSettingPullRequest").check();
+  await expect(page.locator("#menuSettingCode")).toBeChecked();
+  await expect(page.locator("#reviewerCountSettingPanel")).toBeVisible();
+  await expect(page.locator("#defaultBranceSettingPanel")).toBeVisible();
+  await page.locator("#reviewerCountDisable").check();
+  await expect(page.locator("#welReviewerCount")).toBeHidden();
+  await page.locator("#reviewerCountEnable").check();
+  await expect(page.locator("#welReviewerCount")).toBeVisible();
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

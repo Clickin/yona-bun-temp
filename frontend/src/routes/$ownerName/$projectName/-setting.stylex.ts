@@ -16,6 +16,14 @@ export const projectSettingColors = stylex.defineVars({
 
 export const styles = stylex.create({
   projectSettingSubmenuItem: { marginBottom: "-2px" },
+  cuLabel: {
+    display: "inline-block",
+    width: "160px",
+    paddingRight: "45px",
+    verticalAlign: "top",
+  },
+  cuDesc: { display: "inline-block" },
+  cuNote: { color: "#777", fontSize: "12px" },
   issueTemplateEdit: {
     backgroundColor: projectSettingColors.buttonSurface,
     borderColor: projectSettingColors.buttonBorder,

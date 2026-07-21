@@ -57,6 +57,9 @@ const sx = {
   defaultBranchResult: stylex.props(styles.defaultBranchResult),
   defaultBranchSelect: stylex.props(styles.defaultBranchSelect),
   issueTemplateEdit: stylex.props(styles.issueTemplateEdit),
+  cuLabel: stylex.props(styles.cuLabel),
+  cuDesc: stylex.props(styles.cuDesc),
+  cuNote: stylex.props(styles.cuNote),
 } as const;
 
 const textareaStaticStyles = stylex.create({
@@ -635,8 +638,18 @@ function ProjectSettingBody({
             </div>
 
             <div className="box-wrap middle">
-              <div className="cu-label">{t("project.shareOption")}</div>{" "}
-              <div className="cu-desc">
+              <div
+                {...sx.cuLabel}
+                className={`${sx.cuLabel.className} cu-label`}
+                data-stylex-owner="project-setting-cu-label-share"
+              >
+                {t("project.shareOption")}
+              </div>{" "}
+              <div
+                {...sx.cuDesc}
+                className={`${sx.cuDesc.className} cu-desc`}
+                data-stylex-owner="project-setting-cu-desc-share"
+              >
                 <input
                   name="projectScope"
                   type="radio"
@@ -676,14 +689,30 @@ function ProjectSettingBody({
                 <label htmlFor="private" className="bg-radiobtn label-private">
                   {t("project.private")}
                 </label>{" "}
-                <span className="note">{t("project.private.notice")}</span>
+                <span
+                  {...sx.cuNote}
+                  className={`${sx.cuNote.className} note`}
+                  data-stylex-owner="project-setting-cu-note-share"
+                >
+                  {t("project.private.notice")}
+                </span>
               </div>
             </div>
 
             {isGit ? (
               <div className="box-wrap middle">
-                <div className="cu-label">{t("issue.template")}</div>{" "}
-                <div className="cu-desc">
+                <div
+                  {...sx.cuLabel}
+                  className={`${sx.cuLabel.className} cu-label`}
+                  data-stylex-owner="project-setting-cu-label-issue-template"
+                >
+                  {t("issue.template")}
+                </div>{" "}
+                <div
+                  {...sx.cuDesc}
+                  className={`${sx.cuDesc.className} cu-desc`}
+                  data-stylex-owner="project-setting-cu-desc-issue-template"
+                >
                   <Link
                     activeOptions={legacyProjectSettingsLinkActiveOptions}
                     activeProps={legacyProjectSettingsLinkSuppressActiveProps}
@@ -701,8 +730,18 @@ function ProjectSettingBody({
             ) : null}
 
             <div className="box-wrap middle">
-              <div className="cu-label">{t("project.codeAccessible")}</div>{" "}
-              <div className="cu-desc">
+              <div
+                {...sx.cuLabel}
+                className={`${sx.cuLabel.className} cu-label`}
+                data-stylex-owner="project-setting-cu-label-code-accessible"
+              >
+                {t("project.codeAccessible")}
+              </div>{" "}
+              <div
+                {...sx.cuDesc}
+                className={`${sx.cuDesc.className} cu-desc`}
+                data-stylex-owner="project-setting-cu-desc-code-accessible"
+              >
                 <input
                   name="isCodeAccessibleMemberOnly"
                   type="radio"
@@ -727,7 +766,11 @@ function ProjectSettingBody({
                 <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
                   {t("button.no")}
                 </label>
-                <span className="note"></span>
+                <span
+                  {...sx.cuNote}
+                  className={`${sx.cuNote.className} note`}
+                  data-stylex-owner="project-setting-cu-note-code-accessible"
+                ></span>
               </div>
             </div>
 
@@ -743,8 +786,18 @@ function ProjectSettingBody({
                   }`}
                   id="reviewerCountSettingPanel"
                 >
-                  <div className="cu-label vmiddle">{t("project.reviewer.count")}</div>{" "}
-                  <div className="cu-desc">
+                  <div
+                    {...sx.cuLabel}
+                    className={`${sx.cuLabel.className} cu-label vmiddle`}
+                    data-stylex-owner="project-setting-cu-label-reviewer"
+                  >
+                    {t("project.reviewer.count")}
+                  </div>{" "}
+                  <div
+                    {...sx.cuDesc}
+                    className={`${sx.cuDesc.className} cu-desc`}
+                    data-stylex-owner="project-setting-cu-desc-reviewer"
+                  >
                     <input
                       name="isUsingReviewerCount"
                       type="radio"
@@ -847,7 +900,13 @@ function ProjectSettingBody({
                           ))}
                         </ul>
                       </div>
-                      <span className="note ml10">{t("project.reviewer.count.description")}</span>
+                      <span
+                        {...sx.cuNote}
+                        className={`${sx.cuNote.className} note ml10`}
+                        data-stylex-owner="project-setting-cu-note-reviewer"
+                      >
+                        {t("project.reviewer.count.description")}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -862,8 +921,18 @@ function ProjectSettingBody({
                   }`}
                   id="defaultBranceSettingPanel"
                 >
-                  <div className="cu-label vmiddle">{t("code.branches.defaultBranch")}</div>{" "}
-                  <div className="cu-desc">
+                  <div
+                    {...sx.cuLabel}
+                    className={`${sx.cuLabel.className} cu-label vmiddle`}
+                    data-stylex-owner="project-setting-cu-label-default-branch"
+                  >
+                    {t("code.branches.defaultBranch")}
+                  </div>{" "}
+                  <div
+                    {...sx.cuDesc}
+                    className={`${sx.cuDesc.className} cu-desc`}
+                    data-stylex-owner="project-setting-cu-desc-default-branch"
+                  >
                     <DefaultBranchSelect2 branches={branches} defaultBranch={defaultBranch} />
                   </div>
                 </div>
@@ -871,8 +940,18 @@ function ProjectSettingBody({
             ) : null}
 
             <div className="box-wrap middle">
-              <div className="cu-label vmiddle">{t("project.menu.setting")}</div>{" "}
-              <div className="cu-desc">
+              <div
+                {...sx.cuLabel}
+                className={`${sx.cuLabel.className} cu-label vmiddle`}
+                data-stylex-owner="project-setting-cu-label-menu"
+              >
+                {t("project.menu.setting")}
+              </div>{" "}
+              <div
+                {...sx.cuDesc}
+                className={`${sx.cuDesc.className} cu-desc`}
+                data-stylex-owner="project-setting-cu-desc-menu"
+              >
                 <MenuCheckbox
                   id="menuSettingCode"
                   name="code"

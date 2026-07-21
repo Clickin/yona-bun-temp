@@ -347,6 +347,14 @@ desktop/mobile containment through route-local StyleX. The organization-only
 protected branch and unrelated radio consumers retain the legacy fallback.
 Focused normal and fallback-off runs pass 1/1 each.
 
+## Follow-up — authenticated project-settings middle-row owners
+
+Fallback-off evidence confirmed six `.cu-label`, six `.cu-desc`, and three
+nested `.note` owners retain frozen declarations on desktop/mobile, including
+legacy `vmiddle` alignment and empty-note output. Row copy/order and
+menu/reviewer dependencies remain intact; generic `.cu-*` fallback remains.
+Focused normal and fallback-off runs pass 1/1 each.
+
 ## Follow-up — authenticated project-settings Save button owner
 
 Fallback-off evidence confirmed that the existing `#save.ybtn.ybtn-success`

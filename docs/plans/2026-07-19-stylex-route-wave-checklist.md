@@ -873,3 +873,11 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves tab DOM/order/copy, Link hrefs, active
   state, count badge, conditional Change VCS visibility, desktop/mobile
   containment, and computed margin in normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 724 project-settings middle-row label/description proof
+
+- [x] Six label, six description, and three note owners carry the frozen
+  inline-block, width/padding/alignment, and note color/size declarations;
+  legacy `vmiddle` and empty-note behavior remain intact.
+- [x] Desktop/mobile computed declarations and menu/reviewer dependencies pass
+  in normal and fallback-off runs (1/1 each); generic `.cu-*` fallback remains.

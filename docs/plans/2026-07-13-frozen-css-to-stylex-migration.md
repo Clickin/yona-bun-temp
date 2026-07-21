@@ -5570,6 +5570,14 @@ legacy values. Keep generic `.ybtn` fallback consumers unchanged; verify
 desktop/mobile geometry, interaction paint, and validation submit behavior in
 normal and fallback-off focused tests.
 
+## Batch 724
+
+Complete authenticated project-settings middle-row `.cu-label`, `.cu-desc`,
+and nested `.cu-desc .note` visible state through route-local StyleX owners.
+Preserve row DOM/copy/order, `vmiddle`, empty notes, and dependencies; carry
+only frozen inline-block, label width/padding/alignment, and note color/size
+declarations while retaining generic `.cu-*` fallback consumers.
+
 ## Batch 722
 
 Complete the authenticated project-settings Issue Template Edit link visible
