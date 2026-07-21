@@ -36,9 +36,10 @@ test("List All divider source has complete global-theme StyleX ownership", () =>
   expect(styles).toContain("content: '\"|\"'");
   expect(styles).toContain('float: "left"');
   expect(styles).toContain('position: "relative"');
-  expect(styles).toContain('width: "auto"');
-  expect(styles).toContain('height: "auto"');
-  expect(styles).toContain('backgroundImage: "none"');
+  expect(styles).not.toContain('width: "auto"');
+  expect(styles).not.toContain('height: "auto"');
+  expect(styles).not.toContain('backgroundColor: "transparent"');
+  expect(styles).not.toContain('backgroundImage: "none"');
   expect(styles).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(|hsla?\(/iu);
 
   const marker = route.indexOf('data-stylex-owner="global-gnb-project-list-divider"');
@@ -49,7 +50,7 @@ test("List All divider source has complete global-theme StyleX ownership", () =>
 
   expect(appCss).not.toContain(".gnb-nav .divider");
   expect(appCss).toContain(".gnb-usermenu .divider");
-  expect(appCss).toContain(".gnb-nav > li,");
+  expect(appCss).toContain(".gnb-nav > li {");
 });
 
 test("frozen GNB divider sources stay byte-identical", () => {

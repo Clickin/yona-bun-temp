@@ -5408,3 +5408,13 @@ Repair the populated `/projects` row-content line boxes from the frozen Bootstra
 The existing header, description, name-tag, and stats owners now carry exact `line-height:20px`
 declarations; no DOM, spacing offset, or interaction behavior changed. The focused row-content
 contract passes 3/3 in normal and fallback-off desktop/mobile states.
+
+## Batch 706
+
+Clean the global GNB project-list divider owner against the exact frozen source boundary.
+`navbar.scala.html:47-49` emits the List All divider, while `_page.less:240-295` supplies only
+the inherited nav float/position, divider font-size/line-height, and `|` pseudo-element paint.
+Remove the existing owner’s unsupported background, auto-size, and image declarations without
+changing the list-item DOM, conditional visibility, or fallback boundary. The focused normal and
+fallback-off contract passes 10/10 with desktop/mobile geometry, conditional visibility, and paint
+isolation.

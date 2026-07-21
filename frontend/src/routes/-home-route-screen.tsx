@@ -1370,15 +1370,11 @@ const globalGnbFeedbackStyles = stylex.create({
 
 const globalGnbProjectListDividerStyles = stylex.create({
   root: {
-    backgroundColor: "transparent",
-    backgroundImage: "none",
     color: homeColors.textMuted,
     float: "left",
     fontSize: "12px",
-    height: "auto",
     lineHeight: "40px",
     position: "relative",
-    width: "auto",
     "::after": {
       color: homeColors.textMuted,
       content: '"|"',

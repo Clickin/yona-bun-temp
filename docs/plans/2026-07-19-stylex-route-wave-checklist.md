@@ -704,3 +704,12 @@ desktop/mobile geometry, and filtering.
   from retained raw-class consumers and preserves frozen source hashes.
 - [x] Normal and fallback-off outer checks pass 9/9 with desktop/mobile
   geometry, responsive padding, and paint-isolation coverage.
+
+### 2026-07-21 Batch 706 global GNB project-list divider owner-boundary proof
+
+- [x] The existing List All divider owner retains only frozen `.gnb-nav`/divider
+  declarations; unsupported `backgroundColor`, `backgroundImage`, `height:auto`,
+  and `width:auto` declarations are removed.
+- [x] The focused contract records the current `.gnb-nav > li {` fallback bridge,
+  preserves conditional visibility and DOM order, and passes desktop/mobile
+  geometry and paint isolation 10/10 in normal and fallback-off modes.

@@ -222,3 +222,13 @@ project-header override at `0px`; no offsets or DOM changes were added.
 Normal and fallback-off focused checks pass 9/9, including source hashes,
 consumer ownership, all home/project/organization desktop/mobile geometry, and
 paint isolation.
+
+## Follow-up — global GNB project-list divider owner boundary
+
+The divider source contract exposed only non-source declarations in the existing
+StyleX owner: `backgroundColor`, `backgroundImage`, `height:auto`, and `width:auto`
+are absent from frozen `.gnb-nav`/`.divider` output. The owner now retains the exact
+float/position, font-size, line-height, and `|` pseudo-element paint; the stale
+`.gnb-nav > li,` assertion was corrected to the current `.gnb-nav > li {` bridge.
+Focused normal and fallback-off runs pass 10/10 with desktop/mobile geometry,
+conditional visibility, and paint isolation.
