@@ -106,6 +106,7 @@ export const styles = stylex.create({
   },
   issuePostItemActive: { backgroundColor: issuesTheme.postActiveSurface },
   dueDateClosed: { color: issuesTheme.dueDateClosedText },
+  dueDateIcon: { marginRight: "3px" },
   massUpdateCheck: {
     float: "left",
     marginRight: "15px",

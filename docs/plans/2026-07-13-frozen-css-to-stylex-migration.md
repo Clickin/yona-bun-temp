@@ -5967,3 +5967,14 @@ shared fallback boundary, input state/copy, hover/focus popover, and responsive
 parent hiding. The focused project-posts test verifies source mapping,
 computed desktop/mobile geometry, no-inline-style, and interaction in normal
 and fallback-disabled modes.
+
+## Batch 762
+
+Move the authenticated project-issues populated due-date clock's active
+`.mr3` spacing into the existing route-local StyleX owner using the frozen
+`margin-right:3px` declaration from `_common.less:221`. Preserve the legacy
+clock/`vmiddle` classes, due-date wrapper and copy, overdue/closed state, title,
+and responsive behavior; keep the generic `.mr3` fallback for unrelated
+consumers. The focused project-issues test verifies source mapping, computed
+margin, desktop/mobile geometry, no-inline-style, and visible overdue state in
+normal and fallback-disabled modes.

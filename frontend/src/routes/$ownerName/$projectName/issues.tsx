@@ -1854,7 +1854,10 @@ function ProjectIssueItem({
             } ${stylex.props(issue.state === "closed" ? styles.dueDateClosed : undefined).className ?? ""}`}
             {...dueDateAttrs}
           >
-            <i className="yobicon-clock2 mr3 vmiddle"></i>
+            <i
+              className={`yobicon-clock2 vmiddle ${stylex.props(styles.dueDateIcon).className ?? ""}`}
+              data-stylex-owner="project-issues-due-date-icon"
+            ></i>
             <span className="vmiddle">
               {issue.state === "open" && issue.dueDateOverdue
                 ? t("issue.dueDate.overdue")

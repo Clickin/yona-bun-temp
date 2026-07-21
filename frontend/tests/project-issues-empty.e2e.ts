@@ -21,6 +21,14 @@ const LEGACY_ISSUE_PAGE_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
 );
+const LEGACY_ISSUE_LIST_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/issue/partial_list.scala.html", import.meta.url),
+  "utf8",
+);
+const LEGACY_COMMON_LESS_SOURCE = readFileSync(
+  new URL("../../yona-original/app/assets/stylesheets/less/_common.less", import.meta.url),
+  "utf8",
+);
 const SITE_LAYOUT_SHELL_SOURCE = readFileSync(
   new URL("../src/routes/-home-route-screen.tsx", import.meta.url),
   "utf8",
@@ -2557,6 +2565,72 @@ test("project issue list open due date shows legacy relative until text", async 
       ),
     ),
   );
+});
+
+test("project issue due-date clock owns legacy mr3 spacing with route StyleX", async ({ page }) => {
+  expect(LEGACY_ISSUE_LIST_SOURCE).toContain('<i class="yobicon-clock2 mr3 vmiddle"></i>');
+  expect(LEGACY_COMMON_LESS_SOURCE).toContain(".mr3 { margin-right:3px; }");
+  expect(PROJECT_ISSUES_STYLE_SOURCE).toContain('dueDateIcon: { marginRight: "3px" }');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain('data-stylex-owner="project-issues-due-date-icon"');
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).toContain("styles.dueDateIcon");
+  expect(PROJECT_ISSUES_ROUTE_SOURCE).not.toContain("yobicon-clock2 mr3 vmiddle");
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectIssues(page, "populated");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${basePath}/admin/sample/issues?filter=bug`);
+
+  const desktop = await page.locator("#issue-item-42").evaluate((row) => {
+    const dueDate = row.querySelector(".mr20.mt10.pull-right.overdue") as HTMLElement;
+    const icon = dueDate.querySelector(
+      '[data-stylex-owner="project-issues-due-date-icon"]',
+    ) as HTMLElement;
+    const label = dueDate.querySelector("span.vmiddle") as HTMLElement;
+    const dueDateBox = dueDate.getBoundingClientRect();
+    const iconBox = icon.getBoundingClientRect();
+    const labelBox = label.getBoundingClientRect();
+    return {
+      dueDateVisible: dueDate.getClientRects().length > 0,
+      iconClassName: icon.className,
+      iconMarginRight: window.getComputedStyle(icon).marginRight,
+      iconInlineStyle: icon.getAttribute("style"),
+      iconInsideDueDate: iconBox.left >= dueDateBox.left && iconBox.right <= dueDateBox.right,
+      labelAfterIcon: labelBox.left >= iconBox.right,
+      overdueText: label.textContent?.trim(),
+      title: dueDate.getAttribute("title"),
+    };
+  });
+  expect(desktop).toMatchObject({
+    dueDateVisible: true,
+    iconClassName: expect.stringContaining("yobicon-clock2"),
+    iconMarginRight: "3px",
+    iconInlineStyle: null,
+    iconInsideDueDate: true,
+    labelAfterIcon: true,
+    overdueText: "Overdue",
+    title: "Jun 30, 2026",
+  });
+
+  await page.setViewportSize({ width: 720, height: 900 });
+  const mobile = await page.locator("#issue-item-42").evaluate((row) => {
+    const dueDate = row.querySelector(".mr20.mt10.pull-right.overdue") as HTMLElement;
+    const icon = dueDate.querySelector(
+      '[data-stylex-owner="project-issues-due-date-icon"]',
+    ) as HTMLElement;
+    const iconBox = icon.getBoundingClientRect();
+    return {
+      dueDateDisplay: window.getComputedStyle(dueDate).display,
+      iconMarginRight: window.getComputedStyle(icon).marginRight,
+      iconGeometry: { width: iconBox.width, height: iconBox.height },
+      dueDateText: dueDate.textContent?.trim(),
+    };
+  });
+  expect(mobile).toEqual({
+    dueDateDisplay: "block",
+    iconMarginRight: "3px",
+    iconGeometry: { width: 0, height: 0 },
+    dueDateText: "Overdue",
+  });
 });
 
 test("project issue list sharer count matches legacy common/sharerCount.scala.html DOM", async ({
