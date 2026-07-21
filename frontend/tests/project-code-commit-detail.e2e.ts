@@ -1210,9 +1210,7 @@ test("project commit detail renders legacy partial_filediff rows", async ({ page
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
   );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'diffBody: { fontFamily: \'"monospace", Consolas, Tahoma\', overflowX: "auto" }',
-  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
   await mockProjectCommitDetail(page, detailRequests, {
     files: [
       {
@@ -1294,11 +1292,11 @@ test("project commit detail owns diff-body font family", async ({ page }) => {
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
     '.diff-body {\n    font-family: "monospace", Consolas, Tahoma;',
   );
-  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
-    'diffBody: { fontFamily: \'"monospace", Consolas, Tahoma\', overflowX: "auto" }',
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("fontFamily: '\"monospace\", Consolas, Tahoma'");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`${sx.diffBody.className} diff-body`}");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-body-layout"',
   );
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("className={`diff-body ${sx.diffBody.className}`}");
-  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-body"');
 
   await mockProjectCommitDetail(page, []);
   const diffBody = page.locator(".diff-body");
@@ -1309,6 +1307,36 @@ test("project commit detail owns diff-body font family", async ({ page }) => {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(diffBody).toHaveCSS("font-family", '"monospace", Consolas, Tahoma');
+});
+
+test("project commit detail owns diff-body layout", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".diff-body {\n            position:relative;\n            .border-radius(3px);\n            min-height:30px;",
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "relative"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderRadius: "3px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('minHeight: "30px"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-body-layout"',
+  );
+
+  await mockProjectCommitDetail(page, []);
+  const diffBody = page.locator('[data-stylex-owner="commit-detail-diff-body-layout"]');
+
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    if (viewport.width === 1366) {
+      await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+    }
+    await expect(diffBody).toHaveClass(/diff-body/);
+    await expect(diffBody).toHaveCSS("position", "relative");
+    await expect(diffBody).toHaveCSS("border-radius", "3px");
+    await expect(diffBody).toHaveCSS("min-height", "30px");
+  }
 });
 
 test("project commit detail renders legacy added deleted and renamed filename headers", async ({

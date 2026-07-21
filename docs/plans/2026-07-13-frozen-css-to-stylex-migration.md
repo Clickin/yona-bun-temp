@@ -5781,3 +5781,12 @@ block-review interaction while carrying only the frozen monospace font-family
 declaration. Keep `.isBinary`, `.btnPop`, and nested partial-diff declarations
 fallback-owned, and verify the owner independently at desktop/390px in normal
 and fallback-off focused tests.
+## Batch 745
+
+Complete the authenticated commit-detail diff-body layout owner through
+route-local StyleX. Preserve the `.diff-body` class, diff DOM/order, and
+selection-driven block-review interaction while carrying only the frozen
+relative positioning, 3px radius, and 30px minimum-height declarations from
+the codediff layout. Keep nested partial-diff rows and fallback consumers
+outside this owner scope, and verify desktop/390px geometry independently in
+normal and fallback-off focused tests.

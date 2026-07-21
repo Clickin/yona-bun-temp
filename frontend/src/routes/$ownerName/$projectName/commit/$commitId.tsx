@@ -364,7 +364,7 @@ function ProjectCommitDetailBody({
                 <div
                   {...sx.diffBody}
                   className={`${sx.diffBody.className} diff-body`}
-                  data-stylex-owner="commit-detail-diff-body"
+                  data-stylex-owner="commit-detail-diff-body-layout"
                   onMouseUp={() => {
                     const selection = globalThis.getSelection?.();
                     const selectedText = selection?.toString() ?? "";

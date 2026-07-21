@@ -1041,3 +1041,6 @@ desktop/mobile geometry, and filtering.
   monospace family, desktop/390px coverage, and fallback-off independent
   focused contract pass 1/1 each; nested partial-diff fallback remains scoped
   separately.
+- [x] Batch 745 diff-body layout owner: frozen source mapping, exact relative
+  position/radius/min-height, desktop/390px computed coverage, and independent
+  fallback-off focused contract pass 1/1 each.
