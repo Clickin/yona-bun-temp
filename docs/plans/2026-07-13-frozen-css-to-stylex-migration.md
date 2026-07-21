@@ -5865,3 +5865,15 @@ the shared thread-comment padding owner, non-emitted utility/comment-box
 selectors, range/colors, and unrelated comment consumers outside this owner
 scope, and verify desktop/390px computed containment and fallback-off ownership
 in focused normal and fallback-off tests.
+
+## Batch 753
+
+Complete the authenticated commit-detail emitted partial-diff line-number
+comment-icon base visible state through a route-local StyleX owner. Preserve the
+Scala icon element/class and line-number DOM while carrying only the frozen
+`.linenum .yobicon-comments` base declarations: absolute position, pointer
+cursor, hidden opacity, negative left margin, width, and top margin. Keep
+parent-hover opacity, add/remove/context row hover paint, `discommentable`, and
+other icon consumers fallback-owned. Verify source mapping, no inline style,
+desktop/390px computed geometry, and containment in normal and fallback-off
+focused tests.

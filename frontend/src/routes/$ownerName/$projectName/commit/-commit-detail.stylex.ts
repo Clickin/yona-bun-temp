@@ -64,6 +64,14 @@ export const styles = stylex.create({
       display: "block",
     },
   },
+  diffLineCommentIcon: {
+    position: "absolute",
+    cursor: "pointer",
+    opacity: 0,
+    marginLeft: "-84px",
+    width: "25px",
+    marginTop: "2px",
+  },
   diffCodeCell: { whiteSpace: "nowrap", padding: "0px 5px" },
   diffCodeLine: {
     fontFamily: 'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace',

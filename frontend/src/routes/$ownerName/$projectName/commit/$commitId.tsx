@@ -53,6 +53,7 @@ const sx = {
   reviewWriteCommentBox: stylex.props(styles.reviewWriteCommentBox),
   diffLineNumber: stylex.props(styles.diffLineNumber),
   diffLineNumberMarker: stylex.props(styles.diffLineNumberMarker),
+  diffLineCommentIcon: stylex.props(styles.diffLineCommentIcon),
   diffCodeCell: stylex.props(styles.diffCodeCell),
   diffCodeLine: stylex.props(styles.diffCodeLine),
   diffIsBinary: stylex.props(styles.diffIsBinary),
@@ -1061,7 +1062,11 @@ function DiffLineView({ line }: { line: Extract<ParsedDiffLine, { kind: "line" }
         data-stylex-owner="commit-detail-diff-line-number-cell"
         className={`${sx.diffLineNumber.className} linenum`}
       >
-        <i className="yobicon-comments"></i>
+        <i
+          {...sx.diffLineCommentIcon}
+          data-stylex-owner="commit-detail-diff-line-comment-icon"
+          className={`${sx.diffLineCommentIcon.className} yobicon-comments`}
+        ></i>
         <div
           {...sx.diffLineNumberMarker}
           data-stylex-owner="commit-detail-diff-line-number"

@@ -56,6 +56,10 @@ const LEGACY_FILE_DIFF_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/partial_filediff.scala.html", import.meta.url),
   "utf8",
 );
+const LEGACY_DIFF_LINE_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/partial_diff_line.scala.html", import.meta.url),
+  "utf8",
+);
 const LEGACY_REVIEWLIST_SOURCE = readFileSync(
   new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
   "utf8",
@@ -1316,6 +1320,18 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".line-number {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".code {");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".diff-partial-codeline {");
+  expect(LEGACY_DIFF_LINE_SOURCE).toContain('<i class="yobicon-comments"></i>');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".yobicon-comments {\n                                    position:absolute;",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-left: -84px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin-top:2px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "tr.add:hover, tr.remove:hover,tr.context:hover",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".linenum:hover .yobicon-comments");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.discommentable {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("display:none;");
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
     'data-stylex-owner="commit-detail-diff-line-number-cell"',
   );
@@ -1324,6 +1340,20 @@ test("project commit detail Batch 746 partial diff row and cell owners keep lega
   );
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-cell"');
   expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-code-pre"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-diff-line-comment-icon"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("sx.diffLineCommentIcon");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain(
+    'data-stylex-owner="commit-detail-diff-line-comment-icon" style=',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("diffLineCommentIcon: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "absolute"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('cursor: "pointer"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("opacity: 0");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginLeft: "-84px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "25px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "2px"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textAlign: "right"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('width: "50px"');
   expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('whiteSpace: "nowrap"');
@@ -1352,6 +1382,9 @@ index 1234567..abcdef1 100644
     const styles = await page.locator("#src-main-rs tr.remove").evaluate((row) => {
       const lineNumberCell = row.querySelector<HTMLElement>(".linenum")!;
       const lineNumber = row.querySelector<HTMLElement>(".line-number")!;
+      const commentIcon = row.querySelector<HTMLElement>(
+        '[data-stylex-owner="commit-detail-diff-line-comment-icon"]',
+      )!;
       const code = row.querySelector<HTMLElement>(".code")!;
       const codeLine = row.querySelector<HTMLElement>(".diff-partial-codeline")!;
       return {
@@ -1376,6 +1409,20 @@ index 1234567..abcdef1 100644
           textAlign: getComputedStyle(lineNumberCell).textAlign,
           whiteSpace: getComputedStyle(lineNumberCell).whiteSpace,
         },
+        commentIcon: {
+          position: getComputedStyle(commentIcon).position,
+          cursor: getComputedStyle(commentIcon).cursor,
+          opacity: getComputedStyle(commentIcon).opacity,
+          marginLeft: getComputedStyle(commentIcon).marginLeft,
+          width: getComputedStyle(commentIcon).width,
+          marginTop: getComputedStyle(commentIcon).marginTop,
+          count: row.querySelectorAll('[data-stylex-owner="commit-detail-diff-line-comment-icon"]')
+            .length,
+          lineNumberContained:
+            lineNumber.getBoundingClientRect().right <=
+              lineNumberCell.getBoundingClientRect().right &&
+            lineNumber.getBoundingClientRect().left >= lineNumberCell.getBoundingClientRect().left,
+        },
       };
     });
     expect(styles).toEqual({
@@ -1389,7 +1436,26 @@ index 1234567..abcdef1 100644
       },
       lineNumber: { height: "20px", position: "relative", width: "50px" },
       lineNumberCell: { padding: "0px 3px", textAlign: "right", whiteSpace: "nowrap" },
+      commentIcon: {
+        position: "absolute",
+        cursor: "pointer",
+        opacity: "0",
+        marginLeft: "-84px",
+        width: "25px",
+        marginTop: "2px",
+        count: 1,
+        lineNumberContained: true,
+      },
     });
+    await expect(
+      page.locator('[data-stylex-owner="commit-detail-diff-line-comment-icon"]'),
+    ).toHaveCount(2);
+    expect(
+      await page
+        .locator('[data-stylex-owner="commit-detail-diff-line-comment-icon"]')
+        .first()
+        .getAttribute("style"),
+    ).toBeNull();
   }
   expect(detailRequests).toEqual(["branch=main"]);
   const fallback = page.locator('link[href*="legacy-fallback.css"]');

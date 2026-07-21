@@ -1075,3 +1075,8 @@ desktop/mobile geometry, and filtering.
   desktop/390px containment, visible thread copy, and independent normal and
   fallback-off focused runs pass 1/1 each; shared thread padding, non-emitted
   selectors, ranges/colors, and unrelated consumers remain scoped.
+- [x] Batch 753 emitted partial-diff line-number comment-icon owner: frozen
+  Scala/LESS mapping, exact base position/cursor/opacity/margin/width
+  declarations, no-inline-style proof, desktop/390px computed geometry and
+  containment, and independent normal and fallback-off focused runs pass 1/1
+  each; hover/discommentable and unrelated icon consumers remain fallback-owned.
