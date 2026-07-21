@@ -971,3 +971,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes source mapping, computed declarations,
   desktop/390px geometry, and containment in normal and fallback-off runs
   (1/1 each).
+
+### 2026-07-21 Batch 736 commit-detail thread-shell proof
+
+- [x] Commit-detail ranged and non-ranged thread wrappers preserve the legacy
+  `.comment-thread-wrap` DOM/classes/state hooks while the route-local StyleX
+  owner carries only frozen shell border/padding/background/max-width/position
+  and open/closed inset shadows; PR changes/shared fallback remain untouched.
+- [x] The focused contract passes source mapping, computed shell declarations,
+  desktop/390px containment, and open-state interaction in normal and
+  fallback-off runs (1/1 each).

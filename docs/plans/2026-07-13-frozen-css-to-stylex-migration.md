@@ -5698,3 +5698,12 @@ badge visible state through route-local StyleX owners. Preserve the legacy
 consumers while carrying only frozen header `padding: 5px 10px 10px 10px` and
 badge `margin:0; padding:2px 10px`. Verify desktop/390px computed geometry and
 containment in normal and fallback-off focused tests.
+
+## Batch 736
+
+Complete the authenticated commit-detail ranged/non-ranged review-thread shell
+through route-local StyleX owners. Preserve the legacy
+`.comment-thread-wrap` classes, state hooks, DOM, and shared fallback consumers
+while carrying only frozen border, padding, background, max-width, position,
+and open/closed inset shadow declarations. Verify desktop/390px computed shell
+geometry and containment in normal and fallback-off focused tests.

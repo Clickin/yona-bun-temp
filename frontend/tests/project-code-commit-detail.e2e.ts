@@ -1560,6 +1560,31 @@ test("project commit detail ranged thread header and badge own frozen geometry",
     '<span class="badge state @thread.state.toString().toLowerCase()">',
   );
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".comment-thread-wrap {");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("border:1px solid #e5e5e5;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("border-width:1px 0px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding:5px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding-bottom:0;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("background-color:#fefefe;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("max-width:876px;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("position:relative;");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.open");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("&.closed");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShell:");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('backgroundColor: "#fefefe"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('border: "1px solid #e5e5e5"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderWidth: "1px 0px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('paddingBottom: "0px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('maxWidth: "876px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('position: "relative"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'threadShellOpen: { boxShadow: "inset 5px 0px 0px #b6da54" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'threadShellClosed: { boxShadow: "inset 5px 0px 0px #fd6956" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadShell");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-thread-shell"');
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".thread-header{");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("padding: 5px 10px 10px 10px;");
   expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain("margin:0; padding:2px 10px;");
@@ -1621,6 +1646,17 @@ index 1234567..abcdef1 100644
   const header = page.locator("#thread-77 .thread-header");
   const thread = page.locator("#thread-77.comment-thread-wrap");
   const assertBadgeMetrics = async () => {
+    await expect(thread).toHaveAttribute("data-stylex-owner", "commit-detail-thread-shell");
+    await expect(thread).toHaveCSS("border-top-width", "1px");
+    await expect(thread).toHaveCSS("border-right-width", "0px");
+    await expect(thread).toHaveCSS("border-bottom-width", "1px");
+    await expect(thread).toHaveCSS("border-left-width", "0px");
+    await expect(thread).toHaveCSS("border-top-color", "rgb(229, 229, 229)");
+    await expect(thread).toHaveCSS("padding", "5px 5px 0px");
+    await expect(thread).toHaveCSS("background-color", "rgb(254, 254, 254)");
+    await expect(thread).toHaveCSS("max-width", "876px");
+    await expect(thread).toHaveCSS("position", "relative");
+    await expect(thread).toHaveCSS("box-shadow", "rgb(182, 218, 84) 5px 0px 0px 0px inset");
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText("Open");
     await expect(header).toHaveCSS("padding", "5px 10px 10px");

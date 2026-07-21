@@ -1088,6 +1088,10 @@ function CodeCommentThreadView({
     thread.commitId,
   );
   const [editingCommentIds, setEditingCommentIds] = useState<Set<number>>(() => new Set());
+  const threadShellProps = stylex.props(
+    styles.threadShell,
+    state === "closed" ? styles.threadShellClosed : styles.threadShellOpen,
+  );
 
   function setCommentEditing(commentId: number, isEditing: boolean) {
     setEditingCommentIds((current) => {
@@ -1105,7 +1109,9 @@ function CodeCommentThreadView({
     <div
       id={`thread-${thread.id}`}
       data-state={isNonRanged ? undefined : state}
-      className={`comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
+      {...threadShellProps}
+      className={`${threadShellProps.className} comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
+      data-stylex-owner="commit-detail-thread-shell"
       data-range-path={isNonRanged ? undefined : thread.path}
       data-range-startside={isNonRanged ? undefined : thread.startSide}
       data-range-startline={isNonRanged ? undefined : thread.startLine}

@@ -23,6 +23,17 @@ export const styles = stylex.create({
   rightText: { textAlign: "right" },
   commentDeleteModalVisible: { display: "block" },
   threadReviewForm: { display: "block" },
+  threadShell: {
+    backgroundColor: "#fefefe",
+    border: "1px solid #e5e5e5",
+    borderWidth: "1px 0px",
+    maxWidth: "876px",
+    padding: "5px",
+    paddingBottom: "0px",
+    position: "relative",
+  },
+  threadShellOpen: { boxShadow: "inset 5px 0px 0px #b6da54" },
+  threadShellClosed: { boxShadow: "inset 5px 0px 0px #fd6956" },
   rangedThreadHeader: { padding: "5px 10px 10px 10px" },
   rangedThreadBadge: { margin: "0px", padding: "2px 10px" },
   originalMessageToggle: {
