@@ -1034,3 +1034,6 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 742 review-card rail: verify source mapping, desktop/390px computed
   geometry, hover, state rail, and hash interaction in normal and fallback-off
   runs (1/1 each).
+- [x] Batch 743 review-card inner content/date/comments: source mapping,
+  truncation, computed metadata colors/spacing, desktop/390px geometry, and
+  hash interaction pass in normal and fallback-off runs (1/1 each).

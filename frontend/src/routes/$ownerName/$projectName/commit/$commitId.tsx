@@ -55,6 +55,9 @@ const sx = {
   rangedThreadMinimize: stylex.props(styles.rangedThreadMinimize),
   threadActions: stylex.props(styles.threadActions),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
+  reviewCardContent: stylex.props(styles.reviewCardContent),
+  reviewCardDate: stylex.props(styles.reviewCardDate),
+  reviewCardComments: stylex.props(styles.reviewCardComments),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -1954,9 +1957,21 @@ function ReviewCards({
             data-stylex-owner="commit-detail-review-card"
             key={thread.id}
           >
-            <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
-            <span className="date" title={thread.createdLabel}>
-              <span className="comments">
+            <p
+              className={`${sx.reviewCardContent.className} content`}
+              data-stylex-owner="commit-detail-review-card-content"
+            >
+              {thread.comments[0]?.contentsMarkdown ?? ""}
+            </p>
+            <span
+              className={`${sx.reviewCardDate.className} date`}
+              data-stylex-owner="commit-detail-review-card-date"
+              title={thread.createdLabel}
+            >
+              <span
+                className={`${sx.reviewCardComments.className} comments`}
+                data-stylex-owner="commit-detail-review-card-comments"
+              >
                 {thread.comments.length > 1 ? (
                   <>
                     <i className="yobicon-comments"></i> {thread.comments.length}

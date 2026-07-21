@@ -5763,3 +5763,13 @@ closed inset rail while carrying only the frozen display, border, padding,
 radius, margin, hover, and state-shadow declarations. Retain generic fallback
 consumers and verify desktop/390px computed geometry and hash interaction in
 normal and fallback-off focused tests.
+## Batch 743
+
+Complete the authenticated commit-detail review-card inner visible state
+through route-local StyleX owners. Preserve the legacy content/date/comments
+classes, order, truncation behavior, and hash interaction while carrying only
+the frozen `.content`, `.date`, and `.comments` declarations applicable to the
+commit diff markup. Keep `.info` and outdated-label declarations fallback-owned
+because this route does not emit those elements, and retain other review-card
+consumers in the fallback. Verify desktop/390px computed geometry in normal and
+fallback-off focused tests.

@@ -2559,6 +2559,40 @@ test("project commit detail renders legacy non-ranged comment thread", async ({ 
 });
 
 test("project commit detail review cards own legacy rail geometry and hash", async ({ page }) => {
+  expect(LEGACY_CODE_DIFF_SOURCE).toContain(
+    '<p class="content">@thread.getFirstReviewComment().getContents()</p>',
+  );
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="content">');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".content {\n        display: box;\n        display: -webkit-box;\n        overflow:hidden;\n        text-overflow:ellipsis;\n        text-align: justify;\n        max-height: 60px;\n        -webkit-line-clamp: 3;\n        -webkit-box-orient:vertical;\n        word-break:break-all;\n    }",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".date {\n        color:#999;\n        vertical-align:middle;\n    }",
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".comments {\n        color:#3592b5;\n        margin-top:2px;\n        margin-left:1px;\n    }",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-review-card-content"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-review-card-date"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'data-stylex-owner="commit-detail-review-card-comments"',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("reviewCardContent: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'display: stylex.firstThatWorks("-webkit-box", "box")',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'reviewCardDate: { color: "#999", verticalAlign: "middle" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'reviewCardComments: { color: "#3592b5", marginTop: "2px", marginLeft: "1px" }',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain('className="info"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("outdated-label");
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];
   await mockProjectCommitDetail(page, detailRequests, {
@@ -2583,7 +2617,27 @@ test("project commit detail review cards own legacy rail geometry and hash", asy
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
   const reviewCard = page.locator("#reviewcards-open .review-card.open");
+  const reviewCardContent = reviewCard.locator(
+    '[data-stylex-owner="commit-detail-review-card-content"]',
+  );
+  const reviewCardDate = reviewCard.locator('[data-stylex-owner="commit-detail-review-card-date"]');
+  const reviewCardComments = reviewCard.locator(
+    '[data-stylex-owner="commit-detail-review-card-comments"]',
+  );
   await expect(reviewCard).toBeVisible();
+  await expect(reviewCardContent).toHaveCSS("display", "flow-root");
+  await expect(reviewCardContent).toHaveCSS("overflow", "hidden");
+  await expect(reviewCardContent).toHaveCSS("text-overflow", "ellipsis");
+  await expect(reviewCardContent).toHaveCSS("text-align", "justify");
+  await expect(reviewCardContent).toHaveCSS("max-height", "60px");
+  await expect(reviewCardContent).toHaveCSS("-webkit-line-clamp", "3");
+  await expect(reviewCardContent).toHaveCSS("-webkit-box-orient", "vertical");
+  await expect(reviewCardContent).toHaveCSS("word-break", "break-all");
+  await expect(reviewCardDate).toHaveCSS("color", "rgb(153, 153, 153)");
+  await expect(reviewCardDate).toHaveCSS("vertical-align", "middle");
+  await expect(reviewCardComments).toHaveCSS("color", "rgb(53, 146, 181)");
+  await expect(reviewCardComments).toHaveCSS("margin-top", "2px");
+  await expect(reviewCardComments).toHaveCSS("margin-left", "1px");
   await expect(reviewCard).toHaveCSS("display", "block");
   await expect(reviewCard).toHaveCSS("border", "1px solid rgb(221, 221, 221)");
   await expect(reviewCard).toHaveCSS("padding", "10px 10px 10px 15px");
