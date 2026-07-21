@@ -63,10 +63,10 @@ test("Feedback source has complete global-theme StyleX ownership", () => {
   expect(link).toContain('target="_blank"');
   expect(item).not.toContain("className");
 
-  for (const selector of [".gnb-nav > li,", ".gnb-nav a,", ".gnb-nav a {", ".gnb-nav a:hover,"]) {
+  for (const selector of [".gnb-nav > li {", ".gnb-nav a,", ".gnb-nav a {", ".gnb-nav a:hover,"]) {
     expect(appCss).toContain(selector);
   }
-  expect(restricted).toContain('className="gnb-nav"');
+  expect(restricted).toContain('data-stylex-owner="restricted-gnb-nav"');
   expect(appCss).not.toMatch(/feedback/iu);
 });
 

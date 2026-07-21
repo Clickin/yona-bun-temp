@@ -195,3 +195,20 @@ The test now records the current retained `.gnb-nav > li {` bridge and the
 actual migrated/retained consumer split. The global home nav also dropped an
 explicit `fontWeight:400` declaration not present in frozen `.gnb-nav`, leaving
 typography inherited as in legacy. Normal and fallback-off checks pass 8/8.
+
+## Follow-up — global GNB inner box model and shared consumer contracts
+
+The GNB-inner fallback-off probe exposed a real declaration gap: the existing
+StyleX owner added `box-sizing:border-box`, while frozen `_page.less:198-203`
+does not declare box sizing and the legacy computed state is `content-box`.
+Removing that unsupported declaration restores the desktop/mobile home,
+project, and organization states without offsets or DOM changes. The same
+wave repaired stale source assertions for the already StyleX-owned restricted
+brand/nav/inner consumers, current `.gnb-nav > li {` selector spelling, and
+StyleX-owned sidebar pseudo-glyph isolation. The assembled five-owner
+fallback-off wave reported 38/38 tests green before managed wrapper cleanup
+was interrupted; the restricted sidebar serial run passed 4/4 parity checks.
+The unsupported `.gnb-inner` fallback bridge was also retired from
+`frontend/src/app.css`; the focused source contract now asserts that only the
+source-backed declarations remain and that adding the retained legacy class
+does not change the StyleX-owned computed state.

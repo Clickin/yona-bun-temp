@@ -61,7 +61,7 @@ test("global GNB brand link has complete global-theme StyleX ownership", () => {
   expect(route).toContain("hasScopedSearch && globalGnbBrandLinkStyles.projectHeader");
   expect(owner).not.toContain("activeProps={{");
 
-  expect(restricted).toContain('className="logo logo-letter"');
+  expect(restricted).toContain('data-stylex-owner="restricted-gnb-brand"');
   for (const selector of [
     ".gnb-inner .logo {",
     ".gnb-inner .logo::before",

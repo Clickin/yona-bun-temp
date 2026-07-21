@@ -56,10 +56,10 @@ test("List All source has complete global-theme StyleX ownership", () => {
   expect(linkOwner).toContain("globalGnbProjectListStyles.link");
   expect(route).toContain('activeMenu === "projects" && globalGnbProjectListStyles.activeItem');
 
-  for (const selector of [".gnb-nav > li,", ".gnb-nav a,", ".gnb-nav a {", ".gnb-nav a:hover,"]) {
+  for (const selector of [".gnb-nav > li {", ".gnb-nav a,", ".gnb-nav a {", ".gnb-nav a:hover,"]) {
     expect(appCss).toContain(selector);
   }
-  expect(restricted).toContain('className="gnb-nav"');
+  expect(restricted).toContain('data-stylex-owner="restricted-gnb-nav"');
 });
 
 for (const state of [

@@ -458,7 +458,6 @@ body:has([data-stylex-owner="framed-site-shell"][data-sidebar-open="true"]) {
 }
 
 .gnb-inner {
-  box-sizing: border-box;
   width: 98%;
   height: 40px;
   margin: 0 auto;

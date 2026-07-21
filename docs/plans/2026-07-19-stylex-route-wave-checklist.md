@@ -682,3 +682,17 @@ desktop/mobile geometry, and filtering.
   retained raw-class consumers without changing their DOM or fallback boundary.
 - [x] Normal and fallback-off nav checks pass 8/8 with desktop/mobile geometry
   and paint-isolation coverage.
+
+### 2026-07-21 Batch 704 global GNB inner box-model proof
+
+- [x] The existing global GNB-inner owner no longer introduces `border-box`,
+  which is absent from frozen `.gnb-inner`; computed desktop/mobile state is
+  `content-box` as in the legacy output.
+- [x] The focused contract distinguishes the migrated restricted inner owner
+  from retained raw-class consumers without changing DOM or fallback behavior.
+- [x] Home, project, and organization inner geometry checks report green in
+  fallback-off mode; the assembled five-owner wave reports 38/38 green before
+  managed cleanup interruption.
+- [x] The unsupported `.gnb-inner` fallback `box-sizing` bridge is retired;
+  source-backed width/height/margin/color and neighboring pseudo-element rules
+  remain retained for non-migrated consumers.

@@ -24,8 +24,8 @@ test("restricted sidebar pin has route-paint and inline-geometry StyleX ownershi
   expect(owner).toContain('fontSize: "18px"');
   expect(owner).toContain('fontFamily: "yobicon"');
   expect(owner).toContain('lineHeight: "1"');
-  expect(owner).toContain('content: \'"\\\\e031"\'');
-  expect(owner).toContain('content: \'"\\\\e030"\'');
+  expect(owner).toContain("content: '\"\\\\e031\"'");
+  expect(owner).toContain("content: '\"\\\\e030\"'");
   expect(owner).not.toContain("globalColors.");
   expect(routeTheme).toContain('sidebarPinSurface: "#03a9f4"');
   expect(route).toContain('data-stylex-owner="restricted-sidebar-pin"');
@@ -75,7 +75,9 @@ for (const viewport of [
       await expect(searchForm).toBeVisible();
       const searchMetrics = await searchForm.evaluate((form) => {
         const header = form.closest<HTMLElement>('[data-stylex-owner="restricted-gnb-outer"]');
-        const input = form.querySelector<HTMLElement>('[data-stylex-owner="restricted-gnb-search-input"]');
+        const input = form.querySelector<HTMLElement>(
+          '[data-stylex-owner="restricted-gnb-search-input"]',
+        );
         if (!header || !input) throw new Error("Restricted GNB search metrics are missing");
         const headerBox = header.getBoundingClientRect();
         const inputBox = input.getBoundingClientRect();
@@ -159,8 +161,8 @@ test("restricted sidebar pin loses its surface when StyleX classes are removed",
   expect(unstyled.pin.styles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
   expect(unstyled.pin.styles.padding).toBe("0px");
   expect(unstyled.pin.styles.position).toBe("static");
-  await expect(pin.locator(":scope > .yobicon-arrow-left")).toBeVisible();
-  await expect(pin.locator(":scope > .yobicon-arrow-right")).toBeVisible();
+  await expect(pin.locator(":scope > .yobicon-arrow-left")).toBeHidden();
+  await expect(pin.locator(":scope > .yobicon-arrow-right")).toBeHidden();
 });
 
 async function readEvidence(pin: Locator) {

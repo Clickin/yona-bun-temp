@@ -43,7 +43,13 @@ test("global GNB inner has complete global-theme StyleX ownership", () => {
 
   expect(appCss).toContain(".gnb-inner {");
   expect(appCss).toContain(".gnb-inner::after {");
-  for (const consumer of ["restricted.tsx", "secret.tsx", "$user.tsx", "__root.tsx"]) {
+  const innerBridgeStart = appCss.indexOf(".gnb-inner {");
+  const innerBridgeEnd = appCss.indexOf("}", innerBridgeStart);
+  expect(appCss.slice(innerBridgeStart, innerBridgeEnd)).not.toContain("box-sizing: border-box;");
+  expect(readFileSync("src/routes/restricted.tsx", "utf8")).toContain(
+    'data-stylex-owner="restricted-gnb-inner"',
+  );
+  for (const consumer of ["secret.tsx", "$user.tsx", "__root.tsx"]) {
     expect(readFileSync(`src/routes/${consumer}`, "utf8")).toContain('className="gnb-inner"');
   }
 });
