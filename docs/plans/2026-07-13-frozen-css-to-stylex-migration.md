@@ -6132,6 +6132,21 @@ normal/fallback-off runs, 1/1 each. The adjacent existing reply-focus test
 continues to cover click/focus behavior; no child attachment owner is added
 because the legacy child-comments template has no attachment wrapper.
 
+## Batch 777
+
+Move the authorized child issue-comment form's remaining frozen declarations
+into route-local StyleX: the wrapper hidden/visible state, textarea styling,
+and submit-button display from `yona-original/app/assets/stylesheets/less/_page.less:3107-3123`.
+Use `yona-original/app/views/common/child_commentForm.scala.html:17-27` and
+`yona-original/app/views/common/childComments.scala.html:70-74` as output DOM
+evidence, preserving the form action, hidden parent id, field names, Reply
+placeholder, OK copy/order, notification receiver, Escape behavior, and
+responsive geometry. Parent/comment forms, generic notification receiver
+styles, unauthorized child-form branch, and broad fallback consumers remain
+excluded. Focused normal/fallback-off child-reply form, visual, and interaction
+checks pass 3/3 each; live legacy screenshot parity remains the documented
+gap because port 9000 was unavailable.
+
 ## Batch 776
 
 Move the remaining visible `.add-a-comment` declarations for the child issue

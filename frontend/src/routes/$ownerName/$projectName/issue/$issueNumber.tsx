@@ -3874,8 +3874,11 @@ function ChildComments({
         </div>
         {booleanField(issue.viewerCanComment) ? (
           <div
-            {...(formOpen ? stylex.props(styles.childCommentFormVisible) : {})}
-            className={`${formOpen ? stylex.props(styles.childCommentFormVisible).className : ""} child-comment-input-form`}
+            {...stylex.props(
+              formOpen ? styles.childCommentFormVisible : styles.childCommentFormHidden,
+            )}
+            data-stylex-owner="project-issue-detail-child-comment-form"
+            className={`${stylex.props(formOpen ? styles.childCommentFormVisible : styles.childCommentFormHidden).className} child-comment-input-form`}
           >
             <form action={newCommentAction} method="post" encType="multipart/form-data">
               <input
@@ -3891,7 +3894,8 @@ function ChildComments({
               >
                 <textarea
                   ref={textareaRef}
-                  className="editorSeries"
+                  {...stylex.props(styles.childCommentFormTextarea)}
+                  className={`${stylex.props(styles.childCommentFormTextarea).className} editorSeries`}
                   name="contents"
                   rows={1}
                   placeholder={`Reply (${replyShortcutKey} + ENTER)`}
@@ -3903,7 +3907,11 @@ function ChildComments({
                   }}
                   {...{ markdown: "true" }}
                 ></textarea>
-                <button type="submit" className="ybtn ybtn-success">
+                <button
+                  {...stylex.props(styles.childCommentFormSubmit)}
+                  className={`${stylex.props(styles.childCommentFormSubmit).className} ybtn ybtn-success`}
+                  type="submit"
+                >
                   OK
                 </button>
               </div>

@@ -53,6 +53,7 @@ export const styles = stylex.create({
   keymapModalVisible: { display: "block" },
   commentBodyHidden: { display: "none" },
   replyVisible: { display: "block" },
+  childCommentFormHidden: { display: "none" },
   childCommentFormVisible: { display: "block", visibility: "visible" },
   notificationVisible: { display: "block" },
   voterSummary: { marginRight: "2px" },
@@ -335,6 +336,19 @@ export const styles = stylex.create({
   childCommentFormRow: {
     display: "flex",
     marginLeft: "12px",
+  },
+  childCommentFormTextarea: {
+    marginTop: "5px",
+    border: "none",
+    borderBottom: "1px solid #ccc",
+    borderRadius: "0 !important",
+    marginBottom: "0",
+    resize: "none",
+    overflow: "hidden",
+    paddingLeft: "10px",
+  },
+  childCommentFormSubmit: {
+    display: "inline-block",
   },
   sidebarMetaDl: { marginBottom: "20px" },
   sidebarMetaDd: { padding: "5px 0px" },

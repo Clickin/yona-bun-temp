@@ -1836,6 +1836,179 @@ test("project issue detail focuses child reply editor after legacy reply click",
   );
 });
 
+test("project issue detail owns the child reply form declarations and geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const legacyForm = readFileSync(
+    new URL("../../yona-original/app/views/common/child_commentForm.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyChildComments = readFileSync(
+    new URL("../../yona-original/app/views/common/childComments.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
+    "utf8",
+  );
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(legacyForm).toContain(
+    '<input class="parentCommentId" type="hidden" name="parentCommentId"',
+  );
+  expect(legacyForm).toContain('<div class="oneline-comment-box">');
+  expect(legacyForm).toContain(
+    '<textarea class="editorSeries" name="contents" markdown="true" rows="1"',
+  );
+  expect(legacyForm).toContain('<button type="submit" class="ybtn ybtn-success">OK</button>');
+  expect(legacyForm).toContain('<div class="notification-receiver">');
+  expect(legacyChildComments).toContain('<div class="child-comment-input-form">');
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  const formLess = legacyPage.slice(
+    legacyPage.indexOf("                .child-comment-input-form {"),
+    legacyPage.indexOf("                .child-comment-input-form {") + 600,
+  );
+  for (const declaration of [
+    "display: none;",
+    "margin-top: 5px;",
+    "border: none;",
+    "border-bottom: 1px solid #ccc;",
+    "border-radius: 0 !important;",
+    "margin-bottom: 0;",
+    "resize: none;",
+    "overflow: hidden;",
+    "padding-left: 10px;",
+    "display: inline-block;",
+  ]) {
+    expect(formLess).toContain(declaration);
+  }
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-child-comment-form"');
+  expect(routeSource).toContain("styles.childCommentFormHidden");
+  expect(routeSource).toContain("styles.childCommentFormVisible");
+  expect(routeSource).toContain("styles.childCommentFormTextarea");
+  expect(routeSource).toContain("styles.childCommentFormSubmit");
+  expect(styleSource).toMatch(/childCommentFormHidden:\s*\{\s*display:\s*["']none["']/u);
+  expect(styleSource).toMatch(
+    /childCommentFormVisible:\s*\{\s*display:\s*["']block["'],\s*visibility:\s*["']visible["']/u,
+  );
+  expect(styleSource).toMatch(
+    /childCommentFormTextarea:\s*\{[\s\S]*marginTop:\s*["']5px["'][\s\S]*border:\s*["']none["'][\s\S]*borderBottom:\s*["']1px solid #ccc["'][\s\S]*borderRadius:\s*["']0 !important["'][\s\S]*marginBottom:\s*["']0["'][\s\S]*resize:\s*["']none["'][\s\S]*overflow:\s*["']hidden["'][\s\S]*paddingLeft:\s*["']10px["']/u,
+  );
+  expect(styleSource).toMatch(/childCommentFormSubmit:\s*\{\s*display:\s*["']inline-block["']/u);
+
+  await mockProjectIssueDetail(page);
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/issue/11`);
+    const comment = page.locator(".span-left-pane #comment-77");
+    const reply = comment.locator(":scope > .add-a-comment");
+    const form = comment.locator(":scope > .subcomment-media-body > .child-comment-input-form");
+    const row = form.locator(":scope > form > .oneline-comment-box");
+    const editor = row.locator(":scope > .editorSeries");
+    const submit = row.locator(":scope > .ybtn-success");
+
+    await expect(form).toHaveCount(1);
+    await expect(form).toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-child-comment-form",
+    );
+    await expect(form).toBeHidden();
+    await expect(form).not.toHaveAttribute("style");
+    await expect(editor).toHaveCount(1);
+    await expect(submit).toHaveCount(1);
+    await expect(editor).not.toHaveAttribute("style");
+    await expect(submit).not.toHaveAttribute("style");
+    await expect(editor).toHaveAttribute("name", "contents");
+    await expect(editor).toHaveAttribute("rows", "1");
+    await expect(editor).toHaveAttribute("placeholder", await childReplyPlaceholder(page));
+    await expect(submit).toHaveText("OK");
+
+    await comment.hover();
+    await reply.click();
+    await expect(form).toBeVisible();
+    await expect(editor).toBeFocused();
+    await expect(form.locator(":scope > form > .parentCommentId")).toHaveValue("77");
+    await expect(form.locator(":scope > form > .notification-receiver")).toBeVisible();
+
+    const metrics = await row.evaluate((element) => {
+      const rowRect = element.getBoundingClientRect();
+      const editorElement = element.querySelector(":scope > .editorSeries");
+      const submitElement = element.querySelector(":scope > .ybtn-success");
+      if (!editorElement || !submitElement) throw new Error("child form controls are missing");
+      const editorRect = editorElement.getBoundingClientRect();
+      const submitRect = submitElement.getBoundingClientRect();
+      const editorStyle = getComputedStyle(editorElement);
+      const submitStyle = getComputedStyle(submitElement);
+      return {
+        editorLeft: editorRect.left,
+        editorRight: editorRect.right,
+        editorTop: editorRect.top,
+        rowLeft: rowRect.left,
+        rowRight: rowRect.right,
+        rowTop: rowRect.top,
+        submitBottom: submitRect.bottom,
+        submitLeft: submitRect.left,
+        submitRight: submitRect.right,
+        submitTop: submitRect.top,
+        editorStyle: {
+          marginTop: editorStyle.marginTop,
+          borderTopWidth: editorStyle.borderTopWidth,
+          borderBottomWidth: editorStyle.borderBottomWidth,
+          borderRadius: editorStyle.borderRadius,
+          marginBottom: editorStyle.marginBottom,
+          resize: editorStyle.resize,
+          overflow: editorStyle.overflow,
+          paddingLeft: editorStyle.paddingLeft,
+          inlineStyle: editorElement.getAttribute("style"),
+        },
+        rowDisplay: getComputedStyle(element).display,
+        submitStyle: {
+          display: submitStyle.display,
+          inlineStyle: submitElement.getAttribute("style"),
+        },
+      };
+    });
+    expect(metrics.editorStyle.marginTop).toBe("5px");
+    expect(metrics.editorStyle.borderTopWidth).toBe("0px");
+    expect(metrics.editorStyle.borderBottomWidth).toBe("1px");
+    expect(metrics.editorStyle.borderRadius).toBe("0px");
+    expect(metrics.editorStyle.marginBottom).toBe("0px");
+    expect(metrics.editorStyle.resize).toBe("none");
+    expect(metrics.editorStyle.overflow).toBe("hidden");
+    expect(metrics.editorStyle.paddingLeft).toBe("10px");
+    expect(metrics.editorStyle.inlineStyle).toBeNull();
+    // The legacy declaration remains `display: inline-block`; flex-item blockification
+    // makes the browser-computed submit display `block` inside the flex row.
+    expect(metrics.rowDisplay).toBe("flex");
+    expect(metrics.submitStyle.display).toBe("block");
+    expect(metrics.submitStyle.inlineStyle).toBeNull();
+    expect(metrics.editorLeft).toBeGreaterThanOrEqual(metrics.rowLeft - 1);
+    expect(metrics.editorRight).toBeLessThanOrEqual(metrics.rowRight + 1);
+    expect(metrics.submitLeft).toBeGreaterThanOrEqual(metrics.rowLeft - 1);
+    expect(metrics.submitRight).toBeLessThanOrEqual(metrics.rowRight + 1);
+    expect(metrics.editorTop).toBeGreaterThanOrEqual(metrics.rowTop - 1);
+    expect(metrics.submitBottom).toBeGreaterThanOrEqual(metrics.submitTop);
+
+    await editor.press("Escape");
+    await expect(form).toBeHidden();
+  }
+});
+
 test("project issue detail owns the child reply float across desktop and mobile", async ({
   page,
 }) => {

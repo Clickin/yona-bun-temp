@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 777 child-comment form proof
+
+- [x] The authorized child reply form preserves legacy action/encoding, hidden
+  parent id, field names, placeholder, OK/notification copy/order, focus/Escape
+  behavior, and classes while StyleX owns the frozen wrapper, textarea, and
+  submit declarations; parent/comment forms, generic notification rules,
+  unauthorized branch, and broad fallback consumers remain excluded.
+- [x] Focused normal/fallback-off Playwright checks pass 3/3, covering source
+  roots/imports, all moved declarations, no inline style, hidden/visible state,
+  direct child scope, interaction, form contracts, and desktop/390px geometry.
+  Computed submit `block` is documented as flex-item blockification of the
+  frozen `inline-block`; screenshot parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 776 child-comment reply visual proof
 
 - [x] The child reply `add-a-comment pull-right` preserves legacy copy/order,
