@@ -5393,3 +5393,11 @@ while retaining the desktop `12px` baseline. Focused source, computed typography
 interaction checks pass in normal and fallback-off modes. The remaining uniform ancestor shift
 is unchanged (1px normal, 3px fallback-off) and is retained as a shell/fallback-boundary gap;
 do not add route-local compensation.
+
+## Batch 699
+
+Correct the `/projects` directory tab margin scope. The breadcrumb tabs are emitted under
+`.title_area`, outside `.project-page-wrap`, so the applicable frozen Bootstrap declaration is
+`margin-bottom:-1px`; the frozen `-2px` rule remains scoped evidence for other project-page tabs.
+The full normal focused contract is green (4/4). Fallback-off source/interaction remains green,
+while a uniform 2px ancestor shift remains at the fallback boundary; do not compensate locally.

@@ -99,6 +99,7 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   expect(responsive).toContain("width: inherit !important;");
   expect(responsive).toContain('input[type="text"],');
   expect(responsive).toContain("font-size: 16px !important;");
+  expect(bootstrap).toContain(".nav-tabs > li {\n  margin-bottom: -1px;\n}");
   expect(bootstrap).toContain(".pull-left {");
   expect(bootstrap).toContain('font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;');
   expect(messages).toContain("site.project.filter = 키워드로 프로젝트 찾기");
@@ -109,7 +110,7 @@ test("search strip records frozen sources and six ownership boundaries", () => {
     expect(route).not.toContain(`className="${token}"`);
   for (const paint of ["searchBorder", "searchSurface", "searchText"])
     expect(route).toContain(`projectsDirectoryColors.${paint}`);
-  expect(route).toContain('marginBottom: "-2px"');
+  expect(route).toContain('marginBottom: "-1px"');
   expect(route).toContain('directorySearchForm: { margin: "0px 0px 2px" }');
   expect(route).toContain("fontFamily: '\"Helvetica Neue\", Helvetica, Arial, sans-serif'");
   // StyleX 0.19 omits color for a non-rendering 0/none border; do not claim dead ownership.

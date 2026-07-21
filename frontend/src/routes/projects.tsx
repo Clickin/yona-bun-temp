@@ -97,7 +97,7 @@ const styles = stylex.create({
     float: "left",
     fontSize: "16px",
     fontWeight: "400",
-    marginBottom: "-2px",
+    marginBottom: "-1px",
   },
   directoryTabsLink: {
     backgroundColor: {

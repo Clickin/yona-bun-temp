@@ -136,3 +136,11 @@ with fallback disabled while desktop remains `12px`. This removes the input-font
 does not move the search ancestor: the fallback-off wrap and descendants remain uniformly 3px
 high, so the residual is retained for shell/fallback-boundary investigation rather than patched
 with a route-local offset.
+
+## Follow-up — breadcrumb tab selector scope
+
+The directory tabs are outside `.project-page-wrap`, so the applicable frozen Bootstrap rule is
+`margin-bottom:-1px`; the frozen `-2px` declaration is scoped to other project-page tabs. After
+correcting this owner, the normal `/projects` contract passes 4/4, including desktop/mobile
+geometry. Fallback-off source and interaction pass, while the search ancestor remains uniformly
+2px high. This residual is retained as a shell/fallback-boundary gap with no local compensation.
