@@ -43,6 +43,7 @@ import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
 import { LastOutletTransition } from "../../../-last-outlet-transition";
 import { useRootToast } from "../../../__root";
 import legacySpriteUrl from "../../../../assets/legacy/sprite.png";
+import "../../../../yobicon-font.css";
 import { styles } from "./-issue-detail.stylex";
 
 const issueSharerStyles = stylex.create({ visible: { display: "block" } });
@@ -1530,7 +1531,12 @@ function IssueVote({
 
   return (
     <>
-      <div id="vote" className={`vote-wrap ${voters.length ? "voter-exists" : ""}`}>
+      <div
+        id="vote"
+        {...stylex.props(styles.issueVoteWrap)}
+        className={`${stylex.props(styles.issueVoteWrap).className} vote-wrap ${voters.length ? "voter-exists" : ""}`}
+        data-stylex-owner="project-issue-detail-vote-wrap"
+      >
         {canComment ? (
           <button
             type="button"
@@ -1538,7 +1544,14 @@ function IssueVote({
             title={hasVoted ? "Unvote this issue" : "Vote this issue"}
             onClick={onIssueVote}
           >
-            <span className="heart">
+            <span
+              {...stylex.props(
+                styles.issueVoteHeart,
+                hasVoted ? styles.issueVoteHeartWatching : undefined,
+              )}
+              className={`${stylex.props(styles.issueVoteHeart, hasVoted ? styles.issueVoteHeartWatching : undefined).className} heart`}
+              data-stylex-owner="project-issue-detail-vote-heart"
+            >
               <i className="yobicon-hearts"></i>
             </span>
           </button>
@@ -1550,7 +1563,11 @@ function IssueVote({
             title={t("user.login.alert")}
             data-login="required"
           >
-            <span className="heart">
+            <span
+              {...stylex.props(styles.issueVoteHeart)}
+              className={`${stylex.props(styles.issueVoteHeart).className} heart`}
+              data-stylex-owner="project-issue-detail-vote-heart-disabled"
+            >
               <i className="yobicon-hearts"></i>
             </span>
           </span>
@@ -1607,15 +1624,30 @@ function IssueVoterAvatars({
     .join("");
 
   return (
-    <div className="voter-list-wrap">
-      <ul className="voter-list">
+    <div
+      {...stylex.props(styles.issueVoterListWrap)}
+      className={`${stylex.props(styles.issueVoterListWrap).className} voter-list-wrap`}
+      data-stylex-owner="project-issue-detail-voter-list-wrap"
+    >
+      <ul
+        {...stylex.props(styles.issueVoterList)}
+        className={`${stylex.props(styles.issueVoterList).className} voter-list`}
+        data-stylex-owner="project-issue-detail-voter-list"
+      >
         {visibleVoters.map((voter) => (
-          <li key={stringField(voter.loginId)}>
+          <li
+            {...stylex.props(styles.issueVoterListItem)}
+            className={`${stylex.props(styles.issueVoterListItem).className} voter-list-item`}
+            data-stylex-owner="project-issue-detail-voter-list-item"
+            key={stringField(voter.loginId)}
+          >
             <Link
               {...LEGACY_LINK_PROPS}
               to="/$user"
               params={{ user: stringField(voter.loginId) }}
-              className="avatar-wrap smaller"
+              {...stylex.props(styles.issueVoterAvatar)}
+              className={`${stylex.props(styles.issueVoterAvatar).className} avatar-wrap smaller`}
+              data-stylex-owner="project-issue-detail-voter-avatar"
               title={stringField(voter.userLabel)}
             >
               <img src={stringField(voter.avatarUrl)} alt="" />
@@ -1623,7 +1655,13 @@ function IssueVoterAvatars({
           </li>
         ))}
         {overflowVoters.length ? (
-          <li data-html="true" title={overflowTitle}>
+          <li
+            {...stylex.props(styles.issueVoterListItem, styles.issueVoterListItemLast)}
+            className={`${stylex.props(styles.issueVoterListItem, styles.issueVoterListItemLast).className} voter-list-item`}
+            data-html="true"
+            data-stylex-owner="project-issue-detail-voter-overflow"
+            title={overflowTitle}
+          >
             <button type="button" onClick={onOpen}>
               {`and ${overflowVoters.length} others`}
             </button>

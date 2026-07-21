@@ -4362,6 +4362,200 @@ test("project issue detail renders legacy disabled vote action", async ({ page }
   );
 });
 
+test("project issue detail owns active vote controls and voter list declarations", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const fallbackOff = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1";
+  const routeSource = readFileSync(
+    "../frontend/src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "../frontend/src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyView = readFileSync("../yona-original/app/views/issue/view.scala.html", "utf8");
+  const legacyVoters = readFileSync(
+    "../yona-original/app/views/issue/partial_voters.scala.html",
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyVariables = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyYobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyView).toContain('<div id="vote" class="vote-wrap');
+  expect(legacyView).toContain('<span class="heart"><i class="yobicon-hearts"></i></span>');
+  expect(legacyView).toContain("@partial_voters(issue, 3)");
+  expect(legacyVoters).toContain('<div class="voter-list-wrap">');
+  expect(legacyVoters).toContain('<ul class="voter-list">');
+  expect(legacyVoters).toContain('<li>@Html(getUserAvatar(voter, "smaller"))</li>');
+  expect(legacyVoters).toContain('Messages("issue.voters.more"');
+  expect(legacyPage).toContain(".vote-wrap {");
+  expect(legacyPage).toContain("display:inline-block;");
+  expect(legacyPage).toContain("direction: rtl;");
+  expect(legacyPage).toContain("margin-right: -3px;");
+  expect(legacyPage).toContain(".heart {");
+  expect(legacyPage).toContain("font-size: 17px;");
+  expect(legacyPage).toContain(".voter-list-wrap {");
+  expect(legacyPage).toContain("overflow: hidden;");
+  expect(legacyPage).toContain(".voter-list {");
+  expect(legacyPage).toContain("float:left;");
+  expect(legacyPage).toContain("margin-top: -4px;");
+  expect(legacyVariables).toContain("@base-font-size  : 13px;");
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(styleSource).toContain("issueVoteWrap:");
+  expect(styleSource).toContain('issueVoteWrap: {\n    display: "inline-block"');
+  expect(styleSource).toContain("issueVoteHeart:");
+  expect(styleSource).toContain("issueVoterListWrap:");
+  expect(styleSource).toContain("issueVoterList:");
+  expect(styleSource).toContain("issueVoterListItem:");
+  expect(styleSource).toContain("issueVoterAvatar:");
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-vote-wrap"');
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list-wrap"');
+  expect(routeSource).toContain('data-stylex-owner="project-issue-detail-voter-list"');
+
+  await mockProjectIssueDetail(page, { issueVoters: commentVoters(), voterCount: 6 });
+  await page.goto(`${basePath}/admin/sample/issue/11`);
+  await page.setViewportSize({ width: fallbackOff ? 390 : 1366, height: 900 });
+
+  const vote = page.locator('[data-stylex-owner="project-issue-detail-vote-wrap"]');
+  const heart = vote.locator('[data-stylex-owner="project-issue-detail-vote-heart"]');
+  const listWrap = vote.locator('[data-stylex-owner="project-issue-detail-voter-list-wrap"]');
+  const list = listWrap.locator('[data-stylex-owner="project-issue-detail-voter-list"]');
+  const items = list.locator('[data-stylex-owner="project-issue-detail-voter-list-item"]');
+  const avatars = list.locator('[data-stylex-owner="project-issue-detail-voter-avatar"]');
+  const overflow = list.locator('[data-stylex-owner="project-issue-detail-voter-overflow"]');
+
+  await expect(vote).toBeVisible();
+  await expect(heart).toBeVisible();
+  await expect(avatars).toHaveCount(3);
+  await expect(overflow).toBeVisible();
+  await expect(overflow).toHaveText("and 3 others");
+  await expect(vote.locator(".voter-list-wrap")).toHaveCount(1);
+  await expect(page.locator("#voters.voters-dialog")).toHaveCount(1);
+  await expect(
+    page.locator("#voters [data-stylex-owner^='project-issue-detail-voter-']"),
+  ).toHaveCount(0);
+
+  const metrics = await vote.evaluate((node) => {
+    const style = getComputedStyle(node);
+    const heartNode = node.querySelector<HTMLElement>(".heart");
+    const wrapNode = node.querySelector<HTMLElement>(".voter-list-wrap");
+    const listNode = node.querySelector<HTMLElement>(".voter-list");
+    const itemNode = node.querySelector<HTMLElement>(".voter-list-item");
+    const avatarNode = node.querySelector<HTMLElement>(".voter-list-item a.avatar-wrap");
+    const boardActions = node.closest<HTMLElement>(".board-actrow");
+    const heartStyle = heartNode ? getComputedStyle(heartNode) : null;
+    const wrapStyle = wrapNode ? getComputedStyle(wrapNode) : null;
+    const listStyle = listNode ? getComputedStyle(listNode) : null;
+    const itemStyle = itemNode ? getComputedStyle(itemNode) : null;
+    const avatarStyle = avatarNode ? getComputedStyle(avatarNode) : null;
+    const voteBox = node.getBoundingClientRect();
+    const actionBox = boardActions?.getBoundingClientRect();
+    const listBox = wrapNode?.getBoundingClientRect();
+    return {
+      avatarMarginRight: avatarStyle?.marginRight ?? null,
+      boardActionDirectParent: node.parentElement?.className ?? null,
+      boardActionContainsVote: Boolean(
+        actionBox && voteBox.left >= actionBox.left && voteBox.right <= actionBox.right,
+      ),
+      heartColor: heartStyle?.color ?? null,
+      heartDisplay: heartStyle?.display ?? null,
+      heartFontSize: heartStyle?.fontSize ?? null,
+      heartMarginRight: heartStyle?.marginRight ?? null,
+      heartMarginTop: heartStyle?.marginTop ?? null,
+      heartVerticalAlign: heartStyle?.verticalAlign ?? null,
+      itemFloat: itemStyle?.float ?? null,
+      itemLineHeight: itemStyle?.lineHeight ?? null,
+      itemMarginRight: itemStyle?.marginRight ?? null,
+      itemMarginTop: itemStyle?.marginTop ?? null,
+      listDisplay: listStyle?.display ?? null,
+      listListStyle: listStyle?.listStyleType ?? null,
+      listWrapDisplay: wrapStyle?.display ?? null,
+      listWrapMarginLeft: wrapStyle?.marginLeft ?? null,
+      listWrapMarginRight: wrapStyle?.marginRight ?? null,
+      listWrapOverflow: wrapStyle?.overflow ?? null,
+      listWrapVerticalAlign: wrapStyle?.verticalAlign ?? null,
+      voteDirection: style.direction,
+      voteDisplay: style.display,
+      voteFontSize: style.fontSize,
+      voteInlineStyle: node.getAttribute("style"),
+      voteMarginRight: style.marginRight,
+      voteVerticalAlign: style.verticalAlign,
+      listBoxWidth: listBox?.width ?? 0,
+      voteBoxWidth: voteBox.width,
+    };
+  });
+  expect(metrics).toMatchObject({
+    avatarMarginRight: "0px",
+    boardActionDirectParent: expect.stringContaining("board-actrow"),
+    boardActionContainsVote: true,
+    heartColor: "rgb(221, 221, 221)",
+    heartDisplay: "inline-block",
+    heartFontSize: "17px",
+    heartMarginRight: "2px",
+    heartMarginTop: "3px",
+    heartVerticalAlign: "middle",
+    itemFloat: "left",
+    itemLineHeight: "25px",
+    itemMarginRight: "3px",
+    itemMarginTop: "-4px",
+    listDisplay: "block",
+    listListStyle: "none",
+    listWrapDisplay: "inline-block",
+    listWrapMarginRight: "5px",
+    listWrapOverflow: "hidden",
+    listWrapVerticalAlign: "middle",
+    voteDirection: "rtl",
+    // The route's flex action row blockifies this inline-block flex item at computed-style time.
+    voteDisplay: "block",
+    voteFontSize: "13px",
+    voteInlineStyle: null,
+    voteMarginRight: "-3px",
+    voteVerticalAlign: "middle",
+  });
+  expect(metrics.listWrapMarginLeft).toBe("3.9px");
+  await expect(vote).not.toHaveAttribute("style", /./u);
+  await expect(heart).not.toHaveAttribute("style", /./u);
+  await expect(items.first()).not.toHaveAttribute("style", /./u);
+  await expect(avatars.first()).not.toHaveAttribute("style", /./u);
+
+  const geometry = await page.evaluate(() => {
+    const voteBox = document.querySelector<HTMLElement>("#vote")?.getBoundingClientRect();
+    const listBox = document
+      .querySelector<HTMLElement>(
+        '#vote [data-stylex-owner="project-issue-detail-voter-list-wrap"]',
+      )
+      ?.getBoundingClientRect();
+    const avatarBoxes = Array.from(document.querySelectorAll<HTMLElement>("#vote .voter-list a"))
+      .map((avatar) => avatar.getBoundingClientRect())
+      .filter((box) => box.width > 0 && box.height > 0);
+    return {
+      avatarCount: avatarBoxes.length,
+      firstAvatarBeforeSecond: avatarBoxes[0]?.left < avatarBoxes[1]?.left,
+      listContainedInVote: Boolean(
+        voteBox && listBox && listBox.left >= voteBox.left && listBox.right <= voteBox.right,
+      ),
+      viewportWidth: window.innerWidth,
+      voteHeight: voteBox?.height ?? 0,
+      voteWidth: voteBox?.width ?? 0,
+    };
+  });
+  expect(geometry.avatarCount).toBe(3);
+  expect(geometry.firstAvatarBeforeSecond).toBe(true);
+  expect(geometry.listContainedInVote).toBe(true);
+  expect(geometry.voteWidth).toBeGreaterThan(0);
+  expect(geometry.voteHeight).toBeGreaterThan(0);
+  expect(geometry.viewportWidth).toBe(fallbackOff ? 390 : 1366);
+});
+
 test("project issue detail vote action posts and toggles legacy voted state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { issueVoteRequests } = await mockProjectIssueDetail(page);

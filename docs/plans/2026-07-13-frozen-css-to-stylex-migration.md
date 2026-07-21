@@ -6186,6 +6186,19 @@ and comment attachment floats remain separately scoped. Focused
 normal/fallback-off suites pass 1/1 each; live legacy screenshot parity remains
 the documented gap because port 9000 was unavailable.
 
+## Batch 782
+
+Move the active issue-detail vote control and voter avatar list declarations
+into route-local StyleX owners. Use
+`yona-original/app/views/issue/view.scala.html:210-224` and
+`yona-original/app/views/issue/partial_voters.scala.html:11-39` for output DOM,
+frozen `_page.less:4230-4310` for vote/list geometry, and `_variables.less:15`
+for the 13px base font through `yobi.less`. Preserve vote/heart DOM, voter
+avatars, overflow copy/order, modal behavior, and responsive geometry. Keep the
+separate voters modal out of scope. Focused normal/fallback-off suites pass 1/1
+each; live legacy screenshot parity remains the documented gap because port
+9000 was unavailable.
+
 ## Batch 777
 
 Move the authorized child issue-comment form's remaining frozen declarations

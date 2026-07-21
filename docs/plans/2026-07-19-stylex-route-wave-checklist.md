@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 782 vote and voter-list proof
+
+- [x] Active issue vote/heart and voter avatar/overflow consumers preserve
+  legacy DOM, copy/order, modal trigger behavior, and responsive geometry while
+  route-local StyleX owns the frozen `_page.less:4230-4310` declarations and
+  `_variables.less:15` base font; the separate voters modal remains excluded.
+- [x] Focused normal/fallback-off checks pass 1/1, covering source roots/imports,
+  all moved computed declarations, no inline styles, active overflow behavior,
+  direct board-action scope, and desktop/390px geometry. The frozen vote
+  `inline-block` computes as `block` under flex-item blockification. Screenshot
+  parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 781 board action group float proof
 
 - [x] The issue-detail board action group preserves its inner `pull-left`
