@@ -3323,6 +3323,111 @@ test("project SVN commit detail matches legacy code/svnDiff.scala.html shell", a
   await expect(page.locator("#watch-button")).toHaveText("Watch");
 });
 
+test("project SVN commit detail Batch 757 owns commit metadata with StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<p class="commitInfo">');
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<span class="ago"');
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<strong class="commitId pull-right">');
+  expect(LEGACY_SVN_DIFF_SOURCE).toContain('<pre class="commitMsg">@commit.getMessage</pre>');
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(".ago { margin-left:5px; color:#bbb; }");
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    "    .commitId {\n        color:@secondary;\n        margin-top:5px;\n        font-family: @fixed-font-family;",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-info"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-ago"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-svn-id"');
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).not.toContain("commitMsg-wrap");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'commitAuthorAgo: { marginLeft: "5px", color: "#bbb" }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#51aacc"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('marginTop: "5px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'fontFamily: \'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace\'',
+  );
+
+  await mockProjectCommitDetail(
+    page,
+    [],
+    {
+      commit: {
+        authorDate: "Jul 1, 2026",
+        authorEmail: "svn@example.com",
+        authorName: "SVN Author",
+        commentCount: 0,
+        commitId: "abcdef1234567890",
+        commitShortId: "abcdef1",
+        message: "SVN commit message",
+        shortMessage: "SVN commit message",
+      },
+      files: [{ path: "README.md", patch: SVN_PATCH }],
+      selectedBranch: "trunk",
+    },
+    { vcs: "SVN" },
+  );
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    if (viewport.width === 1366) {
+      await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=trunk`);
+    }
+
+    const info = page.locator('[data-stylex-owner="commit-detail-svn-info"]');
+    const ago = page.locator('[data-stylex-owner="commit-detail-svn-ago"]');
+    const id = page.locator('[data-stylex-owner="commit-detail-svn-id"]');
+    const author = page.locator("#code-browse-wrap > .commitInfo > strong:not(.commitId)");
+    const message = page.locator("#code-browse-wrap > .commitMsg");
+    await expect(info).toBeVisible();
+    await expect(ago).toHaveText("Jul 1, 2026");
+    await expect(author).toHaveText("SVN Author");
+    await expect(id).toHaveText("@abcdef1234567890");
+    await expect(message).toHaveText("SVN commit message");
+    await expect(info).not.toHaveAttribute("style");
+    await expect(info).toHaveCSS("color", "rgb(51, 51, 51)");
+    await expect(info).toHaveCSS("margin", "10px 0px");
+    await expect(ago).not.toHaveAttribute("style");
+    await expect(id).not.toHaveAttribute("style");
+    await expect(ago).toHaveCSS("margin-left", "5px");
+    await expect(ago).toHaveCSS("color", "rgb(187, 187, 187)");
+    await expect(id).toHaveCSS("color", "rgb(81, 170, 204)");
+    await expect(id).toHaveCSS("margin-top", "5px");
+    await expect(id).toHaveCSS(
+      "font-family",
+      'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    );
+
+    const geometry = await page.evaluate(() => {
+      const read = (owner: string) => {
+        const element = document.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`);
+        if (!element) throw new Error(`Missing ${owner}`);
+        const box = element.getBoundingClientRect();
+        return { bottom: box.bottom, left: box.left, right: box.right, top: box.top };
+      };
+      const infoBox = read("commit-detail-svn-info");
+      const agoBox = read("commit-detail-svn-ago");
+      const idBox = read("commit-detail-svn-id");
+      return {
+        agoContained: agoBox.left >= infoBox.left && agoBox.right <= infoBox.right + 1,
+        idContained: idBox.left >= infoBox.left && idBox.right <= infoBox.right + 1,
+        infoHeight: infoBox.bottom - infoBox.top,
+        infoWidth: infoBox.right - infoBox.left,
+      };
+    });
+    expect(geometry.infoHeight).toBeGreaterThan(0);
+    expect(geometry.infoWidth).toBeGreaterThan(0);
+    expect(geometry.agoContained).toBe(true);
+    expect(geometry.idContained).toBe(true);
+  }
+
+  await expect(page.locator(".commitMsg-wrap")).toHaveCount(0);
+  await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+    process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+  );
+});
+
 test("project SVN commit detail branch dropdown uses route-local state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const detailRequests: string[] = [];

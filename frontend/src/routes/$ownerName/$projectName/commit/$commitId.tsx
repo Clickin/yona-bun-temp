@@ -675,7 +675,11 @@ function SvnCommitDetailBody({
             </li>
           </ul>
 
-          <p className="commitInfo">
+          <p
+            {...sx.commitInfo}
+            className={`${sx.commitInfo.className} commitInfo`}
+            data-stylex-owner="commit-detail-svn-info"
+          >
             <span className="avatar-wrap">
               <img
                 src={prefixBasePath(runtimeConfig.basePath, "/assets/images/default-avatar-32.png")}
@@ -685,10 +689,21 @@ function SvnCommitDetailBody({
               />
             </span>
             <strong>{commit?.authorName || commit?.authorEmail || anonymousAuthorName}</strong>
-            <span className="ago" title={commit?.authorDate ?? ""}>
+            <span
+              {...sx.commitAuthorAgo}
+              className={`${sx.commitAuthorAgo.className} ago`}
+              data-stylex-owner="commit-detail-svn-ago"
+              title={commit?.authorDate ?? ""}
+            >
               {commit?.authorDate ?? ""}
             </span>
-            <strong className="commitId pull-right">@{commit?.commitId ?? commitId}</strong>
+            <strong
+              {...sx.commitId}
+              className={`${sx.commitId.className} commitId pull-right`}
+              data-stylex-owner="commit-detail-svn-id"
+            >
+              @{commit?.commitId ?? commitId}
+            </strong>
           </p>
           <pre className="commitMsg">{commit?.message ?? ""}</pre>
           <div

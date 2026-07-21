@@ -5912,3 +5912,16 @@ retired `commitMsg-wrap` fallback arm, SVN metadata, and unrelated fallback
 consumers outside this owner scope. Verify source mapping, no-inline-style,
 computed declarations, and desktop/390px geometry independently in normal and
 fallback-off focused tests.
+
+## Batch 757
+
+Complete the authenticated SVN commit-detail metadata visible state through
+the existing route-local StyleX declarations. Preserve the Scala `<p
+class="commitInfo">` DOM, author/date/id/message copy, legacy classes, and
+commit-id pull-right behavior while applying the exact `.commitInfo`, `.ago`,
+and `.commitId` declarations from `code/svnDiff.scala.html:52-75` and
+`_page.less:4593-4615`. Keep the plain `.commitMsg`, generic avatar styling,
+SVN diff wrapper, and unrelated fallback consumers outside this owner scope.
+Verify source mapping, no-inline-style, computed declarations, visible copy,
+and desktop/390px geometry independently in normal and fallback-off focused
+tests.

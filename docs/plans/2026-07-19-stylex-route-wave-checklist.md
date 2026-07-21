@@ -1098,3 +1098,9 @@ desktop/mobile geometry, and filtering.
   owner-relative desktop/390px geometry, plus independent normal/fallback-off
   focused runs pass 1/1 each; `commitMsg-wrap` remains retired and SVN state
   stays separately scoped.
+- [x] Batch 757 authenticated SVN commit-detail metadata owners: frozen
+  Scala/LESS mapping, exact shared commit-info/ago/commit-id declarations,
+  preserved SVN metadata DOM/copy, no-inline-style and desktop/390px geometry,
+  plus independent normal/fallback-off focused runs pass 1/1 each; plain
+  `.commitMsg`, generic avatar styling, and the already-owned diff wrapper stay
+  fallback- or separately-owned.
