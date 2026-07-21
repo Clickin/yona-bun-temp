@@ -82,6 +82,10 @@ export const styles = stylex.create({
     margin: "2px",
     verticalAlign: "top",
   },
+  radioInput: {
+    margin: "2px",
+    verticalAlign: "top",
+  },
   menuCheckboxLabel: {
     marginLeft: "15px",
     verticalAlign: "middle",

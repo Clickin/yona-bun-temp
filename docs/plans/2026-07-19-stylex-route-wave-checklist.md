@@ -836,3 +836,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract preserves label/input order and copy, checked
   state, desktop/mobile containment, and code-dependent visibility behavior in
   normal and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 720 project-settings radio-input proof
+
+- [x] The six visible project-settings radio inputs own only frozen
+  `.radio-btn` `vertical-align:top` and `margin:2px` declarations through
+  route-local StyleX; the organization-only protected raw consumer and other
+  fallback consumers remain.
+- [x] The focused contract preserves owner/order, checked state,
+  desktop/mobile containment, and reviewer enable/disable panel behavior in
+  normal and fallback-off runs (1/1 each).

@@ -40,6 +40,7 @@ const sx = {
   namePopover: stylex.props(styles.namePopover),
   textarea: stylex.props(styles.textarea),
   oldPlace: stylex.props(styles.oldPlace),
+  radioInput: stylex.props(styles.radioInput),
   defaultBranchContainer: stylex.props(styles.defaultBranchContainer),
   defaultBranchDrop: stylex.props(styles.defaultBranchDrop),
   defaultBranchDropHidden: stylex.props(styles.defaultBranchDropHidden),
@@ -639,10 +640,11 @@ function ProjectSettingBody({
                 <input
                   name="projectScope"
                   type="radio"
-                  className="radio-btn"
+                  className={`${sx.radioInput.className} radio-btn`}
                   id="public"
                   value="PUBLIC"
                   defaultChecked={projectScope === "PUBLIC"}
+                  data-stylex-owner="project-setting-radio-public"
                 />
                 <label htmlFor="public" className="bg-radiobtn label-public">
                   {t("project.public")}
@@ -665,10 +667,11 @@ function ProjectSettingBody({
                 <input
                   name="projectScope"
                   type="radio"
-                  className="radio-btn"
+                  className={`${sx.radioInput.className} radio-btn`}
                   id="private"
                   value="PRIVATE"
                   defaultChecked={projectScope === "PRIVATE"}
+                  data-stylex-owner="project-setting-radio-private"
                 />
                 <label htmlFor="private" className="bg-radiobtn label-private">
                   {t("project.private")}
@@ -703,9 +706,10 @@ function ProjectSettingBody({
                   name="isCodeAccessibleMemberOnly"
                   type="radio"
                   id="codeAccessibleMemberOnly"
-                  className="radio-btn"
+                  className={`${sx.radioInput.className} radio-btn`}
                   value="true"
                   defaultChecked={booleanField(recordField(project).codeMemberOnly)}
+                  data-stylex-owner="project-setting-radio-code-members"
                 />
                 <label htmlFor="codeAccessibleMemberOnly" className="bg-radiobtn label-public">
                   {t("button.yes")}
@@ -714,9 +718,10 @@ function ProjectSettingBody({
                   name="isCodeAccessibleMemberOnly"
                   type="radio"
                   id="codeAccessibleAnyone"
-                  className="radio-btn"
+                  className={`${sx.radioInput.className} radio-btn`}
                   value="false"
                   defaultChecked={!booleanField(recordField(project).codeMemberOnly)}
+                  data-stylex-owner="project-setting-radio-code-anyone"
                 />
                 <label htmlFor="codeAccessibleAnyone" className="bg-radiobtn label-private">
                   {t("button.no")}
@@ -742,11 +747,12 @@ function ProjectSettingBody({
                     <input
                       name="isUsingReviewerCount"
                       type="radio"
-                      className="radio-btn"
+                      className={`${sx.radioInput.className} radio-btn`}
                       id="reviewerCountEnable"
                       value="true"
                       checked={reviewerCountEnabled}
                       onChange={() => setReviewerCountEnabled(true)}
+                      data-stylex-owner="project-setting-radio-reviewer-enable"
                     />
                     <label htmlFor="reviewerCountEnable" className="bg-radiobtn label-public">
                       {t("project.reviewer.count.enable")}
@@ -754,11 +760,12 @@ function ProjectSettingBody({
                     <input
                       name="isUsingReviewerCount"
                       type="radio"
-                      className="radio-btn"
+                      className={`${sx.radioInput.className} radio-btn`}
                       id="reviewerCountDisable"
                       value="false"
                       checked={!reviewerCountEnabled}
                       onChange={() => setReviewerCountEnabled(false)}
+                      data-stylex-owner="project-setting-radio-reviewer-disable"
                     />
                     <label htmlFor="reviewerCountDisable" className="bg-radiobtn label-private">
                       {t("project.reviewer.count.disable")}

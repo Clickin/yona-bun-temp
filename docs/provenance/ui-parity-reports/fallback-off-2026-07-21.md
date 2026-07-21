@@ -337,3 +337,12 @@ copy/order, checked state, code-dependent visibility, and desktop/mobile
 containment through route-local StyleX. Unrelated radio and inline-list
 consumers retain the legacy fallback. Focused normal and fallback-off runs
 pass 1/1 each.
+
+## Follow-up — authenticated project-settings radio-input owners
+
+Fallback-off evidence confirmed that the six visible project-settings radio
+inputs retain frozen `.radio-btn` `vertical-align:top` and `margin:2px`
+geometry, DOM order, checked state, reviewer enable/disable behavior, and
+desktop/mobile containment through route-local StyleX. The organization-only
+protected branch and unrelated radio consumers retain the legacy fallback.
+Focused normal and fallback-off runs pass 1/1 each.

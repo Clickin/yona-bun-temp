@@ -1181,6 +1181,102 @@ test("project settings reviewer count radios mirror legacy show/hide behavior", 
   await expect(page.locator("#welReviewerCount")).toBeVisible();
 });
 
+test("project settings visible radios use route-local StyleX ownership", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectSettings(page, {
+    project: { codeMemberOnly: false, isUsingReviewerCount: true, projectScope: "PUBLIC" },
+  });
+
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto(`${basePath}/admin/sample/settingform`);
+
+  const owners = [
+    "project-setting-radio-public",
+    "project-setting-radio-private",
+    "project-setting-radio-code-members",
+    "project-setting-radio-code-anyone",
+    "project-setting-radio-reviewer-enable",
+    "project-setting-radio-reviewer-disable",
+  ];
+  const radios = page.locator('input[type="radio"][data-stylex-owner^="project-setting-radio-"]');
+  await expect(radios).toHaveCount(6);
+  await expect(page.locator("#protected[data-stylex-owner]")).toHaveCount(0);
+  expect(
+    await radios.evaluateAll((elements) =>
+      elements.every((element) => element.classList.contains("radio-btn")),
+    ),
+  ).toBe(true);
+  expect(
+    await radios.evaluateAll((elements) => elements.map((element) => element.dataset.stylexOwner)),
+  ).toEqual(owners);
+
+  const metrics = await radios.evaluateAll((elements) =>
+    elements.map((element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        id: element.id,
+        verticalAlign: style.verticalAlign,
+        margin: style.margin,
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+      };
+    }),
+  );
+  expect(metrics.map((metric) => metric.id)).toEqual([
+    "public",
+    "private",
+    "codeAccessibleMemberOnly",
+    "codeAccessibleAnyone",
+    "reviewerCountEnable",
+    "reviewerCountDisable",
+  ]);
+  for (const metric of metrics) {
+    expect(metric.verticalAlign).toBe("top");
+    expect(metric.margin).toBe("2px");
+    expect(metric.bottom).toBeGreaterThan(metric.top);
+  }
+  await expect(page.locator("#public")).toBeChecked();
+  await expect(page.locator("#codeAccessibleAnyone")).toBeChecked();
+  await expect(page.locator("#reviewerCountEnable")).toBeChecked();
+
+  const panel = page.locator("#reviewerCountSettingPanel");
+  const panelBox = await panel.boundingBox();
+  expect(panelBox).not.toBeNull();
+  for (const metric of metrics.slice(4)) {
+    expect(metric.left).toBeGreaterThanOrEqual(panelBox!.x);
+    expect(metric.bottom).toBeLessThanOrEqual(panelBox!.y + panelBox!.height);
+  }
+
+  await page.locator("#reviewerCountDisable").check();
+  await expect(page.locator("#reviewerCountDisable")).toBeChecked();
+  await expect(page.locator("#reviewerCountEnable")).not.toBeChecked();
+  await expect(page.locator("#welReviewerCount")).toBeHidden();
+  await page.locator("#reviewerCountEnable").check();
+  await expect(page.locator("#reviewerCountEnable")).toBeChecked();
+  await expect(page.locator("#welReviewerCount")).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  const mobileMetrics = await radios.evaluateAll((elements) =>
+    elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        id: element.id,
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+      };
+    }),
+  );
+  for (const metric of mobileMetrics) {
+    expect(metric.left).toBeGreaterThanOrEqual(0);
+    expect(metric.right).toBeLessThanOrEqual(390);
+  }
+  expect(mobileMetrics.map((metric) => metric.id)).toEqual(metrics.map((metric) => metric.id));
+});
+
 test("project settings reviewer count dropdown uses route-local open state", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectSettings(page);

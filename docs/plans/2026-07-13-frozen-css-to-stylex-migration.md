@@ -5549,3 +5549,13 @@ frozen `.radio-btn` and `label.inline-list` declarations, including the first
 label margin rule, while retaining fallback styling for unrelated radio and
 inline-list consumers; verify desktop/mobile geometry and dependency
 interaction in normal and fallback-off focused tests.
+
+## Batch 720
+
+Migrate the authenticated project-settings visible radio inputs into the
+existing route-local StyleX owner. Preserve the public/private, code-access,
+and reviewer enable/disable input DOM, order, copy, checked state, and panel
+behavior; keep the organization-only protected input as a raw fallback
+consumer for this fixture/state. Carry only the frozen `.radio-btn`
+`vertical-align:top` and `margin:2px` declarations, and verify desktop/mobile
+geometry and reviewer interaction in normal and fallback-off focused tests.
