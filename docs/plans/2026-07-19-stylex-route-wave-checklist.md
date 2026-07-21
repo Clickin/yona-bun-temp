@@ -756,3 +756,12 @@ desktop/mobile geometry, and filtering.
 - [x] Paired submit/scope-menu contracts preserve desktop/project/organization
   geometry, menu interaction, GET behavior, responsive hiding, and paint
   isolation in normal and fallback-off modes (16/16 each).
+
+### 2026-07-21 Batch 712 global GNB search-submit browser-default proof
+
+- [x] The existing submit owner removes only unsupported `boxSizing`; frozen
+  button appearance, border, color, cursor, typography, margin, outline,
+  padding, alignment, and Yobicon declarations remain.
+- [x] The focused submit contract preserves desktop/project/organization
+  geometry, hover/focus, responsive hiding, isolation, and GET behavior in
+  normal and fallback-off modes (9/9 each).

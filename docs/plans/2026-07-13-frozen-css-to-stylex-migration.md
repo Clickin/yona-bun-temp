@@ -5458,6 +5458,16 @@ from the existing StyleX owner. Verify unchanged submit/input/scope behavior,
 responsive hiding, desktop/project/organization geometry, and paint isolation in
 focused normal/fallback-off tests.
 
+## Batch 712
+
+Clean the global GNB search-submit owner against the frozen search-button
+boundary. The legacy button source supplies background, border, outline, and
+margin, while the frozen Bootstrap button reset does not declare `box-sizing`;
+remove only the redundant `boxSizing:"border-box"` from the existing StyleX
+owner. Verify unchanged desktop/project/organization geometry, hover/focus,
+responsive hiding, isolation, and GET behavior in focused normal/fallback-off
+tests.
+
 ## Batch 706
 
 Clean the global GNB project-list divider owner against the exact frozen source boundary.

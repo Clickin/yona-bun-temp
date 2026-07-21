@@ -275,3 +275,10 @@ radius, background, height, display, vertical alignment, submit/input geometry,
 and scope-menu behavior after removing only explicit `border-style:none`,
 `border-width:0px`, and `box-sizing:content-box` StyleX declarations. Paired
 submit and scope-menu runs pass 16/16 in normal and fallback-off modes.
+
+## Follow-up — global GNB search-submit browser-default box-model cleanup
+
+Fallback-off evidence confirmed that the search submit retains its legacy
+geometry, hover/focus paint, responsive hiding, Yobicon isolation, and GET
+payload after removing only explicit `box-sizing:border-box` from its StyleX
+owner. Focused normal and fallback-off submit runs pass 9/9.

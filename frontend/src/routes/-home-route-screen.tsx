@@ -944,7 +944,6 @@ const globalGnbSearchSubmitStyles = stylex.create({
     borderStyle: "none",
     borderWidth: "0px",
     boxShadow: "none",
-    boxSizing: "border-box",
     color: homeColors.globalGnbSearchSubmitColor,
     cursor: "pointer",
     display: "inline-block",
