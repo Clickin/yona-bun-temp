@@ -1606,6 +1606,56 @@ index 1234567..abcdef1
   expect(detailRequests).toEqual(["branch=main"]);
 });
 
+test("project commit detail owns legacy file-mode binary styling with fallback off", async ({
+  page,
+}) => {
+  expect(LEGACY_FILE_DIFF_SOURCE).toContain(
+    '<td class="isBinary">@Messages("code.fileModeChanged")</td>',
+  );
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(
+    ".isBinary { color:#bbb; text-shadow:-1px -1px #fff; padding:5px 10px; }",
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain('data-stylex-owner="commit-detail-diff-is-binary"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('color: "#bbb"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('textShadow: "-1px -1px #fff"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('padding: "5px 10px"');
+
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "script/run.sh",
+        patch: `diff --git a/script/run.sh b/script/run.sh
+old mode 100644
+new mode 100755
+index 1234567..abcdef1
+--- a/script/run.sh
++++ b/script/run.sh`,
+      },
+    ],
+  });
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+    const binaryCell = page.locator(
+      '#script-run-sh [data-stylex-owner="commit-detail-diff-is-binary"]',
+    );
+    await expect(binaryCell).toBeVisible();
+    await expect(binaryCell).toHaveClass(/isBinary/);
+    await expect(binaryCell).toHaveText("File mode has changed");
+    await expect(binaryCell).toHaveCSS("color", "rgb(187, 187, 187)");
+    await expect(binaryCell).toHaveCSS("text-shadow", "rgb(255, 255, 255) -1px -1px 0px");
+    await expect(binaryCell).toHaveCSS("padding", "5px 10px");
+    await expect(page.locator('link[href*="legacy-fallback.css"]')).toHaveCount(
+      process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? 0 : 1,
+    );
+  }
+});
+
 async function readPartialDiffMetrics(page: Page) {
   return page.evaluate(() => {
     const diffBody = document.querySelector<HTMLElement>(".diff-body");

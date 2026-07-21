@@ -5652,6 +5652,17 @@ overflow/margin/radius/background declarations while retaining generic shell
 fallback consumers and verifying desktop/mobile computed output in normal and
 fallback-off focused tests.
 
+## Batch 749
+
+Complete the authenticated commit-detail partial-filediff file-mode/binary
+visible state through a route-local StyleX owner. Preserve the Scala `isBinary`
+row element, copy, line-number DOM, and error/no-change behavior while carrying
+only the frozen color, text-shadow, and padding declarations. Keep
+`diff-partial-utility` deferred because the canonical partial Scala template does
+not emit it, and keep btnPop, outer/meta, comments, ranges/colors, and unrelated
+`.isBinary` consumers outside this owner scope. Verify desktop/390px computed
+declarations independently in normal and fallback-off focused tests.
+
 ## Batch 748
 
 Complete the authenticated commit-detail partial-filediff commit-id header

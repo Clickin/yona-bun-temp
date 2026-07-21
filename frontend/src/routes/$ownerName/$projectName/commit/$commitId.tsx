@@ -50,6 +50,7 @@ const sx = {
   diffLineNumberMarker: stylex.props(styles.diffLineNumberMarker),
   diffCodeCell: stylex.props(styles.diffCodeCell),
   diffCodeLine: stylex.props(styles.diffCodeLine),
+  diffIsBinary: stylex.props(styles.diffIsBinary),
   diffPartialFile: stylex.props(styles.diffPartialFile),
   diffPartialCommit: stylex.props(styles.diffPartialCommit),
   diffPartialCommitId: stylex.props(styles.diffPartialCommitId),
@@ -933,7 +934,13 @@ function FileModeChangedRow({ modeChange }: { modeChange: { newMode: string; old
         ></div>
         <span className="hidden">{modeChange.newMode}</span>
       </td>
-      <td className="isBinary">{t("code.fileModeChanged")}</td>
+      <td
+        {...sx.diffIsBinary}
+        className={`${sx.diffIsBinary.className} isBinary`}
+        data-stylex-owner="commit-detail-diff-is-binary"
+      >
+        {t("code.fileModeChanged")}
+      </td>
     </tr>
   );
 }

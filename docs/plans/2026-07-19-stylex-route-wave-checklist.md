@@ -1057,3 +1057,8 @@ desktop/mobile geometry, and filtering.
   IDs, Link behavior, and independent fallback-off focused contract pass 1/1
   each; file-header, utility, comments, range/color, and other declarations remain
   scoped.
+- [x] Batch 749 emitted `.isBinary` file-mode owner: frozen source mapping, exact
+  color/text-shadow/padding, desktop/390px computed coverage, visible copy, and
+  independent fallback-off focused contract pass 1/1 each; non-emitted utility,
+  btnPop, outer/meta, comments, ranges/colors, and unrelated consumers remain
+  scoped.

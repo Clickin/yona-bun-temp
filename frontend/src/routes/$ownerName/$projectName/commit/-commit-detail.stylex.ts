@@ -72,6 +72,11 @@ export const styles = stylex.create({
     fontSize: "12px",
     whiteSpace: "pre",
   },
+  diffIsBinary: {
+    color: "#bbb",
+    textShadow: "-1px -1px #fff",
+    padding: "5px 10px",
+  },
   diffPartialFile: {
     padding: "5px 10px",
     fontWeight: "bold",
