@@ -367,6 +367,9 @@ export const styles = stylex.create({
   childCommentNotificationReceiverTitle: {
     color: "#999",
   },
+  markdownEditorNotificationReceiverTitle: {
+    color: "#999",
+  },
   sidebarMetaDl: { marginBottom: "20px" },
   sidebarMetaDd: { padding: "5px 0px" },
   sidebarMetaAssigneeName: { fontSize: "11px" },

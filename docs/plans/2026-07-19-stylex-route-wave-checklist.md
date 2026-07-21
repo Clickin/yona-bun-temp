@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 780 generic MarkdownEditor receiver-title proof
+
+- [x] New-comment and comment-edit MarkdownEditor receivers preserve title
+  class/copy/order while their per-instance StyleX owner carries the frozen
+  `_page.less:7819-7821` color; child receiver remains separately scoped and
+  notification-list badge rules remain excluded without a current consumer.
+- [x] Focused normal/fallback-off suites pass 7/7, covering source roots and
+  imports, owner/declaration, computed `rgb(153, 153, 153)`, no inline style,
+  visible focus for both editor instances, child scope, and desktop/390px
+  geometry. Screenshot parity remains a live-legacy gap.
+
 ### 2026-07-22 Batch 779 child notification receiver title proof
 
 - [x] The child notification receiver title preserves its legacy class, copy,

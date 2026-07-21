@@ -6159,6 +6159,21 @@ child DOM has no badge consumer. Focused normal/fallback-off child-reply suites
 pass 5/5 each; live legacy screenshot parity remains the documented gap because
 port 9000 was unavailable.
 
+## Batch 780
+
+Move the generic notification receiver title color emitted by the shared
+Markdown editor into a route-local StyleX owner for the issue new-comment and
+comment-edit editor instances. Use
+`yona-original/app/views/common/editor.scala.html:61-64` as output DOM,
+`common/commentForm.scala.html:31` and `common/commentUpdateForm.scala.html:32`
+as the issue consumers, and frozen `_page.less:7819-7821` through `yobi.less`
+for `.notification-receiver-title { color:#999; }`. Preserve title
+class/copy/order and child receiver separation; do not add notification-list
+badge rules because there is no current React badge consumer. Focused
+normal/fallback-off suites pass 7/7 each, including visible focus state and
+desktop/390px geometry. Live legacy screenshot parity remains the documented
+gap because port 9000 was unavailable.
+
 ## Batch 777
 
 Move the authorized child issue-comment form's remaining frozen declarations

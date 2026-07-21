@@ -4246,8 +4246,14 @@ function MarkdownEditor({
         <div
           className="notification-receiver"
           {...(notificationVisible ? stylex.props(styles.notificationVisible) : {})}
+          data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver"
+          data-stylex-owner-instance={wrapId}
         >
-          <span className="notification-receiver-title">
+          <span
+            {...stylex.props(styles.markdownEditorNotificationReceiverTitle)}
+            data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver-title"
+            className={`${stylex.props(styles.markdownEditorNotificationReceiverTitle).className} notification-receiver-title`}
+          >
             {t("notification.receiver.list.title")}
           </span>
           <span className="notification-receiver-list"></span>

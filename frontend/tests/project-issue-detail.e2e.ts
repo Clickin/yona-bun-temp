@@ -1798,15 +1798,133 @@ test("project issue detail shows notification receiver on editor focus", async (
   await mockProjectIssueDetail(page);
 
   await page.goto(`${basePath}/admin/sample/issue/11`);
-  const receiver = page.locator("#comment-form .notification-receiver");
+  const receiver = page.locator(
+    '[data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver"][data-stylex-owner-instance="contents"]',
+  );
   await expect(receiver).toBeHidden();
 
-  await page.locator("#comment-form .editorSeries").focus();
+  await page.locator('textarea[data-editor-mode="comment-body"]').focus();
   await expect(receiver).toBeVisible();
   await expect(receiver).toHaveCSS("display", "block");
   await expect(receiver.locator(".notification-receiver-title")).toHaveText(
     "Notification receivers",
   );
+});
+
+test("project issue detail owns generic MarkdownEditor notification receiver title color", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const legacyEditor = readFileSync(
+    new URL("../../yona-original/app/views/common/editor.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyCommentForm = readFileSync(
+    new URL("../../yona-original/app/views/common/commentForm.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyCommentUpdateForm = readFileSync(
+    new URL("../../yona-original/app/views/common/commentUpdateForm.scala.html", import.meta.url),
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
+    "utf8",
+  );
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/$issueNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/issue/-issue-detail.stylex.ts",
+    "utf8",
+  );
+
+  expect(legacyEditor).toContain('<div class="notification-receiver">');
+  expect(legacyEditor).toContain('<span class="notification-receiver-title">');
+  expect(legacyCommentForm).toContain('@common.editor("contents","","","comment-body")');
+  expect(legacyCommentUpdateForm).toContain('@common.editor("contents-" + comment.id');
+  expect(legacyPage).toContain(".notification-receiver-title {");
+  expect(
+    legacyPage.slice(
+      legacyPage.indexOf(".notification-receiver-title {"),
+      legacyPage.indexOf(".notification-receiver-title {") + 100,
+    ),
+  ).toContain("color: #999;");
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(routeSource).toContain(
+    'data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver-title"',
+  );
+  expect(routeSource).toContain("styles.markdownEditorNotificationReceiverTitle");
+  expect(styleSource).toMatch(
+    /markdownEditorNotificationReceiverTitle:\s*\{\s*color:\s*["']#999["']/u,
+  );
+
+  await mockProjectIssueDetail(page, { viewerCanComment: true });
+  for (const viewport of [
+    { height: 900, width: 1366 },
+    { height: 844, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/admin/sample/issue/11`);
+
+    const genericReceiver = page.locator(
+      '[data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver"][data-stylex-owner-instance="contents"]',
+    );
+    const genericTitle = genericReceiver.locator(":scope > .notification-receiver-title");
+    await expect(genericReceiver).toBeHidden();
+    await expect(genericTitle).toHaveCount(1);
+    await expect(genericTitle).toHaveText("Notification receivers");
+    await expect(genericTitle).toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-markdown-editor-notification-receiver-title",
+    );
+    await expect(genericTitle).not.toHaveAttribute("style");
+    await expect(
+      page.locator(
+        '[data-stylex-owner="project-issue-detail-child-comment-notification-receiver-title"]',
+      ),
+    ).toHaveCount(1);
+
+    await page.locator('textarea[data-editor-mode="comment-body"]').focus();
+    await expect(genericReceiver).toBeVisible();
+    await expect(genericTitle).toHaveCSS("color", "rgb(153, 153, 153)");
+    await expect(genericTitle).not.toHaveAttribute("style");
+    const newTitleOrder = await genericReceiver
+      .locator(":scope > *")
+      .evaluateAll((nodes) =>
+        nodes.map((node) =>
+          node.classList.contains("notification-receiver-title")
+            ? "notification-receiver-title"
+            : "notification-receiver-list",
+        ),
+      );
+    expect(newTitleOrder).toEqual(["notification-receiver-title", "notification-receiver-list"]);
+
+    const comment = page.locator(".span-left-pane #comment-77");
+    await comment
+      .locator(':scope > .media-body > .meta-info > .act-row button[title="Edit comment"]')
+      .click();
+    const updateReceiver = page.locator(
+      '[data-stylex-owner="project-issue-detail-markdown-editor-notification-receiver"][data-stylex-owner-instance="77"]',
+    );
+    const updateTitle = updateReceiver.locator(":scope > .notification-receiver-title");
+    await expect(updateReceiver).toBeHidden();
+    await page.locator("#editor-contents-77").focus();
+    await expect(updateReceiver).toBeVisible();
+    await expect(updateTitle).toHaveText("Notification receivers");
+    await expect(updateTitle).toHaveAttribute(
+      "data-stylex-owner",
+      "project-issue-detail-markdown-editor-notification-receiver-title",
+    );
+    await expect(updateTitle).toHaveCSS("color", "rgb(153, 153, 153)");
+    await expect(updateTitle).not.toHaveAttribute("style");
+    await expect(updateReceiver.locator(":scope > *")).toHaveCount(2);
+  }
 });
 
 test("project issue detail focuses child reply editor after legacy reply click", async ({
