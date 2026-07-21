@@ -1725,6 +1725,130 @@ index 1234567..abcdef1 100644
   await assertBadgeMetrics();
 });
 
+test("project commit detail folds closed ranged threads with frozen StyleX geometry", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(`&.fold {
+        position:static;
+        padding:0; margin:0;
+        background: transparent;
+        border: none;`);
+  expect(LEGACY_COMMENT_THREAD_LESS_SOURCE).toContain(`.thread-header,
+        .thread-actrow,
+        .comments,
+        .write-comment-form {
+            display:none;
+        }`);
+  expect(LEGACY_COMMENT_THREAD_SOURCE).toContain(
+    'class="comment-thread-wrap @thread.state.toString().toLowerCase()\n     @if(thread.isInstanceOf[CodeCommentThread] && thread.state == CommentThread.ThreadState.CLOSED){fold}"',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain(
+    'const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;',
+  );
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadShellClosedFold");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldHidden");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldHere");
+  expect(COMMIT_DETAIL_ROUTE_SOURCE).toContain("styles.threadFoldClosedButton");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadShellClosedFold: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain(
+    'threadFoldHere: {\n    position: "absolute",\n    zIndex: 99,\n    right: "0px",\n    marginTop: "0px",\n    display: "block",\n  }',
+  );
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain("threadFoldClosedButton: {");
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftWidth: "3px"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftStyle: "solid"');
+  expect(COMMIT_DETAIL_STYLEX_SOURCE).toContain('borderLeftColor: "#fd6956"');
+
+  await mockProjectCommitDetail(page, [], {
+    files: [
+      {
+        path: "src/main.rs",
+        patch: `diff --git a/src/main.rs b/src/main.rs
+index 1234567..abcdef1 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -1,1 +1,2 @@
+ fn main() {
++    println!("new");`,
+      },
+    ],
+    threads: [
+      {
+        authorId: 2,
+        authorLabel: "Dev User",
+        authorLoginId: "dev",
+        comments: [
+          {
+            authorId: 2,
+            authorAvatarUrl: "/avatars/dev.png",
+            authorLabel: "Dev User",
+            authorLoginId: "dev",
+            canDelete: false,
+            contentsHtml: "<p>Server HTML should not render</p>",
+            contentsMarkdown: "Closed ranged note",
+            createdLabel: "Jul 1, 2026",
+            id: 504,
+            threadId: 79,
+            viaEmail: false,
+          },
+        ],
+        commitId: "abcdef1234567890",
+        createdLabel: "Jul 1, 2026",
+        endLine: 2,
+        id: 79,
+        path: "src/main.rs",
+        prevCommitId: "1234567890abcdef",
+        startLine: 2,
+        state: "closed",
+      },
+    ],
+  });
+
+  const thread = page.locator("#thread-79.comment-thread-wrap");
+  const foldedHere = thread.locator(":scope > .btn-thread-here");
+  const foldedButton = foldedHere.locator("button");
+  const header = thread.locator(":scope > .thread-header");
+  const comments = thread.locator(":scope > ul.comments");
+  const replyForm = thread.locator(":scope > .write-comment-form");
+  const headerMinimize = header.locator(":scope > .btn-thread-minimize");
+
+  const assertClosedFold = async () => {
+    await expect(thread).toHaveClass(/closed fold/);
+    await expect(thread).toHaveCSS("position", "static");
+    await expect(thread).toHaveCSS("padding", "0px");
+    await expect(thread).toHaveCSS("margin", "0px");
+    await expect(thread).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(thread).toHaveCSS("border-top-width", "0px");
+    await expect(thread).toHaveCSS("box-shadow", "none");
+    await expect(header).toBeHidden();
+    await expect(comments).toBeHidden();
+    await expect(replyForm).toBeHidden();
+    await expect(headerMinimize).toBeHidden();
+    await expect(foldedHere).toBeVisible();
+    await expect(foldedHere).toHaveCSS("position", "absolute");
+    await expect(foldedHere).toHaveCSS("z-index", "99");
+    await expect(foldedHere).toHaveCSS("right", "0px");
+    await expect(foldedHere).toHaveCSS("margin-top", "0px");
+    await expect(foldedHere).toHaveCSS("display", "block");
+    await expect(foldedButton).toHaveCSS("border-left", "3px solid rgb(253, 105, 86)");
+  };
+
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/commit/abcdef1234567890?branch=main`);
+  await assertClosedFold();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await assertClosedFold();
+
+  await foldedButton.click();
+  await expect(thread).not.toHaveClass(/fold/);
+  await expect(header).toBeVisible();
+  await expect(comments).toBeVisible();
+  await expect(replyForm).toBeVisible();
+  await expect(foldedHere).toBeHidden();
+  await expect(headerMinimize).toBeVisible();
+});
+
 test("project commit detail renders legacy inline diff comment row", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   expect(LEGACY_COMMENT_THREAD_SOURCE).toContain('<div class="thread-header">');

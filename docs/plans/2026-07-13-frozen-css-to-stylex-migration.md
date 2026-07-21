@@ -5725,3 +5725,13 @@ buttons, copy, order, and toggle/submit behavior while carrying only the
 legacy `thread-actrow` padding and right alignment declarations. Verify
 desktop/390px computed action geometry in normal and fallback-off focused
 tests.
+
+## Batch 739
+
+Complete the authenticated commit-detail closed ranged-thread fold state
+through route-local StyleX owners. Preserve the Scala fold classes and hidden
+header/comments/reply DOM, the folded-here red affordance, and React toggle
+interaction while carrying only the frozen `.fold`, hidden-content, and
+folded-here declarations. Retain generic fallback consumers and verify
+desktop/390px computed geometry and fold/unfold interaction in normal and
+fallback-off focused tests.

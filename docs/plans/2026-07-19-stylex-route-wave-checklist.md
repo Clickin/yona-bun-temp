@@ -1001,3 +1001,13 @@ desktop/mobile geometry, and filtering.
 - [x] The focused contract passes partial/source mapping, computed padding and
   alignment, desktop/390px containment, and visible action geometry in normal
   and fallback-off runs (1/1 each).
+
+### 2026-07-21 Batch 739 commit-detail closed ranged-thread fold proof
+
+- [x] The commit-route closed ranged thread preserves the Scala `fold` class,
+  hidden header/comments/reply state, folded-here red affordance, and React
+  fold/unfold interaction while carrying only frozen fold declarations through
+  route-local StyleX; shared fallback remains intact.
+- [x] The focused contract passes source mapping, computed fold geometry,
+  desktop/390px containment, and fold/unfold interaction in normal and
+  fallback-off runs (1/1 each).

@@ -1093,10 +1093,22 @@ function CodeCommentThreadView({
     thread.commitId,
   );
   const [editingCommentIds, setEditingCommentIds] = useState<Set<number>>(() => new Set());
+  const [isFolded, setIsFolded] = useState(() => !isNonRanged && state === "closed");
+  const isClosedRangedFold = !isNonRanged && state === "closed" && isFolded;
   const threadShellProps = stylex.props(
     styles.threadShell,
     state === "closed" ? styles.threadShellClosed : styles.threadShellOpen,
+    isClosedRangedFold && styles.threadShellClosedFold,
   );
+  const threadFoldHereProps = stylex.props(isClosedRangedFold && styles.threadFoldHere);
+  const threadFoldButtonProps = stylex.props(
+    isClosedRangedFold
+      ? styles.threadFoldClosedButton
+      : isFolded
+        ? styles.threadFoldOpenButton
+        : null,
+  );
+  const threadFoldHiddenProps = stylex.props(isClosedRangedFold && styles.threadFoldHidden);
 
   function setCommentEditing(commentId: number, isEditing: boolean) {
     setEditingCommentIds((current) => {
@@ -1115,7 +1127,7 @@ function CodeCommentThreadView({
       id={`thread-${thread.id}`}
       data-state={isNonRanged ? undefined : state}
       {...threadShellProps}
-      className={`${threadShellProps.className} comment-thread-wrap ${state}${!isNonRanged && state === "closed" ? " fold" : ""}`}
+      className={`${threadShellProps.className} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
       data-stylex-owner="commit-detail-thread-shell"
       data-range-path={isNonRanged ? undefined : thread.path}
       data-range-startside={isNonRanged ? undefined : thread.startSide}
@@ -1125,8 +1137,16 @@ function CodeCommentThreadView({
       data-range-endline={isNonRanged ? undefined : thread.endLine}
       data-range-endcolumn={isNonRanged ? undefined : thread.endColumn}
     >
-      <div className="btn-thread-here btn-thread-minimize">
-        <button type="button" className="ybtn ybtn-default ybtn-small">
+      <div
+        {...threadFoldHereProps}
+        className={`${threadFoldHereProps.className ?? ""} btn-thread-here btn-thread-minimize`}
+      >
+        <button
+          type="button"
+          {...threadFoldButtonProps}
+          className={`${threadFoldButtonProps.className ?? ""} ybtn ybtn-default ybtn-small`}
+          onClick={() => setIsFolded((current) => !current)}
+        >
           <i className={isNonRanged ? "yobicon-comments" : "yobicon-post2"}></i>
         </button>
       </div>
@@ -1134,7 +1154,8 @@ function CodeCommentThreadView({
       {isNonRanged ? null : (
         <div
           {...sx.rangedThreadHeader}
-          className={`${sx.rangedThreadHeader.className} thread-header`}
+          {...threadFoldHiddenProps}
+          className={`${sx.rangedThreadHeader.className} ${threadFoldHiddenProps.className ?? ""} thread-header`}
         >
           <span
             className={`${stylex.props(styles.rangedThreadBadge).className} badge state ${state}`}
@@ -1143,15 +1164,21 @@ function CodeCommentThreadView({
           </span>
           <button
             {...sx.rangedThreadMinimize}
+            {...threadFoldHiddenProps}
             type="button"
-            className={`${sx.rangedThreadMinimize.className} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+            className={`${sx.rangedThreadMinimize.className} ${threadFoldHiddenProps.className ?? ""} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+            onClick={() => setIsFolded((current) => !current)}
           >
             <i className="yobicon-maximize"></i>
           </button>
         </div>
       )}
 
-      <ul {...sx.threadComments} className={`${sx.threadComments.className} comments`}>
+      <ul
+        {...sx.threadComments}
+        {...threadFoldHiddenProps}
+        className={`${sx.threadComments.className} ${threadFoldHiddenProps.className ?? ""} comments`}
+      >
         {thread.comments.map((comment) => {
           const isEditing = editingCommentIds.has(comment.id);
           return (
@@ -1287,8 +1314,9 @@ function CodeCommentThreadView({
           action={action}
           method="post"
           encType="multipart/form-data"
-          className="review-form"
           {...sx.threadReviewForm}
+          {...threadFoldHiddenProps}
+          className={`review-form ${sx.threadReviewForm.className} ${threadFoldHiddenProps.className ?? ""}`}
           data-stylex-owner="commit-detail-thread-review-form"
           onSubmit={(event) => {
             event.preventDefault();
