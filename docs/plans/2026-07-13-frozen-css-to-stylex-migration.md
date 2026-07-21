@@ -6131,3 +6131,19 @@ no-inline-style, direct child scope, and desktop/390px containment in
 normal/fallback-off runs, 1/1 each. The adjacent existing reply-focus test
 continues to cover click/focus behavior; no child attachment owner is added
 because the legacy child-comments template has no attachment wrapper.
+
+## Batch 776
+
+Move the remaining visible `.add-a-comment` declarations for the child issue
+reply control into the existing route-local StyleX owner. The exact source is
+`yona-original/app/assets/stylesheets/less/_page.less:3049-3066`, imported by
+`yona-original/app/assets/stylesheets/yobi.less`; preserve the legacy
+`add-a-comment pull-right` DOM, hover-visible behavior, reply copy/order,
+toggle/focus behavior, and child form behavior. Keep parent action rows,
+parent attachments, child contents/delete, already-owned child surface/form
+styles, and broad fallback consumers excluded. The focused E2E verifies every
+moved computed declaration, initial hidden/hover visible states, direct child
+scope, click/focus behavior, and desktop/390px geometry in normal and
+fallback-off runs, 2/2 each. Live legacy port 9000 was unavailable during
+verification, so screenshot-level visual parity remains an explicitly recorded
+gap; LESS-derived geometry and browser metrics are verified.

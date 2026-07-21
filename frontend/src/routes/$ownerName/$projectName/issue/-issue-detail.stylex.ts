@@ -225,7 +225,28 @@ export const styles = stylex.create({
     float: "left",
   },
   childCommentReply: {
+    fontSize: "12px",
+    backgroundColor: "#fff",
+    position: "relative",
+    right: "10px",
+    color: "#00b0e8",
+    border: "1px solid #00b0e8",
+    marginTop: "-32px",
+    padding: "0 5px",
+    borderRadius: "3px",
     float: "right",
+    zIndex: 2,
+    ":hover": {
+      boxShadow: "1px 1px 2px #e0e0e0",
+      cursor: "pointer",
+      display: "block",
+    },
+  },
+  childCommentReplyHidden: {
+    display: "none",
+  },
+  childCommentReplyVisible: {
+    display: "block",
   },
   disabledCommentActions: { textAlign: "right" },
   unauthorizedComment: { marginTop: "20px" },

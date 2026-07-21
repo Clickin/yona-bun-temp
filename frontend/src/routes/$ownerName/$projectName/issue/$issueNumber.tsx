@@ -3842,7 +3842,9 @@ function ChildComments({
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         {...stylex.props(styles.childCommentReply)}
-        {...(replyVisible ? stylex.props(styles.replyVisible) : {})}
+        {...stylex.props(
+          replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden,
+        )}
         data-stylex-owner="project-issue-detail-child-comment-reply"
         onClick={() => {
           toggleForm();
@@ -3850,7 +3852,7 @@ function ChildComments({
             requestAnimationFrame(() => textareaRef.current?.focus());
           }
         }}
-        className={`${stylex.props(styles.childCommentReply).className} ${replyVisible ? stylex.props(styles.replyVisible).className : ""} add-a-comment pull-right`}
+        className={`${stylex.props(styles.childCommentReply).className} ${stylex.props(replyVisible ? styles.childCommentReplyVisible : styles.childCommentReplyHidden).className} add-a-comment pull-right`}
       >
         Reply
       </div>

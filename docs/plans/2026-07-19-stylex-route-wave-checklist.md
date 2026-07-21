@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 776 child-comment reply visual proof
+
+- [x] The child reply `add-a-comment pull-right` preserves legacy copy/order,
+  initial hidden and hover-visible states, click/focus behavior, and child form
+  interaction while StyleX owns the frozen `_page.less:3049-3066` declarations;
+  parent actions/attachments, child content/delete, existing child surface/form
+  owners, and broad fallback consumers remain excluded.
+- [x] Focused normal/fallback-off Playwright checks pass 2/2, covering every
+  moved computed declaration, no inline style, direct child scope, interaction,
+  and desktop/390px geometry. Live legacy port 9000 was unavailable, so
+  screenshot visual parity remains a documented gap.
+
 ### 2026-07-22 Batch 775 child-comment reply float proof
 
 - [x] Child reply `add-a-comment pull-right` preserves copy/order and the

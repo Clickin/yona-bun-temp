@@ -1844,8 +1844,12 @@ test("project issue detail owns the child reply float across desktop and mobile"
     new URL("../../yona-original/app/views/common/childComments.scala.html", import.meta.url),
     "utf8",
   );
-  const legacyBootstrap = readFileSync(
-    new URL("../../yona-original/public/bootstrap/css/bootstrap.css", import.meta.url),
+  const legacyPage = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/yobi.less", import.meta.url),
     "utf8",
   );
   const routeSource = readFileSync(
@@ -1860,18 +1864,41 @@ test("project issue detail owns the child reply float across desktop and mobile"
   expect(legacyChildComments).toContain(
     '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
   );
-  expect(legacyBootstrap).toContain(".pull-right {");
-  expect(legacyBootstrap).toContain("  float: right;");
+  expect(legacyYobi).toContain('@import "less/_page.less";');
+  expect(legacyPage).toContain(".comment {");
+  expect(legacyPage).toContain("            .add-a-comment {");
+  for (const declaration of [
+    "font-size: 12px;",
+    "background-color: #fff;",
+    "position: relative;",
+    "right: 10px;",
+    "color: #00b0e8;",
+    "border: 1px solid #00b0e8;",
+    "margin-top: -32px;",
+    "padding: 0 5px;",
+    "border-radius: 3px;",
+    "display: none;",
+    "z-index: 2;",
+    "box-shadow: 1px 1px 2px #e0e0e0;",
+    "cursor: pointer;",
+    "display: block;",
+  ]) {
+    expect(legacyPage).toContain(declaration);
+  }
   expect(routeSource).toContain('data-stylex-owner="project-issue-detail-child-comment-reply"');
   expect(routeSource).toContain("styles.childCommentReply");
-  expect(styleSource).toMatch(/childCommentReply:\s*\{\s*float:\s*["']right["']/u);
+  expect(styleSource).toMatch(
+    /childCommentReply:\s*\{[\s\S]*fontSize:\s*["']12px["'][\s\S]*backgroundColor:\s*["']#fff["'][\s\S]*position:\s*["']relative["'][\s\S]*right:\s*["']10px["'][\s\S]*color:\s*["']#00b0e8["'][\s\S]*border:\s*["']1px solid #00b0e8["'][\s\S]*marginTop:\s*["']-32px["'][\s\S]*padding:\s*["']0 5px["'][\s\S]*borderRadius:\s*["']3px["'][\s\S]*float:\s*["']right["'][\s\S]*zIndex:\s*2[\s\S]*["']?:hover["']?:[\s\S]*boxShadow:\s*["']1px 1px 2px #e0e0e0["'][\s\S]*cursor:\s*["']pointer["'][\s\S]*display:\s*["']block["']/u,
+  );
+  expect(styleSource).toMatch(/childCommentReplyHidden:\s*\{\s*display:\s*["']none["']/u);
+  expect(styleSource).toMatch(/childCommentReplyVisible:\s*\{\s*display:\s*["']block["']/u);
   expect(routeSource).not.toContain("childAttachment");
 
   await mockProjectIssueDetail(page);
   await page.setViewportSize({ height: 900, width: 1366 });
   await page.goto(`${basePath}/admin/sample/issue/11`);
   const comment = page.locator(".span-left-pane #comment-77");
-  const reply = comment.locator(".add-a-comment").first();
+  const reply = comment.locator(":scope > .add-a-comment");
   const parentActionRow = comment.locator(":scope > .media-body > .meta-info > .act-row");
   await expect(reply).toHaveCount(1);
   await expect(reply).toHaveText("Reply");
@@ -1883,6 +1910,7 @@ test("project issue detail owns the child reply float across desktop and mobile"
   );
   expect(await reply.evaluate((element) => element.closest("#comment-77") !== null)).toBe(true);
   await expect(reply).not.toHaveAttribute("style");
+  await expect(reply).toHaveCSS("display", "none");
   await expect(parentActionRow).not.toHaveAttribute(
     "data-stylex-owner",
     "project-issue-detail-child-comment-reply",
@@ -1893,28 +1921,88 @@ test("project issue detail owns the child reply float across desktop and mobile"
       const replyRect = element.getBoundingClientRect();
       const commentRect = element.closest("li.comment")?.getBoundingClientRect();
       if (!commentRect) throw new Error("parent comment target is missing");
+      const computed = window.getComputedStyle(element);
       return {
-        float: window.getComputedStyle(element).float,
+        backgroundColor: computed.backgroundColor,
+        borderRadius: computed.borderRadius,
+        borderStyle: computed.borderTopStyle,
+        borderTopColor: computed.borderTopColor,
+        borderTopWidth: computed.borderTopWidth,
+        color: computed.color,
+        display: computed.display,
+        float: computed.float,
+        fontSize: computed.fontSize,
         inlineStyle: element.getAttribute("style"),
+        marginTop: computed.marginTop,
+        paddingLeft: computed.paddingLeft,
+        paddingRight: computed.paddingRight,
+        position: computed.position,
         replyLeft: replyRect.left,
         replyRight: replyRect.right,
+        right: computed.right,
         commentLeft: commentRect.left,
         commentRight: commentRect.right,
+        zIndex: computed.zIndex,
+        boxShadow: computed.boxShadow,
+        cursor: computed.cursor,
       };
     });
   await comment.hover();
   await expect(reply).toBeVisible();
+  await reply.hover();
   const desktopMetrics = await readReplyMetrics();
+  expect(desktopMetrics.fontSize).toBe("12px");
+  expect(desktopMetrics.backgroundColor).toBe("rgb(255, 255, 255)");
+  expect(desktopMetrics.position).toBe("relative");
+  expect(desktopMetrics.right).toBe("10px");
+  expect(desktopMetrics.color).toBe("rgb(0, 176, 232)");
+  expect(desktopMetrics.borderTopWidth).toBe("1px");
+  expect(desktopMetrics.borderStyle).toBe("solid");
+  expect(desktopMetrics.borderTopColor).toBe("rgb(0, 176, 232)");
+  expect(desktopMetrics.marginTop).toBe("-32px");
+  expect(desktopMetrics.paddingLeft).toBe("5px");
+  expect(desktopMetrics.paddingRight).toBe("5px");
+  expect(desktopMetrics.borderRadius).toBe("3px");
+  expect(desktopMetrics.display).toBe("block");
   expect(desktopMetrics.float).toBe("right");
+  expect(desktopMetrics.zIndex).toBe("2");
+  expect(desktopMetrics.boxShadow).toContain("1px 1px 2px");
+  expect(desktopMetrics.boxShadow).toContain("rgb(224, 224, 224)");
+  expect(desktopMetrics.cursor).toBe("pointer");
   expect(desktopMetrics.inlineStyle).toBeNull();
   expect(desktopMetrics.replyRight).toBeLessThanOrEqual(desktopMetrics.commentRight + 1);
   expect(desktopMetrics.replyLeft).toBeGreaterThanOrEqual(desktopMetrics.commentLeft - 1);
 
+  await reply.click();
+  const replyEditor = comment.locator(".child-comment-input-form .editorSeries");
+  await expect(comment.locator(".child-comment-input-form")).toBeVisible();
+  await expect(replyEditor).toBeFocused();
+  await replyEditor.press("Escape");
+  await expect(comment.locator(".child-comment-input-form")).toBeHidden();
+
   await page.setViewportSize({ height: 844, width: 390 });
   await comment.hover();
   await expect(reply).toBeVisible();
+  await reply.hover();
   const mobileMetrics = await readReplyMetrics();
+  expect(mobileMetrics.fontSize).toBe("12px");
+  expect(mobileMetrics.backgroundColor).toBe("rgb(255, 255, 255)");
+  expect(mobileMetrics.position).toBe("relative");
+  expect(mobileMetrics.right).toBe("10px");
+  expect(mobileMetrics.color).toBe("rgb(0, 176, 232)");
+  expect(mobileMetrics.borderTopWidth).toBe("1px");
+  expect(mobileMetrics.borderStyle).toBe("solid");
+  expect(mobileMetrics.borderTopColor).toBe("rgb(0, 176, 232)");
+  expect(mobileMetrics.marginTop).toBe("-32px");
+  expect(mobileMetrics.paddingLeft).toBe("5px");
+  expect(mobileMetrics.paddingRight).toBe("5px");
+  expect(mobileMetrics.borderRadius).toBe("3px");
+  expect(mobileMetrics.display).toBe("block");
   expect(mobileMetrics.float).toBe("right");
+  expect(mobileMetrics.zIndex).toBe("2");
+  expect(mobileMetrics.boxShadow).toContain("1px 1px 2px");
+  expect(mobileMetrics.boxShadow).toContain("rgb(224, 224, 224)");
+  expect(mobileMetrics.cursor).toBe("pointer");
   expect(mobileMetrics.inlineStyle).toBeNull();
   expect(mobileMetrics.replyRight).toBeLessThanOrEqual(mobileMetrics.commentRight + 1);
   expect(mobileMetrics.replyLeft).toBeGreaterThanOrEqual(mobileMetrics.commentLeft - 1);
