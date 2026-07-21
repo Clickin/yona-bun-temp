@@ -1052,3 +1052,8 @@ desktop/mobile geometry, and filtering.
   header/filename declarations, desktop/390px computed coverage, preserved commit
   links, and independent fallback-off focused contract pass 1/1 each; commit-id,
   utility, comments, range/color, and other nested declarations remain scoped.
+- [x] Batch 748 partial-filediff commit-id owners: frozen source mapping, exact
+  wrapper/cell declarations, desktop/390px computed coverage, visible shortened
+  IDs, Link behavior, and independent fallback-off focused contract pass 1/1
+  each; file-header, utility, comments, range/color, and other declarations remain
+  scoped.

@@ -5652,6 +5652,17 @@ overflow/margin/radius/background declarations while retaining generic shell
 fallback consumers and verifying desktop/mobile computed output in normal and
 fallback-off focused tests.
 
+## Batch 748
+
+Complete the authenticated commit-detail partial-filediff commit-id header
+visible state through route-local StyleX owners. Preserve the Scala commit-id DOM,
+shortened IDs, fallback nbsp arms, Link targets/titles/targets, and existing diff
+behavior while carrying only the frozen `.diff-partial-commit` and
+`.diff-partial-commit-id` declarations. Keep the file header, utility, comments,
+range/color, and other partial-diff declarations outside this owner scope, and
+verify desktop/390px computed declarations independently in normal and fallback-off
+focused tests.
+
 ## Batch 747
 
 Complete the authenticated commit-detail partial-filediff file-header visible

@@ -80,6 +80,17 @@ export const styles = stylex.create({
     wordBreak: "break-all",
     marginRight: "115px",
   },
+  diffPartialCommit: { float: "left" },
+  diffPartialCommitId: {
+    float: "left",
+    padding: "5px 2px",
+    fontWeight: "bold",
+    borderRightWidth: "1px",
+    borderRightStyle: "solid",
+    borderRightColor: "#bbb",
+    width: "52px",
+    textAlign: "center",
+  },
   diffPartialFilename: {
     color: commitDetailColors.commitText,
     fontSize: "13px",

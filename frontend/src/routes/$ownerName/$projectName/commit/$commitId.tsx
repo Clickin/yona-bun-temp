@@ -51,6 +51,8 @@ const sx = {
   diffCodeCell: stylex.props(styles.diffCodeCell),
   diffCodeLine: stylex.props(styles.diffCodeLine),
   diffPartialFile: stylex.props(styles.diffPartialFile),
+  diffPartialCommit: stylex.props(styles.diffPartialCommit),
+  diffPartialCommitId: stylex.props(styles.diffPartialCommitId),
   diffPartialFilename: stylex.props(styles.diffPartialFilename),
   rightText: stylex.props(styles.rightText),
   threadReviewForm: stylex.props(styles.threadReviewForm),
@@ -756,8 +758,16 @@ function FileDiffView({
           className={`${stylex.props(styles.fileMeta).className} diff-partial-meta`}
           data-stylex-owner="commit-detail-file-meta"
         >
-          <div className="diff-partial-commit">
-            <div className="diff-partial-commit-id">
+          <div
+            {...sx.diffPartialCommit}
+            className={`${sx.diffPartialCommit.className} diff-partial-commit`}
+            data-stylex-owner="commit-detail-file-commit"
+          >
+            <div
+              {...sx.diffPartialCommitId}
+              className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
+              data-stylex-owner="commit-detail-file-commit-id"
+            >
               {commitA && parsed.pathA ? (
                 <Link
                   to={projectTo(ownerName, projectName, "code", commitA, parsed.pathA)}
@@ -770,7 +780,11 @@ function FileDiffView({
                 "\u00a0"
               )}
             </div>
-            <div className="diff-partial-commit-id">
+            <div
+              {...sx.diffPartialCommitId}
+              className={`${sx.diffPartialCommitId.className} diff-partial-commit-id`}
+              data-stylex-owner="commit-detail-file-commit-id"
+            >
               {commitB && parsed.pathB ? (
                 <Link
                   to={projectTo(ownerName, projectName, "code", commitB, parsed.pathB)}
