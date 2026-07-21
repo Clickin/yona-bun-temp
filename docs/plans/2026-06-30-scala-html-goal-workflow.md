@@ -487,3 +487,10 @@ Stop and report instead of broadening scope when:
 
 When stopped, record the exact route, template, missing data or behavior, and
 the smallest next write scope.
+
+## Follow-up — `/projects` shared shell baseline
+
+Repair the existing site-admin affix and project search-control StyleX owners from the frozen
+LESS/Bootstrap resets, then retain the focused normal/fallback-off matrix as the gate. This
+bounded wave is complete when source, desktop/mobile geometry, and filter interaction all pass;
+do not add route-local offsets or broaden the migration scope.

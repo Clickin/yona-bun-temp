@@ -4807,6 +4807,7 @@ const siteAdminAffixStyles = stylex.create({
     color: homeColors.siteAdminAffixText,
     fontSize: "20px",
     fontWeight: "700",
+    lineHeight: "20px",
     padding: "10px",
     textAlign: "center",
     width: {

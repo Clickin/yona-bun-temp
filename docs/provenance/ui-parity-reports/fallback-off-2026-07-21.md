@@ -144,3 +144,12 @@ The directory tabs are outside `.project-page-wrap`, so the applicable frozen Bo
 correcting this owner, the normal `/projects` contract passes 4/4, including desktop/mobile
 geometry. Fallback-off source and interaction pass, while the search ancestor remains uniformly
 2px high. This residual is retained as a shell/fallback-boundary gap with no local compensation.
+
+## Follow-up — `/projects` shell/control reset closure
+
+The remaining fallback-off residual was traced to frozen shared resets: `_page.less:6801-6808`
+requires the authenticated admin affix to use a 20px line height, while Bootstrap
+`bootstrap.css:116-125,138-154` supplies the input/button vertical alignment, line-height, and
+pointer cursor defaults. Existing StyleX owners now carry those exact declarations. Normal and
+`VITE_DISABLE_LEGACY_FALLBACK=1` focused runs cover source, desktop/mobile geometry, and filter
+submission; no offset or assertion relaxation was added.

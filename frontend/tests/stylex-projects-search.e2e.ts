@@ -70,6 +70,7 @@ async function open(page: Page) {
 
 test("search strip records frozen sources and six ownership boundaries", () => {
   const route = readFileSync("src/routes/projects.tsx", "utf8");
+  const homeRoute = readFileSync("src/routes/-home-route-screen.tsx", "utf8");
   const scala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
   const siteLayout = readFileSync("../yona-original/app/views/siteLayout.scala.html", "utf8");
   const yobi = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
@@ -90,6 +91,8 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   expect(pageLess).toContain(".search-wrap {");
   expect(pageLess).toContain(".nav-tabs > li {");
   expect(pageLess).toContain("margin-bottom: -2px;");
+  expect(pageLess).toContain(".admin-logged-in-affix {");
+  expect(pageLess).toContain("font-size:20px;");
   expect(ui).toContain("label, input, button, select, textarea {");
   expect(ui).toContain("font-size:12px;");
   expect(ui).toContain("padding:4px 25px 4px 5px;");
@@ -100,12 +103,21 @@ test("search strip records frozen sources and six ownership boundaries", () => {
   expect(responsive).toContain('input[type="text"],');
   expect(responsive).toContain("font-size: 16px !important;");
   expect(bootstrap).toContain(".nav-tabs > li {\n  margin-bottom: -1px;\n}");
+  expect(bootstrap).toContain("body {");
+  expect(bootstrap).toContain("line-height: 20px;");
+  expect(bootstrap).toContain("vertical-align: middle;");
+  expect(bootstrap).toContain("button,\ninput {\n  *overflow: visible;\n  line-height: normal;\n}");
+  expect(bootstrap).toContain(
+    'button,\nhtml input[type="button"],\ninput[type="reset"],\ninput[type="submit"] {\n  cursor: pointer;',
+  );
   expect(bootstrap).toContain(".pull-left {");
   expect(bootstrap).toContain('font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;');
   expect(messages).toContain("site.project.filter = 키워드로 프로젝트 찾기");
   for (const owner of Object.values(owners))
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   expect(route).toContain('import "../yobicon-font.css";');
+  expect(homeRoute).toContain('data-stylex-owner="site-admin-affix"');
+  expect(homeRoute).toContain('lineHeight: "20px"');
   for (const token of ["search-wrap", "pull-left", "search-bar", "textbox", "search-btn"])
     expect(route).not.toContain(`className="${token}"`);
   for (const paint of ["searchBorder", "searchSurface", "searchText"])
@@ -129,7 +141,11 @@ test("search strip records frozen sources and six ownership boundaries", () => {
     route.indexOf("},\n  directorySearchButton:", route.indexOf("directorySearchInput: {")),
   );
   expect(inputStyle).toContain('fontSize: { default: "12px", [globalBreakpoints.mobile]: "16px" }');
+  expect(inputStyle).toContain('lineHeight: "normal"');
+  expect(inputStyle).toContain('verticalAlign: "middle"');
   expect(buttonStyle).toContain('fontSize: "12px"');
+  expect(buttonStyle).toContain('cursor: "pointer"');
+  expect(buttonStyle).toContain('lineHeight: "20px"');
   expect(buttonStyle).toContain('boxShadow: "none"');
   expect(buttonStyle).toContain('outlineStyle: "none"');
   expect(buttonStyle).toContain('outlineWidth: "0px"');
@@ -212,6 +228,7 @@ for (const viewport of [
           fontSize: style(input).fontSize,
           height: style(input).height,
           lineHeight: style(input).lineHeight,
+          verticalAlign: style(input).verticalAlign,
           margin: style(input).margin,
           padding: style(input).padding,
           outline: style(input).outline,
@@ -229,12 +246,22 @@ for (const viewport of [
           right: style(button).right,
           top: style(button).top,
         },
+        affix: (() => {
+          const element = document.querySelector<HTMLElement>(
+            '[data-stylex-owner="site-admin-affix"]',
+          );
+          if (!element) return null;
+          const rect = element.getBoundingClientRect();
+          return { height: rect.height, lineHeight: getComputedStyle(element).lineHeight };
+        })(),
         listY: document
           .querySelector<HTMLElement>('[data-stylex-owner="projects-directory-list"]')!
           .getBoundingClientRect().y,
         scrollWidth: document.documentElement.scrollWidth,
       };
     }, owners);
+    expect(metrics.affix?.lineHeight).toBe("20px");
+    expect(metrics.affix?.height).toBeGreaterThan(0);
     const mobile = viewport.name === "mobile";
     expect(metrics.boxes).toEqual(
       mobile
@@ -283,10 +310,11 @@ for (const viewport of [
       fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
       fontSize: mobile ? "16px" : "12px",
       height: "20px",
-      lineHeight: "20px",
+      lineHeight: "normal",
       margin: "0px -5px",
       padding: "0px 5px",
       outline: "rgb(85, 85, 85) none 0px",
+      verticalAlign: "middle",
       width: mobile ? "173px" : "350px",
     });
     expect(metrics.button).toEqual({
