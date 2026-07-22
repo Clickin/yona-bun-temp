@@ -540,3 +540,15 @@ textarea-box final cascade, and action-row spacing/alignment. System-Chrome
 normal/fallback-off runs pass 1/1 each. Direct desktop/mobile legacy/local
 screenshots show exact width, a 1px height difference, and the same known 2px
 state offset; the target declarations and visual order are aligned.
+
+## Batch 811 — board-post NEW-comment hidden notification receiver
+
+The authenticated populated board-post NEW-comment editor now owns exactly the
+frozen hidden receiver wrapper and title declarations from
+`common/editor.scala.html` and `_page.less`. Board view has no issue-style
+focus/show receiver wiring, so focus retains `display:none` and zero geometry.
+Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each at desktop
+and 390px, and fresh actual legacy/local screenshots were directly inspected.
+UPDATE/child receivers and receiver-list badges remain later consumers. Fixture
+and locale differences are outside these two owners; Yoram footer/contact/
+repository omissions and their geometry remain approved deviations, not gaps.

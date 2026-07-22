@@ -2956,6 +2956,10 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "@common.commentForm(post.asResource(), ResourceType.NONISSUE_COMMENT,",
   );
   expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
+  expect(legacyBoardSource).toContain(
+    "@common.commentForm(post.asResource(), ResourceType.NONISSUE_COMMENT",
+  );
+  expect(legacyBoardSource).not.toContain("notification-receiver");
   expect(legacyCommentFormSource).toContain("@common.fileUploader(resourceType, null)");
   expect(legacyCommentFormSource).toMatch(
     /<form id="comment-form" action="@action" method="post" enctype="multipart\/form-data">\s*<div class="write-comment-box">/u,
@@ -4121,6 +4125,50 @@ test("project board detail owns parent comment action and reply controls in Styl
 
 test("project board detail submits legacy comment form through REST", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const batch811RouteSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const batch811StyleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyCommentFormSource = readFileSync(
+    "../yona-original/app/views/common/commentForm.scala.html",
+    "utf8",
+  );
+  const legacyEditorSource = readFileSync(
+    "../yona-original/app/views/common/editor.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
+  expect(legacyEditorSource).toMatch(
+    /<div class="notification-receiver">\s*<span class="notification-receiver-title">@Messages\("notification\.receiver\.list\.title"\)<\/span>\s*<span class="notification-receiver-list"><\/span>\s*<\/div>/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.notification-receiver\s*\{\s*background-color:\s*#F7F7F7;\s*display:\s*none;\s*text-align:\s*start;\s*padding:\s*5px 5px 5px 10px;[\s\S]*?\.notification-receiver-title\s*\{\s*color:\s*#999;/u,
+  );
+  expect(legacyYobiSource).toContain('@import "less/_page.less";');
+  for (const owner of [
+    "post-detail-comment-create-notification-receiver",
+    "post-detail-comment-create-notification-receiver-title",
+  ]) {
+    expect(batch811RouteSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
+  expect(batch811StyleSource).toMatch(
+    /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
+  );
+  expect(batch811StyleSource).toContain(
+    'commentCreateNotificationReceiverTitle: { color: "#999999" }',
+  );
   const { commentCreateRequests } = await mockProjectPosts(page);
 
   await page.goto(`${basePath}/admin/sample/post/3`);
@@ -4173,6 +4221,56 @@ test("project board detail submits legacy comment form through REST", async ({ p
   await expect(page.locator('#comment-form [data-toggle="markdown-editor"]')).toHaveCount(0);
   const commentEditor = page.locator("#comment-form .mt10:has(#editor-contents-contents)");
   await expect(commentEditor).toHaveCount(1);
+  const notificationReceiver = commentEditor.locator(
+    ':scope > .tab-content > [data-stylex-owner="post-detail-comment-create-notification-receiver"]',
+  );
+  const notificationReceiverTitle = notificationReceiver.locator(
+    ':scope > [data-stylex-owner="post-detail-comment-create-notification-receiver-title"]',
+  );
+  await expect(notificationReceiver).toHaveCount(1);
+  await expect(notificationReceiver).toHaveClass(/notification-receiver/u);
+  await expect(notificationReceiver).not.toHaveAttribute("style");
+  await expect(notificationReceiverTitle).toHaveCount(1);
+  await expect(notificationReceiverTitle).toHaveClass(/notification-receiver-title/u);
+  await expect(notificationReceiverTitle).not.toHaveAttribute("style");
+  await expect(notificationReceiverTitle).toHaveText("Notification receivers ");
+  await expect(notificationReceiver).toHaveCSS("background-color", "rgb(247, 247, 247)");
+  await expect(notificationReceiver).toHaveCSS("display", "none");
+  await expect(notificationReceiver).toHaveCSS("padding", "5px 5px 5px 10px");
+  await expect(notificationReceiver).toHaveCSS("text-align", "start");
+  await expect(notificationReceiverTitle).toHaveCSS("color", "rgb(153, 153, 153)");
+  expect(
+    await notificationReceiver.evaluate((receiver) => ({
+      childClasses: Array.from(receiver.children).map((child) =>
+        child.classList.contains("notification-receiver-title")
+          ? "notification-receiver-title"
+          : "notification-receiver-list",
+      ),
+      height: receiver.getBoundingClientRect().height,
+      previousId: receiver.previousElementSibling?.id,
+      width: receiver.getBoundingClientRect().width,
+    })),
+  ).toEqual({
+    childClasses: ["notification-receiver-title", "notification-receiver-list"],
+    height: 0,
+    previousId: "preview-contents",
+    width: 0,
+  });
+  await expect(
+    page.locator(
+      '[data-stylex-owner="post-detail-comment-create-notification-receiver"], [data-stylex-owner="post-detail-comment-create-notification-receiver-title"]',
+    ),
+  ).toHaveCount(2);
+  await expect(
+    page.locator(
+      '.comment-update-form [data-stylex-owner^="post-detail-comment-create-notification-receiver"], .child-comment-input-form [data-stylex-owner^="post-detail-comment-create-notification-receiver"]',
+    ),
+  ).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  await page.locator("#comment-form textarea[name='contents']").focus();
+  await expect(notificationReceiver).toHaveCSS("display", "none");
   const editorMetrics = await page
     .locator("#comment-form .mt10:has(#editor-contents-contents)")
     .evaluate((editor) => {
@@ -4246,7 +4344,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     });
   expect(editorMetrics).toEqual({
     className: "mt10",
-    navClassName: "nav nav-tabs nm small",
+    navClassName: expect.stringContaining("nav nav-tabs nm small"),
     navHeight: "29px",
     navMargin: "0px",
     editTagName: "a",
@@ -4262,20 +4360,22 @@ test("project board detail submits legacy comment form through REST", async ({ p
     previewMode: null,
     previewText: "Preview",
     taskButtonType: "button",
-    taskButtonClassName: "add-task-list-button ybtn ybtn-small ybtn-danger-no-outline",
+    taskButtonClassName: expect.stringContaining(
+      "add-task-list-button ybtn ybtn-small ybtn-danger-no-outline",
+    ),
     taskButtonText: "Add checklist",
     clearButtonType: "button",
     clearButtonClassName: "ybtn ybtn-small ybtn-warning",
     clearButtonText: "Clear Temporary",
-    tabContentStyle: "position: relative; overflow: visible;",
+    tabContentStyle: null,
     tabContentPosition: "relative",
     tabContentOverflow: "visible",
-    editPaneClassName: "tab-pane active",
+    editPaneClassName: expect.stringContaining("tab-pane active"),
     editPaneDisplay: "block",
-    previewPaneClassName: "tab-pane",
+    previewPaneClassName: expect.stringContaining("tab-pane"),
     previewPaneDisplay: "none",
     textareaName: "contents",
-    textareaClassName: "editorSeries content comment nm",
+    textareaClassName: expect.stringContaining("editorSeries content comment nm"),
     textareaMode: "comment-body",
     textareaMarkdown: "true",
     textareaId: "editor-contents-contents",
@@ -4283,7 +4383,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     previewViaEmail: "false",
     markdownHelpNavItemCount: 11,
     markdownHelpItemCount: 10,
-    notificationClassName: "notification-receiver",
+    notificationClassName: expect.stringContaining("notification-receiver"),
     notificationDisplay: "none",
     notificationText: "Notification receivers ",
     tabButtonDataModeCount: 0,
@@ -4376,7 +4476,9 @@ test("project board detail submits legacy comment form through REST", async ({ p
     const plain = upload.querySelector(".plain") as HTMLElement;
     const pastable = upload.querySelector(".help-pastable") as HTMLElement;
     const attachedFiles = upload.querySelector(".attached-files") as HTMLElement;
-    const help = upload.querySelector(".right-txt.help") as HTMLElement;
+    const help = upload.querySelector(
+      '[data-stylex-owner="post-detail-comment-upload-help"].help',
+    ) as HTMLElement;
     const droppableStyle = window.getComputedStyle(droppable);
     const btnWrapStyle = window.getComputedStyle(btnWrap);
     const plainStyle = window.getComputedStyle(plain);
@@ -4414,7 +4516,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     };
   });
   expect(uploadFormMetrics).toEqual({
-    className: "upload-wrap content-footer",
+    className: expect.stringContaining("upload-wrap content-footer"),
     leftInset: 54,
     resourceType: "NONISSUE_COMMENT",
     resourceId: null,
@@ -4425,7 +4527,7 @@ test("project board detail submits legacy comment form through REST", async ({ p
     plainText: "Click upload button",
     pastableText: "Paste the clipboard image",
     helpText: "Selected file will be attached when your comment is saved.",
-    attachedFilesClass: "attached-files unstyled",
+    attachedFilesClass: expect.stringContaining("attached-files unstyled"),
     padding: "10px",
     marginBottom: "10px",
     writeCommentBoxPadding: "0px 0px 15px 54px",
@@ -4485,6 +4587,8 @@ test("project board detail submits legacy comment form through REST", async ({ p
   expect(markdownEditorSource).toContain('t("button.add.checklist")');
   expect(markdownEditorSource).toContain('t("button.clear.temporary")');
   expect(markdownEditorSource).toContain('t("notification.receiver.list.title")');
+  expect(markdownEditorSource).toContain("styles.commentCreateNotificationReceiver");
+  expect(markdownEditorSource).toContain("styles.commentCreateNotificationReceiverTitle");
   expect(markdownEditorSource).not.toContain(">Edit<");
   expect(markdownEditorSource).not.toContain(">Preview<");
   expect(markdownEditorSource).not.toContain("Add checklist");
@@ -4520,6 +4624,15 @@ test("project board detail submits legacy comment form through REST", async ({ p
   await expect(page.locator("#comment-form textarea[name='contents']")).toHaveValue("");
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(notificationReceiver).toHaveCSS("display", "none");
+  expect(
+    await notificationReceiver.evaluate((receiver) => ({
+      height: receiver.getBoundingClientRect().height,
+      width: receiver.getBoundingClientRect().width,
+    })),
+  ).toEqual({ height: 0, width: 0 });
+  await page.locator("#comment-form textarea[name='contents']").focus();
+  await expect(notificationReceiver).toHaveCSS("display", "none");
   const mobileUploadMetrics = await page.locator("#comment-form #upload").evaluate((upload) => {
     const writeCommentBox = upload.closest(".write-comment-box") as HTMLElement;
     const uploadBox = upload.getBoundingClientRect();

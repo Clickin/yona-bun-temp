@@ -338,6 +338,13 @@ export const styles = stylex.create({
     },
     "@media all and (max-width: 720px)": { fontSize: "16px !important" },
   },
+  commentCreateNotificationReceiver: {
+    backgroundColor: "#F7F7F7",
+    display: "none",
+    padding: "5px 5px 5px 10px",
+    textAlign: "start",
+  },
+  commentCreateNotificationReceiverTitle: { color: "#999999" },
   commentUpdateFileUpload: { display: "inline-block", position: "relative" },
   commentUpdateActionButton: {
     backgroundColor: "#ffffff",

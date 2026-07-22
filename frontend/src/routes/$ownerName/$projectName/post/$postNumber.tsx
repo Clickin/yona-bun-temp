@@ -2217,6 +2217,12 @@ function MarkdownEditor({
   const createEditorNoticeLabelStyle = isCommentCreateEditor
     ? stylex.props(styles.commentCreateEditorNoticeLabel)
     : undefined;
+  const createNotificationReceiverStyle = isCommentCreateEditor
+    ? stylex.props(styles.commentCreateNotificationReceiver)
+    : undefined;
+  const createNotificationReceiverTitleStyle = isCommentCreateEditor
+    ? stylex.props(styles.commentCreateNotificationReceiverTitle)
+    : undefined;
 
   return (
     <div className="mt10">
@@ -2430,8 +2436,22 @@ function MarkdownEditor({
             ) : null}
           </div>
         </div>
-        <div className="notification-receiver">
-          <span className="notification-receiver-title">
+        <div
+          {...createNotificationReceiverStyle}
+          className={`${createNotificationReceiverStyle?.className ?? ""} notification-receiver`.trim()}
+          data-stylex-owner={
+            isCommentCreateEditor ? "post-detail-comment-create-notification-receiver" : undefined
+          }
+        >
+          <span
+            {...createNotificationReceiverTitleStyle}
+            className={`${createNotificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim()}
+            data-stylex-owner={
+              isCommentCreateEditor
+                ? "post-detail-comment-create-notification-receiver-title"
+                : undefined
+            }
+          >
             {t("notification.receiver.list.title")}{" "}
           </span>
           <span className="notification-receiver-list"></span>
