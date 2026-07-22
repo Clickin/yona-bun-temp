@@ -204,6 +204,27 @@ export const styles = stylex.create({
     },
     "@media all and (max-width: 720px)": { fontSize: "16px !important" },
   },
+  commentCreateTextareaBox: {
+    display: "block",
+    margin: 0,
+    padding: "0px 14px 0px 0px",
+    position: "relative",
+  },
+  commentCreateTextareaControl: {
+    borderRadius: "2px",
+    boxShadow: "none",
+    fontSize: "12px",
+    height: "160px",
+    margin: 0,
+    resize: "vertical",
+    width: "100%",
+    ":focus": {
+      borderColor: "#F36C22 !important",
+      borderStyle: "solid",
+      borderWidth: "1px",
+    },
+    "@media all and (max-width: 720px)": { fontSize: "16px !important" },
+  },
   commentUpdateFileUpload: { display: "inline-block", position: "relative" },
   commentUpdateActionButton: {
     backgroundColor: "#ffffff",

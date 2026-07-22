@@ -2068,6 +2068,12 @@ function MarkdownEditor({
     editorMode === "update-comment-body"
       ? stylex.props(styles.commentUpdateTextareaControl)
       : undefined;
+  const createTextareaBoxStyle = isCommentCreateEditor
+    ? stylex.props(styles.commentCreateTextareaBox)
+    : undefined;
+  const createTextareaStyle = isCommentCreateEditor
+    ? stylex.props(styles.commentCreateTextareaControl)
+    : undefined;
   const editorNavStyle =
     isCommentUpdateEditor || isCommentCreateEditor
       ? stylex.props(styles.commentUpdateEditorNav)
@@ -2283,21 +2289,27 @@ function MarkdownEditor({
         >
           <div
             {...updateTextareaBoxStyle}
-            className={`${updateTextareaBoxStyle?.className ?? ""} textarea-box`.trim()}
+            {...createTextareaBoxStyle}
+            className={`${updateTextareaBoxStyle?.className ?? createTextareaBoxStyle?.className ?? ""} textarea-box`.trim()}
             data-stylex-owner={
               editorMode === "update-comment-body"
                 ? "post-detail-comment-update-textarea-box"
-                : undefined
+                : isCommentCreateEditor
+                  ? "post-detail-comment-create-textarea-box"
+                  : undefined
             }
           >
             <textarea
               {...updateTextareaStyle}
+              {...createTextareaStyle}
               name={name}
-              className={`${updateTextareaStyle?.className ?? ""} editorSeries content comment nm`.trim()}
+              className={`${updateTextareaStyle?.className ?? createTextareaStyle?.className ?? ""} editorSeries content comment nm`.trim()}
               data-stylex-owner={
                 editorMode === "update-comment-body"
                   ? "post-detail-comment-update-textarea"
-                  : undefined
+                  : isCommentCreateEditor
+                    ? "post-detail-comment-create-textarea"
+                    : undefined
               }
               data-editor-mode={editorMode}
               {...{ markdown: "true" }}

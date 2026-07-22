@@ -2707,6 +2707,22 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     /<li class="active">[\s\S]*?common\.editor\.edit[\s\S]*?<li>[\s\S]*?common\.editor\.preview[\s\S]*?<li>[\s\S]*?task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
   );
   expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
+  expect(legacyCommonSource).toContain("textarea { font-family: @fixed-font-family !important; }");
+  expect(legacyPageSource).toMatch(
+    /\.textarea-box\s*\{\s*padding:\s*0;\s*margin:\s*0;\s*display:\s*block;\s*padding-right:\s*14px;\s*position:relative;[\s\S]*?textarea\s*\{\s*\.border-radius\(0 0 3px 3px\);\s*width:\s*100%;\s*resize:vertical !important;\s*font-size:\s*1em;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.comment\s*\{\s*height:\s*160px;\s*margin:\s*0;\s*resize:vertical;\s*\.box-shadow\(none\);\s*&:focus\s*\{\s*border:\s*1px solid @gray-cc;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px !important;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /label, input, button, select, textarea \{ font-size:12px; \}[\s\S]*?textarea,[\s\S]*?\.box-shadow\(none\);\s*\.border-radius\(2px\);[\s\S]*?&:focus\s*\{\s*\.box-shadow\(none\);\s*border-color:@primary !important;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /select,\s*textarea,[\s\S]*?display:\s*inline-block;\s*height:\s*20px;\s*padding:\s*4px 6px;\s*margin-bottom:\s*10px;[\s\S]*?textarea,[\s\S]*?background-color:\s*#ffffff;\s*border:\s*1px solid #cccccc;/u,
+  );
   expect(legacyPageSource).toMatch(
     /\.project-page-wrap\s*\{[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-2px;/u,
   );
@@ -2752,6 +2768,18 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     /commentCreateClearTemporary:\s*\{\s*display:\s*"none",\s*marginLeft:\s*"10px"\s*\}/u,
   );
   expect(styleSource).toMatch(/commentCreateEditorNoticeLabel:\s*\{\s*padding:\s*"4px 15px"\s*\}/u);
+  expect(styleSource).toMatch(
+    /commentCreateTextareaBox:\s*\{\s*display:\s*"block",\s*margin:\s*0,\s*padding:\s*"0px 14px 0px 0px",\s*position:\s*"relative",\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /commentCreateTextareaControl:\s*\{[\s\S]*?borderRadius:\s*"2px"[\s\S]*?boxShadow:\s*"none"[\s\S]*?fontSize:\s*"12px"[\s\S]*?height:\s*"160px"[\s\S]*?margin:\s*0[\s\S]*?resize:\s*"vertical"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?@media all and \(max-width: 720px\)[\s\S]*?fontSize:\s*"16px !important"/u,
+  );
+  for (const owner of [
+    "post-detail-comment-create-textarea-box",
+    "post-detail-comment-create-textarea",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
   expect(styleSource).toMatch(/commentUpdateChecklistWrap:\s*\{ marginTop:\s*"2px" \}/u);
   expect(styleSource).toMatch(
     /commentUpdateChecklistButton:\s*\{[\s\S]*?backgroundColor:\s*"#eeeeee"[\s\S]*?borderColor:\s*"transparent"[\s\S]*?fontSize:\s*"13px !important"[\s\S]*?marginTop:\s*"1px"[\s\S]*?padding:\s*"1px 10px !important"[\s\S]*?backgroundColor:\s*"#fbe9e7"[\s\S]*?borderColor:\s*"#EF9A9A"[\s\S]*?color:\s*"#C93426"/u,
@@ -2851,6 +2879,9 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
+    const textareaBox = commentForm.locator(
+      '[data-stylex-owner="post-detail-comment-create-textarea-box"]',
+    );
     const editorNav = commentForm.locator(
       '[data-stylex-owner="post-detail-comment-create-editor-nav"]',
     );
@@ -2904,6 +2935,23 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(
       page.locator('.comment-update-form [data-stylex-owner^="post-detail-comment-create-"]'),
     ).toHaveCount(0);
+    await expect(textareaBox).toHaveCount(1);
+    await expect(textarea).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-textarea",
+    );
+    await expect(textareaBox).toHaveCSS("display", "block");
+    await expect(textareaBox).toHaveCSS("margin", "0px");
+    await expect(textareaBox).toHaveCSS("padding", "0px 14px 0px 0px");
+    await expect(textareaBox).toHaveCSS("position", "relative");
+    await expect(textarea).toHaveCSS("border-radius", "2px");
+    await expect(textarea).toHaveCSS("box-shadow", "none");
+    await expect(textarea).toHaveCSS("font-size", viewport.width === 390 ? "16px" : "12px");
+    await expect(textarea).toHaveCSS("height", "160px");
+    await expect(textarea).toHaveCSS("margin", "0px");
+    await expect(textarea).toHaveCSS("resize", "vertical");
+    await textarea.focus();
+    await expect(textarea).toHaveCSS("border-color", "rgb(243, 108, 34)");
     await expect(
       page.locator(
         '.comment-update-form [data-stylex-owner^="post-detail-comment-create-checklist-"]',
@@ -2962,11 +3010,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         previewPane: measure("#preview-contents"),
         tabContent: measure(".tab-content"),
         textarea: measure("textarea.editorSeries"),
+        textareaBox: measure('[data-stylex-owner="post-detail-comment-create-textarea-box"]'),
         upload: measure("#upload"),
       };
     });
 
     expect(metrics.tabContent).toMatchObject({ overflow: "visible", position: "relative" });
+    expect(metrics.textarea.left).toBeGreaterThanOrEqual(metrics.textareaBox.left);
+    expect(metrics.textarea.right).toBeLessThanOrEqual(metrics.textareaBox.right);
+    expect(metrics.textarea.top).toBeGreaterThanOrEqual(metrics.textareaBox.top);
+    expect(metrics.textarea.bottom).toBeLessThanOrEqual(metrics.textareaBox.bottom);
+    expect(metrics.textareaBox.bottom).toBeLessThanOrEqual(metrics.upload.top);
     expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
     expect(metrics.clearTemporary.left).toBe(0);
     expect(metrics.clearTemporary.right).toBe(0);
