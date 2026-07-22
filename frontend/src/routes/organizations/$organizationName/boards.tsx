@@ -16,6 +16,7 @@ import { type RuntimeConfig } from "../../../runtime-config";
 import {
   organizationBoardsColors,
   organizationBoardsEmptyStyles,
+  organizationBoardsPaginationStyles,
 } from "./-organization-boards.stylex";
 
 const errorIconSpriteStyles = stylex.create({
@@ -357,12 +358,24 @@ function BoardPagination({
 
   return (
     <div
+      {...stylex.props(organizationBoardsPaginationStyles.paginationWrap)}
       id="pagination"
-      className="page-navigation-wrap"
+      className={`${stylex.props(organizationBoardsPaginationStyles.paginationWrap).className} page-navigation-wrap`}
       data-stylex-owner="organization-boards-pagination"
     >
-      <ul className="page-nums">
-        <li className="page-num ikon">
+      <ul
+        {...stylex.props(organizationBoardsPaginationStyles.paginationPageNums)}
+        className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNums).className} page-nums`}
+        data-stylex-owner="organization-boards-pagination-page-nums"
+      >
+        <li
+          {...stylex.props(
+            organizationBoardsPaginationStyles.paginationPageNum,
+            organizationBoardsPaginationStyles.paginationIconPageNum,
+          )}
+          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="organization-boards-pagination-prev-page"
+        >
           {hasPrev ? (
             <Link
               activeOptions={{ exact: true }}
@@ -375,19 +388,54 @@ function BoardPagination({
               search={pageSearch(currentPage - 1)}
               to="/organizations/$organizationName/boards"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(
+                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
+                  organizationBoardsPaginationStyles.paginationPrev,
+                )}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationPrev).className} ico btn-pg-prev`}
+                data-stylex-owner="organization-boards-pagination-prev-icon"
+              ></i>
+              <span
+                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabel)}
+                data-stylex-owner="organization-boards-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(
+                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
+                  organizationBoardsPaginationStyles.paginationPrev,
+                  organizationBoardsPaginationStyles.paginationPrevOff,
+                )}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationPrev, organizationBoardsPaginationStyles.paginationPrevOff).className} ico btn-pg-prev off`}
+                data-stylex-owner="organization-boards-pagination-prev-icon"
+              ></i>
+              <span
+                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff)}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="organization-boards-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...stylex.props(organizationBoardsPaginationStyles.paginationPageNum)}
+          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum).className} page-num`}
+          data-stylex-owner="organization-boards-pagination-input-page"
+        >
           <input
-            className="input-mini nospinner"
+            {...stylex.props(
+              organizationBoardsPaginationStyles.paginationInput,
+              organizationBoardsPaginationStyles.paginationNoSpinner,
+            )}
+            className={`${stylex.props(organizationBoardsPaginationStyles.paginationInput, organizationBoardsPaginationStyles.paginationNoSpinner).className} input-mini nospinner`}
+            data-stylex-owner="organization-boards-pagination-input"
             defaultValue={currentPage}
             key={currentPage}
             max={pages}
@@ -401,9 +449,31 @@ function BoardPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{pages}</li>
-        <li className="page-num ikon">
+        <li
+          {...stylex.props(
+            organizationBoardsPaginationStyles.paginationPageNum,
+            organizationBoardsPaginationStyles.paginationDelimiter,
+          )}
+          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationDelimiter).className} page-num delimiter`}
+          data-stylex-owner="organization-boards-pagination-delimiter"
+        >
+          /
+        </li>
+        <li
+          {...stylex.props(organizationBoardsPaginationStyles.paginationPageNum)}
+          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum).className} page-num`}
+          data-stylex-owner="organization-boards-pagination-total"
+        >
+          {pages}
+        </li>
+        <li
+          {...stylex.props(
+            organizationBoardsPaginationStyles.paginationPageNum,
+            organizationBoardsPaginationStyles.paginationIconPageNum,
+          )}
+          className={`${stylex.props(organizationBoardsPaginationStyles.paginationPageNum, organizationBoardsPaginationStyles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="organization-boards-pagination-next-page"
+        >
           {hasNext ? (
             <Link
               activeOptions={{ exact: true }}
@@ -416,13 +486,39 @@ function BoardPagination({
               search={pageSearch(currentPage + 1)}
               to="/organizations/$organizationName/boards"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabel)}
+                data-stylex-owner="organization-boards-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(
+                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
+                  organizationBoardsPaginationStyles.paginationNext,
+                )}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationNext).className} ico btn-pg-next`}
+                data-stylex-owner="organization-boards-pagination-next-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff)}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="organization-boards-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(
+                  organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl),
+                  organizationBoardsPaginationStyles.paginationNext,
+                  organizationBoardsPaginationStyles.paginationNextOff,
+                )}
+                className={`${stylex.props(organizationBoardsPaginationStyles.paginationIcon(legacySpriteUrl), organizationBoardsPaginationStyles.paginationNext, organizationBoardsPaginationStyles.paginationNextOff).className} ico btn-pg-next off`}
+                data-stylex-owner="organization-boards-pagination-next-icon"
+              ></i>
             </>
           )}
         </li>

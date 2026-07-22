@@ -6565,3 +6565,25 @@ unverified because `127.0.0.1:9000` was unavailable, and no compensating
 geometry was added. Approved Yoram footer/provider/developer-contact/repository
 differences remain intentional deviations and must not be restored. This is not
 Wave 1 completion.
+
+## Batch 828
+
+Move the authenticated populated organization boards pagination state into the
+existing organization boards StyleX boundary. Legacy organization board output
+and the pagination mount are established by
+`yona-original/app/views/organization/group_board_list.scala.html` and its
+`yona-original/app/views/organization/group_board_list_partial.scala.html`, with `yona-original/app/views/board/list.scala.html`
+confirming the equivalent populated board boundary and total-page behavior.
+Frozen `yobi.less:1-13` imports `_common.less:50-101`, `_sprites.less:1-5,97-119`,
+`_page.less:7442-7444`, and `_responsive.less`; `messages.ko-KR` supplies the
+Korean labels and the effective `margin-left:-120px !important` remains at both
+viewport sizes. React preserves the five-item organization-scoped DOM/order/copy,
+sprites, filter/order/projectNames navigation, and invalid/clamped input behavior
+while `-organization-boards.stylex.ts` owns only the traced pagination
+declarations. Focused outside-sandbox system-Chrome normal/fallback-off runs
+pass 4/4 each; local screenshots under
+`frontend/output/playwright/batch-organization-boards-pagination/` were visually
+inspected. Live legacy populated screenshot parity remains explicitly unverified
+because `127.0.0.1:9000` was unavailable, and no compensating geometry was added.
+Approved Yoram footer/provider/developer-contact/repository differences remain
+intentional deviations and must not be restored. This is not Wave 1 completion.
