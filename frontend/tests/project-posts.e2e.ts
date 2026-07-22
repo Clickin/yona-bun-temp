@@ -889,8 +889,67 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
     `${basePath}/admin/sample/posts?pageNum=2&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
   );
 
+  const routeSource = readFileSync("src/routes/$ownerName/$projectName/posts.tsx", "utf8");
+  const styleSource = readFileSync("src/routes/$ownerName/$projectName/-posts.stylex.ts", "utf8");
+  const boardScala = readFileSync("../yona-original/app/views/board/list.scala.html", "utf8");
+  const projectScala = readFileSync("../yona-original/app/views/project/list.scala.html", "utf8");
+  const commonLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const responsiveLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const spritesLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_sprites.less",
+    "utf8",
+  );
+  expect(boardScala).toContain('<div id="pagination">');
+  expect(projectScala).toContain('<div id="pagination"></div>');
+  expect(commonLess).toContain(".page-navigation-wrap {");
+  expect(commonLess).toContain(".page-nums {");
+  expect(commonLess).toContain(".input-mini {");
+  expect(pageLess).toContain(".page-nums {\n    margin-left: -120px !important;");
+  expect(responsiveLess).toContain(".page-nums {\n    margin-left: 0;");
+  expect(spritesLess).toContain(".btn-pg-prev {");
+  expect(spritesLess).toContain(".btn-pg-next {");
+  for (const owner of [
+    "project-posts-pagination",
+    "project-posts-pagination-page-nums",
+    "project-posts-pagination-prev-page",
+    "project-posts-pagination-prev-icon",
+    "project-posts-pagination-prev-label",
+    "project-posts-pagination-input-page",
+    "project-posts-pagination-input",
+    "project-posts-pagination-delimiter",
+    "project-posts-pagination-total",
+    "project-posts-pagination-next-page",
+    "project-posts-pagination-next-icon",
+    "project-posts-pagination-next-label",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  for (const declaration of [
+    "paginationWrap",
+    "paginationPageNums",
+    "paginationPageNum",
+    "paginationIconPageNum",
+    "paginationInput",
+    "paginationNoSpinner",
+    "paginationDelimiter",
+    "paginationIcon",
+    "paginationPrev",
+    "paginationPrevOff",
+    "paginationNext",
+    "paginationNextOff",
+  ]) {
+    expect(styleSource).toContain(`${declaration}:`);
+  }
+
   const pagination = page.locator("#pagination");
-  await expect(pagination).toHaveClass("page-navigation-wrap");
+  await expect(pagination).toHaveClass(/page-navigation-wrap/u);
   await expect(pagination.locator("> ul.page-nums")).toHaveCount(1);
   await expect(pagination.locator("> ul.page-nums > li")).toHaveCount(5);
   await expect(pagination.locator("li.page-num.ikon").first()).toContainText("Previous page");
@@ -901,10 +960,52 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
   const input = pagination.locator('input[name="pageNum"]');
   await expect(input).toHaveAttribute("type", "number");
   await expect(input).toHaveAttribute("pattern", "[0-9]*");
-  await expect(input).toHaveClass("input-mini nospinner");
+  await expect(input).toHaveClass(/input-mini/u);
+  await expect(input).toHaveClass(/nospinner/u);
   await expect(input).toHaveAttribute("min", "1");
   await expect(input).toHaveAttribute("max", "3");
   await expect(input).toHaveValue("2");
+  await expect(
+    pagination.locator('[data-stylex-owner="project-posts-pagination-prev-icon"]'),
+  ).toHaveCSS("width", "6px");
+  await expect(
+    pagination.locator('[data-stylex-owner="project-posts-pagination-prev-icon"]'),
+  ).toHaveCSS("height", "9px");
+  await expect(
+    pagination.locator('[data-stylex-owner="project-posts-pagination-next-icon"]'),
+  ).toHaveCSS("width", "6px");
+  await expect(
+    pagination.locator('[data-stylex-owner="project-posts-pagination-next-icon"]'),
+  ).toHaveCSS("height", "9px");
+  await expect(input).toHaveCSS("width", "30px");
+
+  const desktopMetrics = await pagination.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const pageNums = element.querySelector(".page-nums")!.getBoundingClientRect();
+    return {
+      pageNumsInside: pageNums.left >= rect.left && pageNums.right <= rect.right,
+      noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      pageNumsMarginLeft: getComputedStyle(element.querySelector(".page-nums")!).marginLeft,
+      inputBorder: getComputedStyle(element.querySelector("input")!).borderTopWidth,
+    };
+  });
+  expect(desktopMetrics).toEqual({
+    pageNumsInside: true,
+    noOverflow: true,
+    pageNumsMarginLeft: "-120px",
+    inputBorder: "1px",
+  });
+  await input.hover();
+  await expect(input).toHaveCSS("border-top-color", "rgb(243, 108, 34)");
+  await input.focus();
+  await expect(input).toHaveCSS("border-top-color", "rgb(243, 108, 34)");
+
+  const screenshotDirectory = resolve(process.cwd(), "output/playwright/batch-823");
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(screenshotDirectory, "board-pagination-desktop.png"),
+  });
 
   await expect(pagination.locator("li.page-num.ikon").first().locator("a")).toHaveAttribute(
     "href",
@@ -955,6 +1056,17 @@ test("project board list pagination matches legacy yobi.Pagination behavior", as
     `${basePath}/admin/sample/posts?pageNum=3&filter=release&labelIds=8&orderBy=createdDate&orderDir=asc`,
   );
   await expect(page.locator('#pagination input[name="pageNum"]')).toHaveValue("3");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileMetrics = await page.locator("#pagination").evaluate((element) => ({
+    pageNumsMarginLeft: getComputedStyle(element.querySelector(".page-nums")!).marginLeft,
+    noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+  }));
+  expect(mobileMetrics).toEqual({ pageNumsMarginLeft: "-120px", noOverflow: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(screenshotDirectory, "board-pagination-mobile.png"),
+  });
 });
 
 test("project board list empty state matches legacy board/list.scala.html DOM", async ({

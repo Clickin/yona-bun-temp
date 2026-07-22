@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 823 project board populated pagination
+
+- [x] Legacy `board/list.scala.html`/`project/list.scala.html` pagination mount, `_common.less:50-101` wrapper/list/item/input/label cascade, `_page.less:7442-7444` page-number offset, `_responsive.less` responsive rule, and `_sprites.less:1-5,97-119` icon geometry are mapped.
+- [x] Existing project-posts pagination behavior is now route-owned through `-posts.stylex.ts`: wrapper, page list/items, prev/next labels/icons, input/nospinner, delimiter, and total owners preserve legacy classes, DOM/order, links, and Enter/clamp behavior; the shared fallback and the other eight pagination consumers remain intact.
+- [x] Focused outside-sandbox system-Chrome normal/fallback-off checks pass 1/1 each with source mapping, owner isolation, enabled/disabled controls, input hover/focus, navigation, desktop/390px containment, and no overflow.
+- [x] Local desktop/mobile screenshots were captured and visually inspected under `frontend/output/playwright/batch-823/` (`board-pagination-desktop.png`, `board-pagination-mobile.png`).
+- [x] The effective frozen cascade is recorded: `_page.less` `margin-left:-120px !important` wins over the non-important responsive `0` declaration, so both desktop and mobile compute to `-120px`; StyleX reproduces that effective result without invented geometry.
+- [ ] Populated live legacy screenshot parity remains unverified because the legacy server at `127.0.0.1:9000` was unavailable; retain this explicit gap and do not claim live legacy visual parity.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-22 Batch 822 PR changes non-ranged review-card visible state
 
 - [x] Legacy `git/partial_reviewlist.scala.html:27-47` review-card DOM and frozen `_page.less:6191-6250` card/state/content/meta declarations are mapped; legacy diff inclusion is retained as additional evidence from `code/diff.scala.html:131-159`.
