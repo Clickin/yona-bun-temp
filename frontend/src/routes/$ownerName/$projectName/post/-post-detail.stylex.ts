@@ -233,7 +233,32 @@ export const styles = stylex.create({
     padding: "15px 0px",
   },
   commentUploadHelp: { display: "none", textAlign: "right" },
+  commentCreateWriteWrap: { position: "relative" },
   commentActions: { textAlign: "right" },
+  commentCreateDynamicButton: {
+    display: "none !important",
+    visibility: "hidden !important",
+  },
+  commentCreateSubmitButton: {
+    backgroundColor: "#FF7332 !important",
+    borderColor: "#E95E01",
+    color: "#ffffff",
+    ":hover": {
+      backgroundColor: "#E95E01 !important",
+      borderColor: "#E95E01",
+      color: "#ffffff",
+    },
+    ":focus": {
+      backgroundColor: "#E95E01 !important",
+      borderColor: "#E95E01",
+      color: "#ffffff",
+    },
+    ":active": {
+      backgroundColor: "#E95E01 !important",
+      borderColor: "#E95E01",
+      color: "#ffffff",
+    },
+  },
   commentUpdateForm: { display: "none" },
   commentUpdateFormVisible: { display: "block" },
   commentUpdateWriteBox: { padding: "10px" },

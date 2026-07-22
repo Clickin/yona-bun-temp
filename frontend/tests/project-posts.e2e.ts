@@ -2716,6 +2716,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   );
   expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
   expect(legacyCommentFormSource).toContain("@common.fileUploader(resourceType, null)");
+  expect(legacyCommentFormSource).toMatch(
+    /<div class="write-comment-wrap">\s*<div class="right-txt">\s*<button type="button" class="ybtn hidden" id="dynamic-comment-btn"><\/button>\s*<button type="submit" class="ybtn ybtn-success">@Messages\("button\.comment\.new"\)<\/button>/u,
+  );
+  for (const owner of [
+    "post-detail-comment-create-write-wrap",
+    "post-detail-comment-actions",
+    "post-detail-comment-create-dynamic-button",
+    "post-detail-comment-create-submit",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
   expect(legacyUploadFormSource).toMatch(
     /<div[\s\S]*?class="upload-wrap content-footer"[\s\S]*?<div class="attach-wrap">[\s\S]*?<div class="btn-wrap">[\s\S]*?<div class="nbtn medium white fake-file-wrap">[\s\S]*?<input type="file" class="file" name="filePath" multiple="multiple">/u,
   );
@@ -2733,6 +2744,31 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   }
   expect(legacyPageSource).toMatch(
     /\.write-comment-box\s*\{[\s\S]*?\.upload-wrap\s*\{\s*background:#efefef;\s*padding:10px; margin-bottom:10px;\s*\.border-radius\(0px 0px 5px 5px\);/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.write-comment-wrap\s*\{\s*position:\s*relative;/u,
+  );
+  expect(legacyCommonSource).toContain(".right-txt     { text-align:right; }");
+  expect(legacyCommonSource).toMatch(
+    /\.hidden\s*\{\s*display:\s*none !important;\s*visibility:\s*hidden !important;/u,
+  );
+  for (const declaration of [
+    "@yobi-orange : #FF7332;",
+    "@yobi-orange-dark : #E95E01;",
+    "@yobi-primary : @yobi-orange;",
+    "@yobi-btn-primary : @yobi-primary;",
+    "@yobi-btn-primary-hover : @yobi-orange-dark;",
+  ]) {
+    expect(legacyVariablesSource).toContain(declaration);
+  }
+  expect(legacyYobiUiSource).toMatch(
+    /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?text-align\s*:center;[\s\S]*?background-color:\s*@yobi-btn-default;[\s\S]*?\.border-radius\(3px\)\s*!important;[\s\S]*?padding:\s*4px 12px !important;[\s\S]*?font-size:\s*14px;[\s\S]*?margin-left:\s*\.3em;[\s\S]*?border:\s*1px solid rgba\(0,0,0,\.15\);/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /&\.ybtn-primary, &\.ybtn-success,[\s\S]*?color:@yobi-white;[\s\S]*?&\.ybtn-success\s*\{\s*background-color\s*:\s*@yobi-btn-primary !important;\s*border:1px solid @yobi-btn-primary-hover;[\s\S]*?&:hover, &:focus, &:active, &:focus\s*\{\s*background-color:\s*@yobi-btn-primary-hover !important;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /button,\s*input,\s*select,\s*textarea\s*\{\s*margin:\s*0;\s*font-size:\s*100%;\s*vertical-align:\s*middle;[\s\S]*?button,\s*input\s*\{[\s\S]*?line-height:\s*normal;[\s\S]*?input\[type="submit"\]\s*\{\s*cursor:\s*pointer;\s*-webkit-appearance:\s*button;/u,
   );
   expect(legacyPageSource).toMatch(
     /\.upload-wrap\s*\{\s*padding:10px !important;[\s\S]*?\.attach-wrap\s*\{\s*text-align:center;[\s\S]*?\.btn-wrap\s*\{\s*display:inline-block !important;\s*margin:0 5px; vertical-align:top;/u,
@@ -2766,6 +2802,20 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   );
   expect(styleSource).toMatch(
     /commentUploadHelp:\s*\{ display:\s*"none", textAlign:\s*"right" \}/u,
+  );
+  expect(styleSource).toMatch(/commentCreateWriteWrap:\s*\{ position:\s*"relative" \}/u);
+  expect(styleSource).toMatch(/commentActions:\s*\{ textAlign:\s*"right" \}/u);
+  expect(styleSource).toMatch(
+    /commentCreateDynamicButton:\s*\{\s*display:\s*"none !important",\s*visibility:\s*"hidden !important"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentCreateSubmitButton:\s*\{[\s\S]*?backgroundColor:\s*"#FF7332 !important"[\s\S]*?borderColor:\s*"#E95E01"[\s\S]*?color:\s*"#ffffff"[\s\S]*?":hover"[\s\S]*?"#E95E01 !important"[\s\S]*?":focus"[\s\S]*?"#E95E01 !important"[\s\S]*?":active"[\s\S]*?"#E95E01 !important"/u,
+  );
+  expect(routeSource).toMatch(
+    /commentCreateDynamicButton:\s*stylex\.props\(\s*styles\.commentUpdateActionButton,\s*styles\.commentCreateDynamicButton,/u,
+  );
+  expect(routeSource).toMatch(
+    /commentCreateSubmitButton:\s*stylex\.props\(\s*styles\.commentUpdateActionButton,\s*styles\.commentCreateSubmitButton,/u,
   );
   for (const owner of [
     "post-detail-comment-upload-wrap",
@@ -2829,6 +2879,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyKoreanMessagesSource).toContain("common.editor.edit = 편집");
   expect(legacyKoreanMessagesSource).toContain("common.editor.preview = 미리보기");
   expect(legacyKoreanMessagesSource).toContain("button.add.checklist = 체크리스트 추가");
+  expect(legacyKoreanMessagesSource).toContain("button.comment.new = 댓글 입력");
   expect(legacyKoreanMessagesSource).toContain(
     "common.attach.drophere = 첨부할 파일을 끌어다 놓거나",
   );
@@ -2991,6 +3042,18 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
     );
     const uploadHelp = upload.locator('[data-stylex-owner="post-detail-comment-upload-help"]');
+    const createWriteWrap = commentForm.locator(
+      '[data-stylex-owner="post-detail-comment-create-write-wrap"]',
+    );
+    const createActions = createWriteWrap.locator(
+      '[data-stylex-owner="post-detail-comment-actions"]',
+    );
+    const createDynamicButton = createActions.locator(
+      '[data-stylex-owner="post-detail-comment-create-dynamic-button"]',
+    );
+    const createSubmit = createActions.locator(
+      '[data-stylex-owner="post-detail-comment-create-submit"]',
+    );
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
@@ -3084,6 +3147,43 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(uploadHelp).toHaveCSS("display", "none");
     await expect(uploadHelp).toHaveCSS("text-align", "right");
     await expect(uploadHelp).toContainText("표시된 파일은 글을 저장하면 첨부됩니다.");
+    await expect(createWriteWrap).toHaveClass(/write-comment-wrap/u);
+    await expect(createWriteWrap).toHaveCSS("position", "relative");
+    await expect(createActions).toHaveClass(/right-txt/u);
+    await expect(createActions).toHaveCSS("text-align", "right");
+    await expect(createDynamicButton).toHaveClass(/ybtn hidden/u);
+    await expect(createDynamicButton).toHaveAttribute("id", "dynamic-comment-btn");
+    await expect(createDynamicButton).toHaveAttribute("type", "button");
+    await expect(createDynamicButton).toHaveCSS("display", "none");
+    await expect(createDynamicButton).toHaveCSS("visibility", "hidden");
+    await expect(createSubmit).toHaveClass(/ybtn ybtn-success/u);
+    await expect(createSubmit).toHaveAttribute("type", "submit");
+    await expect(createSubmit).toHaveText("댓글 입력");
+    await expect(createSubmit).toHaveCSS("background-color", "rgb(255, 115, 50)");
+    await expect(createSubmit).toHaveCSS("border", "1px solid rgb(233, 94, 1)");
+    await expect(createSubmit).toHaveCSS("border-radius", "3px");
+    await expect(createSubmit).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px");
+    await expect(createSubmit).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(createSubmit).toHaveCSS("cursor", "pointer");
+    await expect(createSubmit).toHaveCSS("display", "inline-block");
+    await expect(createSubmit).toHaveCSS("font-size", "14px");
+    await expect(createSubmit).toHaveCSS("line-height", "20px");
+    await expect(createSubmit).toHaveCSS("margin-bottom", "0px");
+    await expect(createSubmit).toHaveCSS("padding", "4px 12px");
+    await expect(createSubmit).toHaveCSS("position", "relative");
+    await expect(createSubmit).toHaveCSS("text-align", "center");
+    await expect(createSubmit).toHaveCSS("vertical-align", "middle");
+    await expect(createSubmit).toHaveCSS("white-space", "nowrap");
+    await expect(
+      commentForm.locator(
+        '[data-stylex-owner="post-detail-comment-create-write-wrap"], [data-stylex-owner="post-detail-comment-actions"], [data-stylex-owner="post-detail-comment-create-dynamic-button"], [data-stylex-owner="post-detail-comment-create-submit"]',
+      ),
+    ).toHaveCount(4);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner="post-detail-comment-create-write-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-actions"], .comment-update-form [data-stylex-owner="post-detail-comment-create-dynamic-button"], .comment-update-form [data-stylex-owner="post-detail-comment-create-submit"]',
+      ),
+    ).toHaveCount(0);
     await expect(
       commentForm.locator(
         '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
@@ -3188,7 +3288,9 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
           overflow: style.overflow,
           position: style.position,
           right: rect.right,
+          textAlign: style.textAlign,
           top: rect.top,
+          visibility: style.visibility,
           width: rect.width,
         };
       };
@@ -3235,6 +3337,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
           '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
         ),
         uploadHelp: measure('[data-stylex-owner="post-detail-comment-upload-help"]'),
+        createWriteWrap: measure('[data-stylex-owner="post-detail-comment-create-write-wrap"]'),
+        createActions: measure('[data-stylex-owner="post-detail-comment-actions"]'),
+        createDynamicButton: measure(
+          '[data-stylex-owner="post-detail-comment-create-dynamic-button"]',
+        ),
+        createSubmit: measure('[data-stylex-owner="post-detail-comment-create-submit"]'),
+        createActionOrder: Array.from(
+          form.querySelectorAll<HTMLElement>(
+            '[data-stylex-owner="post-detail-comment-actions"] > [data-stylex-owner]',
+          ),
+        ).map((element) => element.dataset.stylexOwner),
         uploadResidualOrder: Array.from(
           form.querySelectorAll<HTMLElement>(
             '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
@@ -3304,6 +3417,31 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       expect(hidden.top).toBe(0);
       expect(hidden.bottom).toBe(0);
     }
+    expect(metrics.createActionOrder).toEqual([
+      "post-detail-comment-create-dynamic-button",
+      "post-detail-comment-create-submit",
+    ]);
+    expect(metrics.createWriteWrap.position).toBe("relative");
+    expect(metrics.createActions.textAlign).toBe("right");
+    expect(metrics.createDynamicButton).toMatchObject({
+      display: "none",
+      height: 0,
+      visibility: "hidden",
+      width: 0,
+    });
+    expect(metrics.createDynamicButton.left).toBe(0);
+    expect(metrics.createDynamicButton.right).toBe(0);
+    expect(metrics.createDynamicButton.top).toBe(0);
+    expect(metrics.createDynamicButton.bottom).toBe(0);
+    expect(metrics.createSubmit.left).toBeGreaterThanOrEqual(metrics.createActions.left);
+    expect(metrics.createSubmit.right).toBeLessThanOrEqual(metrics.createActions.right);
+    expect(metrics.createSubmit.top).toBeGreaterThanOrEqual(metrics.createActions.top);
+    expect(metrics.createSubmit.bottom).toBeLessThanOrEqual(metrics.createActions.bottom);
+    expect(metrics.createActions.left).toBeGreaterThanOrEqual(metrics.createWriteWrap.left);
+    expect(metrics.createActions.right).toBeLessThanOrEqual(metrics.createWriteWrap.right);
+    expect(metrics.createActions.top).toBeGreaterThanOrEqual(metrics.createWriteWrap.top);
+    expect(metrics.createActions.bottom).toBeLessThanOrEqual(metrics.createWriteWrap.bottom);
+    expect(metrics.createWriteWrap.top).toBeGreaterThanOrEqual(metrics.upload.bottom);
     expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
     expect(metrics.clearTemporary.left).toBe(0);
     expect(metrics.clearTemporary.right).toBe(0);
@@ -3384,6 +3522,26 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
 
     await textarea.fill("Boundary **preview**");
     const urlBeforePreview = page.url();
+    const valueBeforeSubmitStates = await textarea.inputValue();
+    await createSubmit.hover();
+    await expect(createSubmit).toHaveCSS("background-color", "rgb(233, 94, 1)");
+    await expect(createSubmit).toHaveCSS("border-color", "rgb(233, 94, 1)");
+    await expect(createSubmit).toHaveCSS("color", "rgb(255, 255, 255)");
+    expect(page.url()).toBe(urlBeforePreview);
+    await expect(textarea).toHaveValue(valueBeforeSubmitStates);
+    await createSubmit.focus();
+    await expect(createSubmit).toBeFocused();
+    await expect(createSubmit).toHaveCSS("background-color", "rgb(233, 94, 1)");
+    expect(page.url()).toBe(urlBeforePreview);
+    await expect(textarea).toHaveValue(valueBeforeSubmitStates);
+    await createSubmit.hover();
+    await page.mouse.down();
+    await expect(createSubmit).toHaveCSS("background-color", "rgb(233, 94, 1)");
+    await expect(createSubmit).toHaveCSS("color", "rgb(255, 255, 255)");
+    await page.mouse.move(0, 0);
+    await page.mouse.up();
+    expect(page.url()).toBe(urlBeforePreview);
+    await expect(textarea).toHaveValue(valueBeforeSubmitStates);
     await previewTab.click();
     await expect(editPane).toHaveCSS("display", "none");
     await expect(previewPane).toHaveCSS("display", "block");

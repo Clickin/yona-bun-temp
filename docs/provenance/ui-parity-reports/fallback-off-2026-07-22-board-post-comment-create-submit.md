@@ -1,0 +1,9 @@
+# Batch 808: Board-post new-comment submit area
+
+- Route/state: authenticated populated `/admin/sample/post/1`, new-comment submit area.
+- Legacy basis: `board/view.scala.html` → `common/commentForm.scala.html`; frozen `_page.less`, `_common.less`, `_yobiUI.less`, Bootstrap button resets, variables, and complete `yobi.less` order.
+- Ownership: exactly four NEW-comment-only owners for the relative write wrapper, right-aligned action row, hidden dynamic-comment button, and orange submit button. The declaration-identical generic button group is reused from the update-comment action controls. Upload content, update controls, unauthorized state, and mutation/API behavior remain excluded.
+- Browser gate: outside-sandbox system Chrome passed normal and `VITE_DISABLE_LEGACY_FALLBACK=1` 1/1 each at desktop/390px with source and final-cascade proof, owner isolation, exact default/hover/focus/active declarations, hidden zero geometry, order, containment, and URL/textarea-value stability. An attempted duplicate submit-request assertion was removed because submit mutation behavior already has separate coverage and is outside this styling wave.
+- Screenshot gate: inspected `output/playwright/batch-808/{legacy,local}-{desktop,mobile}.png`. Both viewports confirm the visible orange `댓글 입력` button is right-aligned directly below the gray upload wrapper with matching paint, border, radius, copy, and relative geometry. Seed and fixture content differ.
+- Approved deviation: `Yoram authors`, removal of NAVER/NAVER LABS, upstream Yona repository, and developer-contact items, plus their downstream geometry, are explicit user-approved deviations rather than parity gaps and must not be restored or compensated for.
+- Deferred: remaining new-comment consumers and shared fallback remain active for later waves.

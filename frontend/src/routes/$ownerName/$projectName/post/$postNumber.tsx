@@ -78,6 +78,16 @@ const sx = {
   commentUploadPastable: stylex.props(styles.commentUploadPastable),
   commentUploadAttachedFiles: stylex.props(styles.commentUploadAttachedFiles),
   commentUploadHelp: stylex.props(styles.commentUploadHelp),
+  commentCreateWriteWrap: stylex.props(styles.commentCreateWriteWrap),
+  commentActions: stylex.props(styles.commentActions),
+  commentCreateDynamicButton: stylex.props(
+    styles.commentUpdateActionButton,
+    styles.commentCreateDynamicButton,
+  ),
+  commentCreateSubmitButton: stylex.props(
+    styles.commentUpdateActionButton,
+    styles.commentCreateSubmitButton,
+  ),
   comments: stylex.props(styles.comments),
   commentHeader: stylex.props(styles.commentHeader),
   commentHeaderIcon: stylex.props(styles.commentHeaderIcon),
@@ -1390,13 +1400,25 @@ function PostCommentForm({
             <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
           </p>
         </div>
-        <div className="write-comment-wrap">
+        <div
+          className={`${sx.commentCreateWriteWrap.className} write-comment-wrap`}
+          data-stylex-owner="post-detail-comment-create-write-wrap"
+        >
           <div
-            {...stylex.props(styles.commentActions)}
+            className={`${sx.commentActions.className} right-txt`}
             data-stylex-owner="post-detail-comment-actions"
           >
-            <button type="button" className="ybtn hidden" id="dynamic-comment-btn"></button>
-            <button type="submit" className="ybtn ybtn-success">
+            <button
+              type="button"
+              className={`${sx.commentCreateDynamicButton.className} ybtn hidden`}
+              data-stylex-owner="post-detail-comment-create-dynamic-button"
+              id="dynamic-comment-btn"
+            ></button>
+            <button
+              type="submit"
+              className={`${sx.commentCreateSubmitButton.className} ybtn ybtn-success`}
+              data-stylex-owner="post-detail-comment-create-submit"
+            >
               {t("button.comment.new")}
             </button>
           </div>
