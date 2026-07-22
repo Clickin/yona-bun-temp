@@ -1772,3 +1772,11 @@ desktop/mobile geometry, and filtering.
   system-Chrome checks pass 4/4; live legacy parity is unverified because the
   populated legacy instance is unavailable. The approved Yoram
   footer/provider/contact/repository deviation remains intentional.
+
+### 2026-07-23 Batch 831 authenticated populated user-issues pagination
+
+- [x] Legacy controller/view partials, full frozen LESS import chain, sprites, and Korean messages are mapped.
+- [x] `user/issues.tsx` and `-issues.stylex.ts` preserve five direct items, Korean labels, sprites, `/user/issues` query parameters, TanStack navigation, and invalid/clamped Enter behavior while moving only exact pagination geometry/paint route-locally.
+- [x] Focused managed dynamic-port system-Chrome normal/fallback-off checks pass 4/4 each; screenshots were captured under `frontend/output/playwright/stylex-user-issues-pagination/`.
+- [ ] Live legacy populated rendering is unavailable, so parity is explicitly unverified; no compensating geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.

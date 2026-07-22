@@ -6618,3 +6618,7 @@ queries, and invalid/clamped Enter behavior. Live legacy populated rendering
 is unavailable, so parity is explicitly unverified; no compensating geometry
 was added. The approved Yoram footer/provider/developer-contact/repository
 difference remains intentional.
+
+## Batch 831
+
+Move authenticated populated `/user/issues` pagination into the existing route-local StyleX boundary. Legacy sources are `IssueApp.userIssues`/`issuesAsHTML`, `issue/my_list.scala.html`, `my_partial_search.scala.html`, `my_partial_list.scala.html`, and `my_partial_list_quicksearch.scala.html`; frozen `yobi.less` imports `_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, and `_responsive.less`, with `messages.ko-KR` supplying labels. React preserves the five direct `li` items, sprites, `/user/issues` filter/order/state/query/pageNum parameters, existing TanStack navigation, and invalid/clamped Enter behavior. Live legacy populated rendering is unavailable, so parity is explicitly unverified; no compensating geometry was added. The approved Yoram footer/provider/developer-contact/repository difference remains intentional.
