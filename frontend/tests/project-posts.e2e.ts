@@ -5229,6 +5229,183 @@ test("project board detail renders legacy parent comments", async ({ page }) => 
   );
 });
 
+test("project board detail auto-links populated parent rich Markdown", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  await mockProjectPosts(page, "parentRichMarkdown");
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(`${basePath}/admin/sample/post/3`);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyAutoLinkSource = readFileSync(
+    "../yona-original/app/utils/AutoLinkRenderer.java",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const owners = [
+    "post-detail-parent-comment-no-text-decoration",
+    "post-detail-parent-comment-user-link",
+    "post-detail-parent-comment-project-link",
+    "post-detail-parent-comment-organization-link",
+    "post-detail-parent-comment-issue-state-open",
+    "post-detail-parent-comment-issue-state-closed",
+  ] as const;
+
+  expect(legacyViewSource).toContain("@partial_comments(project, post)");
+  expect(legacyCommentsSource).toContain("Markdown.render(comment.contents, project)");
+  expect(legacyAutoLinkSource).toMatch(
+    /return new Link\(RouteUtil\.getUrl\(user\), "no-text-decoration user-link",/u,
+  );
+  expect(legacyAutoLinkSource).toContain("<span class='org-link'>@");
+  expect(legacyAutoLinkSource).toContain("<span class='project-link'>@");
+  expect(legacyAutoLinkSource).toContain("<span class='issue-state ");
+  expect(legacyPageSource).toMatch(
+    /\.user-link\s*\{[\s\S]*?border:\s*1px solid #4FC3F7;[\s\S]*?background-color:\s*#4FC3F7;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.project-link, \.org-link\s*\{[\s\S]*?border:\s*1px solid #9741ff;[\s\S]*?background-color:\s*#9741ff;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.issue-state\s*\{[\s\S]*?&\.open\s*\{[\s\S]*?background-color:\s*#2ea043;[\s\S]*?&\.closed\s*\{[\s\S]*?background-color:\s*#da3733;/u,
+  );
+  expect(legacyYobiSource.indexOf('@import "less/_page.less";')).toBeLessThan(
+    legacyYobiSource.indexOf('@import "less/_responsive.less";'),
+  );
+  expect(routeSource).toContain("createParentCommentMarkdownAutoLinkPlugin");
+  expect(routeSource).toContain("createParentCommentMarkdownComponents");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  for (const owner of owners) {
+    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+  }
+  expect(styleSource).toContain("parentCommentUserLink:");
+  expect(styleSource).toContain("parentCommentProjectLink:");
+  expect(styleSource).toContain("parentCommentOrganizationLink:");
+  expect(styleSource).toContain("parentCommentIssueStateOpen:");
+  expect(styleSource).toContain("parentCommentIssueStateClosed:");
+
+  const commentBody = page.locator("#comment-21 .comment-body.markdown-wrap");
+  await expect(commentBody).toHaveAttribute("data-via-email", "false");
+  await expect(commentBody).toContainText("Parent");
+  const paragraph = commentBody.locator(":scope > p");
+  const userLink = paragraph.locator("a.no-text-decoration");
+  const organizationLink = paragraph.locator("a:has(> span.org-link)");
+  const projectLink = paragraph.locator("a:has(> span.project-link)");
+  const issueLinks = paragraph.locator("a.issueLink");
+  await expect(paragraph.locator(":scope > a, :scope > span")).toHaveCount(5);
+  await expect(userLink).toHaveText("@Dev Member");
+  await expect(userLink).toHaveAttribute("href", `${basePath}/dev`);
+  await expect(userLink).toHaveCSS("background-color", "rgb(79, 195, 247)");
+  await expect(organizationLink).toHaveText("@Team");
+  await expect(organizationLink).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(projectLink).toHaveText("@other/cross");
+  await expect(projectLink).toHaveAttribute("href", `${basePath}/other/cross`);
+  await expect(issueLinks).toHaveCount(2);
+  await expect(issueLinks.nth(0)).toContainText("#11.Open parent Markdown");
+  await expect(issueLinks.nth(0)).toHaveAttribute("href", `${basePath}/admin/sample/issue/11`);
+  await expect(issueLinks.nth(0).locator(".issue-state.open")).toHaveText("Open");
+  await expect(issueLinks.nth(1)).toContainText("#12.Closed parent Markdown");
+  await expect(issueLinks.nth(1)).toHaveAttribute("href", `${basePath}/admin/sample/issue/12`);
+  await expect(issueLinks.nth(1).locator(".issue-state.closed")).toHaveText("Closed");
+  await expectNoTanStackActiveAttrs(userLink);
+  await expectNoTanStackActiveAttrs(organizationLink);
+  await expectNoTanStackActiveAttrs(projectLink);
+  await expectNoTanStackActiveAttrs(issueLinks.nth(0));
+  await userLink.hover();
+  await expect(userLink).toHaveCSS("background-color", "rgb(79, 195, 247)");
+  await issueLinks.nth(1).locator(".issue-state.closed").hover();
+  await expect(issueLinks.nth(1).locator(".issue-state.closed")).toHaveCSS(
+    "text-decoration-line",
+    "none",
+  );
+
+  const desktopMetrics = await commentBody.evaluate((body) => {
+    const bodyRect = body.getBoundingClientRect();
+    const links = [
+      ...body.querySelectorAll(
+        "a.no-text-decoration, a:has(> span.org-link), a:has(> span.project-link), a.issueLink",
+      ),
+    ];
+    return {
+      linksInside: links.every((link) => {
+        const rect = link.getBoundingClientRect();
+        return rect.left >= bodyRect.left && rect.right <= bodyRect.right + 1;
+      }),
+      noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      userBackground: getComputedStyle(body.querySelector("a.no-text-decoration")!).backgroundColor,
+      projectBackground: getComputedStyle(body.querySelector(".project-link")!).backgroundColor,
+      openBackground: getComputedStyle(body.querySelector(".issue-state.open")!).backgroundColor,
+      closedBackground: getComputedStyle(body.querySelector(".issue-state.closed")!)
+        .backgroundColor,
+    };
+  });
+  expect(desktopMetrics).toEqual({
+    linksInside: true,
+    noOverflow: true,
+    userBackground: "rgb(79, 195, 247)",
+    projectBackground: "rgb(151, 65, 255)",
+    openBackground: "rgb(46, 160, 67)",
+    closedBackground: "rgb(218, 55, 51)",
+  });
+
+  const screenshotDirectory = resolve(process.cwd(), "../output/playwright");
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      screenshotDirectory,
+      "batch-818-local-board-post-parent-rich-markdown-desktop.png",
+    ),
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileMetrics = await commentBody.evaluate((body) => {
+    const bodyRect = body.getBoundingClientRect();
+    const richNodes = [
+      ...body.querySelectorAll(".user-link, .project-link, .org-link, .issue-state"),
+    ];
+    return {
+      inside: richNodes.every((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.left >= bodyRect.left && rect.right <= bodyRect.right + 1;
+      }),
+      noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      userPadding: getComputedStyle(body.querySelector("a.no-text-decoration")!).padding,
+      issueStatePadding: getComputedStyle(body.querySelector(".issue-state.open")!).padding,
+    };
+  });
+  expect(mobileMetrics).toEqual({
+    inside: true,
+    noOverflow: true,
+    userPadding: "0px 2px",
+    issueStatePadding: "0px 3px",
+  });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      screenshotDirectory,
+      "batch-818-local-board-post-parent-rich-markdown-mobile.png",
+    ),
+  });
+});
+
 test("project board detail folds original message content in via-email comments", async ({
   page,
 }) => {
@@ -8886,7 +9063,8 @@ async function mockProjectPosts(
     | "commentUpdate"
     | "viaEmailComment"
     | "attachments"
-    | "childComment" = "default",
+    | "childComment"
+    | "parentRichMarkdown" = "default",
   overrides: Record<string, unknown> = {},
 ) {
   const ownerName = String(overrides.__ownerName ?? "admin");
@@ -9141,7 +9319,8 @@ async function mockProjectPosts(
             state === "comment" ||
             state === "commentUpdate" ||
             state === "viaEmailComment" ||
-            state === "attachments"
+            state === "attachments" ||
+            state === "parentRichMarkdown"
               ? 1
               : state === "childComment"
                 ? 2
@@ -9151,6 +9330,7 @@ async function mockProjectPosts(
             state === "commentUpdate" ||
             state === "viaEmailComment" ||
             state === "attachments" ||
+            state === "parentRichMarkdown" ||
             state === "childComment"
               ? [
                   {
@@ -9172,9 +9352,56 @@ async function mockProjectPosts(
                     contentsMarkdown:
                       state === "viaEmailComment"
                         ? "Reply before quoted mail.\n\n---- Original Message ----\nOriginal author wrote:\n\n> Quoted original line"
-                        : "First **comment**",
+                        : state === "parentRichMarkdown"
+                          ? "Parent @dev references @weblabs, @other/cross, #11, and #12."
+                          : "First **comment**",
                     createdLabel: "Jul 3, 2026",
                     id: "21",
+                    issueReferences:
+                      state === "parentRichMarkdown"
+                        ? [
+                            {
+                              issueNumber: 11,
+                              ownerName,
+                              projectName,
+                              state: "Open",
+                              title: "Open parent Markdown",
+                            },
+                            {
+                              issueNumber: 12,
+                              ownerName,
+                              projectName,
+                              state: "Closed",
+                              title: "Closed parent Markdown",
+                            },
+                          ]
+                        : undefined,
+                    mentionReferences:
+                      state === "parentRichMarkdown"
+                        ? [
+                            {
+                              kind: "user",
+                              label: "Dev Member",
+                              loginId: "dev",
+                              ownerName: "",
+                              projectName: "",
+                            },
+                            {
+                              kind: "organization",
+                              label: "Team",
+                              loginId: "weblabs",
+                              ownerName: "",
+                              projectName: "",
+                            },
+                            {
+                              kind: "project",
+                              label: "other/cross",
+                              loginId: "other/cross",
+                              ownerName: "other",
+                              projectName: "cross",
+                            },
+                          ]
+                        : undefined,
                     parentCommentId: "",
                     viaEmail: state === "viaEmailComment",
                   },

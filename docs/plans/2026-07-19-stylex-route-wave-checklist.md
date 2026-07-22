@@ -24,6 +24,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   Open/Closed states render in the expected child Markdown order; approved
   Yoram footer/contact/repository drift remains excluded.
 
+### 2026-07-22 Batch 818 board-post parent rich Markdown auto-links
+
+- [x] Six parent-only owners translate the legacy user, organization, project,
+  open-issue, and closed-issue Markdown link states; the via-email original
+  message toggle remains intact.
+- [x] Outside-sandbox system-Chrome normal/fallback-off focused runs pass 1/1
+  after correcting the fallback-off user badge ownership from the nested span
+  to the legacy anchor; desktop/390px link order, hrefs, colors, hover, and
+  containment remain covered.
+- [x] Fresh desktop/mobile screenshots were captured and visually inspected.
+  The approved Yoram footer/contact/repository identity diff remains an
+  intentional deviation and is not a parity gap.
+
 ### 2026-07-22 Batch 816 board-post child rich Markdown
 
 - [x] Five child-only owners cover mention/issue links, open issue-state badge,

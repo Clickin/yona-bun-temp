@@ -88,6 +88,16 @@ const sx = {
   childCommentOrganizationLink: stylex.props(styles.childCommentOrganizationLink),
   childCommentBlockquote: stylex.props(styles.childCommentBlockquote),
   childCommentBlockquoteParagraph: stylex.props(styles.childCommentBlockquoteParagraph),
+  parentCommentNoTextDecoration: stylex.props(styles.parentCommentNoTextDecoration),
+  parentCommentUserLink: stylex.props(styles.parentCommentUserLink),
+  parentCommentUserAnchor: stylex.props(
+    styles.parentCommentUserLink,
+    styles.parentCommentNoTextDecoration,
+  ),
+  parentCommentProjectLink: stylex.props(styles.parentCommentProjectLink),
+  parentCommentOrganizationLink: stylex.props(styles.parentCommentOrganizationLink),
+  parentCommentIssueStateOpen: stylex.props(styles.parentCommentIssueStateOpen),
+  parentCommentIssueStateClosed: stylex.props(styles.parentCommentIssueStateClosed),
   commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
@@ -1722,6 +1732,7 @@ function PostCommentRow({
             data-yobi-original-message-processed={hasRouteOwnedOriginalMessage ? "true" : undefined}
           >
             <OriginalMessageMarkdown
+              comment={comment}
               contentsMarkdown={comment.contentsMarkdown}
               viaEmail={viaEmail}
             />
@@ -1754,22 +1765,32 @@ function PostCommentRow({
 }
 
 function OriginalMessageMarkdown({
+  comment,
   contentsMarkdown,
   viaEmail,
 }: {
+  comment: BoardPostComment;
   contentsMarkdown: string;
   viaEmail: boolean;
 }) {
   const [showsOriginalMessage, setShowsOriginalMessage] = useState(false);
   const originalMessage = viaEmail ? splitOriginalMessageMarkdown(contentsMarkdown) : null;
+  const markdownAutoLinkPlugin = createParentCommentMarkdownAutoLinkPlugin(comment);
+  const components = createParentCommentMarkdownComponents();
 
   if (!originalMessage) {
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentsMarkdown}</ReactMarkdown>;
+    return (
+      <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+        {contentsMarkdown}
+      </ReactMarkdown>
+    );
   }
 
   return (
     <>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.visibleMarkdown}</ReactMarkdown>
+      <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+        {originalMessage.visibleMarkdown}
+      </ReactMarkdown>
       <button
         type="button"
         {...sx.originalMessageToggle}
@@ -1783,7 +1804,9 @@ function OriginalMessageMarkdown({
         ...
       </button>
       <div data-original-message-owner="route" hidden={!showsOriginalMessage}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{originalMessage.hiddenMarkdown}</ReactMarkdown>
+        <ReactMarkdown components={components} remarkPlugins={[remarkGfm, markdownAutoLinkPlugin]}>
+          {originalMessage.hiddenMarkdown}
+        </ReactMarkdown>
       </div>
     </>
   );
@@ -1802,6 +1825,100 @@ function splitOriginalMessageMarkdown(contentsMarkdown: string) {
   return {
     visibleMarkdown: lines.slice(0, delimiterIndex).join("\n").trimEnd(),
     hiddenMarkdown: lines.slice(delimiterIndex).join("\n").trim(),
+  };
+}
+
+function createParentCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
+  return createChildCommentMarkdownAutoLinkPlugin(comment);
+}
+
+function createParentCommentMarkdownComponents(): Components {
+  return {
+    span: ({ children, className, node: _node, ...props }) => {
+      if (className === "issue-state open") {
+        return (
+          <span
+            {...props}
+            {...sx.parentCommentIssueStateOpen}
+            className={`${sx.parentCommentIssueStateOpen.className} ${className}`}
+            data-stylex-owner="post-detail-parent-comment-issue-state-open"
+          >
+            {children}
+          </span>
+        );
+      }
+      if (className === "issue-state closed") {
+        return (
+          <span
+            {...props}
+            {...sx.parentCommentIssueStateClosed}
+            className={`${sx.parentCommentIssueStateClosed.className} ${className}`}
+            data-stylex-owner="post-detail-parent-comment-issue-state-closed"
+          >
+            {children}
+          </span>
+        );
+      }
+      if (className === "project-link") {
+        return (
+          <span
+            {...props}
+            {...sx.parentCommentProjectLink}
+            className={`${sx.parentCommentProjectLink.className} ${className}`}
+            data-stylex-owner="post-detail-parent-comment-project-link"
+          >
+            {children}
+          </span>
+        );
+      }
+      if (className === "org-link") {
+        return (
+          <span
+            {...props}
+            {...sx.parentCommentOrganizationLink}
+            className={`${sx.parentCommentOrganizationLink.className} ${className}`}
+            data-stylex-owner="post-detail-parent-comment-organization-link"
+          >
+            {children}
+          </span>
+        );
+      }
+      return (
+        <span {...props} className={className}>
+          {children}
+        </span>
+      );
+    },
+    a: ({ children, className, href, node: _node, ...props }) => {
+      if (!href) return <>{children}</>;
+      const noTextDecoration = className?.split(" ").includes("no-text-decoration") ?? false;
+      if (noTextDecoration) {
+        return (
+          <Link
+            {...props}
+            {...sx.parentCommentUserAnchor}
+            to={href as "/"}
+            className={`${sx.parentCommentUserAnchor.className} ${className} user-link`}
+            data-stylex-owner="post-detail-parent-comment-user-link"
+            activeProps={legacyRouteLocalActiveProps}
+          >
+            <span data-stylex-owner="post-detail-parent-comment-no-text-decoration">
+              {children}
+            </span>
+          </Link>
+        );
+      }
+      return (
+        <Link
+          {...props}
+          to={href as "/"}
+          className={className}
+          activeProps={legacyRouteLocalActiveProps}
+        >
+          {children}
+        </Link>
+      );
+    },
   };
 }
 
