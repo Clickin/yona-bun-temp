@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 798 board-post comment-update actions
+
+- [x] Upload label, Cancel, and Save compose one exact frozen generic `.ybtn`
+  owner; label display/transition and Save info paint remain final variants.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at desktop/390px
+  with default/hover/focus paint, order, containment, button alignment,
+  non-overlap, cancel, and save coverage.
+- [x] Fresh actual legacy/local form screenshots were captured and inspected.
+  Target action controls match; fixture body/tab differences and all non-action
+  editor consumers remain outside this three-owner wave.
+
 ### 2026-07-22 Batch 797 board-post comment-update textarea/upload
 
 - [x] Four route-local owners carry the final frozen textarea and upload

@@ -1716,8 +1716,16 @@ function PostCommentUpdateForm({
   const updateWriteBoxStyle = stylex.props(styles.commentUpdateWriteBox);
   const updateActionsStyle = stylex.props(styles.commentUpdateActions);
   const updateFileUploadStyle = stylex.props(styles.commentUpdateFileUpload);
-  const updateFileUploadLabelStyle = stylex.props(styles.commentUpdateFileUploadLabel);
+  const updateFileUploadLabelStyle = stylex.props(
+    styles.commentUpdateActionButton,
+    styles.commentUpdateFileUploadLabel,
+  );
   const updateFileUploadInputStyle = stylex.props(styles.commentUpdateFileUploadInput);
+  const updateCancelButtonStyle = stylex.props(styles.commentUpdateActionButton);
+  const updateSaveButtonStyle = stylex.props(
+    styles.commentUpdateActionButton,
+    styles.commentUpdateSaveButton,
+  );
 
   return (
     <div
@@ -1782,8 +1790,10 @@ function PostCommentUpdateForm({
                 />
               </span>
               <button
+                {...updateCancelButtonStyle}
                 type="button"
-                className="ybtn ybtn-cancel"
+                className={`${updateCancelButtonStyle.className} ybtn ybtn-cancel`}
+                data-stylex-owner="post-detail-comment-update-cancel"
                 data-comment-id={commentId}
                 onClick={(event) => {
                   event.preventDefault();
@@ -1794,7 +1804,12 @@ function PostCommentUpdateForm({
                 {t("button.cancel")}
               </button>
               {canUpdate ? (
-                <button type="submit" className="ybtn ybtn-info">
+                <button
+                  {...updateSaveButtonStyle}
+                  type="submit"
+                  className={`${updateSaveButtonStyle.className} ybtn ybtn-info`}
+                  data-stylex-owner="post-detail-comment-update-save"
+                >
                   {t("button.save")}
                 </button>
               ) : null}

@@ -5672,6 +5672,10 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyVariablesSource).toContain("@gray-cc: #CCC;");
   expect(legacyVariablesSource).toContain("@orange : #F36C22;");
   expect(legacyVariablesSource).toContain("@primary         : @orange;");
+  expect(legacyVariablesSource).toContain("@yobi-blue : #3A7EE5;");
+  expect(legacyVariablesSource).toContain("@yobi-blue-dark :#206EE5;");
+  expect(legacyVariablesSource).toContain("@yobi-btn-info : @yobi-blue;");
+  expect(legacyVariablesSource).toContain("@yobi-btn-info-hover : @yobi-blue-dark;");
   expect(legacyResponsiveSource).toMatch(
     /@media all and \(max-width: 720px\) \{[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px !important;/u,
   );
@@ -5683,6 +5687,9 @@ test("authenticated populated board post owns open parent comment update form in
   );
   expect(legacyYobiUiSource).toMatch(
     /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?\.border-radius\(3px\)\s*!important;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?padding:\s*4px 12px !important;[\s\S]*?margin-left:\s*\.3em;[\s\S]*?&:hover, &:focus, &:active,[\s\S]*?background-color:#f1f1f1;[\s\S]*?&\.ybtn-info\s*\{\s*background-color\s*:\s*@yobi-btn-info !important;\s*border:1px solid @yobi-btn-info-hover;[\s\S]*?&:hover, &:focus\s*\{\s*background-color:\s*@yobi-btn-info-hover !important;/u,
   );
   expect(legacyYobiUiSource).toMatch(
     /label, input, button, select, textarea \{ font-size:12px; \}[\s\S]*?select, textarea,[\s\S]*?\.uneditable-input \{ font-size:12px; \}/u,
@@ -5697,8 +5704,10 @@ test("authenticated populated board post owns open parent comment update form in
     "commentUpdateTextareaBox",
     "commentUpdateTextareaControl",
     "commentUpdateFileUpload",
+    "commentUpdateActionButton",
     "commentUpdateFileUploadLabel",
     "commentUpdateFileUploadInput",
+    "commentUpdateSaveButton",
     "commentUpdateActions",
   ]) {
     expect(styleSource).toContain(`${styleName}:`);
@@ -5707,7 +5716,13 @@ test("authenticated populated board post owns open parent comment update form in
     /commentUpdateTextareaControl:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{ fontSize:\s*"16px !important" \}/u,
   );
   expect(styleSource).toMatch(
-    /commentUpdateFileUploadLabel:\s*\{[\s\S]*?borderRadius:\s*"3px !important"/u,
+    /commentUpdateFileUploadLabel:\s*\{\s*display:\s*"block",\s*transition:\s*"background 0\.3s"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateActionButton:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"[\s\S]*?padding:\s*"4px 12px !important"[\s\S]*?transition:\s*"all 0\.3s ease"[\s\S]*?":active":/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateSaveButton:\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"[\s\S]*?borderColor:\s*"#206EE5"[\s\S]*?":hover":\s*\{[\s\S]*?backgroundColor:\s*"#206EE5 !important"[\s\S]*?":active":\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"/u,
   );
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
@@ -5718,6 +5733,8 @@ test("authenticated populated board post owns open parent comment update form in
     "post-detail-comment-update-file-upload",
     "post-detail-comment-update-file-upload-label",
     "post-detail-comment-update-file-upload-input",
+    "post-detail-comment-update-cancel",
+    "post-detail-comment-update-save",
     "post-detail-comment-update-actions",
   ]) {
     expect(routeSource).toContain(owner);
@@ -5868,6 +5885,8 @@ test("authenticated populated board post owns open parent comment update form in
     const fileUploadInput = form.locator(
       '[data-stylex-owner="post-detail-comment-update-file-upload-input"]',
     );
+    const cancelButton = form.locator('[data-stylex-owner="post-detail-comment-update-cancel"]');
+    const saveButton = form.locator('[data-stylex-owner="post-detail-comment-update-save"]');
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
@@ -5884,6 +5903,8 @@ test("authenticated populated board post owns open parent comment update form in
       const fileUpload = get("post-detail-comment-update-file-upload");
       const fileUploadLabel = get("post-detail-comment-update-file-upload-label");
       const fileUploadInput = get("post-detail-comment-update-file-upload-input");
+      const cancelButton = get("post-detail-comment-update-cancel");
+      const saveButton = get("post-detail-comment-update-save");
       const actions = get("post-detail-comment-update-actions");
       const upload = wrapper.querySelector<HTMLElement>(".upload-drop-here")!;
       const form = wrapper.querySelector<HTMLElement>(":scope > form")!;
@@ -5893,7 +5914,32 @@ test("authenticated populated board post owns open parent comment update form in
       const textareaControlRect = textarea.getBoundingClientRect();
       const fileUploadRect = fileUpload.getBoundingClientRect();
       const fileUploadLabelRect = fileUploadLabel.getBoundingClientRect();
+      const cancelRect = cancelButton.getBoundingClientRect();
+      const saveRect = saveButton.getBoundingClientRect();
       const actionsRect = actions.getBoundingClientRect();
+      const controlStyle = (control: HTMLElement) => {
+        const computed = getComputedStyle(control);
+        return {
+          backgroundColor: computed.backgroundColor,
+          border: computed.border,
+          borderRadius: computed.borderRadius,
+          boxShadow: computed.boxShadow,
+          color: computed.color,
+          cursor: computed.cursor,
+          display: computed.display,
+          fontSize: computed.fontSize,
+          lineHeight: computed.lineHeight,
+          marginBottom: computed.marginBottom,
+          marginLeft: computed.marginLeft,
+          padding: computed.padding,
+          position: computed.position,
+          textAlign: computed.textAlign,
+          textShadow: computed.textShadow,
+          verticalAlign: computed.verticalAlign,
+          whiteSpace: computed.whiteSpace,
+          zIndex: computed.zIndex,
+        };
+      };
       return {
         formDisplay: getComputedStyle(wrapper).display,
         writePadding: getComputedStyle(writeBox).padding,
@@ -5916,10 +5962,13 @@ test("authenticated populated board post owns open parent comment update form in
           position: getComputedStyle(fileUpload).position,
         },
         fileUploadLabel: {
+          ...controlStyle(fileUploadLabel),
           borderRadius: getComputedStyle(fileUploadLabel).borderRadius,
           display: getComputedStyle(fileUploadLabel).display,
           transition: getComputedStyle(fileUploadLabel).transition,
         },
+        cancelButton: controlStyle(cancelButton),
+        saveButton: controlStyle(saveButton),
         fileUploadInput: {
           bottom: getComputedStyle(fileUploadInput).bottom,
           height: getComputedStyle(fileUploadInput).height,
@@ -5957,6 +6006,32 @@ test("authenticated populated board post owns open parent comment update form in
           fileUploadLabelRect.right === fileUploadRect.right &&
           fileUploadLabelRect.top === fileUploadRect.top &&
           fileUploadLabelRect.bottom === fileUploadRect.bottom,
+        controlOrder:
+          Boolean(
+            fileUploadLabel.compareDocumentPosition(cancelButton) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ) &&
+          Boolean(
+            cancelButton.compareDocumentPosition(saveButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        buttonsAligned:
+          Math.abs(cancelRect.top - saveRect.top) <= 1 &&
+          Math.abs(cancelRect.bottom - saveRect.bottom) <= 1,
+        controlsContained:
+          fileUploadLabelRect.left >= actionsRect.left &&
+          fileUploadLabelRect.right <= actionsRect.right &&
+          fileUploadLabelRect.top >= actionsRect.top &&
+          fileUploadLabelRect.bottom <= actionsRect.bottom &&
+          cancelRect.left >= actionsRect.left &&
+          cancelRect.right <= actionsRect.right &&
+          cancelRect.top >= actionsRect.top &&
+          cancelRect.bottom <= actionsRect.bottom &&
+          saveRect.left >= actionsRect.left &&
+          saveRect.right <= actionsRect.right &&
+          saveRect.top >= actionsRect.top &&
+          saveRect.bottom <= actionsRect.bottom,
+        controlsDoNotOverlap:
+          fileUploadLabelRect.right <= cancelRect.left && cancelRect.right <= saveRect.left,
       };
     });
     expect(metrics).toEqual({
@@ -5978,9 +6053,65 @@ test("authenticated populated board post owns open parent comment update form in
       },
       fileUpload: { display: "inline-block", position: "relative" },
       fileUploadLabel: {
+        backgroundColor: "rgb(255, 255, 255)",
+        border: "1px solid rgba(0, 0, 0, 0.15)",
         borderRadius: "3px",
+        boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+        color: "rgb(51, 51, 51)",
+        cursor: "pointer",
         display: "block",
+        fontSize: "14px",
+        lineHeight: "20px",
+        marginBottom: "0px",
+        marginLeft: "0px",
+        padding: "4px 12px",
+        position: "relative",
+        textAlign: "center",
+        textShadow: "none",
         transition: "background 0.3s",
+        verticalAlign: "middle",
+        whiteSpace: "nowrap",
+        zIndex: "2",
+      },
+      cancelButton: {
+        backgroundColor: "rgb(255, 255, 255)",
+        border: "1px solid rgba(0, 0, 0, 0.15)",
+        borderRadius: "3px",
+        boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+        color: "rgb(51, 51, 51)",
+        cursor: "pointer",
+        display: "inline-block",
+        fontSize: "14px",
+        lineHeight: "20px",
+        marginBottom: "0px",
+        marginLeft: "4.2px",
+        padding: "4px 12px",
+        position: "relative",
+        textAlign: "center",
+        textShadow: "none",
+        verticalAlign: "middle",
+        whiteSpace: "nowrap",
+        zIndex: "2",
+      },
+      saveButton: {
+        backgroundColor: "rgb(58, 126, 229)",
+        border: "1px solid rgb(32, 110, 229)",
+        borderRadius: "3px",
+        boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+        color: "rgb(255, 255, 255)",
+        cursor: "pointer",
+        display: "inline-block",
+        fontSize: "14px",
+        lineHeight: "20px",
+        marginBottom: "0px",
+        marginLeft: "4.2px",
+        padding: "4px 12px",
+        position: "relative",
+        textAlign: "center",
+        textShadow: "none",
+        verticalAlign: "middle",
+        whiteSpace: "nowrap",
+        zIndex: "2",
       },
       fileUploadInput: {
         bottom: "0px",
@@ -6000,7 +6131,24 @@ test("authenticated populated board post owns open parent comment update form in
       textareaContained: true,
       textareaWidthTracksBox: true,
       uploadLabelMatchesWrapper: true,
+      controlOrder: true,
+      buttonsAligned: true,
+      controlsContained: true,
+      controlsDoNotOverlap: true,
     });
+
+    await fileUploadLabel.hover();
+    await expect(fileUploadLabel).toHaveCSS("background-color", "rgb(241, 241, 241)");
+    await expect(fileUploadLabel).toHaveCSS("border-color", "rgba(0, 0, 0, 0.25)");
+    await cancelButton.hover();
+    await expect(cancelButton).toHaveCSS("background-color", "rgb(241, 241, 241)");
+    await expect(cancelButton).toHaveCSS("color", "rgb(41, 41, 41)");
+    await saveButton.hover();
+    await expect(saveButton).toHaveCSS("background-color", "rgb(32, 110, 229)");
+    await expect(saveButton).toHaveCSS("color", "rgb(255, 255, 255)");
+    await saveButton.focus();
+    await expect(saveButton).toHaveCSS("background-color", "rgb(32, 110, 229)");
+    await expect(saveButton).toHaveCSS("border-color", "rgb(32, 110, 229)");
 
     await textarea.focus();
     await expect(textarea).toHaveCSS("border", "1px solid rgb(243, 108, 34)");
