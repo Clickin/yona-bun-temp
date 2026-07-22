@@ -896,7 +896,10 @@ export function PullRequestBranchInfo({
   const toBranchName = branchItemName(pullRequest.toBranch);
   return (
     <div className="pullRequest-branchInfo">
-      <i className={`${stylex.props(styles.branchInfoIcon).className} yobicon-branch ml0`}></i>
+      <i
+        className={`${stylex.props(styles.branchInfoIcon, styles.branchInfoStartIcon).className} yobicon-branch`}
+        data-stylex-owner="pull-request-detail-branch-start-icon"
+      ></i>
       <code
         className={`${stylex.props(styles.branchInfoCode).className} from`}
         title={t("pullRequest.from")}
@@ -935,7 +938,10 @@ export function PullRequestBranchInfo({
           {fromBranchName}
         </Link>
       </code>
-      <i className={`${stylex.props(styles.branchInfoIcon).className} yobicon-right-2 ml10`}></i>
+      <i
+        className={`${stylex.props(styles.branchInfoIcon, styles.branchInfoDirectionIcon).className} yobicon-right-2 ml10`}
+        data-stylex-owner="pull-request-detail-branch-direction-icon"
+      ></i>
       <code
         className={`${stylex.props(styles.branchInfoCode).className} to`}
         title={t("pullRequest.to")}

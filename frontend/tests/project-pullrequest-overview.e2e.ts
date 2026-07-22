@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const EXPECTED_PULL_REQUEST_OVERVIEW = `
-<div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch ml0"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="__BASE_PATH__/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small">Confirm</button></div></div>
+<div class="page-wrap-outer"><div class="project-page-wrap"><div class="board-header issue"><div class="pull-right mr10 mt10"><div class="date" title="Jul 2, 2026">Jul 2, 2026</div><span class="badge nm badge-issue-open">Open</span></div><div class="title"><strong class="board-id">#9</strong> Initial title</div></div><div class="pull-right"><button id="btnAccept" type="button" class="ybtn ybtn-success">Merge</button></div><ul class="nav nav-tabs nm"><li class="active"><a href="__BASE_PATH__/admin/sample/pullRequest/9">Overview</a></li><li><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes">Changes</a></li></ul><div class="board-body"><div class="author-info left-txt" style="margin-top:20px"><a href="__BASE_PATH__/dev" class="usf-group pull-left"><span class="avatar-wrap smaller"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></span><strong class="name">Dev Member</strong><span class="loginid"> <strong>@</strong>dev</span></a><div class="pullRequest-branchInfo"><i class="yobicon-branch"></i><code class="from" title="From"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/feature%2Fui" class="branchName">feature/ui</a></code><i class="yobicon-right-2 ml10"></i><code class="to" title="To"><a href="__BASE_PATH__/admin">admin</a><span>/</span><a href="__BASE_PATH__/admin/sample">sample</a>: <a href="__BASE_PATH__/admin/sample/code/main" class="branchName">main</a></code></div></div><div class="content markdown-wrap"><p>Initial body</p></div><div class="attachments" data-attachments="[]"></div></div><div id="state" class="pullRequest-stateInfo"><div class="alert alert-success"><i class="yobicon-check-circle-alt mr5"></i><span>This pull request can be merged safely.</span></div></div><div class="board-footer board-actrow"><div class="pull-left"><button id="watch-button" type="button" class="ybtn" data-watching="false">Watch</button></div><div class="mr5" style="display:inline-block"><a href="__BASE_PATH__/admin/sample/pullRequest/9/editform" class="ybtn">Edit</a><button type="button" class="ybtn">Close</button></div></div><hr class="nm"><div class="board-comment-wrap"></div><div class="right-txt"><button type="button" class="ybtn ybtn-inverse ybtn-mini">Help</button></div></div></div><div id="helpMessage" class="modal hide fade pullreq-info"><div class="modal-header"><h5>You can check commits and descriptions on received code.</h5></div><div class="modal-body"><div class="row-fluid"><div class="pull-left"><img class="img-polaroid" src="__BASE_PATH__/assets/images/fork-pull/merge.jpg"><br></div><div class="pull-left help-messages mt10"><p>If members of the original project accept the code, it will be merged into the original project.</p><p>You can't accept code if the code is not safe to merge.</p><p>When you can't accept code, you may postpone or delete the pull request.</p></div></div></div><div class="modal-footer"><button type="button" class="ybtn ybtn-info ybtn-small">Confirm</button></div></div>
 `;
 
 const EXPECTED_PULL_REQUEST_COMMIT_EVENT = `<div class="board-comment-wrap"><ul class="comments" id="comments"><li class="event" id="comment-94"><span class="state changed">Committed</span><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><img src="/assets/images/default-avatar-32.png" class="avatar-wrap small"></a><a href="__BASE_PATH__/dev" class="usf-group" title="dev"><strong>Dev Member</strong></a> has committed.<span class="date"><a href="__BASE_PATH__/admin/sample/pullRequest/9#event-94" title="Jul 3, 2026">Jul 3, 2026</a></span><a href="__BASE_PATH__/admin/sample/compare/basehash...headhash" class="ybtn ybtn-mini">Additional changes</a><ul class="commit-list"><li class="comment-body commit-info outdated"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commit-id">1234567</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 3, 2026">Jul 3, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/1234567890abcdef" class="commitMsg short">Fix login</a></li><li class="comment-body commit-info"><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commit-id">abcdef1</a><a href="__BASE_PATH__/dev" class="avatar-wrap small hide-in-mobile" title="Dev Member"><img src="/assets/images/default-avatar-32.png"> dev@example.com</a><div class="date hide-in-mobile" title="Jul 4, 2026">Jul 4, 2026</div><a href="__BASE_PATH__/admin/sample/pullRequest/9/changes/abcdef1234567890" class="commitMsg short">Add UI</a></li></ul></li></ul></div>`;
@@ -569,6 +569,175 @@ test("project pull request overview route source uses direct Links", async () =>
   expect(routeSource).not.toMatch(/id="watch-button"[\s\S]{0,240}data-toggle="button"/u);
   expect(routeSource).not.toMatch(/document\.|querySelector|classList|style\.display/u);
   expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+});
+
+test("project pull request overview retires the overridden branch start ml0 fallback", async ({
+  browser,
+}) => {
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/pullRequest/-pull-request-detail.stylex.ts",
+    "utf8",
+  );
+  const appCssSource = readFileSync("src/app.css", "utf8");
+  const legacyPartial = readFileSync(
+    "../yona-original/app/views/git/partial_branch.scala.html",
+    "utf8",
+  );
+  const commonLess = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const pageLess = readFileSync("../yona-original/app/assets/stylesheets/less/_page.less", "utf8");
+  const yobiconCss = readFileSync("../yona-original/public/stylesheets/yobicon/style.css", "utf8");
+  const yobiLess = readFileSync("../yona-original/app/assets/stylesheets/yobi.less", "utf8");
+
+  expect(legacyPartial).toContain('<i class="yobicon-branch ml0"></i>');
+  expect(commonLess).toContain(".ml0 { margin-left:0; }");
+  expect(pageLess).toContain("i { font-size:12px; margin:0 5px; color: @yobi-cyan-dark; }");
+  expect(yobiLess.indexOf('@import "less/_common.less";')).toBeLessThan(
+    yobiLess.indexOf('@import "less/_page.less";'),
+  );
+  expect(yobiconCss).toContain('[class^="yobicon-"]');
+  expect(yobiconCss).toContain("font-family: 'yobicon';");
+  expect(yobiconCss).toContain("display: inline-block;");
+  expect(yobiconCss).toContain('.yobicon-branch:before {\n    content: "\\e4ed";\n}');
+  expect(yobiconCss).toContain('.yobicon-right-2:before {\n    content: "\\e504";\n}');
+  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-branch-start-icon"');
+  expect(routeSource).toContain('data-stylex-owner="pull-request-detail-branch-direction-icon"');
+  expect(routeSource).not.toContain("yobicon-branch ml0");
+  expect(styleSource).toContain("branchInfoIcon: {");
+  expect(styleSource).toContain('display: "inline-block"');
+  expect(styleSource).toContain('fontFamily: "yobicon"');
+  expect(styleSource).toContain('fontStyle: "normal"');
+  expect(styleSource).toContain('fontVariant: "normal"');
+  expect(styleSource).toContain("fontWeight: 400");
+  expect(styleSource).toContain("lineHeight: 1");
+  expect(styleSource).toContain('margin: "0 5px"');
+  expect(styleSource).toContain('branchInfoStartIcon: { "::before": { content: \'"\\\\e4ed"\' } }');
+  expect(styleSource).toContain(
+    'branchInfoDirectionIcon: { "::before": { content: \'"\\\\e504"\' } }',
+  );
+  expect(appCssSource).not.toMatch(/\.ml0\s*\{/u);
+  expect(appCssSource).toMatch(/\.ml10\s*\{/u);
+
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    const page = await browser.newPage({ viewport });
+    const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+    await mockPullRequestOverview(page);
+    await page.goto(`${basePath}/admin/sample/pullRequest/9`);
+
+    const branchInfo = page.locator(".pullRequest-branchInfo");
+    const startIcon = page.locator('[data-stylex-owner="pull-request-detail-branch-start-icon"]');
+    const directionIcon = page.locator(
+      '[data-stylex-owner="pull-request-detail-branch-direction-icon"]',
+    );
+    const fromBranch = page.locator(".pullRequest-branchInfo .from .branchName");
+    const toBranch = page.locator(".pullRequest-branchInfo .to .branchName");
+    await expect(branchInfo).toBeVisible();
+    await expect(startIcon).toBeVisible();
+    await expect(directionIcon).toBeVisible();
+    await expect(startIcon).toHaveClass(/\byobicon-branch\b/u);
+    await expect(startIcon).not.toHaveClass(/\bml0\b/u);
+    await expect(directionIcon).toHaveClass(/\byobicon-right-2\b/u);
+    await expect(directionIcon).toHaveClass(/\bml10\b/u);
+    await expect(fromBranch).toBeVisible();
+    await expect(fromBranch).toHaveText("feature/ui");
+    await expect(toBranch).toBeVisible();
+    await expect(toBranch).toHaveText("main");
+
+    const metrics = await branchInfo.evaluate(
+      (branchElement, ownerSelectors) => {
+        const start = branchElement.querySelector<HTMLElement>(ownerSelectors.start);
+        const direction = branchElement.querySelector<HTMLElement>(ownerSelectors.direction);
+        const fromCode = branchElement.querySelector<HTMLElement>("code.from");
+        const toCode = branchElement.querySelector<HTMLElement>("code.to");
+        const boardBody = branchElement.closest<HTMLElement>(".board-body");
+        if (!start || !direction || !fromCode || !toCode || !boardBody) {
+          throw new Error("Expected branch-info geometry targets are missing");
+        }
+        const branchBox = branchElement.getBoundingClientRect();
+        const startBox = start.getBoundingClientRect();
+        const directionBox = direction.getBoundingClientRect();
+        const fromBox = fromCode.getBoundingClientRect();
+        const toBox = toCode.getBoundingClientRect();
+        const bodyBox = boardBody.getBoundingClientRect();
+        const iconMetrics = (icon: HTMLElement, box: DOMRect) => {
+          const style = window.getComputedStyle(icon);
+          return {
+            bottom: box.bottom,
+            display: style.display,
+            fontFamily: style.fontFamily,
+            fontStyle: style.fontStyle,
+            fontVariant: style.fontVariant,
+            fontWeight: style.fontWeight,
+            height: box.height,
+            left: box.left,
+            lineHeight: style.lineHeight,
+            marginLeft: style.marginLeft,
+            marginRight: style.marginRight,
+            pseudoContent: window.getComputedStyle(icon, "::before").content,
+            right: box.right,
+            top: box.top,
+            width: box.width,
+          };
+        };
+        return {
+          bodyLeft: bodyBox.left,
+          bodyRight: bodyBox.right,
+          branchLeft: branchBox.left,
+          branchRight: branchBox.right,
+          direction: iconMetrics(direction, directionBox),
+          fromLeft: fromBox.left,
+          overflowX: branchElement.scrollWidth - branchElement.clientWidth,
+          sourceOrder: [start, fromCode, direction, toCode].every(
+            (node, index, nodes) =>
+              index === nodes.length - 1 ||
+              Boolean(
+                node.compareDocumentPosition(nodes[index + 1]) & Node.DOCUMENT_POSITION_FOLLOWING,
+              ),
+          ),
+          start: iconMetrics(start, startBox),
+          toLeft: toBox.left,
+        };
+      },
+      {
+        direction: '[data-stylex-owner="pull-request-detail-branch-direction-icon"]',
+        start: '[data-stylex-owner="pull-request-detail-branch-start-icon"]',
+      },
+    );
+
+    expect(metrics.branchLeft).toBeGreaterThanOrEqual(metrics.bodyLeft);
+    expect(metrics.branchRight).toBeLessThanOrEqual(metrics.bodyRight);
+    expect(metrics.overflowX).toBeLessThanOrEqual(0);
+    expect(metrics.sourceOrder).toBe(true);
+    for (const icon of [metrics.start, metrics.direction]) {
+      expect(icon.display).toBe("inline-block");
+      expect(icon.fontFamily).toBe("yobicon");
+      expect(icon.fontStyle).toBe("normal");
+      expect(icon.fontVariant).toBe("normal");
+      expect(icon.fontWeight).toBe("400");
+      expect(icon.lineHeight).toBe("12px");
+      expect(icon.marginLeft).toBe("5px");
+      expect(icon.marginRight).toBe("5px");
+      expect(icon.width).toBeGreaterThan(0);
+      expect(icon.height).toBeGreaterThan(0);
+      expect(icon.left).toBeGreaterThanOrEqual(metrics.branchLeft);
+      expect(icon.right).toBeLessThanOrEqual(metrics.branchRight);
+    }
+    expect(metrics.start.pseudoContent).toContain(String.fromCodePoint(0xe4ed));
+    expect(metrics.direction.pseudoContent).toContain(String.fromCodePoint(0xe504));
+
+    await fromBranch.click();
+    await expect(page).toHaveURL(`${basePath}/admin/sample/code/feature%2Fui`);
+    await page.close();
+  }
 });
 
 test("project pull request overview badge maps the legacy partial to a conditional StyleX owner", () => {

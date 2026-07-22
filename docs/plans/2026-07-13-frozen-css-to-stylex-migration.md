@@ -6271,3 +6271,19 @@ scope, click/focus behavior, and desktop/390px geometry in normal and
 fallback-off runs, 2/2 each. Live legacy port 9000 was unavailable during
 verification, so screenshot-level visual parity remains an explicitly recorded
 gap; LESS-derived geometry and browser metrics are verified.
+
+## Batch 785
+
+Retire the pull-request branch-info start icon's ineffective React-side `.ml0`
+bridge and complete both visible branch icons' fallback-off glyph ownership.
+Frozen `git/partial_branch.scala.html:27` emits `yobicon-branch ml0`, but
+`yobi.less` imports `_common.less:205` before the more-specific
+`_page.less:4093-4105` icon rule, so the final rendered side margins are 5px.
+Preserve that final cascade, branch copy/order/navigation, the second icon's
+`ml10`, and both legacy glyph classes. Route-local StyleX owns the generic
+yobicon font/display contract plus frozen `\e4ed` branch and `\e504`
+right-arrow pseudo glyphs. Remove only the now-zero-consumer `.ml0` block from
+`frontend/src/app.css`. Focused normal and fallback-off Chrome runs pass 1/1
+each at 1280px and 390px. A real populated legacy screenshot remains a gap:
+the managed legacy seed has no PR, `/admin/sample/pullRequest/1` is 404, and
+the legacy create form rejects the seed because no sending repository exists.

@@ -4,6 +4,21 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 785 pull-request branch-icon fallback proof
+
+- [x] The populated pull-request overview removes only the final-cascade-
+  ineffective `ml0` class and now-zero-consumer React-side `.ml0` bridge while
+  preserving both icon elements, glyph classes, branch copy/order/navigation,
+  the direction icon's `ml10`, and the frozen final 5px side margins.
+- [x] Route-local StyleX owns the generic yobicon font/display contract and
+  frozen branch/right-arrow pseudo glyphs. Focused system-Chrome runs pass 1/1
+  in normal and fallback-off modes at 1280px and 390px, with non-zero glyph
+  geometry and no overflow.
+- [ ] Real populated legacy screenshot parity remains open: the managed legacy
+  parity seed has no pull request, `/admin/sample/pullRequest/1` renders 404,
+  and `newPullRequestForm` returns 400 because the seed has no sending
+  repository. The 404-to-200 sweep is diagnostic only and is not parity proof.
+
 ### 2026-07-22 Batch 783 issue vote heart glyph proof
 
 - [x] Intentional product-copy deviation recorded: Yoram's footer omits the
@@ -555,9 +570,10 @@ Deletion-only candidates. Each requires declaration-level exact source/DOM proof
   organization project-card spans now use the route-local `styles.smallFont`
   owner; the shared app.css arm is retired while frozen/generated evidence remains.
 - [x] `.stats-wrap .like` variants — Batch 537: duplicate/consumer-free rendered Yobi selectors retired; no active module was unlinked.
-- [ ] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item).
+- [x] individual `.site-admin-page` declarations only after SITE-01..04 (never the subtree as one item).
   The 2026-07-20 graph confirms this is an inactive `app.css` bridge with no React DOM ancestor, but its
-  declaration groups and static contracts must still retire one bounded group at a time.
+  declaration groups and static contracts retired through the bounded Batch 549/550 waves recorded in
+  the ledger; the unchecked marker was stale and must not be selected again.
 
 ## Refresh trigger
 
