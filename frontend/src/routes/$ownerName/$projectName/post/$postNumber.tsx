@@ -2058,6 +2058,8 @@ function MarkdownEditor({
     styles.editorPane,
     activeMode === "preview" && styles.editorPaneActive,
   );
+  const isCommentUpdateEditor = editorMode === "update-comment-body";
+  const isCommentCreateEditor = editorMode === "comment-body";
   const updateTextareaBoxStyle =
     editorMode === "update-comment-body"
       ? stylex.props(styles.commentUpdateTextareaBox)
@@ -2066,19 +2068,29 @@ function MarkdownEditor({
     editorMode === "update-comment-body"
       ? stylex.props(styles.commentUpdateTextareaControl)
       : undefined;
-  const isCommentUpdateEditor = editorMode === "update-comment-body";
-  const updateEditorNavStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateEditorNav)
-    : undefined;
-  const updateEditorNavItemStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateEditorNavItem)
-    : undefined;
-  const updateEditorTabStyle = (mode: "edit" | "preview") =>
-    isCommentUpdateEditor
+  const editorNavStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentUpdateEditorNav)
+      : undefined;
+  const editorNavItemStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentUpdateEditorNavItem)
+      : undefined;
+  const editorTabStyle = (mode: "edit" | "preview") =>
+    isCommentUpdateEditor || isCommentCreateEditor
       ? stylex.props(
           styles.commentUpdateEditorTabLink,
           activeMode === mode && styles.commentUpdateEditorTabLinkActive,
         )
+      : undefined;
+  const createEditorNavItemOwner = isCommentCreateEditor
+    ? "post-detail-comment-create-editor-nav-item"
+    : undefined;
+  const createEditorTabOwner = (mode: "edit" | "preview") =>
+    isCommentCreateEditor
+      ? activeMode === mode
+        ? "post-detail-comment-create-editor-tab-active"
+        : "post-detail-comment-create-editor-tab"
       : undefined;
   const updateChecklistWrapStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateChecklistWrap)
@@ -2089,7 +2101,6 @@ function MarkdownEditor({
   const updateChecklistIconStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateChecklistIcon)
     : undefined;
-  const isCommentCreateEditor = editorMode === "comment-body";
   const clearTemporaryStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateClearTemporary)
     : isCommentCreateEditor
@@ -2102,21 +2113,27 @@ function MarkdownEditor({
   return (
     <div className="mt10">
       <ul
-        {...updateEditorNavStyle}
-        className={`${updateEditorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim()}
+        {...editorNavStyle}
+        className={`${editorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim()}
         data-stylex-owner={
-          isCommentUpdateEditor ? "post-detail-comment-update-editor-nav" : undefined
+          isCommentUpdateEditor
+            ? "post-detail-comment-update-editor-nav"
+            : isCommentCreateEditor
+              ? "post-detail-comment-create-editor-nav"
+              : undefined
         }
       >
         <li
-          {...updateEditorNavItemStyle}
-          className={`${updateEditorNavItemStyle?.className ?? ""}${activeMode === "edit" ? " active" : ""}`.trim()}
+          {...editorNavItemStyle}
+          className={`${editorNavItemStyle?.className ?? ""}${activeMode === "edit" ? " active" : ""}`.trim()}
           data-stylex-owner={
-            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-editor-nav-item"
+              : createEditorNavItemOwner
           }
         >
           <Link
-            {...updateEditorTabStyle("edit")}
+            {...editorTabStyle("edit")}
             to="."
             hash={`edit-${wrapId}`}
             data-stylex-owner={
@@ -2124,7 +2141,7 @@ function MarkdownEditor({
                 ? activeMode === "edit"
                   ? "post-detail-comment-update-editor-tab-active"
                   : "post-detail-comment-update-editor-tab"
-                : undefined
+                : createEditorTabOwner("edit")
             }
             onClick={(event) => selectMode("edit", event)}
           >
@@ -2132,14 +2149,16 @@ function MarkdownEditor({
           </Link>
         </li>
         <li
-          {...updateEditorNavItemStyle}
-          className={`${updateEditorNavItemStyle?.className ?? ""}${activeMode === "preview" ? " active" : ""}`.trim()}
+          {...editorNavItemStyle}
+          className={`${editorNavItemStyle?.className ?? ""}${activeMode === "preview" ? " active" : ""}`.trim()}
           data-stylex-owner={
-            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-editor-nav-item"
+              : createEditorNavItemOwner
           }
         >
           <Link
-            {...updateEditorTabStyle("preview")}
+            {...editorTabStyle("preview")}
             to="."
             hash={`preview-${wrapId}`}
             data-stylex-owner={
@@ -2147,7 +2166,7 @@ function MarkdownEditor({
                 ? activeMode === "preview"
                   ? "post-detail-comment-update-editor-tab-active"
                   : "post-detail-comment-update-editor-tab"
-                : undefined
+                : createEditorTabOwner("preview")
             }
             onClick={(event) => selectMode("preview", event)}
           >
@@ -2155,9 +2174,11 @@ function MarkdownEditor({
           </Link>
         </li>
         <li
-          {...updateEditorNavItemStyle}
+          {...editorNavItemStyle}
           data-stylex-owner={
-            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-editor-nav-item"
+              : createEditorNavItemOwner
           }
         >
           <div
@@ -2187,9 +2208,11 @@ function MarkdownEditor({
           </div>
         </li>
         <li
-          {...updateEditorNavItemStyle}
+          {...editorNavItemStyle}
           data-stylex-owner={
-            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-editor-nav-item"
+              : createEditorNavItemOwner
           }
         >
           <div
@@ -2215,9 +2238,11 @@ function MarkdownEditor({
           </div>
         </li>
         <li
-          {...updateEditorNavItemStyle}
+          {...editorNavItemStyle}
           data-stylex-owner={
-            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-editor-nav-item"
+              : createEditorNavItemOwner
           }
         >
           <div

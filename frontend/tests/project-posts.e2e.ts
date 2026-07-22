@@ -2661,6 +2661,26 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
   );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyMixinsSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_mixins.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
   const legacyYobiUiSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
     "utf8",
@@ -2681,6 +2701,21 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
   expect(legacyEditorSource).toMatch(
     /<li class="active">[\s\S]*?common\.editor\.edit[\s\S]*?<li>[\s\S]*?common\.editor\.preview[\s\S]*?<li>[\s\S]*?task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
+  );
+  expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
+  expect(legacyPageSource).toMatch(
+    /\.project-page-wrap\s*\{[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-2px;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.write-comment-wrap\s*\{[\s\S]*?\.nav\s*\{\s*margin-bottom:\s*0;/u,
+  );
+  expect(legacyMixinsSource).toContain(".border-radius(@radius: 5px)");
+  expect(legacyVariablesSource).toContain("@yobi-white-dark :#F2F2F2;");
+  expect(legacyResponsiveSource).toMatch(
+    /\.nav-tabs li a\s*\{\s*padding-left:\s*5px !important;\s*padding-right:\s*5px !important;/u,
+  );
+  expect(legacyYobiSource).toMatch(
+    /@import "less\/_variables\.less";\s*@import "less\/_mixins\.less";\s*@import "less\/_common\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";\s*@import "less\/_yobiUI\.less";/u,
   );
   expect(legacyPageSource).toMatch(
     /\.editor-clear-temporary\s*\{\s*margin-left:\s*10px;\s*display:\s*none;\s*\}/u,
@@ -2717,6 +2752,36 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyBootstrapSource).toMatch(
     /\.tab-content > \.active,[\s\S]*?\{\s*display:\s*block;\s*\}/u,
   );
+  expect(legacyBootstrapSource).toMatch(
+    /\.nav\s*\{\s*margin-bottom:\s*20px;\s*margin-left:\s*0;\s*list-style:\s*none;[\s\S]*?\.nav-tabs:before,[\s\S]*?display:\s*table;\s*line-height:\s*0;\s*content:\s*"";[\s\S]*?\.nav-tabs:after,[\s\S]*?clear:\s*both;[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-1px;[\s\S]*?\.nav-tabs > li > a\s*\{[\s\S]*?border-radius:\s*4px 4px 0 0;[\s\S]*?\.nav-tabs > \.active > a,[\s\S]*?border-bottom-color:\s*transparent;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /\.nav-tabs\s*\{\s*li\s*\{\s*a\s*\{\s*padding-left:30px; padding-right:30px;\s*color: #3592b5;\s*font-weight: bold;[\s\S]*?&\.small\s*\{\s*height:29px;\s*li a \{ padding:4px 15px; \}/u,
+  );
+  for (const styleName of [
+    "commentUpdateEditorNav",
+    "commentUpdateEditorNavItem",
+    "commentUpdateEditorTabLink",
+    "commentUpdateEditorTabLinkActive",
+  ]) {
+    expect(styleSource).toContain(`${styleName}:`);
+  }
+  for (const owner of [
+    "post-detail-comment-create-editor-nav",
+    "post-detail-comment-create-editor-nav-item",
+    "post-detail-comment-create-editor-tab",
+    "post-detail-comment-create-editor-tab-active",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
+  for (const owner of [
+    "post-detail-comment-update-editor-nav",
+    "post-detail-comment-update-editor-nav-item",
+    "post-detail-comment-update-editor-tab",
+    "post-detail-comment-update-editor-tab-active",
+  ]) {
+    expect(routeSource).toContain(`"${owner}"`);
+  }
   expect(styleSource).toMatch(
     /editorTabContent:\s*\{\s*overflow:\s*"visible",\s*position:\s*"relative"\s*\}/u,
   );
@@ -2754,6 +2819,14 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
+    const editorNav = commentForm.locator(
+      '[data-stylex-owner="post-detail-comment-create-editor-nav"]',
+    );
+    const editorNavItems = editorNav.locator(
+      ':scope > [data-stylex-owner="post-detail-comment-create-editor-nav-item"]',
+    );
+    const editTab = editorNav.getByRole("link", { name: "편집" });
+    const previewTab = editorNav.getByRole("link", { name: "미리보기" });
     const clearTemporary = commentForm.locator(
       '[data-stylex-owner="post-detail-comment-create-clear-temporary"]',
     );
@@ -2765,11 +2838,26 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(clearTemporary).toBeHidden();
     await expect(noticeLabel).toHaveCount(1);
     await expect(noticeLabel).toBeEmpty();
+    await expect(editorNav).toHaveCount(1);
+    await expect(editorNavItems).toHaveCount(5);
+    await expect(editTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-editor-tab-active",
+    );
+    await expect(previewTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-editor-tab",
+    );
     await expect(
       commentForm.locator('[data-stylex-owner^="post-detail-comment-update-"]'),
     ).toHaveCount(0);
     await expect(
       page.locator('.comment-update-form [data-stylex-owner^="post-detail-comment-create-"]'),
+    ).toHaveCount(0);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-nav-item"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab"], .comment-update-form [data-stylex-owner="post-detail-comment-create-editor-tab-active"]',
+      ),
     ).toHaveCount(0);
     const metrics = await commentForm.evaluate((form) => {
       const measure = (selector: string) => {
@@ -2797,6 +2885,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         noticeLabel: measure(
           '[data-stylex-owner="post-detail-comment-create-editor-notice-label"]',
         ),
+        editorNav: measure('[data-stylex-owner="post-detail-comment-create-editor-nav"]'),
+        editorItems: Array.from(
+          form.querySelectorAll<HTMLElement>(
+            ':scope [data-stylex-owner="post-detail-comment-create-editor-nav"] > [data-stylex-owner="post-detail-comment-create-editor-nav-item"]',
+          ),
+        ).map((item) => ({
+          float: getComputedStyle(item).float,
+          marginBottom: getComputedStyle(item).marginBottom,
+        })),
+        editTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab-active"]'),
+        previewTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab"]'),
         order: Array.from(form.querySelectorAll(":scope .nav-tabs > li")).map((item) =>
           item.textContent?.trim(),
         ),
@@ -2817,6 +2916,27 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.noticeLabel.height).toBeGreaterThan(0);
     expect(metrics.noticeLabel.width).toBeGreaterThanOrEqual(30);
     expect(metrics.order).toEqual(["편집", "미리보기", "체크리스트 추가", "복구된 본문 삭제", ""]);
+    await expect(editorNav).toHaveCSS("border-bottom", "1px solid rgb(221, 221, 221)");
+    await expect(editorNav).toHaveCSS("height", "29px");
+    await expect(editorNav).toHaveCSS("list-style-type", "none");
+    await expect(editorNav).toHaveCSS("margin", "0px");
+    await expect(editorNav).toHaveCSS("padding", "0px");
+    expect(metrics.editorItems).toEqual(
+      Array.from({ length: 5 }, () => ({ float: "left", marginBottom: "-2px" })),
+    );
+    await expect(editTab).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(editTab).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
+    await expect(editTab).toHaveCSS("color", "rgb(85, 85, 85)");
+    await expect(editTab).toHaveCSS("cursor", "default");
+    await expect(previewTab).toHaveCSS("color", "rgb(53, 146, 181)");
+    await expect(previewTab).toHaveCSS("display", "block");
+    await expect(previewTab).toHaveCSS("font-weight", "700");
+    await expect(previewTab).toHaveCSS("padding", viewport.width === 390 ? "4px 5px" : "4px 15px");
+    expect(metrics.editTab.right).toBeLessThanOrEqual(metrics.previewTab.left);
+    expect(metrics.editTab.top).toBeCloseTo(metrics.previewTab.top, 1);
+    expect(metrics.editTab.bottom).toBeCloseTo(metrics.previewTab.bottom, 1);
+    expect(metrics.editTab.left).toBeGreaterThanOrEqual(metrics.editorNav.left);
+    expect(metrics.previewTab.right).toBeLessThanOrEqual(metrics.editorNav.right);
     expect(metrics.editPane.display).toBe("block");
     expect(metrics.previewPane.display).toBe("none");
     expect(metrics.previewPane.height).toBe(0);
@@ -2830,15 +2950,30 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.upload.top).toBeGreaterThanOrEqual(metrics.editor.top);
 
     await textarea.fill("Boundary **preview**");
-    await commentForm.locator('.nav-tabs a[href$="#preview-contents"]').click();
+    const urlBeforePreview = page.url();
+    await previewTab.click();
     await expect(editPane).toHaveCSS("display", "none");
     await expect(previewPane).toHaveCSS("display", "block");
+    await expect(previewTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-editor-tab-active",
+    );
+    await expect(editTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-editor-tab",
+    );
+    expect(page.url()).toBe(urlBeforePreview);
     await expect(previewPane.locator(".markdown-preview")).toBeVisible();
     await expect(previewPane.locator("strong")).toHaveText("preview");
-    await commentForm.locator('.nav-tabs a[href$="#edit-contents"]').click();
+    await editTab.click();
     await expect(editPane).toHaveCSS("display", "block");
     await expect(previewPane).toHaveCSS("display", "none");
     await expect(textarea).toHaveValue("Boundary **preview**");
+    await expect(editTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-editor-tab-active",
+    );
+    expect(page.url()).toBe(urlBeforePreview);
 
     const restoredBoundary = await commentForm.evaluate((form) => {
       const editor = form.querySelector<HTMLElement>(".write-comment-box > .mt10")!;
