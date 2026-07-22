@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 799 board-post comment-update editor tabs
+
+- [x] Four update-only StyleX owners carry the final frozen nav shell,
+  five direct items, Edit/Preview links, and active state without changing the
+  new-comment editor or React Link/tab behavior.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at desktop/390px
+  with clearfix, exact paint/geometry, responsive 5px link padding, order,
+  containment, alignment, non-overlap, hover, and active interaction.
+- [x] Fresh actual legacy/local screenshots were inspected. Page-level legacy
+  clips confirm tab → help → textarea order; the misleading form-element crop
+  was rejected. Checklist/clear controls and all non-tab editor consumers stay
+  outside this wave.
+
 ### 2026-07-22 Batch 798 board-post comment-update actions
 
 - [x] Upload label, Cancel, and Save compose one exact frozen generic `.ybtn`

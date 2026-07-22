@@ -2049,21 +2049,82 @@ function MarkdownEditor({
     editorMode === "update-comment-body"
       ? stylex.props(styles.commentUpdateTextareaControl)
       : undefined;
+  const isCommentUpdateEditor = editorMode === "update-comment-body";
+  const updateEditorNavStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateEditorNav)
+    : undefined;
+  const updateEditorNavItemStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateEditorNavItem)
+    : undefined;
+  const updateEditorTabStyle = (mode: "edit" | "preview") =>
+    isCommentUpdateEditor
+      ? stylex.props(
+          styles.commentUpdateEditorTabLink,
+          activeMode === mode && styles.commentUpdateEditorTabLinkActive,
+        )
+      : undefined;
 
   return (
     <div className="mt10">
-      <ul className="nav nav-tabs nm small">
-        <li className={activeMode === "edit" ? "active" : undefined}>
-          <Link to="." hash={`edit-${wrapId}`} onClick={(event) => selectMode("edit", event)}>
+      <ul
+        {...updateEditorNavStyle}
+        className={`${updateEditorNavStyle?.className ?? ""} nav nav-tabs nm small`.trim()}
+        data-stylex-owner={
+          isCommentUpdateEditor ? "post-detail-comment-update-editor-nav" : undefined
+        }
+      >
+        <li
+          {...updateEditorNavItemStyle}
+          className={`${updateEditorNavItemStyle?.className ?? ""}${activeMode === "edit" ? " active" : ""}`.trim()}
+          data-stylex-owner={
+            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+          }
+        >
+          <Link
+            {...updateEditorTabStyle("edit")}
+            to="."
+            hash={`edit-${wrapId}`}
+            data-stylex-owner={
+              isCommentUpdateEditor
+                ? activeMode === "edit"
+                  ? "post-detail-comment-update-editor-tab-active"
+                  : "post-detail-comment-update-editor-tab"
+                : undefined
+            }
+            onClick={(event) => selectMode("edit", event)}
+          >
             {t("common.editor.edit")}
           </Link>
         </li>
-        <li className={activeMode === "preview" ? "active" : undefined}>
-          <Link to="." hash={`preview-${wrapId}`} onClick={(event) => selectMode("preview", event)}>
+        <li
+          {...updateEditorNavItemStyle}
+          className={`${updateEditorNavItemStyle?.className ?? ""}${activeMode === "preview" ? " active" : ""}`.trim()}
+          data-stylex-owner={
+            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+          }
+        >
+          <Link
+            {...updateEditorTabStyle("preview")}
+            to="."
+            hash={`preview-${wrapId}`}
+            data-stylex-owner={
+              isCommentUpdateEditor
+                ? activeMode === "preview"
+                  ? "post-detail-comment-update-editor-tab-active"
+                  : "post-detail-comment-update-editor-tab"
+                : undefined
+            }
+            onClick={(event) => selectMode("preview", event)}
+          >
             {t("common.editor.preview")}
           </Link>
         </li>
-        <li>
+        <li
+          {...updateEditorNavItemStyle}
+          data-stylex-owner={
+            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+          }
+        >
           <div className="task-list-button">
             <button
               type="button"
@@ -2073,7 +2134,12 @@ function MarkdownEditor({
             </button>
           </div>
         </li>
-        <li>
+        <li
+          {...updateEditorNavItemStyle}
+          data-stylex-owner={
+            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+          }
+        >
           <div className="editor-clear-temporary">
             <div className="editor-clear-temporary-button">
               <button
@@ -2086,7 +2152,12 @@ function MarkdownEditor({
             </div>
           </div>
         </li>
-        <li>
+        <li
+          {...updateEditorNavItemStyle}
+          data-stylex-owner={
+            isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
+          }
+        >
           <div className="editor-notice-label"></div>
         </li>
       </ul>

@@ -5600,6 +5600,10 @@ test("authenticated populated board post owns open parent comment update form in
     "../yona-original/app/views/common/commentUpdateForm.scala.html",
     "utf8",
   );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
   const legacyEditorSource = readFileSync(
     "../yona-original/app/views/common/editor.scala.html",
     "utf8",
@@ -5647,6 +5651,10 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyEditorSource).toMatch(
     /<div class="textarea-box">\s*<textarea name="@textareaName" class="editorSeries content comment nm" data-editor-mode="@editorMode" markdown="true" id="editor-@textareaName-@wrapId"/u,
   );
+  expect(legacyEditorSource).toMatch(
+    /<ul class="nav nav-tabs nm small">\s*<li class="active">\s*<a href="#edit-@wrapId" data-toggle="tab" data-mode="edit">@Messages\("common\.editor\.edit"\)<\/a>\s*<\/li>\s*<li>\s*<a href="#preview-@wrapId" data-toggle="tab" data-mode="preview">@Messages\("common\.editor\.preview"\)<\/a>[\s\S]*?<li>[\s\S]*?add-task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
+  );
+  expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
   expect(legacyPageSource).toMatch(
     /\.comment-update-form\s*\{\s*display:none;\s*\.textarea-box\s*\{\s*padding-right:\s*2px;\s*margin-bottom:\s*10px;\s*\}\s*\.write-comment-box\s*\{\s*padding:\s*10px;/u,
   );
@@ -5679,8 +5687,14 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyResponsiveSource).toMatch(
     /@media all and \(max-width: 720px\) \{[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px !important;/u,
   );
+  expect(legacyResponsiveSource).toMatch(
+    /@media all and \(max-width: 720px\) \{[\s\S]*?\.nav-tabs li a\s*\{\s*padding-left:\s*5px !important;\s*padding-right:\s*5px !important;/u,
+  );
   expect(legacyBootstrapSource).toMatch(
     /label,\s*input,\s*button,\s*select,\s*textarea\s*\{\s*font-size:\s*14px;[\s\S]*?textarea\s*\{\s*height:\s*auto;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /\.nav\s*\{\s*margin-bottom:\s*20px;\s*margin-left:\s*0;\s*list-style:\s*none;[\s\S]*?\.nav-tabs:before,[\s\S]*?display:\s*table;\s*line-height:\s*0;\s*content:\s*"";[\s\S]*?\.nav-tabs:after,[\s\S]*?clear:\s*both;[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-1px;[\s\S]*?\.nav-tabs > li > a\s*\{[\s\S]*?padding-top:\s*8px;[\s\S]*?border-radius:\s*4px 4px 0 0;[\s\S]*?\.nav-tabs > \.active > a,[\s\S]*?border-bottom-color:\s*transparent;/u,
   );
   expect(legacyYobiSource).toMatch(
     /@import "less\/_variables\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";[\s\S]*?@import "less\/_yobiUI\.less";/u,
@@ -5697,6 +5711,15 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyYobiUiSource).toMatch(
     /textarea, input\[type="text"\],[\s\S]*?&:focus\s*\{\s*\.box-shadow\(none\);\s*border-color:@primary !important;/u,
   );
+  expect(legacyYobiUiSource).toMatch(
+    /\.nav-tabs\s*\{\s*li\s*\{\s*a\s*\{\s*padding-left:30px; padding-right:30px;\s*color: #3592b5;\s*font-weight: bold;[\s\S]*?&\.small\s*\{\s*height:29px;\s*li a \{ padding:4px 15px; \}/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.project-page-wrap\s*\{[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-2px;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.write-comment-wrap\s*\{[\s\S]*?\.nav\s*\{\s*margin-bottom:\s*0;/u,
+  );
   for (const styleName of [
     "commentUpdateForm",
     "commentUpdateFormVisible",
@@ -5709,6 +5732,10 @@ test("authenticated populated board post owns open parent comment update form in
     "commentUpdateFileUploadInput",
     "commentUpdateSaveButton",
     "commentUpdateActions",
+    "commentUpdateEditorNav",
+    "commentUpdateEditorNavItem",
+    "commentUpdateEditorTabLink",
+    "commentUpdateEditorTabLinkActive",
   ]) {
     expect(styleSource).toContain(`${styleName}:`);
   }
@@ -5724,6 +5751,12 @@ test("authenticated populated board post owns open parent comment update form in
   expect(styleSource).toMatch(
     /commentUpdateSaveButton:\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"[\s\S]*?borderColor:\s*"#206EE5"[\s\S]*?":hover":\s*\{[\s\S]*?backgroundColor:\s*"#206EE5 !important"[\s\S]*?":active":\s*\{[\s\S]*?backgroundColor:\s*"#3A7EE5 !important"/u,
   );
+  expect(styleSource).toMatch(
+    /commentUpdateEditorNav:\s*\{[\s\S]*?height:\s*"29px"[\s\S]*?margin:\s*"0px !important"[\s\S]*?"::before":[\s\S]*?"::after":/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateEditorTabLink:\s*\{[\s\S]*?color:\s*"#3592b5"[\s\S]*?padding:\s*"4px 15px"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{[\s\S]*?paddingLeft:\s*"5px !important",[\s\S]*?paddingRight:\s*"5px !important",/u,
+  );
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
     "post-detail-comment-editor",
@@ -5736,6 +5769,10 @@ test("authenticated populated board post owns open parent comment update form in
     "post-detail-comment-update-cancel",
     "post-detail-comment-update-save",
     "post-detail-comment-update-actions",
+    "post-detail-comment-update-editor-nav",
+    "post-detail-comment-update-editor-nav-item",
+    "post-detail-comment-update-editor-tab",
+    "post-detail-comment-update-editor-tab-active",
   ]) {
     expect(routeSource).toContain(owner);
   }
@@ -5887,12 +5924,33 @@ test("authenticated populated board post owns open parent comment update form in
     );
     const cancelButton = form.locator('[data-stylex-owner="post-detail-comment-update-cancel"]');
     const saveButton = form.locator('[data-stylex-owner="post-detail-comment-update-save"]');
+    const editorNav = form.locator('[data-stylex-owner="post-detail-comment-update-editor-nav"]');
+    const editorNavItems = editorNav.locator(
+      ':scope > [data-stylex-owner="post-detail-comment-update-editor-nav-item"]',
+    );
+    const editTab = editorNav.getByRole("link", { name: "Edit" });
+    const previewTab = editorNav.getByRole("link", { name: "Preview" });
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
     await expect(form.locator('input[type="hidden"][name="id"]')).toHaveValue("21");
     await expect(textarea).toHaveValue("First **comment**");
     await expect(actions.locator("button")).toHaveText(["Cancel", "Save"]);
+    await expect(editorNavItems).toHaveCount(5);
+    await expect(editorNavItems.nth(0)).toContainText("Edit");
+    await expect(editorNavItems.nth(1)).toContainText("Preview");
+    await expect(editorNavItems.nth(2)).toContainText("Add checklist");
+    await expect(editorNavItems.nth(3)).toContainText("Clear Temporary");
+    await expect(editTab).toHaveAttribute("href", /#edit-21$/u);
+    await expect(previewTab).toHaveAttribute("href", /#preview-21$/u);
+    await expect(editTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-update-editor-tab-active",
+    );
+    await expect(previewTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-update-editor-tab",
+    );
 
     const metrics = await formWrap.evaluate((wrapper) => {
       const get = (owner: string) =>
@@ -5906,6 +5964,14 @@ test("authenticated populated board post owns open parent comment update form in
       const cancelButton = get("post-detail-comment-update-cancel");
       const saveButton = get("post-detail-comment-update-save");
       const actions = get("post-detail-comment-update-actions");
+      const editorNav = get("post-detail-comment-update-editor-nav");
+      const editorNavItems = Array.from(
+        editorNav.querySelectorAll<HTMLElement>(
+          ':scope > [data-stylex-owner="post-detail-comment-update-editor-nav-item"]',
+        ),
+      );
+      const editTab = editorNavItems[0]!.querySelector<HTMLElement>("a")!;
+      const previewTab = editorNavItems[1]!.querySelector<HTMLElement>("a")!;
       const upload = wrapper.querySelector<HTMLElement>(".upload-drop-here")!;
       const form = wrapper.querySelector<HTMLElement>(":scope > form")!;
       const formRect = form.getBoundingClientRect();
@@ -5917,6 +5983,10 @@ test("authenticated populated board post owns open parent comment update form in
       const cancelRect = cancelButton.getBoundingClientRect();
       const saveRect = saveButton.getBoundingClientRect();
       const actionsRect = actions.getBoundingClientRect();
+      const editorNavRect = editorNav.getBoundingClientRect();
+      const editorItemRects = editorNavItems.map((item) => item.getBoundingClientRect());
+      const editTabRect = editTab.getBoundingClientRect();
+      const previewTabRect = previewTab.getBoundingClientRect();
       const controlStyle = (control: HTMLElement) => {
         const computed = getComputedStyle(control);
         return {
@@ -5983,6 +6053,77 @@ test("authenticated populated board post owns open parent comment update form in
           marginTop: getComputedStyle(actions).marginTop,
           textAlign: getComputedStyle(actions).textAlign,
         },
+        editorNav: {
+          borderBottom: getComputedStyle(editorNav).borderBottom,
+          height: getComputedStyle(editorNav).height,
+          listStyleType: getComputedStyle(editorNav).listStyleType,
+          margin: getComputedStyle(editorNav).margin,
+          padding: getComputedStyle(editorNav).padding,
+          before: {
+            content: getComputedStyle(editorNav, "::before").content,
+            display: getComputedStyle(editorNav, "::before").display,
+            lineHeight: getComputedStyle(editorNav, "::before").lineHeight,
+          },
+          after: {
+            clear: getComputedStyle(editorNav, "::after").clear,
+            content: getComputedStyle(editorNav, "::after").content,
+            display: getComputedStyle(editorNav, "::after").display,
+            lineHeight: getComputedStyle(editorNav, "::after").lineHeight,
+          },
+        },
+        editorItems: editorNavItems.map((item) => ({
+          float: getComputedStyle(item).float,
+          marginBottom: getComputedStyle(item).marginBottom,
+        })),
+        editTab: {
+          backgroundColor: getComputedStyle(editTab).backgroundColor,
+          borderTop: getComputedStyle(editTab).borderTop,
+          borderRight: getComputedStyle(editTab).borderRight,
+          borderBottomColor: getComputedStyle(editTab).borderBottomColor,
+          borderLeft: getComputedStyle(editTab).borderLeft,
+          borderRadius: getComputedStyle(editTab).borderRadius,
+          color: getComputedStyle(editTab).color,
+          cursor: getComputedStyle(editTab).cursor,
+          display: getComputedStyle(editTab).display,
+          fontWeight: getComputedStyle(editTab).fontWeight,
+          lineHeight: getComputedStyle(editTab).lineHeight,
+          marginRight: getComputedStyle(editTab).marginRight,
+          padding: getComputedStyle(editTab).padding,
+        },
+        previewTab: {
+          backgroundColor: getComputedStyle(previewTab).backgroundColor,
+          border: getComputedStyle(previewTab).border,
+          borderRadius: getComputedStyle(previewTab).borderRadius,
+          color: getComputedStyle(previewTab).color,
+          cursor: getComputedStyle(previewTab).cursor,
+          display: getComputedStyle(previewTab).display,
+          fontWeight: getComputedStyle(previewTab).fontWeight,
+          lineHeight: getComputedStyle(previewTab).lineHeight,
+          marginRight: getComputedStyle(previewTab).marginRight,
+          padding: getComputedStyle(previewTab).padding,
+        },
+        editorTabOrder:
+          Boolean(editTab.compareDocumentPosition(previewTab) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+          editorNavItems.every((item, index) =>
+            index === 0
+              ? true
+              : Boolean(
+                  editorNavItems[index - 1]!.compareDocumentPosition(item) &
+                  Node.DOCUMENT_POSITION_FOLLOWING,
+                ),
+          ),
+        editorTabsContained:
+          editTabRect.left >= editorNavRect.left &&
+          previewTabRect.right <= editorNavRect.right &&
+          editTabRect.top >= editorNavRect.top &&
+          previewTabRect.bottom <= editorNavRect.bottom + 2,
+        editorTabsAligned:
+          Math.abs(editTabRect.top - previewTabRect.top) <= 1 &&
+          Math.abs(editTabRect.bottom - previewTabRect.bottom) <= 1,
+        editorTabsDoNotOverlap: editTabRect.right <= previewTabRect.left,
+        editorItemsFollowTabs: editorItemRects
+          .slice(2)
+          .every((rect, index) => rect.left >= editorItemRects[index + 1]!.right),
         order:
           Boolean(textareaBox.compareDocumentPosition(upload) & Node.DOCUMENT_POSITION_FOLLOWING) &&
           Boolean(upload.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING),
@@ -6124,6 +6265,48 @@ test("authenticated populated board post owns open parent comment update form in
         width: "0px",
       },
       actions: { marginTop: "10px", textAlign: "right" },
+      editorNav: {
+        borderBottom: "1px solid rgb(221, 221, 221)",
+        height: "29px",
+        listStyleType: "none",
+        margin: "0px",
+        padding: "0px",
+        before: { content: '""', display: "table", lineHeight: "0px" },
+        after: { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+      },
+      editorItems: Array.from({ length: 5 }, () => ({ float: "left", marginBottom: "-2px" })),
+      editTab: {
+        backgroundColor: "rgb(255, 255, 255)",
+        borderTop: "1px solid rgb(221, 221, 221)",
+        borderRight: "1px solid rgb(221, 221, 221)",
+        borderBottomColor: "rgba(0, 0, 0, 0)",
+        borderLeft: "1px solid rgb(221, 221, 221)",
+        borderRadius: "4px 4px 0px 0px",
+        color: "rgb(85, 85, 85)",
+        cursor: "default",
+        display: "block",
+        fontWeight: "700",
+        lineHeight: "20px",
+        marginRight: "2px",
+        padding: viewport.width <= 720 ? "4px 5px" : "4px 15px",
+      },
+      previewTab: {
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        border: "1px solid rgba(0, 0, 0, 0)",
+        borderRadius: "4px 4px 0px 0px",
+        color: "rgb(53, 146, 181)",
+        cursor: "pointer",
+        display: "block",
+        fontWeight: "700",
+        lineHeight: "20px",
+        marginRight: "2px",
+        padding: viewport.width <= 720 ? "4px 5px" : "4px 15px",
+      },
+      editorTabOrder: true,
+      editorTabsContained: true,
+      editorTabsAligned: true,
+      editorTabsDoNotOverlap: true,
+      editorItemsFollowTabs: true,
       order: true,
       containment: true,
       noOverlap: true,
@@ -6136,6 +6319,28 @@ test("authenticated populated board post owns open parent comment update form in
       controlsContained: true,
       controlsDoNotOverlap: true,
     });
+
+    await previewTab.hover();
+    await expect(previewTab).toHaveCSS("background-color", "rgb(242, 242, 242)");
+    await expect(previewTab).toHaveCSS(
+      "border-color",
+      "rgb(238, 238, 238) rgb(238, 238, 238) rgb(221, 221, 221)",
+    );
+    await previewTab.click();
+    await expect(previewTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-update-editor-tab-active",
+    );
+    await expect(editTab).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-update-editor-tab",
+    );
+    await expect(previewTab).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(previewTab).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
+    await expect(form.locator(`#preview-21`)).toBeVisible();
+    await expect(form.locator(`#edit-21`)).toBeHidden();
+    await editTab.click();
+    await expect(form.locator(`#edit-21`)).toBeVisible();
 
     await fileUploadLabel.hover();
     await expect(fileUploadLabel).toHaveCSS("background-color", "rgb(241, 241, 241)");
