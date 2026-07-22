@@ -112,4 +112,58 @@ export const styles = stylex.create({
   rangedThreadFoldHiddenForm: {
     display: "none",
   },
+  reviewCard: {
+    display: "block",
+    border: "1px solid #ddd",
+    padding: "10px",
+    paddingLeft: "15px",
+    marginBottom: "5px",
+    borderRadius: "0 3px 3px 0",
+    ":last-of-type": {
+      marginBottom: 0,
+    },
+    ":hover": {
+      textDecoration: "none",
+      backgroundColor: "#fafafa",
+    },
+  },
+  reviewCardOpen: {
+    boxShadow: "inset 5px 0 0 #b6da54",
+  },
+  reviewCardClosed: {
+    boxShadow: "inset 5px 0 0 #ddd",
+  },
+  reviewCardOutdatedLabel: {
+    borderRadius: "3px",
+    padding: "3px 6px",
+    backgroundColor: "#777",
+    color: "#fff",
+  },
+  reviewCardOutdatedLabelHidden: {
+    display: "none",
+  },
+  reviewCardContent: {
+    display: "-webkit-box",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    textAlign: "justify",
+    maxHeight: "60px",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    wordBreak: "break-all",
+  },
+  reviewCardInfo: {
+    display: "block",
+    textAlign: "right",
+    marginTop: "10px",
+  },
+  reviewCardDate: {
+    color: "#999",
+    verticalAlign: "middle",
+  },
+  reviewCardComments: {
+    color: "#3592b5",
+    marginTop: "2px",
+    marginLeft: "1px",
+  },
 });

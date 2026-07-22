@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 822 PR changes non-ranged review-card visible state
+
+- [x] Legacy `git/partial_reviewlist.scala.html:27-47` review-card DOM and frozen `_page.less:6191-6250` card/state/content/meta declarations are mapped; legacy diff inclusion is retained as additional evidence from `code/diff.scala.html:131-159`.
+- [x] `changes.tsx` and `-pull-request-changes.stylex.ts` preserve the Link/hash contract, open/closed state shadows, hover, outdated label visibility, clamped content, info/date/comments declarations, and stable route-local owners while retaining the shared fallback for other consumers.
+- [x] Focused outside-sandbox system-Chrome normal/fallback-off checks pass 2/2 each, covering source mapping, owner isolation, open/closed tab interaction, computed declarations, and 390px containment.
+- [x] Local review-card screenshots were captured and visually inspected under `frontend/output/playwright/batch-822/` (`review-card-desktop.png`, `review-card-390.png`). The captured fixture shows the existing asset-loading limitation for the avatar; no route-specific geometry compensation was added.
+- [ ] Populated live legacy screenshot parity remains unverified because the legacy server at `127.0.0.1:9000` was unavailable; retain this explicit gap and do not claim live legacy visual parity.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-22 Batch 821 PR changes ranged review-thread shell/header/fold
 
 - [x] Legacy partial_comment_thread.scala.html ranged shell/header/fold DOM and _page.less:6049-6132/_variables.less:100-101 declarations are mapped; legacy JS is behavior evidence only.

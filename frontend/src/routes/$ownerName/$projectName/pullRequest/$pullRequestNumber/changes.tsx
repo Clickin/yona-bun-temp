@@ -46,6 +46,15 @@ const sx = {
   reviewActions: stylex.props(styles.reviewActions),
   uploadHelp: stylex.props(styles.uploadHelp),
   commentDeleteModalVisible: stylex.props(styles.commentDeleteModalVisible),
+  reviewCard: stylex.props(styles.reviewCard),
+  reviewCardOpen: stylex.props(styles.reviewCardOpen),
+  reviewCardClosed: stylex.props(styles.reviewCardClosed),
+  reviewCardOutdatedLabel: stylex.props(styles.reviewCardOutdatedLabel),
+  reviewCardOutdatedLabelHidden: stylex.props(styles.reviewCardOutdatedLabelHidden),
+  reviewCardContent: stylex.props(styles.reviewCardContent),
+  reviewCardInfo: stylex.props(styles.reviewCardInfo),
+  reviewCardDate: stylex.props(styles.reviewCardDate),
+  reviewCardComments: stylex.props(styles.reviewCardComments),
 } as const;
 
 const legacyMarkdownTextareaAttr = { markdown: "true" };
@@ -841,6 +850,17 @@ function ReviewCard({
   const { runtimeConfig } = Route.useRouteContext();
   const { t } = useLegacyMessages();
   const remainingCommentCount = Math.max(0, thread.comments.length - 1);
+  const reviewCardState =
+    thread.state.toLowerCase() === "open" ? sx.reviewCardOpen : sx.reviewCardClosed;
+  const reviewCardClassName = [
+    "review-card",
+    thread.state.toLowerCase(),
+    thread.isOutdated ? "outdated" : "",
+    sx.reviewCard.className,
+    reviewCardState.className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Link
@@ -848,20 +868,48 @@ function ReviewCard({
       hash={`thread-${thread.id}`}
       activeOptions={legacyHashLinkActiveOptions}
       activeProps={legacyLinkActiveProps}
-      className={`review-card ${thread.state.toLowerCase()}${thread.isOutdated ? " outdated" : ""}`}
+      className={reviewCardClassName}
+      data-stylex-owner="pull-request-changes-review-card"
     >
-      <p className="content">{thread.comments[0]?.contentsMarkdown ?? ""}</p>
-      <p className="info">
+      <p
+        className={`content ${sx.reviewCardContent.className}`}
+        data-stylex-owner="pull-request-changes-review-card-content"
+      >
+        {thread.comments[0]?.contentsMarkdown ?? ""}
+      </p>
+      <p
+        className={`info ${sx.reviewCardInfo.className}`}
+        data-stylex-owner="pull-request-changes-review-card-info"
+      >
         {remainingCommentCount > 0 ? (
-          <span className="comments pull-left">
+          <span
+            className={`comments pull-left ${sx.reviewCardComments.className}`}
+            data-stylex-owner="pull-request-changes-review-card-comments"
+          >
             <i className="yobicon-comments"></i> {remainingCommentCount}
           </span>
         ) : null}
-        <span className="outdated-label">{t("review.outdated")}</span>
-        <span className="date" title={thread.createdLabel}>
+        <span
+          className={`outdated-label ${
+            thread.isOutdated
+              ? sx.reviewCardOutdatedLabel.className
+              : `${sx.reviewCardOutdatedLabel.className} ${sx.reviewCardOutdatedLabelHidden.className}`
+          }`}
+          data-stylex-owner="pull-request-changes-review-card-outdated-label"
+        >
+          {t("review.outdated")}
+        </span>
+        <span
+          className={`date ${sx.reviewCardDate.className}`}
+          data-stylex-owner="pull-request-changes-review-card-date"
+          title={thread.createdLabel}
+        >
           {thread.createdLabel}
         </span>
-        <span className="avatar-wrap smaller ml5">
+        <span
+          className="avatar-wrap smaller ml5"
+          data-stylex-owner="pull-request-changes-review-card-avatar"
+        >
           <img
             src={
               thread.authorAvatarUrl ||

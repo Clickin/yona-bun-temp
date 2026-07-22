@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
@@ -9,9 +11,26 @@ const PULL_REQUEST_CHANGES_ROUTE_SOURCE = readFileSync(
   "utf8",
 );
 
+const PULL_REQUEST_CHANGES_STYLEX_SOURCE = readFileSync(
+  new URL(
+    "../src/routes/$ownerName/$projectName/pullRequest/$pullRequestNumber/-pull-request-changes.stylex.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+const LEGACY_REVIEWLIST_SOURCE = readFileSync(
+  new URL("../../yona-original/app/views/git/partial_reviewlist.scala.html", import.meta.url),
+  "utf8",
+);
+
 const LEGACY_MESSAGES_SOURCE = readFileSync(
   new URL("../../yona-original/conf/messages", import.meta.url),
   "utf8",
+);
+
+const BATCH_822_SCREENSHOT_DIRECTORY = fileURLToPath(
+  new URL("../output/playwright/batch-822", import.meta.url),
 );
 
 const LEGACY_COMMENT_THREAD_SOURCE = readFileSync(
@@ -23,6 +42,8 @@ const LEGACY_COMMENT_THREAD_LESS_SOURCE = readFileSync(
   new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
   "utf8",
 );
+
+const LEGACY_REVIEW_CARD_LESS_SOURCE = LEGACY_COMMENT_THREAD_LESS_SOURCE;
 
 const LEGACY_CODE_COMMENT_JS_SOURCE = readFileSync(
   new URL("../../yona-original/public/javascripts/service/yobi.code.Diff.js", import.meta.url),
@@ -340,6 +361,44 @@ test("project pull request changes source keeps React-owned tab controls free of
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="edit"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain('data-mode="preview"');
   expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).not.toContain("data-type={line.type}");
+});
+
+test("project pull request review cards map legacy markup to route-owned StyleX declarations", () => {
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain(
+    '<a href="@DiffRenderer.urlToCommentThread(thread)" class="review-card',
+  );
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="content">');
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<p class="info">');
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<span class="outdated-label">');
+  expect(LEGACY_REVIEWLIST_SOURCE).toContain('<span class="date"');
+  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain(".review-card {");
+  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&:hover {");
+  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.open {");
+  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("&.closed {");
+  expect(LEGACY_REVIEW_CARD_LESS_SOURCE).toContain("-webkit-line-clamp: 3;");
+  expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain('from "./-pull-request-changes.stylex"');
+  for (const owner of [
+    "pull-request-changes-review-card",
+    "pull-request-changes-review-card-content",
+    "pull-request-changes-review-card-info",
+    "pull-request-changes-review-card-comments",
+    "pull-request-changes-review-card-outdated-label",
+    "pull-request-changes-review-card-date",
+  ]) {
+    expect(PULL_REQUEST_CHANGES_ROUTE_SOURCE).toContain(`data-stylex-owner="${owner}"`);
+  }
+  for (const declaration of [
+    "reviewCard",
+    "reviewCardOpen",
+    "reviewCardClosed",
+    "reviewCardOutdatedLabel",
+    "reviewCardContent",
+    "reviewCardInfo",
+    "reviewCardDate",
+    "reviewCardComments",
+  ]) {
+    expect(PULL_REQUEST_CHANGES_STYLEX_SOURCE).toContain(`${declaration}:`);
+  }
 });
 
 test("project pull request ranged thread source maps the legacy shell and React fold behavior", () => {
@@ -1094,6 +1153,21 @@ test("project pull request changes renders legacy review cards when threads exis
     "alt",
     "Dev Member",
   );
+  await expect(page.locator('[data-stylex-owner="pull-request-changes-review-card"]')).toHaveCount(
+    1,
+  );
+  await expect(
+    page.locator('[data-stylex-owner="pull-request-changes-review-card-content"]'),
+  ).toHaveText("Review note");
+  await expect(
+    page.locator('[data-stylex-owner="pull-request-changes-review-card-info"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('[data-stylex-owner="pull-request-changes-review-card-comments"]'),
+  ).toHaveText("1");
+  await expect(
+    page.locator('[data-stylex-owner="pull-request-changes-review-card-date"]'),
+  ).toHaveText("Jul 5, 2026");
 
   expect(await pullRequestReviewCardMetrics(page)).toEqual({
     cardBorder: "1px solid rgb(221, 221, 221)",
@@ -1127,6 +1201,86 @@ test("project pull request changes renders legacy review cards when threads exis
       EXPECTED_PULL_REQUEST_REVIEW_CARD.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+});
+
+test("project pull request review cards keep StyleX state and responsive containment", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const closedCardThread = { ...REVIEW_THREAD, id: 95, state: "closed" };
+  await mockPullRequestChanges(page, {
+    cardThreads: [REVIEW_THREAD, closedCardThread],
+    threads: [REVIEW_THREAD, closedCardThread],
+  });
+
+  await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
+  const openCard = page.locator("#reviewcards-open .review-card.open");
+  const closedCard = page.locator("#reviewcards-closed .review-card.closed");
+  await expect(openCard).toHaveClass(/review-card\s+open/u);
+  await expect(closedCard).toHaveClass(/review-card\s+closed/u);
+  await expect(openCard).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-91`,
+  );
+  await expect(closedCard).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/pullRequest/9/changes/abcdef1234567890#thread-95`,
+  );
+  await expect(openCard.locator("[data-stylex-owner$='-outdated-label']")).toHaveCSS(
+    "display",
+    "none",
+  );
+  await expect(openCard.locator("[data-stylex-owner$='-content']")).toHaveCSS(
+    "-webkit-line-clamp",
+    "3",
+  );
+  await expect(openCard.locator("[data-stylex-owner$='-content']")).toHaveCSS("max-height", "60px");
+  await expect(openCard.locator("[data-stylex-owner$='-info']")).toHaveCSS("margin-top", "10px");
+  await expect(openCard.locator("[data-stylex-owner$='-date']")).toHaveCSS(
+    "color",
+    "rgb(153, 153, 153)",
+  );
+  await expect(openCard.locator("[data-stylex-owner$='-comments']")).toHaveCSS(
+    "color",
+    "rgb(53, 146, 181)",
+  );
+  mkdirSync(BATCH_822_SCREENSHOT_DIRECTORY, { recursive: true });
+  await page.locator(".review-container").screenshot({
+    path: resolve(BATCH_822_SCREENSHOT_DIRECTORY, "review-card-desktop.png"),
+  });
+  await openCard.hover();
+  await expect(openCard).toHaveCSS("background-color", "rgb(250, 250, 250)");
+  await expect(openCard).toHaveCSS("box-shadow", "rgb(182, 218, 84) 5px 0px 0px 0px inset");
+
+  await page.locator(".review-container .nav-tabs button").nth(1).click();
+  await expect(closedCard).toBeVisible();
+  await expect(closedCard).toHaveCSS("box-shadow", "rgb(221, 221, 221) 5px 0px 0px 0px inset");
+  await page.locator(".review-container .nav-tabs button").nth(0).click();
+  await expect(page.locator("#reviewcards-open")).toHaveClass(/active/u);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const containment = await page.locator(".review-container").evaluate((container) => {
+    const card = container.querySelector<HTMLElement>("#reviewcards-open .review-card.open");
+    const content = card?.querySelector<HTMLElement>(".content");
+    if (!card || !content) return null;
+    const containerRect = container.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    return {
+      cardInsideContainer:
+        cardRect.left >= containerRect.left && cardRect.right <= containerRect.right,
+      contentInsideCard: contentRect.left >= cardRect.left && contentRect.right <= cardRect.right,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(containment).toEqual({
+    cardInsideContainer: true,
+    contentInsideCard: true,
+    viewportWidth: 390,
+  });
+  await page.locator(".review-container").screenshot({
+    path: resolve(BATCH_822_SCREENSHOT_DIRECTORY, "review-card-390.png"),
+  });
 });
 
 test("project pull request changes renders legacy non-ranged thread DOM", async ({ page }) => {
@@ -1409,10 +1563,12 @@ test("project pull request changes internal navigation links render legacy hrefs
     page.locator("#commits .dropdown-menu li").nth(2).locator("a .commit-hash"),
   ).toHaveAttribute("data-stylex-owner", "pull-request-changes-commit-hash");
   await assertLegacyAnchor(page.locator("#reviewcards-open .review-card.open"), {
-    className: "review-card open",
     href: `${basePath}/admin/sample/pullRequest/9/changes/${SELECTED_COMMIT_ID}#thread-92`,
     text: "General **note**OutdatedJul 7, 2026",
   });
+  await expect(page.locator("#reviewcards-open .review-card.open")).toHaveClass(
+    /review-card\s+open/u,
+  );
 });
 
 test("project pull request commit hashes keep legacy blue text on desktop and mobile", async ({
@@ -1585,7 +1741,7 @@ test("project pull request changes renders legacy outdated review-card class", a
 
   await page.goto(`${basePath}/admin/sample/pullRequest/9/changes`);
   await expect(page.locator("#reviewcards-open .review-card")).toHaveClass(
-    "review-card open outdated",
+    /review-card\s+open\s+outdated/u,
   );
   expect(
     await page.locator(".review-card.outdated .outdated-label").evaluate((element) => {
