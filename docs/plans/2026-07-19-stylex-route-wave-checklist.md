@@ -4,6 +4,12 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+## Approved Yoram footer diff (do not classify as a parity gap)
+
+The current footer deliberately differs from `yona-original/app/views/common/footer.scala.html` because the product owner changed the product identity. The React footer keeps `Yoram authors` and intentionally removes the legacy `NAVER`, `NAVER LABS`, and `NAVER CLOUD PLATFORM` provider-facing entries, the upstream Yona repository URL, and the legacy developer-contact link/copy. These are explicit user-authored changes, not omissions or unfinished migration work.
+
+Screenshot parity checks must preserve this diff. Any resulting search/footer position or height change is the natural geometry of the removed/replaced content; do not restore upstream links or add spacing to imitate them. Record any footer-related observation as the approved Yoram identity deviation, with the detailed source and rationale in `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`.
+
 ### 2026-07-22 Batch 816 board-post child rich Markdown
 
 - [x] Five child-only owners cover mention/issue links, open issue-state badge,

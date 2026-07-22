@@ -24,6 +24,25 @@ must preserve this decision. A diff containing those omissions/replacements is
 therefore expected evidence of the approved Yoram deviation, not a failure to
 copy `common/footer.scala.html`.
 
+### Explicit footer diff record
+
+For future screenshot and DOM reviews, classify the following exact differences
+as intentional:
+
+| Legacy footer item | Yoram result | Classification |
+| --- | --- | --- |
+| NAVER / NAVER LABS / NAVER CLOUD PLATFORM provider items | omitted | approved identity deviation |
+| upstream Yona repository URL | omitted until a real Yoram public repository exists | approved identity deviation |
+| legacy developer-contact item/link | omitted until a real Yoram contact destination exists | approved identity deviation |
+| legacy upstream attribution copy | `Yoram authors` | approved identity deviation |
+
+This record is also the rule for the active StyleX goal checklist: these items
+must not be restored as a response to screenshot RED, and their natural impact
+on footer/search geometry must not be reported as a `gap`, `deferred`, or
+`deviation` follow-up. The deviation itself is intentional and already
+accepted; only an accidental Yoram footer regression should be treated as a
+defect.
+
 ## Legacy evidence and deviation
 
 Legacy `yona-original/app/views/common/footer.scala.html`, `layout.scala.html`,
