@@ -6542,3 +6542,26 @@ project-search input (`398` vs `390`); pagination-owned containment remains
 clean and no compensating route geometry was added. Approved Yoram
 footer/provider and developer-contact/repository differences remain intentional
 deviations and must not be restored. This is not Wave 1 completion.
+
+## Batch 827
+
+Move the authenticated populated organization-scoped issue-search pagination
+state into the existing organization-search StyleX boundary. Legacy search
+partial selection and the organization pagination mount are established by
+`yona-original/app/views/search/partial_search.scala.html:142-160` and
+`yona-original/app/views/organization/group_issue_search_partial.scala.html:93`,
+with the populated search partials confirming the result/pagination output.
+Frozen `yobi.less:1-13` imports `_common.less:50-101`, `_sprites.less:1-5,97-119`,
+`_page.less:7442-7444`, and `_responsive.less`; `messages.ko-KR` supplies the
+Korean labels and the effective `margin-left:-120px !important` remains at both
+viewport sizes. React preserves the five-item organization-scoped DOM/order/copy,
+sprites, TanStack navigation, and invalid/clamped input behavior while
+`-organization-search.stylex.ts` owns only the traced pagination declarations.
+Focused outside-sandbox system-Chrome normal/fallback-off runs pass 4/4 each;
+local screenshots under
+`frontend/output/playwright/batch-organization-search-pagination/` were
+visually inspected. Live legacy populated screenshot parity remains explicitly
+unverified because `127.0.0.1:9000` was unavailable, and no compensating
+geometry was added. Approved Yoram footer/provider/developer-contact/repository
+differences remain intentional deviations and must not be restored. This is not
+Wave 1 completion.

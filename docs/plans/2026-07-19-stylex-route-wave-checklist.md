@@ -10,6 +10,15 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] `loginform.tsx` and `-loginform.stylex.ts` preserve the anonymous normal page/full → title/tagline → form → hidden redirect → fields → submit → empty provider row → remember/forgot action order, copy, names, placeholders, autocomplete, REST/TanStack session and redirect behavior, and route-local StyleX ownership. Verification/social/error states are excluded from this one-state slice.
 - [ ] Focused `frontend/tests/stylex-anonymous-login-normal.e2e.ts` normal and `VITE_DISABLE_LEGACY_FALLBACK=1` desktop 1366/mobile 390 runs remain for the parent agent; live legacy screenshot availability is unverified because localhost was unavailable, so parity is not claimed.
 
+### 2026-07-23 Batch 827 organization search populated issue pagination
+
+- [x] Legacy organization search result composition and pagination boundary are mapped through `search/partial_search.scala:142-160`, the populated search partials, and `organization/group_issue_search_partial.scala:93`; frozen `_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, `_responsive.less`, `yobi.less:1-13`, and `messages.ko-KR` supply the declarations, cascade, sprite geometry, and Korean labels.
+- [x] `organizations/$organizationName/search.tsx` preserves the five-item organization-scoped pagination DOM/order/copy, enabled/disabled sprites, TanStack organization search links, and invalid/clamped input behavior; `-organization-search.stylex.ts` owns only the traced route-local pagination declarations and stable markers.
+- [x] Focused outside-sandbox system-Chrome normal/fallback-off checks pass 4/4 each, covering provenance, desktop/mobile computed geometry, pagination-owned containment, organization-scoped SPA navigation, and input behavior.
+- [x] Local desktop/mobile screenshots were captured and visually inspected under `frontend/output/playwright/batch-organization-search-pagination/` (`organization-search-pagination-desktop.png`, `organization-search-pagination-mobile.png`).
+- [ ] Live legacy populated screenshot parity remains unverified because `127.0.0.1:9000` was unavailable; no live legacy parity claim is made. Any fallback-off shell overflow outside the pagination owner remains a baseline and receives no compensating geometry.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-23 Batch 826 project search populated issue pagination
 
 - [x] Legacy `search/partial_search.scala.html` → `search/partial_issues.scala.html` project-scoped issue pagination boundary, Korean page labels, and frozen `yobi.less` pagination cascade (`_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, `_responsive.less`) are mapped.
