@@ -11,6 +11,14 @@ React SPA screen from legacy Yona Scala HTML. It is the execution companion to
 
 Every resumed goal turn must restate this directive before choosing work:
 
+- The project owner explicitly changed the product-facing footer/contact
+  identity for Yoram. NAVER, NAVER LABS, NAVER CLOUD PLATFORM, upstream Yona
+  repository URLs, and the legacy developer-contact link must remain absent or
+  replaced by Yoram-owned copy. These are approved deviations, not parity gaps.
+  Screenshot comparison must exclude their copy, missing-item width, wrapping,
+  and downstream geometry consequences; never restore upstream entries or add
+  artificial spacing to imitate them. The canonical rationale is
+  `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`.
 - Playwright E2E and screenshot parity invocations run wholly outside the
   sandbox with `PW_CHANNEL=chrome`, using installed system Chrome. A bundled
   browser failure or sandboxed launch is not acceptable parity evidence.
