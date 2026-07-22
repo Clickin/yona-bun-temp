@@ -2092,15 +2092,18 @@ function MarkdownEditor({
         ? "post-detail-comment-create-editor-tab-active"
         : "post-detail-comment-create-editor-tab"
       : undefined;
-  const updateChecklistWrapStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateChecklistWrap)
-    : undefined;
-  const updateChecklistButtonStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
-    : undefined;
-  const updateChecklistIconStyle = isCommentUpdateEditor
-    ? stylex.props(styles.commentUpdateChecklistIcon)
-    : undefined;
+  const checklistWrapStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentUpdateChecklistWrap)
+      : undefined;
+  const checklistButtonStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
+      : undefined;
+  const checklistIconStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentUpdateChecklistIcon)
+      : undefined;
   const clearTemporaryStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateClearTemporary)
     : isCommentCreateEditor
@@ -2182,25 +2185,37 @@ function MarkdownEditor({
           }
         >
           <div
-            {...updateChecklistWrapStyle}
-            className={`${updateChecklistWrapStyle?.className ?? ""} task-list-button`.trim()}
+            {...checklistWrapStyle}
+            className={`${checklistWrapStyle?.className ?? ""} task-list-button`.trim()}
             data-stylex-owner={
-              isCommentUpdateEditor ? "post-detail-comment-update-checklist-wrap" : undefined
+              isCommentUpdateEditor
+                ? "post-detail-comment-update-checklist-wrap"
+                : isCommentCreateEditor
+                  ? "post-detail-comment-create-checklist-wrap"
+                  : undefined
             }
           >
             <button
-              {...updateChecklistButtonStyle}
+              {...checklistButtonStyle}
               type="button"
-              className={`${updateChecklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim()}
+              className={`${checklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim()}
               data-stylex-owner={
-                isCommentUpdateEditor ? "post-detail-comment-update-checklist-button" : undefined
+                isCommentUpdateEditor
+                  ? "post-detail-comment-update-checklist-button"
+                  : isCommentCreateEditor
+                    ? "post-detail-comment-create-checklist-button"
+                    : undefined
               }
             >
               <i
-                {...updateChecklistIconStyle}
-                className={`${updateChecklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim()}
+                {...checklistIconStyle}
+                className={`${checklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim()}
                 data-stylex-owner={
-                  isCommentUpdateEditor ? "post-detail-comment-update-checklist-icon" : undefined
+                  isCommentUpdateEditor
+                    ? "post-detail-comment-update-checklist-icon"
+                    : isCommentCreateEditor
+                      ? "post-detail-comment-create-checklist-icon"
+                      : undefined
                 }
               ></i>{" "}
               {t("button.add.checklist")}

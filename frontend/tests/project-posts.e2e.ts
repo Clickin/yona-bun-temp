@@ -2685,6 +2685,10 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
     "utf8",
   );
+  const legacyYobiconSource = readFileSync(
+    "../yona-original/public/stylesheets/yobicon/style.css",
+    "utf8",
+  );
   const legacyTemporarySaveSource = readFileSync(
     "../yona-original/public/javascripts/service/yona.temporarySaveHandler.js",
     "utf8",
@@ -2730,12 +2734,40 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyKoreanMessagesSource).toContain("common.editor.edit = 편집");
   expect(legacyKoreanMessagesSource).toContain("common.editor.preview = 미리보기");
   expect(legacyKoreanMessagesSource).toContain("button.add.checklist = 체크리스트 추가");
+  expect(legacyEditorSource).toMatch(
+    /<div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"><\/i> @Messages\("button\.add\.checklist"\)<\/button><\/div>/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.task-list-button\s*\{\s*margin-top:\s*2px;\s*\.tasklist-icon\s*\{\s*vertical-align:\s*top;\s*\}\s*button\s*\{\s*margin-top:\s*1px;/u,
+  );
+  expect(legacyEditorSource).not.toContain('class="yobicon-list tasklist-icon"');
+  expect(legacyYobiUiSource).toMatch(
+    /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?padding:\s*4px 12px !important;[\s\S]*?&\.ybtn-small\s*\{\s*padding:\s*3px 10px !important;\s*font-size:\s*13px !important;[\s\S]*?&\.ybtn-danger-no-outline\s*\{\s*font-weight:\s*600;\s*box-shadow:\s*none;\s*color:\s*#666;\s*padding:\s*1px 10px !important;\s*border:\s*1px solid transparent;\s*background-color:\s*#eee;[\s\S]*?background-color:\s*#fbe9e7;\s*border:\s*1px solid #EF9A9A;/u,
+  );
+  expect(legacyYobiconSource).toMatch(
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?line-height:\s*1;[\s\S]*?display:\s*inline-block;[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(legacyYobiconSource).toMatch(/\.yobicon-list:before\s*\{\s*content:\s*"\\e25e";/u);
   expect(styleSource).toMatch(
     /commentCreateClearTemporary:\s*\{\s*display:\s*"none",\s*marginLeft:\s*"10px"\s*\}/u,
   );
   expect(styleSource).toMatch(/commentCreateEditorNoticeLabel:\s*\{\s*padding:\s*"4px 15px"\s*\}/u);
+  expect(styleSource).toMatch(/commentUpdateChecklistWrap:\s*\{ marginTop:\s*"2px" \}/u);
+  expect(styleSource).toMatch(
+    /commentUpdateChecklistButton:\s*\{[\s\S]*?backgroundColor:\s*"#eeeeee"[\s\S]*?borderColor:\s*"transparent"[\s\S]*?fontSize:\s*"13px !important"[\s\S]*?marginTop:\s*"1px"[\s\S]*?padding:\s*"1px 10px !important"[\s\S]*?backgroundColor:\s*"#fbe9e7"[\s\S]*?borderColor:\s*"#EF9A9A"[\s\S]*?color:\s*"#C93426"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateChecklistIcon:\s*\{[\s\S]*?fontFamily:\s*"yobicon"[\s\S]*?lineHeight:\s*"20px"[\s\S]*?verticalAlign:\s*"baseline"[\s\S]*?"::before":\s*\{ content:\s*'"\\\\e25e"' \}/u,
+  );
   expect(routeSource.match(/post-detail-comment-create-clear-temporary/g)).toHaveLength(1);
   expect(routeSource.match(/post-detail-comment-create-editor-notice-label/g)).toHaveLength(1);
+  for (const owner of [
+    "post-detail-comment-create-checklist-wrap",
+    "post-detail-comment-create-checklist-button",
+    "post-detail-comment-create-checklist-icon",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
   const markdownEditorSource = routeSource.slice(
     routeSource.indexOf("function MarkdownEditor("),
     routeSource.indexOf("function MarkdownEditor(") + 9_000,
@@ -2827,6 +2859,15 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     );
     const editTab = editorNav.getByRole("link", { name: "편집" });
     const previewTab = editorNav.getByRole("link", { name: "미리보기" });
+    const checklistWrap = editorNav.locator(
+      '[data-stylex-owner="post-detail-comment-create-checklist-wrap"]',
+    );
+    const checklistButton = checklistWrap.locator(
+      '[data-stylex-owner="post-detail-comment-create-checklist-button"]',
+    );
+    const checklistIcon = checklistButton.locator(
+      '[data-stylex-owner="post-detail-comment-create-checklist-icon"]',
+    );
     const clearTemporary = commentForm.locator(
       '[data-stylex-owner="post-detail-comment-create-clear-temporary"]',
     );
@@ -2848,11 +2889,25 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       "data-stylex-owner",
       "post-detail-comment-create-editor-tab",
     );
+    await expect(checklistWrap).toHaveClass(/task-list-button/u);
+    await expect(checklistButton).toHaveClass(
+      /add-task-list-button ybtn ybtn-small ybtn-danger-no-outline/u,
+    );
+    await expect(checklistButton).toHaveText("체크리스트 추가");
+    await expect(checklistIcon).toHaveClass(/yobicon-list task-list-icon/u);
+    await expect(
+      commentForm.locator('[data-stylex-owner^="post-detail-comment-create-checklist-"]'),
+    ).toHaveCount(3);
     await expect(
       commentForm.locator('[data-stylex-owner^="post-detail-comment-update-"]'),
     ).toHaveCount(0);
     await expect(
       page.locator('.comment-update-form [data-stylex-owner^="post-detail-comment-create-"]'),
+    ).toHaveCount(0);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner^="post-detail-comment-create-checklist-"]',
+      ),
     ).toHaveCount(0);
     await expect(
       page.locator(
@@ -2896,6 +2951,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         })),
         editTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab-active"]'),
         previewTab: measure('[data-stylex-owner="post-detail-comment-create-editor-tab"]'),
+        checklistWrap: measure('[data-stylex-owner="post-detail-comment-create-checklist-wrap"]'),
+        checklistButton: measure(
+          '[data-stylex-owner="post-detail-comment-create-checklist-button"]',
+        ),
+        checklistIcon: measure('[data-stylex-owner="post-detail-comment-create-checklist-icon"]'),
         order: Array.from(form.querySelectorAll(":scope .nav-tabs > li")).map((item) =>
           item.textContent?.trim(),
         ),
@@ -2937,6 +2997,42 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.editTab.bottom).toBeCloseTo(metrics.previewTab.bottom, 1);
     expect(metrics.editTab.left).toBeGreaterThanOrEqual(metrics.editorNav.left);
     expect(metrics.previewTab.right).toBeLessThanOrEqual(metrics.editorNav.right);
+    await expect(checklistWrap).toHaveCSS("margin-top", "2px");
+    await expect(checklistButton).toHaveCSS("background-color", "rgb(238, 238, 238)");
+    await expect(checklistButton).toHaveCSS("border-color", "rgba(0, 0, 0, 0)");
+    await expect(checklistButton).toHaveCSS("border-radius", "3px");
+    await expect(checklistButton).toHaveCSS("box-shadow", "none");
+    await expect(checklistButton).toHaveCSS("color", "rgb(102, 102, 102)");
+    await expect(checklistButton).toHaveCSS("display", "inline-block");
+    await expect(checklistButton).toHaveCSS("font-size", "13px");
+    await expect(checklistButton).toHaveCSS("font-weight", "600");
+    await expect(checklistButton).toHaveCSS("line-height", "20px");
+    await expect(checklistButton).toHaveCSS("margin-top", "1px");
+    await expect(checklistButton).toHaveCSS("padding", "1px 10px");
+    await expect(checklistButton).toHaveCSS("position", "relative");
+    await expect(checklistButton).toHaveCSS("vertical-align", "middle");
+    await expect(checklistIcon).toHaveCSS("background-image", "none");
+    await expect(checklistIcon).toHaveCSS("display", "inline-block");
+    await expect(checklistIcon).toHaveCSS("font-family", "yobicon");
+    await expect(checklistIcon).toHaveCSS("font-style", "normal");
+    await expect(checklistIcon).toHaveCSS("font-variant", "normal");
+    await expect(checklistIcon).toHaveCSS("font-weight", "400");
+    await expect(checklistIcon).toHaveCSS("line-height", "20px");
+    await expect(checklistIcon).toHaveCSS("text-decoration-line", "none");
+    await expect(checklistIcon).toHaveCSS("vertical-align", "baseline");
+    expect(await checklistIcon.evaluate((icon) => getComputedStyle(icon, "::before").content)).toBe(
+      '""',
+    );
+    expect(metrics.previewTab.right).toBeLessThanOrEqual(metrics.checklistButton.left);
+    expect(metrics.checklistWrap.left).toBeGreaterThanOrEqual(metrics.editorNav.left);
+    expect(metrics.checklistWrap.right).toBeLessThanOrEqual(metrics.editorNav.right);
+    expect(metrics.checklistButton.left).toBeGreaterThanOrEqual(metrics.checklistWrap.left);
+    expect(metrics.checklistButton.right).toBeLessThanOrEqual(metrics.checklistWrap.right);
+    expect(metrics.checklistIcon.left).toBeGreaterThanOrEqual(metrics.checklistButton.left);
+    expect(metrics.checklistIcon.right).toBeLessThanOrEqual(metrics.checklistButton.right);
+    expect(metrics.checklistButton.top - metrics.editTab.top).toBeCloseTo(3, 1);
+    expect(metrics.checklistButton.bottom).toBeLessThanOrEqual(metrics.editTab.bottom);
+    expect(metrics.checklistButton.bottom).toBeLessThanOrEqual(metrics.editorNav.bottom);
     expect(metrics.editPane.display).toBe("block");
     expect(metrics.previewPane.display).toBe("none");
     expect(metrics.previewPane.height).toBe(0);
@@ -2962,6 +3058,20 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       "data-stylex-owner",
       "post-detail-comment-create-editor-tab",
     );
+    expect(page.url()).toBe(urlBeforePreview);
+
+    const checklistValue = await textarea.inputValue();
+    await checklistButton.hover();
+    await expect(checklistButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(checklistButton).toHaveCSS("border-color", "rgb(239, 154, 154)");
+    await expect(checklistButton).toHaveCSS("color", "rgb(201, 52, 38)");
+    await checklistButton.focus();
+    await expect(checklistButton).toBeFocused();
+    await expect(checklistButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(checklistButton).toHaveCSS("border-color", "rgb(239, 154, 154)");
+    await checklistButton.click();
+    await expect(checklistButton).toBeFocused();
+    await expect(textarea).toHaveValue(checklistValue);
     expect(page.url()).toBe(urlBeforePreview);
     await expect(previewPane.locator(".markdown-preview")).toBeVisible();
     await expect(previewPane.locator("strong")).toHaveText("preview");
