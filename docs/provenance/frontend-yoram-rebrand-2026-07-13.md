@@ -24,6 +24,14 @@ This is not a legacy-copy parity claim. It is an approved product identity
 deviation required because Yoram is an independent Apache-2.0 reimplementation,
 not a NAVER-developed product or a Yona-branded fork.
 
+The approval includes visible layout consequences. In particular, a legacy
+navbar screenshot may contain a configured developer-contact item before the
+global search form. Yoram intentionally omits that item until a real public
+repository is configured, so the search form starts earlier by the omitted
+item's natural width. Screenshot parity must classify that position difference
+as part of this identity deviation, not restore upstream copy/link targets or
+introduce artificial spacing to imitate an absent item.
+
 ## Compatibility boundaries retained
 
 The following names are not product branding and must remain until separately
