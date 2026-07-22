@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 792 board-post Watch paint
+
+- [x] The Watch button now preserves legacy `ybtn` plus conditional
+  `ybtn-watching`; route-local StyleX owns exact default, hover/focus/active,
+  watching, and watching-hover/focus declarations instead of unconditional
+  green paint.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px, covering source ownership, exact paint/geometry, containment,
+  and POST/DELETE watch/unwatch state transitions.
+- [x] Fresh paired screenshots visually align the neutral Watch paint and
+  retain the closed upload boundary. Only the navbar search x-position remains
+  as a screen gap; approved Yoram identity/link deviations remain excluded.
+
 ### 2026-07-22 Batch 791 board-post editor/upload boundary
 
 - [x] The populated comment editor preserves the legacy `tab-content` class

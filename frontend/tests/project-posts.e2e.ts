@@ -1657,6 +1657,150 @@ test("project board detail toggles legacy watch state through REST", async ({ pa
   expect(watchRequests).toEqual(["POST", "DELETE"]);
 });
 
+test("project board detail owns legacy Watch button paint in StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyButtonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+
+  expect(legacyViewSource).toMatch(
+    /id="watch-button"[^>]*class="ybtn @if\(conatinsCurrentUserInWatchers\) \{ybtn-watching\}"/u,
+  );
+  expect(legacyButtonSource).toMatch(
+    /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?background-color: @yobi-btn-default;[\s\S]*?&:hover, &:focus, &:active,[\s\S]*?background-color:#f1f1f1;/u,
+  );
+  expect(legacyButtonSource).toMatch(
+    /&\.ybtn-watching\s*\{[\s\S]*?background-color\s*:\s*#f4efea !important;[\s\S]*?border:1px solid #C9C5C1;[\s\S]*?color:#333;[\s\S]*?&:hover, &:focus\s*\{[\s\S]*?background-color: #e0dad4 !important;/u,
+  );
+  expect(legacyVariablesSource).toMatch(/@yobi-white\s*:\s*#FFF;/u);
+  expect(legacyVariablesSource).toMatch(/@yobi-btn-default\s*:\s*@yobi-white;/u);
+  expect(routeSource).toContain('ybtn${post.isWatching ? " ybtn-watching" : ""}');
+  expect(routeSource).toMatch(
+    /stylex\.props\(\s*styles\.watch,\s*post\.isWatching && styles\.watchWatching,?\s*\)/u,
+  );
+  expect(styleSource).toMatch(/watch:\s*\{[\s\S]*?backgroundColor:\s*"#ffffff"/u);
+  expect(styleSource).toMatch(/watchWatching:\s*\{[\s\S]*?backgroundColor:\s*"#f4efea"/u);
+  expect(routeSource).not.toMatch(/id="watch-button"[\s\S]*?style=\{/u);
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const { watchRequests } = await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const watchButton = page.locator("#watch-button");
+    await expect(watchButton).toHaveJSProperty("tagName", "BUTTON");
+    await expect(watchButton).toHaveClass(/\bybtn\b/u);
+    await expect(watchButton).not.toHaveClass(/\bybtn-watching\b/u);
+    await expect(watchButton).toHaveAttribute("data-watching", "false");
+    await expect(watchButton).toHaveAttribute("title", "If subscribe, notify all new comments");
+    await expect(watchButton).toHaveText("Watch");
+    await expect(watchButton).not.toHaveAttribute("style");
+
+    const paint = () =>
+      watchButton.evaluate((element) => {
+        const button = element.getBoundingClientRect();
+        const wrapper = element.parentElement!.parentElement!.getBoundingClientRect();
+        const actions = element.closest<HTMLElement>(".board-actrow")!.getBoundingClientRect();
+        const actionButtons = element
+          .closest<HTMLElement>(".board-actrow")!
+          .querySelector<HTMLElement>(":scope > span")!
+          .getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          backgroundColor: style.backgroundColor,
+          borderColor: style.borderColor,
+          borderRadius: style.borderRadius,
+          boxShadow: style.boxShadow,
+          color: style.color,
+          contained:
+            button.left >= wrapper.left - 0.5 &&
+            button.right <= wrapper.right + 0.5 &&
+            button.top >= wrapper.top - 0.5 &&
+            button.bottom <= wrapper.bottom + 0.5 &&
+            wrapper.left >= actions.left - 0.5 &&
+            wrapper.right <= actions.right + 0.5,
+          height: button.height,
+          noOverlap: button.right <= actionButtons.left,
+          padding: style.padding,
+        };
+      });
+
+    await expect.poll(paint).toEqual({
+      backgroundColor: "rgb(255, 255, 255)",
+      borderColor: "rgba(0, 0, 0, 0.15)",
+      borderRadius: "3px",
+      boxShadow: "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px",
+      color: "rgb(51, 51, 51)",
+      contained: true,
+      height: 30,
+      noOverlap: true,
+      padding: "4px 12px",
+    });
+
+    await watchButton.hover();
+    await expect.poll(paint).toMatchObject({
+      backgroundColor: "rgb(241, 241, 241)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+    await page.mouse.move(0, 0);
+    await watchButton.focus();
+    await expect.poll(paint).toMatchObject({
+      backgroundColor: "rgb(241, 241, 241)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+
+    await watchButton.click();
+    await expect(watchButton).toHaveClass(/\bybtn-watching\b/u);
+    await expect(watchButton).toHaveAttribute("data-watching", "true");
+    await expect(watchButton).toHaveText("Stop watching");
+    await page.mouse.move(0, 0);
+    await watchButton.blur();
+    await expect.poll(paint).toMatchObject({
+      backgroundColor: "rgb(244, 239, 234)",
+      borderColor: "rgb(201, 197, 193)",
+      color: "rgb(51, 51, 51)",
+    });
+    await watchButton.hover();
+    await expect.poll(paint).toMatchObject({
+      backgroundColor: "rgb(224, 218, 212)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+    await page.mouse.move(0, 0);
+    await watchButton.focus();
+    await expect.poll(paint).toMatchObject({
+      backgroundColor: "rgb(224, 218, 212)",
+      borderColor: "rgba(0, 0, 0, 0.25)",
+      color: "rgb(41, 41, 41)",
+    });
+
+    await watchButton.click();
+    await expect(watchButton).not.toHaveClass(/\bybtn-watching\b/u);
+    await expect(watchButton).toHaveAttribute("data-watching", "false");
+    await expect(watchButton).toHaveText("Watch");
+    expect(watchRequests).toEqual(["POST", "DELETE"]);
+  }
+});
+
 test("project board detail deletes through legacy confirmation modal", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { deleteRequests } = await mockProjectPosts(page);

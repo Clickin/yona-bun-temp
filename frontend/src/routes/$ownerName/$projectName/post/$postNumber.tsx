@@ -60,7 +60,6 @@ const sx = {
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
   watchWrapper: stylex.props(styles.watchWrapper),
-  watch: stylex.props(styles.watch),
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
   tasklist: stylex.props(styles.tasklist),
@@ -272,6 +271,7 @@ function ProjectPostDetailBody({
   const canUpdate = booleanField(post.permissions.canUpdate);
   const canDelete = booleanField(post.permissions.canDelete);
   const canWatch = booleanField(post.permissions.canWatch);
+  const watchButtonStyle = stylex.props(styles.watch, post.isWatching && styles.watchWatching);
   // board/view.scala.html keys this rail entry off the enabled board menu;
   // creation authorization is enforced after navigation, not by hiding it.
   const boardMenuEnabled = projectMenuEnabled(project, "board");
@@ -535,7 +535,8 @@ function ProjectPostDetailBody({
                     <button
                       id="watch-button"
                       type="button"
-                      {...sx.watch}
+                      {...watchButtonStyle}
+                      className={`${watchButtonStyle.className} ybtn${post.isWatching ? " ybtn-watching" : ""}`}
                       data-stylex-owner="post-detail-watch"
                       data-placement="top"
                       title={t("issue.watch.description")}

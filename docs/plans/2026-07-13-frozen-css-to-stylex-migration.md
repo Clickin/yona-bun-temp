@@ -6382,3 +6382,18 @@ renders without overlay or console errors. The separate collapse-button paint
 and navbar-search x-position differences remain goal gaps. User-approved Yoram
 footer/contact/repository identity differences remain intentional deviations
 and must not be restored.
+
+## Batch 792
+
+Close the authenticated populated board-post Watch paint gap. Frozen
+`board/view.scala.html:96-112` emits `button#watch-button.ybtn` and adds
+`ybtn-watching` only while subscribed. `_yobiUI.less:710-747,793-901` plus
+`_variables.less:68,82` establish the exact white default, gray interaction,
+beige watching, border, text, shadow, and geometry declarations. Preserve the
+button/id/title/data/copy contract and conditional legacy classes, remove the
+incorrect unconditional green route paint, and keep POST/DELETE transitions in
+React/TanStack Query. Explicit system-Chrome normal/fallback-off runs pass 1/1
+each at 1366px and 390px. Fresh paired screenshots visually align the neutral
+Watch control and retain the closed upload boundary. Navbar-search x-position
+remains the next screen gap; user-approved Yoram footer/contact/repository
+differences remain intentional deviations and must not be restored.
