@@ -767,29 +767,60 @@ function IssuePagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap" data-total={totalPages}>
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      id="pagination"
+      className={`${stylex.props(styles.paginationWrap).className} page-navigation-wrap`}
+      data-stylex-owner="project-issues-pagination"
+      data-total={totalPages}
+    >
+      <ul
+        className={`${stylex.props(styles.paginationPageNums).className} page-nums`}
+        data-stylex-owner="project-issues-pagination-page-nums"
+      >
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="project-issues-pagination-prev-page"
+        >
           {hasPrev ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
               to={pageRoutePath(currentPage - 1)}
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev).className} ico btn-pg-prev`}
+                data-stylex-owner="project-issues-pagination-prev-icon"
+              ></i>
+              <span
+                className={stylex.props(styles.paginationIconLabel).className}
+                data-stylex-owner="project-issues-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
+                data-stylex-owner="project-issues-pagination-prev-icon"
+              ></i>
+              <span
+                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="project-issues-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
+          data-stylex-owner="project-issues-pagination-input-page"
+        >
           <input
-            className="input-mini nospinner"
+            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
             defaultValue={currentPage}
+            key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
             name="pageNum"
@@ -799,24 +830,54 @@ function IssuePagination({
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
+            data-stylex-owner="project-issues-pagination-input"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationDelimiter).className} page-num delimiter`}
+          data-stylex-owner="project-issues-pagination-delimiter"
+        >
+          /
+        </li>
+        <li
+          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
+          data-stylex-owner="project-issues-pagination-total"
+        >
+          {totalPages}
+        </li>
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="project-issues-pagination-next-page"
+        >
           {hasNext ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
               activeProps={legacyRouteLocalActiveProps}
               to={pageRoutePath(currentPage + 1)}
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                className={stylex.props(styles.paginationIconLabel).className}
+                data-stylex-owner="project-issues-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext).className} ico btn-pg-next`}
+                data-stylex-owner="project-issues-pagination-next-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="project-issues-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
+                data-stylex-owner="project-issues-pagination-next-icon"
+              ></i>
             </>
           )}
         </li>

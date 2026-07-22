@@ -6474,3 +6474,24 @@ Move the authenticated populated PR changes non-ranged review-card visible state
 ## Batch 823
 
 Move the authenticated populated project board pagination state into the existing route-local StyleX boundary. `yona-original/app/views/board/list.scala.html:86-98` and `project/list.scala.html:115-122` establish the pagination mount; frozen `_common.less:50-101` supplies wrapper/list/item/input/label/delimiter/nospinner declarations, `_page.less:7442-7444` supplies the desktop `margin-left:-120px !important`, `_responsive.less` supplies a non-important mobile `margin-left:0` rule, and `_sprites.less:1-5,97-119` supplies the `.ico`/prev/next sprite geometry. The effective frozen cascade remains `-120px` at both viewport sizes because the important desktop declaration wins; StyleX reproduces that effective result without compensating geometry. React preserves the existing TanStack navigation, invalid/clamped Enter behavior, legacy classes/DOM/order/copy, and links; the shared pagination fallback and eight other consumers remain untouched. Focused outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each, and local desktop/mobile screenshots under `frontend/output/playwright/batch-823/` were visually inspected. Live legacy populated screenshot parity remains explicitly unverified because `127.0.0.1:9000` was unavailable. This is not Wave 1 completion.
+
+## Batch 824
+
+Move the authenticated populated project issues pagination state into the
+existing route-local StyleX boundary. `yona-original/app/views/issue/partial_list_wrap.scala.html:41-97`
+establishes the populated issue-list shell and pagination mount;
+`yona-original/app/assets/stylesheets/yobi.less:1-13` imports the relevant
+frozen `_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`,
+and `_responsive.less` cascade, while `yona-original/conf/messages.ko-KR:74,79`
+supplies the Korean page labels. The effective frozen `margin-left:-120px
+!important` remains at both viewport sizes because it wins over the responsive
+non-important `0` rule. React preserves the five-item DOM/order/copy, sprite
+states, TanStack links, and input invalid/clamped Enter behavior; `-issues.stylex.ts`
+owns only those traced declarations and the shared pagination fallback remains
+for other consumers. Focused outside-sandbox system-Chrome normal/fallback-off
+runs pass 5/5 each; local desktop/mobile screenshots under
+`frontend/output/playwright/batch-824/` were visually inspected. Live legacy
+populated screenshot parity remains explicitly unverified because
+`127.0.0.1:9000` was unavailable. Approved Yoram footer/provider and
+developer-contact/repository differences remain intentional deviations and must
+not be restored or geometrically compensated. This is not Wave 1 completion.
