@@ -1726,6 +1726,9 @@ function PostCommentUpdateForm({
     styles.commentUpdateActionButton,
     styles.commentUpdateSaveButton,
   );
+  const updateDropOverlayStyle = stylex.props(styles.commentUpdateDropOverlay);
+  const updateDropMessageWrapStyle = stylex.props(styles.commentUpdateDropMessageWrap);
+  const updateDropMessageStyle = stylex.props(styles.commentUpdateDropMessage);
 
   return (
     <div
@@ -1756,9 +1759,23 @@ function PostCommentUpdateForm({
               value={comment.contentsMarkdown}
               wrapId={commentId}
             />
-            <div className="upload-drop-here">
-              <div className="msg-wrap">
-                <div className="msg">{t("common.attach.dropFilesHere")}</div>
+            <div
+              {...updateDropOverlayStyle}
+              className={`${updateDropOverlayStyle.className} upload-drop-here`}
+              data-stylex-owner="post-detail-comment-update-drop-overlay"
+            >
+              <div
+                {...updateDropMessageWrapStyle}
+                className={`${updateDropMessageWrapStyle.className} msg-wrap`}
+                data-stylex-owner="post-detail-comment-update-drop-message-wrap"
+              >
+                <div
+                  {...updateDropMessageStyle}
+                  className={`${updateDropMessageStyle.className} msg`}
+                  data-stylex-owner="post-detail-comment-update-drop-message"
+                >
+                  {t("common.attach.dropFilesHere")}
+                </div>
               </div>
             </div>
             <div
@@ -2072,6 +2089,9 @@ function MarkdownEditor({
   const updateChecklistIconStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateChecklistIcon)
     : undefined;
+  const updateClearTemporaryStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateClearTemporary)
+    : undefined;
 
   return (
     <div className="mt10">
@@ -2166,7 +2186,13 @@ function MarkdownEditor({
             isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
           }
         >
-          <div className="editor-clear-temporary">
+          <div
+            {...updateClearTemporaryStyle}
+            className={`${updateClearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim()}
+            data-stylex-owner={
+              isCommentUpdateEditor ? "post-detail-comment-update-clear-temporary" : undefined
+            }
+          >
             <div className="editor-clear-temporary-button">
               <button
                 type="button"

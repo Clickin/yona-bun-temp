@@ -4,6 +4,20 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 801 board-post comment-update hidden auxiliary controls
+
+- [x] Four update-only owners carry the exact frozen upload overlay, message
+  wrapper/message, and Clear Temporary wrapper declarations; no drag,
+  localStorage, clear, upload, or visibility behavior was invented.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at desktop/390px
+  with source/behavior limits, exact computed declarations, hidden zero
+  geometry, inert direct drag dispatch, update-only scope, and unchanged editor
+  interactions.
+- [x] Fresh actual legacy/local screenshots were captured and inspected. Both
+  hide these controls in the parent update editor. The fallback-off new-comment
+  Clear Temporary exposure is a separate consumer and the next safe wave;
+  approved Yoram identity differences remain excluded.
+
 ### 2026-07-22 Batch 800 board-post comment-update checklist control
 
 - [x] Three update-only owners carry the checklist wrapper, composed

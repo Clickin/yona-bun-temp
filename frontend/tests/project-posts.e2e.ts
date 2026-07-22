@@ -5640,6 +5640,14 @@ test("authenticated populated board post owns open parent comment update form in
     "../yona-original/public/stylesheets/yobicon/style.css",
     "utf8",
   );
+  const legacyCommentScriptSource = readFileSync(
+    "../yona-original/public/javascripts/common/yobi.Comment.js",
+    "utf8",
+  );
+  const legacyTemporarySaveSource = readFileSync(
+    "../yona-original/public/javascripts/service/yona.temporarySaveHandler.js",
+    "utf8",
+  );
 
   expect(legacyBoardSource).toContain("@partial_comments(project, post)");
   expect(legacyCommentsSource).toContain("@common.commentUpdateForm(comment,");
@@ -5652,6 +5660,9 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyUpdateFormSource).toMatch(
     /<span class="file-upload">\s*<label for="upload-@comment\.id" class="file-upload__label ybtn">[\s\S]*?<input id="upload-@comment\.id" class="file-upload__input" type="file" name="filePath" multiple>/u,
   );
+  expect(legacyUpdateFormSource).toMatch(
+    /<div class="upload-drop-here">\s*<div class="msg-wrap">\s*<div class="msg">@Messages\("common\.attach\.dropFilesHere"\)<\/div>\s*<\/div>\s*<\/div>/u,
+  );
   expect(legacyEditorSource).toMatch(
     /<div class="textarea-box">\s*<textarea name="@textareaName" class="editorSeries content comment nm" data-editor-mode="@editorMode" markdown="true" id="editor-@textareaName-@wrapId"/u,
   );
@@ -5660,6 +5671,9 @@ test("authenticated populated board post owns open parent comment update form in
   );
   expect(legacyEditorSource).toMatch(
     /<div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"><\/i> @Messages\("button\.add\.checklist"\)<\/button><\/div>/u,
+  );
+  expect(legacyEditorSource).toMatch(
+    /<div class="editor-clear-temporary">\s*<div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">@Messages\("button\.clear\.temporary"\)<\/button><\/div>\s*<\/div>/u,
   );
   expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
   expect(legacyPageSource).toMatch(
@@ -5744,6 +5758,21 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyPageSource).toMatch(
     /\.write-comment-box\s*\{[\s\S]*?\.write-comment-wrap\s*\{[\s\S]*?\.nav\s*\{\s*margin-bottom:\s*0;/u,
   );
+  expect(legacyPageSource).toMatch(
+    /\.upload-drop-here\s*\{\s*position:\s*absolute;\s*top:\s*2px;\s*left:\s*2px;\s*right:\s*2px;\s*bottom:\s*2px;\s*border:\s*3px dashed #FFB23D;\s*background:\s*rgba\(255,255,255,0\.8\);\s*z-index:\s*9999;\s*display:none;\s*pointer-events:\s*none;[\s\S]*?\.msg-wrap\s*\{\s*position:relative;\s*width:100%; height:100%;\s*\}[\s\S]*?\.msg\s*\{\s*position:\s*absolute;\s*top:\s*50%;\s*width:\s*100%;\s*margin-top:\s*-13px;\s*color:\s*#999;\s*font-size:\s*26px;\s*text-align:\s*center;\s*\}/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.editor-clear-temporary\s*\{\s*margin-left:\s*10px;\s*display:\s*none;\s*\}/u,
+  );
+  expect(legacyCommentScriptSource).toMatch(
+    /commentEditforms\.each\(function \(i, item\) \{\s*temporarySaveHandler\(\$\(item\)\.find\('textarea'\), false\);\s*\}\);/u,
+  );
+  expect(legacyCommentScriptSource).not.toContain("getUploader");
+  expect(legacyCommentScriptSource).not.toContain("yobi.Files");
+  expect(legacyTemporarySaveSource).toMatch(
+    /if\(\$textarea\.data\("editorMode"\) === "update-comment-body"\) \{[\s\S]*?localStorage\.setItem\(location\.pathname \+ '-last-comment-update-draft', \$textarea\.val\(\)\);\s*return;/u,
+  );
+  expect(legacyTemporarySaveSource).not.toContain("editor-clear-temporary");
   for (const styleName of [
     "commentUpdateForm",
     "commentUpdateFormVisible",
@@ -5763,6 +5792,10 @@ test("authenticated populated board post owns open parent comment update form in
     "commentUpdateChecklistWrap",
     "commentUpdateChecklistButton",
     "commentUpdateChecklistIcon",
+    "commentUpdateDropOverlay",
+    "commentUpdateDropMessageWrap",
+    "commentUpdateDropMessage",
+    "commentUpdateClearTemporary",
   ]) {
     expect(styleSource).toContain(`${styleName}:`);
   }
@@ -5791,6 +5824,19 @@ test("authenticated populated board post owns open parent comment update form in
   expect(styleSource).toMatch(
     /commentUpdateChecklistIcon:\s*\{[\s\S]*?fontFamily:\s*"yobicon"[\s\S]*?lineHeight:\s*"20px"[\s\S]*?verticalAlign:\s*"baseline"[\s\S]*?"::before":\s*\{ content:\s*'"\\\\e25e"' \}/u,
   );
+  expect(styleSource).toMatch(
+    /commentUpdateDropOverlay:\s*\{[\s\S]*?backgroundColor:\s*"rgba\(255, 255, 255, 0\.8\)"[\s\S]*?borderColor:\s*"#FFB23D"[\s\S]*?borderStyle:\s*"dashed"[\s\S]*?borderWidth:\s*"3px"[\s\S]*?bottom:\s*"2px"[\s\S]*?display:\s*"none"[\s\S]*?left:\s*"2px"[\s\S]*?pointerEvents:\s*"none"[\s\S]*?position:\s*"absolute"[\s\S]*?right:\s*"2px"[\s\S]*?top:\s*"2px"[\s\S]*?zIndex:\s*9999/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateDropMessageWrap:\s*\{ height:\s*"100%", position:\s*"relative", width:\s*"100%" \}/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateDropMessage:\s*\{[\s\S]*?color:\s*"#999999"[\s\S]*?fontSize:\s*"26px"[\s\S]*?marginTop:\s*"-13px"[\s\S]*?position:\s*"absolute"[\s\S]*?textAlign:\s*"center"[\s\S]*?top:\s*"50%"[\s\S]*?width:\s*"100%"/u,
+  );
+  expect(styleSource).toContain(
+    'commentUpdateClearTemporary: { display: "none", marginLeft: "10px" }',
+  );
+  expect(styleSource).not.toContain("commentUpdateDropOverlayVisible");
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
     "post-detail-comment-editor",
@@ -5810,9 +5856,15 @@ test("authenticated populated board post owns open parent comment update form in
     "post-detail-comment-update-checklist-wrap",
     "post-detail-comment-update-checklist-button",
     "post-detail-comment-update-checklist-icon",
+    "post-detail-comment-update-drop-overlay",
+    "post-detail-comment-update-drop-message-wrap",
+    "post-detail-comment-update-drop-message",
+    "post-detail-comment-update-clear-temporary",
   ]) {
     expect(routeSource).toContain(owner);
   }
+  expect(routeSource).not.toContain("onDragEnter");
+  expect(routeSource).not.toContain("onDragOver");
 
   for (const viewport of [
     { width: 1366, height: 900 },
@@ -5976,6 +6028,18 @@ test("authenticated populated board post owns open parent comment update form in
     const checklistIcon = checklistButton.locator(
       '[data-stylex-owner="post-detail-comment-update-checklist-icon"]',
     );
+    const dropOverlay = form.locator(
+      '[data-stylex-owner="post-detail-comment-update-drop-overlay"]',
+    );
+    const dropMessageWrap = dropOverlay.locator(
+      '[data-stylex-owner="post-detail-comment-update-drop-message-wrap"]',
+    );
+    const dropMessage = dropMessageWrap.locator(
+      '[data-stylex-owner="post-detail-comment-update-drop-message"]',
+    );
+    const clearTemporary = editorNav.locator(
+      '[data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+    );
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
@@ -6006,6 +6070,121 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(
       page.locator('#comment-form [data-stylex-owner^="post-detail-comment-update-checklist-"]'),
     ).toHaveCount(0);
+    await expect(
+      form.locator(
+        '[data-stylex-owner="post-detail-comment-update-drop-overlay"], [data-stylex-owner="post-detail-comment-update-drop-message-wrap"], [data-stylex-owner="post-detail-comment-update-drop-message"], [data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+      ),
+    ).toHaveCount(4);
+    await expect(
+      page.locator(
+        '#comment-form [data-stylex-owner="post-detail-comment-update-drop-overlay"], #comment-form [data-stylex-owner="post-detail-comment-update-drop-message-wrap"], #comment-form [data-stylex-owner="post-detail-comment-update-drop-message"], #comment-form [data-stylex-owner="post-detail-comment-update-clear-temporary"]',
+      ),
+    ).toHaveCount(0);
+    await expect(dropOverlay).toHaveCSS("display", "none");
+    await expect(clearTemporary).toHaveCSS("display", "none");
+    await expect(dropOverlay).toContainText("Drag & Drop files here to upload.");
+    await expect(clearTemporary).toContainText("Clear Temporary");
+
+    const hiddenAuxiliaryMetrics = await form.evaluate((formElement) => {
+      const get = (owner: string) =>
+        formElement.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const overlay = get("post-detail-comment-update-drop-overlay");
+      const messageWrap = get("post-detail-comment-update-drop-message-wrap");
+      const message = get("post-detail-comment-update-drop-message");
+      const clear = get("post-detail-comment-update-clear-temporary");
+      const overlayStyle = getComputedStyle(overlay);
+      const messageWrapStyle = getComputedStyle(messageWrap);
+      const messageStyle = getComputedStyle(message);
+      const clearStyle = getComputedStyle(clear);
+      const rect = (element: HTMLElement) => {
+        const box = element.getBoundingClientRect();
+        return { height: box.height, width: box.width };
+      };
+      return {
+        overlay: {
+          backgroundColor: overlayStyle.backgroundColor,
+          border: overlayStyle.border,
+          bottom: overlayStyle.bottom,
+          display: overlayStyle.display,
+          left: overlayStyle.left,
+          pointerEvents: overlayStyle.pointerEvents,
+          position: overlayStyle.position,
+          right: overlayStyle.right,
+          top: overlayStyle.top,
+          zIndex: overlayStyle.zIndex,
+        },
+        messageWrap: {
+          height: messageWrapStyle.height,
+          position: messageWrapStyle.position,
+          width: messageWrapStyle.width,
+        },
+        message: {
+          color: messageStyle.color,
+          fontSize: messageStyle.fontSize,
+          marginTop: messageStyle.marginTop,
+          position: messageStyle.position,
+          textAlign: messageStyle.textAlign,
+          top: messageStyle.top,
+          width: messageStyle.width,
+        },
+        clear: { display: clearStyle.display, marginLeft: clearStyle.marginLeft },
+        rects: {
+          clear: rect(clear),
+          message: rect(message),
+          messageWrap: rect(messageWrap),
+          overlay: rect(overlay),
+        },
+        order:
+          Boolean(
+            formElement.querySelector(".textarea-box")!.compareDocumentPosition(overlay) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ) &&
+          Boolean(
+            overlay.compareDocumentPosition(formElement.querySelector(".comment-update-button")!) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+      };
+    });
+    expect(hiddenAuxiliaryMetrics).toEqual({
+      overlay: {
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        border: "3px dashed rgb(255, 178, 61)",
+        bottom: "2px",
+        display: "none",
+        left: "2px",
+        pointerEvents: "none",
+        position: "absolute",
+        right: "2px",
+        top: "2px",
+        zIndex: "9999",
+      },
+      messageWrap: { height: "100%", position: "relative", width: "100%" },
+      message: {
+        color: "rgb(153, 153, 153)",
+        fontSize: "26px",
+        marginTop: "-13px",
+        position: "absolute",
+        textAlign: "center",
+        top: "50%",
+        width: "100%",
+      },
+      clear: { display: "none", marginLeft: "10px" },
+      rects: {
+        clear: { height: 0, width: 0 },
+        message: { height: 0, width: 0 },
+        messageWrap: { height: 0, width: 0 },
+        overlay: { height: 0, width: 0 },
+      },
+      order: true,
+    });
+
+    const textareaBeforeDrag = await textarea.inputValue();
+    await textarea.dispatchEvent("dragenter");
+    await textarea.dispatchEvent("dragover");
+    await expect(dropOverlay).toHaveCSS("display", "none");
+    await expect(clearTemporary).toHaveCSS("display", "none");
+    await expect(textarea).toHaveValue(textareaBeforeDrag);
+    await expect(formWrap).toBeVisible();
 
     const metrics = await formWrap.evaluate((wrapper) => {
       const get = (owner: string) =>
