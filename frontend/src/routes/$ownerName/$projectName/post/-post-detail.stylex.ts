@@ -176,6 +176,7 @@ export const styles = stylex.create({
   },
   childCommentReplyHidden: { display: "none" },
   childCommentReplyVisible: { display: "block" },
+  childCommentForm: { display: "none" },
   childCommentFormVisible: { display: "block" },
   childCommentMediaBody: {
     marginLeft: "60px",
@@ -202,6 +203,23 @@ export const styles = stylex.create({
     width: "100%",
   },
   childCommentSubmitButton: { display: "inline-block" },
+  childCommentParagraph: { color: "#202020", margin: 0, padding: 0 },
+  childCommentStrong: { fontWeight: "bold" },
+  childCommentAuthorLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": { color: "#005580", outline: "none !important", textDecoration: "underline" },
+    ":focus": { color: "#005580", outline: "none !important", textDecoration: "underline" },
+  },
+  childCommentAuthorStrong: { fontWeight: "bold" },
+  childCommentAgoLink: {
+    color: "inherit",
+    outline: "none",
+    textDecoration: "none",
+    ":hover": { color: "#005580", outline: "none !important", textDecoration: "underline" },
+    ":focus": { color: "#005580", outline: "none !important", textDecoration: "underline" },
+  },
   childCommentNotificationReceiver: {
     borderBottomLeftRadius: "3px",
     borderBottomRightRadius: "3px",

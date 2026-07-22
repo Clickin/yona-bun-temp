@@ -11,6 +11,12 @@ React SPA screen from legacy Yona Scala HTML. It is the execution companion to
 
 Every resumed goal turn must restate this directive before choosing work:
 
+- Batch 815 confirms that legacy post-render scripts are part of screenshot
+  parity evidence: compare the browser-rendered legacy DOM, then translate the
+  result with React-owned rendering. For child comments, the hidden Scala span
+  is not the final UI; `yona.SubComment.js` moves metadata into the final
+  Markdown paragraph.
+
 - The project owner explicitly changed the product-facing footer/contact
   identity for Yoram. NAVER, NAVER LABS, NAVER CLOUD PLATFORM, upstream Yona
   repository URLs, and the legacy developer-contact link must remain absent or

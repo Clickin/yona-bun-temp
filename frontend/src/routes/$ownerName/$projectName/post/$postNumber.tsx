@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   createPostCommentRest,
@@ -74,6 +74,12 @@ const sx = {
   childCommentOneLineBox: stylex.props(styles.childCommentOneLineBox),
   childCommentTextarea: stylex.props(styles.childCommentTextarea),
   childCommentSubmitButton: stylex.props(styles.childCommentSubmitButton),
+  childCommentForm: stylex.props(styles.childCommentForm),
+  childCommentParagraph: stylex.props(styles.childCommentParagraph),
+  childCommentStrong: stylex.props(styles.childCommentStrong),
+  childCommentAuthorLink: stylex.props(styles.childCommentAuthorLink),
+  childCommentAuthorStrong: stylex.props(styles.childCommentAuthorStrong),
+  childCommentAgoLink: stylex.props(styles.childCommentAgoLink),
   commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
@@ -2040,11 +2046,12 @@ function PostChildComments({
         </div>
         {canComment ? (
           <div
-            className={
-              formOpen
-                ? `${stylex.props(styles.childCommentFormVisible).className} child-comment-input-form`
-                : "child-comment-input-form"
-            }
+            {...sx.childCommentForm}
+            className={`${
+              stylex.props(styles.childCommentForm, formOpen && styles.childCommentFormVisible)
+                .className
+            } child-comment-input-form`}
+            data-stylex-owner="post-detail-child-comment-form"
           >
             <form
               action={prefixBasePath(
@@ -2117,6 +2124,84 @@ function PostChildComment({
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
+  const metadata = (
+    <>
+      -{" "}
+      <Link
+        {...sx.childCommentAuthorLink}
+        to="/$user"
+        params={{ user: authorLoginId }}
+        search={LEGACY_EMPTY_PROFILE_SEARCH}
+        className={`${sx.childCommentAuthorLink.className} usf-group`}
+        data-stylex-owner="post-detail-child-comment-author-link"
+        activeOptions={{ exact: true }}
+        activeProps={legacyRouteLocalActiveProps}
+      >
+        <strong
+          {...sx.childCommentAuthorStrong}
+          data-stylex-owner="post-detail-child-comment-author-strong"
+        >
+          {authorLabel}
+        </strong>
+      </Link>{" "}
+      <Link
+        {...sx.childCommentAgoLink}
+        to="."
+        hash={`comment-${commentId}`}
+        activeOptions={{ includeHash: true }}
+        activeProps={legacyRouteLocalActiveProps}
+        className={`${sx.childCommentAgoLink.className} ago`}
+        data-stylex-owner="post-detail-child-comment-ago-link"
+        title={comment.createdLabel}
+      >
+        {comment.createdLabel}
+      </Link>
+      {canDelete ? (
+        <button
+          {...sx.childCommentDeleteButton}
+          type="button"
+          className={`${sx.childCommentDeleteButton.className} btn-transparent deleteButtonX`}
+          data-stylex-owner="post-detail-child-comment-delete"
+          title={t("common.comment.delete")}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onCommentDeleteRequest(commentId);
+          }}
+        >
+          x
+        </button>
+      ) : null}
+    </>
+  );
+  const components: Components = {
+    p: ({ children, node: _node, ...props }) => {
+      const { [CHILD_COMMENT_METADATA_ATTRIBUTE]: metadataPlacement, ...paragraphProps } =
+        props as Record<string, unknown>;
+      if (metadataPlacement === "root") {
+        return metadata;
+      }
+      return (
+        <p
+          {...paragraphProps}
+          {...sx.childCommentParagraph}
+          data-stylex-owner="post-detail-child-comment-paragraph"
+        >
+          {children}
+          {metadataPlacement === "paragraph" ? metadata : null}
+        </p>
+      );
+    },
+    strong: ({ children, node: _node, ...props }) => (
+      <strong
+        {...props}
+        {...sx.childCommentStrong}
+        data-stylex-owner="post-detail-child-comment-strong"
+      >
+        {children}
+      </strong>
+    ),
+  };
   return (
     <div className="one-line-comment">
       <div
@@ -2124,49 +2209,50 @@ function PostChildComment({
         className={`${sx.childCommentContents.className} contents`}
         data-stylex-owner="post-detail-child-comment-contents"
       >
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
-        <span className="subcomment-author hide">
-          -{" "}
-          <Link
-            to="/$user"
-            params={{ user: authorLoginId }}
-            search={LEGACY_EMPTY_PROFILE_SEARCH}
-            className="usf-group"
-            activeOptions={{ exact: true }}
-            activeProps={legacyRouteLocalActiveProps}
-          >
-            <strong>{authorLabel}</strong>
-          </Link>{" "}
-          <Link
-            to="."
-            hash={`comment-${commentId}`}
-            activeOptions={{ includeHash: true }}
-            activeProps={legacyRouteLocalActiveProps}
-            className="ago"
-            title={comment.createdLabel}
-          >
-            {comment.createdLabel}
-          </Link>
-          {canDelete ? (
-            <button
-              {...sx.childCommentDeleteButton}
-              type="button"
-              className={`${sx.childCommentDeleteButton.className} btn-transparent deleteButtonX`}
-              data-stylex-owner="post-detail-child-comment-delete"
-              title={t("common.comment.delete")}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onCommentDeleteRequest(commentId);
-              }}
-            >
-              x
-            </button>
-          ) : null}
-        </span>
+        <ReactMarkdown
+          components={components}
+          remarkPlugins={[remarkGfm, remarkChildCommentMetadata]}
+        >
+          {comment.contentsMarkdown}
+        </ReactMarkdown>
       </div>
     </div>
   );
+}
+
+const CHILD_COMMENT_METADATA_ATTRIBUTE = "data-child-comment-metadata";
+
+type ChildCommentMarkdownNode = {
+  children?: ChildCommentMarkdownNode[];
+  data?: { hProperties?: Record<string, string> };
+  type: string;
+};
+
+function remarkChildCommentMetadata() {
+  return (tree: ChildCommentMarkdownNode) => {
+    let lastParagraph: ChildCommentMarkdownNode | undefined;
+    const visit = (node: ChildCommentMarkdownNode) => {
+      if (node.type === "paragraph") lastParagraph = node;
+      node.children?.forEach(visit);
+    };
+    visit(tree);
+    if (lastParagraph) {
+      lastParagraph.data = {
+        ...lastParagraph.data,
+        hProperties: {
+          ...lastParagraph.data?.hProperties,
+          [CHILD_COMMENT_METADATA_ATTRIBUTE]: "paragraph",
+        },
+      };
+      return;
+    }
+    tree.children ??= [];
+    tree.children.push({
+      type: "paragraph",
+      children: [],
+      data: { hProperties: { [CHILD_COMMENT_METADATA_ATTRIBUTE]: "root" } },
+    });
+  };
 }
 
 function MarkdownEditor({

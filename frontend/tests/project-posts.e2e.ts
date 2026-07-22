@@ -364,7 +364,7 @@ test("project board list tooltip markers are not React-owned DOM", async ({ page
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const POPULATED_CHILD_COMMENT_BODY =
-  '<div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
+  '<div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong>- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></p></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const POPULATED_CHILD_COMMENT_FORM = `<div class="add-a-comment">Reply</div>${POPULATED_CHILD_COMMENT_BODY}`;
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
@@ -5694,6 +5694,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     "utf8",
   );
   const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyLayoutSource = readFileSync("../yona-original/app/views/layout.scala.html", "utf8");
   const legacyCommentsSource = readFileSync(
     "../yona-original/app/views/board/partial_comments.scala.html",
     "utf8",
@@ -5704,6 +5705,18 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   );
   const legacyFormSource = readFileSync(
     "../yona-original/app/views/common/child_commentForm.scala.html",
+    "utf8",
+  );
+  const legacySubCommentScript = readFileSync(
+    "../yona-original/public/javascripts/common/yona.SubComment.js",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
     "utf8",
   );
   const legacyPageSource = readFileSync(
@@ -5726,19 +5739,47 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     "post-detail-child-comment-textarea",
     "post-detail-child-comment-submit",
   ] as const;
+  const batch815Owners = [
+    "post-detail-child-comment-form",
+    "post-detail-child-comment-paragraph",
+    "post-detail-child-comment-strong",
+    "post-detail-child-comment-author-link",
+    "post-detail-child-comment-author-strong",
+    "post-detail-child-comment-ago-link",
+  ] as const;
 
   expect(legacyViewSource).toContain("@partial_comments(project, post)");
+  expect(legacyLayoutSource.indexOf("bootstrap/css/bootstrap.css")).toBeLessThan(
+    legacyLayoutSource.indexOf("stylesheets/yobi.css"),
+  );
   expect(legacyCommentsSource).toContain(
     "@common.childComments(post, comment, ResourceType.NONISSUE_COMMENT)",
   );
   expect(legacyChildSource).toContain(
     "@common.child_commentForm(posting.asResource(), resourceType, getNewCommentUrl, currentComment.id)",
   );
+  expect(legacyChildSource).toMatch(
+    /@Html\(Markdown\.render\(comment\.contents, posting\.project\)\)[\s\S]*?<span class="subcomment-author hide">/u,
+  );
+  expect(legacyViewSource).toContain("yona.SubComment.js");
+  expect(legacySubCommentScript).toMatch(
+    /var trimmed = \$el\.html\(\)\.replace\(\/\\s\\s\+\/g, ' '\);[\s\S]*?var normalTextRenderedParagraph = \$closest\.find\('p'\)\.last\(\);[\s\S]*?\$el\.remove\(\);[\s\S]*?normalTextRenderedParagraph\.length === 0[\s\S]*?\$closest\.append\(trimmed\);[\s\S]*?normalTextRenderedParagraph\.append\(trimmed\);/u,
+  );
   expect(legacyFormSource).toMatch(
     /<div class="oneline-comment-box">[\s\S]*?<textarea class="editorSeries"[\s\S]*?<button type="submit" class="ybtn ybtn-success">OK<\/button>/u,
   );
   expect(legacyPageSource).toMatch(
     /\.subcomment-media-body\s*\{\s*margin-left:\s*60px;\s*text-align:\s*right;[\s\S]*?\.deleteButtonX\s*\{\s*display:\s*inline-flex;\s*align-items:\s*center;\s*color:\s*red;[\s\S]*?\.contents\s*\{\s*text-align:\s*left;\s*margin-left:\s*12px;\s*padding:\s*5px 0 4px 10px;\s*border-bottom:\s*1px dashed #ccc;[\s\S]*?\.child-comment-input-form\s*\{\s*display:\s*none;[\s\S]*?textarea\s*\{\s*margin-top:\s*5px;\s*border:\s*none;\s*border-bottom:\s*1px solid #ccc;\s*border-radius:\s*0 !important;\s*margin-bottom:\s*0;\s*resize:\s*none;\s*overflow:\s*hidden;\s*padding-left:\s*10px;[\s\S]*?button\s*\{\s*display:\s*inline-block;/u,
+  );
+  expect(legacyCommonSource).toMatch(
+    /body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,form,fieldset,p,button\{\s*margin:0;\s*padding:0/u,
+  );
+  expect(legacyCommonSource).toMatch(
+    /a\s*\{\s*color:\s*inherit;\s*text-decoration:\s*none;\s*outline:\s*none;[\s\S]*?&:hover\s*\{\s*outline:\s*none !important;\s*text-decoration:\s*underline;\s*\}[\s\S]*?&:focus\s*\{\s*outline:\s*none !important;\s*text-decoration:\s*underline;\s*\}/u,
+  );
+  expect(legacyBootstrapSource).toMatch(/strong\s*\{\s*font-weight:\s*bold;\s*\}/u);
+  expect(legacyBootstrapSource).toMatch(
+    /a:hover,\s*a:focus\s*\{\s*color:\s*#005580;\s*text-decoration:\s*underline;\s*\}/u,
   );
   expect(legacyPageSource).toMatch(
     /\.oneline-comment-box\s*\{\s*display:\s*flex;\s*margin-left:\s*12px;\s*textarea\s*\{\s*width:\s*100%;/u,
@@ -5755,6 +5796,26 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
     expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
   }
+  // RED recorded before Batch 815: these six owners were absent and metadata remained hidden.
+  expect(batch815Owners).toHaveLength(6);
+  for (const owner of batch815Owners) {
+    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+  }
+  expect(routeSource).not.toContain('className="subcomment-author hide"');
+  expect(routeSource).toContain("remarkChildCommentMetadata");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+  expect(styleSource).toMatch(/childCommentForm:\s*\{\s*display:\s*"none"\s*\}/u);
+  expect(styleSource).toMatch(
+    /childCommentParagraph:\s*\{\s*color:\s*"#202020",\s*margin:\s*0,\s*padding:\s*0\s*\}/u,
+  );
+  expect(styleSource).toMatch(/childCommentStrong:\s*\{\s*fontWeight:\s*"bold"\s*\}/u);
+  expect(styleSource).toMatch(/childCommentAuthorStrong:\s*\{\s*fontWeight:\s*"bold"\s*\}/u);
+  expect(
+    styleSource.match(
+      /color:\s*"#005580",\s*outline:\s*"none !important",\s*textDecoration:\s*"underline"/g,
+    ),
+  ).toHaveLength(4);
   expect(styleSource).toContain('"@media all and (max-width: 720px)": { marginLeft: 0 }');
   expect(styleSource).not.toContain("noTextDecoration");
   expect(styleSource).not.toContain("issueLink");
@@ -5778,8 +5839,19 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const childComments = comment.querySelector(".child-comments") as HTMLElement;
     const row = comment.querySelector(".one-line-comment") as HTMLElement;
     const contents = comment.querySelector(".one-line-comment .contents") as HTMLElement;
-    const author = comment.querySelector(".subcomment-author") as HTMLElement;
-    const ago = comment.querySelector(".subcomment-author .ago") as HTMLAnchorElement;
+    const paragraph = contents.querySelector(":scope > p") as HTMLParagraphElement;
+    const markdownStrong = paragraph.querySelector(
+      '[data-stylex-owner="post-detail-child-comment-strong"]',
+    ) as HTMLElement;
+    const author = paragraph.querySelector(
+      '[data-stylex-owner="post-detail-child-comment-author-link"]',
+    ) as HTMLAnchorElement;
+    const authorStrong = paragraph.querySelector(
+      '[data-stylex-owner="post-detail-child-comment-author-strong"]',
+    ) as HTMLElement;
+    const ago = paragraph.querySelector(
+      '[data-stylex-owner="post-detail-child-comment-ago-link"]',
+    ) as HTMLAnchorElement;
     const deleteButton = comment.querySelector(".deleteButtonX") as HTMLButtonElement;
     const formWrap = comment.querySelector(".child-comment-input-form") as HTMLElement;
     const form = formWrap.querySelector("form") as HTMLFormElement;
@@ -5792,7 +5864,11 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const replyStyle = window.getComputedStyle(reply);
     const bodyStyle = window.getComputedStyle(body);
     const contentsStyle = window.getComputedStyle(contents);
+    const paragraphStyle = window.getComputedStyle(paragraph);
+    const markdownStrongStyle = window.getComputedStyle(markdownStrong);
     const authorStyle = window.getComputedStyle(author);
+    const authorStrongStyle = window.getComputedStyle(authorStrong);
+    const agoStyle = window.getComputedStyle(ago);
     const deleteStyle = window.getComputedStyle(deleteButton);
     const formWrapStyle = window.getComputedStyle(formWrap);
     const oneLineBoxStyle = window.getComputedStyle(oneLineBox);
@@ -5821,8 +5897,34 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       contentsPadding: contentsStyle.padding,
       contentsTextAlign: contentsStyle.textAlign,
       contentsBorderBottom: contentsStyle.borderBottom,
+      paragraphMargin: paragraphStyle.margin,
+      paragraphPadding: paragraphStyle.padding,
+      directParagraphChildren: Array.from(paragraph.childNodes).map((node) =>
+        node.nodeType === Node.TEXT_NODE
+          ? `#text:${node.textContent}`
+          : (node as Element).matches('[data-stylex-owner="post-detail-child-comment-strong"]')
+            ? "markdown-strong"
+            : (node as Element).matches(
+                  '[data-stylex-owner="post-detail-child-comment-author-link"]',
+                )
+              ? "author-link"
+              : (node as Element).matches(
+                    '[data-stylex-owner="post-detail-child-comment-ago-link"]',
+                  )
+                ? "ago-link"
+                : (node as Element).matches(".deleteButtonX")
+                  ? "delete"
+                  : (node as Element).tagName.toLowerCase(),
+      ),
+      markdownStrongWeight: markdownStrongStyle.fontWeight,
       authorClassName: author.className,
-      authorDisplay: authorStyle.display,
+      authorColor: authorStyle.color,
+      authorDecoration: authorStyle.textDecorationLine,
+      authorOutline: authorStyle.outlineStyle,
+      authorStrongWeight: authorStrongStyle.fontWeight,
+      agoColor: agoStyle.color,
+      agoDecoration: agoStyle.textDecorationLine,
+      agoOutline: agoStyle.outlineStyle,
       agoHref: ago.getAttribute("href"),
       agoTitle: ago.getAttribute("title"),
       deleteTagName: deleteButton.tagName.toLowerCase(),
@@ -5893,8 +5995,27 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     contentsPadding: "5px 0px 4px 10px",
     contentsTextAlign: "left",
     contentsBorderBottom: "1px dashed rgb(204, 204, 204)",
-    authorClassName: "subcomment-author hide",
-    authorDisplay: "none",
+    paragraphMargin: "0px",
+    paragraphPadding: "0px",
+    directParagraphChildren: [
+      "#text:Nested ",
+      "markdown-strong",
+      "#text:-",
+      "#text: ",
+      "author-link",
+      "#text: ",
+      "ago-link",
+      "delete",
+    ],
+    markdownStrongWeight: "700",
+    authorClassName: expect.stringContaining("usf-group"),
+    authorColor: "rgb(32, 32, 32)",
+    authorDecoration: "none",
+    authorOutline: "none",
+    authorStrongWeight: "700",
+    agoColor: "rgb(32, 32, 32)",
+    agoDecoration: "none",
+    agoOutline: "none",
     agoHref: `${basePath}/admin/sample/post/3#comment-22`,
     agoTitle: "Jul 4, 2026",
     deleteTagName: "button",
@@ -5906,7 +6027,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     deleteDisplay: "inline-flex",
     deleteAlignItems: "center",
     deleteColor: "rgb(255, 0, 0)",
-    formWrapClassName: "child-comment-input-form",
+    formWrapClassName: expect.stringContaining("child-comment-input-form"),
     formWrapDisplay: "none",
     formAction: `${basePath}/admin/sample/post/3/comments`,
     formMethod: "post",
@@ -5949,7 +6070,17 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   );
 
   const parent = page.locator("#comment-21");
+  await expect(parent.locator(".subcomment-author")).toHaveCount(0);
+  const metadataParagraph = parent.locator(".one-line-comment .contents > p");
+  await expect(metadataParagraph.locator(":scope > .usf-group")).toHaveCount(1);
+  await expect(metadataParagraph.locator(":scope > .ago")).toHaveCount(1);
+  await expect(metadataParagraph.locator(":scope > .deleteButtonX")).toHaveCount(1);
   for (const owner of owners) {
+    const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(consumer).toHaveCount(1);
+    await expect(consumer).not.toHaveAttribute("style", /.+/u);
+  }
+  for (const owner of batch815Owners) {
     const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
     await expect(consumer).toHaveCount(1);
     await expect(consumer).not.toHaveAttribute("style", /.+/u);
@@ -6049,9 +6180,20 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     noOverflow: true,
   });
 
-  const childAuthor = page.locator("#comment-21 .subcomment-author");
-  await expect(childAuthor.locator('a[href^="javascript:"]')).toHaveCount(0);
-  const childDeleteButton = childAuthor.locator('button[type="button"].deleteButtonX');
+  const childMetadata = page.locator("#comment-21 .one-line-comment .contents > p");
+  const authorLink = childMetadata.locator(":scope > .usf-group");
+  const agoLink = childMetadata.locator(":scope > .ago");
+  await expect(authorLink).toHaveAttribute("href", `${basePath}/admin`);
+  await expect(agoLink).toHaveAttribute("href", `${basePath}/admin/sample/post/3#comment-22`);
+  await expectNoTanStackActiveAttrs(authorLink);
+  await expectNoTanStackActiveAttrs(agoLink);
+  await authorLink.hover();
+  await expect(authorLink).toHaveCSS("color", "rgb(0, 85, 128)");
+  await expect(authorLink).toHaveCSS("text-decoration-line", "underline");
+  await agoLink.focus();
+  await expect(agoLink).toHaveCSS("color", "rgb(0, 85, 128)");
+  await expect(agoLink).toHaveCSS("text-decoration-line", "underline");
+  const childDeleteButton = childMetadata.locator('button[type="button"].deleteButtonX');
   await expect(childDeleteButton).toHaveText("x");
   await expect(childDeleteButton).not.toHaveAttribute("data-request-uri");
   await expect(childDeleteButton).not.toHaveAttribute("data-request-method");
@@ -9092,6 +9234,16 @@ async function canonicalize(page: Page, selector: string) {
           (attr) =>
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
+            !(
+              attr.name === "class" &&
+              attr.value
+                .split(/\s+/u)
+                .filter(Boolean)
+                .every(
+                  (token) =>
+                    token.startsWith("-post-detail__styles.") || /^x[a-z0-9]+$/u.test(token),
+                )
+            ) &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
             attr.name !== "data-stylex-owner" &&
             attr.name !== "data-style-src" &&

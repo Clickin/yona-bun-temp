@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 815 board-post child metadata placement
+
+- [x] Six owners reproduce the legacy post-script output: closed/open child
+  form, final Markdown paragraph and strong, author link/strong, and ago link.
+- [x] Outside-sandbox system-Chrome normal/fallback-off focused runs pass 1/1
+  with exact DOM order, desktop/390px computed output, hover/focus, hash links,
+  and delete behavior.
+- [x] Fresh local desktop/mobile screenshots were visually compared with actual
+  legacy captures. Approved Yoram footer/contact/repository differences and
+  their downstream geometry are intentional deviations, never parity gaps.
+
 ### 2026-07-22 Batch 814 board-post populated child comment and Reply-open controls
 
 - [x] Six child-only owners carry the exact frozen responsive media gutter,
