@@ -20,8 +20,21 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   style, active/disabled visibility, and the fallback cascade difference in
   line-height. The managed legacy issue screen has a real 1/1 desktop
   screenshot sweep, and paired local comparison runs through root-base Vite
-  dev with system Chrome. Footer/provider and developer-contact differences
-  are the approved Yoram identity deviation recorded above.
+  dev with system Chrome. Sidebar horizontal geometry is aligned after the
+  final `_responsive.less` padding cascade; the remaining 456px-vs-410px
+  issue-form height difference is an explicit follow-up gap. Footer/provider
+  and developer-contact differences are the approved Yoram identity deviation
+  recorded above.
+
+### 2026-07-22 Batch 784 issue-detail sidebar responsive cascade proof
+
+- [x] The route-local `issueInfo` owner follows the final frozen cascade from
+  `_responsive.less` (`@media all`, `padding: 15px 0 0 10px`) rather than
+  stopping at the earlier `_page.less` 52px declaration.
+- [x] Focused normal/fallback-off sidebar metadata checks pass 1/1 each, and
+  the paired desktop sweep confirms the issue form's horizontal geometry now
+  matches legacy. The editable-label/permission branch still has a documented
+  456px-vs-410px vertical gap; no full parity claim is made.
 
 ### 2026-07-22 Batch 782 vote and voter-list proof
 

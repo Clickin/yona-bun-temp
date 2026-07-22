@@ -17,7 +17,11 @@
 - Visual recheck: the managed legacy port is prepared and seeded with Java 8;
   the legacy issue screenshot sweep passes 1/1. Paired local comparison now
   runs against the root-base Vite dev server with system Chrome; both sides
-  render successfully and remaining geometry findings are tracked separately.
+  render successfully. The issue sidebar horizontal geometry is aligned after
+  applying the final `_responsive.less` `.issue-info` padding cascade. One
+  vertical difference remains: the local editable/label branch produces an
+  issue form height of 456px versus legacy's 410px; it is retained as an
+  explicit follow-up gap and parity is not claimed as fully green.
 - Intentional product-identity deviation: the Yoram footer omits legacy
   NAVER/NAVER LABS provider links, and the developer-contact link uses the
   Yoram repository URL. These are explicit product changes, not parity gaps,

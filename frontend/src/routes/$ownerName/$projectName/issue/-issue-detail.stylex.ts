@@ -45,7 +45,48 @@ export const styles = stylex.create({
     top,
     transform: "translate(-50%, -100%)",
   }),
-  labelControl: { display: "inline-block" },
+  labelControl: {
+    display: "inline-block",
+    width: "100%",
+    boxSizing: "border-box",
+    backgroundColor: "#fff",
+    border: "1px solid #ddd",
+    borderRadius: "3px",
+    textAlign: "left",
+  },
+  labelChoices: {
+    listStyle: "none",
+    margin: 0,
+    minHeight: "26px",
+    overflow: "hidden",
+    padding: 0,
+  },
+  labelChoice: {
+    float: "left",
+    listStyle: "none",
+    margin: "3px 0 3px 5px",
+    padding: "3px 18px 3px 5px",
+    position: "relative",
+    lineHeight: "13px",
+  },
+  labelChoiceClose: {
+    backgroundColor: "transparent",
+    border: 0,
+    display: "block",
+    height: "13px",
+    left: "3px",
+    opacity: 0,
+    position: "absolute",
+    top: "6px",
+    width: "12px",
+  },
+  labelSearchField: {
+    float: "left",
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    whiteSpace: "nowrap",
+  },
   labelSearchInput: { width: "10px" },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
   shareLinkHidden: { display: "none" },
@@ -312,13 +353,10 @@ export const styles = stylex.create({
     display: "block",
     margin: "10px 20px",
   },
-  // `_page.less` keeps the desktop metadata gutter at 52px and only narrows it
-  // at the frozen 720px responsive boundary.
+  // `_responsive.less` wins the frozen cascade for the rendered issue detail
+  // state, including the desktop viewport used by the paired sweep.
   issueInfo: {
-    padding: "15px 0 0 52px",
-    "@media all and (max-width: 720px)": {
-      padding: "15px 0 0 10px",
-    },
+    padding: "15px 0 0 10px",
   },
   boardFooter: {
     marginTop: "20px",

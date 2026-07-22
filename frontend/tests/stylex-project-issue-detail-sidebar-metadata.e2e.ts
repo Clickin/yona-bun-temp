@@ -18,18 +18,23 @@ test("issue detail sidebar metadata uses route-local StyleX ownership", async ()
     new URL("../../yona-original/app/assets/stylesheets/less/_page.less", import.meta.url),
     "utf8",
   );
+  const legacyResponsiveLess = readFileSync(
+    new URL("../../yona-original/app/assets/stylesheets/less/_responsive.less", import.meta.url),
+    "utf8",
+  );
   const appCss = readFileSync(new URL("../src/app.css", import.meta.url), "utf8");
 
   expect(legacySource).toContain('class="issue-info"');
   expect(legacyLess).toContain(".issue-info {");
   expect(legacyLess).toContain("margin-bottom:20px;");
   expect(legacyLess).toContain("padding:5px 0px;");
+  expect(legacyResponsiveLess).toContain(".issue-info {");
+  expect(legacyResponsiveLess).toContain("padding: 15px 0 0 10px;");
 
   expect(routeSource.match(/data-stylex-owner="issue-detail-sidebar-dl"/g)).toHaveLength(3);
   expect(routeSource.match(/data-stylex-owner="issue-detail-sidebar-dd"/g)).toHaveLength(4);
   expect(routeSource).toContain('data-stylex-owner="issue-detail-sidebar-assignee-name"');
   expect(styleSource).toContain("issueInfo: {");
-  expect(styleSource).toContain('padding: "15px 0 0 52px"');
   expect(styleSource).toContain('padding: "15px 0 0 10px"');
   expect(styleSource).toContain('sidebarMetaDl: { marginBottom: "20px" }');
   expect(styleSource).toContain('sidebarMetaDd: { padding: "5px 0px" }');

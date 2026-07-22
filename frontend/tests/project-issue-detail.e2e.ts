@@ -222,7 +222,7 @@ test("project issue detail keeps the frozen desktop and mobile issue-info gutter
   await page.goto(`${basePath}/admin/sample/issue/11`);
   await expect(page.locator(".span-right-pane .issue-info")).toHaveCSS(
     "padding",
-    "15px 0px 0px 52px",
+    "15px 0px 0px 10px",
   );
 
   await page.setViewportSize({ width: 720, height: 900 });
@@ -3699,9 +3699,12 @@ test("project issue detail renders legacy updateable labels without manager edit
   );
   await expect(page.locator("#labelIds")).toHaveAttribute("data-placeholder", "Select label");
   await expect(page.locator("#labelIds")).toHaveAttribute("data-close-on-select", "false");
+  await expect(
+    page.locator("#issueUpdateForm .select2-container-multi.issue-labels"),
+  ).not.toHaveClass(/\bhide\b/u);
   const expectedLabels =
-    '<dl><dt>Label</dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select></dd></dl>';
-  expect(await canonicalize(page, ".issue-info form dl:has(#labelIds)")).toEqual(
+    '<select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" data-close-on-select="false" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false" selected="">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup></select>';
+  expect(await canonicalize(page, "#labelIds")).toEqual(
     await canonicalizeHtml(page, expectedLabels),
   );
 

@@ -2237,15 +2237,22 @@ function LegacyLabelControl({
     );
   return (
     <div
-      className={`select2-container select2-container-multi hide issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
+      className={`select2-container select2-container-multi issue-labels bordered fullsize${open ? " select2-container-active" : ""}`}
       {...stylex.props(styles.labelControl)}
       data-stylex-owner="project-issue-detail-label-control"
     >
-      <ul className="select2-choices">
+      <ul
+        {...stylex.props(styles.labelChoices)}
+        className={`select2-choices ${stylex.props(styles.labelChoices).className}`}
+      >
         {labels
           .filter((label) => selectedLabelIds.has(stringField(label.id)))
           .map((label) => (
-            <li className="select2-search-choice" key={stringField(label.id)}>
+            <li
+              {...stylex.props(styles.labelChoice)}
+              className={`select2-search-choice ${stylex.props(styles.labelChoice).className}`}
+              key={stringField(label.id)}
+            >
               <div>
                 <strong
                   {...stylex.props(
@@ -2259,6 +2266,7 @@ function LegacyLabelControl({
                 </strong>
               </div>
               <span
+                {...stylex.props(styles.labelChoiceClose)}
                 className="select2-search-choice-close"
                 role="button"
                 tabIndex={0}
@@ -2270,7 +2278,10 @@ function LegacyLabelControl({
               ></span>
             </li>
           ))}
-        <li className="select2-search-field">
+        <li
+          {...stylex.props(styles.labelSearchField)}
+          className={`select2-search-field ${stylex.props(styles.labelSearchField).className}`}
+        >
           <input
             className="select2-input"
             aria-label={t("label.select")}
