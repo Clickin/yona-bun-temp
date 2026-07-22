@@ -68,6 +68,23 @@ const sx = {
   commentAvatar: stylex.props(styles.commentAvatar),
   commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
   commentMeta: stylex.props(styles.commentMeta),
+  disabledCommentBox: stylex.props(styles.commentCreateWriteBox, styles.disabledCommentBox),
+  disabledCommentWrap: stylex.props(styles.commentCreateWriteWrap),
+  disabledCommentTextareaBox: stylex.props(styles.commentCreateTextareaBox),
+  disabledComment: stylex.props(
+    styles.commentCreateTextareaControl,
+    styles.disabledCommentControl,
+    styles.disabledComment,
+  ),
+  disabledCommentActions: stylex.props(
+    styles.commentActions,
+    styles.disabledCommentActions,
+    styles.disabledCommentActionsMargin,
+  ),
+  disabledCommentButton: stylex.props(
+    styles.commentUpdateActionButton,
+    styles.disabledCommentButton,
+  ),
   commentCreateForm: stylex.props(styles.commentCreateForm),
   commentCreateWriteBox: stylex.props(styles.commentCreateWriteBox),
   commentUploadWrap: stylex.props(styles.commentUploadWrap),
@@ -1294,25 +1311,35 @@ function PostCommentForm({
   if (!canComment) {
     return (
       <div
-        className="write-comment-box mt20"
+        className={`${sx.disabledCommentBox.className} write-comment-box mt20`}
+        data-stylex-owner="post-detail-disabled-comment-box"
         title={t("error.auth.unauthorized.comment")}
         data-login="required"
       >
-        <div className="write-comment-wrap">
-          <div className="textarea-box">
+        <div
+          className={`${sx.disabledCommentWrap.className} write-comment-wrap`}
+          data-stylex-owner="post-detail-disabled-comment-wrap"
+        >
+          <div
+            className={`${sx.disabledCommentTextareaBox.className} textarea-box`}
+            data-stylex-owner="post-detail-disabled-comment-textarea-box"
+          >
             <textarea
-              className="comment disabled"
-              disabled
-              {...stylex.props(styles.disabledComment)}
+              className={`${sx.disabledComment.className} comment disabled`}
               data-stylex-owner="post-detail-disabled-comment"
-            ></textarea>
+              disabled
+            />
           </div>
           <div
-            {...stylex.props(styles.disabledCommentActions)}
-            className="mt10"
+            className={`${sx.disabledCommentActions.className} right-txt mt10`}
             data-stylex-owner="post-detail-disabled-comment-actions"
           >
-            <span className="ybtn ybtn-disabled">{t("button.comment.new")}</span>
+            <span
+              className={`${sx.disabledCommentButton.className} ybtn ybtn-disabled`}
+              data-stylex-owner="post-detail-disabled-comment-button"
+            >
+              {t("button.comment.new")}
+            </span>
           </div>
         </div>
       </div>

@@ -178,6 +178,33 @@ export const styles = stylex.create({
   childCommentReplyVisible: { display: "block" },
   childCommentFormVisible: { display: "block" },
   disabledCommentActions: { textAlign: "right" },
+  disabledCommentBox: { marginTop: "20px" },
+  disabledCommentActionsMargin: { marginTop: "10px" },
+  disabledCommentControl: {
+    backgroundColor: "transparent",
+    borderColor: "#cccccc",
+    borderRadius: "0px 0px 3px 3px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    fontFamily:
+      'Consolas, "Menlo", "Monaco", "Ubuntu Mono", "source-code-pro", monospace !important',
+    fontSize: "13px",
+    height: "80px",
+    overflow: "hidden",
+    overflowWrap: "break-word",
+    "@media all and (max-width: 720px)": { fontSize: "16px !important" },
+  },
+  disabledCommentButton: {
+    backgroundColor: "#f2f2f2 !important",
+    borderColor: "currentColor",
+    borderStyle: "none",
+    borderWidth: 0,
+    color: "#dedede",
+    marginLeft: 0,
+    textShadow: "1px 1px rgba(255, 255, 255, 0.5)",
+    ":hover": { backgroundColor: "#f2f2f2 !important", color: "#dedede" },
+    ":focus": { backgroundColor: "#f2f2f2 !important", color: "#dedede" },
+  },
   commentCreateForm: { margin: "0px 0px 2px" },
   commentCreateWriteBox: {
     fontFamily:

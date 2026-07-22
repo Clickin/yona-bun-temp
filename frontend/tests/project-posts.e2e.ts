@@ -2635,6 +2635,247 @@ test("project board-post body and footer own their left floats in StyleX", async
   }
 });
 
+test("project board-post renders legacy unauthorized comment state", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentFormSource = readFileSync(
+    "../yona-original/app/views/common/commentForm.scala.html",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyYobiUiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const englishMessages = readFileSync("../yona-original/conf/messages", "utf8");
+  const koreanMessages = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
+
+  expect(legacyViewSource).toContain(
+    "@common.commentForm(post.asResource(), ResourceType.NONISSUE_COMMENT, routes.BoardApp.newComment(project.owner, project.name, post.getNumber).toString())",
+  );
+  expect(legacyCommentFormSource).toMatch(
+    /<div class="write-comment-box mt20" title="@Messages\("error\.auth\.unauthorized\.comment"\)" data-login="required">[\s\S]*?<div class="write-comment-wrap">[\s\S]*?<div class="textarea-box">\s*<textarea class="comment disabled" disabled="disabled" style="cursor:text;"><\/textarea>[\s\S]*?<div class="right-txt mt10">\s*<span class="ybtn ybtn-disabled">@Messages\("button\.comment\.new"\)<\/span>/u,
+  );
+  expect(legacyCommonSource).toMatch(/\.right-txt\s*\{\s*text-align:\s*right;\s*\}/u);
+  expect(legacyCommonSource).toMatch(/\.mt10\s*\{\s*margin-top:\s*10px;\s*\}/u);
+  expect(legacyCommonSource).toMatch(/\.mt20\s*\{\s*margin-top:\s*20px;\s*\}/u);
+  expect(legacyCommonSource).toContain("textarea { font-family: @fixed-font-family !important; }");
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{\s*padding:\s*0 0 15px 54px;\s*font-family:@base-font-family;[\s\S]*?\.write-comment-wrap\s*\{\s*position:\s*relative;[\s\S]*?textarea\.disabled\s*\{\s*resize:none;\s*height:80px;\s*background:transparent;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.textarea-box\s*\{[\s\S]*?padding-right:\s*14px;[\s\S]*?position:relative;[\s\S]*?textarea\s*\{[\s\S]*?width:\s*100%;[\s\S]*?resize:vertical !important;[\s\S]*?font-size:\s*1em;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /@media[^{]*\(max-width:\s*720px\)[\s\S]*?\.write-comment-box\s*\{\s*padding:\s*0;\s*\}/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /label, input, button, select, textarea \{ font-size:12px; \}/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /&\.ybtn-disabled, &\[disabled\] \{\s*background-color\s*:\s*@yobi-btn-disabled !important;\s*border:none;\s*color:#dedede;\s*text-shadow:1px 1px rgba\(255,255,255,0\.5\);/u,
+  );
+  expect(legacyVariablesSource).toContain("@yobi-btn-disabled : @yobi-white-dark;");
+  expect(legacyVariablesSource).toContain("@yobi-white-dark :#F2F2F2;");
+  expect(legacyVariablesSource).toContain(
+    '@fixed-font-family: Consolas, "Menlo", "Monaco", "Ubuntu Mono",  "source-code-pro", monospace;',
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /input,\s*button,\s*select,\s*textarea\s*\{\s*font-family:\s*"Helvetica Neue", Helvetica, Arial, sans-serif;/u,
+  );
+  expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)?.slice(0, 9)).toEqual([
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+  ]);
+  expect(englishMessages).toContain("button.comment.new = Add a comment");
+  expect(koreanMessages).toContain("button.comment.new = 댓글 입력");
+
+  const owners = [
+    "post-detail-disabled-comment-box",
+    "post-detail-disabled-comment-wrap",
+    "post-detail-disabled-comment-textarea-box",
+    "post-detail-disabled-comment",
+    "post-detail-disabled-comment-actions",
+    "post-detail-disabled-comment-button",
+  ];
+  for (const owner of owners) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
+  expect(styleSource).toContain("disabledCommentBox");
+  expect(styleSource).toMatch(/commentCreateTextareaControl:\s*\{[\s\S]*?width:\s*"100%"/u);
+
+  for (const viewport of [
+    { height: 900, locale: "ko-KR", title: "로그인 후 댓글 입력이 가능합니다.", width: 1366 },
+    { height: 844, locale: "en-US", title: "You need to log in to add comments.", width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.addInitScript((locale) => {
+      Object.defineProperty(navigator, "language", { configurable: true, value: locale });
+      Object.defineProperty(navigator, "languages", { configurable: true, value: [locale] });
+    }, viewport.locale);
+    await mockProjectPosts(page, "unauthorizedComment", { __postNumber: "1" });
+    await page.goto(`${basePath}/admin/sample/post/1`);
+
+    const box = page.locator('[data-stylex-owner="post-detail-disabled-comment-box"]');
+    const wrap = box.locator(':scope > [data-stylex-owner="post-detail-disabled-comment-wrap"]');
+    const textareaBox = wrap.locator(
+      ':scope > [data-stylex-owner="post-detail-disabled-comment-textarea-box"]',
+    );
+    const textarea = textareaBox.locator(
+      ':scope > [data-stylex-owner="post-detail-disabled-comment"]',
+    );
+    const actions = wrap.locator(
+      ':scope > [data-stylex-owner="post-detail-disabled-comment-actions"]',
+    );
+    const button = actions.locator(
+      ':scope > [data-stylex-owner="post-detail-disabled-comment-button"]',
+    );
+
+    await expect(page.locator("#comment-form")).toHaveCount(0);
+    await expect(box).toHaveCount(1);
+    await expect(box).toHaveClass(/write-comment-box/u);
+    await expect(box).toHaveClass(/mt20/u);
+    await expect(box).toHaveAttribute("title", viewport.title);
+    await expect(box).toHaveAttribute("data-login", "required");
+    await expect(wrap).toHaveClass(/write-comment-wrap/u);
+    await expect(textareaBox).toHaveClass(/textarea-box/u);
+    await expect(textarea).toHaveClass(/comment/u);
+    await expect(textarea).toHaveClass(/disabled/u);
+    await expect(textarea).toBeDisabled();
+    await expect(textarea).not.toHaveAttribute("style");
+    await expect(actions).toHaveClass(/right-txt/u);
+    await expect(actions).toHaveClass(/mt10/u);
+    await expect(button).toHaveClass(/ybtn/u);
+    await expect(button).toHaveClass(/ybtn-disabled/u);
+    await expect(button).toHaveText(viewport.locale === "ko-KR" ? "댓글 입력" : "Add a comment");
+    await expect(page.locator('[data-stylex-owner^="post-detail-disabled-comment"]')).toHaveCount(
+      6,
+    );
+    await expect(
+      page.locator(
+        '[data-stylex-owner^="post-detail-comment-create-"], .comment-update-form [data-stylex-owner^="post-detail-disabled-comment"], .child-comment-input-form [data-stylex-owner^="post-detail-disabled-comment"]',
+      ),
+    ).toHaveCount(0);
+
+    await expect(box).toHaveCSS("margin", "20px 0px 0px");
+    await expect(box).toHaveCSS("padding", viewport.width === 390 ? "0px" : "0px 0px 15px 54px");
+    await expect(wrap).toHaveCSS("position", "relative");
+    await expect(textareaBox).toHaveCSS("display", "block");
+    await expect(textareaBox).toHaveCSS("margin", "0px");
+    await expect(textareaBox).toHaveCSS("padding", "0px 14px 0px 0px");
+    await expect(textareaBox).toHaveCSS("position", "relative");
+    await expect(textarea).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(textarea).toHaveCSS("border", "1px solid rgb(204, 204, 204)");
+    await expect(textarea).toHaveCSS("border-radius", "0px 0px 3px 3px");
+    await expect(textarea).toHaveCSS("box-shadow", "none");
+    await expect(textarea).toHaveCSS("cursor", "text");
+    await expect(textarea).toHaveCSS("font-size", viewport.width === 390 ? "16px" : "13px");
+    await expect(textarea).toHaveCSS("height", "80px");
+    await expect(textarea).toHaveCSS("margin", "0px");
+    await expect(textarea).toHaveCSS("overflow", "hidden");
+    await expect(textarea).toHaveCSS("overflow-wrap", "break-word");
+    await expect(textarea).toHaveCSS("resize", "vertical");
+    expect(await textarea.evaluate((element) => getComputedStyle(element).fontFamily)).toBe(
+      'Consolas, Menlo, Monaco, "Ubuntu Mono", source-code-pro, monospace',
+    );
+    await expect(actions).toHaveCSS("margin-top", "10px");
+    await expect(actions).toHaveCSS("text-align", "right");
+    await expect(button).toHaveCSS("background-color", "rgb(242, 242, 242)");
+    await expect(button).toHaveCSS("border", "0px none rgb(222, 222, 222)");
+    await expect(button).toHaveCSS("border-radius", "3px");
+    await expect(button).toHaveCSS("box-shadow", "rgba(0, 0, 0, 0.05) 0px 1px 0px 0px");
+    await expect(button).toHaveCSS("color", "rgb(222, 222, 222)");
+    await expect(button).toHaveCSS("cursor", "pointer");
+    await expect(button).toHaveCSS("display", "inline-block");
+    await expect(button).toHaveCSS("font-size", "14px");
+    await expect(button).toHaveCSS("line-height", "20px");
+    await expect(button).toHaveCSS("margin", "0px");
+    await expect(button).toHaveCSS("padding", "4px 12px");
+    await expect(button).toHaveCSS("text-align", "center");
+    await expect(button).toHaveCSS("text-shadow", "rgba(255, 255, 255, 0.5) 1px 1px 0px");
+    await expect(button).toHaveCSS("vertical-align", "middle");
+    await expect(button).toHaveCSS("white-space", "nowrap");
+
+    const metrics = await box.evaluate((outer) => {
+      const owner = (name: string) =>
+        outer.querySelector<HTMLElement>(`[data-stylex-owner="${name}"]`)!;
+      const measure = (element: HTMLElement) => {
+        const rect = element.getBoundingClientRect();
+        return { bottom: rect.bottom, left: rect.left, right: rect.right, top: rect.top };
+      };
+      return {
+        actions: measure(owner("post-detail-disabled-comment-actions")),
+        box: measure(outer),
+        button: measure(owner("post-detail-disabled-comment-button")),
+        textarea: measure(owner("post-detail-disabled-comment")),
+        textareaBox: measure(owner("post-detail-disabled-comment-textarea-box")),
+        wrap: measure(owner("post-detail-disabled-comment-wrap")),
+      };
+    });
+    expect(metrics.wrap.left).toBeGreaterThanOrEqual(metrics.box.left);
+    expect(metrics.wrap.right).toBeLessThanOrEqual(metrics.box.right);
+    expect(metrics.textareaBox.left).toBeGreaterThanOrEqual(metrics.wrap.left);
+    expect(metrics.textareaBox.right).toBeLessThanOrEqual(metrics.wrap.right);
+    expect(metrics.textarea.left).toBeCloseTo(metrics.textareaBox.left, 1);
+    expect(metrics.textarea.right).toBeCloseTo(metrics.textareaBox.right, 1);
+    expect(metrics.textarea.bottom).toBeLessThanOrEqual(metrics.actions.top);
+    expect(metrics.button.left).toBeGreaterThanOrEqual(metrics.actions.left);
+    expect(metrics.button.right).toBeLessThanOrEqual(metrics.actions.right);
+    expect(metrics.button.top).toBeGreaterThanOrEqual(metrics.actions.top);
+    expect(metrics.button.bottom).toBeLessThanOrEqual(metrics.actions.bottom);
+
+    const url = page.url();
+    await textarea.evaluate((element) => element.focus());
+    await expect(textarea).not.toBeFocused();
+    await textarea.click({ force: true });
+    await expect(textarea).toBeDisabled();
+    await expect(textarea).not.toBeFocused();
+    expect(page.url()).toBe(url);
+    await button.hover();
+    await expect(button).toHaveCSS("background-color", "rgb(242, 242, 242)");
+    await expect(button).toHaveCSS("color", "rgb(222, 222, 222)");
+    expect(page.url()).toBe(url);
+  }
+});
+
 test("project board-post comment editor meets its upload boundary", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const routeSource = readFileSync(
@@ -7670,6 +7911,7 @@ async function mockProjectPosts(
     | "editableLabel"
     | "readonlyLabel"
     | "comment"
+    | "unauthorizedComment"
     | "commentUpdate"
     | "viaEmailComment"
     | "attachments"
@@ -8004,7 +8246,7 @@ async function mockProjectPosts(
           notice: false,
           ownerName,
           permissions: {
-            canComment: true,
+            canComment: state !== "unauthorizedComment",
             canCreate: true,
             canDelete: true,
             canRead: true,
