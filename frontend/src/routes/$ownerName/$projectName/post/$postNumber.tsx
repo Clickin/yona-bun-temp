@@ -2063,6 +2063,15 @@ function MarkdownEditor({
           activeMode === mode && styles.commentUpdateEditorTabLinkActive,
         )
       : undefined;
+  const updateChecklistWrapStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateChecklistWrap)
+    : undefined;
+  const updateChecklistButtonStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateActionButton, styles.commentUpdateChecklistButton)
+    : undefined;
+  const updateChecklistIconStyle = isCommentUpdateEditor
+    ? stylex.props(styles.commentUpdateChecklistIcon)
+    : undefined;
 
   return (
     <div className="mt10">
@@ -2125,12 +2134,29 @@ function MarkdownEditor({
             isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
           }
         >
-          <div className="task-list-button">
+          <div
+            {...updateChecklistWrapStyle}
+            className={`${updateChecklistWrapStyle?.className ?? ""} task-list-button`.trim()}
+            data-stylex-owner={
+              isCommentUpdateEditor ? "post-detail-comment-update-checklist-wrap" : undefined
+            }
+          >
             <button
+              {...updateChecklistButtonStyle}
               type="button"
-              className="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"
+              className={`${updateChecklistButtonStyle?.className ?? ""} add-task-list-button ybtn ybtn-small ybtn-danger-no-outline`.trim()}
+              data-stylex-owner={
+                isCommentUpdateEditor ? "post-detail-comment-update-checklist-button" : undefined
+              }
             >
-              <i className="yobicon-list task-list-icon"></i> {t("button.add.checklist")}
+              <i
+                {...updateChecklistIconStyle}
+                className={`${updateChecklistIconStyle?.className ?? ""} yobicon-list task-list-icon`.trim()}
+                data-stylex-owner={
+                  isCommentUpdateEditor ? "post-detail-comment-update-checklist-icon" : undefined
+                }
+              ></i>{" "}
+              {t("button.add.checklist")}
             </button>
           </div>
         </li>

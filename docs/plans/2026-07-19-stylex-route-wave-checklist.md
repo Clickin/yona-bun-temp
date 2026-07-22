@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 800 board-post comment-update checklist control
+
+- [x] Three update-only owners carry the checklist wrapper, composed
+  small/danger-no-outline button, and effective yobicon list glyph. The
+  non-matching legacy `.tasklist-icon` typo is documented, not migrated.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at desktop/390px
+  with default/hover/focus, glyph, geometry, scoping, and no-navigation or
+  editor-state-corruption coverage.
+- [x] Fresh actual legacy/local screenshots were captured and inspected;
+  checklist paint, glyph, baseline, and mobile overlay relation match. Clear
+  Temporary and all non-checklist editor consumers remain outside this wave.
+
 ### 2026-07-22 Batch 799 board-post comment-update editor tabs
 
 - [x] Four update-only StyleX owners carry the final frozen nav shell,

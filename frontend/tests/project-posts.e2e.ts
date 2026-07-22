@@ -5636,6 +5636,10 @@ test("authenticated populated board post owns open parent comment update form in
     "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
     "utf8",
   );
+  const legacyYobiconSource = readFileSync(
+    "../yona-original/public/stylesheets/yobicon/style.css",
+    "utf8",
+  );
 
   expect(legacyBoardSource).toContain("@partial_comments(project, post)");
   expect(legacyCommentsSource).toContain("@common.commentUpdateForm(comment,");
@@ -5653,6 +5657,9 @@ test("authenticated populated board post owns open parent comment update form in
   );
   expect(legacyEditorSource).toMatch(
     /<ul class="nav nav-tabs nm small">\s*<li class="active">\s*<a href="#edit-@wrapId" data-toggle="tab" data-mode="edit">@Messages\("common\.editor\.edit"\)<\/a>\s*<\/li>\s*<li>\s*<a href="#preview-@wrapId" data-toggle="tab" data-mode="preview">@Messages\("common\.editor\.preview"\)<\/a>[\s\S]*?<li>[\s\S]*?add-task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
+  );
+  expect(legacyEditorSource).toMatch(
+    /<div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"><\/i> @Messages\("button\.add\.checklist"\)<\/button><\/div>/u,
   );
   expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
   expect(legacyPageSource).toMatch(
@@ -5684,6 +5691,8 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyVariablesSource).toContain("@yobi-blue-dark :#206EE5;");
   expect(legacyVariablesSource).toContain("@yobi-btn-info : @yobi-blue;");
   expect(legacyVariablesSource).toContain("@yobi-btn-info-hover : @yobi-blue-dark;");
+  expect(legacyVariablesSource).toContain("@yobi-red : #C93426;");
+  expect(legacyVariablesSource).toContain("@yobi-btn-danger : @yobi-red;");
   expect(legacyResponsiveSource).toMatch(
     /@media all and \(max-width: 720px\) \{[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px !important;/u,
   );
@@ -5692,6 +5701,9 @@ test("authenticated populated board post owns open parent comment update form in
   );
   expect(legacyBootstrapSource).toMatch(
     /label,\s*input,\s*button,\s*select,\s*textarea\s*\{\s*font-size:\s*14px;[\s\S]*?textarea\s*\{\s*height:\s*auto;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /button,\s*input,\s*select,\s*textarea\s*\{\s*margin:\s*0;\s*font-size:\s*100%;\s*vertical-align:\s*middle;[\s\S]*?button,\s*input\s*\{[\s\S]*?line-height:\s*normal;/u,
   );
   expect(legacyBootstrapSource).toMatch(
     /\.nav\s*\{\s*margin-bottom:\s*20px;\s*margin-left:\s*0;\s*list-style:\s*none;[\s\S]*?\.nav-tabs:before,[\s\S]*?display:\s*table;\s*line-height:\s*0;\s*content:\s*"";[\s\S]*?\.nav-tabs:after,[\s\S]*?clear:\s*both;[\s\S]*?\.nav-tabs > li\s*\{\s*margin-bottom:\s*-1px;[\s\S]*?\.nav-tabs > li > a\s*\{[\s\S]*?padding-top:\s*8px;[\s\S]*?border-radius:\s*4px 4px 0 0;[\s\S]*?\.nav-tabs > \.active > a,[\s\S]*?border-bottom-color:\s*transparent;/u,
@@ -5705,6 +5717,18 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyYobiUiSource).toMatch(
     /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?padding:\s*4px 12px !important;[\s\S]*?margin-left:\s*\.3em;[\s\S]*?&:hover, &:focus, &:active,[\s\S]*?background-color:#f1f1f1;[\s\S]*?&\.ybtn-info\s*\{\s*background-color\s*:\s*@yobi-btn-info !important;\s*border:1px solid @yobi-btn-info-hover;[\s\S]*?&:hover, &:focus\s*\{\s*background-color:\s*@yobi-btn-info-hover !important;/u,
   );
+  expect(legacyYobiUiSource).toMatch(
+    /&\.ybtn-small\s*\{\s*padding:\s*3px 10px !important;\s*font-size:\s*13px !important;[\s\S]*?&\.ybtn-danger-no-outline\s*\{\s*font-weight:\s*600;\s*box-shadow:\s*none;\s*color:\s*#666;\s*padding:\s*1px 10px !important;\s*border:\s*1px solid transparent;\s*background-color:\s*#eee;\s*&:hover, &:focus\s*\{\s*color:\s*@yobi-btn-danger;\s*background-color:\s*#fbe9e7;\s*border:\s*1px solid #EF9A9A;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(/i \{ line-height:20px;\}/u);
+  expect(legacyPageSource).toMatch(
+    /\.task-list-button\s*\{\s*margin-top:\s*2px;\s*\.tasklist-icon\s*\{\s*vertical-align:\s*top;\s*\}\s*button\s*\{\s*margin-top:\s*1px;/u,
+  );
+  expect(legacyEditorSource).not.toContain('class="yobicon-list tasklist-icon"');
+  expect(legacyYobiconSource).toMatch(
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?line-height:\s*1;[\s\S]*?display:\s*inline-block;[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(legacyYobiconSource).toMatch(/\.yobicon-list:before\s*\{\s*content:\s*"\\e25e";/u);
   expect(legacyYobiUiSource).toMatch(
     /label, input, button, select, textarea \{ font-size:12px; \}[\s\S]*?select, textarea,[\s\S]*?\.uneditable-input \{ font-size:12px; \}/u,
   );
@@ -5736,6 +5760,9 @@ test("authenticated populated board post owns open parent comment update form in
     "commentUpdateEditorNavItem",
     "commentUpdateEditorTabLink",
     "commentUpdateEditorTabLinkActive",
+    "commentUpdateChecklistWrap",
+    "commentUpdateChecklistButton",
+    "commentUpdateChecklistIcon",
   ]) {
     expect(styleSource).toContain(`${styleName}:`);
   }
@@ -5757,6 +5784,13 @@ test("authenticated populated board post owns open parent comment update form in
   expect(styleSource).toMatch(
     /commentUpdateEditorTabLink:\s*\{[\s\S]*?color:\s*"#3592b5"[\s\S]*?padding:\s*"4px 15px"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{[\s\S]*?paddingLeft:\s*"5px !important",[\s\S]*?paddingRight:\s*"5px !important",/u,
   );
+  expect(styleSource).toMatch(/commentUpdateChecklistWrap:\s*\{ marginTop:\s*"2px" \}/u);
+  expect(styleSource).toMatch(
+    /commentUpdateChecklistButton:\s*\{[\s\S]*?backgroundColor:\s*"#eeeeee"[\s\S]*?borderColor:\s*"transparent"[\s\S]*?boxShadow:\s*"none"[\s\S]*?fontSize:\s*"13px !important"[\s\S]*?marginTop:\s*"1px"[\s\S]*?padding:\s*"1px 10px !important"[\s\S]*?backgroundColor:\s*"#fbe9e7"[\s\S]*?borderColor:\s*"#EF9A9A"[\s\S]*?color:\s*"#C93426"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateChecklistIcon:\s*\{[\s\S]*?fontFamily:\s*"yobicon"[\s\S]*?lineHeight:\s*"20px"[\s\S]*?verticalAlign:\s*"baseline"[\s\S]*?"::before":\s*\{ content:\s*'"\\\\e25e"' \}/u,
+  );
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
     "post-detail-comment-editor",
@@ -5773,6 +5807,9 @@ test("authenticated populated board post owns open parent comment update form in
     "post-detail-comment-update-editor-nav-item",
     "post-detail-comment-update-editor-tab",
     "post-detail-comment-update-editor-tab-active",
+    "post-detail-comment-update-checklist-wrap",
+    "post-detail-comment-update-checklist-button",
+    "post-detail-comment-update-checklist-icon",
   ]) {
     expect(routeSource).toContain(owner);
   }
@@ -5930,6 +5967,15 @@ test("authenticated populated board post owns open parent comment update form in
     );
     const editTab = editorNav.getByRole("link", { name: "Edit" });
     const previewTab = editorNav.getByRole("link", { name: "Preview" });
+    const checklistWrap = editorNav.locator(
+      '[data-stylex-owner="post-detail-comment-update-checklist-wrap"]',
+    );
+    const checklistButton = checklistWrap.locator(
+      '[data-stylex-owner="post-detail-comment-update-checklist-button"]',
+    );
+    const checklistIcon = checklistButton.locator(
+      '[data-stylex-owner="post-detail-comment-update-checklist-icon"]',
+    );
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
@@ -5951,6 +5997,15 @@ test("authenticated populated board post owns open parent comment update form in
       "data-stylex-owner",
       "post-detail-comment-update-editor-tab",
     );
+    await expect(checklistWrap).toHaveClass(/task-list-button/u);
+    await expect(checklistButton).toHaveClass(
+      /add-task-list-button ybtn ybtn-small ybtn-danger-no-outline/u,
+    );
+    await expect(checklistButton).toHaveText("Add checklist");
+    await expect(checklistIcon).toHaveClass(/yobicon-list task-list-icon/u);
+    await expect(
+      page.locator('#comment-form [data-stylex-owner^="post-detail-comment-update-checklist-"]'),
+    ).toHaveCount(0);
 
     const metrics = await formWrap.evaluate((wrapper) => {
       const get = (owner: string) =>
@@ -5972,6 +6027,9 @@ test("authenticated populated board post owns open parent comment update form in
       );
       const editTab = editorNavItems[0]!.querySelector<HTMLElement>("a")!;
       const previewTab = editorNavItems[1]!.querySelector<HTMLElement>("a")!;
+      const checklistWrap = get("post-detail-comment-update-checklist-wrap");
+      const checklistButton = get("post-detail-comment-update-checklist-button");
+      const checklistIcon = get("post-detail-comment-update-checklist-icon");
       const upload = wrapper.querySelector<HTMLElement>(".upload-drop-here")!;
       const form = wrapper.querySelector<HTMLElement>(":scope > form")!;
       const formRect = form.getBoundingClientRect();
@@ -5987,6 +6045,9 @@ test("authenticated populated board post owns open parent comment update form in
       const editorItemRects = editorNavItems.map((item) => item.getBoundingClientRect());
       const editTabRect = editTab.getBoundingClientRect();
       const previewTabRect = previewTab.getBoundingClientRect();
+      const checklistWrapRect = checklistWrap.getBoundingClientRect();
+      const checklistButtonRect = checklistButton.getBoundingClientRect();
+      const checklistIconRect = checklistIcon.getBoundingClientRect();
       const controlStyle = (control: HTMLElement) => {
         const computed = getComputedStyle(control);
         return {
@@ -6102,6 +6163,24 @@ test("authenticated populated board post owns open parent comment update form in
           marginRight: getComputedStyle(previewTab).marginRight,
           padding: getComputedStyle(previewTab).padding,
         },
+        checklistWrap: { marginTop: getComputedStyle(checklistWrap).marginTop },
+        checklistButton: {
+          ...controlStyle(checklistButton),
+          fontWeight: getComputedStyle(checklistButton).fontWeight,
+          marginTop: getComputedStyle(checklistButton).marginTop,
+        },
+        checklistIcon: {
+          backgroundImage: getComputedStyle(checklistIcon).backgroundImage,
+          display: getComputedStyle(checklistIcon).display,
+          fontFamily: getComputedStyle(checklistIcon).fontFamily,
+          fontStyle: getComputedStyle(checklistIcon).fontStyle,
+          fontVariant: getComputedStyle(checklistIcon).fontVariant,
+          fontWeight: getComputedStyle(checklistIcon).fontWeight,
+          glyph: getComputedStyle(checklistIcon, "::before").content,
+          lineHeight: getComputedStyle(checklistIcon).lineHeight,
+          textDecorationLine: getComputedStyle(checklistIcon).textDecorationLine,
+          verticalAlign: getComputedStyle(checklistIcon).verticalAlign,
+        },
         editorTabOrder:
           Boolean(editTab.compareDocumentPosition(previewTab) & Node.DOCUMENT_POSITION_FOLLOWING) &&
           editorNavItems.every((item, index) =>
@@ -6124,6 +6203,25 @@ test("authenticated populated board post owns open parent comment update form in
         editorItemsFollowTabs: editorItemRects
           .slice(2)
           .every((rect, index) => rect.left >= editorItemRects[index + 1]!.right),
+        checklistOrder:
+          Boolean(
+            previewTab.compareDocumentPosition(checklistWrap) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ) &&
+          Boolean(
+            checklistWrap.compareDocumentPosition(editorNavItems[3]!) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        checklistContained:
+          checklistWrapRect.left >= editorItemRects[2]!.left &&
+          checklistWrapRect.right <= editorItemRects[2]!.right &&
+          checklistButtonRect.left >= checklistWrapRect.left &&
+          checklistButtonRect.right <= checklistWrapRect.right &&
+          checklistIconRect.left >= checklistButtonRect.left &&
+          checklistIconRect.right <= checklistButtonRect.right,
+        checklistAligned:
+          Math.abs(checklistButtonRect.top - editTabRect.top) <= 3 &&
+          Math.abs(checklistButtonRect.bottom - editTabRect.bottom) <= 3,
+        checklistDoesNotOverlap: previewTabRect.right <= checklistButtonRect.left,
         order:
           Boolean(textareaBox.compareDocumentPosition(upload) & Node.DOCUMENT_POSITION_FOLLOWING) &&
           Boolean(upload.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING),
@@ -6302,11 +6400,50 @@ test("authenticated populated board post owns open parent comment update form in
         marginRight: "2px",
         padding: viewport.width <= 720 ? "4px 5px" : "4px 15px",
       },
+      checklistWrap: { marginTop: "2px" },
+      checklistButton: {
+        backgroundColor: "rgb(238, 238, 238)",
+        border: "1px solid rgba(0, 0, 0, 0)",
+        borderRadius: "3px",
+        boxShadow: "none",
+        color: "rgb(102, 102, 102)",
+        cursor: "pointer",
+        display: "inline-block",
+        fontSize: "13px",
+        fontWeight: "600",
+        lineHeight: "20px",
+        marginBottom: "0px",
+        marginLeft: "0px",
+        marginTop: "1px",
+        padding: "1px 10px",
+        position: "relative",
+        textAlign: "center",
+        textShadow: "none",
+        verticalAlign: "middle",
+        whiteSpace: "nowrap",
+        zIndex: "2",
+      },
+      checklistIcon: {
+        backgroundImage: "none",
+        display: "inline-block",
+        fontFamily: "yobicon",
+        fontStyle: "normal",
+        fontVariant: "normal",
+        fontWeight: "400",
+        glyph: '""',
+        lineHeight: "20px",
+        textDecorationLine: "none",
+        verticalAlign: "baseline",
+      },
       editorTabOrder: true,
       editorTabsContained: true,
       editorTabsAligned: true,
       editorTabsDoNotOverlap: true,
       editorItemsFollowTabs: true,
+      checklistOrder: true,
+      checklistContained: true,
+      checklistAligned: true,
+      checklistDoesNotOverlap: true,
       order: true,
       containment: true,
       noOverlap: true,
@@ -6341,6 +6478,20 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(form.locator(`#edit-21`)).toBeHidden();
     await editTab.click();
     await expect(form.locator(`#edit-21`)).toBeVisible();
+
+    const checklistUrl = page.url();
+    const checklistValue = await textarea.inputValue();
+    await checklistButton.hover();
+    await expect(checklistButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(checklistButton).toHaveCSS("border-color", "rgb(239, 154, 154)");
+    await expect(checklistButton).toHaveCSS("color", "rgb(201, 52, 38)");
+    await checklistButton.focus();
+    await expect(checklistButton).toHaveCSS("background-color", "rgb(251, 233, 231)");
+    await expect(checklistButton).toHaveCSS("border-color", "rgb(239, 154, 154)");
+    await checklistButton.click();
+    await expect(formWrap).toBeVisible();
+    await expect(textarea).toHaveValue(checklistValue);
+    expect(page.url()).toBe(checklistUrl);
 
     await fileUploadLabel.hover();
     await expect(fileUploadLabel).toHaveCSS("background-color", "rgb(241, 241, 241)");
