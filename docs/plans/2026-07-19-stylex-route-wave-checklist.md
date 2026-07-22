@@ -1780,3 +1780,10 @@ desktop/mobile geometry, and filtering.
 - [x] Focused managed dynamic-port system-Chrome normal/fallback-off checks pass 4/4 each; screenshots were captured under `frontend/output/playwright/stylex-user-issues-pagination/`.
 - [ ] Live legacy populated rendering is unavailable, so parity is explicitly unverified; no compensating geometry was added.
 - [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
+### 2026-07-23 Batch 832 pagination fallback bridge retirement
+
+- [x] The exact React-side `.page-navigation-wrap`, `.page-nums`, `.page-num`, and `.input-mini` bridge arms are removed from `frontend/src/app.css`; frozen generated legacy fallback CSS remains.
+- [x] The nine direct route consumers are recorded and retain stable route-local StyleX pagination owners; colocated/shared pagination consumers are not falsely classified as bridge consumers.
+- [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies bridge absence, generated fallback retention, and the complete direct consumer graph in normal and fallback-off modes.
+- [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.

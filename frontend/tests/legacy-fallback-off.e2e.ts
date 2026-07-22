@@ -3,6 +3,49 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const generatedFallbackHref = "legacy-assets/stylesheets/legacy-fallback.css";
 
+test("pagination fallback bridge is retired while the exact consumer graph remains owned", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+  for (const selector of [
+    ".page-navigation-wrap {",
+    ".page-navigation-wrap .page-nums {",
+    ".page-navigation-wrap .page-nums .page-num {",
+    ".page-navigation-wrap .page-nums .page-num .input-mini {",
+  ]) {
+    expect(generatedFallback).toContain(selector);
+  }
+  for (const selector of [
+    ".page-navigation-wrap {",
+    ".page-navigation-wrap .page-nums {",
+    ".page-navigation-wrap .page-num {",
+    ".page-navigation-wrap .input-mini {",
+  ])
+    expect(appCss).not.toContain(selector);
+
+  const consumers = [
+    ["src/routes/$ownerName/$projectName/issues.tsx", "project-issues-pagination"],
+    ["src/routes/$ownerName/$projectName/posts.tsx", "project-posts-pagination"],
+    ["src/routes/$ownerName/$projectName/search.tsx", "project-search-pagination"],
+    ["src/routes/organizations/$organizationName/boards.tsx", "organization-boards-pagination"],
+    ["src/routes/organizations/$organizationName/issues.tsx", "organization-issues-pagination"],
+    [
+      "src/routes/organizations/$organizationName/pullrequests.tsx",
+      "organization-pullrequests-pagination",
+    ],
+    ["src/routes/organizations/$organizationName/search.tsx", "organization-search-pagination"],
+    ["src/routes/search.tsx", "global-search-pagination"],
+    ["src/routes/user/issues.tsx", "user-issues-pagination"],
+  ] as const;
+  for (const [route, owner] of consumers) {
+    const source = readFileSync(route, "utf8");
+    expect(source).toContain("page-navigation-wrap");
+    expect(source).toContain(`data-stylex-owner=\"${owner}\"`);
+  }
+});
+
 async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
   for (const owner of owners) {
     const locator = page.locator(`[data-stylex-owner="${owner}"]`);
