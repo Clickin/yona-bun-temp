@@ -68,6 +68,11 @@ const sx = {
   commentAvatar: stylex.props(styles.commentAvatar),
   commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
   commentMeta: stylex.props(styles.commentMeta),
+  commentUploadWrap: stylex.props(styles.commentUploadWrap),
+  commentUploadAttachWrap: stylex.props(styles.commentUploadAttachWrap),
+  commentUploadButtonWrap: stylex.props(styles.commentUploadButtonWrap),
+  commentUploadFileButton: stylex.props(styles.commentUploadFileButton),
+  commentUploadFileInput: stylex.props(styles.commentUploadFileInput),
   comments: stylex.props(styles.comments),
   commentHeader: stylex.props(styles.commentHeader),
   commentHeaderIcon: stylex.props(styles.commentHeaderIcon),
@@ -1323,16 +1328,32 @@ function PostCommentForm({
           wrapId="contents"
         />
         <div
-          className="upload-wrap content-footer"
+          className={`${sx.commentUploadWrap.className} upload-wrap content-footer`}
           data-resource-type="NONISSUE_COMMENT"
+          data-stylex-owner="post-detail-comment-upload-wrap"
           id="upload"
         >
-          <div className="attach-wrap">
+          <div
+            className={`${sx.commentUploadAttachWrap.className} attach-wrap`}
+            data-stylex-owner="post-detail-comment-upload-attach-wrap"
+          >
             <span className="help help-droppable">{t("common.attach.drophere")}</span>
-            <div className="btn-wrap">
-              <div className="nbtn medium white fake-file-wrap">
+            <div
+              className={`${sx.commentUploadButtonWrap.className} btn-wrap`}
+              data-stylex-owner="post-detail-comment-upload-button-wrap"
+            >
+              <div
+                className={`${sx.commentUploadFileButton.className} nbtn medium white fake-file-wrap`}
+                data-stylex-owner="post-detail-comment-upload-file-button"
+              >
                 <i className="yobicon-upload"></i> {t("button.upload")}
-                <input type="file" className="file" name="filePath" multiple />
+                <input
+                  type="file"
+                  className={`${sx.commentUploadFileInput.className} file`}
+                  data-stylex-owner="post-detail-comment-upload-file-input"
+                  name="filePath"
+                  multiple
+                />
               </div>
             </div>
             <span className="plain">{t("common.attach.clickbutton")}</span>

@@ -2657,6 +2657,10 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "../yona-original/app/views/common/commentForm.scala.html",
     "utf8",
   );
+  const legacyUploadFormSource = readFileSync(
+    "../yona-original/app/views/common/uploadForm.scala.html",
+    "utf8",
+  );
   const legacyPageSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
@@ -2703,6 +2707,41 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "@common.commentForm(post.asResource(), ResourceType.NONISSUE_COMMENT,",
   );
   expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
+  expect(legacyCommentFormSource).toContain("@common.fileUploader(resourceType, null)");
+  expect(legacyUploadFormSource).toMatch(
+    /<div[\s\S]*?class="upload-wrap content-footer"[\s\S]*?<div class="attach-wrap">[\s\S]*?<div class="btn-wrap">[\s\S]*?<div class="nbtn medium white fake-file-wrap">[\s\S]*?<input type="file" class="file" name="filePath" multiple="multiple">/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.upload-wrap\s*\{\s*background:#efefef;\s*padding:10px; margin-bottom:10px;\s*\.border-radius\(0px 0px 5px 5px\);/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.upload-wrap\s*\{\s*padding:10px !important;[\s\S]*?\.attach-wrap\s*\{\s*text-align:center;[\s\S]*?\.btn-wrap\s*\{\s*display:inline-block !important;\s*margin:0 5px; vertical-align:top;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /\.nbtn\s*\{[\s\S]*?text-align\s*:center;[\s\S]*?font-weight:bold;[\s\S]*?font-size: 11px;[\s\S]*?line-height: 18px;[\s\S]*?&\.white\s*\{\s*color: #222;\s*background-color: @white;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /a\.nbtn, div\.nbtn, span\.nbtn, p\.nbtn\s*\{[\s\S]*?&\.medium \{ padding: 6px 20px; \}[\s\S]*?\.fake-file-wrap\s*\{\s*position: relative; display:block; clear:both;\s*overflow: hidden; cursor:pointer;[\s\S]*?\.file\s*\{\s*position: absolute; z-index:2; cursor:pointer;\s*top:0; left: 5px;[\s\S]*?min-width:100px; width:100%;\s*\.opacity\(0\);/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUploadWrap:\s*\{[\s\S]*?backgroundColor:\s*"#efefef"[\s\S]*?borderRadius:\s*"0px 0px 5px 5px"[\s\S]*?marginBottom:\s*"10px"[\s\S]*?padding:\s*"10px !important"/u,
+  );
+  expect(styleSource).toMatch(/commentUploadAttachWrap:\s*\{ textAlign:\s*"center" \}/u);
+  expect(styleSource).toMatch(
+    /commentUploadButtonWrap:\s*\{\s*display:\s*"inline-block !important",\s*margin:\s*"0px 5px",\s*verticalAlign:\s*"top"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUploadFileInput:\s*\{[\s\S]*?left:\s*"5px"[\s\S]*?minWidth:\s*"100px"[\s\S]*?opacity:\s*0[\s\S]*?position:\s*"absolute"[\s\S]*?top:\s*0[\s\S]*?width:\s*"100%"[\s\S]*?zIndex:\s*2/u,
+  );
+  for (const owner of [
+    "post-detail-comment-upload-wrap",
+    "post-detail-comment-upload-attach-wrap",
+    "post-detail-comment-upload-button-wrap",
+    "post-detail-comment-upload-file-button",
+    "post-detail-comment-upload-file-input",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
   expect(legacyEditorSource).toMatch(
     /<li class="active">[\s\S]*?common\.editor\.edit[\s\S]*?<li>[\s\S]*?common\.editor\.preview[\s\S]*?<li>[\s\S]*?task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
   );
@@ -2876,6 +2915,19 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await page.goto(`${basePath}/admin/sample/post/1`);
 
     const commentForm = page.locator("#comment-form:has(#upload)");
+    const upload = commentForm.locator('[data-stylex-owner="post-detail-comment-upload-wrap"]');
+    const uploadAttach = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-attach-wrap"]',
+    );
+    const uploadButtonWrap = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-button-wrap"]',
+    );
+    const uploadFileButton = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-file-button"]',
+    );
+    const uploadFileInput = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-file-input"]',
+    );
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
@@ -2910,6 +2962,73 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(clearTemporary).toBeHidden();
     await expect(noticeLabel).toHaveCount(1);
     await expect(noticeLabel).toBeEmpty();
+    await expect(upload).toHaveClass(/upload-wrap content-footer/u);
+    await expect(uploadAttach).toHaveClass(/attach-wrap/u);
+    await expect(uploadButtonWrap).toHaveClass(/btn-wrap/u);
+    await expect(uploadFileButton).toHaveClass(/nbtn medium white fake-file-wrap/u);
+    await expect(uploadFileInput).toHaveClass(/file/u);
+    await expect(uploadFileInput).toHaveAttribute("name", "filePath");
+    await expect(uploadFileInput).toHaveAttribute("multiple", "");
+    await expect(upload).toHaveCSS("background-color", "rgb(239, 239, 239)");
+    await expect(upload).toHaveCSS("border-radius", "0px 0px 5px 5px");
+    await expect(upload).toHaveCSS("margin-bottom", "10px");
+    await expect(upload).toHaveCSS("padding", "10px");
+    await expect(uploadAttach).toHaveCSS("text-align", "center");
+    await expect(uploadButtonWrap).toHaveCSS("display", "inline-block");
+    await expect(uploadButtonWrap).toHaveCSS("margin", "0px 5px");
+    await expect(uploadButtonWrap).toHaveCSS("vertical-align", "top");
+    await expect(uploadFileButton).toHaveCSS("display", "block");
+    await expect(uploadFileButton).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(uploadFileButton).toHaveCSS("border", "0px none rgb(34, 34, 34)");
+    await expect(uploadFileButton).toHaveCSS("border-radius", "2px");
+    await expect(uploadFileButton).toHaveCSS(
+      "box-shadow",
+      "rgba(0, 0, 0, 0.3) 0px -1px 1px 0px inset",
+    );
+    await expect(uploadFileButton).toHaveCSS("color", "rgb(34, 34, 34)");
+    await expect(uploadFileButton).toHaveCSS("font-size", "11px");
+    await expect(uploadFileButton).toHaveCSS("font-weight", "700");
+    await expect(uploadFileButton).toHaveCSS("line-height", "18px");
+    await expect(uploadFileButton).toHaveCSS("margin-right", "5px");
+    await expect(uploadFileButton).toHaveCSS("position", "relative");
+    await expect(uploadFileButton).toHaveCSS("overflow", "hidden");
+    await expect(uploadFileButton).toHaveCSS("padding", "6px 20px");
+    await expect(uploadFileButton).toHaveCSS("text-align", "center");
+    await expect(uploadFileButton).toHaveCSS("white-space", "nowrap");
+    await expect(uploadFileInput).toHaveCSS("left", "5px");
+    await expect(uploadFileInput).toHaveCSS("min-width", "100px");
+    await expect(uploadFileInput).toHaveCSS("opacity", "0");
+    await expect(uploadFileInput).toHaveCSS("position", "absolute");
+    await expect(uploadFileInput).toHaveCSS("top", "0px");
+    await expect(uploadFileInput).toHaveCSS("z-index", "2");
+    await expect(
+      commentForm.locator(
+        '[data-stylex-owner="post-detail-comment-upload-wrap"], [data-stylex-owner="post-detail-comment-upload-attach-wrap"], [data-stylex-owner="post-detail-comment-upload-button-wrap"], [data-stylex-owner="post-detail-comment-upload-file-button"], [data-stylex-owner="post-detail-comment-upload-file-input"]',
+      ),
+    ).toHaveCount(5);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner="post-detail-comment-upload-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-attach-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-button-wrap"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-file-button"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-file-input"]',
+      ),
+    ).toHaveCount(0);
+    await uploadFileButton.hover();
+    await expect(uploadFileButton).toHaveCSS("background-color", "rgb(230, 230, 230)");
+    await expect(uploadFileButton).toHaveCSS("color", "rgb(243, 108, 34)");
+    await uploadFileInput.setInputFiles([
+      {
+        name: `batch-806-${viewport.width}-a.txt`,
+        mimeType: "text/plain",
+        buffer: Buffer.from("batch 806 a"),
+      },
+      {
+        name: `batch-806-${viewport.width}-b.txt`,
+        mimeType: "text/plain",
+        buffer: Buffer.from("batch 806 b"),
+      },
+    ]);
+    expect(await uploadFileInput.evaluate((input: HTMLInputElement) => input.files?.length)).toBe(
+      2,
+    );
     await expect(editorNav).toHaveCount(1);
     await expect(editorNavItems).toHaveCount(5);
     await expect(editTab).toHaveAttribute(
@@ -3011,7 +3130,11 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         tabContent: measure(".tab-content"),
         textarea: measure("textarea.editorSeries"),
         textareaBox: measure('[data-stylex-owner="post-detail-comment-create-textarea-box"]'),
-        upload: measure("#upload"),
+        upload: measure('[data-stylex-owner="post-detail-comment-upload-wrap"]'),
+        uploadAttach: measure('[data-stylex-owner="post-detail-comment-upload-attach-wrap"]'),
+        uploadButtonWrap: measure('[data-stylex-owner="post-detail-comment-upload-button-wrap"]'),
+        uploadFileButton: measure('[data-stylex-owner="post-detail-comment-upload-file-button"]'),
+        uploadFileInput: measure('[data-stylex-owner="post-detail-comment-upload-file-input"]'),
       };
     });
 
@@ -3021,6 +3144,18 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.textarea.top).toBeGreaterThanOrEqual(metrics.textareaBox.top);
     expect(metrics.textarea.bottom).toBeLessThanOrEqual(metrics.textareaBox.bottom);
     expect(metrics.textareaBox.bottom).toBeLessThanOrEqual(metrics.upload.top);
+    expect(metrics.uploadAttach.left).toBeGreaterThanOrEqual(metrics.upload.left);
+    expect(metrics.uploadAttach.right).toBeLessThanOrEqual(metrics.upload.right);
+    expect(metrics.uploadButtonWrap.left).toBeGreaterThanOrEqual(metrics.uploadAttach.left);
+    expect(metrics.uploadButtonWrap.right).toBeLessThanOrEqual(metrics.uploadAttach.right);
+    expect(metrics.uploadFileButton.left).toBeGreaterThanOrEqual(metrics.uploadButtonWrap.left);
+    expect(metrics.uploadFileButton.right).toBeLessThanOrEqual(metrics.uploadButtonWrap.right);
+    expect(metrics.uploadFileInput.left).toBeGreaterThan(metrics.uploadFileButton.left);
+    expect(metrics.uploadFileInput.right).toBeGreaterThanOrEqual(metrics.uploadFileButton.right);
+    expect(metrics.uploadFileInput.top).toBe(metrics.uploadFileButton.top);
+    expect(metrics.uploadFileInput.bottom).toBeGreaterThanOrEqual(metrics.uploadFileButton.bottom);
+    expect(metrics.uploadFileButton.overflow).toBe("hidden");
+    expect(metrics.uploadFileInput.width).toBeGreaterThanOrEqual(100);
     expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
     expect(metrics.clearTemporary.left).toBe(0);
     expect(metrics.clearTemporary.right).toBe(0);
