@@ -1,9 +1,31 @@
+import { mkdir } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const routeSource = new URL("../src/routes/user/files.tsx", import.meta.url);
 const styleSource = new URL("../src/routes/user/-files.stylex.ts", import.meta.url);
 const fallbackSource = new URL("../src/app.css", import.meta.url);
+const legacyTemplateSource = new URL(
+  "../../yona-original/app/views/user/userFiles.scala.html",
+  import.meta.url,
+);
+const legacyCommonSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_common.less",
+  import.meta.url,
+);
+const legacySpritesSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_sprites.less",
+  import.meta.url,
+);
+const legacyResponsiveSource = new URL(
+  "../../yona-original/app/assets/stylesheets/less/_responsive.less",
+  import.meta.url,
+);
+const legacyYobiSource = new URL(
+  "../../yona-original/app/assets/stylesheets/yobi.less",
+  import.meta.url,
+);
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 
 async function mockSession(page: Page) {
@@ -53,11 +75,17 @@ function fileResponse(filter: string, page: number) {
 
 test.describe("StyleX user files screen family", () => {
   test("declares six route-local owners from the frozen user-files rules", async () => {
-    const [route, styles, fallback] = await Promise.all([
-      readFile(routeSource, "utf8"),
-      readFile(styleSource, "utf8"),
-      readFile(fallbackSource, "utf8"),
-    ]);
+    const [route, styles, fallback, template, common, sprites, responsive, yobi] =
+      await Promise.all([
+        readFile(routeSource, "utf8"),
+        readFile(styleSource, "utf8"),
+        readFile(fallbackSource, "utf8"),
+        readFile(legacyTemplateSource, "utf8"),
+        readFile(legacyCommonSource, "utf8"),
+        readFile(legacySpritesSource, "utf8"),
+        readFile(legacyResponsiveSource, "utf8"),
+        readFile(legacyYobiSource, "utf8"),
+      ]);
 
     for (const owner of [
       "user-files-files",
@@ -66,9 +94,40 @@ test.describe("StyleX user files screen family", () => {
       "user-files-search",
       "user-files-search-action",
       "user-files-pagination",
+      "user-files-pagination-list",
+      "user-files-pagination-item",
+      "user-files-pagination-icon",
+      "user-files-pagination-label",
+      "user-files-pagination-input",
     ]) {
       expect(route).toContain(`data-stylex-owner="${owner}"`);
     }
+    expect(template).toContain('<div id="pagination"></div>');
+    expect(template).toContain(
+      'yobi.Pagination.update($("#pagination"), @currentPage.getTotalPageCount);',
+    );
+    expect(common).toContain(".page-navigation-wrap {");
+    expect(common).toContain(".page-nums");
+    expect(common).toContain(".input-mini");
+    expect(common).toContain(".nospinner");
+    expect(sprites).toContain(".btn-pg-prev {");
+    expect(sprites).toContain("background-position: -136px -139px;");
+    expect(sprites).toContain("background-position: -164px -2px;");
+    expect(sprites).toContain(".btn-pg-next {");
+    expect(sprites).toContain("background-position: -146px -139px;");
+    expect(sprites).toContain("background-position: -23px -13px;");
+    expect(responsive).toContain(".page-nums");
+    expect(yobi.trim()).toContain('@import "less/_common.less";');
+    expect(yobi.trim()).toContain('@import "less/_sprites.less";');
+    expect(route).toContain('import legacySpriteUrl from "../../assets/legacy/sprite.png";');
+    expect(route).toContain("userFilesStyles.paginationSprite(legacySpriteUrl)");
+    expect(route).not.toContain("style={");
+    expect(styles).toContain("--user-files-pagination-sprite");
+    expect(route).not.toContain("page-navigation-wrap");
+    expect(route).not.toContain("page-nums");
+    expect(route).not.toContain("input-mini nospinner");
+    expect(route).not.toContain("btn-pg-prev");
+    expect(route).not.toContain("btn-pg-next");
     expect(route).toContain("userFilesStyles.row, isHovered && userFilesStyles.rowHovered");
     expect(styles).toContain("export const userFilesColors = stylex.defineVars");
     expect(styles).toContain('rowHoverBorder: "#10a2e4"');
@@ -111,7 +170,38 @@ test.describe("StyleX user files screen family", () => {
     const pagination = page.locator('[data-stylex-owner="user-files-pagination"]');
     await expect(pagination).toBeVisible();
     await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("1");
-    await pagination.getByText("Next page").click();
+    await expect(
+      pagination.locator('[data-stylex-owner="user-files-pagination-item"]'),
+    ).toHaveCount(5);
+    await expect(
+      pagination.locator('[data-stylex-owner="user-files-pagination-label"]'),
+    ).toHaveText(["Previous page", "Next page"]);
+    await expect(
+      pagination.locator('[data-stylex-owner="user-files-pagination-icon"]'),
+    ).toHaveCount(2);
+    await expect(
+      pagination.locator('[data-stylex-owner="user-files-pagination-icon"]').first(),
+    ).toHaveAttribute("data-disabled", "true");
+    await expect(
+      pagination.locator('[data-stylex-owner="user-files-pagination-icon"]').last(),
+    ).not.toHaveAttribute("data-disabled");
+    for (const owner of await pagination.locator("[data-stylex-owner]").all()) {
+      await expect(owner).not.toHaveClass(
+        /(?:page-navigation-wrap|page-nums|page-num|ikon|delimiter|input-mini|nospinner|ico|btn-pg-prev|btn-pg-next|off)/u,
+      );
+    }
+    await pagination.locator('[data-stylex-owner="user-files-pagination-input"]').hover();
+    await expect(pagination.locator('[data-stylex-owner="user-files-pagination-input"]')).toHaveCSS(
+      "border-color",
+      "rgb(243, 108, 34)",
+    );
+    await pagination.locator('[data-stylex-owner="user-files-pagination-input"]').focus();
+    await expect(pagination.locator('[data-stylex-owner="user-files-pagination-input"]')).toHaveCSS(
+      "box-shadow",
+      "rgba(0, 0, 0, 0.1) -1px -1px 2px 0px inset",
+    );
+    await pagination.locator('[data-stylex-owner="user-files-pagination-input"]').fill("2");
+    await pagination.locator('[data-stylex-owner="user-files-pagination-input"]').press("Enter");
     await expect(page).toHaveURL(`${basePath}/user/files?filter=avatar&pageNum=2`);
     await expect(pagination.locator('input[name="pageNum"]')).toHaveValue("2");
 
@@ -139,5 +229,26 @@ test.describe("StyleX user files screen family", () => {
     expect(boxes!.previewRight).toBeLessThanOrEqual(boxes!.nameLeft);
     expect(boxes!.rowLeft).toBeGreaterThanOrEqual(0);
     expect(boxes!.rowRight).toBeLessThanOrEqual(1366);
+
+    await mkdir(resolve("output/playwright/batch-820"), { recursive: true });
+    await page.screenshot({
+      path: resolve("output/playwright/batch-820/user-files-pagination-desktop.png"),
+      fullPage: true,
+    });
+
+    await page.setViewportSize({ height: 844, width: 390 });
+    await expect(pagination).toBeVisible();
+    const mobileOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    );
+    expect(mobileOverflow).toBe(true);
+    const mobileBox = await pagination.boundingBox();
+    expect(mobileBox).not.toBeNull();
+    expect(mobileBox!.x).toBeGreaterThanOrEqual(0);
+    expect(mobileBox!.x + mobileBox!.width).toBeLessThanOrEqual(390);
+    await page.screenshot({
+      path: resolve("output/playwright/batch-820/user-files-pagination-mobile.png"),
+      fullPage: true,
+    });
   });
 });

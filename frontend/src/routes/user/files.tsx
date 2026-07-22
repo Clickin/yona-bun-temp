@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import { useState } from "react";
+import legacySpriteUrl from "../../assets/legacy/sprite.png";
 import {
   listWorkspaceFilesRest,
   type WorkspaceFileItem,
@@ -400,10 +401,41 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
     });
   };
 
+  const paginationStyleProps = stylex.props(userFilesStyles.pagination);
+  const paginationListStyleProps = stylex.props(userFilesStyles.paginationList);
+  const paginationItemStyleProps = stylex.props(userFilesStyles.paginationItem);
+  const paginationIconItemStyleProps = stylex.props(
+    userFilesStyles.paginationItem,
+    userFilesStyles.paginationIconItem,
+  );
+  const paginationDelimiterStyleProps = stylex.props(
+    userFilesStyles.paginationItem,
+    userFilesStyles.paginationDelimiter,
+  );
+  const paginationInputStyleProps = stylex.props(userFilesStyles.paginationInput);
+  const paginationLabelStyleProps = stylex.props(userFilesStyles.paginationLabel);
+  const paginationDisabledLabelStyleProps = stylex.props(
+    userFilesStyles.paginationLabel,
+    userFilesStyles.paginationLabelDisabled,
+  );
   return (
-    <div id="pagination" className="page-navigation-wrap" data-stylex-owner="user-files-pagination">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...paginationStyleProps}
+      className={paginationStyleProps.className}
+      id="pagination"
+      data-stylex-owner="user-files-pagination"
+    >
+      <ul
+        {...paginationListStyleProps}
+        className={paginationListStyleProps.className}
+        data-stylex-owner="user-files-pagination-list"
+      >
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="user-files-pagination-item"
+        >
           {hasPrev ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -411,19 +443,53 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               search={pageSearch(currentPage - 1)}
               to="/user/files"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(
+                  userFilesStyles.paginationIcon,
+                  userFilesStyles.paginationPrevIcon,
+                  userFilesStyles.paginationSprite(legacySpriteUrl),
+                )}
+                data-stylex-owner="user-files-pagination-icon"
+              ></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="user-files-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(
+                  userFilesStyles.paginationIcon,
+                  userFilesStyles.paginationPrevIcon,
+                  userFilesStyles.paginationPrevIconDisabled,
+                  userFilesStyles.paginationSprite(legacySpriteUrl),
+                )}
+                data-disabled="true"
+                data-stylex-owner="user-files-pagination-icon"
+              ></i>
+              <span
+                {...paginationDisabledLabelStyleProps}
+                className={paginationDisabledLabelStyleProps.className}
+                data-disabled="true"
+                data-stylex-owner="user-files-pagination-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="user-files-pagination-item"
+        >
           <input
-            className="input-mini nospinner"
+            {...paginationInputStyleProps}
+            className={paginationInputStyleProps.className}
             defaultValue={currentPage}
             key={`${currentPage}-${files.totalPages}`}
             max={files.totalPages}
@@ -450,11 +516,30 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
             }}
             pattern="[0-9]*"
             type="number"
+            data-stylex-owner="user-files-pagination-input"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{files.totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...paginationDelimiterStyleProps}
+          className={paginationDelimiterStyleProps.className}
+          data-pagination-variant="delimiter"
+          data-stylex-owner="user-files-pagination-item"
+        >
+          /
+        </li>
+        <li
+          {...paginationItemStyleProps}
+          className={paginationItemStyleProps.className}
+          data-stylex-owner="user-files-pagination-item"
+        >
+          {files.totalPages}
+        </li>
+        <li
+          {...paginationIconItemStyleProps}
+          className={paginationIconItemStyleProps.className}
+          data-pagination-variant="icon"
+          data-stylex-owner="user-files-pagination-item"
+        >
           {hasNext ? (
             <Link
               activeOptions={legacyRouteLocalActiveOptions}
@@ -462,13 +547,42 @@ function Pagination({ files }: { files: WorkspaceFilesResponse }) {
               search={pageSearch(currentPage + 1)}
               to="/user/files"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...paginationLabelStyleProps}
+                className={paginationLabelStyleProps.className}
+                data-stylex-owner="user-files-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(
+                  userFilesStyles.paginationIcon,
+                  userFilesStyles.paginationNextIcon,
+                  userFilesStyles.paginationSprite(legacySpriteUrl),
+                )}
+                data-stylex-owner="user-files-pagination-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...paginationDisabledLabelStyleProps}
+                className={paginationDisabledLabelStyleProps.className}
+                data-disabled="true"
+                data-stylex-owner="user-files-pagination-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(
+                  userFilesStyles.paginationIcon,
+                  userFilesStyles.paginationNextIcon,
+                  userFilesStyles.paginationNextIconDisabled,
+                  userFilesStyles.paginationSprite(legacySpriteUrl),
+                )}
+                data-disabled="true"
+                data-stylex-owner="user-files-pagination-icon"
+              ></i>
             </>
           )}
         </li>

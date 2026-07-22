@@ -6427,6 +6427,23 @@ at `1002×107` desktop and `386×135` mobile, with a uniform 2px vertical state
 difference. The automated navbar shifts are approved Yoram contact-item
 deviation consequences and require no compensating layout.
 
+## Batch 820
+
+Move the authenticated populated `/user/files` pagination state into the route's
+existing StyleX boundary. `yona-original/app/views/user/userFiles.scala.html:31-78`
+emits the pagination placeholder; frozen `_common.less:50-91` supplies the
+wrapper/list/item/input/label cascade, `_sprites.less:1-5,97-119` supplies the
+prev/next sprite geometry, and `_page.less:7442-7444` plus
+`_responsive.less:548-550` supplies the desktop/mobile page-number offset.
+Preserve the existing React/TanStack page navigation and input Enter behavior,
+use the imported frozen sprite asset through dynamic StyleX, keep the shared
+fallback for unrelated consumers, and do not remove broad `app.css` selectors.
+Focused normal/fallback-off system-Chrome runs pass 2/2 each with desktop/mobile
+computed declarations, order, interaction, containment, and no overflow. Local
+populated screenshots and real legacy empty-state baselines are captured under
+`frontend/output/playwright/batch-820/`; exact populated legacy screenshot parity
+remains an explicit gap until a live legacy instance contains attachments.
+
 ## Batch 819
 
 Translate authenticated populated board-post Markdown commit references from the

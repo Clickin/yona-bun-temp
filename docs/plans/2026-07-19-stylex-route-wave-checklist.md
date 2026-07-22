@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 820 user-files populated pagination
+
+- [x] Legacy `userFiles.scala.html` pagination placeholder, `_common.less` pagination cascade, `_sprites.less` prev/next geometry, and responsive page-number offset are mapped.
+- [x] Six route-local owners preserve wrapper/list/item/input/label/sprite declarations and React/TanStack pagination behavior without inline styles or shared fallback deletion.
+- [x] Focused normal/fallback-off system-Chrome checks pass 2/2 each with desktop/mobile computed output, enabled/disabled order, focus/hover/Enter navigation, containment, and no overflow.
+- [x] Local populated-state desktop/mobile screenshots and real legacy empty-state desktop/mobile baseline screenshots were captured under `frontend/output/playwright/batch-820/` and visually inspected.
+- [ ] Exact populated pagination screenshot parity against a live legacy render remains unverified because the disposable legacy instance has no attachments; retain this as an explicit gap and do not claim full visual parity for this state.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-22 Batch 819 board-post Markdown commit references
 
 - [x] Legacy source mapped: `board/view.scala.html` → `partial_comments.scala.html` → `common/childComments.scala.html` plus `AutoLinkRenderer.java` commit-token resolution.
