@@ -7,9 +7,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 ### 2026-07-22 Batch 783 issue vote heart glyph proof
 
 - [x] Intentional product-copy deviation recorded: Yoram's footer omits the
-  legacy NAVER/NAVER LABS provider links, and the developer-contact link uses
-  the Yoram repository URL. This is an approved identity/link change, not a
-  parity gap or follow-up item.
+  legacy NAVER/NAVER LABS provider links, and the developer-contact item uses
+  the Yoram repository URL/copy. These are explicit user-authored Yoram
+  identity/link changes, not parity gaps or follow-up items; screenshot review
+  must preserve them rather than restore the legacy copy or destinations.
 
 - [x] Active and disabled issue vote hearts preserve the `yobicon-hearts`
   element/class while the route-local StyleX owner carries the frozen yobicon
@@ -20,10 +21,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   style, active/disabled visibility, and the fallback cascade difference in
   line-height. The managed legacy issue screen has a real 1/1 desktop
   screenshot sweep, and paired local comparison runs through root-base Vite
-  dev with system Chrome. Sidebar horizontal geometry is aligned after the
-  final `_responsive.less` padding cascade; the remaining 456px-vs-410px
-  issue-form height difference is an explicit follow-up gap. Footer/provider
-  and developer-contact differences are the approved Yoram identity deviation
+  dev with system Chrome. The latest paired rerun passes legacy/local 1/1 with
+  zero diff/local failures; sidebar geometry and issue-form height are aligned,
+  so the previously recorded 456px-vs-410px gap is closed. Footer/provider and
+  developer-contact differences are the approved Yoram identity deviation
   recorded above.
 
 ### 2026-07-22 Batch 784 issue-detail sidebar responsive cascade proof
@@ -33,8 +34,8 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   stopping at the earlier `_page.less` 52px declaration.
 - [x] Focused normal/fallback-off sidebar metadata checks pass 1/1 each, and
   the paired desktop sweep confirms the issue form's horizontal geometry now
-  matches legacy. The editable-label/permission branch still has a documented
-  456px-vs-410px vertical gap; no full parity claim is made.
+  matches legacy. A fresh paired rerun passes both targets 1/1 with zero
+  diff/local failures and closes the stale 456px-vs-410px vertical-gap record.
 
 ### 2026-07-22 Batch 782 vote and voter-list proof
 

@@ -18,12 +18,15 @@
   the legacy issue screenshot sweep passes 1/1. Paired local comparison now
   runs against the root-base Vite dev server with system Chrome; both sides
   render successfully. The issue sidebar horizontal geometry is aligned after
-  applying the final `_responsive.less` `.issue-info` padding cascade. One
-  vertical difference remains: the local editable/label branch produces an
-  issue form height of 456px versus legacy's 410px; it is retained as an
-  explicit follow-up gap and parity is not claimed as fully green.
+  applying the final `_responsive.less` `.issue-info` padding cascade. The
+  2026-07-22 paired rerun passes legacy/local 1/1 with `diffFailures: 0` and
+  `localFailures: 0`; the previously recorded 456px-versus-410px issue-form
+  height gap is resolved. Direct inspection confirms the body, two-column
+  layout, editor, and footer placement are geometrically aligned.
 - Intentional product-identity deviation: the Yoram footer omits legacy
   NAVER/NAVER LABS provider links, and the developer-contact link uses the
-  Yoram repository URL. These are explicit product changes, not parity gaps,
-  and must not be restored to legacy copy.
+  Yoram repository URL/copy instead of the legacy developer-contact item.
+  These are explicit user-authored Yoram product changes, not parity gaps,
+  must be excluded from screenshot-gap counts, and must not be restored to
+  legacy copy or destinations.
 - Frozen `yona-original/**` sources remained unchanged.
