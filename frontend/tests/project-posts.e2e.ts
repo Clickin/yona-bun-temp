@@ -1676,7 +1676,6 @@ test("project board detail owns legacy Watch button paint in StyleX", async ({ p
     "../yona-original/app/assets/stylesheets/less/_variables.less",
     "utf8",
   );
-
   expect(legacyViewSource).toMatch(
     /id="watch-button"[^>]*class="ybtn @if\(conatinsCurrentUserInWatchers\) \{ybtn-watching\}"/u,
   );
@@ -2003,6 +2002,10 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
   );
   const legacyYobiSource = readFileSync(
     "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyYobiUiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
     "utf8",
   );
   const legacyCommonSource = readFileSync(
@@ -5597,12 +5600,36 @@ test("authenticated populated board post owns open parent comment update form in
     "../yona-original/app/views/common/commentUpdateForm.scala.html",
     "utf8",
   );
+  const legacyEditorSource = readFileSync(
+    "../yona-original/app/views/common/editor.scala.html",
+    "utf8",
+  );
   const legacyPageSource = readFileSync(
     "../yona-original/app/assets/stylesheets/less/_page.less",
     "utf8",
   );
+  const legacyMixinsSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_mixins.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
   const legacyYobiSource = readFileSync(
     "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyYobiUiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
     "utf8",
   );
 
@@ -5614,6 +5641,12 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyUpdateFormSource).toMatch(
     /@Messages\("button\.upload"\)[\s\S]*?@Messages\("button\.cancel"\)[\s\S]*?@Messages\("button\.save"\)/u,
   );
+  expect(legacyUpdateFormSource).toMatch(
+    /<span class="file-upload">\s*<label for="upload-@comment\.id" class="file-upload__label ybtn">[\s\S]*?<input id="upload-@comment\.id" class="file-upload__input" type="file" name="filePath" multiple>/u,
+  );
+  expect(legacyEditorSource).toMatch(
+    /<div class="textarea-box">\s*<textarea name="@textareaName" class="editorSeries content comment nm" data-editor-mode="@editorMode" markdown="true" id="editor-@textareaName-@wrapId"/u,
+  );
   expect(legacyPageSource).toMatch(
     /\.comment-update-form\s*\{\s*display:none;\s*\.textarea-box\s*\{\s*padding-right:\s*2px;\s*margin-bottom:\s*10px;\s*\}\s*\.write-comment-box\s*\{\s*padding:\s*10px;/u,
   );
@@ -5623,23 +5656,68 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyPageSource).toMatch(
     /\.textarea-box\s*\{\s*padding:\s*0;\s*margin:\s*0;\s*display:\s*block;\s*padding-right:\s*14px;\s*position:relative;/u,
   );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.comment\s*\{\s*height:\s*160px;\s*margin:\s*0;\s*resize:vertical;\s*\.box-shadow\(none\);\s*&:focus\s*\{\s*border:\s*1px solid @gray-cc;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.textarea-box\s*\{[\s\S]*?textarea\s*\{\s*\.border-radius\(0 0 3px 3px\);\s*width:\s*100%;\s*resize:vertical !important;\s*font-size:\s*1em;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.upload-button-line\s*\{\s*\.file-upload\s*\{\s*position:\s*relative;\s*display:\s*inline-block;\s*\}\s*\.file-upload__label\s*\{\s*display:\s*block;\s*border-radius:\s*2px;\s*transition:\s*background \.3s;\s*\}\s*\.file-upload__input\s*\{\s*position:\s*fixed;\s*left:\s*0;\s*top:\s*0;\s*right:\s*0;\s*height:\s*0;\s*bottom:\s*0;\s*width:0;\s*opacity:\s*0;/u,
+  );
+  expect(legacyMixinsSource).toMatch(
+    /\.border-radius\(@radius: 5px\)[\s\S]*?border-radius:\s*@radius;/u,
+  );
+  expect(legacyMixinsSource).toMatch(/\.box-shadow\(@shadow:[\s\S]*?box-shadow:\s*@shadow;/u);
+  expect(legacyVariablesSource).toContain("@gray-cc: #CCC;");
+  expect(legacyVariablesSource).toContain("@orange : #F36C22;");
+  expect(legacyVariablesSource).toContain("@primary         : @orange;");
+  expect(legacyResponsiveSource).toMatch(
+    /@media all and \(max-width: 720px\) \{[\s\S]*?input\[type="text"\],[\s\S]*?textarea\s*\{\s*font-size:\s*16px !important;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /label,\s*input,\s*button,\s*select,\s*textarea\s*\{\s*font-size:\s*14px;[\s\S]*?textarea\s*\{\s*height:\s*auto;/u,
+  );
   expect(legacyYobiSource).toMatch(
-    /@import "less\/_variables\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";/u,
+    /@import "less\/_variables\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";[\s\S]*?@import "less\/_yobiUI\.less";/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /\.ybtn, \.flat > li > \.ybtn\s*\{[\s\S]*?\.border-radius\(3px\)\s*!important;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /label, input, button, select, textarea \{ font-size:12px; \}[\s\S]*?select, textarea,[\s\S]*?\.uneditable-input \{ font-size:12px; \}/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /textarea, input\[type="text"\],[\s\S]*?&:focus\s*\{\s*\.box-shadow\(none\);\s*border-color:@primary !important;/u,
   );
   for (const styleName of [
     "commentUpdateForm",
     "commentUpdateFormVisible",
     "commentUpdateWriteBox",
     "commentUpdateTextareaBox",
+    "commentUpdateTextareaControl",
+    "commentUpdateFileUpload",
+    "commentUpdateFileUploadLabel",
+    "commentUpdateFileUploadInput",
     "commentUpdateActions",
   ]) {
     expect(styleSource).toContain(`${styleName}:`);
   }
+  expect(styleSource).toMatch(
+    /commentUpdateTextareaControl:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?width:\s*"100%"[\s\S]*?borderColor:\s*"#F36C22 !important"[\s\S]*?"@media all and \(max-width: 720px\)":\s*\{ fontSize:\s*"16px !important" \}/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUpdateFileUploadLabel:\s*\{[\s\S]*?borderRadius:\s*"3px !important"/u,
+  );
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
     "post-detail-comment-editor",
     "post-detail-comment-update-write-box",
     "post-detail-comment-update-textarea-box",
+    "post-detail-comment-update-textarea",
+    "post-detail-comment-update-file-upload",
+    "post-detail-comment-update-file-upload-label",
+    "post-detail-comment-update-file-upload-input",
     "post-detail-comment-update-actions",
   ]) {
     expect(routeSource).toContain(owner);
@@ -5782,11 +5860,19 @@ test("authenticated populated board post owns open parent comment update form in
       '[data-stylex-owner="post-detail-comment-update-textarea-box"]',
     );
     const actions = form.locator('[data-stylex-owner="post-detail-comment-update-actions"]');
+    const textarea = form.locator('[data-stylex-owner="post-detail-comment-update-textarea"]');
+    const fileUpload = form.locator('[data-stylex-owner="post-detail-comment-update-file-upload"]');
+    const fileUploadLabel = form.locator(
+      '[data-stylex-owner="post-detail-comment-update-file-upload-label"]',
+    );
+    const fileUploadInput = form.locator(
+      '[data-stylex-owner="post-detail-comment-update-file-upload-input"]',
+    );
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
     await expect(form.locator('input[type="hidden"][name="id"]')).toHaveValue("21");
-    await expect(textareaBox.locator("textarea")).toHaveValue("First **comment**");
+    await expect(textarea).toHaveValue("First **comment**");
     await expect(actions.locator("button")).toHaveText(["Cancel", "Save"]);
 
     const metrics = await formWrap.evaluate((wrapper) => {
@@ -5794,12 +5880,19 @@ test("authenticated populated board post owns open parent comment update form in
         wrapper.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
       const writeBox = get("post-detail-comment-update-write-box");
       const textareaBox = get("post-detail-comment-update-textarea-box");
+      const textarea = get("post-detail-comment-update-textarea");
+      const fileUpload = get("post-detail-comment-update-file-upload");
+      const fileUploadLabel = get("post-detail-comment-update-file-upload-label");
+      const fileUploadInput = get("post-detail-comment-update-file-upload-input");
       const actions = get("post-detail-comment-update-actions");
       const upload = wrapper.querySelector<HTMLElement>(".upload-drop-here")!;
       const form = wrapper.querySelector<HTMLElement>(":scope > form")!;
       const formRect = form.getBoundingClientRect();
       const writeRect = writeBox.getBoundingClientRect();
       const textareaRect = textareaBox.getBoundingClientRect();
+      const textareaControlRect = textarea.getBoundingClientRect();
+      const fileUploadRect = fileUpload.getBoundingClientRect();
+      const fileUploadLabelRect = fileUploadLabel.getBoundingClientRect();
       const actionsRect = actions.getBoundingClientRect();
       return {
         formDisplay: getComputedStyle(wrapper).display,
@@ -5809,6 +5902,33 @@ test("authenticated populated board post owns open parent comment update form in
           margin: getComputedStyle(textareaBox).margin,
           padding: getComputedStyle(textareaBox).padding,
           position: getComputedStyle(textareaBox).position,
+        },
+        textareaControl: {
+          borderRadius: getComputedStyle(textarea).borderRadius,
+          boxShadow: getComputedStyle(textarea).boxShadow,
+          fontSize: getComputedStyle(textarea).fontSize,
+          height: getComputedStyle(textarea).height,
+          margin: getComputedStyle(textarea).margin,
+          resize: getComputedStyle(textarea).resize,
+        },
+        fileUpload: {
+          display: getComputedStyle(fileUpload).display,
+          position: getComputedStyle(fileUpload).position,
+        },
+        fileUploadLabel: {
+          borderRadius: getComputedStyle(fileUploadLabel).borderRadius,
+          display: getComputedStyle(fileUploadLabel).display,
+          transition: getComputedStyle(fileUploadLabel).transition,
+        },
+        fileUploadInput: {
+          bottom: getComputedStyle(fileUploadInput).bottom,
+          height: getComputedStyle(fileUploadInput).height,
+          left: getComputedStyle(fileUploadInput).left,
+          opacity: getComputedStyle(fileUploadInput).opacity,
+          position: getComputedStyle(fileUploadInput).position,
+          right: getComputedStyle(fileUploadInput).right,
+          top: getComputedStyle(fileUploadInput).top,
+          width: getComputedStyle(fileUploadInput).width,
         },
         actions: {
           marginTop: getComputedStyle(actions).marginTop,
@@ -5826,6 +5946,17 @@ test("authenticated populated board post owns open parent comment update form in
           actionsRect.right <= writeRect.right,
         noOverlap: textareaRect.bottom <= actionsRect.top,
         actionRightAligned: actionsRect.right <= writeRect.right,
+        textareaContained:
+          textareaControlRect.left >= textareaRect.left &&
+          textareaControlRect.right <= textareaRect.right,
+        textareaWidthTracksBox:
+          textareaControlRect.width > 0 &&
+          Math.abs(textareaControlRect.width - textareaRect.width) <= 2,
+        uploadLabelMatchesWrapper:
+          fileUploadLabelRect.left === fileUploadRect.left &&
+          fileUploadLabelRect.right === fileUploadRect.right &&
+          fileUploadLabelRect.top === fileUploadRect.top &&
+          fileUploadLabelRect.bottom === fileUploadRect.bottom,
       };
     });
     expect(metrics).toEqual({
@@ -5837,19 +5968,58 @@ test("authenticated populated board post owns open parent comment update form in
         padding: "0px 2px 0px 0px",
         position: "relative",
       },
+      textareaControl: {
+        borderRadius: "0px 0px 3px 3px",
+        boxShadow: "none",
+        fontSize: viewport.width <= 720 ? "16px" : "12px",
+        height: "160px",
+        margin: "0px",
+        resize: "vertical",
+      },
+      fileUpload: { display: "inline-block", position: "relative" },
+      fileUploadLabel: {
+        borderRadius: "3px",
+        display: "block",
+        transition: "background 0.3s",
+      },
+      fileUploadInput: {
+        bottom: "0px",
+        height: "0px",
+        left: "0px",
+        opacity: "0",
+        position: "fixed",
+        right: "0px",
+        top: "0px",
+        width: "0px",
+      },
       actions: { marginTop: "10px", textAlign: "right" },
       order: true,
       containment: true,
       noOverlap: true,
       actionRightAligned: true,
+      textareaContained: true,
+      textareaWidthTracksBox: true,
+      uploadLabelMatchesWrapper: true,
     });
+
+    await textarea.focus();
+    await expect(textarea).toHaveCSS("border", "1px solid rgb(243, 108, 34)");
+    await expect(textarea).toHaveCSS("box-shadow", "none");
+    await fileUploadInput.setInputFiles({
+      name: `batch-797-${viewport.width}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from("batch 797"),
+    });
+    expect(await fileUploadInput.evaluate((input: HTMLInputElement) => input.files?.length)).toBe(
+      1,
+    );
 
     await actions.getByRole("button", { name: "Cancel" }).click();
     await expect(formWrap).toHaveCSS("display", "none");
     await expect(body).toBeVisible();
     await expect(body).toContainText("First comment");
     await comment.locator('.act-row button[title="Edit comment"]').click();
-    await textareaBox.locator("textarea").fill(`Updated at ${viewport.width}`);
+    await textarea.fill(`Updated at ${viewport.width}`);
     await actions.getByRole("button", { name: "Save" }).click();
     await expect
       .poll(() => commentUpdateRequests.at(-1)?.contentsMarkdown)

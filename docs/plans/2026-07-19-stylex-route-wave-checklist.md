@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 797 board-post comment-update textarea/upload
+
+- [x] Four route-local owners carry the final frozen textarea and upload
+  wrapper/label/input cascade, including later Yobi and responsive winners.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at desktop/390px
+  with focus, file-selection, cancel/save mutation, and geometry coverage.
+- [x] Fresh legacy/local form screenshots were captured and inspected.
+  Upload-drop overlay, generic buttons, tabs/preview, new-comment editor, and
+  fallback deletion remain outside this wave.
+
 ### 2026-07-22 Batch 796 board-post open comment-update form
 
 - [x] Four route-local groups own exact frozen hidden/open form, write-box,

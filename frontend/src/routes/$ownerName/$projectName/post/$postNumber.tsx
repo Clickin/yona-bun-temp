@@ -1715,6 +1715,9 @@ function PostCommentUpdateForm({
   );
   const updateWriteBoxStyle = stylex.props(styles.commentUpdateWriteBox);
   const updateActionsStyle = stylex.props(styles.commentUpdateActions);
+  const updateFileUploadStyle = stylex.props(styles.commentUpdateFileUpload);
+  const updateFileUploadLabelStyle = stylex.props(styles.commentUpdateFileUploadLabel);
+  const updateFileUploadInputStyle = stylex.props(styles.commentUpdateFileUploadInput);
 
   return (
     <div
@@ -1755,13 +1758,24 @@ function PostCommentUpdateForm({
               className={`${updateActionsStyle.className} comment-update-button upload-button-line`}
               data-stylex-owner="post-detail-comment-update-actions"
             >
-              <span className="file-upload">
-                <label htmlFor={`upload-${commentId}`} className="file-upload__label ybtn">
+              <span
+                {...updateFileUploadStyle}
+                className={`${updateFileUploadStyle.className} file-upload`}
+                data-stylex-owner="post-detail-comment-update-file-upload"
+              >
+                <label
+                  {...updateFileUploadLabelStyle}
+                  htmlFor={`upload-${commentId}`}
+                  className={`${updateFileUploadLabelStyle.className} file-upload__label ybtn`}
+                  data-stylex-owner="post-detail-comment-update-file-upload-label"
+                >
                   {t("button.upload")}
                 </label>
                 <input
+                  {...updateFileUploadInputStyle}
                   id={`upload-${commentId}`}
-                  className="file-upload__input"
+                  className={`${updateFileUploadInputStyle.className} file-upload__input`}
+                  data-stylex-owner="post-detail-comment-update-file-upload-input"
                   type="file"
                   name="filePath"
                   multiple
@@ -2016,6 +2030,10 @@ function MarkdownEditor({
     editorMode === "update-comment-body"
       ? stylex.props(styles.commentUpdateTextareaBox)
       : undefined;
+  const updateTextareaStyle =
+    editorMode === "update-comment-body"
+      ? stylex.props(styles.commentUpdateTextareaControl)
+      : undefined;
 
   return (
     <div className="mt10">
@@ -2079,8 +2097,14 @@ function MarkdownEditor({
             }
           >
             <textarea
+              {...updateTextareaStyle}
               name={name}
-              className="editorSeries content comment nm"
+              className={`${updateTextareaStyle?.className ?? ""} editorSeries content comment nm`.trim()}
+              data-stylex-owner={
+                editorMode === "update-comment-body"
+                  ? "post-detail-comment-update-textarea"
+                  : undefined
+              }
               data-editor-mode={editorMode}
               {...{ markdown: "true" }}
               id={`editor-${name}-${wrapId}`}

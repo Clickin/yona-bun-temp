@@ -11,6 +11,9 @@ React SPA screen from legacy Yona Scala HTML. It is the execution companion to
 
 Every resumed goal turn must restate this directive before choosing work:
 
+- Playwright E2E and screenshot parity invocations run wholly outside the
+  sandbox with `PW_CHANNEL=chrome`, using installed system Chrome. A bundled
+  browser failure or sandboxed launch is not acceptable parity evidence.
 - Legacy Scala HTML is the UI source of truth.
 - Existing React DOM is not implementation evidence.
 - Legacy Scala HTML and legacy JavaScript define the required rendered DOM and
