@@ -47,6 +47,8 @@ const sx = {
   author: stylex.props(styles.author),
   content: stylex.props(styles.content),
   actions: stylex.props(styles.actions),
+  postDeleteAction: stylex.props(styles.postDeleteAction),
+  commentDeleteAction: stylex.props(styles.commentDeleteAction),
   comments: stylex.props(styles.comments),
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
@@ -1097,7 +1099,8 @@ function PostActionButtons({
       {canDelete ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight ml6"
+          className={`${sx.postDeleteAction.className} icon btn-transparent-with-fontsize-lineheight`}
+          data-stylex-owner="post-detail-post-delete-action"
           title={t("button.delete")}
           onClick={(event) => {
             event.preventDefault();
@@ -1444,7 +1447,8 @@ function PostCommentRow({
             {canDelete ? (
               <button
                 type="button"
-                className="btn-transparent ml6"
+                className={`${sx.commentDeleteAction.className} btn-transparent`}
+                data-stylex-owner="post-detail-comment-delete-action"
                 title={t("common.comment.delete")}
                 onClick={(event) => {
                   event.preventDefault();

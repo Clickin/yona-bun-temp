@@ -1841,6 +1841,176 @@ test("project board detail deletes comments through legacy confirmation modal", 
   expect(commentDeleteSource).not.toContain("style.display");
 });
 
+test("project board detail owns the final ml6 delete-action spacing in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const appCssSource = readFileSync("src/app.css", "utf8");
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+
+  expect(legacyViewSource.match(/btn-transparent-with-fontsize-lineheight ml6/g)).toHaveLength(2);
+  expect(legacyCommentsSource).toContain('class="btn-transparent ml6"');
+  expect(legacyYobiSource).toContain('@import "less/_common.less";');
+  expect(legacyCommonSource).toMatch(/\.ml6\s*\{\s*margin-left:\s*6px;\s*\}/u);
+  expect(styleSource.match(/marginLeft:\s*"6px"/g)).toHaveLength(2);
+  expect(styleSource).toContain("postDeleteAction:");
+  expect(styleSource).toContain("commentDeleteAction:");
+  expect(routeSource.match(/data-stylex-owner="post-detail-post-delete-action"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-stylex-owner="post-detail-comment-delete-action"/g)).toHaveLength(
+    1,
+  );
+  expect(routeSource).not.toMatch(/className="[^"]*\bml6\b/u);
+  expect(appCssSource).not.toMatch(/\.ml6\s*\{/u);
+
+  const productionSources = [routeSource, appCssSource];
+  expect(productionSources.join("\n")).not.toMatch(/className="[^"]*\bml6\b/u);
+
+  for (const viewport of [
+    { name: "desktop", width: 1366, height: 900 },
+    { name: "mobile", width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const postDeletes = page.locator('[data-stylex-owner="post-detail-post-delete-action"]');
+    const commentDelete = page.locator(
+      '#comment-21 [data-stylex-owner="post-detail-comment-delete-action"]',
+    );
+    await expect(postDeletes).toHaveCount(2);
+    await expect(commentDelete).toHaveCount(1);
+    expect(
+      await postDeletes.evaluateAll((buttons) =>
+        buttons.every((button) => !button.classList.contains("ml6")),
+      ),
+    ).toBe(true);
+    await expect(commentDelete).not.toHaveClass(/\bml6\b/u);
+
+    const geometry = await page.evaluate(() => {
+      const postButtons = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="post-detail-post-delete-action"]',
+        ),
+      );
+      const commentButton = document.querySelector<HTMLElement>(
+        '#comment-21 [data-stylex-owner="post-detail-comment-delete-action"]',
+      )!;
+      const allButtons = [...postButtons, commentButton];
+      const details = allButtons.map((button) => {
+        const buttonRect = button.getBoundingClientRect();
+        const isComment = button.dataset.stylexOwner === "post-detail-comment-delete-action";
+        const region = isComment
+          ? button.closest<HTMLElement>("li.comment")
+          : (button.closest<HTMLElement>(".span-left-pane") ??
+            button.closest<HTMLElement>(".span-right-pane"));
+        const regionRect = region?.getBoundingClientRect() ?? null;
+        const previous = button.previousElementSibling as HTMLElement | null;
+        const previousRect = previous?.getBoundingClientRect() ?? null;
+        return {
+          marginLeft: getComputedStyle(button).marginLeft,
+          regionClass: region?.className ?? null,
+          regionWidth: regionRect?.width ?? null,
+          regionHeight: regionRect?.height ?? null,
+          buttonWidth: buttonRect.width,
+          buttonHeight: buttonRect.height,
+          regionHasBox: regionRect !== null && regionRect.width > 0 && regionRect.height > 0,
+          contained:
+            regionRect !== null &&
+            buttonRect.left >= regionRect.left - 0.5 &&
+            buttonRect.right <= regionRect.right + 0.5 &&
+            buttonRect.top >= regionRect.top - 0.5 &&
+            buttonRect.bottom <= regionRect.bottom + 0.5,
+          followsEdit: previous?.getAttribute("title")?.toLowerCase().includes("edit") ?? false,
+          noOverlap: previousRect === null || previousRect.right <= buttonRect.left,
+        };
+      });
+      return {
+        details,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(geometry.details).toHaveLength(3);
+    expect(geometry.details.every(({ marginLeft }) => marginLeft === "6px")).toBe(true);
+    const leftPaneDelete = geometry.details.find(({ regionClass }) =>
+      regionClass?.includes("span-left-pane"),
+    );
+    const rightPaneDelete = geometry.details.find(({ regionClass }) =>
+      regionClass?.includes("span-right-pane"),
+    );
+    const commentRowDelete = geometry.details.find(({ regionClass }) =>
+      regionClass?.split(/\s+/u).includes("comment"),
+    );
+    expect(leftPaneDelete).toBeDefined();
+    expect(rightPaneDelete).toBeDefined();
+    expect(commentRowDelete).toBeDefined();
+    if (viewport.name === "desktop") {
+      expect(
+        geometry.details.filter(
+          ({ regionHasBox, contained, buttonWidth, buttonHeight }) =>
+            !regionHasBox || !contained || buttonWidth === 0 || buttonHeight === 0,
+        ),
+      ).toEqual([]);
+    } else {
+      for (const visibleDelete of [leftPaneDelete!, commentRowDelete!]) {
+        expect(visibleDelete.regionHasBox).toBe(true);
+        expect(visibleDelete.contained).toBe(true);
+        expect(visibleDelete.buttonWidth).toBeGreaterThan(0);
+        expect(visibleDelete.buttonHeight).toBeGreaterThan(0);
+      }
+      expect(rightPaneDelete).toMatchObject({
+        buttonHeight: 0,
+        buttonWidth: 0,
+        contained: true,
+        regionHasBox: false,
+        regionHeight: 0,
+        regionWidth: 0,
+      });
+    }
+    expect(geometry.details.every(({ followsEdit }) => followsEdit)).toBe(true);
+    expect(geometry.details.every(({ noOverlap }) => noOverlap)).toBe(true);
+    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+
+    await postDeletes.first().click();
+    await expect(page.locator("#deleteConfirm")).toBeVisible();
+    expect(
+      await dispatchCancelableClick(
+        page.locator("#deleteConfirm .modal-footer button.ybtn").last(),
+      ),
+    ).toBe(false);
+    await expect(page.locator("#deleteConfirm")).toBeHidden();
+
+    await commentDelete.click();
+    await expect(page.locator("#comment-delete-modal")).toBeVisible();
+    expect(
+      await dispatchCancelableClick(
+        page.locator("#comment-delete-modal .modal-footer button.ybtn").last(),
+      ),
+    ).toBe(false);
+    await expect(page.locator("#comment-delete-modal")).toBeHidden();
+  }
+});
+
 test("project board detail submits legacy comment form through REST", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { commentCreateRequests } = await mockProjectPosts(page);

@@ -6287,3 +6287,19 @@ right-arrow pseudo glyphs. Remove only the now-zero-consumer `.ml0` block from
 each at 1280px and 390px. A real populated legacy screenshot remains a gap:
 the managed legacy seed has no PR, `/admin/sample/pullRequest/1` is 404, and
 the legacy create form rejects the seed because no sending repository exists.
+
+## Batch 786
+
+Move the authenticated populated board-post detail's final `.ml6` consumers
+into route-local StyleX. `board/view.scala.html:125,169` emits the post delete
+action in the main and sidebar action regions, while
+`board/partial_comments.scala.html:61` emits the populated comment delete
+action; frozen `_common.less:216`, imported by `yobi.less`, supplies the exact
+6px left margin. Preserve button/icon DOM, source order, and React-owned delete
+modal behavior, remove only the now-zero-consumer `.ml6` bridge, and leave
+`.ml10`, `.pt5px`, and unrelated consumers unchanged. Focused normal and
+fallback-off Chrome runs pass 1/1 each at 1366px and 390px. The real paired
+desktop sweep renders both populated screens but records a pre-existing 30px
+upload-area vertical drift and collapse-button paint difference outside this
+spacing-only batch; approved Yoram footer/contact/repository differences are
+not parity gaps.

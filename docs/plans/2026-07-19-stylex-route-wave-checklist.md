@@ -4,6 +4,20 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 786 board-post delete-action spacing
+
+- [x] The authenticated populated board-post detail moves all three rendered
+  delete-action `.ml6` consumers (two post actions and one comment action) to
+  route-local StyleX owners and removes the now-zero-consumer React bridge.
+- [x] Focused system-Chrome runs pass 1/1 in normal and fallback-off modes at
+  1366px and 390px, covering exact 6px margins, order, containment, no overlap,
+  and post/comment delete-modal open and dismiss behavior.
+- [ ] Paired legacy/local desktop screenshots render the same populated state,
+  but the automated sweep reports the local upload area 30px lower. Direct
+  review also shows the pre-existing green-vs-default collapse-button paint
+  difference. These are screen-level gaps outside this spacing-only batch;
+  approved Yoram repository/footer identity differences remain excluded.
+
 ### 2026-07-22 Batch 785 pull-request branch-icon fallback proof
 
 - [x] The populated pull-request overview removes only the final-cascade-
