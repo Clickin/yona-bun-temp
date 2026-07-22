@@ -2697,6 +2697,14 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "../yona-original/public/javascripts/service/yona.temporarySaveHandler.js",
     "utf8",
   );
+  const legacyAttachmentsSource = readFileSync(
+    "../yona-original/public/javascripts/common/yobi.Attachments.js",
+    "utf8",
+  );
+  const legacyFilesSource = readFileSync(
+    "../yona-original/public/javascripts/common/yobi.Files.js",
+    "utf8",
+  );
   const legacyKoreanMessagesSource = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
   const legacyBootstrapSource = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
@@ -2711,11 +2719,26 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyUploadFormSource).toMatch(
     /<div[\s\S]*?class="upload-wrap content-footer"[\s\S]*?<div class="attach-wrap">[\s\S]*?<div class="btn-wrap">[\s\S]*?<div class="nbtn medium white fake-file-wrap">[\s\S]*?<input type="file" class="file" name="filePath" multiple="multiple">/u,
   );
+  expect(legacyUploadFormSource).toMatch(
+    /<span class="help help-droppable">[\s\S]*?<span class="plain">[\s\S]*?<span class="help help-pastable">[\s\S]*?<ul class="attached-files unstyled"><\/ul>[\s\S]*?<p class="right-txt help">/u,
+  );
+  for (const owner of [
+    "post-detail-comment-upload-droppable",
+    "post-detail-comment-upload-plain",
+    "post-detail-comment-upload-pastable",
+    "post-detail-comment-upload-attached-files",
+    "post-detail-comment-upload-help",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
   expect(legacyPageSource).toMatch(
     /\.write-comment-box\s*\{[\s\S]*?\.upload-wrap\s*\{\s*background:#efefef;\s*padding:10px; margin-bottom:10px;\s*\.border-radius\(0px 0px 5px 5px\);/u,
   );
   expect(legacyPageSource).toMatch(
     /\.upload-wrap\s*\{\s*padding:10px !important;[\s\S]*?\.attach-wrap\s*\{\s*text-align:center;[\s\S]*?\.btn-wrap\s*\{\s*display:inline-block !important;\s*margin:0 5px; vertical-align:top;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.upload-wrap\s*\{\s*padding:10px !important;\s*\.help \{ display:none; \}\s*\.help-droppable \{\s*display: inline;\s*\}[\s\S]*?\.plain\s*\{\s*display:inline-block;\s*line-height:30px;\s*\}[\s\S]*?\.attached-files\s*\{\s*display:none;\s*padding: 0;\s*margin-bottom: 0;\s*margin-top: 15px;\s*border-top: 1px solid #e0e0e0;\s*padding: 15px 0px;/u,
   );
   expect(legacyYobiUiSource).toMatch(
     /\.nbtn\s*\{[\s\S]*?text-align\s*:center;[\s\S]*?font-weight:bold;[\s\S]*?font-size: 11px;[\s\S]*?line-height: 18px;[\s\S]*?&\.white\s*\{\s*color: #222;\s*background-color: @white;/u,
@@ -2732,6 +2755,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   );
   expect(styleSource).toMatch(
     /commentUploadFileInput:\s*\{[\s\S]*?left:\s*"5px"[\s\S]*?minWidth:\s*"100px"[\s\S]*?opacity:\s*0[\s\S]*?position:\s*"absolute"[\s\S]*?top:\s*0[\s\S]*?width:\s*"100%"[\s\S]*?zIndex:\s*2/u,
+  );
+  expect(styleSource).toMatch(/commentUploadDroppable:\s*\{ display:\s*"inline" \}/u);
+  expect(styleSource).toMatch(
+    /commentUploadPlain:\s*\{ display:\s*"inline-block", lineHeight:\s*"30px" \}/u,
+  );
+  expect(styleSource).toMatch(/commentUploadPastable:\s*\{ display:\s*"block" \}/u);
+  expect(styleSource).toMatch(
+    /commentUploadAttachedFiles:\s*\{\s*borderTop:\s*"1px solid #e0e0e0",\s*display:\s*"none",\s*marginBottom:\s*0,\s*marginTop:\s*"15px",\s*padding:\s*"15px 0px"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentUploadHelp:\s*\{ display:\s*"none", textAlign:\s*"right" \}/u,
   );
   for (const owner of [
     "post-detail-comment-upload-wrap",
@@ -2785,10 +2819,28 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyTemporarySaveSource).toMatch(
     /var noticePanel = \$\("\.editor-notice-label"\);[\s\S]*?setTimeout\(function \(\) \{[\s\S]*?noticePanel\.html\("<span class=\\"saved\\">Draft saved<\/span>"\);/u,
   );
+  expect(legacyFilesSource).toMatch(
+    /htVar\.bXHR2 = !!\(window\.ProgressEvent && window\.FileReader\) && !!window\.FormData;[\s\S]*?htVar\.bPastable = \(typeof document\.onpaste != "undefined"\) && htVar\.bXHR2\s*&& \(navigator\.userAgent\.indexOf\("FireFox"\) === -1\);/u,
+  );
+  expect(legacyAttachmentsSource).toMatch(
+    /var htEnv = yobi\.Files\.getEnv\(\);[\s\S]*?welHelpPastable\s*= htElements\.welContainer\.find\("\.help-pastable"\);[\s\S]*?welHelpPastable\[htEnv\.bPastable \? "show" : "hide"\]\(\);/u,
+  );
   expect(legacyKoreanMessagesSource).toContain("button.clear.temporary = 복구된 본문 삭제");
   expect(legacyKoreanMessagesSource).toContain("common.editor.edit = 편집");
   expect(legacyKoreanMessagesSource).toContain("common.editor.preview = 미리보기");
   expect(legacyKoreanMessagesSource).toContain("button.add.checklist = 체크리스트 추가");
+  expect(legacyKoreanMessagesSource).toContain(
+    "common.attach.drophere = 첨부할 파일을 끌어다 놓거나",
+  );
+  expect(legacyKoreanMessagesSource).toContain(
+    "common.attach.clickbutton = 버튼을 클릭해서 선택하세요",
+  );
+  expect(legacyKoreanMessagesSource).toContain(
+    "common.attach.pastehere = 클립보드 이미지를 붙여 넣을 수도 있습니다",
+  );
+  expect(legacyKoreanMessagesSource).toContain(
+    "common.attach.attachIfYouSave = 표시된 파일은 글을 저장하면 첨부됩니다.",
+  );
   expect(legacyEditorSource).toMatch(
     /<div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"><\/i> @Messages\("button\.add\.checklist"\)<\/button><\/div>/u,
   );
@@ -2928,6 +2980,17 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const uploadFileInput = upload.locator(
       '[data-stylex-owner="post-detail-comment-upload-file-input"]',
     );
+    const uploadDroppable = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-droppable"]',
+    );
+    const uploadPlain = upload.locator('[data-stylex-owner="post-detail-comment-upload-plain"]');
+    const uploadPastable = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-pastable"]',
+    );
+    const uploadAttachedFiles = upload.locator(
+      '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
+    );
+    const uploadHelp = upload.locator('[data-stylex-owner="post-detail-comment-upload-help"]');
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
@@ -3001,6 +3064,36 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await expect(uploadFileInput).toHaveCSS("position", "absolute");
     await expect(uploadFileInput).toHaveCSS("top", "0px");
     await expect(uploadFileInput).toHaveCSS("z-index", "2");
+    await expect(uploadDroppable).toHaveClass(/help help-droppable/u);
+    await expect(uploadDroppable).toHaveCSS("display", "inline");
+    await expect(uploadPlain).toHaveClass(/plain/u);
+    await expect(uploadPlain).toHaveCSS("display", "inline-block");
+    await expect(uploadPlain).toHaveCSS("line-height", "30px");
+    await expect(uploadPastable).toHaveClass(/help help-pastable/u);
+    await expect(uploadPastable).toHaveCSS("display", "block");
+    await expect(uploadPastable).toHaveCSS("text-align", "center");
+    await expect(uploadPastable).toBeVisible();
+    await expect(uploadPastable).toContainText("클립보드 이미지를 붙여 넣을 수도 있습니다");
+    await expect(uploadAttachedFiles).toHaveClass(/attached-files unstyled/u);
+    await expect(uploadAttachedFiles).toHaveCSS("border-top", "1px solid rgb(224, 224, 224)");
+    await expect(uploadAttachedFiles).toHaveCSS("display", "none");
+    await expect(uploadAttachedFiles).toHaveCSS("margin-bottom", "0px");
+    await expect(uploadAttachedFiles).toHaveCSS("margin-top", "15px");
+    await expect(uploadAttachedFiles).toHaveCSS("padding", "15px 0px");
+    await expect(uploadHelp).toHaveClass(/help/u);
+    await expect(uploadHelp).toHaveCSS("display", "none");
+    await expect(uploadHelp).toHaveCSS("text-align", "right");
+    await expect(uploadHelp).toContainText("표시된 파일은 글을 저장하면 첨부됩니다.");
+    await expect(
+      commentForm.locator(
+        '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
+      ),
+    ).toHaveCount(5);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner="post-detail-comment-upload-droppable"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-plain"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-pastable"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-attached-files"], .comment-update-form [data-stylex-owner="post-detail-comment-upload-help"]',
+      ),
+    ).toHaveCount(0);
     await expect(
       commentForm.locator(
         '[data-stylex-owner="post-detail-comment-upload-wrap"], [data-stylex-owner="post-detail-comment-upload-attach-wrap"], [data-stylex-owner="post-detail-comment-upload-button-wrap"], [data-stylex-owner="post-detail-comment-upload-file-button"], [data-stylex-owner="post-detail-comment-upload-file-input"]',
@@ -3135,6 +3228,18 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         uploadButtonWrap: measure('[data-stylex-owner="post-detail-comment-upload-button-wrap"]'),
         uploadFileButton: measure('[data-stylex-owner="post-detail-comment-upload-file-button"]'),
         uploadFileInput: measure('[data-stylex-owner="post-detail-comment-upload-file-input"]'),
+        uploadDroppable: measure('[data-stylex-owner="post-detail-comment-upload-droppable"]'),
+        uploadPlain: measure('[data-stylex-owner="post-detail-comment-upload-plain"]'),
+        uploadPastable: measure('[data-stylex-owner="post-detail-comment-upload-pastable"]'),
+        uploadAttachedFiles: measure(
+          '[data-stylex-owner="post-detail-comment-upload-attached-files"]',
+        ),
+        uploadHelp: measure('[data-stylex-owner="post-detail-comment-upload-help"]'),
+        uploadResidualOrder: Array.from(
+          form.querySelectorAll<HTMLElement>(
+            '[data-stylex-owner="post-detail-comment-upload-droppable"], [data-stylex-owner="post-detail-comment-upload-plain"], [data-stylex-owner="post-detail-comment-upload-pastable"], [data-stylex-owner="post-detail-comment-upload-attached-files"], [data-stylex-owner="post-detail-comment-upload-help"]',
+          ),
+        ).map((element) => element.dataset.stylexOwner),
       };
     });
 
@@ -3156,6 +3261,49 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     expect(metrics.uploadFileInput.bottom).toBeGreaterThanOrEqual(metrics.uploadFileButton.bottom);
     expect(metrics.uploadFileButton.overflow).toBe("hidden");
     expect(metrics.uploadFileInput.width).toBeGreaterThanOrEqual(100);
+    expect(metrics.uploadResidualOrder).toEqual([
+      "post-detail-comment-upload-droppable",
+      "post-detail-comment-upload-plain",
+      "post-detail-comment-upload-pastable",
+      "post-detail-comment-upload-attached-files",
+      "post-detail-comment-upload-help",
+    ]);
+    expect(metrics.uploadDroppable.right).toBeLessThanOrEqual(metrics.uploadButtonWrap.left);
+    expect(
+      metrics.uploadButtonWrap.right <= metrics.uploadPlain.left ||
+        metrics.uploadButtonWrap.bottom <= metrics.uploadPlain.top ||
+        metrics.uploadPlain.bottom <= metrics.uploadButtonWrap.top,
+    ).toBe(true);
+    expect(metrics.uploadDroppable.top).toBeLessThan(metrics.uploadButtonWrap.bottom);
+    expect(metrics.uploadDroppable.bottom).toBeGreaterThan(metrics.uploadButtonWrap.top);
+    if (viewport.width === 390) {
+      expect((metrics.uploadPlain.left + metrics.uploadPlain.right) / 2).toBeCloseTo(
+        (metrics.uploadAttach.left + metrics.uploadAttach.right) / 2,
+        1,
+      );
+    } else {
+      expect(metrics.uploadPlain.top).toBeLessThan(metrics.uploadButtonWrap.bottom);
+      expect(metrics.uploadPlain.bottom).toBeGreaterThan(metrics.uploadButtonWrap.top);
+    }
+    expect(
+      metrics.uploadDroppable.right <= metrics.uploadPlain.left ||
+        metrics.uploadDroppable.bottom <= metrics.uploadPlain.top ||
+        metrics.uploadPlain.bottom <= metrics.uploadDroppable.top,
+    ).toBe(true);
+    expect(metrics.uploadPastable.width).toBeGreaterThan(0);
+    expect(metrics.uploadPastable.height).toBeGreaterThan(0);
+    expect(metrics.uploadPastable.left).toBeCloseTo(metrics.uploadAttach.left, 1);
+    expect(metrics.uploadPastable.right).toBeCloseTo(metrics.uploadAttach.right, 1);
+    expect(metrics.uploadPastable.width).toBeCloseTo(metrics.uploadAttach.width, 1);
+    expect(metrics.uploadPastable.top).toBeGreaterThanOrEqual(metrics.uploadButtonWrap.bottom);
+    expect(metrics.uploadPastable.top).toBeGreaterThanOrEqual(metrics.uploadPlain.bottom);
+    for (const hidden of [metrics.uploadAttachedFiles, metrics.uploadHelp]) {
+      expect(hidden).toMatchObject({ display: "none", height: 0, width: 0 });
+      expect(hidden.left).toBe(0);
+      expect(hidden.right).toBe(0);
+      expect(hidden.top).toBe(0);
+      expect(hidden.bottom).toBe(0);
+    }
     expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
     expect(metrics.clearTemporary.left).toBe(0);
     expect(metrics.clearTemporary.right).toBe(0);

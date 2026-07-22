@@ -73,6 +73,11 @@ const sx = {
   commentUploadButtonWrap: stylex.props(styles.commentUploadButtonWrap),
   commentUploadFileButton: stylex.props(styles.commentUploadFileButton),
   commentUploadFileInput: stylex.props(styles.commentUploadFileInput),
+  commentUploadDroppable: stylex.props(styles.commentUploadDroppable),
+  commentUploadPlain: stylex.props(styles.commentUploadPlain),
+  commentUploadPastable: stylex.props(styles.commentUploadPastable),
+  commentUploadAttachedFiles: stylex.props(styles.commentUploadAttachedFiles),
+  commentUploadHelp: stylex.props(styles.commentUploadHelp),
   comments: stylex.props(styles.comments),
   commentHeader: stylex.props(styles.commentHeader),
   commentHeaderIcon: stylex.props(styles.commentHeaderIcon),
@@ -1337,7 +1342,12 @@ function PostCommentForm({
             className={`${sx.commentUploadAttachWrap.className} attach-wrap`}
             data-stylex-owner="post-detail-comment-upload-attach-wrap"
           >
-            <span className="help help-droppable">{t("common.attach.drophere")}</span>
+            <span
+              className={`${sx.commentUploadDroppable.className} help help-droppable`}
+              data-stylex-owner="post-detail-comment-upload-droppable"
+            >
+              {t("common.attach.drophere")}
+            </span>
             <div
               className={`${sx.commentUploadButtonWrap.className} btn-wrap`}
               data-stylex-owner="post-detail-comment-upload-button-wrap"
@@ -1356,13 +1366,25 @@ function PostCommentForm({
                 />
               </div>
             </div>
-            <span className="plain">{t("common.attach.clickbutton")}</span>
-            <span className="help help-pastable">{t("common.attach.pastehere")}</span>
+            <span
+              className={`${sx.commentUploadPlain.className} plain`}
+              data-stylex-owner="post-detail-comment-upload-plain"
+            >
+              {t("common.attach.clickbutton")}
+            </span>
+            <span
+              className={`${sx.commentUploadPastable.className} help help-pastable`}
+              data-stylex-owner="post-detail-comment-upload-pastable"
+            >
+              {t("common.attach.pastehere")}
+            </span>
           </div>
-          <ul className="attached-files unstyled"></ul>
+          <ul
+            className={`${sx.commentUploadAttachedFiles.className} attached-files unstyled`}
+            data-stylex-owner="post-detail-comment-upload-attached-files"
+          ></ul>
           <p
-            {...stylex.props(styles.commentUploadHelp)}
-            className="help"
+            className={`${sx.commentUploadHelp.className} help`}
             data-stylex-owner="post-detail-comment-upload-help"
           >
             <i className="yobicon-supportrequest"></i> {t("common.attach.attachIfYouSave")}
