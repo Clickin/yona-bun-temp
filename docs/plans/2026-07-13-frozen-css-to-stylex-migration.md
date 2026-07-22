@@ -6495,3 +6495,25 @@ populated screenshot parity remains explicitly unverified because
 `127.0.0.1:9000` was unavailable. Approved Yoram footer/provider and
 developer-contact/repository differences remain intentional deviations and must
 not be restored or geometrically compensated. This is not Wave 1 completion.
+
+## Batch 825
+
+Move the authenticated populated global issue-search pagination state into the
+existing route-local StyleX boundary. `yona-original/app/views/search/partial_search.scala.html:142-145`
+includes `search/partial_issues.scala.html:31-77`, which establishes the
+populated result list and pagination mount. `yobi.less:1-13` imports the frozen
+`_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, and
+`_responsive.less` cascade, while `messages.ko-KR` supplies the Korean page
+labels. The effective frozen `margin-left:-120px !important` remains at both
+viewport sizes because it wins over the responsive non-important `0` rule.
+React preserves the five-item DOM/order/copy, sprite states, TanStack
+query/search navigation, and key-remounted invalid/clamped Enter behavior;
+`-search.stylex.ts` owns only those traced declarations and the shared
+pagination fallback remains for other categories. Focused outside-sandbox
+system-Chrome normal/fallback-off runs pass 3/3 each; local desktop/mobile
+screenshots under `frontend/output/playwright/batch-global-search-pagination/`
+were visually inspected. Live legacy populated screenshot parity remains
+explicitly unverified because `127.0.0.1:9000` was unavailable. Approved Yoram
+footer/provider and developer-contact/repository differences remain intentional
+deviations and must not be restored or geometrically compensated. This is not
+Wave 1 completion.

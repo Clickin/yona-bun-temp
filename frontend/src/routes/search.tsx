@@ -17,6 +17,7 @@ import {
   type SearchType,
 } from "../api/search";
 import { LegacyI18nProvider, useLegacyMessages } from "../i18n";
+import legacySpriteUrl from "../assets/legacy/sprite.png";
 import { YoramQueryProvider } from "../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { SiteLayoutShell } from "./-home-route-screen";
@@ -821,9 +822,19 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      id="pagination"
+      className={`${stylex.props(styles.paginationWrap).className} page-navigation-wrap`}
+      data-stylex-owner="global-search-pagination"
+    >
+      <ul
+        className={`${stylex.props(styles.paginationPageNums).className} page-nums`}
+        data-stylex-owner="global-search-pagination-page-nums"
+      >
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="global-search-pagination-prev-page"
+        >
           {hasPrev ? (
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
@@ -832,19 +843,38 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               search={pageSearch(currentPage - 1)}
               to="/search"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev).className} ico btn-pg-prev`}
+                data-stylex-owner="global-search-pagination-prev-icon"
+              ></i>
+              <span
+                className={stylex.props(styles.paginationIconLabel).className}
+                data-stylex-owner="global-search-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev, styles.paginationPrevOff).className} ico btn-pg-prev off`}
+                data-stylex-owner="global-search-pagination-prev-icon"
+              ></i>
+              <span
+                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="global-search-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
+          data-stylex-owner="global-search-pagination-input-page"
+        >
           <input
-            className="input-mini nospinner"
+            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
             defaultValue={currentPage}
             key={currentPage}
             max={totalPages}
@@ -856,11 +886,25 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               event.currentTarget.select();
             }}
             onKeyDown={handleInputKeyDown}
+            data-stylex-owner="global-search-pagination-input"
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationDelimiter).className} page-num delimiter`}
+          data-stylex-owner="global-search-pagination-delimiter"
+        >
+          /
+        </li>
+        <li
+          className={`${stylex.props(styles.paginationPageNum).className} page-num`}
+          data-stylex-owner="global-search-pagination-total"
+        >
+          {totalPages}
+        </li>
+        <li
+          className={`${stylex.props(styles.paginationPageNum, styles.paginationIconPageNum).className} page-num ikon`}
+          data-stylex-owner="global-search-pagination-next-page"
+        >
           {hasNext ? (
             <Link
               activeOptions={legacySearchPaginationLinkActiveOptions}
@@ -869,13 +913,29 @@ function GlobalSearchPagination({ result }: { result: SearchResponse }) {
               search={pageSearch(currentPage + 1)}
               to="/search"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                className={stylex.props(styles.paginationIconLabel).className}
+                data-stylex-owner="global-search-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext).className} ico btn-pg-next`}
+                data-stylex-owner="global-search-pagination-next-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                className={`${stylex.props(styles.paginationIconLabelOff).className} off`}
+                data-stylex-owner="global-search-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                className={`${stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext, styles.paginationNextOff).className} ico btn-pg-next off`}
+                data-stylex-owner="global-search-pagination-next-icon"
+              ></i>
             </>
           )}
         </li>
