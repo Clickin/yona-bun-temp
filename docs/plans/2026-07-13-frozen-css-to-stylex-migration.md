@@ -6378,10 +6378,12 @@ move exact pane display state to two route-local StyleX owners, and retain
 React Preview/Edit behavior. Explicit system-Chrome normal/fallback-off runs
 pass 1/1 each at 1366px and 390px. Fresh paired metrics move local upload y
 from 1009 to 977 versus legacy 979, closing this gap; fresh standalone Vite
-renders without overlay or console errors. The separate collapse-button paint
-and navbar-search x-position differences remain goal gaps. User-approved Yoram
-footer/contact/repository identity differences remain intentional deviations
-and must not be restored.
+renders without overlay or console errors. The separate Watch paint gap remains
+for the next slice. The navbar-search x-position difference is the natural
+consequence of the approved Yoram developer-contact decision: unlike the
+configured legacy screen, Yoram omits that preceding item until a real public
+repository is configured. It is not a goal gap and must not be offset with
+invented spacing.
 
 ## Batch 792
 
@@ -6394,6 +6396,27 @@ button/id/title/data/copy contract and conditional legacy classes, remove the
 incorrect unconditional green route paint, and keep POST/DELETE transitions in
 React/TanStack Query. Explicit system-Chrome normal/fallback-off runs pass 1/1
 each at 1366px and 390px. Fresh paired screenshots visually align the neutral
-Watch control and retain the closed upload boundary. Navbar-search x-position
-remains the next screen gap; user-approved Yoram footer/contact/repository
-differences remain intentional deviations and must not be restored.
+Watch control and retain the closed upload boundary. The remaining navbar-search
+x-position difference is classified as an approved-deviation consequence, not
+the next screen gap: legacy renders a configured developer-contact predecessor
+while Yoram intentionally omits it until a real public repository is configured.
+No legacy item or compensating spacing is restored.
+
+## Batch 793
+
+Move the authenticated populated board-post comment-card skeleton into six
+route-local StyleX owners. `board/partial_comments.scala.html` emits the
+`ul.comments`, top-level `li.comment`, desktop avatar/wrap, media card and
+pointer, and metadata row. Frozen `_common.less:144-147` avatar display,
+`_page.less:3005-3170`, the max-720 comment rules in `_responsive.less`,
+Bootstrap's media overflow, and the complete `yobi.less` cascade supply the
+exact list reset, row position/padding,
+desktop/mobile avatar and card geometry, pointer, hover/target paint, and
+metadata declarations. Preserve profile/hash links, element/class/order/copy,
+and React reply/edit/delete behavior. Body, action, child/reply/update,
+attachment, tasklist, and shared fallback owners remain excluded. Explicit
+system-Chrome normal/fallback-off runs pass 1/1 each at 1366px and 390px. Fresh
+live paired screenshots render both sides 1/1 and match comment sizes exactly
+at `1002×107` desktop and `386×135` mobile, with a uniform 2px vertical state
+difference. The automated navbar shifts are approved Yoram contact-item
+deviation consequences and require no compensating layout.

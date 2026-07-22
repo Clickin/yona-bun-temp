@@ -56,6 +56,11 @@ const sx = {
   commentEditAction: stylex.props(styles.commentEditAction),
   commentDeleteAction: stylex.props(styles.commentDeleteAction),
   commentActionRow: stylex.props(styles.commentActionRow),
+  commentList: stylex.props(styles.commentList),
+  commentRow: stylex.props(styles.commentRow),
+  commentAvatar: stylex.props(styles.commentAvatar),
+  commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
+  commentMeta: stylex.props(styles.commentMeta),
   comments: stylex.props(styles.comments),
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
@@ -1176,7 +1181,11 @@ function PostComments({
             <strong className="num">{post.comments.length}</strong>
           </div>
           <hr className="nm" />
-          <ul className="comments">
+          <ul
+            {...sx.commentList}
+            className={`${sx.commentList.className} comments`}
+            data-stylex-owner="post-detail-comment-list"
+          >
             {comments.map((comment) => (
               <PostCommentRow
                 basePath={basePath}
@@ -1373,6 +1382,10 @@ function PostCommentRow({
     viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
   const [replyVisible, setReplyVisible] = useState(false);
   const [childFormOpen, setChildFormOpen] = useState(false);
+  const commentMediaStyle = stylex.props(
+    styles.commentMedia,
+    hash === `comment-${commentId}` && styles.commentMediaTarget,
+  );
 
   useEffect(() => {
     if (hash !== `comment-${commentId}`) {
@@ -1387,7 +1400,9 @@ function PostCommentRow({
 
   return (
     <li
-      className="comment"
+      {...sx.commentRow}
+      className={`${sx.commentRow.className} comment`}
+      data-stylex-owner="post-detail-comment-row"
       id={`comment-${commentId}`}
       ref={commentRef}
       onMouseEnter={() => setReplyVisible(true)}
@@ -1403,19 +1418,33 @@ function PostCommentRow({
           key={stringField(childComment.id)}
         ></div>
       ))}
-      <div className="comment-avatar">
+      <div
+        {...sx.commentAvatar}
+        className={`${sx.commentAvatar.className} comment-avatar`}
+        data-stylex-owner="post-detail-comment-avatar"
+      >
         <Link
           to="/$user"
           params={{ user: authorLoginId }}
           search={LEGACY_EMPTY_PROFILE_SEARCH}
           activeProps={legacyRouteLocalActiveProps}
-          className={"avatar-wrap"}
+          {...sx.commentAvatarWrap}
+          className={`${sx.commentAvatarWrap.className} avatar-wrap`}
+          data-stylex-owner="post-detail-comment-avatar-wrap"
         >
           <img src={avatarUrl} width="32" height="32" alt={authorLoginId} />
         </Link>
       </div>
-      <div className="media-body">
-        <div className="meta-info">
+      <div
+        {...commentMediaStyle}
+        className={`${commentMediaStyle.className} media-body`}
+        data-stylex-owner="post-detail-comment-media"
+      >
+        <div
+          {...sx.commentMeta}
+          className={`${sx.commentMeta.className} meta-info`}
+          data-stylex-owner="post-detail-comment-meta"
+        >
           <span className="comment_author">
             <span className="resp-comment-avatar">
               <Link

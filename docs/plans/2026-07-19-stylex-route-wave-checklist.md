@@ -4,6 +4,22 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 793 board-post comment-card skeleton
+
+- [x] Six route-local owners preserve the populated Scala comment list, row,
+  avatar/wrap, media card/pointer/target/hover, and metadata skeleton while
+  moving only exact frozen desktop/mobile declarations to StyleX. Existing
+  profile/hash links and React reply/edit/delete behavior remain unchanged;
+  body/actions/forms/attachments/tasklist/shared fallback stay excluded.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px with source/cascade proof, exact computed declarations and pseudo,
+  hover/hash target, containment, and no overflow.
+- [x] Fresh live paired screenshots render legacy/local 1/1 each. Comment size
+  matches exactly at `1002×107` desktop and `386×135` mobile with a uniform 2px
+  vertical state difference; direct inspection confirms visual card parity.
+  Desktop search and mobile user-menu shifts are approved Yoram contact-item
+  deviation consequences, not parity gaps.
+
 ### 2026-07-22 Batch 792 board-post Watch paint
 
 - [x] The Watch button now preserves legacy `ybtn` plus conditional
@@ -14,8 +30,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   and 390px, covering source ownership, exact paint/geometry, containment,
   and POST/DELETE watch/unwatch state transitions.
 - [x] Fresh paired screenshots visually align the neutral Watch paint and
-  retain the closed upload boundary. Only the navbar search x-position remains
-  as a screen gap; approved Yoram identity/link deviations remain excluded.
+  retain the closed upload boundary. The navbar search x-position difference
+  is the natural consequence of the approved Yoram developer-contact decision,
+  not a screen gap: the legacy configured contact item precedes search, while
+  Yoram omits it until a real public repository is configured.
 
 ### 2026-07-22 Batch 791 board-post editor/upload boundary
 
@@ -28,9 +46,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   contact, containment, and Preview/Edit interaction.
 - [x] The former 30px upload drift is closed: the fresh paired measurement
   moved local upload y from 1009 to 977 versus legacy 979. Fresh standalone
-  Vite/system-Chrome rendering has no overlay or console error. The separate
-  collapse-button paint difference and navbar search x-position drift remain
-  goal gaps; approved Yoram identity/link deviations remain excluded.
+  Vite/system-Chrome rendering has no overlay or console error. Batch 792
+  closed the separate Watch paint difference. The navbar search x-position
+  difference is an approved Yoram contact-item deviation consequence, not a
+  goal gap.
 
 ### 2026-07-22 Batch 790 board-post body/footer left floats
 
@@ -39,8 +58,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
   and existing keymap spacing remain unchanged.
 - [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
   and 390px with containment/alignment/no-overlap and Watch/keymap interactions.
-- [ ] Fresh paired screenshots retain only the known upload/collapse-button
-  screen gaps; approved Yoram identity/link deviations remain excluded.
+- [x] Fresh paired screenshots retained the then-known upload/Watch gaps;
+  Batches 791–792 closed both. The remaining navbar position difference is an
+  approved Yoram identity/contact deviation consequence, not a parity gap.
 
 ### 2026-07-22 Batch 789 board-post responsive header metadata
 
@@ -50,9 +70,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
   and 390px with date copy/title parity, mutually exclusive visibility,
   containment, alignment, and no overlap.
-- [ ] The fresh paired desktop sweep retains only the previously documented
-  upload-area and collapse-button screen gaps; approved Yoram identity/link
-  differences remain excluded.
+- [x] The fresh paired desktop sweep retained the then-known upload/Watch gaps;
+  Batches 791–792 closed both. The remaining navbar position difference is an
+  approved Yoram identity/contact deviation consequence, not a parity gap.
 
 ### 2026-07-22 Batch 788 board-post comment action/reply controls
 
@@ -63,9 +83,9 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
   and 390px, covering hidden/hover-visible/click states, exact computed
   declarations, containment, action ordering, form visibility, and focus.
-- [ ] The fresh paired desktop sweep retains the known 30px upload-area drift
-  and green-vs-default collapse-button paint gap. Approved Yoram identity/link
-  differences remain excluded from parity gaps.
+- [x] The fresh paired desktop sweep recorded the then-known 30px upload and
+  Watch paint gaps; Batches 791–792 closed both. The remaining navbar position
+  difference is an approved Yoram identity/contact deviation consequence.
 
 ### 2026-07-22 Batch 787 board-post edit-action spacing
 
@@ -75,10 +95,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Focused system-Chrome runs pass 1/1 in normal and fallback-off modes at
   1366px and 390px, covering exact margins/padding, three rendered instances,
   order, containment, no overlap, post edit navigation, and comment edit/cancel.
-- [ ] The fresh paired desktop sweep retains the existing 30px upload-area
-  drift and green-vs-default collapse-button paint difference. The migrated
-  edit controls visually align; approved Yoram identity/link differences stay
-  excluded from parity gaps.
+- [x] The fresh paired desktop sweep recorded the then-existing 30px upload and
+  Watch paint gaps; Batches 791–792 closed both. The migrated edit controls
+  visually align, and the remaining navbar position difference is an approved
+  Yoram identity/contact deviation consequence.
 
 ### 2026-07-22 Batch 786 board-post delete-action spacing
 
@@ -88,11 +108,10 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Focused system-Chrome runs pass 1/1 in normal and fallback-off modes at
   1366px and 390px, covering exact 6px margins, order, containment, no overlap,
   and post/comment delete-modal open and dismiss behavior.
-- [ ] Paired legacy/local desktop screenshots render the same populated state,
-  but the automated sweep reports the local upload area 30px lower. Direct
-  review also shows the pre-existing green-vs-default collapse-button paint
-  difference. These are screen-level gaps outside this spacing-only batch;
-  approved Yoram repository/footer identity differences remain excluded.
+- [x] Paired legacy/local desktop screenshots rendered the same populated state
+  and recorded the then-existing 30px upload and Watch paint differences;
+  Batches 791–792 closed both. The remaining navbar position difference is an
+  approved Yoram identity/contact deviation consequence, not a follow-up gap.
 
 ### 2026-07-22 Batch 785 pull-request branch-icon fallback proof
 

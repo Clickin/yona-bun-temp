@@ -4695,6 +4695,267 @@ async function emptyBoardGeometry(page: Page) {
   });
 }
 
+test("authenticated populated board post owns the comment-card skeleton in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+
+  expect(legacyCommentsSource).toMatch(
+    /<ul class="comments">[\s\S]*?<li class="comment [^>]*id="comment-@comment\.id">[\s\S]*?<div class="comment-avatar">[\s\S]*?class="avatar-wrap"[\s\S]*?<div class="media-body">[\s\S]*?<div class="meta-info">/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.comments\s*\{\s*margin:\s*0;\s*padding:\s*0;\s*list-style:\s*none;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.comment\s*\{[\s\S]*?padding:\s*10px 0px;[\s\S]*?position:\s*relative;[\s\S]*?\.comment-avatar\s*\{\s*float:\s*left;\s*padding-left:\s*5px;/u,
+  );
+  expect(legacyCommonSource).toMatch(/\.avatar-wrap\s*\{[\s\S]*?display:\s*inline-block;/u);
+  expect(legacyPageSource).toMatch(
+    /\.media-body\s*\{[\s\S]*?margin-left:\s*52px;[\s\S]*?border:\s*1px solid #BDC3C7;[\s\S]*?\.border-radius\(3px\);[\s\S]*?&:before\s*\{[\s\S]*?top:\s*23px;[\s\S]*?left:\s*47px;[\s\S]*?width:\s*9px;[\s\S]*?height:\s*9px;[\s\S]*?border-width:\s*0 0 1px 1px;[\s\S]*?background-color:\s*#f8f8f8;[\s\S]*?\.rotate\(45deg\);[\s\S]*?&:hover\s*\{\s*box-shadow:\s*2px 2px 1px 0 rgb\(220, 220, 220\)/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.meta-info\s*\{\s*height:\s*22px;\s*padding:\s*5px 15px;\s*margin-bottom:\s*0;\s*background-color:\s*#F7F7F7;/u,
+  );
+  expect(legacyBootstrapSource).toMatch(/\.media,\s*\.media-body\s*\{\s*overflow:\s*hidden;/u);
+  expect(legacyResponsiveSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.media-body \.meta-info\s*\{\s*padding:\s*5px 5px !important;[\s\S]*?\.comment-avatar\s*\{\s*display:\s*none;[\s\S]*?\.media-body\s*\{\s*margin-left:\s*0 !important;[\s\S]*?&:before\s*\{\s*display:\s*none;/u,
+  );
+  expect(styleSource).toContain("commentList:");
+  expect(styleSource).toContain("commentRow:");
+  expect(styleSource).toContain("commentAvatar:");
+  expect(styleSource).toContain("commentAvatarWrap:");
+  expect(styleSource).toContain("commentMedia:");
+  expect(styleSource).toContain("commentMeta:");
+  for (const owner of [
+    "post-detail-comment-list",
+    "post-detail-comment-row",
+    "post-detail-comment-avatar",
+    "post-detail-comment-avatar-wrap",
+    "post-detail-comment-media",
+    "post-detail-comment-meta",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(routeSource).not.toMatch(/style=\{|style:\s*\{/u);
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await mockProjectPosts(page, "comment");
+    await page.route("**/api/v1/projects/admin/sample/posts/1", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyHtml: "<p>Server HTML should not render</p>",
+          bodyMarkdown: "Populated **board post**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsHtml: "<p>Server HTML should not render</p>",
+              contentsMarkdown: "First **comment**",
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyHtml: "",
+          historyMarkdown: "",
+          id: "31",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "sample",
+          readme: false,
+          title: "Populated board post",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    });
+    await page.goto(`${basePath}/admin/sample/post/1`);
+
+    const comment = page.locator('[data-stylex-owner="post-detail-comment-row"]');
+    await expect(comment).toHaveCount(1);
+    const normal = await comment.evaluate((row) => {
+      const list = row.closest<HTMLElement>("ul.comments")!;
+      const avatar = row.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-avatar"]',
+      )!;
+      const avatarWrap = avatar.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-avatar-wrap"]',
+      )!;
+      const media = row.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-media"]',
+      )!;
+      const meta = row.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-meta"]',
+      )!;
+      const listStyle = getComputedStyle(list);
+      const rowStyle = getComputedStyle(row);
+      const avatarStyle = getComputedStyle(avatar);
+      const mediaStyle = getComputedStyle(media);
+      const pointerStyle = getComputedStyle(media, "::before");
+      const metaStyle = getComputedStyle(meta);
+      const rowRect = row.getBoundingClientRect();
+      const mediaRect = media.getBoundingClientRect();
+      const metaRect = meta.getBoundingClientRect();
+      return {
+        listStyle: listStyle.listStyleType,
+        listMargin: listStyle.margin,
+        listPadding: listStyle.padding,
+        rowPosition: rowStyle.position,
+        rowPadding: rowStyle.padding,
+        avatarDisplay: avatarStyle.display,
+        avatarFloat: avatarStyle.float,
+        avatarPaddingLeft: avatarStyle.paddingLeft,
+        avatarWrapDisplay: getComputedStyle(avatarWrap).display,
+        mediaMarginLeft: mediaStyle.marginLeft,
+        mediaOverflow: mediaStyle.overflow,
+        mediaBorder: mediaStyle.border,
+        mediaRadius: mediaStyle.borderRadius,
+        pointerDisplay: pointerStyle.display,
+        pointerContent: pointerStyle.content,
+        pointerTop: pointerStyle.top,
+        pointerLeft: pointerStyle.left,
+        pointerWidth: pointerStyle.width,
+        pointerHeight: pointerStyle.height,
+        pointerBorderColor: pointerStyle.borderColor,
+        pointerBorderStyle: pointerStyle.borderStyle,
+        pointerBorderWidth: pointerStyle.borderWidth,
+        pointerBackground: pointerStyle.backgroundColor,
+        pointerTransform: pointerStyle.transform,
+        metaHeight: metaStyle.height,
+        metaPadding: metaStyle.padding,
+        metaMarginBottom: metaStyle.marginBottom,
+        metaBackground: metaStyle.backgroundColor,
+        mediaContained:
+          mediaRect.left >= rowRect.left - 0.5 && mediaRect.right <= rowRect.right + 0.5,
+        metaContained:
+          metaRect.left >= mediaRect.left - 0.5 && metaRect.right <= mediaRect.right + 0.5,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(normal).toMatchObject({
+      listStyle: "none",
+      listMargin: "0px",
+      listPadding: "0px",
+      rowPosition: "relative",
+      rowPadding: "10px 0px",
+      avatarWrapDisplay: "inline-block",
+      mediaOverflow: "hidden",
+      mediaBorder: "1px solid rgb(189, 195, 199)",
+      mediaRadius: "3px",
+      metaHeight: "22px",
+      metaMarginBottom: "0px",
+      metaBackground: "rgb(247, 247, 247)",
+      mediaContained: true,
+      metaContained: true,
+    });
+    if (viewport.width > 720) {
+      expect(normal).toMatchObject({
+        avatarDisplay: "block",
+        avatarFloat: "left",
+        avatarPaddingLeft: "5px",
+        mediaMarginLeft: "52px",
+        pointerDisplay: "block",
+        pointerContent: '" "',
+        pointerTop: "23px",
+        pointerLeft: "47px",
+        pointerWidth: "9px",
+        pointerHeight: "9px",
+        pointerBorderColor: "rgb(189, 195, 199)",
+        pointerBorderStyle: "solid",
+        pointerBorderWidth: "0px 0px 1px 1px",
+        pointerBackground: "rgb(248, 248, 248)",
+        metaPadding: "5px 15px",
+      });
+      expect(normal.pointerTransform).not.toBe("none");
+      await comment.locator('[data-stylex-owner="post-detail-comment-media"]').hover();
+      await expect(comment.locator('[data-stylex-owner="post-detail-comment-media"]')).toHaveCSS(
+        "box-shadow",
+        "rgb(220, 220, 220) 2px 2px 1px 0px",
+      );
+    } else {
+      expect(normal).toMatchObject({
+        avatarDisplay: "none",
+        mediaMarginLeft: "0px",
+        pointerDisplay: "none",
+        metaPadding: "5px",
+      });
+    }
+    expect(normal.documentWidth).toBeLessThanOrEqual(normal.viewportWidth);
+
+    await page.goto(`${basePath}/admin/sample/post/1#comment-21`);
+    const targeted = await comment.evaluate((row) => {
+      const media = row.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-media"]',
+      )!;
+      return {
+        border: getComputedStyle(media).border,
+        pointerBorderColor: getComputedStyle(media, "::before").borderColor,
+        pointerBorderWidth: getComputedStyle(media, "::before").borderWidth,
+      };
+    });
+    expect(targeted.border).toBe("2px solid rgb(3, 169, 244)");
+    if (viewport.width > 720) {
+      expect(targeted.pointerBorderColor).toBe("rgb(3, 169, 244)");
+      expect(targeted.pointerBorderWidth).toBe("0px 0px 2px 2px");
+    }
+  }
+});
+
 async function mockProjectPosts(
   page: Page,
   state:
