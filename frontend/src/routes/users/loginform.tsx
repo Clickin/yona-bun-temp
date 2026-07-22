@@ -12,7 +12,7 @@ import { YoramQueryProvider } from "../../query-client";
 import { prefixBasePath, type RuntimeConfig } from "../../runtime-config";
 import { SiteLayoutShell } from "../-home-route-screen";
 import { useRootToast } from "../__root";
-import { loginFormColors, loginProviderStyles } from "./-loginform.stylex";
+import { loginFormStyles, loginProviderStyles } from "./-loginform.stylex";
 
 type LoginFormSearch = {
   password?: string;
@@ -27,102 +27,19 @@ type AuthUiCapabilities = ReadAuthUiCapabilitiesResponse & {
   socialLoginOnly?: boolean;
 };
 
-const styles = stylex.create({
-  standaloneLogin: {
-    "--yoram-stylex-standalone-login": "stylex",
-  },
-  taglineWrap: {
-    textAlign: "center",
-    marginTop: "0px",
-    marginBottom: "26px",
-    paddingTop: "80px",
-  },
-  title: {
-    display: "inline-block",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-    fontSize: "3.3em",
-    lineHeight: "42px",
-    fontWeight: "400",
-  },
-  tagline: {
-    marginTop: "10px",
-    fontSize: "1.2em",
-    color: loginFormColors.taglineText,
-  },
-  formWrap: {
-    position: "relative",
-    width: {
-      default: "400px",
-      "@media (max-width: 767px)": "95%",
-    },
-    margin: "54px auto 0px",
-  },
-  textInput: {
-    width: {
-      default: "386px",
-      "@media (max-width: 767px)": "95%",
-    },
-    height: "27px",
-    marginBottom: "10px",
-    fontSize: "12px",
-    fontWeight: "700",
-    borderStyle: "none",
-    borderBottomColor: loginFormColors.inputBorder,
-    borderBottomStyle: "solid",
-    borderBottomWidth: "1px",
-    borderRadius: "0px",
-    ":focus": {
-      borderBottomColor: loginFormColors.inputFocusBorder,
-      outline: "none",
-      boxShadow: "none",
-    },
-  },
-  passwordInput: {
-    marginBottom: "15px",
-  },
-  buttonRow: {
-    display: "block",
-    textAlign: "center",
-    margin: "0px auto 20px",
-  },
-  submit: {
-    display: "block",
-    boxSizing: "border-box",
-    width: "100%",
-  },
-  rememberMe: {
-    marginTop: "0px",
-  },
-  checkbox: {
-    marginLeft: "0px",
-    marginTop: "4px",
-  },
-  actionRow: {
-    lineHeight: "22px",
-    overflow: "auto",
-  },
-  verificationHelp: {
-    fontWeight: "700",
-    padding: "5px",
-    marginBottom: "10px",
-    fontSize: "16px",
-  },
-});
-
-const standaloneLoginClassName = stylex.props(styles.standaloneLogin).className;
-const taglineWrapClassName = stylex.props(styles.taglineWrap).className;
-const titleClassName = stylex.props(styles.title).className;
-const taglineClassName = stylex.props(styles.tagline).className;
-const formWrapClassName = stylex.props(styles.formWrap).className;
-const textInputClassName = stylex.props(styles.textInput).className;
-const passwordInputClassName = stylex.props(styles.passwordInput).className;
-const buttonRowClassName = stylex.props(styles.buttonRow).className;
-const submitClassName = stylex.props(styles.submit).className;
-const rememberMeClassName = stylex.props(styles.rememberMe).className;
-const checkboxClassName = stylex.props(styles.checkbox).className;
-const actionRowClassName = stylex.props(styles.actionRow).className;
-const verificationHelpClassName = stylex.props(styles.verificationHelp).className;
+const taglineWrapClassName = stylex.props(loginFormStyles.taglineWrap).className;
+const titleClassName = stylex.props(loginFormStyles.title).className;
+const taglineClassName = stylex.props(loginFormStyles.tagline).className;
+const formWrapClassName = stylex.props(loginFormStyles.formWrap).className;
+const formListClassName = stylex.props(loginFormStyles.formList).className;
+const textInputClassName = stylex.props(loginFormStyles.textInput).className;
+const passwordInputClassName = stylex.props(loginFormStyles.passwordInput).className;
+const buttonRowClassName = stylex.props(loginFormStyles.buttonRow).className;
+const submitClassName = stylex.props(loginFormStyles.submit).className;
+const rememberMeClassName = stylex.props(loginFormStyles.rememberMe).className;
+const checkboxClassName = stylex.props(loginFormStyles.checkbox).className;
+const actionRowClassName = stylex.props(loginFormStyles.actionRow).className;
+const verificationHelpClassName = stylex.props(loginFormStyles.verificationHelp).className;
 
 export const Route = createFileRoute("/users/loginform")({
   component: LoginFormRoute,
@@ -213,10 +130,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
     <>
       <SiteLayoutShell runtimeConfig={runtimeConfig}>
         <title>{t("title.login")}</title>
-        <div
-          className={`page full ${standaloneLoginClassName}`}
-          data-stylex-owner="standalone-login-form"
-        >
+        <div className="page full" data-stylex-owner="standalone-login-form">
           <div
             className={`center-wrap tag-line-wrap login ${taglineWrapClassName}`}
             data-stylex-part="standalone-login-tagline"
@@ -251,7 +165,7 @@ function LoginFormScreen({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
                 <div className="btns-row nm">{t("app.warn.support.social.login.only")}</div>
               ) : (
                 <>
-                  <dl>
+                  <dl className={formListClassName}>
                     <dd>
                       <input
                         id="loginIdOrEmailD"

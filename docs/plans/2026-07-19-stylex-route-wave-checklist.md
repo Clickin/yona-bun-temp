@@ -4,6 +4,12 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-23 Anonymous default `/users/loginform` screen state
+
+- [x] Legacy `user/login.scala.html:36-99` skeleton, login messages, frozen `_page.less` title/form declarations, `_responsive.less` mobile width rules, `_common.less` utility output, and Bootstrap form/button cascade are mapped; the inline focus script is behavior evidence only.
+- [x] `loginform.tsx` and `-loginform.stylex.ts` preserve the anonymous normal page/full → title/tagline → form → hidden redirect → fields → submit → empty provider row → remember/forgot action order, copy, names, placeholders, autocomplete, REST/TanStack session and redirect behavior, and route-local StyleX ownership. Verification/social/error states are excluded from this one-state slice.
+- [ ] Focused `frontend/tests/stylex-anonymous-login-normal.e2e.ts` normal and `VITE_DISABLE_LEGACY_FALLBACK=1` desktop 1366/mobile 390 runs remain for the parent agent; live legacy screenshot availability is unverified because localhost was unavailable, so parity is not claimed.
+
 ### 2026-07-23 Batch 826 project search populated issue pagination
 
 - [x] Legacy `search/partial_search.scala.html` → `search/partial_issues.scala.html` project-scoped issue pagination boundary, Korean page labels, and frozen `yobi.less` pagination cascade (`_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, `_responsive.less`) are mapped.
