@@ -576,3 +576,17 @@ fresh legacy/local open child-form screenshots were directly inspected. NEW/
 UPDATE markers remain unchanged, and the empty receiver list/badge rules remain
 outside this wave. Yoram footer/contact/repository differences remain approved
 deviations, not gaps.
+
+## Batch 814 — board-post populated child comment and Reply-open controls
+
+The populated child-comment fixture now owns exactly six frozen consumers:
+responsive child media gutter, nested contents, delete control, one-line input
+row, textarea, and submit display. Batch 788 Reply, Batch 813 receiver, generic
+button paint, parent comments, backend submission, and fallback deletion remain
+separate. Outside-sandbox system-Chrome normal and fallback-off focused runs
+pass 1/1 each with desktop/390px computed declarations, exact child-subtree DOM,
+geometry, focus/draft preservation, delete-modal behavior, and no overflow.
+Actual legacy display/open and local fallback-off open desktop/mobile images
+were inspected. The 60px desktop/0px mobile gutter, dashed row, and 12px
+textarea/OK input line align. Fixture, locale, assets, and the user-approved
+Yoram footer/contact/repository deviations remain excluded.

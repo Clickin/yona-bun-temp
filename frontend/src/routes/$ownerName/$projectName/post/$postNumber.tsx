@@ -68,6 +68,12 @@ const sx = {
   childCommentNotificationReceiverTitle: stylex.props(
     styles.commentCreateNotificationReceiverTitle,
   ),
+  childCommentMediaBody: stylex.props(styles.childCommentMediaBody),
+  childCommentContents: stylex.props(styles.childCommentContents),
+  childCommentDeleteButton: stylex.props(styles.childCommentDeleteButton),
+  childCommentOneLineBox: stylex.props(styles.childCommentOneLineBox),
+  childCommentTextarea: stylex.props(styles.childCommentTextarea),
+  childCommentSubmitButton: stylex.props(styles.childCommentSubmitButton),
   commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
@@ -2017,7 +2023,11 @@ function PostChildComments({
       >
         {t("comment.oneline.comment.placeholder")}
       </div>
-      <div className="subcomment-media-body">
+      <div
+        {...sx.childCommentMediaBody}
+        className={`${sx.childCommentMediaBody.className} subcomment-media-body`}
+        data-stylex-owner="post-detail-child-comment-media-body"
+      >
         <div className="child-comments">
           {childComments.map((comment) => (
             <PostChildComment
@@ -2050,16 +2060,27 @@ function PostChildComments({
                 name="parentCommentId"
                 value={parentCommentId}
               />
-              <div className="oneline-comment-box">
+              <div
+                {...sx.childCommentOneLineBox}
+                className={`${sx.childCommentOneLineBox.className} oneline-comment-box`}
+                data-stylex-owner="post-detail-child-comment-oneline-box"
+              >
                 <textarea
+                  {...sx.childCommentTextarea}
                   ref={textareaRef}
-                  className="editorSeries"
+                  className={`${sx.childCommentTextarea.className} editorSeries`}
+                  data-stylex-owner="post-detail-child-comment-textarea"
                   name="contents"
                   {...{ markdown: "true" }}
                   rows={1}
                   placeholder={`${t("comment.oneline.comment.placeholder")} (${ctrlKey()} + ENTER)`}
                 ></textarea>
-                <button type="submit" className="ybtn ybtn-success">
+                <button
+                  {...sx.childCommentSubmitButton}
+                  type="submit"
+                  className={`${sx.childCommentSubmitButton.className} ybtn ybtn-success`}
+                  data-stylex-owner="post-detail-child-comment-submit"
+                >
                   OK
                 </button>
               </div>
@@ -2098,7 +2119,11 @@ function PostChildComment({
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
   return (
     <div className="one-line-comment">
-      <div className="contents">
+      <div
+        {...sx.childCommentContents}
+        className={`${sx.childCommentContents.className} contents`}
+        data-stylex-owner="post-detail-child-comment-contents"
+      >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.contentsMarkdown}</ReactMarkdown>
         <span className="subcomment-author hide">
           -{" "}
@@ -2124,8 +2149,10 @@ function PostChildComment({
           </Link>
           {canDelete ? (
             <button
+              {...sx.childCommentDeleteButton}
               type="button"
-              className="btn-transparent deleteButtonX"
+              className={`${sx.childCommentDeleteButton.className} btn-transparent deleteButtonX`}
+              data-stylex-owner="post-detail-child-comment-delete"
               title={t("common.comment.delete")}
               onClick={(event) => {
                 event.preventDefault();

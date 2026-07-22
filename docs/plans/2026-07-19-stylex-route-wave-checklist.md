@@ -4,6 +4,21 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 814 board-post populated child comment and Reply-open controls
+
+- [x] Six child-only owners carry the exact frozen responsive media gutter,
+  nested contents, delete control, flex input row, textarea, and submit
+  declarations; receiver, Reply affordance, generic button paint, parent
+  comments, backend submission, and fallback deletion remain excluded.
+- [x] Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each with
+  Scala/LESS/import proof, owner isolation, exact desktop/390px computed output,
+  subtree DOM parity, containment/non-overlap/no-overflow, focus/draft
+  preservation, and delete-modal behavior.
+- [x] Fresh actual legacy display/open and local fallback-off open desktop/mobile
+  screenshots were captured and inspected. Child gutter, dashed row, and open
+  textarea/OK geometry align; fixture/locale/assets and approved Yoram footer,
+  contact, and repository differences remain outside this wave.
+
 ### 2026-07-22 Batch 813 board-post child-reply notification receiver
 
 - [x] Two child-only owners compose the existing generic wrapper/title groups;

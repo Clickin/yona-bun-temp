@@ -363,6 +363,9 @@ test("project board list tooltip markers are not React-owned DOM", async ({ page
 
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
+const POPULATED_CHILD_COMMENT_BODY =
+  '<div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
+const POPULATED_CHILD_COMMENT_FORM = `<div class="add-a-comment">Reply</div>${POPULATED_CHILD_COMMENT_BODY}`;
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
   '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
@@ -404,10 +407,7 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
       '<li class="comment" id="comment-21"><div class="comment-avatar">',
       '<li class="comment" id="comment-21"><div id="comment-22"></div><div class="comment-avatar">',
     )
-    .replace(
-      EMPTY_CHILD_COMMENT_FORM,
-      '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
-    );
+    .replace(EMPTY_CHILD_COMMENT_FORM, POPULATED_CHILD_COMMENT_FORM);
 
 function expectedProjectPostsEmpty() {
   const listStart = EXPECTED_PROJECT_POSTS_CURRENT.indexOf('<div class="filter-wrap board">');
@@ -5310,6 +5310,7 @@ test("project board detail owns comment hash links through router", async ({ pag
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   await mockProjectPosts(page, "childComment");
 
+  await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(`${basePath}/admin/sample/post/3`);
   await page.evaluate(() => {
     (window as typeof window & { __spaMarker?: string }).__spaMarker = "post-comment-hash";
@@ -5681,8 +5682,83 @@ test("project board detail renders legacy post and comment attachments", async (
 });
 
 test("project board detail renders legacy child comments", async ({ page }) => {
+  test.setTimeout(60_000);
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const submitKey = process.platform === "darwin" ? "⌘" : "CTRL";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyChildSource = readFileSync(
+    "../yona-original/app/views/common/childComments.scala.html",
+    "utf8",
+  );
+  const legacyFormSource = readFileSync(
+    "../yona-original/app/views/common/child_commentForm.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const owners = [
+    "post-detail-child-comment-media-body",
+    "post-detail-child-comment-contents",
+    "post-detail-child-comment-delete",
+    "post-detail-child-comment-oneline-box",
+    "post-detail-child-comment-textarea",
+    "post-detail-child-comment-submit",
+  ] as const;
+
+  expect(legacyViewSource).toContain("@partial_comments(project, post)");
+  expect(legacyCommentsSource).toContain(
+    "@common.childComments(post, comment, ResourceType.NONISSUE_COMMENT)",
+  );
+  expect(legacyChildSource).toContain(
+    "@common.child_commentForm(posting.asResource(), resourceType, getNewCommentUrl, currentComment.id)",
+  );
+  expect(legacyFormSource).toMatch(
+    /<div class="oneline-comment-box">[\s\S]*?<textarea class="editorSeries"[\s\S]*?<button type="submit" class="ybtn ybtn-success">OK<\/button>/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.subcomment-media-body\s*\{\s*margin-left:\s*60px;\s*text-align:\s*right;[\s\S]*?\.deleteButtonX\s*\{\s*display:\s*inline-flex;\s*align-items:\s*center;\s*color:\s*red;[\s\S]*?\.contents\s*\{\s*text-align:\s*left;\s*margin-left:\s*12px;\s*padding:\s*5px 0 4px 10px;\s*border-bottom:\s*1px dashed #ccc;[\s\S]*?\.child-comment-input-form\s*\{\s*display:\s*none;[\s\S]*?textarea\s*\{\s*margin-top:\s*5px;\s*border:\s*none;\s*border-bottom:\s*1px solid #ccc;\s*border-radius:\s*0 !important;\s*margin-bottom:\s*0;\s*resize:\s*none;\s*overflow:\s*hidden;\s*padding-left:\s*10px;[\s\S]*?button\s*\{\s*display:\s*inline-block;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.oneline-comment-box\s*\{\s*display:\s*flex;\s*margin-left:\s*12px;\s*textarea\s*\{\s*width:\s*100%;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /\.board-comment-wrap \.comments \.comment \.subcomment-media-body\s*\{\s*margin-left:\s*0;/u,
+  );
+  expect(legacyYobiSource.indexOf('@import "less/_page.less";')).toBeLessThan(
+    legacyYobiSource.indexOf('@import "less/_responsive.less";'),
+  );
+  // RED recorded before implementation: all six consumer owner counts were zero.
+  expect(owners).toHaveLength(6);
+  for (const owner of owners) {
+    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+  }
+  expect(styleSource).toContain('"@media all and (max-width: 720px)": { marginLeft: 0 }');
+  expect(styleSource).not.toContain("noTextDecoration");
+  expect(styleSource).not.toContain("issueLink");
+  expect(styleSource).not.toContain("childCommentBlockquote");
   await mockProjectPosts(page, "childComment");
 
   await page.goto(`${basePath}/admin/sample/post/3`);
@@ -5722,6 +5798,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const oneLineBoxStyle = window.getComputedStyle(oneLineBox);
     const textareaStyle = window.getComputedStyle(textarea);
     const notificationStyle = window.getComputedStyle(notification);
+    const submitStyle = window.getComputedStyle(submitButton);
 
     return {
       replyClassName: reply.className,
@@ -5783,8 +5860,10 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       textareaResize: textareaStyle.resize,
       textareaBorderBottom: textareaStyle.borderBottom,
       textareaBorderRadius: textareaStyle.borderRadius,
+      textareaWidth: textareaStyle.width,
       submitText: submitButton.textContent?.trim(),
       submitClassName: submitButton.className,
+      submitDisplay: submitStyle.display,
       notificationClassName: notification.className,
       notificationDisplay: notificationStyle.display,
       notificationMarginLeft: notificationStyle.marginLeft,
@@ -5804,7 +5883,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     replyColor: "rgb(0, 176, 232)",
     replyBorder: "1px solid rgb(0, 176, 232)",
     replyBorderRadius: "3px",
-    bodyClassName: "subcomment-media-body",
+    bodyClassName: expect.stringContaining("subcomment-media-body"),
     bodyMarginLeft: "60px",
     bodyTextAlign: "right",
     childCommentsClassName: "child-comments",
@@ -5835,10 +5914,10 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     parentClassName: "parentCommentId",
     parentName: "parentCommentId",
     parentValue: "21",
-    oneLineBoxClassName: "oneline-comment-box",
+    oneLineBoxClassName: expect.stringContaining("oneline-comment-box"),
     oneLineBoxDisplay: "flex",
     oneLineBoxMarginLeft: "12px",
-    textareaClassName: "editorSeries",
+    textareaClassName: expect.stringContaining("editorSeries"),
     textareaName: "contents",
     textareaMarkdown: "true",
     textareaRows: 1,
@@ -5850,8 +5929,10 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     textareaResize: "none",
     textareaBorderBottom: "1px solid rgb(204, 204, 204)",
     textareaBorderRadius: "0px",
+    textareaWidth: "100%",
     submitText: "OK",
-    submitClassName: "ybtn ybtn-success",
+    submitClassName: expect.stringContaining("ybtn ybtn-success"),
+    submitDisplay: "block",
     notificationClassName: expect.stringContaining("notification-receiver"),
     notificationDisplay: "none",
     notificationMarginLeft: "12px",
@@ -5860,12 +5941,113 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     notificationText: "Notification receivers ",
   });
 
-  expect(await canonicalize(page, ".page-wrap-outer")).toEqual(
+  expect(await canonicalize(page, "#comment-21 > .subcomment-media-body")).toEqual(
     await canonicalizeHtml(
       page,
-      EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT.replaceAll("__BASE_PATH__", basePath),
+      POPULATED_CHILD_COMMENT_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+
+  const parent = page.locator("#comment-21");
+  for (const owner of owners) {
+    const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
+    await expect(consumer).toHaveCount(1);
+    await expect(consumer).not.toHaveAttribute("style", /.+/u);
+  }
+  await parent.hover();
+  const reply = parent.locator('[data-stylex-owner="post-detail-child-comment-reply"]');
+  await expect(reply).toBeVisible();
+  await reply.click();
+  const childForm = parent.locator(".child-comment-input-form");
+  const childTextarea = parent.locator('[data-stylex-owner="post-detail-child-comment-textarea"]');
+  await expect(childForm).toBeVisible();
+  await expect(childTextarea).toBeFocused();
+  await childTextarea.fill("Draft nested reply");
+  const openMetrics = await parent.evaluate((comment) => {
+    const body = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-media-body"]',
+    )!;
+    const box = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-oneline-box"]',
+    )!;
+    const textarea = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-textarea"]',
+    )!;
+    const submit = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-submit"]',
+    )!;
+    const bodyBox = body.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const submitRect = submit.getBoundingClientRect();
+    return {
+      bodyLeft: bodyBox.left,
+      bodyRight: bodyBox.right,
+      boxLeft: boxRect.left,
+      boxRight: boxRect.right,
+      textareaLeft: textareaRect.left,
+      textareaRight: textareaRect.right,
+      submitLeft: submitRect.left,
+      submitRight: submitRect.right,
+      overlaps: textareaRect.right > submitRect.left,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    };
+  });
+  expect(openMetrics.boxLeft).toBeGreaterThanOrEqual(openMetrics.bodyLeft);
+  expect(openMetrics.boxRight).toBeLessThanOrEqual(openMetrics.bodyRight + 1);
+  expect(openMetrics.textareaLeft).toBeGreaterThanOrEqual(openMetrics.boxLeft);
+  expect(openMetrics.submitRight).toBeLessThanOrEqual(openMetrics.boxRight + 1);
+  expect(openMetrics.overlaps).toBe(false);
+  expect(openMetrics.overflow).toBe(false);
+  await reply.click();
+  await expect(childForm).toBeHidden();
+  await reply.click();
+  await expect(childTextarea).toHaveValue("Draft nested reply");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileMetrics = await parent.evaluate((comment) => {
+    const body = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-media-body"]',
+    )!;
+    const contents = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-contents"]',
+    )!;
+    const box = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-oneline-box"]',
+    )!;
+    const textarea = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-textarea"]',
+    )!;
+    const submit = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-submit"]',
+    )!;
+    const bodyRect = body.getBoundingClientRect();
+    const contentsRect = contents.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const submitRect = submit.getBoundingClientRect();
+    const bodyStyle = getComputedStyle(body);
+    const textareaStyle = getComputedStyle(textarea);
+    return {
+      bodyMarginLeft: bodyStyle.marginLeft,
+      bodyTextAlign: bodyStyle.textAlign,
+      contentsInside:
+        contentsRect.left >= bodyRect.left && contentsRect.right <= bodyRect.right + 1,
+      formInside: boxRect.left >= bodyRect.left && boxRect.right <= bodyRect.right + 1,
+      textareaWidth: textareaStyle.width,
+      nonOverlap: textareaRect.right <= submitRect.left,
+      noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    };
+  });
+  expect(mobileMetrics).toEqual({
+    bodyMarginLeft: "0px",
+    bodyTextAlign: "right",
+    contentsInside: true,
+    formInside: true,
+    textareaWidth: expect.stringMatching(/px$/u),
+    nonOverlap: true,
+    noOverflow: true,
+  });
 
   const childAuthor = page.locator("#comment-21 .subcomment-author");
   await expect(childAuthor.locator('a[href^="javascript:"]')).toHaveCount(0);
@@ -8911,6 +9093,8 @@ async function canonicalize(page: Page, selector: string) {
             !attr.name.startsWith("data-v-") &&
             attr.name !== "alt" &&
             !(node.matches(".markdown-help-item") && attr.name === "id") &&
+            attr.name !== "data-stylex-owner" &&
+            attr.name !== "data-style-src" &&
             // TanStack Router annotates route-local active links; dedicated assertions cover
             // the shared project shell links that must remain legacy-clean.
             attr.name !== "aria-current" &&
@@ -8931,6 +9115,15 @@ async function canonicalize(page: Page, selector: string) {
     }
 
     function normalizeAttr(attr: Attr) {
+      if (attr.name === "class") {
+        return attr.value
+          .split(/\s+/u)
+          .filter(
+            (token) =>
+              token && !token.startsWith("-post-detail__styles.") && !/^x[a-z0-9]+$/u.test(token),
+          )
+          .join(" ");
+      }
       if (attr.name === "src" && attr.value.includes("/assets/")) {
         return attr.value.slice(attr.value.indexOf("/assets/"));
       }
