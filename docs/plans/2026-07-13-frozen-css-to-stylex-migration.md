@@ -6602,3 +6602,19 @@ by `frontend/tests/stylex-organization-issues-pagination.e2e.ts` (4/4 managed
 dynamic-port system-Chrome pass). Live legacy `http://127.0.0.1:9000` was
 unavailable, so parity is unverified and no compensating geometry was added.
 The approved Yoram footer identity difference is intentional, not a parity gap.
+
+## Batch 830
+
+Move authenticated populated organization pull-request pagination into the
+existing organization route-local StyleX boundary. The legacy
+`group_pullrequest_list.scala.html` root selects
+`group_pullrequest_list_partial.scala.html`, whose populated list mounts
+`#pagination`; frozen `yobi.less` imports `_common.less:50-101`,
+`_sprites.less:1-5,97-119`, `_page.less:7442-7444`, and `_responsive.less`,
+while `messages.ko-KR` supplies the Korean labels. The effective frozen
+`margin-left:-120px !important` remains at desktop and mobile. React preserves
+the five direct `li` items, labels, sprites, open/closed routes, filter/pageNum
+queries, and invalid/clamped Enter behavior. Live legacy populated rendering
+is unavailable, so parity is explicitly unverified; no compensating geometry
+was added. The approved Yoram footer/provider/developer-contact/repository
+difference remains intentional.

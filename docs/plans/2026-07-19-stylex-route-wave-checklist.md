@@ -1765,3 +1765,10 @@ desktop/mobile geometry, and filtering.
   legacy rendering was unavailable, so parity remains unverified and no route
   compensation was added. The approved Yoram footer/provider/contact/repository
   difference remains intentional and is not a parity gap.
+- [x] Batch 830 authenticated populated organization pull-request pagination:
+  preserve the five direct items, Korean copy, sprites, scoped open/closed
+  query navigation, invalid/clamped Enter behavior, and exact frozen
+  route-local StyleX geometry at desktop/390px. Focused managed-port
+  system-Chrome checks pass 4/4; live legacy parity is unverified because the
+  populated legacy instance is unavailable. The approved Yoram
+  footer/provider/contact/repository deviation remains intentional.
