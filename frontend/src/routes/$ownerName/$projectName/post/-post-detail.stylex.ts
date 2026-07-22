@@ -137,8 +137,15 @@ export const styles = stylex.create({
     transitionDuration: "0.2s",
   },
   keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
+  desktopMetadata: {
+    float: "right",
+    marginRight: "10px",
+    marginTop: "10px",
+    "@media all and (max-width: 720px)": { display: "none" },
+  },
   mobileMetadata: {
     display: "none",
+    float: "right",
     fontSize: "0.7em",
     "@media all and (max-width: 720px)": { display: "block" },
   },

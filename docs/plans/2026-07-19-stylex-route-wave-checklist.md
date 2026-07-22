@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 789 board-post responsive header metadata
+
+- [x] Desktop and mobile date wrappers now own their exact frozen float,
+  spacing, baseline visibility, 720px responsive visibility, and mobile font
+  declarations through two route-local StyleX owners.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px with date copy/title parity, mutually exclusive visibility,
+  containment, alignment, and no overlap.
+- [ ] The fresh paired desktop sweep retains only the previously documented
+  upload-area and collapse-button screen gaps; approved Yoram identity/link
+  differences remain excluded.
+
 ### 2026-07-22 Batch 788 board-post comment action/reply controls
 
 - [x] The populated parent-comment action row now owns frozen Bootstrap

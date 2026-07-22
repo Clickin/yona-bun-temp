@@ -61,6 +61,7 @@ const sx = {
   tasklist: stylex.props(styles.tasklist),
   tasklistProgress: stylex.props(styles.tasklistProgress),
   keymapWrapper: stylex.props(styles.keymapWrapper),
+  desktopMetadata: stylex.props(styles.desktopMetadata),
   mobileMetadata: stylex.props(styles.mobileMetadata),
   errorWrap: stylex.props(styles.errorWrap),
   errorIcon: stylex.props(styles.errorIcon(legacySpriteUrl)),
@@ -388,7 +389,11 @@ function ProjectPostDetailBody({
           className={`${sx.header.className} board-header issue`}
           data-stylex-owner="post-detail-header"
         >
-          <div className="pull-right mr10 mt10 hide-in-mobile">
+          <div
+            {...sx.desktopMetadata}
+            className={sx.desktopMetadata.className}
+            data-stylex-owner="post-detail-desktop-metadata"
+          >
             <div
               {...sx.date}
               className={`${sx.date.className} date`}
@@ -413,7 +418,7 @@ function ProjectPostDetailBody({
             {post.title}
             <div
               {...sx.mobileMetadata}
-              className={`${sx.mobileMetadata.className} pull-right hide show-in-mobile`}
+              className={sx.mobileMetadata.className}
               data-stylex-owner="post-detail-mobile-metadata"
             >
               <span

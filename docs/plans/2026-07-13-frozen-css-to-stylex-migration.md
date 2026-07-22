@@ -6336,3 +6336,18 @@ excluded. Explicit system-Chrome normal/fallback-off runs pass 1/1 each at
 1366px and 390px. The real paired desktop sweep retains the existing 30px
 upload drift and collapse-button paint gap outside this wave; approved Yoram
 identity/link differences remain deviations.
+
+## Batch 789
+
+Move the board-post header's desktop/mobile date metadata utilities into two
+route-local StyleX owners. `board/view.scala.html:37-52` emits the desktop
+`pull-right mr10 mt10 hide-in-mobile` wrapper and mobile
+`pull-right hide show-in-mobile` wrapper with `font-size:0.7em`. Frozen
+Bootstrap supplies float and baseline hidden display, `_common.less:207-208`
+supplies 10px right/top margins, and `_responsive.less:290-304` supplies the
+720px visibility swap through `yobi.less`. Preserve wrapper types, title/date
+copy, order, and responsive behavior; inner date/title and body/comment owners
+remain excluded. Explicit system-Chrome normal/fallback-off runs pass 1/1 each
+at 1366px and 390px. The real paired desktop sweep confirms header alignment
+and retains the known upload/collapse-button gaps outside this wave; approved
+Yoram identity/link differences remain deviations.

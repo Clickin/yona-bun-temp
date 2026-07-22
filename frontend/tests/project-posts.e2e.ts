@@ -2148,6 +2148,180 @@ test("project board detail owns the final edit-action spacing in StyleX", async 
   }
 });
 
+test("project board detail owns responsive header metadata in StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+
+  expect(legacyViewSource).toContain('<div class="pull-right mr10 mt10 hide-in-mobile">');
+  expect(legacyViewSource).toContain(
+    '<div class="pull-right hide show-in-mobile" style="font-size: 0.7em">',
+  );
+  expect(legacyBootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;\s*\}/u);
+  expect(legacyBootstrapSource).toMatch(/\.hide\s*\{\s*display:\s*none;\s*\}/u);
+  expect(legacyCommonSource).toMatch(/\.mr10\s*\{\s*margin-right:\s*10px;\s*\}/u);
+  expect(legacyCommonSource).toMatch(/\.mt10\s*\{\s*margin-top:\s*10px;\s*\}/u);
+  expect(legacyResponsiveSource).toMatch(
+    /@media[^\{]*\(max-width:\s*720px\)[\s\S]*?\.show-in-mobile\s*\{\s*display:\s*block\s*!important;\s*\}[\s\S]*?\.hide-in-mobile\s*\{\s*display:\s*none\s*!important;\s*\}/u,
+  );
+  expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)).toEqual([
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_temporary.less";',
+    '@import "less/_markdown.less";',
+    '@import "less/_migration.less";',
+    '@import "less/_override.less";',
+  ]);
+  expect(styleSource).toMatch(
+    /desktopMetadata:\s*\{[\s\S]*?float:\s*"right"[\s\S]*?marginRight:\s*"10px"[\s\S]*?marginTop:\s*"10px"[\s\S]*?["']@media all and \(max-width:\s*720px\)["']:\s*\{\s*display:\s*"none"/u,
+  );
+  expect(styleSource).toMatch(
+    /mobileMetadata:\s*\{[\s\S]*?display:\s*"none"[\s\S]*?float:\s*"right"[\s\S]*?fontSize:\s*"0\.7em"[\s\S]*?["']@media all and \(max-width:\s*720px\)["']:\s*\{\s*display:\s*"block"/u,
+  );
+  expect(routeSource.match(/data-stylex-owner="post-detail-desktop-metadata"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-stylex-owner="post-detail-mobile-metadata"/g)).toHaveLength(1);
+  expect(routeSource).not.toContain('className="pull-right mr10 mt10 hide-in-mobile"');
+  expect(routeSource).not.toContain("pull-right hide show-in-mobile");
+  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-mobile-metadata"[^>]*style=/su);
+
+  for (const viewport of [
+    { name: "desktop", width: 1366, height: 900 },
+    { name: "mobile", width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const desktopMetadata = page.locator('[data-stylex-owner="post-detail-desktop-metadata"]');
+    const mobileMetadata = page.locator('[data-stylex-owner="post-detail-mobile-metadata"]');
+    await expect(desktopMetadata).toHaveCount(1);
+    await expect(mobileMetadata).toHaveCount(1);
+    await expect(desktopMetadata).not.toHaveClass(/\b(?:pull-right|mr10|mt10|hide-in-mobile)\b/u);
+    await expect(mobileMetadata).not.toHaveClass(/\b(?:pull-right|hide|show-in-mobile)\b/u);
+    await expect(desktopMetadata.locator(".date")).toHaveText("Jul 2, 2026");
+    await expect(desktopMetadata.locator(".date")).toHaveAttribute("title", "Jul 2, 2026");
+    await expect(mobileMetadata.locator(".date")).toHaveText("Jul 2, 2026");
+    await expect(mobileMetadata.locator(".date")).toHaveAttribute("title", "Jul 2, 2026");
+
+    if (viewport.name === "desktop") {
+      await expect(desktopMetadata).toBeVisible();
+      await expect(mobileMetadata).toBeHidden();
+    } else {
+      await expect(desktopMetadata).toBeHidden();
+      await expect(mobileMetadata).toBeVisible();
+    }
+
+    const metrics = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-header"]',
+      )!;
+      const title = document.querySelector<HTMLElement>('[data-stylex-owner="post-detail-title"]')!;
+      const boardId = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-board-id"]',
+      )!;
+      const desktop = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-desktop-metadata"]',
+      )!;
+      const mobile = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-mobile-metadata"]',
+      )!;
+      const headerRect = header.getBoundingClientRect();
+      const titleRect = title.getBoundingClientRect();
+      const boardIdRect = boardId.getBoundingClientRect();
+      const desktopRect = desktop.getBoundingClientRect();
+      const mobileRect = mobile.getBoundingClientRect();
+      const desktopStyle = getComputedStyle(desktop);
+      const mobileStyle = getComputedStyle(mobile);
+      return {
+        desktopBeforeTitle: Boolean(
+          desktop.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        boardIdBeforeMobile: Boolean(
+          boardId.compareDocumentPosition(mobile) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        desktop: {
+          contained:
+            desktopStyle.display === "none" ||
+            (desktopRect.left >= headerRect.left - 0.5 &&
+              desktopRect.right <= headerRect.right + 0.5 &&
+              desktopRect.top >= headerRect.top - 0.5 &&
+              desktopRect.bottom <= headerRect.bottom + 0.5),
+          display: desktopStyle.display,
+          float: desktopStyle.float,
+          marginRight: desktopStyle.marginRight,
+          marginTop: desktopStyle.marginTop,
+          noOverlap:
+            desktopStyle.display === "none" ||
+            boardIdRect.right <= desktopRect.left ||
+            desktopRect.right <= boardIdRect.left,
+        },
+        mobile: {
+          contained:
+            mobileStyle.display === "none" ||
+            (mobileRect.left >= titleRect.left - 0.5 &&
+              mobileRect.right <= titleRect.right + 0.5 &&
+              mobileRect.top >= titleRect.top - 0.5 &&
+              mobileRect.bottom <= titleRect.bottom + 0.5),
+          display: mobileStyle.display,
+          float: mobileStyle.float,
+          fontSize: mobileStyle.fontSize,
+          noOverlap:
+            mobileStyle.display === "none" ||
+            boardIdRect.right <= mobileRect.left ||
+            mobileRect.right <= boardIdRect.left,
+        },
+      };
+    });
+    expect(metrics.desktopBeforeTitle).toBe(true);
+    expect(metrics.boardIdBeforeMobile).toBe(true);
+    expect(metrics.desktop).toMatchObject({
+      contained: true,
+      display: viewport.name === "desktop" ? "block" : "none",
+      float: "right",
+      marginRight: "10px",
+      marginTop: "10px",
+      noOverlap: true,
+    });
+    expect(metrics.mobile).toMatchObject({
+      contained: true,
+      display: viewport.name === "desktop" ? "none" : "block",
+      float: "right",
+      fontSize: "12.6px",
+      noOverlap: true,
+    });
+  }
+});
+
 test("project board detail owns parent comment action and reply controls in StyleX", async ({
   page,
 }) => {
