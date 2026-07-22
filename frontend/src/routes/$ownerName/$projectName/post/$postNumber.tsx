@@ -83,6 +83,9 @@ const sx = {
   childCommentNoTextDecoration: stylex.props(styles.childCommentNoTextDecoration),
   childCommentIssueLink: stylex.props(styles.childCommentIssueLink),
   childCommentIssueStateOpen: stylex.props(styles.childCommentIssueStateOpen),
+  childCommentIssueStateClosed: stylex.props(styles.childCommentIssueStateClosed),
+  childCommentProjectLink: stylex.props(styles.childCommentProjectLink),
+  childCommentOrganizationLink: stylex.props(styles.childCommentOrganizationLink),
   childCommentBlockquote: stylex.props(styles.childCommentBlockquote),
   childCommentBlockquoteParagraph: stylex.props(styles.childCommentBlockquoteParagraph),
   commentBody: stylex.props(styles.commentBody),
@@ -2235,6 +2238,42 @@ function PostChildComment({
           </span>
         );
       }
+      if (className === "issue-state closed") {
+        return (
+          <span
+            {...props}
+            {...sx.childCommentIssueStateClosed}
+            className={`${sx.childCommentIssueStateClosed.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-issue-state-closed"
+          >
+            {children}
+          </span>
+        );
+      }
+      if (className === "org-link") {
+        return (
+          <span
+            {...props}
+            {...sx.childCommentOrganizationLink}
+            className={`${sx.childCommentOrganizationLink.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-organization-link"
+          >
+            {children}
+          </span>
+        );
+      }
+      if (className === "project-link") {
+        return (
+          <span
+            {...props}
+            {...sx.childCommentProjectLink}
+            className={`${sx.childCommentProjectLink.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-project-link"
+          >
+            {children}
+          </span>
+        );
+      }
       return (
         <span {...props} className={className}>
           {children}
@@ -2325,7 +2364,7 @@ type ChildCommentMarkdownNode = {
 
 type ChildCommentMarkdownReplacement = {
   children: ChildCommentMarkdownNode[];
-  className: string[];
+  className?: string[];
   token: string;
   url: string;
 };
@@ -2350,7 +2389,34 @@ function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
     }),
   );
   for (const reference of comment.mentionReferences ?? []) {
-    if (reference.kind !== "user") continue;
+    if (reference.kind === "organization") {
+      replacements.push({
+        children: [
+          {
+            data: { hName: "span", hProperties: { className: ["org-link"] } },
+            type: "text",
+            value: `@${reference.label || reference.loginId}`,
+          },
+        ],
+        token: `@${reference.loginId}`,
+        url: `/organizations/${reference.loginId}`,
+      });
+      continue;
+    }
+    if (reference.kind === "project") {
+      replacements.push({
+        children: [
+          {
+            data: { hName: "span", hProperties: { className: ["project-link"] } },
+            type: "text",
+            value: `@${reference.label || reference.loginId}`,
+          },
+        ],
+        token: `@${reference.loginId}`,
+        url: `/${reference.ownerName}/${reference.projectName}`,
+      });
+      continue;
+    }
     replacements.push({
       children: [{ type: "text", value: `@${reference.label || reference.loginId}` }],
       className: ["no-text-decoration", "user-link"],

@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const LEGACY_MARKDOWN_HELP = readFileSync(
@@ -364,7 +365,7 @@ test("project board list tooltip markers are not React-owned DOM", async ({ page
 const EMPTY_CHILD_COMMENT_FORM =
   '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const POPULATED_CHILD_COMMENT_BODY =
-  '<div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><blockquote><p><a href="__BASE_PATH__/dev" class="no-text-decoration user-link">@Dev Member</a> references <a href="__BASE_PATH__/admin/sample/issue/11" class="issueLink">#11.Rich child Markdown<span class="issue-state open">Open</span></a>.</p></blockquote><p>Nested <strong>reply</strong>- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></p></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
+  '<div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><blockquote><p><a href="__BASE_PATH__/dev" class="no-text-decoration user-link">@Dev Member</a> references <a href="__BASE_PATH__/admin/sample/issue/11" class="issueLink">#11.Rich child Markdown<span class="issue-state open">Open</span></a>, <a href="__BASE_PATH__/admin/sample/issue/12" class="issueLink">#12.Closed child Markdown<span class="issue-state closed">Closed</span></a>, <a href="__BASE_PATH__/organizations/weblabs"><span class="org-link">@Team</span></a>, and <a href="__BASE_PATH__/other/cross"><span class="project-link">@other/cross</span></a>.</p></blockquote><p>Nested <strong>reply</strong>- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></p></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const POPULATED_CHILD_COMMENT_FORM = `<div class="add-a-comment">Reply</div>${POPULATED_CHILD_COMMENT_BODY}`;
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
@@ -5758,6 +5759,11 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     "post-detail-child-comment-blockquote",
     "post-detail-child-comment-blockquote-paragraph",
   ] as const;
+  const batch817Owners = [
+    "post-detail-child-comment-organization-link",
+    "post-detail-child-comment-project-link",
+    "post-detail-child-comment-issue-state-closed",
+  ] as const;
 
   expect(legacyViewSource).toContain("@partial_comments(project, post)");
   expect(legacyLayoutSource.indexOf("bootstrap/css/bootstrap.css")).toBeLessThan(
@@ -5781,6 +5787,12 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   );
   expect(legacyAutoLinkSource).toMatch(
     /return new Link\(RouteUtil\.getUrl\(user\), "no-text-decoration user-link",/u,
+  );
+  expect(legacyAutoLinkSource).toMatch(
+    /return new Link\(RouteUtil\.getUrl\(org\), "<span class='org-link'>@"/u,
+  );
+  expect(legacyAutoLinkSource).toMatch(
+    /return new Link\(RouteUtil\.getUrl\(project\), "<span class='project-link'>@"/u,
   );
   expect(legacyFormSource).toMatch(
     /<div class="oneline-comment-box">[\s\S]*?<textarea class="editorSeries"[\s\S]*?<button type="submit" class="ybtn ybtn-success">OK<\/button>/u,
@@ -5859,6 +5871,18 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   expect(styleSource).toMatch(
     /childCommentIssueStateOpen:\s*\{\s*backgroundColor:\s*"#2ea043",\s*borderRadius:\s*"3px",\s*color:\s*"#fff",\s*marginLeft:\s*"3px",\s*padding:\s*"0 3px",\s*userSelect:\s*"none",\s*":hover":\s*\{\s*textDecoration:\s*"none"\s*\},\s*\}/u,
   );
+  expect(styleSource).toMatch(
+    /childCommentIssueStateClosed:\s*\{\s*backgroundColor:\s*"#da3733",\s*borderRadius:\s*"3px",\s*color:\s*"#fff",\s*marginLeft:\s*"3px",\s*padding:\s*"0 3px",\s*userSelect:\s*"none",\s*":hover":\s*\{\s*textDecoration:\s*"none"\s*\},\s*\}/u,
+  );
+  for (const owner of batch817Owners) {
+    expect(routeSource.match(new RegExp(`data-stylex-owner="${owner}"`, "g"))).toHaveLength(1);
+    expect(routeSource).not.toMatch(new RegExp(`data-stylex-owner="${owner}"[^>]*style=`, "u"));
+  }
+  expect(styleSource).toContain('borderColor: "#9741ff"');
+  expect(styleSource).toContain('borderStyle: "solid"');
+  expect(styleSource).toContain('borderWidth: "1px"');
+  expect(styleSource).toContain('backgroundColor: "#9741ff"');
+  expect(styleSource).toContain('color: "#00ddff"');
   expect(styleSource).toMatch(
     /childCommentBlockquote:\s*\{\s*borderLeftColor:\s*"#eeeeee",\s*borderLeftStyle:\s*"solid",\s*borderLeftWidth:\s*"5px",\s*margin:\s*"0 0 10px",\s*padding:\s*"0 0 0 15px",\s*\}/u,
   );
@@ -6074,7 +6098,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     childCommentsClassName: "child-comments",
     rowClassName: "one-line-comment",
     contentsText:
-      "@Dev Member references #11.Rich child MarkdownOpen. Nested reply- Site Admin Jul 4, 2026x",
+      "@Dev Member references #11.Rich child MarkdownOpen, #12.Closed child MarkdownClosed, @Team, and @other/cross. Nested reply- Site Admin Jul 4, 2026x",
     contentsMarginLeft: "12px",
     contentsPadding: "5px 0px 4px 10px",
     contentsTextAlign: "left",
@@ -6166,6 +6190,83 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     notificationBackground: "rgb(247, 247, 247)",
     notificationText: "Notification receivers ",
   });
+  expect(childCommentMetrics.contentsText).toContain(
+    "@Dev Member references #11.Rich child MarkdownOpen, #12.Closed child MarkdownClosed, @Team, and @other/cross. Nested reply- Site Admin Jul 4, 2026x",
+  );
+  const batch817DesktopMetrics = await page.locator("#comment-21").evaluate((comment) => {
+    const consumers = [
+      "post-detail-child-comment-organization-link",
+      "post-detail-child-comment-project-link",
+      "post-detail-child-comment-issue-state-closed",
+    ].map((owner) => comment.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!);
+    const links = consumers.map((consumer) => consumer.closest("a") as HTMLAnchorElement);
+    return consumers.map((consumer, index) => {
+      const style = getComputedStyle(consumer);
+      const linkRect = links[index].getBoundingClientRect();
+      const rect = consumer.getBoundingClientRect();
+      return {
+        backgroundColor: style.backgroundColor,
+        border: style.border,
+        borderRadius: style.borderRadius,
+        color: style.color,
+        insideLink: rect.left >= linkRect.left && rect.right <= linkRect.right + 1,
+        marginRight: style.marginRight,
+        padding: `${style.paddingTop} ${style.paddingRight} ${style.paddingBottom} ${style.paddingLeft}`,
+        tagName: consumer.tagName.toLowerCase(),
+        width: rect.width,
+      };
+    });
+  });
+  expect(batch817DesktopMetrics).toEqual([
+    {
+      backgroundColor: "rgb(151, 65, 255)",
+      border: "1px solid rgb(151, 65, 255)",
+      borderRadius: "3px",
+      color: "rgb(255, 255, 255)",
+      insideLink: true,
+      marginRight: "3px",
+      padding: "0px 2px 0px 2px",
+      tagName: "span",
+      width: expect.any(Number),
+    },
+    {
+      backgroundColor: "rgb(151, 65, 255)",
+      border: "1px solid rgb(151, 65, 255)",
+      borderRadius: "3px",
+      color: "rgb(255, 255, 255)",
+      insideLink: true,
+      marginRight: "3px",
+      padding: "0px 2px 0px 2px",
+      tagName: "span",
+      width: expect.any(Number),
+    },
+    {
+      backgroundColor: "rgb(218, 55, 51)",
+      border: "0px none rgb(255, 255, 255)",
+      borderRadius: "3px",
+      color: "rgb(255, 255, 255)",
+      insideLink: true,
+      marginRight: "0px",
+      padding: "0px 3px 0px 3px",
+      tagName: "span",
+      width: expect.any(Number),
+    },
+  ]);
+  await expect(
+    page.locator('[data-stylex-owner="post-detail-child-comment-organization-link"]'),
+  ).toHaveText("@Team");
+  await expect(
+    page.locator('[data-stylex-owner="post-detail-child-comment-project-link"]'),
+  ).toHaveText("@other/cross");
+  await expect(
+    page.locator('[data-stylex-owner="post-detail-child-comment-issue-state-closed"]'),
+  ).toHaveText("Closed");
+  await expect(
+    page.locator('[data-stylex-owner="post-detail-child-comment-organization-link"]').locator(".."),
+  ).toHaveAttribute("href", `${basePath}/organizations/weblabs`);
+  await expect(
+    page.locator('[data-stylex-owner="post-detail-child-comment-project-link"]').locator(".."),
+  ).toHaveAttribute("href", `${basePath}/other/cross`);
 
   expect(await canonicalize(page, "#comment-21 > .subcomment-media-body")).toEqual(
     await canonicalizeHtml(
@@ -6173,6 +6274,15 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       POPULATED_CHILD_COMMENT_BODY.replaceAll("__BASE_PATH__", basePath),
     ),
   );
+  const screenshotDirectory = resolve(process.cwd(), "../output/playwright");
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(
+      screenshotDirectory,
+      "batch-817-local-board-post-child-rich-markdown-desktop.png",
+    ),
+  });
 
   const parent = page.locator("#comment-21");
   await expect(parent.locator(".subcomment-author")).toHaveCount(0);
@@ -6187,8 +6297,11 @@ test("project board detail renders legacy child comments", async ({ page }) => {
   }
   for (const owner of batch816Owners) {
     const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
-    await expect(consumer).toHaveCount(1);
-    await expect(consumer).not.toHaveAttribute("style", /.+/u);
+    const expectedCount = owner === "post-detail-child-comment-issue-link" ? 2 : 1;
+    await expect(consumer).toHaveCount(expectedCount);
+    for (let index = 0; index < expectedCount; index += 1) {
+      await expect(consumer.nth(index)).not.toHaveAttribute("style", /.+/u);
+    }
   }
   for (const owner of batch815Owners) {
     const consumer = parent.locator(`[data-stylex-owner="${owner}"]`);
@@ -6265,6 +6378,15 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const issueState = comment.querySelector<HTMLElement>(
       '[data-stylex-owner="post-detail-child-comment-issue-state-open"]',
     )!;
+    const organizationLink = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-organization-link"]',
+    )!;
+    const projectLink = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-project-link"]',
+    )!;
+    const closedIssueState = comment.querySelector<HTMLElement>(
+      '[data-stylex-owner="post-detail-child-comment-issue-state-closed"]',
+    )!;
     const box = comment.querySelector<HTMLElement>(
       '[data-stylex-owner="post-detail-child-comment-oneline-box"]',
     )!;
@@ -6280,12 +6402,21 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     const blockquoteParagraphRect = blockquoteParagraph.getBoundingClientRect();
     const issueLinkRect = issueLink.getBoundingClientRect();
     const issueStateRect = issueState.getBoundingClientRect();
+    const organizationRect = organizationLink.getBoundingClientRect();
+    const organizationLinkRect = organizationLink.closest("a")!.getBoundingClientRect();
+    const projectRect = projectLink.getBoundingClientRect();
+    const projectAnchorRect = projectLink.closest("a")!.getBoundingClientRect();
+    const closedIssueStateRect = closedIssueState.getBoundingClientRect();
+    const closedIssueLinkRect = closedIssueState.closest("a")!.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
     const textareaRect = textarea.getBoundingClientRect();
     const submitRect = submit.getBoundingClientRect();
     const bodyStyle = getComputedStyle(body);
     const textareaStyle = getComputedStyle(textarea);
     const issueStateStyle = getComputedStyle(issueState);
+    const organizationStyle = getComputedStyle(organizationLink);
+    const projectStyle = getComputedStyle(projectLink);
+    const closedIssueStateStyle = getComputedStyle(closedIssueState);
     return {
       bodyMarginLeft: bodyStyle.marginLeft,
       bodyTextAlign: bodyStyle.textAlign,
@@ -6300,6 +6431,21 @@ test("project board detail renders legacy child comments", async ({ page }) => {
       issueStateColor: issueStateStyle.color,
       issueStateInsideLink:
         issueStateRect.left >= issueLinkRect.left && issueStateRect.right <= issueLinkRect.right,
+      organizationBackground: organizationStyle.backgroundColor,
+      organizationColor: organizationStyle.color,
+      organizationInsideLink:
+        organizationRect.left >= organizationLinkRect.left &&
+        organizationRect.right <= organizationLinkRect.right + 1,
+      projectBackground: projectStyle.backgroundColor,
+      projectColor: projectStyle.color,
+      projectInsideLink:
+        projectRect.left >= projectAnchorRect.left &&
+        projectRect.right <= projectAnchorRect.right + 1,
+      closedIssueBackground: closedIssueStateStyle.backgroundColor,
+      closedIssueColor: closedIssueStateStyle.color,
+      closedIssueInsideLink:
+        closedIssueStateRect.left >= closedIssueLinkRect.left &&
+        closedIssueStateRect.right <= closedIssueLinkRect.right + 1,
       formInside: boxRect.left >= bodyRect.left && boxRect.right <= bodyRect.right + 1,
       textareaWidth: textareaStyle.width,
       nonOverlap: textareaRect.right <= submitRect.left,
@@ -6315,35 +6461,63 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     issueStateBackground: "rgb(46, 160, 67)",
     issueStateColor: "rgb(255, 255, 255)",
     issueStateInsideLink: true,
+    organizationBackground: "rgb(151, 65, 255)",
+    organizationColor: "rgb(255, 255, 255)",
+    organizationInsideLink: true,
+    projectBackground: "rgb(151, 65, 255)",
+    projectColor: "rgb(255, 255, 255)",
+    projectInsideLink: true,
+    closedIssueBackground: "rgb(218, 55, 51)",
+    closedIssueColor: "rgb(255, 255, 255)",
+    closedIssueInsideLink: true,
     formInside: true,
     textareaWidth: expect.stringMatching(/px$/u),
     nonOverlap: true,
     noOverflow: true,
+  });
+  await page.screenshot({
+    fullPage: true,
+    path: resolve(screenshotDirectory, "batch-817-local-board-post-child-rich-markdown-mobile.png"),
   });
 
   const mentionLink = parent.locator(
     '[data-stylex-owner="post-detail-child-comment-no-text-decoration"]',
   );
   const issueLink = parent.locator('[data-stylex-owner="post-detail-child-comment-issue-link"]');
-  const issueState = issueLink.locator(
+  const openIssueLink = issueLink.filter({ hasText: "#11.Rich child Markdown" });
+  const closedIssueLink = issueLink.filter({ hasText: "#12.Closed child Markdown" });
+  const issueState = openIssueLink.locator(
     '[data-stylex-owner="post-detail-child-comment-issue-state-open"]',
+  );
+  const closedIssueState = closedIssueLink.locator(
+    '[data-stylex-owner="post-detail-child-comment-issue-state-closed"]',
   );
   await expect(mentionLink).toHaveText("@Dev Member");
   await expect(mentionLink).toHaveAttribute("href", `${basePath}/dev`);
-  await expect(issueLink).toContainText("#11.Rich child Markdown");
-  await expect(issueLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/11`);
+  await expect(openIssueLink).toHaveCount(1);
+  await expect(openIssueLink).toContainText("#11.Rich child Markdown");
+  await expect(openIssueLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/11`);
   await expect(issueState).toHaveText("Open");
   await expect(issueState).toHaveCSS("background-color", "rgb(46, 160, 67)");
   await expect(issueState).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(closedIssueLink).toHaveCount(1);
+  await expect(closedIssueLink).toContainText("#12.Closed child Markdown");
+  await expect(closedIssueLink).toHaveAttribute("href", `${basePath}/admin/sample/issue/12`);
+  await expect(closedIssueState).toHaveText("Closed");
+  await expect(closedIssueState).toHaveCSS("background-color", "rgb(218, 55, 51)");
+  await expect(closedIssueState).toHaveCSS("color", "rgb(255, 255, 255)");
   await expectNoTanStackActiveAttrs(mentionLink);
-  await expectNoTanStackActiveAttrs(issueLink);
+  await expectNoTanStackActiveAttrs(openIssueLink);
+  await expectNoTanStackActiveAttrs(closedIssueLink);
   await issueState.hover();
   await expect(issueState).toHaveCSS("text-decoration-line", "none");
+  await closedIssueState.hover();
+  await expect(closedIssueState).toHaveCSS("text-decoration-line", "none");
   await mentionLink.click();
   await expect(page).toHaveURL(`${basePath}/dev?daysAgo=14&selected=issues`);
   await page.goBack();
   await expect(page).toHaveURL(detailUrl);
-  await issueLink.click();
+  await openIssueLink.click();
   await expect(page).toHaveURL(`${basePath}/admin/sample/issue/11`);
   await page.goBack();
   await expect(page).toHaveURL(detailUrl);
@@ -9012,7 +9186,8 @@ async function mockProjectPosts(
                           authorLabel: "Site Admin",
                           authorLoginId: "admin",
                           contentsHtml: "<p>Server HTML should not render</p>",
-                          contentsMarkdown: "> @dev references #11.\n\nNested **reply**",
+                          contentsMarkdown:
+                            "> @dev references #11, #12, @weblabs, and @other/cross.\n\nNested **reply**",
                           createdLabel: "Jul 4, 2026",
                           id: "22",
                           issueReferences: [
@@ -9023,6 +9198,13 @@ async function mockProjectPosts(
                               state: "Open",
                               title: "Rich child Markdown",
                             },
+                            {
+                              issueNumber: 12,
+                              ownerName: "admin",
+                              projectName: "sample",
+                              state: "Closed",
+                              title: "Closed child Markdown",
+                            },
                           ],
                           mentionReferences: [
                             {
@@ -9031,6 +9213,20 @@ async function mockProjectPosts(
                               loginId: "dev",
                               ownerName: "",
                               projectName: "",
+                            },
+                            {
+                              kind: "organization",
+                              label: "Team",
+                              loginId: "weblabs",
+                              ownerName: "",
+                              projectName: "",
+                            },
+                            {
+                              kind: "project",
+                              label: "other/cross",
+                              loginId: "other/cross",
+                              ownerName: "other",
+                              projectName: "cross",
                             },
                           ],
                           parentCommentId: "21",

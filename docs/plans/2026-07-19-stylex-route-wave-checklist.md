@@ -10,6 +10,20 @@ The current footer deliberately differs from `yona-original/app/views/common/foo
 
 Screenshot parity checks must preserve this diff. Any resulting search/footer position or height change is the natural geometry of the removed/replaced content; do not restore upstream links or add spacing to imitate them. Record any footer-related observation as the approved Yoram identity deviation, with the detailed source and rationale in `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`.
 
+### 2026-07-22 Batch 817 board-post child rich Markdown remaining auto-links
+
+- [x] Three additional child-only owners reproduce legacy organization and
+  project mention badges plus the closed issue-state badge; Batch 816 open
+  state, user mention, blockquote, metadata, Reply, and delete behavior remain
+  intact.
+- [x] Outside-sandbox system-Chrome normal/fallback-off focused runs pass 1/1
+  with exact internal links, owner isolation, computed badge declarations,
+  hover behavior, desktop/390px containment, and no overflow.
+- [x] Fresh fallback-off desktop/mobile screenshots were captured and
+  visually inspected. Purple organization/project badges and the green/red
+  Open/Closed states render in the expected child Markdown order; approved
+  Yoram footer/contact/repository drift remains excluded.
+
 ### 2026-07-22 Batch 816 board-post child rich Markdown
 
 - [x] Five child-only owners cover mention/issue links, open issue-state badge,
