@@ -892,8 +892,10 @@ export function PullRequestBranchInfo({
   runtimeConfig?: RuntimeConfig;
 }) {
   const { t } = useLegacyMessages();
-  const fromBranchName = branchItemName(pullRequest.fromBranch);
-  const toBranchName = branchItemName(pullRequest.toBranch);
+  const fromBranchName = pullRequest.fromBranch;
+  const toBranchName = pullRequest.toBranch;
+  const fromBranchLabel = branchItemName(fromBranchName);
+  const toBranchLabel = branchItemName(toBranchName);
   return (
     <div className="pullRequest-branchInfo">
       <i
@@ -935,7 +937,7 @@ export function PullRequestBranchInfo({
           className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
-          {fromBranchName}
+          {fromBranchLabel}
         </Link>
       </code>
       <i
@@ -974,7 +976,7 @@ export function PullRequestBranchInfo({
           className={`${stylex.props(styles.branchInfoLink, styles.branchName).className} branchName`}
           {...LEGACY_LINK_PROPS}
         >
-          {toBranchName}
+          {toBranchLabel}
         </Link>
       </code>
     </div>

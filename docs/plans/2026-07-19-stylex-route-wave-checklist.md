@@ -316,7 +316,7 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   Batches 791–792 closed both. The remaining navbar position difference is an
   approved Yoram identity/contact deviation consequence, not a follow-up gap.
 
-### 2026-07-22 Batch 785 pull-request branch-icon fallback proof
+### 2026-07-22 Batch 785 pull-request branch-icon fallback and screenshot proof
 
 - [x] The populated pull-request overview removes only the final-cascade-
   ineffective `ml0` class and now-zero-consumer React-side `.ml0` bridge while
@@ -326,10 +326,19 @@ Screenshot parity checks must preserve this diff. Any resulting search/footer po
   frozen branch/right-arrow pseudo glyphs. Focused system-Chrome runs pass 1/1
   in normal and fallback-off modes at 1280px and 390px, with non-zero glyph
   geometry and no overflow.
-- [ ] Real populated legacy screenshot parity remains open: the managed legacy
-  parity seed has no pull request, `/admin/sample/pullRequest/1` renders 404,
-  and `newPullRequestForm` returns 400 because the seed has no sending
-  repository. The 404-to-200 sweep is diagnostic only and is not parity proof.
+- [x] A separate `batch785` legacy instance was seeded outside the sandbox,
+  given real Git history/branches and a disposable fork, and a populated
+  `/admin/sample/pullRequest/1` was created. Real system-Chrome legacy
+  desktop/mobile screenshots were captured and directly inspected alongside
+  the local desktop/mobile captures. Whole-page copy, locale, asset, and
+  approved Yoram footer differences remain outside the branch-icon owner;
+  the branch-info DOM/order, two glyphs, 5px margins, and containment align.
+  The route keeps raw `fromBranch`/`toBranch` values in code-link params while
+  applying `branchItemName` only to visible labels, matching the legacy
+  template's deep-link behavior for `refs/*` branches.
+- [x] The legacy seed helper now defaults to system Chrome, so this proof also
+  records the Playwright channel fix that prevents bundled-Chromium lookup
+  failures during legacy bootstrap.
 
 ### 2026-07-22 Batch 783 issue vote heart glyph proof
 

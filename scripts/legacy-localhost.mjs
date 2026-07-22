@@ -544,7 +544,9 @@ async function status(layout) {
 }
 
 function playwrightLaunchOptions() {
-  const channel = process.env.PW_CHANNEL ?? "";
+  // Legacy seeding is also screenshot/parity browser work: use installed
+  // system Chrome by default instead of assuming bundled Chromium exists.
+  const channel = process.env.PW_CHANNEL ?? "chrome";
   return {
     ...(channel ? { channel } : {}),
     headless: true,

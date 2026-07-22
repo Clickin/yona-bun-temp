@@ -22,6 +22,12 @@ PW_CHANNEL=chrome pnpm --config.store-dir=/Users/senghyunjo/.pnpm-store \
   node scripts/visual-parity-sweep.mjs
 ```
 
+`PW_CHANNEL=chrome` is the canonical outside-sandbox path when system Google
+Chrome is installed. The legacy seed helper in `scripts/legacy-localhost.mjs`
+uses the same `chrome` channel by default, so seed/bootstrap does not silently
+fall back to a missing bundled Chromium executable; an explicit `PW_CHANNEL`
+may still override it for a verified alternate browser.
+
 The root workspace does not expose the frontend-only Playwright binary. The
 `--only-shell` flag is required for the headless executable used by the seed
 and screenshot harness. `visual-parity-sweep.mjs` historically defaults to
