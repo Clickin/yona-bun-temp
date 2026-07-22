@@ -6587,3 +6587,18 @@ inspected. Live legacy populated screenshot parity remains explicitly unverified
 because `127.0.0.1:9000` was unavailable, and no compensating geometry was added.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional deviations and must not be restored. This is not Wave 1 completion.
+
+## Batch 829
+
+Authenticated populated organization issue pagination now owns only the exact
+frozen declarations in the existing route-local StyleX boundary. Sources:
+`/Users/senghyunjo/github/yona-bun-temp/yona-original/app/views/organization/group_issue_list.scala.html`,
+`/Users/senghyunjo/github/yona-bun-temp/yona-original/app/views/organization/group_issue_search_partial.scala.html`,
+`/Users/senghyunjo/github/yona-bun-temp/yona-original/app/views/organization/group_issue_list_partial.scala.html`,
+`/Users/senghyunjo/github/yona-bun-temp/yona-original/app/views/organization/group_issue_list_quicksearch.scala.html`,
+and the frozen `yobi.less` import chain. The five direct `li` items, Korean
+labels, sprites, scoped query navigation, and clamped Enter behavior are covered
+by `frontend/tests/stylex-organization-issues-pagination.e2e.ts` (4/4 managed
+dynamic-port system-Chrome pass). Live legacy `http://127.0.0.1:9000` was
+unavailable, so parity is unverified and no compensating geometry was added.
+The approved Yoram footer identity difference is intentional, not a parity gap.

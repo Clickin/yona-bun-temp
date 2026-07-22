@@ -1756,3 +1756,12 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 767 authenticated issue-detail edit/delete action spacing StyleX ownership: frozen issue view action rows and `_common.less:206,216`/`_page.less:2956,3550` remain unchanged, unrelated translation/comment controls stay fallback-owned, and normal/fallback-off focused parity verifies both owners, computed spacing, no-inline-style, row geometry/order, and edit/delete interaction 1/1 each.
 - [x] Batch 768 authenticated configured issue translation button `.ml10` StyleX ownership: frozen `issue/view.scala.html:232` and `_common.less:206` remain unchanged, comment translation/unrelated controls stay fallback-owned, and normal/fallback-off focused parity verifies source/import mapping, owner, computed margin, no-inline-style, disabled state, and translation interaction 1/1 each.
 - [x] Batch 760 authenticated profile/organization `.yobicon-middle` StyleX ownership and React-side fallback bridge retirement: frozen legacy icon consumers and `_common.less:191-194` remain unchanged, while normal/fallback-off static contracts verify StyleX ownership and generated fallback retention.
+
+- [x] Batch 829 authenticated populated organization issue pagination StyleX
+  ownership: full legacy Scala paths, frozen LESS import chain, and Korean
+  messages are recorded; `frontend/tests/stylex-organization-issues-pagination.e2e.ts`
+  passes 4/4 on managed dynamic ports/system Chrome with desktop/mobile
+  screenshots, geometry, containment, and SPA/clamped-input coverage. Live
+  legacy rendering was unavailable, so parity remains unverified and no route
+  compensation was added. The approved Yoram footer/provider/contact/repository
+  difference remains intentional and is not a parity gap.
