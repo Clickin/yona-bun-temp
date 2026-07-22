@@ -1709,11 +1709,18 @@ function PostCommentUpdateForm({
     await onUpdateComment(commentId, typeof contents === "string" ? contents : "");
   }
 
+  const updateFormStyle = stylex.props(
+    styles.commentUpdateForm,
+    isEditing && styles.commentUpdateFormVisible,
+  );
+  const updateWriteBoxStyle = stylex.props(styles.commentUpdateWriteBox);
+  const updateActionsStyle = stylex.props(styles.commentUpdateActions);
+
   return (
     <div
       id={`comment-editform-${commentId}`}
-      className="comment-update-form"
-      {...(isEditing ? stylex.props(styles.commentEditorVisible) : {})}
+      {...updateFormStyle}
+      className={`${updateFormStyle.className} comment-update-form`}
       data-stylex-owner="post-detail-comment-editor"
     >
       <form
@@ -1726,7 +1733,11 @@ function PostCommentUpdateForm({
         onSubmit={handleSubmit}
       >
         <input type="hidden" name="id" value={commentId} />
-        <div className="write-comment-box">
+        <div
+          {...updateWriteBoxStyle}
+          className={`${updateWriteBoxStyle.className} write-comment-box`}
+          data-stylex-owner="post-detail-comment-update-write-box"
+        >
           <div className="write-comment-wrap">
             <MarkdownEditor
               editorMode="update-comment-body"
@@ -1740,8 +1751,8 @@ function PostCommentUpdateForm({
               </div>
             </div>
             <div
-              {...stylex.props(styles.commentUpdateActions)}
-              className="comment-update-button upload-button-line"
+              {...updateActionsStyle}
+              className={`${updateActionsStyle.className} comment-update-button upload-button-line`}
               data-stylex-owner="post-detail-comment-update-actions"
             >
               <span className="file-upload">
@@ -2001,6 +2012,10 @@ function MarkdownEditor({
     styles.editorPane,
     activeMode === "preview" && styles.editorPaneActive,
   );
+  const updateTextareaBoxStyle =
+    editorMode === "update-comment-body"
+      ? stylex.props(styles.commentUpdateTextareaBox)
+      : undefined;
 
   return (
     <div className="mt10">
@@ -2054,7 +2069,15 @@ function MarkdownEditor({
           className={`${editPaneStyle.className} tab-pane${activeMode === "edit" ? " active" : ""}`}
           data-stylex-owner="post-detail-editor-pane"
         >
-          <div className="textarea-box">
+          <div
+            {...updateTextareaBoxStyle}
+            className={`${updateTextareaBoxStyle?.className ?? ""} textarea-box`.trim()}
+            data-stylex-owner={
+              editorMode === "update-comment-body"
+                ? "post-detail-comment-update-textarea-box"
+                : undefined
+            }
+          >
             <textarea
               name={name}
               className="editorSeries content comment nm"

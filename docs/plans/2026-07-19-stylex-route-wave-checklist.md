@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 796 board-post open comment-update form
+
+- [x] Four route-local groups own exact frozen hidden/open form, write-box,
+  update textarea-box final cascade, and action spacing/alignment declarations.
+  Existing edit/cancel/save behavior and Scala form contract remain intact.
+- [x] System-Chrome normal/fallback-off runs pass 1/1 each at 1366px and 390px
+  with source, computed declarations, direct scope, containment, and mutation.
+- [x] Direct open-state screenshots match width exactly on desktop/mobile and
+  differ only by 1px height plus the known 2px state offset. Textarea element,
+  tabs, upload, buttons, notification, attachments, and other forms remain
+  explicitly outside this wave.
+
 ### 2026-07-22 Batch 795 board-post comment section boundary/header
 
 - [x] Four route-local groups own exact frozen wrapper desktop/mobile, header,

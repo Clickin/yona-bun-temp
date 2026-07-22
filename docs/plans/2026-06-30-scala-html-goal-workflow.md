@@ -520,3 +520,12 @@ remains fallback-owned. Outside-sandbox system-Chrome normal/fallback-off runs
 pass 1/1 each, and fresh desktop/mobile legacy/local screenshots were directly
 inspected. Automated navbar shifts remain consequences of the approved Yoram
 footer/contact/repository deviation rather than goal gaps.
+
+## Batch 796 — board-post open parent comment-update form
+
+The authenticated populated `/admin/sample/post/1` edit-open state now owns
+the frozen comment-update form visibility, direct write-box padding, update
+textarea-box final cascade, and action-row spacing/alignment. System-Chrome
+normal/fallback-off runs pass 1/1 each. Direct desktop/mobile legacy/local
+screenshots show exact width, a 1px height difference, and the same known 2px
+state offset; the target declarations and visual order are aligned.

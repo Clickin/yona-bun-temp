@@ -5573,6 +5573,292 @@ test("authenticated populated board post owns comment section boundary and heade
   }
 });
 
+test("authenticated populated board post owns open parent comment update form in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyBoardSource = readFileSync(
+    "../yona-original/app/views/board/view.scala.html",
+    "utf8",
+  );
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyUpdateFormSource = readFileSync(
+    "../yona-original/app/views/common/commentUpdateForm.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+
+  expect(legacyBoardSource).toContain("@partial_comments(project, post)");
+  expect(legacyCommentsSource).toContain("@common.commentUpdateForm(comment,");
+  expect(legacyUpdateFormSource).toMatch(
+    /<div id="comment-editform-@comment\.id" class="comment-update-form">[\s\S]*?<form action="@action\/@comment\.id" method="post" enctype="multipart\/form-data">[\s\S]*?<input type="hidden" name="id" value="@comment\.id">[\s\S]*?<div class="write-comment-box">\s*<div class="write-comment-wrap">[\s\S]*?@common\.editor\("contents-" \+ comment\.id, contents,"", "update-comment-body"\)[\s\S]*?<div class="upload-drop-here">[\s\S]*?<div class="right-txt comment-update-button upload-button-line">/u,
+  );
+  expect(legacyUpdateFormSource).toMatch(
+    /@Messages\("button\.upload"\)[\s\S]*?@Messages\("button\.cancel"\)[\s\S]*?@Messages\("button\.save"\)/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.comment-update-form\s*\{\s*display:none;\s*\.textarea-box\s*\{\s*padding-right:\s*2px;\s*margin-bottom:\s*10px;\s*\}\s*\.write-comment-box\s*\{\s*padding:\s*10px;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{[\s\S]*?\.write-comment-wrap\s*\{[\s\S]*?\.comment-update-button\s*\{\s*margin-top:\s*10px;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.textarea-box\s*\{\s*padding:\s*0;\s*margin:\s*0;\s*display:\s*block;\s*padding-right:\s*14px;\s*position:relative;/u,
+  );
+  expect(legacyYobiSource).toMatch(
+    /@import "less\/_variables\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";/u,
+  );
+  for (const styleName of [
+    "commentUpdateForm",
+    "commentUpdateFormVisible",
+    "commentUpdateWriteBox",
+    "commentUpdateTextareaBox",
+    "commentUpdateActions",
+  ]) {
+    expect(styleSource).toContain(`${styleName}:`);
+  }
+  expect(styleSource).not.toContain("commentEditorVisible:");
+  for (const owner of [
+    "post-detail-comment-editor",
+    "post-detail-comment-update-write-box",
+    "post-detail-comment-update-textarea-box",
+    "post-detail-comment-update-actions",
+  ]) {
+    expect(routeSource).toContain(owner);
+  }
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const { commentUpdateRequests } = await mockProjectPosts(page, "commentUpdate");
+    await page.route("**/api/v1/projects/admin/sample/posts/1/comments/21", async (route) => {
+      if (route.request().method() !== "PATCH") {
+        await route.fallback();
+        return;
+      }
+      const body = JSON.parse(route.request().postData() ?? "{}") as {
+        attachmentIds?: string[];
+        contentsMarkdown?: string;
+        parentCommentId?: string | number | null;
+      };
+      const contentsMarkdown = body.contentsMarkdown ?? "";
+      commentUpdateRequests.push({
+        attachmentIds: body.attachmentIds ?? [],
+        contentsMarkdown,
+        parentCommentId: body.parentCommentId ?? null,
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyMarkdown: "Populated **board post**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsMarkdown,
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyMarkdown: "",
+          id: "31",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "sample",
+          readme: false,
+          title: "Populated board post",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    });
+    await page.route("**/api/v1/projects/admin/sample/posts/1", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyMarkdown: "Populated **board post**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsMarkdown: "First **comment**",
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyMarkdown: "",
+          id: "31",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "sample",
+          readme: false,
+          title: "Populated board post",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    });
+    await page.goto(`${basePath}/admin/sample/post/1`);
+
+    const comment = page.locator("#comment-21");
+    const formWrap = comment.locator('[data-stylex-owner="post-detail-comment-editor"]');
+    const body = comment.locator("#comment-body-21");
+    await expect(formWrap).toHaveCSS("display", "none");
+    await expect(body).toBeVisible();
+    await expect(
+      page.locator('#comment-form [data-stylex-owner^="post-detail-comment-update-"]'),
+    ).toHaveCount(0);
+
+    await comment.locator('.act-row button[title="Edit comment"]').click();
+    await expect(formWrap).toHaveCSS("display", "block");
+    await expect(body).toBeHidden();
+    const form = formWrap.locator(":scope > form");
+    const writeBox = form.locator('[data-stylex-owner="post-detail-comment-update-write-box"]');
+    const textareaBox = form.locator(
+      '[data-stylex-owner="post-detail-comment-update-textarea-box"]',
+    );
+    const actions = form.locator('[data-stylex-owner="post-detail-comment-update-actions"]');
+    await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
+    await expect(form).toHaveAttribute("method", "post");
+    await expect(form).toHaveAttribute("enctype", "multipart/form-data");
+    await expect(form.locator('input[type="hidden"][name="id"]')).toHaveValue("21");
+    await expect(textareaBox.locator("textarea")).toHaveValue("First **comment**");
+    await expect(actions.locator("button")).toHaveText(["Cancel", "Save"]);
+
+    const metrics = await formWrap.evaluate((wrapper) => {
+      const get = (owner: string) =>
+        wrapper.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const writeBox = get("post-detail-comment-update-write-box");
+      const textareaBox = get("post-detail-comment-update-textarea-box");
+      const actions = get("post-detail-comment-update-actions");
+      const upload = wrapper.querySelector<HTMLElement>(".upload-drop-here")!;
+      const form = wrapper.querySelector<HTMLElement>(":scope > form")!;
+      const formRect = form.getBoundingClientRect();
+      const writeRect = writeBox.getBoundingClientRect();
+      const textareaRect = textareaBox.getBoundingClientRect();
+      const actionsRect = actions.getBoundingClientRect();
+      return {
+        formDisplay: getComputedStyle(wrapper).display,
+        writePadding: getComputedStyle(writeBox).padding,
+        textarea: {
+          display: getComputedStyle(textareaBox).display,
+          margin: getComputedStyle(textareaBox).margin,
+          padding: getComputedStyle(textareaBox).padding,
+          position: getComputedStyle(textareaBox).position,
+        },
+        actions: {
+          marginTop: getComputedStyle(actions).marginTop,
+          textAlign: getComputedStyle(actions).textAlign,
+        },
+        order:
+          Boolean(textareaBox.compareDocumentPosition(upload) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+          Boolean(upload.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING),
+        containment:
+          writeRect.left >= formRect.left &&
+          writeRect.right <= formRect.right &&
+          textareaRect.left >= writeRect.left &&
+          textareaRect.right <= writeRect.right &&
+          actionsRect.left >= writeRect.left &&
+          actionsRect.right <= writeRect.right,
+        noOverlap: textareaRect.bottom <= actionsRect.top,
+        actionRightAligned: actionsRect.right <= writeRect.right,
+      };
+    });
+    expect(metrics).toEqual({
+      formDisplay: "block",
+      writePadding: "10px",
+      textarea: {
+        display: "block",
+        margin: "0px 0px 10px",
+        padding: "0px 2px 0px 0px",
+        position: "relative",
+      },
+      actions: { marginTop: "10px", textAlign: "right" },
+      order: true,
+      containment: true,
+      noOverlap: true,
+      actionRightAligned: true,
+    });
+
+    await actions.getByRole("button", { name: "Cancel" }).click();
+    await expect(formWrap).toHaveCSS("display", "none");
+    await expect(body).toBeVisible();
+    await expect(body).toContainText("First comment");
+    await comment.locator('.act-row button[title="Edit comment"]').click();
+    await textareaBox.locator("textarea").fill(`Updated at ${viewport.width}`);
+    await actions.getByRole("button", { name: "Save" }).click();
+    await expect
+      .poll(() => commentUpdateRequests.at(-1)?.contentsMarkdown)
+      .toBe(`Updated at ${viewport.width}`);
+    await expect(formWrap).toHaveCSS("display", "none");
+    await expect(body).toContainText(`Updated at ${viewport.width}`);
+  }
+});
+
 async function mockProjectPosts(
   page: Page,
   state:
