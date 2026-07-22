@@ -375,15 +375,17 @@ const EXPECTED_PROJECT_POST_DETAIL_RAW = `
 const EXPECTED_PROJECT_POST_DETAIL = EXPECTED_PROJECT_POST_DETAIL_RAW.replace(
   'src="/assets/images/default-avatar-32.png" width="20" height="20"',
   'src="__BASE_PATH__/assets/images/default-avatar-32.png" width="20" height="20"',
-);
+).replaceAll(" ml10 pt5px", "");
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
   '<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul>',
   `<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div>${EMPTY_CHILD_COMMENT_FORM}</li></ul>`,
-).replaceAll(
-  'src="/assets/images/default-avatar-32.png" width="32" height="32"',
-  'src="__BASE_PATH__/legacy-assets/images/default-avatar-128.png" width="32" height="32"',
-);
+)
+  .replaceAll(
+    'src="/assets/images/default-avatar-32.png" width="32" height="32"',
+    'src="__BASE_PATH__/legacy-assets/images/default-avatar-128.png" width="32" height="32"',
+  )
+  .replace('class="btn-transparent ml10"', 'class="btn-transparent"');
 
 const COMMENT_UPDATE_FORM = `<div id="comment-editform-21" class="comment-update-form"><form action="__BASE_PATH__/admin/sample/post/3/comments/21" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="21"><div class="write-comment-box"><div class="write-comment-wrap"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-21" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="update-comment-body" markdown="true" id="editor-contents-21">First **comment**</textarea></div></div><div id="preview-21" class="tab-pane"><div class="markdown-preview markdown-wrap update-comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-drop-here"><div class="msg-wrap"><div class="msg">Drag &amp; Drop files here to upload.</div></div></div><div class="right-txt comment-update-button upload-button-line"><span class="file-upload"><label for="upload-21" class="file-upload__label ybtn">File upload</label><input id="upload-21" class="file-upload__input" type="file" name="filePath" multiple=""></span><button type="button" class="ybtn ybtn-cancel" data-comment-id="21">Cancel</button><button type="submit" class="ybtn ybtn-info">Save</button></div></div><input type="hidden" name="temporaryUploadFiles" class="temporaryUploadFiles" value=""><div class="preview-21"></div><div class="attachment-files"></div><div id="upload-21" data-resourcetype="NONISSUE_COMMENT" data-resourceid="21"></div></div></form></div>`;
 
@@ -1355,11 +1357,11 @@ test("project board detail matches legacy board/view.scala.html DOM", async ({ p
     "data-toggle",
     "tooltip",
   );
-  await expect(page.locator(".board-actrow > span > button[title='Edit']")).toHaveClass(
-    "icon btn-transparent-with-fontsize-lineheight ml10 pt5px",
+  await expect(page.locator(".board-actrow > span > button[title='Edit']")).not.toHaveClass(
+    /\b(?:ml10|pt5px)\b/u,
   );
-  await expect(page.locator(".right-menu-icons > button[title='Edit']")).toHaveClass(
-    "icon btn-transparent-with-fontsize-lineheight ml10 pt5px",
+  await expect(page.locator(".right-menu-icons > button[title='Edit']")).not.toHaveClass(
+    /\b(?:ml10|pt5px)\b/u,
   );
   await expect(page.locator("#deleteConfirm [data-request-uri]")).toHaveCount(0);
   await expect(page.locator("#deleteConfirm [data-request-method]")).toHaveCount(0);
@@ -1463,12 +1465,8 @@ test("project board detail tooltip plugin markers are not React-owned DOM", asyn
   const sideEditButton = page.locator(".right-menu-icons > button[title='Edit']");
   await expect(topEditButton).not.toHaveAttribute("data-toggle", "tooltip");
   await expect(sideEditButton).not.toHaveAttribute("data-toggle", "tooltip");
-  await expect(topEditButton).toHaveClass(
-    "icon btn-transparent-with-fontsize-lineheight ml10 pt5px",
-  );
-  await expect(sideEditButton).toHaveClass(
-    "icon btn-transparent-with-fontsize-lineheight ml10 pt5px",
-  );
+  await expect(topEditButton).not.toHaveClass(/\b(?:ml10|pt5px)\b/u);
+  await expect(sideEditButton).not.toHaveClass(/\b(?:ml10|pt5px)\b/u);
 
   const routeSource = readFileSync(
     "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
@@ -2008,6 +2006,145 @@ test("project board detail owns the final ml6 delete-action spacing in StyleX", 
       ),
     ).toBe(false);
     await expect(page.locator("#comment-delete-modal")).toBeHidden();
+  }
+});
+
+test("project board detail owns the final edit-action spacing in StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+
+  expect(
+    legacyViewSource.match(/btn-transparent-with-fontsize-lineheight ml10 pt5px/g),
+  ).toHaveLength(4);
+  expect(legacyCommentsSource).toContain('class="btn-transparent ml10"');
+  expect(legacyCommonSource).toMatch(/\.ml10\s*\{\s*margin-left:\s*10px;\s*\}/u);
+  expect(legacyPageSource.match(/\.pt5px\s*\{\s*padding-top:\s*5px;\s*\}/gu)).toHaveLength(2);
+  expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)).toEqual([
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_temporary.less";',
+    '@import "less/_markdown.less";',
+    '@import "less/_migration.less";',
+    '@import "less/_override.less";',
+  ]);
+  expect(styleSource).toMatch(
+    /postEditAction:\s*\{[^}]*marginLeft:\s*"10px"[^}]*paddingTop:\s*"5px"/su,
+  );
+  expect(styleSource).toMatch(/commentEditAction:\s*\{[^}]*marginLeft:\s*"10px"/su);
+  expect(routeSource.match(/data-stylex-owner="post-detail-post-edit-action"/g)).toHaveLength(2);
+  expect(routeSource.match(/data-stylex-owner="post-detail-comment-edit-action"/g)).toHaveLength(1);
+  expect(routeSource).not.toMatch(/className="[^"]*\b(?:ml10|pt5px)\b/u);
+
+  for (const viewport of [
+    { name: "desktop", width: 1366, height: 900 },
+    { name: "mobile", width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const postEdits = page.locator('[data-stylex-owner="post-detail-post-edit-action"]');
+    const commentEdit = page.locator(
+      '#comment-21 [data-stylex-owner="post-detail-comment-edit-action"]',
+    );
+    await expect(postEdits).toHaveCount(2);
+    await expect(commentEdit).toHaveCount(1);
+
+    const geometry = await page.evaluate(() => {
+      const postButtons = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          '[data-stylex-owner="post-detail-post-edit-action"]',
+        ),
+      );
+      const commentButton = document.querySelector<HTMLElement>(
+        '#comment-21 [data-stylex-owner="post-detail-comment-edit-action"]',
+      )!;
+      return [...postButtons, commentButton].map((button) => {
+        const buttonRect = button.getBoundingClientRect();
+        const isComment = button.dataset.stylexOwner === "post-detail-comment-edit-action";
+        const region = isComment
+          ? button.closest<HTMLElement>("li.comment")
+          : (button.closest<HTMLElement>(".span-left-pane") ??
+            button.closest<HTMLElement>(".span-right-pane"));
+        const regionRect = region?.getBoundingClientRect() ?? null;
+        const next = button.nextElementSibling as HTMLElement | null;
+        const nextRect = next?.getBoundingClientRect() ?? null;
+        return {
+          contained:
+            regionRect !== null &&
+            buttonRect.left >= regionRect.left - 0.5 &&
+            buttonRect.right <= regionRect.right + 0.5 &&
+            buttonRect.top >= regionRect.top - 0.5 &&
+            buttonRect.bottom <= regionRect.bottom + 0.5,
+          height: buttonRect.height,
+          marginLeft: getComputedStyle(button).marginLeft,
+          nextIsDelete: next?.getAttribute("title")?.toLowerCase().includes("delete") ?? false,
+          noOverlap: nextRect === null || buttonRect.right <= nextRect.left,
+          paddingTop: getComputedStyle(button).paddingTop,
+          regionHasBox: regionRect !== null && regionRect.width > 0 && regionRect.height > 0,
+          type: isComment
+            ? "comment"
+            : region?.classList.contains("span-left-pane")
+              ? "left"
+              : "right",
+          width: buttonRect.width,
+        };
+      });
+    });
+    expect(geometry).toHaveLength(3);
+    expect(geometry.every(({ marginLeft }) => marginLeft === "10px")).toBe(true);
+    expect(
+      geometry
+        .filter(({ type }) => type !== "comment")
+        .every(({ paddingTop }) => paddingTop === "5px"),
+    ).toBe(true);
+    expect(geometry.every(({ nextIsDelete, noOverlap }) => nextIsDelete && noOverlap)).toBe(true);
+    const visible = geometry.filter(({ type }) => viewport.name === "desktop" || type !== "right");
+    expect(
+      visible.every(
+        ({ contained, height, regionHasBox, width }) =>
+          contained && regionHasBox && height > 0 && width > 0,
+      ),
+    ).toBe(true);
+
+    await postEdits.first().click();
+    await expect(page).toHaveURL(`${basePath}/admin/sample/post/3/editform`);
+    await page.goto(`${basePath}/admin/sample/post/3`);
+    await commentEdit.click();
+    await expect(page.locator("#comment-editform-21")).toBeVisible();
+    await page.locator("#comment-editform-21 .ybtn-cancel").click();
+    await expect(page.locator("#comment-editform-21")).toBeHidden();
   }
 });
 

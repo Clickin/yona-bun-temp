@@ -6303,3 +6303,19 @@ desktop sweep renders both populated screens but records a pre-existing 30px
 upload-area vertical drift and collapse-button paint difference outside this
 spacing-only batch; approved Yoram footer/contact/repository differences are
 not parity gaps.
+
+## Batch 787
+
+Move the authenticated populated board-post detail edit actions into
+route-local StyleX. `board/view.scala.html:114-132,158-176` emits the shared
+post edit/show-original control in the main and sidebar regions, while
+`board/partial_comments.scala.html:44-67` emits the populated comment edit
+control. Frozen `_common.less:206` supplies the exact 10px left margin, and
+the two context rules in `_page.less:2956,3550` supply the post action's exact
+5px top padding through `yobi.less`. Preserve button/icon DOM, titles, order,
+post edit navigation, and comment edit/cancel behavior. Translation controls,
+delete owners, metadata utilities, and the still-shared `.ml10` bridge remain
+excluded. Focused normal/fallback-off Chrome runs pass 1/1 each at 1366px and
+390px. The real paired desktop sweep retains the previously recorded 30px
+upload-area drift and collapse-button paint gap outside this spacing wave;
+approved Yoram identity/link differences remain deviations, not gaps.

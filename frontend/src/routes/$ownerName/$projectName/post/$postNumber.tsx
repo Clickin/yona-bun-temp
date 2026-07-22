@@ -47,7 +47,9 @@ const sx = {
   author: stylex.props(styles.author),
   content: stylex.props(styles.content),
   actions: stylex.props(styles.actions),
+  postEditAction: stylex.props(styles.postEditAction),
   postDeleteAction: stylex.props(styles.postDeleteAction),
+  commentEditAction: stylex.props(styles.commentEditAction),
   commentDeleteAction: stylex.props(styles.commentDeleteAction),
   comments: stylex.props(styles.comments),
   sidebar: stylex.props(styles.sidebar),
@@ -1075,7 +1077,8 @@ function PostActionButtons({
       {canUpdate ? (
         <button
           type="button"
-          className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+          className={`${sx.postEditAction.className} icon btn-transparent-with-fontsize-lineheight`}
+          data-stylex-owner="post-detail-post-edit-action"
           title={t("button.edit")}
           onClick={(event) => {
             event.preventDefault();
@@ -1089,7 +1092,8 @@ function PostActionButtons({
         <Link to={editRoutePath} activeProps={legacyRouteLocalActiveProps}>
           <button
             type="button"
-            className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+            className={`${sx.postEditAction.className} icon btn-transparent-with-fontsize-lineheight`}
+            data-stylex-owner="post-detail-post-edit-action"
             title={t("button.show.original")}
           >
             <i className="yobicon-edit-2"></i>
@@ -1432,8 +1436,9 @@ function PostCommentRow({
             {canUpdate ? (
               <button
                 type="button"
-                className="btn-transparent ml10"
+                className={`${sx.commentEditAction.className} btn-transparent`}
                 data-comment-id={commentId}
+                data-stylex-owner="post-detail-comment-edit-action"
                 title={t("common.comment.edit")}
                 onClick={(event) => {
                   event.preventDefault();

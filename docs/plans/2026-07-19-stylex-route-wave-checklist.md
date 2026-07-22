@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 787 board-post edit-action spacing
+
+- [x] The authenticated populated board-post detail moves both rendered post
+  edit actions' exact `ml10`/`pt5px` declarations and the populated comment
+  edit action's `ml10` declaration to two route-local StyleX owners.
+- [x] Focused system-Chrome runs pass 1/1 in normal and fallback-off modes at
+  1366px and 390px, covering exact margins/padding, three rendered instances,
+  order, containment, no overlap, post edit navigation, and comment edit/cancel.
+- [ ] The fresh paired desktop sweep retains the existing 30px upload-area
+  drift and green-vs-default collapse-button paint difference. The migrated
+  edit controls visually align; approved Yoram identity/link differences stay
+  excluded from parity gaps.
+
 ### 2026-07-22 Batch 786 board-post delete-action spacing
 
 - [x] The authenticated populated board-post detail moves all three rendered
