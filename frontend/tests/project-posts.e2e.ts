@@ -362,7 +362,7 @@ test("project board list tooltip markers are not React-owned DOM", async ({ page
 });
 
 const EMPTY_CHILD_COMMENT_FORM =
-  '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
+  '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>';
 const BOARD_COMMENT_FORM = `<form id="comment-form" action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><div class="write-comment-box"><div class="mt10"><ul class="nav nav-tabs nm small"><li class="active"><button type="button">Edit</button></li><li><button type="button">Preview</button></li><li><div class="task-list-button"><button type="button" class="add-task-list-button ybtn ybtn-small ybtn-danger-no-outline"><i class="yobicon-list task-list-icon"></i> Add checklist</button></div></li><li><div class="editor-clear-temporary"><div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">Clear Temporary</button></div></div></li><li><div class="editor-notice-label"></div></li></ul><div class="tab-content" style="position:relative;overflow:visible">${LEGACY_MARKDOWN_HELP}<div id="edit-contents" class="tab-pane active"><div class="textarea-box"><textarea name="contents" class="editorSeries content comment nm" data-editor-mode="comment-body" markdown="true" id="editor-contents-contents"></textarea></div></div><div id="preview-contents" class="tab-pane"><div class="markdown-preview markdown-wrap comment-body" data-via-email="false"></div></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></div></div><div class="upload-wrap content-footer" data-resource-type="NONISSUE_COMMENT" id="upload"><div class="attach-wrap"><span class="help help-droppable">Drag &amp; Drop files to attach here or</span><div class="btn-wrap"><div class="nbtn medium white fake-file-wrap"><i class="yobicon-upload"></i> File upload<input type="file" class="file" name="filePath" multiple=""></div></div><span class="plain">Click upload button</span><span class="help help-pastable">Paste the clipboard image</span></div><ul class="attached-files unstyled"></ul><p class="right-txt help"><i class="yobicon-supportrequest"></i> Selected file will be attached when your comment is saved.</p></div><div class="write-comment-wrap"><div class="right-txt"><button type="button" class="ybtn hidden" id="dynamic-comment-btn"></button><button type="submit" class="ybtn ybtn-success">Add a comment</button></div></div></div></form>`;
 const BOARD_EDITABLE_LABEL_SELECTOR =
   '<dl class=""><dt>Label <a href="__BASE_PATH__/admin/sample/issue/labelsform" target="_blank" class="label-edit">[Edit]</a></dt><dd><select id="labelIds" name="labelIds" multiple="" data-format="issuelabel" data-allow-clear="true" data-dropdown-css-class="issue-labels" data-container-css-class="issue-labels bordered fullsize" data-placeholder="Select label" class="hide"><option></option><optgroup label="type" data-category-id="3" data-category-is-exclusive="false"><option value="8" data-category-id="3" data-category-is-exclusive="false">bug</option><option value="9" data-category-id="3" data-category-is-exclusive="false">enhancement</option></optgroup><optgroup label="priority" data-category-id="4" data-category-is-exclusive="true"><option value="10" data-category-id="4" data-category-is-exclusive="true">high</option><option value="11" data-category-id="4" data-category-is-exclusive="true">low</option></optgroup></select></dd></dl>';
@@ -379,7 +379,7 @@ const EXPECTED_PROJECT_POST_DETAIL = EXPECTED_PROJECT_POST_DETAIL_RAW.replace(
 
 const EXPECTED_PROJECT_POST_DETAIL_WITH_COMMENT = EXPECTED_PROJECT_POST_DETAIL.replace(
   '<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">0</strong></div><hr class="nm"><ul class="comments"></ul>',
-  `<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row pull-right"><button type="button" class="btn-transparent ml10" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div>${EMPTY_CHILD_COMMENT_FORM}</li></ul>`,
+  `<div class="comment-header"><i class="yobicon-comments"></i> <strong>Comment</strong> <strong class="num">1</strong></div><hr class="nm"><ul class="comments"><li class="comment" id="comment-21"><div class="comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></div><div class="media-body"><div class="meta-info"><span class="comment_author"><span class="resp-comment-avatar"><a href="__BASE_PATH__/dev" class="avatar-wrap"><img src="/assets/images/default-avatar-32.png" width="32" height="32"></a></span><a href="__BASE_PATH__/dev"><strong>Dev Member</strong></a></span><span class="ago-date"><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="ago" title="Jul 3, 2026">Jul 3, 2026</a><a href="__BASE_PATH__/admin/sample/post/3#comment-21" class="share-link" style="display:none">[Link]</a></span><span class="act-row"><button type="button" class="btn-transparent ml10" data-comment-id="21" title="Edit comment"><i class="yobicon-edit-2"></i></button><button type="button" class="btn-transparent ml6" title="Delete comment"><i class="yobicon-trash"></i></button></span></div><div id="comment-body-21"><div class="tasklist"><div class="task-title">Tasks<span class="done-counter"></span></div><div class="task-progress"><div class="bar red" style="width:0px" title="Tasklist"></div></div></div><div class="comment-body markdown-wrap" data-allowed-update="true" data-via-email="false"><p>First <strong>comment</strong></p></div><div class="attachments" data-attachments="[]"></div></div></div>${EMPTY_CHILD_COMMENT_FORM}</li></ul>`,
 )
   .replaceAll(
     'src="/assets/images/default-avatar-32.png" width="32" height="32"',
@@ -406,7 +406,7 @@ const EXPECTED_PROJECT_POST_DETAIL_WITH_CHILD_COMMENT =
     )
     .replace(
       EMPTY_CHILD_COMMENT_FORM,
-      '<div class="add-a-comment pull-right">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
+      '<div class="add-a-comment">Reply</div><div class="subcomment-media-body"><div class="child-comments"><div class="one-line-comment"><div class="contents"><p>Nested <strong>reply</strong></p><span class="subcomment-author hide">- <a href="__BASE_PATH__/admin" class="usf-group"><strong>Site Admin</strong></a> <a href="__BASE_PATH__/admin/sample/post/3#comment-22" class="ago" title="Jul 4, 2026">Jul 4, 2026</a><button type="button" class="btn-transparent deleteButtonX" title="Delete comment">x</button></span></div></div></div><div class="child-comment-input-form"><form action="__BASE_PATH__/admin/sample/post/3/comments" method="post" enctype="multipart/form-data"><input class="parentCommentId" type="hidden" name="parentCommentId" value="21"><div class="oneline-comment-box"><textarea class="editorSeries" name="contents" markdown="true" rows="1" placeholder="Reply (__CTRL_KEY__ + ENTER)"></textarea><button type="submit" class="ybtn ybtn-success">OK</button></div><div class="notification-receiver"><span class="notification-receiver-title">Notification receivers </span><span class="notification-receiver-list"></span></div></form></div></div>',
     );
 
 function expectedProjectPostsEmpty() {
@@ -2148,6 +2148,172 @@ test("project board detail owns the final edit-action spacing in StyleX", async 
   }
 });
 
+test("project board detail owns parent comment action and reply controls in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyChildCommentsSource = readFileSync(
+    "../yona-original/app/views/common/childComments.scala.html",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+
+  expect(legacyCommentsSource).toContain('<span class="act-row pull-right">');
+  expect(legacyChildCommentsSource).toContain(
+    '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
+  );
+  expect(legacyBootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;\s*\}/u);
+  expect(legacyPageSource).toMatch(
+    /\.add-a-comment\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?background-color:\s*#fff;[\s\S]*?position:\s*relative;[\s\S]*?right:\s*10px;[\s\S]*?color:\s*#00b0e8;[\s\S]*?border:\s*1px solid #00b0e8;[\s\S]*?margin-top:\s*-32px;[\s\S]*?padding:\s*0 5px;[\s\S]*?border-radius:\s*3px;[\s\S]*?display:\s*none;[\s\S]*?z-index:\s*2;[\s\S]*?&:hover\s*\{[\s\S]*?box-shadow:\s*1px 1px 2px #e0e0e0;[\s\S]*?cursor:\s*pointer;[\s\S]*?display:\s*block;/u,
+  );
+  expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)).toEqual([
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_temporary.less";',
+    '@import "less/_markdown.less";',
+    '@import "less/_migration.less";',
+    '@import "less/_override.less";',
+  ]);
+  expect(styleSource).toMatch(/commentActionRow:\s*\{\s*float:\s*"right"\s*\}/u);
+  expect(styleSource).toMatch(
+    /childCommentReply:\s*\{[\s\S]*?fontSize:\s*"12px"[\s\S]*?backgroundColor:\s*"#fff"[\s\S]*?position:\s*"relative"[\s\S]*?right:\s*"10px"[\s\S]*?color:\s*"#00b0e8"[\s\S]*?border:\s*"1px solid #00b0e8"[\s\S]*?marginTop:\s*"-32px"[\s\S]*?padding:\s*"0 5px"[\s\S]*?borderRadius:\s*"3px"[\s\S]*?float:\s*"right"[\s\S]*?zIndex:\s*2[\s\S]*?":hover":\s*\{[\s\S]*?boxShadow:\s*"1px 1px 2px #e0e0e0"[\s\S]*?cursor:\s*"pointer"[\s\S]*?display:\s*"block"/u,
+  );
+  expect(styleSource).toMatch(/childCommentReplyHidden:\s*\{\s*display:\s*"none"\s*\}/u);
+  expect(styleSource).toMatch(/childCommentReplyVisible:\s*\{\s*display:\s*"block"\s*\}/u);
+  expect(routeSource.match(/data-stylex-owner="post-detail-comment-action-row"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-stylex-owner="post-detail-child-comment-reply"/g)).toHaveLength(1);
+  expect(routeSource).not.toMatch(/className="act-row pull-right"/u);
+  expect(routeSource).not.toMatch(/className="add-a-comment pull-right"/u);
+  expect(routeSource).not.toMatch(/style=\{|style:\s*\{/u);
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const comment = page.locator("#comment-21");
+    const actionRow = comment.locator('[data-stylex-owner="post-detail-comment-action-row"]');
+    const reply = comment.locator('[data-stylex-owner="post-detail-child-comment-reply"]');
+    const form = comment.locator(".child-comment-input-form");
+    await expect(actionRow).toHaveCount(1);
+    await expect(reply).toHaveCount(1);
+    await expect(reply).toHaveText("Reply");
+    await expect(reply).not.toHaveClass(/\bpull-right\b/u);
+    await expect(actionRow).not.toHaveClass(/\bpull-right\b/u);
+    await expect(reply).toHaveCSS("display", "none");
+
+    await comment.hover();
+    await expect(reply).toHaveCSS("display", "block");
+    const metrics = await comment.evaluate((element) => {
+      const action = element.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-comment-action-row"]',
+      )!;
+      const replyControl = element.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-child-comment-reply"]',
+      )!;
+      const edit = action.querySelector<HTMLElement>('[title="Edit comment"]')!;
+      const remove = action.querySelector<HTMLElement>('[title="Delete comment"]')!;
+      const commentRect = element.getBoundingClientRect();
+      const actionRect = action.getBoundingClientRect();
+      const replyRect = replyControl.getBoundingClientRect();
+      const editRect = edit.getBoundingClientRect();
+      const removeRect = remove.getBoundingClientRect();
+      const replyStyle = getComputedStyle(replyControl);
+      return {
+        actionFloat: getComputedStyle(action).float,
+        actionContained:
+          actionRect.left >= commentRect.left && actionRect.right <= commentRect.right + 0.5,
+        editBeforeDelete: edit.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING,
+        actionsDoNotOverlap: editRect.right <= removeRect.left,
+        replyContained:
+          replyRect.left >= commentRect.left && replyRect.right <= commentRect.right + 0.5,
+        replyFloat: replyStyle.float,
+        replyFontSize: replyStyle.fontSize,
+        replyBackgroundColor: replyStyle.backgroundColor,
+        replyPosition: replyStyle.position,
+        replyRight: replyStyle.right,
+        replyColor: replyStyle.color,
+        replyBorder: replyStyle.border,
+        replyMarginTop: replyStyle.marginTop,
+        replyPadding: replyStyle.padding,
+        replyBorderRadius: replyStyle.borderRadius,
+        replyDisplay: replyStyle.display,
+        replyZIndex: replyStyle.zIndex,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(metrics).toMatchObject({
+      actionFloat: "right",
+      actionContained: true,
+      actionsDoNotOverlap: true,
+      replyContained: true,
+      replyFloat: "right",
+      replyFontSize: "12px",
+      replyBackgroundColor: "rgb(255, 255, 255)",
+      replyPosition: "relative",
+      replyRight: "10px",
+      replyColor: "rgb(0, 176, 232)",
+      replyBorder: "1px solid rgb(0, 176, 232)",
+      replyMarginTop: "-32px",
+      replyPadding: "0px 5px",
+      replyBorderRadius: "3px",
+      replyDisplay: "block",
+      replyZIndex: "2",
+    });
+    expect(metrics.editBeforeDelete).toBeTruthy();
+    expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+
+    await reply.hover();
+    await expect(reply).toHaveCSS("cursor", "pointer");
+    await expect(reply).toHaveCSS("box-shadow", "rgb(224, 224, 224) 1px 1px 2px 0px");
+    await page.mouse.move(1, 1);
+    await expect(reply).toHaveCSS("display", "none");
+
+    await comment.hover();
+    await reply.click();
+    await expect(form).toBeVisible();
+    await expect(form.locator("textarea[name='contents']")).toBeFocused();
+    await expect(form.locator(".parentCommentId")).toHaveValue("21");
+    await expect(form.locator("button[type='submit']")).toHaveText("OK");
+    await reply.click();
+    await expect(form).toBeHidden();
+  }
+});
+
 test("project board detail submits legacy comment form through REST", async ({ page }) => {
   const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
   const { commentCreateRequests } = await mockProjectPosts(page);
@@ -3336,9 +3502,7 @@ test("project board detail renders legacy comment update form", async ({ page })
   );
   expect(commentToggleSource).toContain("setEditingCommentId((currentCommentId)");
   expect(commentToggleSource).toContain("event.stopPropagation();");
-  expect(commentToggleSource).toContain(
-    'className="add-a-comment pull-right" hidden={hideReplyPrompt}',
-  );
+  expect(commentToggleSource).toContain('data-stylex-owner="post-detail-child-comment-reply"');
   expect(commentToggleSource).toContain('t("notification.receiver.list.title")');
   expect(commentToggleSource).not.toContain("Notification receivers ");
   expect(commentToggleSource).not.toContain("document.");
@@ -3600,7 +3764,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     };
   });
   expect(childCommentMetrics).toEqual({
-    replyClassName: "add-a-comment pull-right",
+    replyClassName: expect.stringContaining("add-a-comment"),
     replyText: "Reply",
     replyDisplay: "none",
     replyPosition: "relative",

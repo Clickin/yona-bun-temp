@@ -6319,3 +6319,20 @@ excluded. Focused normal/fallback-off Chrome runs pass 1/1 each at 1366px and
 390px. The real paired desktop sweep retains the previously recorded 30px
 upload-area drift and collapse-button paint gap outside this spacing wave;
 approved Yoram identity/link differences remain deviations, not gaps.
+
+## Batch 788
+
+Move the populated board-post comment controls' remaining visible fallback
+declarations into route-local StyleX. `board/partial_comments.scala.html:44-67`
+emits the parent `act-row pull-right`, and included
+`common/childComments.scala.html:62-77` emits the child Reply affordance and
+form. Frozen Bootstrap `bootstrap.css:6093-6095` supplies both right floats;
+frozen `_page.less:3049-3066` supplies the Reply font, surface, position,
+spacing, radius, hidden/hover paint, cursor, and stacking through `yobi.less`.
+Preserve comment actions, Reply copy/order, parent hover visibility, click-to-
+open child form, and textarea focus using React state. Existing edit/delete
+spacing, child form internals, metadata, keymap, and shared fallback remain
+excluded. Explicit system-Chrome normal/fallback-off runs pass 1/1 each at
+1366px and 390px. The real paired desktop sweep retains the existing 30px
+upload drift and collapse-button paint gap outside this wave; approved Yoram
+identity/link differences remain deviations.

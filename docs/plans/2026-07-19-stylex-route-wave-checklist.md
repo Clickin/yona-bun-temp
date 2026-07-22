@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 788 board-post comment action/reply controls
+
+- [x] The populated parent-comment action row now owns frozen Bootstrap
+  `float:right`, while the child Reply affordance owns its frozen float and
+  complete `_page.less` paint/geometry/hover declarations through route-local
+  StyleX. React state translates legacy hover and reply-form behavior.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px, covering hidden/hover-visible/click states, exact computed
+  declarations, containment, action ordering, form visibility, and focus.
+- [ ] The fresh paired desktop sweep retains the known 30px upload-area drift
+  and green-vs-default collapse-button paint gap. Approved Yoram identity/link
+  differences remain excluded from parity gaps.
+
 ### 2026-07-22 Batch 787 board-post edit-action spacing
 
 - [x] The authenticated populated board-post detail moves both rendered post

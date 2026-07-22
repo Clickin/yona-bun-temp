@@ -51,6 +51,7 @@ const sx = {
   postDeleteAction: stylex.props(styles.postDeleteAction),
   commentEditAction: stylex.props(styles.commentEditAction),
   commentDeleteAction: stylex.props(styles.commentDeleteAction),
+  commentActionRow: stylex.props(styles.commentActionRow),
   comments: stylex.props(styles.comments),
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
@@ -1355,6 +1356,8 @@ function PostCommentRow({
   const viaEmail = booleanField(comment.viaEmail);
   const hasRouteOwnedOriginalMessage =
     viaEmail && splitOriginalMessageMarkdown(comment.contentsMarkdown) !== null;
+  const [replyVisible, setReplyVisible] = useState(false);
+  const [childFormOpen, setChildFormOpen] = useState(false);
 
   useEffect(() => {
     if (hash !== `comment-${commentId}`) {
@@ -1368,7 +1371,17 @@ function PostCommentRow({
   }, [commentId, hash]);
 
   return (
-    <li className="comment" id={`comment-${commentId}`} ref={commentRef}>
+    <li
+      className="comment"
+      id={`comment-${commentId}`}
+      ref={commentRef}
+      onMouseEnter={() => setReplyVisible(true)}
+      onMouseLeave={() => {
+        if (!childFormOpen) {
+          setReplyVisible(false);
+        }
+      }}
+    >
       {childComments.map((childComment) => (
         <div
           id={`comment-${stringField(childComment.id)}`}
@@ -1432,7 +1445,10 @@ function PostCommentRow({
               [Link]
             </Link>
           </span>
-          <span className="act-row pull-right">
+          <span
+            className={`${sx.commentActionRow.className} act-row`}
+            data-stylex-owner="post-detail-comment-action-row"
+          >
             {canUpdate ? (
               <button
                 type="button"
@@ -1506,11 +1522,17 @@ function PostCommentRow({
         canDelete={canDelete}
         childComments={childComments}
         hideReplyPrompt={editingCommentId !== null}
+        formOpen={childFormOpen}
         onCommentDeleteRequest={onCommentDeleteRequest}
         ownerName={ownerName}
         parentCommentId={commentId}
         postNumber={postNumber}
         projectName={projectName}
+        replyVisible={replyVisible}
+        toggleForm={() => {
+          setChildFormOpen((current) => !current);
+          setReplyVisible(true);
+        }}
       />
     </li>
   );
@@ -1691,24 +1713,31 @@ function PostChildComments({
   canDelete,
   childComments,
   hideReplyPrompt,
+  formOpen,
   onCommentDeleteRequest,
   ownerName,
   parentCommentId,
   postNumber,
   projectName,
+  replyVisible,
+  toggleForm,
 }: {
   basePath: string;
   canComment: boolean;
   canDelete: boolean;
   childComments: BoardPostComment[];
   hideReplyPrompt: boolean;
+  formOpen: boolean;
   onCommentDeleteRequest: (commentId: string) => void;
   ownerName: string;
   parentCommentId: string;
   postNumber: string;
   projectName: string;
+  replyVisible: boolean;
+  toggleForm: () => void;
 }) {
   const { t } = useLegacyMessages();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   if (!childComments.length && !canComment) {
     return null;
@@ -1716,7 +1745,24 @@ function PostChildComments({
 
   return (
     <>
-      <div className="add-a-comment pull-right" hidden={hideReplyPrompt}>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div
+        className={`${
+          stylex.props(
+            styles.childCommentReply,
+            replyVisible && !hideReplyPrompt
+              ? styles.childCommentReplyVisible
+              : styles.childCommentReplyHidden,
+          ).className
+        } add-a-comment`}
+        data-stylex-owner="post-detail-child-comment-reply"
+        onClick={() => {
+          toggleForm();
+          if (!formOpen) {
+            requestAnimationFrame(() => textareaRef.current?.focus());
+          }
+        }}
+      >
         {t("comment.oneline.comment.placeholder")}
       </div>
       <div className="subcomment-media-body">
@@ -1731,7 +1777,13 @@ function PostChildComments({
           ))}
         </div>
         {canComment ? (
-          <div className="child-comment-input-form">
+          <div
+            className={
+              formOpen
+                ? `${stylex.props(styles.childCommentFormVisible).className} child-comment-input-form`
+                : "child-comment-input-form"
+            }
+          >
             <form
               action={prefixBasePath(
                 basePath,
@@ -1748,6 +1800,7 @@ function PostChildComments({
               />
               <div className="oneline-comment-box">
                 <textarea
+                  ref={textareaRef}
                   className="editorSeries"
                   name="contents"
                   {...{ markdown: "true" }}
