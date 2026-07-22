@@ -6,6 +6,8 @@ export const pullRequestChangesColors = stylex.defineVars({
   meta: "#999",
   accent: "#49afcd",
   commitHash: "#5DBBE0",
+  threadOpen: "#b6da54",
+  threadClosed: "#fd6956",
 });
 export const styles = stylex.create({
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
@@ -48,4 +50,66 @@ export const styles = stylex.create({
   commentDeleteModalVisible: { display: "block" },
   pendingBlockVisible: { display: "block" },
   pendingBlockPosition: (top: number, left: number) => ({ top, left }),
+  rangedThreadWrap: {
+    backgroundColor: "#fefefe",
+    borderBottom: "1px solid #e5e5e5",
+    borderTop: "1px solid #e5e5e5",
+    maxWidth: 876,
+    padding: "5px 5px 0",
+    position: "relative",
+  },
+  rangedThreadOpen: {
+    boxShadow: `inset 5px 0 0 ${pullRequestChangesColors.threadOpen}`,
+  },
+  rangedThreadClosed: {
+    boxShadow: `inset 5px 0 0 ${pullRequestChangesColors.threadClosed}`,
+  },
+  rangedThreadClosedFold: {
+    backgroundColor: "transparent",
+    border: 0,
+    boxShadow: "none",
+    margin: 0,
+    padding: 0,
+    position: "static",
+  },
+  rangedThreadHeader: {
+    padding: "5px 10px 10px",
+  },
+  rangedThreadBadge: {
+    margin: 0,
+    padding: "2px 10px",
+  },
+  rangedThreadMinimize: {
+    position: "absolute",
+    right: 10,
+    top: 8,
+  },
+  rangedThreadFoldHere: {
+    display: "block",
+    marginTop: 0,
+    position: "absolute",
+    right: 0,
+    zIndex: 99,
+  },
+  rangedThreadFoldHereOpen: {
+    borderLeft: `3px solid ${pullRequestChangesColors.threadOpen}`,
+    borderLeftColor: pullRequestChangesColors.threadOpen,
+    borderLeftStyle: "solid",
+    borderLeftWidth: 3,
+  },
+  rangedThreadFoldHereClosed: {
+    borderLeft: `3px solid ${pullRequestChangesColors.threadClosed}`,
+    borderLeftColor: pullRequestChangesColors.threadClosed,
+    borderLeftStyle: "solid",
+    borderLeftWidth: 3,
+  },
+  rangedThreadFoldHiddenHeader: {
+    display: "none",
+  },
+  rangedThreadFoldHiddenComments: {
+    display: "none",
+  },
+  rangedThreadFoldHiddenForm: {
+    display: "none",
+  },
 });

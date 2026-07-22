@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 821 PR changes ranged review-thread shell/header/fold
+
+- [x] Legacy partial_comment_thread.scala.html ranged shell/header/fold DOM and _page.less:6049-6132/_variables.less:100-101 declarations are mapped; legacy JS is behavior evidence only.
+- [x] React owns open/closed fold state and seven route-local StyleX owners preserve shell, state shadow, header/badge, minimize, folded here control, and hidden subtree declarations; shared fallback and non-ranged consumers remain intact.
+- [x] Focused normal/fallback-off system-Chrome tests pass 3/3 each with source proof, owner isolation, open/closed interaction, computed declarations, desktop screenshots, and 390px diff-scrollport containment/no-document-overflow metrics.
+- [x] Local screenshots under frontend/output/playwright/batch-821/ were visually inspected, including open, folded-open, and closed-folded states.
+- [ ] Populated live legacy screenshot parity remains unverified because 127.0.0.1:9000 was unavailable during this turn; retain this explicit gap and do not claim live legacy visual parity.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-22 Batch 820 user-files populated pagination
 
 - [x] Legacy `userFiles.scala.html` pagination placeholder, `_common.less` pagination cascade, `_sprites.less` prev/next geometry, and responsive page-number offset are mapped.

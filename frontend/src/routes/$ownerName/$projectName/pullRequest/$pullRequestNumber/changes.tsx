@@ -1154,12 +1154,35 @@ function InlineThread({
   const { t } = useLegacyMessages();
   const state = thread.state.toLowerCase();
   const isClosed = state === "closed";
+  const [isFolded, setIsFolded] = useState(() => isClosed);
+  const threadShellProps = stylex.props(
+    styles.rangedThreadWrap,
+    state === "closed" ? styles.rangedThreadClosed : styles.rangedThreadOpen,
+    isFolded && styles.rangedThreadClosedFold,
+  );
+  const threadFoldHereProps = stylex.props(isFolded && styles.rangedThreadFoldHere);
+  const threadFoldButtonProps = stylex.props(
+    isFolded
+      ? state === "closed"
+        ? styles.rangedThreadFoldHereClosed
+        : styles.rangedThreadFoldHereOpen
+      : null,
+  );
+  const threadFoldHiddenHeaderProps = stylex.props(isFolded && styles.rangedThreadFoldHiddenHeader);
+  const threadFoldHiddenCommentsProps = stylex.props(
+    isFolded && styles.rangedThreadFoldHiddenComments,
+  );
+  const threadFoldHiddenFormProps = stylex.props(isFolded && styles.rangedThreadFoldHiddenForm);
+  const toggleFold = () => setIsFolded((current) => !current);
 
   return (
     <div
       id={`thread-${thread.id}`}
       data-state={state}
-      className={`comment-thread-wrap ${state}${isClosed ? " fold" : ""}`}
+      {...threadShellProps}
+      className={`${threadShellProps.className ?? ""} comment-thread-wrap ${state}${isFolded ? " fold" : ""}`}
+      data-stylex-owner="pull-request-changes-ranged-thread-shell"
+      data-thread-folded={isFolded ? "true" : "false"}
       data-range-path={thread.path}
       data-range-startside={thread.startSide}
       data-range-startline={thread.startLine}
@@ -1168,18 +1191,48 @@ function InlineThread({
       data-range-endline={thread.endLine}
       data-range-endcolumn="0"
     >
-      <div className="btn-thread-here btn-thread-minimize">
-        <button type="button" className="ybtn ybtn-default ybtn-small">
+      <div
+        {...threadFoldHereProps}
+        className={`${threadFoldHereProps.className ?? ""} btn-thread-here btn-thread-minimize`}
+        data-stylex-owner="pull-request-changes-ranged-thread-fold-here"
+      >
+        <button
+          type="button"
+          {...threadFoldButtonProps}
+          className={`${threadFoldButtonProps.className ?? ""} ybtn ybtn-default ybtn-small`}
+          onClick={toggleFold}
+        >
           <i className="yobicon-post2"></i>
         </button>
       </div>
-      <div className="thread-header">
-        <span className={`badge state ${state}`}>{t(`issue.state.${state}`)}</span>
-        <button type="button" className="ybtn ybtn-default ybtn-small btn-thread-minimize">
+      <div
+        {...threadFoldHiddenHeaderProps}
+        className={`${threadFoldHiddenHeaderProps.className ?? ""} thread-header`}
+        data-stylex-owner="pull-request-changes-ranged-thread-header"
+      >
+        <span
+          {...stylex.props(styles.rangedThreadBadge)}
+          className={`${stylex.props(styles.rangedThreadBadge).className ?? ""} badge state ${state}`}
+          data-stylex-owner="pull-request-changes-ranged-thread-badge"
+        >
+          {t(`issue.state.${state}`)}
+        </span>
+        <button
+          {...stylex.props(styles.rangedThreadMinimize)}
+          {...threadFoldHiddenHeaderProps}
+          type="button"
+          className={`${stylex.props(styles.rangedThreadMinimize).className ?? ""} ${threadFoldHiddenHeaderProps.className ?? ""} ybtn ybtn-default ybtn-small btn-thread-minimize`}
+          onClick={toggleFold}
+          data-stylex-owner="pull-request-changes-ranged-thread-minimize"
+        >
           <i className="yobicon-maximize"></i>
         </button>
       </div>
-      <ul className="comments">
+      <ul
+        {...threadFoldHiddenCommentsProps}
+        className={`${threadFoldHiddenCommentsProps.className ?? ""} comments`}
+        data-stylex-owner="pull-request-changes-ranged-thread-comments"
+      >
         {thread.comments.map((comment) => (
           <NonRangedThreadComment
             comment={comment}
@@ -1189,7 +1242,11 @@ function InlineThread({
           />
         ))}
       </ul>
-      <div className="write-comment-form">
+      <div
+        {...threadFoldHiddenFormProps}
+        className={`${threadFoldHiddenFormProps.className ?? ""} write-comment-form`}
+        data-stylex-owner="pull-request-changes-ranged-thread-form"
+      >
         <form
           action={pullRequestCommentHref(runtimeConfig.basePath, pullRequest, thread.commitId)}
           method="post"
