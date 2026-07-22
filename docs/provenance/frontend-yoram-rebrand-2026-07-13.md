@@ -3,6 +3,16 @@
 Status: Phase 2 complete; intentional identity deviation retained
 Date: 2026-07-13
 
+## Owner confirmation — 2026-07-22
+
+The project owner has explicitly reconfirmed that the footer diff is intentional:
+the `NAVER`, `NAVER LABS`, `NAVER CLOUD PLATFORM`, upstream Yona repository URL,
+and legacy developer-contact entries are unrelated to Yoram and were deliberately
+removed or replaced by the owner. This is approved product copy, not an agent
+omission or an unfinished parity task. Screenshot and DOM parity reviews must
+preserve this diff and must not restore those entries or create compensating
+spacing for them.
+
 ## Approved identity
 
 The Yoram project owner explicitly made these footer/contact/repository changes;
