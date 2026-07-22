@@ -6364,3 +6364,21 @@ open/confirm/Escape behavior; action container, footer shell, modal internals,
 and unrelated pull utilities remain excluded. Explicit system-Chrome normal/
 fallback-off runs pass 1/1 each at 1366px and 390px. Fresh paired screenshots
 confirm both positions and retain known screen gaps outside this wave.
+
+## Batch 791
+
+Close the authenticated populated board-post comment editor's 30px upload
+boundary drift without an offset. `board/view.scala.html:133-139` includes
+`common/commentForm.scala.html`, whose `common/editor.scala.html:48-65`
+renders `.tab-content` before `common/uploadForm.scala.html`. Frozen Bootstrap
+`bootstrap.css:4203-4211` hides inactive direct `.tab-pane` children and shows
+the active pane. The React prop order had overwritten `tab-content`, leaving
+the inactive preview's 30px border/padding in flow. Preserve the legacy class,
+move exact pane display state to two route-local StyleX owners, and retain
+React Preview/Edit behavior. Explicit system-Chrome normal/fallback-off runs
+pass 1/1 each at 1366px and 390px. Fresh paired metrics move local upload y
+from 1009 to 977 versus legacy 979, closing this gap; fresh standalone Vite
+renders without overlay or console errors. The separate collapse-button paint
+and navbar-search x-position differences remain goal gaps. User-approved Yoram
+footer/contact/repository identity differences remain intentional deviations
+and must not be restored.

@@ -2,10 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import * as stylex from "@stylexjs/stylex";
 import {
+  Children,
+  cloneElement,
   Fragment,
+  isValidElement,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -1914,6 +1918,14 @@ function MarkdownEditor({
     event.stopPropagation();
     setActiveMode(mode);
   };
+  const editPaneStyle = stylex.props(
+    styles.editorPane,
+    activeMode === "edit" && styles.editorPaneActive,
+  );
+  const previewPaneStyle = stylex.props(
+    styles.editorPane,
+    activeMode === "preview" && styles.editorPaneActive,
+  );
 
   return (
     <div className="mt10">
@@ -1956,12 +1968,17 @@ function MarkdownEditor({
         </li>
       </ul>
       <div
-        className="tab-content"
         {...sx.editorTabContent}
+        className={`${sx.editorTabContent.className} tab-content`}
         data-stylex-owner="post-detail-editor-tab-content"
       >
-        <LegacyMarkdownHelp />
-        <div id={`edit-${wrapId}`} className={`tab-pane${activeMode === "edit" ? " active" : ""}`}>
+        <PostDetailMarkdownHelp />
+        <div
+          {...editPaneStyle}
+          id={`edit-${wrapId}`}
+          className={`${editPaneStyle.className} tab-pane${activeMode === "edit" ? " active" : ""}`}
+          data-stylex-owner="post-detail-editor-pane"
+        >
           <div className="textarea-box">
             <textarea
               name={name}
@@ -1975,8 +1992,10 @@ function MarkdownEditor({
           </div>
         </div>
         <div
+          {...previewPaneStyle}
           id={`preview-${wrapId}`}
-          className={`tab-pane${activeMode === "preview" ? " active" : ""}`}
+          className={`${previewPaneStyle.className} tab-pane${activeMode === "preview" ? " active" : ""}`}
+          data-stylex-owner="post-detail-editor-pane"
         >
           <div className={`markdown-preview markdown-wrap ${editorMode}`} data-via-email="false">
             {activeMode === "preview" ? (
@@ -1992,6 +2011,22 @@ function MarkdownEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+function PostDetailMarkdownHelp() {
+  const markdownHelp = LegacyMarkdownHelp();
+  if (!isValidElement<{ children?: ReactNode }>(markdownHelp)) return markdownHelp;
+
+  const [nav, ...content] = Children.toArray(markdownHelp.props.children);
+  if (!isValidElement<{ children?: ReactNode }>(nav)) return markdownHelp;
+
+  const spacedNavItems = Children.toArray(nav.props.children).flatMap((item) => [item, " "]);
+  return cloneElement(
+    markdownHelp,
+    undefined,
+    cloneElement(nav, undefined, spacedNavItems),
+    content,
   );
 }
 

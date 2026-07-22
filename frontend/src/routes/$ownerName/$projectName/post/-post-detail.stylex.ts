@@ -108,6 +108,8 @@ export const styles = stylex.create({
     padding: "4px 12px",
   },
   editorTabContent: { overflow: "visible", position: "relative" },
+  editorPane: { display: "none" },
+  editorPaneActive: { display: "block" },
   originalMessageToggle: {
     borderStyle: "none",
     borderWidth: 0,

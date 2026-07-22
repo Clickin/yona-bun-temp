@@ -4,6 +4,21 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 791 board-post editor/upload boundary
+
+- [x] The populated comment editor preserves the legacy `tab-content` class
+  while route-local StyleX owns Bootstrap's exact inactive/active pane
+  `display:none`/`display:block` declarations; no compensating offset was
+  added.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px, covering source ownership, computed pane state, editor/upload
+  contact, containment, and Preview/Edit interaction.
+- [x] The former 30px upload drift is closed: the fresh paired measurement
+  moved local upload y from 1009 to 977 versus legacy 979. Fresh standalone
+  Vite/system-Chrome rendering has no overlay or console error. The separate
+  collapse-button paint difference and navbar search x-position drift remain
+  goal gaps; approved Yoram identity/link deviations remain excluded.
+
 ### 2026-07-22 Batch 790 board-post body/footer left floats
 
 - [x] The body Watch group and footer keymap wrapper now own exact frozen

@@ -2488,6 +2488,135 @@ test("project board-post body and footer own their left floats in StyleX", async
   }
 });
 
+test("project board-post comment editor meets its upload boundary", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyEditorSource = readFileSync(
+    "../yona-original/app/views/common/editor.scala.html",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+
+  expect(legacyEditorSource).toContain(
+    '<div class="tab-content" style="position:relative;overflow: visible;">',
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /\.tab-content > \.tab-pane,[\s\S]*?\{\s*display:\s*none;\s*\}/u,
+  );
+  expect(legacyBootstrapSource).toMatch(
+    /\.tab-content > \.active,[\s\S]*?\{\s*display:\s*block;\s*\}/u,
+  );
+  expect(styleSource).toMatch(
+    /editorTabContent:\s*\{\s*overflow:\s*"visible",\s*position:\s*"relative"\s*\}/u,
+  );
+  expect(styleSource).toMatch(/editorPane:\s*\{\s*display:\s*"none"\s*\}/u);
+  expect(styleSource).toMatch(/editorPaneActive:\s*\{\s*display:\s*"block"\s*\}/u);
+  expect(routeSource).toContain("className={`${sx.editorTabContent.className} tab-content`}");
+  expect(routeSource.match(/data-stylex-owner="post-detail-editor-tab-content"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-stylex-owner="post-detail-editor-pane"/g)).toHaveLength(2);
+  expect(routeSource).toContain(
+    'Children.toArray(nav.props.children).flatMap((item) => [item, " "])',
+  );
+  expect(routeSource).not.toMatch(/className="tab-content"\s*\{\.\.\.sx\.editorTabContent\}/u);
+  const editorSource = routeSource.slice(
+    routeSource.indexOf("function MarkdownEditor("),
+    routeSource.indexOf("function MarkdownEditor(") + 7_000,
+  );
+  expect(editorSource).not.toMatch(/style=|margin(?:Top|Bottom):\s*-|transform:/u);
+
+  for (const viewport of [
+    { height: 900, markdownHelpHeight: 31, width: 1366 },
+    { height: 844, markdownHelpHeight: 91, width: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "language", { configurable: true, value: "ko-KR" });
+      Object.defineProperty(navigator, "languages", {
+        configurable: true,
+        value: ["ko-KR"],
+      });
+    });
+    await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const commentForm = page.locator("#comment-form:has(#upload)");
+    const editPane = commentForm.locator("#edit-contents");
+    const previewPane = commentForm.locator("#preview-contents");
+    const textarea = commentForm.locator("textarea.editorSeries");
+    const metrics = await commentForm.evaluate((form) => {
+      const measure = (selector: string) => {
+        const element = form.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing ${selector}`);
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          bottom: rect.bottom,
+          display: style.display,
+          height: rect.height,
+          left: rect.left,
+          overflow: style.overflow,
+          position: style.position,
+          right: rect.right,
+          top: rect.top,
+        };
+      };
+      return {
+        editPane: measure("#edit-contents"),
+        editor: measure(".write-comment-box > .mt10"),
+        help: measure(".markdown-help"),
+        previewPane: measure("#preview-contents"),
+        tabContent: measure(".tab-content"),
+        textarea: measure("textarea.editorSeries"),
+        upload: measure("#upload"),
+      };
+    });
+
+    expect(metrics.tabContent).toMatchObject({ overflow: "visible", position: "relative" });
+    expect(metrics.editPane.display).toBe("block");
+    expect(metrics.previewPane.display).toBe("none");
+    expect(metrics.previewPane.height).toBe(0);
+    expect(metrics.help.height).toBeCloseTo(viewport.markdownHelpHeight, 1);
+    expect(metrics.editor.bottom).toBeCloseTo(metrics.upload.top, 5);
+    expect(metrics.editor.left).toBeLessThanOrEqual(metrics.upload.left);
+    expect(metrics.editor.right).toBeGreaterThanOrEqual(metrics.upload.right);
+    expect(metrics.editPane.bottom).toBeCloseTo(metrics.upload.top, 5);
+    expect(metrics.textarea.bottom).toBeLessThanOrEqual(metrics.upload.top);
+    expect(metrics.tabContent.bottom).toBeCloseTo(metrics.upload.top, 5);
+    expect(metrics.upload.top).toBeGreaterThanOrEqual(metrics.editor.top);
+
+    await textarea.fill("Boundary **preview**");
+    await commentForm.locator('.nav-tabs a[href$="#preview-contents"]').click();
+    await expect(editPane).toHaveCSS("display", "none");
+    await expect(previewPane).toHaveCSS("display", "block");
+    await expect(previewPane.locator(".markdown-preview")).toBeVisible();
+    await expect(previewPane.locator("strong")).toHaveText("preview");
+    await commentForm.locator('.nav-tabs a[href$="#edit-contents"]').click();
+    await expect(editPane).toHaveCSS("display", "block");
+    await expect(previewPane).toHaveCSS("display", "none");
+    await expect(textarea).toHaveValue("Boundary **preview**");
+
+    const restoredBoundary = await commentForm.evaluate((form) => {
+      const editor = form.querySelector<HTMLElement>(".write-comment-box > .mt10")!;
+      const upload = form.querySelector<HTMLElement>("#upload")!;
+      return {
+        editorBottom: editor.getBoundingClientRect().bottom,
+        uploadTop: upload.getBoundingClientRect().top,
+      };
+    });
+    expect(restoredBoundary.editorBottom).toBeCloseTo(restoredBoundary.uploadTop, 5);
+  }
+});
+
 test("project board detail owns parent comment action and reply controls in StyleX", async ({
   page,
 }) => {
