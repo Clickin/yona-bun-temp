@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 816 board-post child rich Markdown
+
+- [x] Five child-only owners cover mention/issue links, open issue-state badge,
+  blockquote, and blockquote paragraph while preserving Batch 814/815 output.
+- [x] Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 with AST
+  auto-link DOM, navigation, hover, desktop/390px geometry, and no overflow.
+- [x] Fresh fallback-off desktop/mobile screenshots were inspected. The 5px
+  quote border, blue links, green Open badge, and separate metadata paragraph
+  render correctly; approved Yoram footer/contact/repository drift is excluded.
+
 ### 2026-07-22 Batch 815 board-post child metadata placement
 
 - [x] Six owners reproduce the legacy post-script output: closed/open child

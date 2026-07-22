@@ -80,6 +80,11 @@ const sx = {
   childCommentAuthorLink: stylex.props(styles.childCommentAuthorLink),
   childCommentAuthorStrong: stylex.props(styles.childCommentAuthorStrong),
   childCommentAgoLink: stylex.props(styles.childCommentAgoLink),
+  childCommentNoTextDecoration: stylex.props(styles.childCommentNoTextDecoration),
+  childCommentIssueLink: stylex.props(styles.childCommentIssueLink),
+  childCommentIssueStateOpen: stylex.props(styles.childCommentIssueStateOpen),
+  childCommentBlockquote: stylex.props(styles.childCommentBlockquote),
+  childCommentBlockquoteParagraph: stylex.props(styles.childCommentBlockquoteParagraph),
   commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
@@ -2124,6 +2129,7 @@ function PostChildComment({
   const commentId = stringField(comment.id);
   const authorLoginId = stringField(comment.authorLoginId);
   const authorLabel = stringField(comment.authorLabel, authorLoginId);
+  const markdownAutoLinkPlugin = createChildCommentMarkdownAutoLinkPlugin(comment);
   const metadata = (
     <>
       -{" "}
@@ -2176,10 +2182,25 @@ function PostChildComment({
   );
   const components: Components = {
     p: ({ children, node: _node, ...props }) => {
-      const { [CHILD_COMMENT_METADATA_ATTRIBUTE]: metadataPlacement, ...paragraphProps } =
-        props as Record<string, unknown>;
+      const {
+        [CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE]: blockquoteParagraph,
+        [CHILD_COMMENT_METADATA_ATTRIBUTE]: metadataPlacement,
+        ...paragraphProps
+      } = props as Record<string, unknown>;
       if (metadataPlacement === "root") {
         return metadata;
+      }
+      if (blockquoteParagraph === "true") {
+        return (
+          <p
+            {...paragraphProps}
+            {...sx.childCommentBlockquoteParagraph}
+            data-stylex-owner="post-detail-child-comment-blockquote-paragraph"
+          >
+            {children}
+            {metadataPlacement === "paragraph" ? metadata : null}
+          </p>
+        );
       }
       return (
         <p
@@ -2201,6 +2222,77 @@ function PostChildComment({
         {children}
       </strong>
     ),
+    span: ({ children, className, node: _node, ...props }) => {
+      if (className === "issue-state open") {
+        return (
+          <span
+            {...props}
+            {...sx.childCommentIssueStateOpen}
+            className={`${sx.childCommentIssueStateOpen.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-issue-state-open"
+          >
+            {children}
+          </span>
+        );
+      }
+      return (
+        <span {...props} className={className}>
+          {children}
+        </span>
+      );
+    },
+    a: ({ children, className, href, node: _node, ...props }) => {
+      if (!href) return <>{children}</>;
+      const issueLink = className?.split(" ").includes("issueLink") ?? false;
+      const noTextDecoration = className?.split(" ").includes("no-text-decoration") ?? false;
+      if (issueLink) {
+        return (
+          <Link
+            {...props}
+            {...sx.childCommentIssueLink}
+            to={href as "/"}
+            className={`${sx.childCommentIssueLink.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-issue-link"
+            activeProps={legacyRouteLocalActiveProps}
+          >
+            {children}
+          </Link>
+        );
+      }
+      if (noTextDecoration) {
+        return (
+          <Link
+            {...props}
+            {...sx.childCommentNoTextDecoration}
+            to={href as "/"}
+            className={`${sx.childCommentNoTextDecoration.className} ${className}`}
+            data-stylex-owner="post-detail-child-comment-no-text-decoration"
+            activeProps={legacyRouteLocalActiveProps}
+          >
+            {children}
+          </Link>
+        );
+      }
+      return (
+        <Link
+          {...props}
+          to={href as "/"}
+          className={className}
+          activeProps={legacyRouteLocalActiveProps}
+        >
+          {children}
+        </Link>
+      );
+    },
+    blockquote: ({ children, node: _node, ...props }) => (
+      <blockquote
+        {...props}
+        {...sx.childCommentBlockquote}
+        data-stylex-owner="post-detail-child-comment-blockquote"
+      >
+        {children}
+      </blockquote>
+    ),
   };
   return (
     <div className="one-line-comment">
@@ -2211,7 +2303,7 @@ function PostChildComment({
       >
         <ReactMarkdown
           components={components}
-          remarkPlugins={[remarkGfm, remarkChildCommentMetadata]}
+          remarkPlugins={[remarkGfm, markdownAutoLinkPlugin, remarkChildCommentMetadata]}
         >
           {comment.contentsMarkdown}
         </ReactMarkdown>
@@ -2221,19 +2313,150 @@ function PostChildComment({
 }
 
 const CHILD_COMMENT_METADATA_ATTRIBUTE = "data-child-comment-metadata";
+const CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE = "data-child-comment-blockquote-paragraph";
 
 type ChildCommentMarkdownNode = {
   children?: ChildCommentMarkdownNode[];
-  data?: { hProperties?: Record<string, string> };
+  data?: { hName?: string; hProperties?: Record<string, unknown> };
   type: string;
+  url?: string;
+  value?: string;
 };
+
+type ChildCommentMarkdownReplacement = {
+  children: ChildCommentMarkdownNode[];
+  className: string[];
+  token: string;
+  url: string;
+};
+
+function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
+  const replacements: ChildCommentMarkdownReplacement[] = (comment.issueReferences ?? []).map(
+    (reference) => ({
+      children: [
+        { type: "text", value: `#${reference.issueNumber}.${reference.title}` },
+        {
+          data: {
+            hName: "span",
+            hProperties: { className: ["issue-state", reference.state.toLowerCase()] },
+          },
+          type: "text",
+          value: reference.state,
+        },
+      ],
+      className: ["issueLink"],
+      token: `#${reference.issueNumber}`,
+      url: `/${reference.ownerName}/${reference.projectName}/issue/${reference.issueNumber}`,
+    }),
+  );
+  for (const reference of comment.mentionReferences ?? []) {
+    if (reference.kind !== "user") continue;
+    replacements.push({
+      children: [{ type: "text", value: `@${reference.label || reference.loginId}` }],
+      className: ["no-text-decoration", "user-link"],
+      token: `@${reference.loginId}`,
+      url: `/${reference.loginId}`,
+    });
+  }
+  return function childCommentMarkdownAutoLinkPlugin() {
+    return (tree: ChildCommentMarkdownNode) =>
+      transformChildCommentMarkdownAutoLinks(tree, replacements);
+  };
+}
+
+const CHILD_COMMENT_MARKDOWN_AUTOLINK_EXCLUDED_NODES = new Set([
+  "code",
+  "definition",
+  "html",
+  "image",
+  "inlineCode",
+  "link",
+  "linkReference",
+]);
+
+function transformChildCommentMarkdownAutoLinks(
+  node: ChildCommentMarkdownNode,
+  replacements: ChildCommentMarkdownReplacement[],
+) {
+  if (!node.children || CHILD_COMMENT_MARKDOWN_AUTOLINK_EXCLUDED_NODES.has(node.type)) {
+    return;
+  }
+  node.children = node.children.flatMap((child) => {
+    if (child.type !== "text" || child.value === undefined) {
+      transformChildCommentMarkdownAutoLinks(child, replacements);
+      return [child];
+    }
+    return childCommentMarkdownAutoLinkTextNodes(child.value, replacements);
+  });
+}
+
+function childCommentMarkdownAutoLinkTextNodes(
+  value: string,
+  replacements: ChildCommentMarkdownReplacement[],
+) {
+  const nodes: ChildCommentMarkdownNode[] = [];
+  let cursor = 0;
+  while (cursor < value.length) {
+    let index = value.length;
+    let match: ChildCommentMarkdownReplacement | undefined;
+    for (const replacement of replacements) {
+      const relativeCandidate = value.slice(cursor).search(escapeRegExp(replacement.token));
+      const candidate = relativeCandidate < 0 ? -1 : cursor + relativeCandidate;
+      if (
+        candidate >= 0 &&
+        candidate < index &&
+        childCommentMarkdownReferenceBoundaryIsValid(value, candidate, replacement.token)
+      ) {
+        index = candidate;
+        match = replacement;
+      }
+    }
+    if (!match) {
+      nodes.push({ type: "text", value: value.slice(cursor) });
+      break;
+    }
+    if (index > cursor) nodes.push({ type: "text", value: value.slice(cursor, index) });
+    nodes.push({
+      children: match.children,
+      data: { hProperties: { className: match.className } },
+      type: "link",
+      url: match.url,
+    });
+    cursor = index + match.token.length;
+  }
+  return nodes.length > 0 ? nodes : [{ type: "text", value }];
+}
+
+function escapeRegExp(value: string) {
+  return new RegExp(value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u");
+}
+
+function childCommentMarkdownReferenceBoundaryIsValid(value: string, index: number, token: string) {
+  const previousCharacter = value.slice(0, index).match(/.$/u)?.[0] ?? "";
+  const nextCharacter = value.slice(index + token.length).match(/^./u)?.[0] ?? "";
+  const wordCharacter = /[A-Za-z0-9_]/u;
+  return !wordCharacter.test(previousCharacter) && !wordCharacter.test(nextCharacter);
+}
 
 function remarkChildCommentMetadata() {
   return (tree: ChildCommentMarkdownNode) => {
     let lastParagraph: ChildCommentMarkdownNode | undefined;
-    const visit = (node: ChildCommentMarkdownNode) => {
-      if (node.type === "paragraph") lastParagraph = node;
-      node.children?.forEach(visit);
+    const visit = (node: ChildCommentMarkdownNode, insideBlockquote = false) => {
+      if (node.type === "paragraph") {
+        lastParagraph = node;
+        if (insideBlockquote) {
+          node.data = {
+            ...node.data,
+            hProperties: {
+              ...node.data?.hProperties,
+              [CHILD_COMMENT_BLOCKQUOTE_PARAGRAPH_ATTRIBUTE]: "true",
+            },
+          };
+        }
+      }
+      node.children?.forEach((child) =>
+        visit(child, insideBlockquote || node.type === "blockquote"),
+      );
     };
     visit(tree);
     if (lastParagraph) {
