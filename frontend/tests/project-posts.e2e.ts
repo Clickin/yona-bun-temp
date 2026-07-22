@@ -3977,6 +3977,10 @@ test("project board detail owns parent comment action and reply controls in Styl
     "../yona-original/app/views/common/childComments.scala.html",
     "utf8",
   );
+  const legacyChildCommentFormSource = readFileSync(
+    "../yona-original/app/views/common/child_commentForm.scala.html",
+    "utf8",
+  );
   const legacyBootstrapSource = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
     "utf8",
@@ -3994,9 +3998,24 @@ test("project board detail owns parent comment action and reply controls in Styl
   expect(legacyChildCommentsSource).toContain(
     '<div class="add-a-comment pull-right">@Messages("comment.oneline.comment.placeholder")</div>',
   );
+  expect(legacyCommentsSource).toContain(
+    "@common.childComments(post, comment, ResourceType.NONISSUE_COMMENT)",
+  );
+  expect(legacyChildCommentsSource).toContain(
+    "@common.child_commentForm(posting.asResource(), resourceType, getNewCommentUrl, currentComment.id)",
+  );
+  expect(legacyChildCommentFormSource).toMatch(
+    /<div class="notification-receiver">\s*<span class="notification-receiver-title">@Messages\("notification\.receiver\.list\.title"\)<\/span>\s*<span class="notification-receiver-list"><\/span>\s*<\/div>/u,
+  );
   expect(legacyBootstrapSource).toMatch(/\.pull-right\s*\{\s*float:\s*right;\s*\}/u);
   expect(legacyPageSource).toMatch(
     /\.add-a-comment\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?background-color:\s*#fff;[\s\S]*?position:\s*relative;[\s\S]*?right:\s*10px;[\s\S]*?color:\s*#00b0e8;[\s\S]*?border:\s*1px solid #00b0e8;[\s\S]*?margin-top:\s*-32px;[\s\S]*?padding:\s*0 5px;[\s\S]*?border-radius:\s*3px;[\s\S]*?display:\s*none;[\s\S]*?z-index:\s*2;[\s\S]*?&:hover\s*\{[\s\S]*?box-shadow:\s*1px 1px 2px #e0e0e0;[\s\S]*?cursor:\s*pointer;[\s\S]*?display:\s*block;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.child-comment-input-form\s*\{\s*\.notification-receiver\s*\{\s*margin-left:\s*12px;\s*border-bottom-left-radius:\s*3px;\s*border-bottom-right-radius:\s*3px;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.notification-receiver\s*\{\s*background-color:\s*#F7F7F7;\s*display:\s*none;\s*text-align:\s*start;\s*padding:\s*5px 5px 5px 10px;[\s\S]*?\.notification-receiver-title\s*\{\s*color:\s*#999;/u,
   );
   expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)).toEqual([
     '@import "less/_variables.less";',
@@ -4019,8 +4038,21 @@ test("project board detail owns parent comment action and reply controls in Styl
   );
   expect(styleSource).toMatch(/childCommentReplyHidden:\s*\{\s*display:\s*"none"\s*\}/u);
   expect(styleSource).toMatch(/childCommentReplyVisible:\s*\{\s*display:\s*"block"\s*\}/u);
+  expect(styleSource).toMatch(
+    /childCommentNotificationReceiver:\s*\{\s*borderBottomLeftRadius:\s*"3px",\s*borderBottomRightRadius:\s*"3px",\s*marginLeft:\s*"12px",\s*\}/u,
+  );
+  expect(routeSource).toContain(
+    "styles.commentCreateNotificationReceiver,\n    styles.childCommentNotificationReceiver,",
+  );
+  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
   expect(routeSource.match(/data-stylex-owner="post-detail-comment-action-row"/g)).toHaveLength(1);
   expect(routeSource.match(/data-stylex-owner="post-detail-child-comment-reply"/g)).toHaveLength(1);
+  expect(
+    routeSource.match(/data-stylex-owner="post-detail-child-comment-notification-receiver"/g),
+  ).toHaveLength(1);
+  expect(
+    routeSource.match(/data-stylex-owner="post-detail-child-comment-notification-receiver-title"/g),
+  ).toHaveLength(1);
   expect(routeSource).not.toMatch(/className="act-row pull-right"/u);
   expect(routeSource).not.toMatch(/className="add-a-comment pull-right"/u);
   expect(routeSource).not.toMatch(/style=\{|style:\s*\{/u);
@@ -4115,9 +4147,89 @@ test("project board detail owns parent comment action and reply controls in Styl
     await comment.hover();
     await reply.click();
     await expect(form).toBeVisible();
-    await expect(form.locator("textarea[name='contents']")).toBeFocused();
+    const childReplyForm = form.locator(":scope > form");
+    const textarea = form.locator("textarea[name='contents']");
+    const receiver = childReplyForm.locator(
+      ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver"].notification-receiver',
+    );
+    const receiverTitle = receiver.locator(
+      ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver-title"].notification-receiver-title',
+    );
+    await expect(textarea).toBeFocused();
     await expect(form.locator(".parentCommentId")).toHaveValue("21");
     await expect(form.locator("button[type='submit']")).toHaveText("OK");
+    await expect(receiver).toHaveCount(1);
+    await expect(receiverTitle).toHaveText("Notification receivers");
+    await expect(receiver.locator(":scope > .notification-receiver-list")).toBeEmpty();
+    await expect(receiver).not.toHaveAttribute("style");
+    await expect(receiverTitle).not.toHaveAttribute("style");
+    await expect(
+      page.locator(
+        '[data-stylex-owner="post-detail-child-comment-notification-receiver"], [data-stylex-owner="post-detail-child-comment-notification-receiver-title"]',
+      ),
+    ).toHaveCount(2);
+    await expect(
+      page.locator(
+        '#comment-form [data-stylex-owner^="post-detail-child-comment-notification-receiver"], .comment-update-form [data-stylex-owner^="post-detail-child-comment-notification-receiver"]',
+      ),
+    ).toHaveCount(0);
+    await expect(
+      form.locator(
+        '[data-stylex-owner^="post-detail-comment-create-notification-receiver"], [data-stylex-owner^="post-detail-comment-update-notification-receiver"]',
+      ),
+    ).toHaveCount(0);
+
+    const receiverMetrics = async () =>
+      receiver.evaluate((element) => {
+        const title = element.querySelector<HTMLElement>(
+          ':scope > [data-stylex-owner="post-detail-child-comment-notification-receiver-title"]',
+        )!;
+        const list = element.querySelector<HTMLElement>(":scope > .notification-receiver-list")!;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return {
+          backgroundColor: style.backgroundColor,
+          borderBottomLeftRadius: style.borderBottomLeftRadius,
+          borderBottomRightRadius: style.borderBottomRightRadius,
+          childOrder: Array.from(element.children).map((child) =>
+            child.classList.contains("notification-receiver-title")
+              ? "notification-receiver-title"
+              : "notification-receiver-list",
+          ),
+          display: style.display,
+          height: rect.height,
+          listText: list.textContent,
+          marginLeft: style.marginLeft,
+          padding: style.padding,
+          textAlign: style.textAlign,
+          titleColor: getComputedStyle(title).color,
+          width: rect.width,
+          documentWidth: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+        };
+      });
+    await textarea.blur();
+    const blurredReceiverMetrics = await receiverMetrics();
+    expect(blurredReceiverMetrics).toMatchObject({
+      backgroundColor: "rgb(247, 247, 247)",
+      borderBottomLeftRadius: "3px",
+      borderBottomRightRadius: "3px",
+      childOrder: ["notification-receiver-title", "notification-receiver-list"],
+      display: "none",
+      height: 0,
+      listText: "",
+      marginLeft: "12px",
+      padding: "5px 5px 5px 10px",
+      textAlign: "start",
+      titleColor: "rgb(153, 153, 153)",
+      width: 0,
+    });
+    expect(blurredReceiverMetrics.documentWidth).toBeLessThanOrEqual(
+      blurredReceiverMetrics.viewportWidth,
+    );
+    await textarea.focus();
+    await expect(textarea).toBeFocused();
+    expect(await receiverMetrics()).toMatchObject({ display: "none", height: 0, width: 0 });
     await reply.click();
     await expect(form).toBeHidden();
   }
@@ -5740,7 +5852,7 @@ test("project board detail renders legacy child comments", async ({ page }) => {
     textareaBorderRadius: "0px",
     submitText: "OK",
     submitClassName: "ybtn ybtn-success",
-    notificationClassName: "notification-receiver",
+    notificationClassName: expect.stringContaining("notification-receiver"),
     notificationDisplay: "none",
     notificationMarginLeft: "12px",
     notificationPadding: "5px 5px 5px 10px",

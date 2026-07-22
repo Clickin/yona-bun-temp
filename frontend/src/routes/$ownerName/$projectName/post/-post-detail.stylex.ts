@@ -177,6 +177,11 @@ export const styles = stylex.create({
   childCommentReplyHidden: { display: "none" },
   childCommentReplyVisible: { display: "block" },
   childCommentFormVisible: { display: "block" },
+  childCommentNotificationReceiver: {
+    borderBottomLeftRadius: "3px",
+    borderBottomRightRadius: "3px",
+    marginLeft: "12px",
+  },
   disabledCommentActions: { textAlign: "right" },
   disabledCommentBox: { marginTop: "20px" },
   disabledCommentActionsMargin: { marginTop: "10px" },

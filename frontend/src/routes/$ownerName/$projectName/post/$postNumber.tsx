@@ -61,6 +61,13 @@ const sx = {
   commentAgo: stylex.props(styles.commentAgo),
   commentEditIcon: stylex.props(styles.commentActionIcon, styles.commentEditIcon),
   commentDeleteIcon: stylex.props(styles.commentActionIcon, styles.commentDeleteIcon),
+  childCommentNotificationReceiver: stylex.props(
+    styles.commentCreateNotificationReceiver,
+    styles.childCommentNotificationReceiver,
+  ),
+  childCommentNotificationReceiverTitle: stylex.props(
+    styles.commentCreateNotificationReceiverTitle,
+  ),
   commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
@@ -2056,8 +2063,14 @@ function PostChildComments({
                   OK
                 </button>
               </div>
-              <div className="notification-receiver">
-                <span className="notification-receiver-title">
+              <div
+                className={`${sx.childCommentNotificationReceiver.className} notification-receiver`}
+                data-stylex-owner="post-detail-child-comment-notification-receiver"
+              >
+                <span
+                  className={`${sx.childCommentNotificationReceiverTitle.className} notification-receiver-title`}
+                  data-stylex-owner="post-detail-child-comment-notification-receiver-title"
+                >
                   {t("notification.receiver.list.title")}{" "}
                 </span>
                 <span className="notification-receiver-list"></span>

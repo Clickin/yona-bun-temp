@@ -564,3 +564,15 @@ legacy/local open-form screenshots were directly inspected. NEW owner markers
 remain unchanged, while child receivers and receiver-list badges remain later
 consumers. Yoram footer/contact/repository differences remain approved
 deviations, not parity gaps.
+
+## Batch 813 — board-post child-reply hidden notification receiver
+
+The authenticated populated board-post open child reply form now composes the
+existing generic receiver/title StyleX groups under two child-only markers. A
+small child variant carries only the frozen 12px left margin and two 3px bottom
+radii. Actual focus keeps the receiver hidden with zero geometry at desktop and
+390px. Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each;
+fresh legacy/local open child-form screenshots were directly inspected. NEW/
+UPDATE markers remain unchanged, and the empty receiver list/badge rules remain
+outside this wave. Yoram footer/contact/repository differences remain approved
+deviations, not gaps.

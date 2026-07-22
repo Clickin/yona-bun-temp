@@ -4,6 +4,17 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 813 board-post child-reply notification receiver
+
+- [x] Two child-only owners compose the existing generic wrapper/title groups;
+  one variant adds only the frozen 12px left margin and two 3px bottom radii.
+- [x] Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each with
+  source/import, owner isolation, full computed cascade, copy/order, hover/open/
+  focus/close behavior, zero desktop/390px geometry, and containment.
+- [x] Fresh actual legacy/local open child-form desktop/mobile screenshots were
+  captured and inspected. The hidden receiver adds no height; fixture/locale
+  and approved Yoram footer/contact/repository differences remain excluded.
+
 ### 2026-07-22 Batch 812 board-post UPDATE notification receiver
 
 - [x] Two UPDATE-only markers reuse the exact Batch 811 hidden receiver wrapper
