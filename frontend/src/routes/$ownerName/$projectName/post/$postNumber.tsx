@@ -69,6 +69,9 @@ const sx = {
   commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
   commentMeta: stylex.props(styles.commentMeta),
   comments: stylex.props(styles.comments),
+  commentHeader: stylex.props(styles.commentHeader),
+  commentHeaderIcon: stylex.props(styles.commentHeaderIcon),
+  commentDivider: stylex.props(styles.commentDivider),
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
   watchWrapper: stylex.props(styles.watchWrapper),
@@ -1183,11 +1186,24 @@ function PostComments({
     >
       <div id="timeline">
         <div className="timeline-list">
-          <div className="comment-header">
-            <i className="yobicon-comments"></i> <strong>{t("common.comment")}</strong>{" "}
+          <div
+            {...sx.commentHeader}
+            className={`${sx.commentHeader.className} comment-header`}
+            data-stylex-owner="post-detail-comment-header"
+          >
+            <i
+              {...sx.commentHeaderIcon}
+              className={`${sx.commentHeaderIcon.className} yobicon-comments`}
+              data-stylex-owner="post-detail-comment-header-icon"
+            ></i>{" "}
+            <strong>{t("common.comment")}</strong>{" "}
             <strong className="num">{post.comments.length}</strong>
           </div>
-          <hr className="nm" />
+          <hr
+            {...sx.commentDivider}
+            className={`${sx.commentDivider.className} nm`}
+            data-stylex-owner="post-detail-comment-divider"
+          />
           <ul
             {...sx.commentList}
             className={`${sx.commentList.className} comments`}

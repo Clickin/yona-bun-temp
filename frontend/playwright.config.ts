@@ -7,6 +7,7 @@ const mountedBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const frontendOrigin = process.env.YONA_E2E_FRONTEND_ORIGIN ?? "http://127.0.0.1:3101";
 const backendOrigin = process.env.YONA_E2E_BACKEND_ORIGIN ?? "http://127.0.0.1:8089";
 const wrapperManagesServers = process.env.YONA_E2E_MANAGED_SERVERS === "1";
+const browserChannel = process.env.PW_CHANNEL ?? "chrome";
 
 export default defineConfig({
   testDir: "./tests",
@@ -14,7 +15,7 @@ export default defineConfig({
   timeout: 30_000,
   use: {
     baseURL: frontendOrigin,
-    channel: "msedge",
+    channel: browserChannel,
     trace: "retain-on-failure",
   },
   webServer: wrapperManagesServers

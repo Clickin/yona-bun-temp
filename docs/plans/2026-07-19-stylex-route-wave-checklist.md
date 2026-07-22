@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 795 board-post comment section boundary/header
+
+- [x] Four route-local groups own exact frozen wrapper desktop/mobile, header,
+  comments yobicon, and divider declarations while preserving header → divider
+  → list order, copy, count, and populated content.
+- [x] The source-less React 18px wrapper margin remains fallback-owned. The
+  Playwright config now consumes `PW_CHANNEL` and defaults to system Chrome;
+  E2E/screenshot jobs are documented as outside-sandbox Chrome invocations.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px. Fresh paired screenshots render both sides and visual inspection
+  confirms the target; only approved Yoram contact-removal geometry remains.
+
 ### 2026-07-22 Batch 794 board-post comment identity/actions/body
 
 - [x] Six route-local groups own the exact frozen author, responsive avatar,

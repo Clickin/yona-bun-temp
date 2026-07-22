@@ -469,6 +469,11 @@ A screen rebuild goal is complete only when all are true:
   `data-backdrop`, `data-spy`, `data-provider`, `data-loading-text`) and focused
   E2E asserts their absence when React owns the behavior; visible/accessibility
   `title`, `aria-*`, and tooltip copy remain React-owned parity evidence
+- Playwright E2E and screenshot parity run through system Google Chrome outside
+  the sandbox: invoke the whole pnpm job with `require_escalated` and
+  `PW_CHANNEL=chrome`. The Playwright config consumes that variable and defaults
+  to `chrome`; do not fall back to historical `msedge` or assume a sandboxed
+  bundled Chromium exists.
 - no view-model layer decides page DOM shape
 - component decomposition is done after GREEN or documented as unnecessary
 - focused checks pass
@@ -505,3 +510,13 @@ search and user-menu geometry changes follow directly from the user's explicit
 Yoram footer, developer-contact, and repository changes; they are approved
 deviations, not goal gaps, and must not be offset or repaired by restoring
 NAVER, NAVER LABS, upstream Yona copy, or repository destinations.
+
+## Batch 795 — board-post comment section boundary and header
+
+The authenticated populated `/admin/sample/post/1` state now owns the frozen
+comment wrapper desktop/mobile declarations, header typography, comments
+yobicon contract/glyph, and divider reset. The React-only 18px wrapper margin
+remains fallback-owned. Outside-sandbox system-Chrome normal/fallback-off runs
+pass 1/1 each, and fresh desktop/mobile legacy/local screenshots were directly
+inspected. Automated navbar shifts remain consequences of the approved Yoram
+footer/contact/repository deviation rather than goal gaps.

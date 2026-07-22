@@ -5338,6 +5338,241 @@ test("authenticated populated board post owns comment identity actions and body 
   }
 });
 
+test("authenticated populated board post owns comment section boundary and header in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyYobiconSource = readFileSync(
+    "../yona-original/public/stylesheets/yobicon/style.css",
+    "utf8",
+  );
+
+  expect(legacyViewSource).toMatch(
+    /<div id="comments" class="board-comment-wrap">[\s\S]*?@partial_comments\(project, post\)/u,
+  );
+  expect(legacyCommentsSource).toMatch(
+    /<div class="comment-header"><i class="yobicon-comments"><\/i> <strong>@Messages\("common\.comment"\)<\/strong> <strong class="num">@post\.comments\.size<\/strong><\/div>\s*<hr class="nm" \/>\s*<ul class="comments">/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.board-comment-wrap\s*\{\s*display:block;\s*clear:both;\s*font-family:@base-font-family;[\s\S]*?\.comment-header\s*\{\s*color:\s*#222;\s*font-size:\s*16px;\s*line-height:\s*40px;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.board-comment-wrap\s*\{\s*padding:\s*2px;/u,
+  );
+  expect(legacyCommonSource).toMatch(/\.nm\s*\{\s*margin:\s*0 !important;/u);
+  expect(legacyVariablesSource).toMatch(
+    /@base-font-family:\s*-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";/u,
+  );
+  expect(legacyYobiSource).toMatch(
+    /@import "less\/_variables\.less";[\s\S]*?@import "less\/_common\.less";[\s\S]*?@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";/u,
+  );
+  expect(legacyYobiconSource).toMatch(
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?font-style:\s*normal;[\s\S]*?font-variant:\s*normal;[\s\S]*?font-weight:\s*normal;[\s\S]*?line-height:\s*1;[\s\S]*?display:\s*inline-block;[\s\S]*?text-decoration:\s*none;[\s\S]*?background-image:\s*none;[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(legacyYobiconSource).toMatch(/\.yobicon-comments:before\s*\{\s*content:\s*"\\e4b7";/u);
+  expect(styleSource).toMatch(
+    /comments:\s*\{[^}]*clear:\s*"both"[^}]*display:\s*"block"[^}]*fontFamily:[\s\S]*?@media all and \(max-width:\s*720px\)[^}]*padding:\s*"2px"/u,
+  );
+  for (const styleName of ["commentHeader", "commentHeaderIcon", "commentDivider"]) {
+    expect(styleSource).toContain(`${styleName}:`);
+  }
+  for (const owner of [
+    "post-detail-comments",
+    "post-detail-comment-header",
+    "post-detail-comment-header-icon",
+    "post-detail-comment-divider",
+    "post-detail-comment-list",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(routeSource).not.toMatch(
+    /data-stylex-owner="post-detail-comment-(?:header|header-icon|divider)"[^>]*style=/su,
+  );
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await mockProjectPosts(page, "comment");
+    await page.route("**/api/v1/projects/admin/sample/posts/1", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyMarkdown: "Populated **board post**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsMarkdown: "First **comment**",
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyMarkdown: "",
+          id: "31",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "sample",
+          readme: false,
+          title: "Populated board post",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    });
+    await page.goto(`${basePath}/admin/sample/post/1`);
+
+    const boundary = page.locator('[data-stylex-owner="post-detail-comments"]');
+    const header = boundary.locator('[data-stylex-owner="post-detail-comment-header"]');
+    const icon = header.locator('[data-stylex-owner="post-detail-comment-header-icon"]');
+    const divider = boundary.locator('[data-stylex-owner="post-detail-comment-divider"]');
+    const list = boundary.locator('[data-stylex-owner="post-detail-comment-list"]');
+    await expect(header).toContainText("Comment 1");
+    await expect(header.locator(".num")).toHaveText("1");
+
+    const metrics = await boundary.evaluate((wrapper) => {
+      const get = (owner: string) =>
+        wrapper.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const header = get("post-detail-comment-header");
+      const icon = get("post-detail-comment-header-icon");
+      const divider = get("post-detail-comment-divider");
+      const list = get("post-detail-comment-list");
+      const wrapperStyle = getComputedStyle(wrapper);
+      const headerStyle = getComputedStyle(header);
+      const iconStyle = getComputedStyle(icon);
+      const iconPseudo = getComputedStyle(icon, "::before");
+      const dividerStyle = getComputedStyle(divider);
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+      const iconRect = icon.getBoundingClientRect();
+      const dividerRect = divider.getBoundingClientRect();
+      const listRect = list.getBoundingClientRect();
+      return {
+        wrapper: {
+          clear: wrapperStyle.clear,
+          display: wrapperStyle.display,
+          fontFamily: wrapperStyle.fontFamily,
+          padding: wrapperStyle.padding,
+        },
+        header: {
+          color: headerStyle.color,
+          fontSize: headerStyle.fontSize,
+          lineHeight: headerStyle.lineHeight,
+        },
+        icon: {
+          backgroundImage: iconStyle.backgroundImage,
+          display: iconStyle.display,
+          fontFamily: iconStyle.fontFamily,
+          fontStyle: iconStyle.fontStyle,
+          fontVariant: iconStyle.fontVariant,
+          fontWeight: iconStyle.fontWeight,
+          lineHeight: iconStyle.lineHeight,
+          textDecoration: iconStyle.textDecorationLine,
+          verticalAlign: iconStyle.verticalAlign,
+          glyph: iconPseudo.content,
+          nonzeroGeometry: iconRect.width > 0 && iconRect.height > 0,
+        },
+        dividerMargin: dividerStyle.margin,
+        order: headerRect.bottom <= dividerRect.top && dividerRect.bottom <= listRect.top,
+        containment:
+          headerRect.left >= wrapperRect.left &&
+          headerRect.right <= wrapperRect.right &&
+          dividerRect.left >= wrapperRect.left &&
+          dividerRect.right <= wrapperRect.right &&
+          listRect.left >= wrapperRect.left &&
+          listRect.right <= wrapperRect.right,
+        noOverlap: headerRect.bottom <= listRect.top,
+      };
+    });
+    expect(metrics.wrapper).toEqual({
+      clear: "both",
+      display: "block",
+      fontFamily:
+        '-apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+      padding: viewport.width > 720 ? "0px" : "2px",
+    });
+    expect(metrics.header).toEqual({
+      color: "rgb(34, 34, 34)",
+      fontSize: "16px",
+      lineHeight: "40px",
+    });
+    expect(metrics.icon).toEqual({
+      backgroundImage: "none",
+      display: "inline-block",
+      fontFamily: "yobicon",
+      fontStyle: "normal",
+      fontVariant: "normal",
+      fontWeight: "400",
+      lineHeight: "16px",
+      textDecoration: "none",
+      verticalAlign: "baseline",
+      glyph: '"\ue4b7"',
+      nonzeroGeometry: true,
+    });
+    expect(metrics.dividerMargin).toBe("0px");
+    expect(metrics).toMatchObject({ order: true, containment: true, noOverlap: true });
+    await expect(icon).toBeVisible();
+    await expect(divider).toBeVisible();
+    await expect(list).toContainText("First comment");
+  }
+});
+
 async function mockProjectPosts(
   page: Page,
   state:

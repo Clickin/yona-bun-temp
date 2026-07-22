@@ -17,12 +17,18 @@ Use these references when porting one Yona screen from Scala HTML to React/TanSt
   `YONA_LEGACY_PROXY_UPSTREAM` when a distinct legacy instance is explicitly
   under test.
 - Focused E2E: `pnpm --dir frontend test:e2e <frontend/tests/name.e2e.ts>`
+- Focused E2E browser contract: run the whole pnpm/Playwright invocation outside
+  the sandbox with `PW_CHANNEL=chrome`; `frontend/playwright.config.ts` consumes
+  that variable and defaults to the installed system Google Chrome.
 - Frontend typecheck: `pnpm --dir frontend check`
 - Dev script contracts: `pnpm test:dev-scripts`
 - Legacy page audit: `pnpm smoke:legacy-html-pages`
 - Legacy anchor coverage: `pnpm smoke:legacy-anchor-coverage`
 - Legacy route coverage: `pnpm smoke:legacy-route-coverage`
 - Visual sweep: `node scripts/visual-parity-sweep.mjs` with `YORAM_SWEEP_PATHS=/path`
+- Visual sweep browser contract: run outside the sandbox with
+  `PW_CHANNEL=chrome`; screenshot parity is not established by sandboxed or
+  unavailable bundled Chromium.
 - Turn commit hook: `pnpm agent:turn-commit -- -m "<summary>"`
 - Goal turn resume: `pnpm agent:scala-html-goal-automation` (run before picking a target on a multi-day unattended `/goal` turn; stop if the history range marker is missing or the audit fails)
 - Cargo (escalated, outside sandbox): `pnpm agent:cargo -- --outside-sandbox <cargo args>`
