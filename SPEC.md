@@ -128,7 +128,7 @@ repo root/
 - 상태 관리: React Context API (`AppRuntimeContext`).
 - API 통신: REST JSON client + TanStack Query.
 - `proto/`는 REST pivot 이전 message schema snapshot으로만 취급한다. runtime RPC registration과 frontend ConnectRPC client는 Phase -1에서 제거되었으며, 새 feature는 REST-first로 설계한다.
-- Product identity deviation: 공개 React frontend의 제품명은 `Yoram`이다. legacy footer의 Yona/NAVER/NAVER LABS/NAVER CLOUD PLATFORM 제품-facing 묶음은 `Yoram authors`로 대체하고, 기본 개발팀 문의 링크는 실제 Yoram public repository가 생길 때까지 노출하지 않는다. `Yona`/`Yobi`는 Apache-2.0 upstream 고지와 환경변수, API/DB/migration, deep link, legacy CSS/icon/message key 같은 호환 경계에만 유지한다. 근거와 사용자 영향은 `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`에 기록한다.
+- Product identity deviation: 공개 React frontend의 제품명은 `Yoram`이다. 프로젝트 소유자가 명시적으로 승인한 변경으로서, legacy footer의 Yona/NAVER/NAVER LABS/NAVER CLOUD PLATFORM 제품-facing 묶음은 `Yoram authors`로 대체하고, upstream Yona repository URL과 기본 개발팀 문의 링크는 실제 Yoram public repository가 생길 때까지 노출하지 않는다. 이 누락·대체와 그에 따른 screenshot geometry 차이는 parity `gap`이 아니며 StyleX/screenshot parity 작업에서 복원하지 않는다. `Yona`/`Yobi`는 Apache-2.0 upstream 고지와 환경변수, API/DB/migration, deep link, legacy CSS/icon/message key 같은 호환 경계에만 유지한다. 근거와 사용자 영향은 `docs/provenance/frontend-yoram-rebrand-2026-07-13.md`에 기록한다.
 
 ### 1.4 배포 기준선
 

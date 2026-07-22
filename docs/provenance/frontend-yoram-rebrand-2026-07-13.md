@@ -5,11 +5,20 @@ Date: 2026-07-13
 
 ## Approved identity
 
+This deviation was explicitly requested and approved by the Yoram project
+owner. It is not an implementation accident, an unresolved parity gap, or an
+item to restore during screenshot-parity or StyleX migration work.
+
 - Display name: `Yoram`
 - Footer attribution shown in the product UI: `Yoram authors`
 - Default developer-contact repository: not rendered until a real public Yoram repository exists
 - Korean and English product-name spelling: `Yoram`
 - Release assets: Yoram-owned assets only; upstream Yona/NAVER artwork is not reused
+
+In particular, footer or navigation entries for NAVER, NAVER LABS, NAVER CLOUD
+PLATFORM, upstream Yona repository URLs, and the legacy developer-contact link
+are intentionally absent or replaced by Yoram-owned copy. Future parity work
+must preserve this decision.
 
 ## Legacy evidence and deviation
 
