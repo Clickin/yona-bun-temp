@@ -6977,6 +6977,9 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyEditorSource).toMatch(
     /<div class="editor-clear-temporary">\s*<div class="editor-clear-temporary-button"><button type="button" id="button-clear-temporary" class="ybtn ybtn-small ybtn-warning">@Messages\("button\.clear\.temporary"\)<\/button><\/div>\s*<\/div>/u,
   );
+  expect(legacyEditorSource).toMatch(
+    /<div class="notification-receiver">\s*<span class="notification-receiver-title">@Messages\("notification\.receiver\.list\.title"\)<\/span>\s*<span class="notification-receiver-list"><\/span>\s*<\/div>/u,
+  );
   expect(legacyCommonSource).toContain(".nm { margin: 0 !important; }");
   expect(legacyPageSource).toMatch(
     /\.comment-update-form\s*\{\s*display:none;\s*\.textarea-box\s*\{\s*padding-right:\s*2px;\s*margin-bottom:\s*10px;\s*\}\s*\.write-comment-box\s*\{\s*padding:\s*10px;/u,
@@ -7066,6 +7069,10 @@ test("authenticated populated board post owns open parent comment update form in
   expect(legacyPageSource).toMatch(
     /\.editor-clear-temporary\s*\{\s*margin-left:\s*10px;\s*display:\s*none;\s*\}/u,
   );
+  expect(legacyPageSource).toMatch(
+    /\.notification-receiver\s*\{\s*background-color:\s*#F7F7F7;\s*display:\s*none;\s*text-align:\s*start;\s*padding:\s*5px 5px 5px 10px;[\s\S]*?\.notification-receiver-title\s*\{\s*color:\s*#999;/u,
+  );
+  expect(legacyBoardSource).not.toContain("notification-receiver");
   expect(legacyCommentScriptSource).toMatch(
     /commentEditforms\.each\(function \(i, item\) \{\s*temporarySaveHandler\(\$\(item\)\.find\('textarea'\), false\);\s*\}\);/u,
   );
@@ -7138,6 +7145,18 @@ test("authenticated populated board post owns open parent comment update form in
   expect(styleSource).toContain(
     'commentUpdateClearTemporary: { display: "none", marginLeft: "10px" }',
   );
+  expect(styleSource).toMatch(
+    /commentCreateNotificationReceiver:\s*\{\s*backgroundColor:\s*"#F7F7F7",\s*display:\s*"none",\s*padding:\s*"5px 5px 5px 10px",\s*textAlign:\s*"start",\s*\}/u,
+  );
+  expect(styleSource).toContain('commentCreateNotificationReceiverTitle: { color: "#999999" }');
+  for (const owner of [
+    "post-detail-comment-update-notification-receiver",
+    "post-detail-comment-update-notification-receiver-title",
+  ]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
+  expect(routeSource).toContain("styles.commentCreateNotificationReceiver");
+  expect(routeSource).toContain("styles.commentCreateNotificationReceiverTitle");
   expect(styleSource).not.toContain("commentUpdateDropOverlayVisible");
   expect(styleSource).not.toContain("commentEditorVisible:");
   for (const owner of [
@@ -7342,6 +7361,12 @@ test("authenticated populated board post owns open parent comment update form in
     const clearTemporary = editorNav.locator(
       '[data-stylex-owner="post-detail-comment-update-clear-temporary"]',
     );
+    const notificationReceiver = form.locator(
+      ':scope .tab-content > [data-stylex-owner="post-detail-comment-update-notification-receiver"]',
+    );
+    const notificationReceiverTitle = notificationReceiver.locator(
+      ':scope > [data-stylex-owner="post-detail-comment-update-notification-receiver-title"]',
+    );
     await expect(form).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments/21`);
     await expect(form).toHaveAttribute("method", "post");
     await expect(form).toHaveAttribute("enctype", "multipart/form-data");
@@ -7386,6 +7411,61 @@ test("authenticated populated board post owns open parent comment update form in
     await expect(clearTemporary).toHaveCSS("display", "none");
     await expect(dropOverlay).toContainText("Drag & Drop files here to upload.");
     await expect(clearTemporary).toContainText("Clear Temporary");
+    await expect(notificationReceiver).toHaveCount(1);
+    await expect(notificationReceiver).toHaveClass(/notification-receiver/u);
+    await expect(notificationReceiver).not.toHaveAttribute("style");
+    await expect(notificationReceiverTitle).toHaveCount(1);
+    await expect(notificationReceiverTitle).toHaveClass(/notification-receiver-title/u);
+    await expect(notificationReceiverTitle).not.toHaveAttribute("style");
+    expect(await notificationReceiverTitle.evaluate((title) => title.textContent)).toBe(
+      "Notification receivers ",
+    );
+    await expect(notificationReceiver).toHaveCSS("background-color", "rgb(247, 247, 247)");
+    await expect(notificationReceiver).toHaveCSS("display", "none");
+    await expect(notificationReceiver).toHaveCSS("padding", "5px 5px 5px 10px");
+    await expect(notificationReceiver).toHaveCSS("text-align", "start");
+    await expect(notificationReceiverTitle).toHaveCSS("color", "rgb(153, 153, 153)");
+    expect(
+      await notificationReceiver.evaluate((receiver) => ({
+        childOrder: Array.from(receiver.children).map((child) =>
+          child.classList.contains("notification-receiver-title")
+            ? "notification-receiver-title"
+            : "notification-receiver-list",
+        ),
+        height: receiver.getBoundingClientRect().height,
+        previousId: receiver.previousElementSibling?.id,
+        width: receiver.getBoundingClientRect().width,
+      })),
+    ).toEqual({
+      childOrder: ["notification-receiver-title", "notification-receiver-list"],
+      height: 0,
+      previousId: "preview-21",
+      width: 0,
+    });
+    await expect(
+      page.locator(
+        '[data-stylex-owner="post-detail-comment-update-notification-receiver"], [data-stylex-owner="post-detail-comment-update-notification-receiver-title"]',
+      ),
+    ).toHaveCount(2);
+    await expect(
+      page.locator(
+        '#comment-form [data-stylex-owner^="post-detail-comment-update-notification-receiver"], .child-comment-input-form [data-stylex-owner^="post-detail-comment-update-notification-receiver"]',
+      ),
+    ).toHaveCount(0);
+    await expect(
+      form.locator('[data-stylex-owner^="post-detail-comment-create-notification-receiver"]'),
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await textarea.focus();
+    await expect(notificationReceiver).toHaveCSS("display", "none");
+    expect(
+      await notificationReceiver.evaluate((receiver) => ({
+        height: receiver.getBoundingClientRect().height,
+        width: receiver.getBoundingClientRect().width,
+      })),
+    ).toEqual({ height: 0, width: 0 });
 
     const hiddenAuxiliaryMetrics = await form.evaluate((formElement) => {
       const get = (owner: string) =>

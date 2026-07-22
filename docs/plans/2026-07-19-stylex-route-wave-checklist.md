@@ -4,6 +4,19 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 812 board-post UPDATE notification receiver
+
+- [x] Two UPDATE-only markers reuse the exact Batch 811 hidden receiver wrapper
+  and title groups; NEW markers remain unchanged and child/list badge consumers
+  stay excluded.
+- [x] Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each with
+  source/import, owner isolation, exact computed declarations, copy/order,
+  focus-stable hidden state, zero desktop/390px geometry, and edit/cancel/save
+  behavior.
+- [x] Fresh actual legacy/local open-form desktop/mobile screenshots were
+  captured and inspected. The receiver adds no geometry; fixture/locale and
+  approved Yoram footer/contact/repository differences remain outside the wave.
+
 ### 2026-07-22 Batch 811 board-post NEW-comment notification receiver
 
 - [x] Two `comment-body`-only owners carry the frozen hidden receiver wrapper

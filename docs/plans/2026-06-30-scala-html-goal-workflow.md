@@ -552,3 +552,15 @@ and 390px, and fresh actual legacy/local screenshots were directly inspected.
 UPDATE/child receivers and receiver-list badges remain later consumers. Fixture
 and locale differences are outside these two owners; Yoram footer/contact/
 repository omissions and their geometry remain approved deviations, not gaps.
+
+## Batch 812 — board-post UPDATE hidden notification receiver
+
+The authenticated populated board-post open parent-comment UPDATE editor now
+reuses the exact Batch 811 hidden receiver wrapper/title StyleX declarations
+under two UPDATE-only owner markers. Legacy board view has no issue-style
+focus/show wiring, and actual focus retains zero geometry at desktop and 390px.
+Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1 each; fresh
+legacy/local open-form screenshots were directly inspected. NEW owner markers
+remain unchanged, while child receivers and receiver-list badges remain later
+consumers. Yoram footer/contact/repository differences remain approved
+deviations, not parity gaps.

@@ -2217,12 +2217,14 @@ function MarkdownEditor({
   const createEditorNoticeLabelStyle = isCommentCreateEditor
     ? stylex.props(styles.commentCreateEditorNoticeLabel)
     : undefined;
-  const createNotificationReceiverStyle = isCommentCreateEditor
-    ? stylex.props(styles.commentCreateNotificationReceiver)
-    : undefined;
-  const createNotificationReceiverTitleStyle = isCommentCreateEditor
-    ? stylex.props(styles.commentCreateNotificationReceiverTitle)
-    : undefined;
+  const notificationReceiverStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentCreateNotificationReceiver)
+      : undefined;
+  const notificationReceiverTitleStyle =
+    isCommentUpdateEditor || isCommentCreateEditor
+      ? stylex.props(styles.commentCreateNotificationReceiverTitle)
+      : undefined;
 
   return (
     <div className="mt10">
@@ -2437,19 +2439,25 @@ function MarkdownEditor({
           </div>
         </div>
         <div
-          {...createNotificationReceiverStyle}
-          className={`${createNotificationReceiverStyle?.className ?? ""} notification-receiver`.trim()}
+          {...notificationReceiverStyle}
+          className={`${notificationReceiverStyle?.className ?? ""} notification-receiver`.trim()}
           data-stylex-owner={
-            isCommentCreateEditor ? "post-detail-comment-create-notification-receiver" : undefined
+            isCommentUpdateEditor
+              ? "post-detail-comment-update-notification-receiver"
+              : isCommentCreateEditor
+                ? "post-detail-comment-create-notification-receiver"
+                : undefined
           }
         >
           <span
-            {...createNotificationReceiverTitleStyle}
-            className={`${createNotificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim()}
+            {...notificationReceiverTitleStyle}
+            className={`${notificationReceiverTitleStyle?.className ?? ""} notification-receiver-title`.trim()}
             data-stylex-owner={
-              isCommentCreateEditor
-                ? "post-detail-comment-create-notification-receiver-title"
-                : undefined
+              isCommentUpdateEditor
+                ? "post-detail-comment-update-notification-receiver-title"
+                : isCommentCreateEditor
+                  ? "post-detail-comment-create-notification-receiver-title"
+                  : undefined
             }
           >
             {t("notification.receiver.list.title")}{" "}
