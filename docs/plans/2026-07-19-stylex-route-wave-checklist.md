@@ -4,6 +4,14 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 819 board-post Markdown commit references
+
+- [x] Legacy source mapped: `board/view.scala.html` → `partial_comments.scala.html` → `common/childComments.scala.html` plus `AutoLinkRenderer.java` commit-token resolution.
+- [x] REST metadata added for post and parent/child comments; frontend normalizes and renders commit links through ReactMarkdown/TanStack Router.
+- [x] Focused E2E covers `User/Project@SHA`, `User@SHA`, and `@SHA` output, short IDs, hrefs, order, desktop/mobile containment, and no-overflow.
+- [x] Outside-sandbox system-Chrome normal/fallback-off runs pass 1/1; local exact-state desktop/mobile and fallback-off screenshots plus real legacy seed desktop/mobile baseline screenshots were visually inspected under `frontend/output/playwright/batch-819/`.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain documented intentional deviations and are not restored.
+
 ## Approved Yoram footer diff (do not classify as a parity gap)
 
 The current footer deliberately differs from `yona-original/app/views/common/footer.scala.html` because the product owner changed the product identity. The React footer keeps `Yoram authors` and intentionally removes the legacy `NAVER`, `NAVER LABS`, and `NAVER CLOUD PLATFORM` provider-facing entries, the upstream Yona repository URL, and the legacy developer-contact link/copy. These are explicit user-authored changes, not omissions or unfinished migration work.

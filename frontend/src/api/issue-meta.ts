@@ -172,6 +172,8 @@ export type MarkdownCommitReference = {
   token: string;
 };
 
+export type CommitReferenceMetadata = Omit<MarkdownCommitReference, "token">;
+
 export type ProjectMarkdownReferencesInput = ProjectScopeInput & {
   bodyMarkdown: string;
 };
@@ -482,6 +484,17 @@ export function normalizeIssueReferences(
     projectName: reference.projectName ?? "",
     state: reference.state ?? "",
     title: reference.title ?? "",
+  }));
+}
+
+export function normalizeCommitReferences(
+  references: Partial<CommitReferenceMetadata>[] | undefined,
+): CommitReferenceMetadata[] {
+  return (references ?? []).map((reference) => ({
+    commitId: reference.commitId ?? "",
+    ownerName: reference.ownerName ?? "",
+    projectName: reference.projectName ?? "",
+    shortId: reference.shortId ?? "",
   }));
 }
 

@@ -5406,6 +5406,103 @@ test("project board detail auto-links populated parent rich Markdown", async ({ 
   });
 });
 
+test("project board detail auto-links commit references in parent and child Markdown", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const screenshotDirectory = resolve(process.cwd(), "output/playwright/batch-819");
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await mockProjectPosts(page, "commitReferenceMarkdown");
+  await page.goto(`${basePath}/admin/sample/post/3`);
+
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyChildCommentsSource = readFileSync(
+    "../yona-original/app/views/common/childComments.scala.html",
+    "utf8",
+  );
+  const legacyAutoLinkSource = readFileSync(
+    "../yona-original/app/utils/AutoLinkRenderer.java",
+    "utf8",
+  );
+  expect(legacyViewSource).toContain("@partial_comments(project, post)");
+  expect(legacyCommentsSource).toContain("Markdown.render(comment.contents, project)");
+  expect(legacyChildCommentsSource).toContain("Markdown.render(comment.contents, posting.project)");
+  expect(legacyAutoLinkSource).toContain("User/Project@SHA");
+  expect(legacyAutoLinkSource).toContain("commit.getShortId()");
+  expect(routeSource).toContain("commitReferences");
+  expect(routeSource).toContain("/commit/${reference.commitId}");
+  expect(routeSource).not.toContain("dangerouslySetInnerHTML");
+
+  const parentLinks = page.locator("#comment-21 .comment-body p a");
+  await expect(parentLinks).toHaveCount(2);
+  await expect(parentLinks).toHaveText(["0123456", "admin/sample@fedcba9"]);
+  await expect(parentLinks.nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/0123456789abcdef`,
+  );
+  await expect(parentLinks.nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/fedcba987654321`,
+  );
+
+  const childLinks = page.locator("#comment-21 .child-comments .contents a[href*='/commit/']");
+  await expect(childLinks).toHaveCount(2);
+  await expect(childLinks).toHaveText(["abcdef0", "admin/sample@1234567"]);
+  await expect(childLinks.nth(0)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/abcdef0123456789`,
+  );
+  await expect(childLinks.nth(1)).toHaveAttribute(
+    "href",
+    `${basePath}/admin/sample/commit/1234567890abcdef`,
+  );
+
+  for (const [viewport, filename] of [
+    [{ width: 1366, height: 900 }, "board-post-commit-references-desktop.png"],
+    [{ width: 390, height: 844 }, "board-post-commit-references-mobile.png"],
+  ] as const) {
+    await page.setViewportSize(viewport);
+    const containment = await page.locator("#comments").evaluate((comments) => {
+      const commentsRect = comments.getBoundingClientRect();
+      const links = [...comments.querySelectorAll(".comment-body a, .contents a")];
+      return {
+        linksInside: links.every((link) => {
+          const rect = link.getBoundingClientRect();
+          return rect.left >= commentsRect.left && rect.right <= commentsRect.right + 1;
+        }),
+        noOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      };
+    });
+    expect(containment).toEqual({ linksInside: true, noOverflow: true });
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(screenshotDirectory, filename),
+    });
+  }
+
+  await mockProjectPosts(page, "comment");
+  await page.goto(`${basePath}/admin/sample/post/3`);
+  await expect(page.locator("#comments a[href*='/commit/']")).toHaveCount(0);
+  for (const [viewport, filename] of [
+    [{ width: 1366, height: 900 }, "board-post-commit-references-fallback-off-desktop.png"],
+    [{ width: 390, height: 844 }, "board-post-commit-references-fallback-off-mobile.png"],
+  ] as const) {
+    await page.setViewportSize(viewport);
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(screenshotDirectory, filename),
+    });
+  }
+});
+
 test("project board detail folds original message content in via-email comments", async ({
   page,
 }) => {
@@ -9064,7 +9161,8 @@ async function mockProjectPosts(
     | "viaEmailComment"
     | "attachments"
     | "childComment"
-    | "parentRichMarkdown" = "default",
+    | "parentRichMarkdown"
+    | "commitReferenceMarkdown" = "default",
   overrides: Record<string, unknown> = {},
 ) {
   const ownerName = String(overrides.__ownerName ?? "admin");
@@ -9320,8 +9418,11 @@ async function mockProjectPosts(
             state === "commentUpdate" ||
             state === "viaEmailComment" ||
             state === "attachments" ||
-            state === "parentRichMarkdown"
-              ? 1
+            state === "parentRichMarkdown" ||
+            state === "commitReferenceMarkdown"
+              ? state === "commitReferenceMarkdown"
+                ? 2
+                : 1
               : state === "childComment"
                 ? 2
                 : 0,
@@ -9331,7 +9432,8 @@ async function mockProjectPosts(
             state === "viaEmailComment" ||
             state === "attachments" ||
             state === "parentRichMarkdown" ||
-            state === "childComment"
+            state === "childComment" ||
+            state === "commitReferenceMarkdown"
               ? [
                   {
                     attachments:
@@ -9354,7 +9456,9 @@ async function mockProjectPosts(
                         ? "Reply before quoted mail.\n\n---- Original Message ----\nOriginal author wrote:\n\n> Quoted original line"
                         : state === "parentRichMarkdown"
                           ? "Parent @dev references @weblabs, @other/cross, #11, and #12."
-                          : "First **comment**",
+                          : state === "commitReferenceMarkdown"
+                            ? "Parent @0123456789abcdef and admin/sample@fedcba987654321."
+                            : "First **comment**",
                     createdLabel: "Jul 3, 2026",
                     id: "21",
                     issueReferences:
@@ -9402,10 +9506,27 @@ async function mockProjectPosts(
                             },
                           ]
                         : undefined,
+                    commitReferences:
+                      state === "commitReferenceMarkdown"
+                        ? [
+                            {
+                              commitId: "0123456789abcdef",
+                              ownerName,
+                              projectName,
+                              shortId: "0123456",
+                            },
+                            {
+                              commitId: "fedcba987654321",
+                              ownerName: "admin",
+                              projectName: "sample",
+                              shortId: "fedcba9",
+                            },
+                          ]
+                        : undefined,
                     parentCommentId: "",
                     viaEmail: state === "viaEmailComment",
                   },
-                  ...(state === "childComment"
+                  ...(state === "childComment" || state === "commitReferenceMarkdown"
                     ? [
                         {
                           attachments: [],
@@ -9414,48 +9535,73 @@ async function mockProjectPosts(
                           authorLoginId: "admin",
                           contentsHtml: "<p>Server HTML should not render</p>",
                           contentsMarkdown:
-                            "> @dev references #11, #12, @weblabs, and @other/cross.\n\nNested **reply**",
+                            state === "commitReferenceMarkdown"
+                              ? "> @abcdef0123456789 and admin/sample@1234567890abcdef.\n\nNested reply"
+                              : "> @dev references #11, #12, @weblabs, and @other/cross.\n\nNested **reply**",
                           createdLabel: "Jul 4, 2026",
                           id: "22",
-                          issueReferences: [
-                            {
-                              issueNumber: 11,
-                              ownerName: "admin",
-                              projectName: "sample",
-                              state: "Open",
-                              title: "Rich child Markdown",
-                            },
-                            {
-                              issueNumber: 12,
-                              ownerName: "admin",
-                              projectName: "sample",
-                              state: "Closed",
-                              title: "Closed child Markdown",
-                            },
-                          ],
-                          mentionReferences: [
-                            {
-                              kind: "user",
-                              label: "Dev Member",
-                              loginId: "dev",
-                              ownerName: "",
-                              projectName: "",
-                            },
-                            {
-                              kind: "organization",
-                              label: "Team",
-                              loginId: "weblabs",
-                              ownerName: "",
-                              projectName: "",
-                            },
-                            {
-                              kind: "project",
-                              label: "other/cross",
-                              loginId: "other/cross",
-                              ownerName: "other",
-                              projectName: "cross",
-                            },
-                          ],
+                          issueReferences:
+                            state === "childComment"
+                              ? [
+                                  {
+                                    issueNumber: 11,
+                                    ownerName: "admin",
+                                    projectName: "sample",
+                                    state: "Open",
+                                    title: "Rich child Markdown",
+                                  },
+                                  {
+                                    issueNumber: 12,
+                                    ownerName: "admin",
+                                    projectName: "sample",
+                                    state: "Closed",
+                                    title: "Closed child Markdown",
+                                  },
+                                ]
+                              : undefined,
+                          mentionReferences:
+                            state === "childComment"
+                              ? [
+                                  {
+                                    kind: "user",
+                                    label: "Dev Member",
+                                    loginId: "dev",
+                                    ownerName: "",
+                                    projectName: "",
+                                  },
+                                  {
+                                    kind: "organization",
+                                    label: "Team",
+                                    loginId: "weblabs",
+                                    ownerName: "",
+                                    projectName: "",
+                                  },
+                                  {
+                                    kind: "project",
+                                    label: "other/cross",
+                                    ownerName: "other",
+                                    projectName: "cross",
+                                    loginId: "other/cross",
+                                  },
+                                ]
+                              : undefined,
+                          commitReferences:
+                            state === "commitReferenceMarkdown"
+                              ? [
+                                  {
+                                    commitId: "abcdef0123456789",
+                                    ownerName: "admin",
+                                    projectName: "sample",
+                                    shortId: "abcdef0",
+                                  },
+                                  {
+                                    commitId: "1234567890abcdef",
+                                    ownerName: "admin",
+                                    projectName: "sample",
+                                    shortId: "1234567",
+                                  },
+                                ]
+                              : undefined,
                           parentCommentId: "21",
                           viaEmail: false,
                         },

@@ -1,7 +1,15 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
-import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
-import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
+import type {
+  CommitReferenceMetadata,
+  IssueReferenceMetadata,
+  MentionReferenceMetadata,
+} from "./issue-meta";
+import {
+  normalizeCommitReferences,
+  normalizeIssueReferences,
+  normalizeMentionReferences,
+} from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -29,6 +37,7 @@ export type BoardPostComment = {
   contentsHtml: string;
   contentsMarkdown: string;
   createdLabel: string;
+  commitReferences?: CommitReferenceMetadata[];
   id: string;
   issueReferences?: IssueReferenceMetadata[];
   mentionReferences?: MentionReferenceMetadata[];
@@ -57,6 +66,7 @@ export type BoardPostDetail = BoardPostListItem & {
   authorId: string;
   bodyHtml: string;
   bodyMarkdown: string;
+  commitReferences?: CommitReferenceMetadata[];
   comments: BoardPostComment[];
   historyHtml: string;
   historyMarkdown: string;
@@ -352,6 +362,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
     authorId: response.authorId ?? "",
     bodyHtml: response.bodyHtml ?? "",
     bodyMarkdown: response.bodyMarkdown ?? "",
+    commitReferences: normalizeCommitReferences(response.commitReferences),
     comments: (response.comments ?? []).map((comment) => ({
       attachments: normalizeAttachments(comment.attachments),
       authorId: comment.authorId ?? "",
@@ -360,6 +371,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       contentsHtml: comment.contentsHtml ?? "",
       contentsMarkdown: comment.contentsMarkdown ?? "",
       createdLabel: comment.createdLabel ?? "",
+      commitReferences: normalizeCommitReferences(comment.commitReferences),
       id: comment.id ?? "",
       issueReferences: normalizeIssueReferences(comment.issueReferences),
       mentionReferences: normalizeMentionReferences(comment.mentionReferences),

@@ -7,19 +7,22 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::Path as FsPath;
 use yoram_vcs::VcsError;
 
 use crate::{
     code_browser_error, decode_query_component, deserialize_i64_vec_from_strings_or_numbers,
     dispatch_posting_comment_webhooks, dispatch_posting_webhooks, form_value, gravatar_url,
-    headers_with_form_csrf, internal_error, markdown_issue_references_for_project,
-    markdown_mention_references, normalize_identifier, optional_i64_string, parse_rest_query_i64,
+    headers_with_form_csrf, internal_error, markdown_commit_references_for_project,
+    markdown_issue_references_for_project, markdown_mention_references, normalize_identifier,
+    optional_i64_string, parse_rest_query_i64,
     parse_rest_query_u32, persistence, project_resource_create_allowed, project_update_allowed,
     redirect_to, require_authenticated_user, require_project_read, require_project_resource_create,
     require_session, require_valid_csrf, rest_board_label_from_record,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
-    visible_projects_for_organization, ConnectError, MarkdownIssueReference,
-    MarkdownMentionReference, PilotBackend, PilotRepository, PilotServiceImpl,
+    visible_projects_for_organization, ConnectError, MarkdownCommitReference,
+    MarkdownIssueReference, MarkdownMentionReference, PilotBackend, PilotRepository,
+    PilotServiceImpl,
     ProjectCreatableResource, RestBoardLabel, RestIssueReferenceMetadata,
     RestMentionReferenceMetadata, RestRouteError,
 };
@@ -200,6 +203,16 @@ struct RestBoardAttachment {
     size: i64,
 }
 
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct RestMarkdownCommitReference {
+    token: String,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    short_id: String,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPostComment {
@@ -211,6 +224,7 @@ struct RestPostComment {
     contents_markdown: String,
     created_label: String,
     id: String,
+    commit_references: Vec<RestMarkdownCommitReference>,
     issue_references: Vec<RestIssueReferenceMetadata>,
     mention_references: Vec<RestMentionReferenceMetadata>,
     parent_comment_id: String,
@@ -250,6 +264,7 @@ struct RestPostDetailResponse {
     history_html: String,
     history_markdown: String,
     id: String,
+    commit_references: Vec<RestMarkdownCommitReference>,
     issue_references: Vec<RestIssueReferenceMetadata>,
     mention_references: Vec<RestMentionReferenceMetadata>,
     is_watching: bool,
@@ -888,6 +903,7 @@ fn rest_post_comment_from_record(
     comment: &persistence::PostingCommentRecord,
     _owner_name: &str,
     _project_name: &str,
+    commit_references: &[MarkdownCommitReference],
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestPostComment {
@@ -904,6 +920,10 @@ fn rest_post_comment_from_record(
         contents_markdown: comment.contents_markdown.clone(),
         created_label: comment.created_label.clone(),
         id: comment.id.to_string(),
+        commit_references: commit_references
+            .iter()
+            .map(rest_markdown_commit_reference_from_resolved)
+            .collect(),
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
@@ -914,6 +934,18 @@ fn rest_post_comment_from_record(
             .collect(),
         parent_comment_id: optional_i64_string(comment.parent_comment_id),
         via_email: comment.via_email,
+    }
+}
+
+fn rest_markdown_commit_reference_from_resolved(
+    reference: &MarkdownCommitReference,
+) -> RestMarkdownCommitReference {
+    RestMarkdownCommitReference {
+        token: reference.token.clone(),
+        owner_name: reference.owner_name.clone(),
+        project_name: reference.project_name.clone(),
+        commit_id: reference.commit_id.clone(),
+        short_id: reference.short_id.clone(),
     }
 }
 
@@ -943,6 +975,7 @@ fn rest_post_list_item_from_record(
 
 async fn rest_post_detail_response_from_record_with_repository_issue_references(
     repository: &PilotRepository,
+    data_root: &FsPath,
     posting: &persistence::PostingRecord,
     actor_id: Option<i64>,
     base_path: &str,
@@ -962,6 +995,7 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
     .await?;
     rest_post_detail_response_from_record_with_access_issue_references(
         repository,
+        data_root,
         &authorization,
         posting,
         actor_id,
@@ -978,6 +1012,7 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
 
 async fn rest_post_detail_response_from_record_with_access_issue_references(
     repository: &PilotRepository,
+    data_root: &FsPath,
     authorization: &persistence::ProjectAuthorizationRecord,
     posting: &persistence::PostingRecord,
     actor_id: Option<i64>,
@@ -1003,6 +1038,14 @@ async fn rest_post_detail_response_from_record_with_access_issue_references(
         markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
             .await?;
     let mention_references = markdown_mention_references(repository, &markdowns).await?;
+    let commit_references = markdown_commit_references_for_project(
+        repository,
+        authorization,
+        actor_id,
+        &markdowns,
+        data_root,
+    )
+    .await?;
     Ok(rest_post_detail_response_from_record_with_references(
         posting,
         base_path,
@@ -1012,6 +1055,7 @@ async fn rest_post_detail_response_from_record_with_access_issue_references(
         viewer_can_comment,
         viewer_can_set_notice,
         viewer_can_watch,
+        &commit_references,
         &issue_references,
         &mention_references,
     ))
@@ -1026,6 +1070,7 @@ fn rest_post_detail_response_from_record_with_references(
     viewer_can_comment: bool,
     viewer_can_set_notice: bool,
     viewer_can_watch: bool,
+    commit_references: &[MarkdownCommitReference],
     issue_references: &[MarkdownIssueReference],
     mention_references: &[MarkdownMentionReference],
 ) -> RestPostDetailResponse {
@@ -1049,6 +1094,7 @@ fn rest_post_detail_response_from_record_with_references(
                     comment,
                     &posting.owner_name,
                     &posting.project_name,
+                    commit_references,
                     issue_references,
                     mention_references,
                 )
@@ -1058,6 +1104,10 @@ fn rest_post_detail_response_from_record_with_references(
         history_html: String::new(),
         history_markdown: posting.history_markdown.clone(),
         id: posting.id.to_string(),
+        commit_references: commit_references
+            .iter()
+            .map(rest_markdown_commit_reference_from_resolved)
+            .collect(),
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
@@ -1302,6 +1352,7 @@ async fn rest_list_project_posts(
         Some(
             rest_post_detail_response_from_record_with_repository_issue_references(
                 repository,
+                &service.data_root,
                 readme,
                 actor_id,
                 &service.base_path,
@@ -1504,6 +1555,7 @@ async fn rest_read_posting_detail(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &access.posting,
             actor_id,
             &service.base_path,
@@ -1611,6 +1663,7 @@ async fn rest_create_posting(
     Ok(Json(RestPostMutationResponse::Detail(
         rest_post_detail_response_from_record_with_access_issue_references(
             repository,
+            &service.data_root,
             &authorization,
             &posting,
             session.user_id,
@@ -1703,6 +1756,7 @@ async fn rest_update_posting(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &posting,
             session.user_id,
             &service.base_path,
@@ -1816,6 +1870,7 @@ async fn rest_update_posting_labels(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &posting,
             session.user_id,
             &service.base_path,
@@ -1904,6 +1959,7 @@ async fn rest_create_posting_comment(
     Ok(Json(
         rest_post_detail_response_from_record_with_access_issue_references(
             repository,
+            &service.data_root,
             &access.authorization,
             &posting,
             session.user_id,
@@ -2000,6 +2056,7 @@ async fn rest_update_posting_comment(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &posting,
             session.user_id,
             &service.base_path,
@@ -2075,6 +2132,7 @@ async fn rest_delete_posting_comment(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &posting,
             session.user_id,
             &service.base_path,
@@ -2146,6 +2204,7 @@ async fn rest_watch_posting(
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
+            &service.data_root,
             &updated,
             session.user_id,
             &service.base_path,

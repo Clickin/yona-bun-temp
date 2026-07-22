@@ -35,6 +35,7 @@ import { readProjectContainerQueryOptions } from "../../../../api/org-project";
 import { apiQueryKeys } from "../../../../api/query-keys";
 import type { ProjectContainer } from "../../../../api/types";
 import { readSessionBootstrap } from "../../../../auth-workspace-client";
+import type { CommitReferenceMetadata } from "../../../../api/issue-meta";
 import { useLegacyMessages } from "../../../../i18n";
 import { prefixBasePath, type RuntimeConfig } from "../../../../runtime-config";
 import { LegacyMarkdownHelp } from "../../../-legacy-markdown-help";
@@ -2487,6 +2488,7 @@ type ChildCommentMarkdownReplacement = {
 };
 
 function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
+  const commitReferences = comment.commitReferences ?? [];
   const replacements: ChildCommentMarkdownReplacement[] = (comment.issueReferences ?? []).map(
     (reference) => ({
       children: [
@@ -2505,6 +2507,23 @@ function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
       url: `/${reference.ownerName}/${reference.projectName}/issue/${reference.issueNumber}`,
     }),
   );
+  for (const reference of commitReferences) {
+    const token = commitReferenceToken(comment.contentsMarkdown, reference);
+    if (token) {
+      const separator = token.lastIndexOf("@");
+      const prefix = separator > 0 ? token.slice(0, separator) : "";
+      replacements.push({
+        children: [
+          {
+            type: "text",
+            value: prefix ? `${prefix}@${reference.shortId}` : reference.shortId,
+          },
+        ],
+        token,
+        url: `/${reference.ownerName}/${reference.projectName}/commit/${reference.commitId}`,
+      });
+    }
+  }
   for (const reference of comment.mentionReferences ?? []) {
     if (reference.kind === "organization") {
       replacements.push({
@@ -2545,6 +2564,15 @@ function createChildCommentMarkdownAutoLinkPlugin(comment: BoardPostComment) {
     return (tree: ChildCommentMarkdownNode) =>
       transformChildCommentMarkdownAutoLinks(tree, replacements);
   };
+}
+
+function commitReferenceToken(markdown: string, reference: CommitReferenceMetadata) {
+  const candidates = [
+    `${reference.ownerName}/${reference.projectName}@${reference.commitId}`,
+    `${reference.ownerName}@${reference.commitId}`,
+    `@${reference.commitId}`,
+  ];
+  return candidates.find((candidate) => markdown.includes(candidate));
 }
 
 const CHILD_COMMENT_MARKDOWN_AUTOLINK_EXCLUDED_NODES = new Set([

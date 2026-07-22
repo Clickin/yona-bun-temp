@@ -32,6 +32,15 @@ pub(crate) struct MarkdownMentionReference {
     pub(crate) label: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct MarkdownCommitReference {
+    pub(crate) token: String,
+    pub(crate) owner_name: String,
+    pub(crate) project_name: String,
+    pub(crate) commit_id: String,
+    pub(crate) short_id: String,
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RestIssueReferenceMetadata {
@@ -966,6 +975,35 @@ pub(crate) async fn markdown_mention_references(
     }
 
     Ok(references)
+}
+
+pub(crate) async fn markdown_commit_references_for_project(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    markdowns: &[&str],
+    data_root: &Path,
+) -> Result<Vec<MarkdownCommitReference>, ConnectError> {
+    let markdown = markdowns.join("\n");
+    let response = resolve_rest_markdown_references(
+        repository,
+        authorization,
+        actor_id,
+        &markdown,
+        data_root,
+    )
+    .await?;
+    Ok(response
+        .commit_references
+        .into_iter()
+        .map(|reference| MarkdownCommitReference {
+            token: reference.token,
+            owner_name: reference.owner_name,
+            project_name: reference.project_name,
+            commit_id: reference.commit_id,
+            short_id: reference.short_id,
+        })
+        .collect())
 }
 
 pub(crate) fn rewrite_code_browser_markdown_image_links(

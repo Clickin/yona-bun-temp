@@ -6426,3 +6426,22 @@ live paired screenshots render both sides 1/1 and match comment sizes exactly
 at `1002×107` desktop and `386×135` mobile, with a uniform 2px vertical state
 difference. The automated navbar shifts are approved Yoram contact-item
 deviation consequences and require no compensating layout.
+
+## Batch 819
+
+Translate authenticated populated board-post Markdown commit references from the
+legacy `board/view.scala.html` → `partial_comments.scala.html` →
+`common/childComments.scala.html` render path and
+`app/utils/AutoLinkRenderer.java:40-48,60-61,134-142,274-290`. Reuse the REST
+Markdown resolver so post detail and parent/child comments expose normalized
+`commitReferences` metadata for `User/Project@SHA`, `User@SHA`, and `@SHA`.
+Render the visible short-id labels and `/owner/project/commit/<full-sha>` links
+through the existing ReactMarkdown AST/TanStack Router translation; no new CSS
+owner is required because these are plain legacy anchors. The focused
+`project board detail auto-links commit references in parent and child Markdown`
+E2E must prove source mapping, metadata wiring, exact text/hrefs/order, and
+desktop/390px containment with normal and fallback-off system-Chrome runs.
+Local exact-state and real legacy seed baseline screenshots are captured under
+`frontend/output/playwright/batch-819/` and visually inspected. Approved Yoram footer/provider
+and developer-contact/repository differences remain intentional deviations and
+must not be reintroduced or offset.

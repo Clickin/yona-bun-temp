@@ -19,10 +19,12 @@ pub use app_config::{
 };
 pub(crate) use markdown::{
     issue_reference_metadata_from_resolved, markdown_issue_references_for_project,
-    markdown_mention_references, mention_reference_metadata_from_resolved,
+    markdown_commit_references_for_project, markdown_mention_references,
+    mention_reference_metadata_from_resolved,
     rest_issue_reference_metadata_from_resolved, rest_mention_reference_metadata_from_resolved,
     rewrite_code_browser_markdown_image_links, rewrite_project_readme_markdown_links,
-    MarkdownIssueReference, MarkdownMentionReference, RestIssueReferenceMetadata,
+    MarkdownCommitReference, MarkdownIssueReference, MarkdownMentionReference,
+    RestIssueReferenceMetadata,
     RestMentionReferenceMetadata,
 };
 pub use notification_mail::{

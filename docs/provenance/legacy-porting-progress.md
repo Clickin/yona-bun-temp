@@ -3,7 +3,17 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-06-30
+Last updated: 2026-07-22
+
+## 2026-07-22 Batch 819 evidence note
+
+The board-post REST boundary now exposes legacy-backed Markdown commit-reference
+metadata (`User/Project@SHA`, `User@SHA`, and `@SHA`) for post detail and nested
+comments. `crates/server/src/markdown.rs` reuses the existing resolver and
+`crates/server/src/routes/boards.rs` maps the contract; the corresponding
+ReactMarkdown/TanStack translation and outside-sandbox system-Chrome evidence
+are recorded in the frontend parity ledger and Scala HTML audit. This is a
+parity slice, not a claim that the broader Rust foundation is complete.
 
 ## Progress Estimate
 
