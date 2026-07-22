@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-23 Batch 826 project search populated issue pagination
+
+- [x] Legacy `search/partial_search.scala.html` → `search/partial_issues.scala.html` project-scoped issue pagination boundary, Korean page labels, and frozen `yobi.less` pagination cascade (`_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, `_responsive.less`) are mapped.
+- [x] Existing project-search pagination behavior is route-owned through `-project-search.stylex.ts`: wrapper, page list/items, prev/next labels/icons, input/nospinner, delimiter, and total owners preserve the five-item DOM/order/copy, sprite states, project-scoped TanStack links, and invalid/clamped Enter behavior. Other search categories and the shared fallback remain unchanged.
+- [x] Focused outside-sandbox system-Chrome normal/fallback-off checks pass 4/4 each, covering source mapping, owner isolation, enabled/disabled controls, desktop/390px computed geometry, project-scoped SPA query navigation, input behavior, and pagination-owned containment.
+- [x] Local desktop/mobile screenshots were captured and visually inspected under `frontend/output/playwright/batch-project-search-pagination/` (`project-search-pagination-desktop.png`, `project-search-pagination-mobile.png`).
+- [ ] Live legacy populated screenshot parity remains unverified because `127.0.0.1:9000` was unavailable. Fallback-off mobile document overflow is an existing 8px project-shell issue from authenticated sidenav/project-search input (`scrollWidth 398` vs `clientWidth 390`); pagination itself is contained (`scrollWidth 390`) and no compensating route geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional deviations and are not restored.
+
 ### 2026-07-22 Batch 825 global search populated issue pagination
 
 - [x] Legacy `search/partial_search.scala.html` → `search/partial_issues.scala.html` pagination boundary, Korean page labels, and frozen `yobi.less` pagination cascade (`_common.less:50-101`, `_sprites.less:1-5,97-119`, `_page.less:7442-7444`, `_responsive.less`) are mapped.

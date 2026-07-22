@@ -61,6 +61,18 @@ const sx = {
   forbiddenErrorWrap: stylex.props(styles.forbiddenErrorWrap),
   forbiddenErrorIcon: stylex.props(styles.forbiddenErrorIcon(legacySpriteUrl)),
   forbiddenErrorMessage: stylex.props(styles.forbiddenErrorMessage),
+  paginationWrap: stylex.props(styles.paginationWrap),
+  paginationPageNums: stylex.props(styles.paginationPageNums),
+  paginationPageNum: stylex.props(styles.paginationPageNum),
+  paginationIconPageNum: stylex.props(styles.paginationIconPageNum),
+  paginationDelimiter: stylex.props(styles.paginationDelimiter),
+  paginationInput: stylex.props(styles.paginationInput),
+  paginationNoSpinner: stylex.props(styles.paginationNoSpinner),
+  paginationIcon: stylex.props(styles.paginationIcon(legacySpriteUrl)),
+  paginationPrev: stylex.props(styles.paginationPrev),
+  paginationPrevOff: stylex.props(styles.paginationPrevOff),
+  paginationNext: stylex.props(styles.paginationNext),
+  paginationNextOff: stylex.props(styles.paginationNextOff),
 } as const;
 
 type ProjectSearchRouteSearch = {
@@ -865,9 +877,22 @@ function ProjectSearchPagination({
   };
 
   return (
-    <div id="pagination" className="page-navigation-wrap">
-      <ul className="page-nums">
-        <li className="page-num ikon">
+    <div
+      {...sx.paginationWrap}
+      className={`${sx.paginationWrap.className} page-navigation-wrap`}
+      data-stylex-owner="project-search-pagination"
+      id="pagination"
+    >
+      <ul
+        {...sx.paginationPageNums}
+        className={`${sx.paginationPageNums.className} page-nums`}
+        data-stylex-owner="project-search-pagination-page-nums"
+      >
+        <li
+          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
+          className={`${sx.paginationPageNum.className} ${sx.paginationIconPageNum.className} page-num ikon`}
+          data-stylex-owner="project-search-pagination-prev-page"
+        >
           {currentPage > 1 ? (
             <Link
               activeOptions={projectSearchPaginationLinkActiveOptions}
@@ -877,21 +902,50 @@ function ProjectSearchPagination({
               search={pageSearch(currentPage - 1)}
               to="/$ownerName/$projectName/search"
             >
-              <i className="ico btn-pg-prev"></i>
-              <span>{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationPrev)}
+                className={`${sx.paginationIcon.className} ${sx.paginationPrev.className} ico btn-pg-prev`}
+                data-stylex-owner="project-search-pagination-prev-icon"
+              ></i>
+              <span
+                className="pagination-icon-label"
+                data-stylex-owner="project-search-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </Link>
           ) : (
             <>
-              <i className="ico btn-pg-prev off"></i>
-              <span className="off">{t("button.prevPage")}</span>
+              <i
+                {...stylex.props(
+                  styles.paginationIcon(legacySpriteUrl),
+                  styles.paginationPrev,
+                  styles.paginationPrevOff,
+                )}
+                className={`${sx.paginationIcon.className} ${sx.paginationPrev.className} ${sx.paginationPrevOff.className} ico btn-pg-prev off`}
+                data-stylex-owner="project-search-pagination-prev-icon"
+              ></i>
+              <span
+                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
+                className={`${stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff).className} pagination-icon-label off`}
+                data-stylex-owner="project-search-pagination-prev-label"
+              >
+                {t("button.prevPage")}
+              </span>
             </>
           )}
         </li>
-        <li className="page-num">
+        <li
+          {...sx.paginationPageNum}
+          className={`${sx.paginationPageNum.className} page-num`}
+          data-stylex-owner="project-search-pagination-input-page"
+        >
           <input
-            className="input-mini nospinner"
+            {...stylex.props(styles.paginationInput, styles.paginationNoSpinner)}
+            className={`${stylex.props(styles.paginationInput, styles.paginationNoSpinner).className} input-mini nospinner`}
+            data-stylex-owner="project-search-pagination-input"
             defaultValue={currentPage}
-            key={currentPage}
+            key={`${currentPage}-${totalPages}`}
             max={totalPages}
             min={1}
             name="pageNum"
@@ -903,9 +957,25 @@ function ProjectSearchPagination({
             onKeyDown={handleInputKeyDown}
           />
         </li>
-        <li className="page-num delimiter">/</li>
-        <li className="page-num">{totalPages}</li>
-        <li className="page-num ikon">
+        <li
+          {...stylex.props(styles.paginationPageNum, styles.paginationDelimiter)}
+          className={`${sx.paginationPageNum.className} ${sx.paginationDelimiter.className} page-num delimiter`}
+          data-stylex-owner="project-search-pagination-delimiter"
+        >
+          /
+        </li>
+        <li
+          {...sx.paginationPageNum}
+          className={`${sx.paginationPageNum.className} page-num`}
+          data-stylex-owner="project-search-pagination-total"
+        >
+          {totalPages}
+        </li>
+        <li
+          {...stylex.props(styles.paginationPageNum, styles.paginationIconPageNum)}
+          className={`${sx.paginationPageNum.className} ${sx.paginationIconPageNum.className} page-num ikon`}
+          data-stylex-owner="project-search-pagination-next-page"
+        >
           {currentPage < totalPages ? (
             <Link
               activeOptions={projectSearchPaginationLinkActiveOptions}
@@ -915,13 +985,37 @@ function ProjectSearchPagination({
               search={pageSearch(currentPage + 1)}
               to="/$ownerName/$projectName/search"
             >
-              <span>{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next"></i>
+              <span
+                {...stylex.props(styles.paginationIconLabel)}
+                className={`${stylex.props(styles.paginationIconLabel).className} pagination-icon-label`}
+                data-stylex-owner="project-search-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(styles.paginationIcon(legacySpriteUrl), styles.paginationNext)}
+                className={`${sx.paginationIcon.className} ${sx.paginationNext.className} ico btn-pg-next`}
+                data-stylex-owner="project-search-pagination-next-icon"
+              ></i>
             </Link>
           ) : (
             <>
-              <span className="off">{t("button.nextPage")}</span>
-              <i className="ico btn-pg-next off"></i>
+              <span
+                {...stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff)}
+                className={`${stylex.props(styles.paginationIconLabel, styles.paginationIconLabelOff).className} pagination-icon-label off`}
+                data-stylex-owner="project-search-pagination-next-label"
+              >
+                {t("button.nextPage")}
+              </span>
+              <i
+                {...stylex.props(
+                  styles.paginationIcon(legacySpriteUrl),
+                  styles.paginationNext,
+                  styles.paginationNextOff,
+                )}
+                className={`${sx.paginationIcon.className} ${sx.paginationNext.className} ${sx.paginationNextOff.className} ico btn-pg-next off`}
+                data-stylex-owner="project-search-pagination-next-icon"
+              ></i>
             </>
           )}
         </li>
