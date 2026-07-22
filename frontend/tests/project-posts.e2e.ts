@@ -2717,6 +2717,30 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
   expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
   expect(legacyCommentFormSource).toContain("@common.fileUploader(resourceType, null)");
   expect(legacyCommentFormSource).toMatch(
+    /<form id="comment-form" action="@action" method="post" enctype="multipart\/form-data">\s*<div class="write-comment-box">/u,
+  );
+  expect(legacyBootstrapSource).toMatch(/form\s*\{\s*margin:\s*0 0 20px;\s*\}/u);
+  expect(legacyPageSource).toMatch(
+    /\.write-comment-box\s*\{\s*padding:\s*0 0 15px 54px;\s*font-family:@base-font-family;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /@media[^{]*\(max-width:\s*720px\)[\s\S]*?\.write-comment-box\s*\{\s*padding:\s*0;\s*\}/u,
+  );
+  expect(legacyVariablesSource).toContain(
+    '@base-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";',
+  );
+  expect(legacyYobiUiSource).toContain("form { margin:0 0 2px; }");
+  expect(legacyYobiSource).toMatch(
+    /@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";\s*@import "less\/_yobiUI\.less";/u,
+  );
+  expect(styleSource).toMatch(/commentCreateForm:\s*\{ margin:\s*"0px 0px 2px" \}/u);
+  expect(styleSource).toMatch(
+    /commentCreateWriteBox:\s*\{[\s\S]*?fontFamily:[\s\S]*?-apple-system, BlinkMacSystemFont[\s\S]*?Segoe UI Symbol[\s\S]*?padding:\s*"0px 0px 15px 54px"[\s\S]*?@media all and \(max-width: 720px\)[\s\S]*?padding:\s*0/u,
+  );
+  for (const owner of ["post-detail-comment-create-form", "post-detail-comment-create-write-box"]) {
+    expect(routeSource.match(new RegExp(`"${owner}"`, "g")) ?? []).toHaveLength(1);
+  }
+  expect(legacyCommentFormSource).toMatch(
     /<div class="write-comment-wrap">\s*<div class="right-txt">\s*<button type="button" class="ybtn hidden" id="dynamic-comment-btn"><\/button>\s*<button type="submit" class="ybtn ybtn-success">@Messages\("button\.comment\.new"\)<\/button>/u,
   );
   for (const owner of [
@@ -3018,6 +3042,9 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     await page.goto(`${basePath}/admin/sample/post/1`);
 
     const commentForm = page.locator("#comment-form:has(#upload)");
+    const createWriteBox = commentForm.locator(
+      ':scope > [data-stylex-owner="post-detail-comment-create-write-box"]',
+    );
     const upload = commentForm.locator('[data-stylex-owner="post-detail-comment-upload-wrap"]');
     const uploadAttach = upload.locator(
       '[data-stylex-owner="post-detail-comment-upload-attach-wrap"]',
@@ -3054,6 +3081,62 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     const createSubmit = createActions.locator(
       '[data-stylex-owner="post-detail-comment-create-submit"]',
     );
+    await expect(commentForm).toHaveAttribute(
+      "data-stylex-owner",
+      "post-detail-comment-create-form",
+    );
+    await expect(commentForm).toHaveAttribute("action", `${basePath}/admin/sample/post/1/comments`);
+    await expect(commentForm).toHaveAttribute("method", "post");
+    await expect(commentForm).toHaveAttribute("enctype", "multipart/form-data");
+    await expect(commentForm).toHaveCSS("margin", "0px 0px 2px");
+    await expect(createWriteBox).toHaveCount(1);
+    await expect(createWriteBox).toHaveClass(/write-comment-box/u);
+    await expect(createWriteBox).toHaveCSS(
+      "padding",
+      viewport.width === 390 ? "0px" : "0px 0px 15px 54px",
+    );
+    const createFontFamily = await createWriteBox.evaluate(
+      (element) => getComputedStyle(element).fontFamily,
+    );
+    for (const family of [
+      "-apple-system",
+      "Segoe UI",
+      "Helvetica",
+      "Arial",
+      "sans-serif",
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      "Segoe UI Symbol",
+    ]) {
+      expect(createFontFamily).toContain(family);
+    }
+    expect(createFontFamily).toMatch(/BlinkMacSystemFont|system-ui/u);
+    expect(
+      await commentForm.evaluate((form) => {
+        const child = form.firstElementChild;
+        return {
+          childCount: form.children.length,
+          className: child?.className,
+          owner: child?.getAttribute("data-stylex-owner"),
+          tagName: child?.tagName.toLowerCase(),
+        };
+      }),
+    ).toEqual({
+      childCount: 1,
+      className: expect.stringContaining("write-comment-box"),
+      owner: "post-detail-comment-create-write-box",
+      tagName: "div",
+    });
+    await expect(
+      page.locator(
+        '[data-stylex-owner="post-detail-comment-create-form"], [data-stylex-owner="post-detail-comment-create-write-box"]',
+      ),
+    ).toHaveCount(2);
+    await expect(
+      page.locator(
+        '.comment-update-form [data-stylex-owner="post-detail-comment-create-form"], .comment-update-form [data-stylex-owner="post-detail-comment-create-write-box"], [data-login="required"] [data-stylex-owner="post-detail-comment-create-form"], [data-login="required"] [data-stylex-owner="post-detail-comment-create-write-box"]',
+      ),
+    ).toHaveCount(0);
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
@@ -3275,9 +3358,7 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
       ),
     ).toHaveCount(0);
     const metrics = await commentForm.evaluate((form) => {
-      const measure = (selector: string) => {
-        const element = form.querySelector<HTMLElement>(selector);
-        if (!element) throw new Error(`Missing ${selector}`);
+      const measureElement = (element: HTMLElement) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
         return {
@@ -3294,7 +3375,23 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
           width: rect.width,
         };
       };
+      const measure = (selector: string) => {
+        const element = form.querySelector<HTMLElement>(selector);
+        if (!element) throw new Error(`Missing ${selector}`);
+        return measureElement(element);
+      };
       return {
+        createForm: measureElement(form),
+        createWriteBox: measure('[data-stylex-owner="post-detail-comment-create-write-box"]'),
+        createShellOrder: Array.from(
+          form.querySelector<HTMLElement>(
+            ':scope > [data-stylex-owner="post-detail-comment-create-write-box"]',
+          )!.children,
+        ).map((element) => ({
+          className: element.className,
+          owner: element.getAttribute("data-stylex-owner"),
+          tagName: element.tagName.toLowerCase(),
+        })),
         clearTemporary: measure('[data-stylex-owner="post-detail-comment-create-clear-temporary"]'),
         editPane: measure("#edit-contents"),
         editor: measure(".write-comment-box > .mt10"),
@@ -3357,6 +3454,29 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     });
 
     expect(metrics.tabContent).toMatchObject({ overflow: "visible", position: "relative" });
+    expect(metrics.createShellOrder).toHaveLength(3);
+    expect(metrics.createShellOrder[0]).toMatchObject({ tagName: "div" });
+    expect(metrics.createShellOrder[0]?.className).toContain("mt10");
+    expect(metrics.createShellOrder[1]).toMatchObject({
+      owner: "post-detail-comment-upload-wrap",
+      tagName: "div",
+    });
+    expect(metrics.createShellOrder[2]).toMatchObject({
+      owner: "post-detail-comment-create-write-wrap",
+      tagName: "div",
+    });
+    expect(metrics.createWriteBox.left).toBeGreaterThanOrEqual(metrics.createForm.left);
+    expect(metrics.createWriteBox.right).toBeLessThanOrEqual(metrics.createForm.right);
+    expect(metrics.createWriteBox.top).toBeGreaterThanOrEqual(metrics.createForm.top);
+    expect(metrics.createWriteBox.bottom).toBeLessThanOrEqual(metrics.createForm.bottom);
+    expect(metrics.editor.left).toBeGreaterThanOrEqual(metrics.createWriteBox.left);
+    expect(metrics.editor.right).toBeLessThanOrEqual(metrics.createWriteBox.right);
+    expect(metrics.upload.left).toBeGreaterThanOrEqual(metrics.createWriteBox.left);
+    expect(metrics.upload.right).toBeLessThanOrEqual(metrics.createWriteBox.right);
+    expect(metrics.createWriteWrap.left).toBeGreaterThanOrEqual(metrics.createWriteBox.left);
+    expect(metrics.createWriteWrap.right).toBeLessThanOrEqual(metrics.createWriteBox.right);
+    expect(metrics.editor.bottom).toBeLessThanOrEqual(metrics.upload.top);
+    expect(metrics.upload.bottom).toBeLessThanOrEqual(metrics.createWriteWrap.top);
     expect(metrics.textarea.left).toBeGreaterThanOrEqual(metrics.textareaBox.left);
     expect(metrics.textarea.right).toBeLessThanOrEqual(metrics.textareaBox.right);
     expect(metrics.textarea.top).toBeGreaterThanOrEqual(metrics.textareaBox.top);

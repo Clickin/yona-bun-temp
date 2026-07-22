@@ -178,6 +178,13 @@ export const styles = stylex.create({
   childCommentReplyVisible: { display: "block" },
   childCommentFormVisible: { display: "block" },
   disabledCommentActions: { textAlign: "right" },
+  commentCreateForm: { margin: "0px 0px 2px" },
+  commentCreateWriteBox: {
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    padding: "0px 0px 15px 54px",
+    "@media all and (max-width: 720px)": { padding: 0 },
+  },
   commentUploadWrap: {
     backgroundColor: "#efefef",
     borderRadius: "0px 0px 5px 5px",

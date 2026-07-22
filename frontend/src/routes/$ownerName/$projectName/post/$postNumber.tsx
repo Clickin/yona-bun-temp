@@ -68,6 +68,8 @@ const sx = {
   commentAvatar: stylex.props(styles.commentAvatar),
   commentAvatarWrap: stylex.props(styles.commentAvatarWrap),
   commentMeta: stylex.props(styles.commentMeta),
+  commentCreateForm: stylex.props(styles.commentCreateForm),
+  commentCreateWriteBox: stylex.props(styles.commentCreateWriteBox),
   commentUploadWrap: stylex.props(styles.commentUploadWrap),
   commentUploadAttachWrap: stylex.props(styles.commentUploadAttachWrap),
   commentUploadButtonWrap: stylex.props(styles.commentUploadButtonWrap),
@@ -1328,13 +1330,18 @@ function PostCommentForm({
 
   return (
     <form
+      className={sx.commentCreateForm.className}
+      data-stylex-owner="post-detail-comment-create-form"
       id="comment-form"
       action={prefixBasePath(basePath, `/${ownerName}/${projectName}/post/${postNumber}/comments`)}
       method="post"
       encType="multipart/form-data"
       onSubmit={handleSubmit}
     >
-      <div className="write-comment-box">
+      <div
+        className={`${sx.commentCreateWriteBox.className} write-comment-box`}
+        data-stylex-owner="post-detail-comment-create-write-box"
+      >
         <MarkdownEditor
           editorMode="comment-body"
           key={editorResetKey}
