@@ -4,6 +4,16 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 790 board-post body/footer left floats
+
+- [x] The body Watch group and footer keymap wrapper now own exact frozen
+  Bootstrap `float:left`; their nested DOM, Watch mutation, modal behavior,
+  and existing keymap spacing remain unchanged.
+- [x] Explicit system-Chrome normal/fallback-off runs pass 1/1 each at 1366px
+  and 390px with containment/alignment/no-overlap and Watch/keymap interactions.
+- [ ] Fresh paired screenshots retain only the known upload/collapse-button
+  screen gaps; approved Yoram identity/link deviations remain excluded.
+
 ### 2026-07-22 Batch 789 board-post responsive header metadata
 
 - [x] Desktop and mobile date wrappers now own their exact frozen float,

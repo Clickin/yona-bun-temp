@@ -6351,3 +6351,16 @@ remain excluded. Explicit system-Chrome normal/fallback-off runs pass 1/1 each
 at 1366px and 390px. The real paired desktop sweep confirms header alignment
 and retains the known upload/collapse-button gaps outside this wave; approved
 Yoram identity/link differences remain deviations.
+
+## Batch 790
+
+Move two remaining board-post left floats into route-local StyleX. Frozen
+`board/view.scala.html:96-112` emits the Watch group's `div.pull-left`, while
+`board/view.scala.html:176-179` includes `help/keymap.scala.html:12-17`, whose
+wrapper combines `pull-left` with the already-owned 55px margin and 10px
+vertical padding. Frozen Bootstrap `bootstrap.css:6097-6099` supplies exact
+`float:left`. Preserve nested DOM, copy/order, Watch mutation, and keymap
+open/confirm/Escape behavior; action container, footer shell, modal internals,
+and unrelated pull utilities remain excluded. Explicit system-Chrome normal/
+fallback-off runs pass 1/1 each at 1366px and 390px. Fresh paired screenshots
+confirm both positions and retain known screen gaps outside this wave.

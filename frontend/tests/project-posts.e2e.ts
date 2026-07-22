@@ -2322,6 +2322,172 @@ test("project board detail owns responsive header metadata in StyleX", async ({ 
   }
 });
 
+test("project board-post body and footer own their left floats in StyleX", async ({ page }) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyViewSource = readFileSync("../yona-original/app/views/board/view.scala.html", "utf8");
+  const legacyKeymapSource = readFileSync(
+    "../yona-original/app/views/help/keymap.scala.html",
+    "utf8",
+  );
+  const legacyBootstrapSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap.css",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/public/bootstrap/css/bootstrap-responsive.css",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+
+  const legacyWatchArea = legacyViewSource.slice(
+    legacyViewSource.indexOf('<div class="board-actrow right-txt">'),
+    legacyViewSource.indexOf('<div class="watcher-list"></div>'),
+  );
+  expect(legacyWatchArea.match(/<div class="pull-left">/g)).toHaveLength(1);
+  expect(legacyWatchArea).toContain('<button id="watch-button"');
+  expect(legacyKeymapSource.match(/<div class="pull-left"/g)).toHaveLength(1);
+  expect(legacyKeymapSource).toContain('style="padding:10px 0; margin-left: 55px;"');
+  expect(legacyBootstrapSource).toMatch(/\.pull-left\s*\{\s*float:\s*left;\s*\}/u);
+  expect(legacyResponsiveSource).toMatch(/\.media \.pull-left,\s*\.media \.pull-right\s*\{/u);
+  expect(legacyYobiSource.match(/^@import "less\/_.*\.less";$/gmu)).toEqual([
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_temporary.less";',
+    '@import "less/_markdown.less";',
+    '@import "less/_migration.less";',
+    '@import "less/_override.less";',
+  ]);
+  expect(styleSource).toMatch(/watchWrapper:\s*\{\s*float:\s*"left"\s*\}/u);
+  expect(styleSource).toMatch(
+    /keymapWrapper:\s*\{[^}]*float:\s*"left"[^}]*marginLeft:\s*55[^}]*padding:\s*"10px 0px"/su,
+  );
+  expect(routeSource.match(/data-stylex-owner="post-detail-watch-wrapper"/g)).toHaveLength(1);
+  expect(routeSource.match(/data-stylex-owner="post-detail-keymap-wrapper"/g)).toHaveLength(1);
+  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-watch-wrapper"[^>]*pull-left/su);
+  expect(routeSource).not.toMatch(/data-stylex-owner="post-detail-keymap-wrapper"[^>]*pull-left/su);
+  expect(routeSource).not.toMatch(
+    /data-stylex-owner="post-detail-(?:watch|keymap)-wrapper"[^>]*style=/su,
+  );
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const { watchRequests } = await mockProjectPosts(page, "comment");
+    await page.goto(`${basePath}/admin/sample/post/3`);
+
+    const watchWrapper = page.locator('[data-stylex-owner="post-detail-watch-wrapper"]');
+    const keymapWrapper = page.locator('[data-stylex-owner="post-detail-keymap-wrapper"]');
+    await expect(watchWrapper).toHaveCount(1);
+    await expect(keymapWrapper).toHaveCount(1);
+    await expect(watchWrapper).not.toHaveClass(/\bpull-left\b/u);
+    await expect(keymapWrapper).not.toHaveClass(/\bpull-left\b/u);
+
+    const metrics = await page.evaluate(() => {
+      const watch = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-watch-wrapper"]',
+      )!;
+      const watchButton = watch.querySelector<HTMLElement>("#watch-button")!;
+      const actionRow = watch.closest<HTMLElement>(".board-actrow")!;
+      const actionButtons = actionRow.querySelector<HTMLElement>(":scope > span")!;
+      const keymap = document.querySelector<HTMLElement>(
+        '[data-stylex-owner="post-detail-keymap-wrapper"]',
+      )!;
+      const keymapButton = keymap.querySelector<HTMLElement>("button")!;
+      const footer = keymap.closest<HTMLElement>(".board-footer")!;
+      const watchRect = watch.getBoundingClientRect();
+      const watchButtonRect = watchButton.getBoundingClientRect();
+      const actionRect = actionRow.getBoundingClientRect();
+      const actionButtonsRect = actionButtons.getBoundingClientRect();
+      const keymapRect = keymap.getBoundingClientRect();
+      const keymapButtonRect = keymapButton.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      return {
+        keymap: {
+          buttonContained:
+            keymapButtonRect.left >= keymapRect.left - 0.5 &&
+            keymapButtonRect.right <= keymapRect.right + 0.5 &&
+            keymapButtonRect.top >= keymapRect.top - 0.5 &&
+            keymapButtonRect.bottom <= keymapRect.bottom + 0.5,
+          contained:
+            keymapRect.left >= footerRect.left - 0.5 && keymapRect.right <= footerRect.right + 0.5,
+          float: getComputedStyle(keymap).float,
+          leftOffset: Math.round(keymapRect.left - footerRect.left),
+          noOverflow: keymapRect.right <= footerRect.right + 0.5,
+        },
+        watch: {
+          buttonContained:
+            watchButtonRect.left >= watchRect.left - 0.5 &&
+            watchButtonRect.right <= watchRect.right + 0.5 &&
+            watchButtonRect.top >= watchRect.top - 0.5 &&
+            watchButtonRect.bottom <= watchRect.bottom + 0.5,
+          contained:
+            watchRect.left >= actionRect.left - 0.5 &&
+            watchRect.right <= actionRect.right + 0.5 &&
+            watchRect.top >= actionRect.top - 0.5 &&
+            watchRect.bottom <= actionRect.bottom + 0.5,
+          float: getComputedStyle(watch).float,
+          leftAligned: Math.abs(watchRect.left - actionRect.left) <= 3,
+          noOverlap: watchRect.right <= actionButtonsRect.left,
+        },
+      };
+    });
+    expect(metrics.watch).toEqual({
+      buttonContained: true,
+      contained: true,
+      float: "left",
+      leftAligned: true,
+      noOverlap: true,
+    });
+    expect(metrics.keymap).toEqual({
+      buttonContained: true,
+      contained: true,
+      float: "left",
+      leftOffset: 55,
+      noOverflow: true,
+    });
+
+    const watchButton = page.locator("#watch-button");
+    await expect(watchButton).toHaveText("Watch");
+    await watchButton.click();
+    await expect(watchButton).toHaveText("Stop watching");
+    await watchButton.click();
+    await expect(watchButton).toHaveText("Watch");
+    expect(watchRequests).toEqual(["POST", "DELETE"]);
+
+    const keymapButton = keymapWrapper.locator("button").first();
+    const keymapModal = page.locator("#helpKeys");
+    await keymapButton.click();
+    await expect(keymapModal).toBeVisible();
+    expect(await dispatchCancelableClick(keymapModal.locator(".actrow button"))).toBe(false);
+    await expect(keymapModal).toBeHidden();
+    await keymapButton.click();
+    await expect(keymapModal).toBeVisible();
+    await keymapModal.locator(".actrow button").focus();
+    await page.keyboard.press("Escape");
+    await expect(keymapModal).toBeHidden();
+  }
+});
+
 test("project board detail owns parent comment action and reply controls in StyleX", async ({
   page,
 }) => {

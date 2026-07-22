@@ -97,6 +97,7 @@ export const styles = stylex.create({
   },
   sidebar: { padding: "15px 0px 0px 52px" },
   footer: { fontSize: 0, marginTop: 20, textAlign: "right" },
+  watchWrapper: { float: "left" },
   watch: {
     backgroundColor: postDetailColors.action,
     borderColor: postDetailColors.action,
@@ -136,7 +137,7 @@ export const styles = stylex.create({
     height: "2px",
     transitionDuration: "0.2s",
   },
-  keymapWrapper: { marginLeft: 55, padding: "10px 0px" },
+  keymapWrapper: { float: "left", marginLeft: 55, padding: "10px 0px" },
   desktopMetadata: {
     float: "right",
     marginRight: "10px",

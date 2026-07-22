@@ -55,6 +55,7 @@ const sx = {
   comments: stylex.props(styles.comments),
   sidebar: stylex.props(styles.sidebar),
   footer: stylex.props(styles.footer),
+  watchWrapper: stylex.props(styles.watchWrapper),
   watch: stylex.props(styles.watch),
   editorTabContent: stylex.props(styles.editorTabContent),
   originalMessageToggle: stylex.props(styles.originalMessageToggle),
@@ -520,7 +521,11 @@ function ProjectPostDetailBody({
               className={`${sx.actions.className} board-actrow`}
               data-stylex-owner="post-detail-actions"
             >
-              <div className="pull-left">
+              <div
+                {...sx.watchWrapper}
+                className={sx.watchWrapper.className}
+                data-stylex-owner="post-detail-watch-wrapper"
+              >
                 <div>
                   {canWatch ? (
                     <button
@@ -2093,7 +2098,7 @@ function BoardDetailKeymap({
   return (
     <div
       {...sx.keymapWrapper}
-      className={`${sx.keymapWrapper.className} pull-left`}
+      className={sx.keymapWrapper.className}
       data-stylex-owner="post-detail-keymap-wrapper"
     >
       <button
