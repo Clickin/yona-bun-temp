@@ -494,3 +494,14 @@ Repair the existing site-admin affix and project search-control StyleX owners fr
 LESS/Bootstrap resets, then retain the focused normal/fallback-off matrix as the gate. This
 bounded wave is complete when source, desktop/mobile geometry, and filter interaction all pass;
 do not add route-local offsets or broaden the migration scope.
+
+## Batch 794 — board-post comment identity, actions, and body
+
+The authenticated populated `/admin/sample/post/1` state now owns the six
+comment identity/action/body groups from the included Scala partial and frozen
+CSS cascade. Focused system-Chrome normal and fallback-off runs pass 1/1 each,
+and fresh legacy/local desktop/mobile screenshots were inspected. The remaining
+search and user-menu geometry changes follow directly from the user's explicit
+Yoram footer, developer-contact, and repository changes; they are approved
+deviations, not goal gaps, and must not be offset or repaired by restoring
+NAVER, NAVER LABS, upstream Yona copy, or repository destinations.

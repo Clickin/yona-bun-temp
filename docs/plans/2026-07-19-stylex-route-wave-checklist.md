@@ -4,6 +4,18 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-22 Batch 794 board-post comment identity/actions/body
+
+- [x] Six route-local groups own the exact frozen author, responsive avatar,
+  time link, transparent action base, edit/delete yobicon, and final body
+  declarations. The later markdown padding wins the responsive cascade.
+- [x] The source-less React 20px action bridge remains fallback-owned and is
+  not falsely attributed to legacy CSS.
+- [x] System Chrome normal/fallback-off passes 1/1 each; fresh desktop/mobile
+  paired screenshots render both targets. Search/user-menu shifts are approved
+  consequences of the user's intentional Yoram footer/contact/repository
+  changes, not gaps; legacy NAVER/NAVER LABS/Yona links remain excluded.
+
 ### 2026-07-22 Batch 793 board-post comment-card skeleton
 
 - [x] Six route-local owners preserve the populated Scala comment list, row,

@@ -4956,6 +4956,388 @@ test("authenticated populated board post owns the comment-card skeleton in Style
   }
 });
 
+test("authenticated populated board post owns comment identity actions and body in StyleX", async ({
+  page,
+}) => {
+  const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+  const routeSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/$postNumber.tsx",
+    "utf8",
+  );
+  const styleSource = readFileSync(
+    "src/routes/$ownerName/$projectName/post/-post-detail.stylex.ts",
+    "utf8",
+  );
+  const legacyCommentsSource = readFileSync(
+    "../yona-original/app/views/board/partial_comments.scala.html",
+    "utf8",
+  );
+  const legacyCommonSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyResponsiveSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_responsive.less",
+    "utf8",
+  );
+  const legacyYobiUiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const legacyVariablesSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_variables.less",
+    "utf8",
+  );
+  const legacyMarkdownSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_markdown.less",
+    "utf8",
+  );
+  const legacyYobiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/yobi.less",
+    "utf8",
+  );
+  const legacyYobiconSource = readFileSync(
+    "../yona-original/public/stylesheets/yobicon/style.css",
+    "utf8",
+  );
+
+  expect(legacyCommentsSource).toMatch(
+    /<span class="comment_author">[\s\S]*?<span class="resp-comment-avatar">[\s\S]*?class="avatar-wrap"[\s\S]*?<a href="#comment-@comment\.id" class="ago"[\s\S]*?class="btn-transparent ml10"[\s\S]*?<i class="yobicon-edit-2">[\s\S]*?class="btn-transparent ml6"[\s\S]*?<i class="yobicon-trash">[\s\S]*?<div class="comment-body markdown-wrap"/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.comment_author\s*\{\s*font-size:\s*13px;\s*margin-right:\s*5px;\s*color:\s*#3f3e40;\s*vertical-align:\s*middle;/u,
+  );
+  expect(legacyPageSource).toMatch(/\.ago\s*\{\s*color:\s*#7F8C8D;/u);
+  expect(legacyPageSource).toMatch(/\.resp-comment-avatar\s*\{\s*display:\s*none;/u);
+  expect(legacyCommonSource).toMatch(
+    /\.avatar-wrap\s*\{\s*width:\s*32px;\s*height:\s*32px;\s*vertical-align:\s*top;\s*overflow:\s*hidden;\s*display:\s*inline-block;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /\.media-body\s*\{[\s\S]*?\.resp-comment-avatar\s*\{\s*display:\s*inline-block;[\s\S]*?\.avatar-wrap\s*\{\s*width:\s*24px !important;\s*height:\s*24px !important;\s*margin-top:\s*-5px;/u,
+  );
+  expect(legacyCommonSource).toMatch(
+    /\.btn-transparent\s*\{\s*border:\s*0;\s*padding:\s*0;\s*background:\s*transparent;/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /\.btn-transparent\s*\{\s*background:\s*transparent;\s*border:\s*0;\s*outline:\s*none;/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.act-row\s*\{\s*overflow:\s*hidden;\s*i\s*\{\s*font-size:\s*20px;\s*line-height:\s*20px;\s*color:\s*#000;\s*\.opacity\(20\);[\s\S]*?&\.yobicon-edit-2\s*\{\s*margin-top:\s*2px;\s*\}[\s\S]*?&:hover\s*\{\s*color:\s*@yobi-link;\s*\.opacity\(100\);/u,
+  );
+  expect(legacyVariablesSource).toMatch(/@yobi-link\s*:\s*#51aacc;/u);
+  expect(legacyYobiconSource).toMatch(
+    /\[class\^="yobicon-"\],[\s\S]*?font-family:\s*'yobicon';[\s\S]*?font-style:\s*normal;[\s\S]*?font-variant:\s*normal;[\s\S]*?font-weight:\s*normal;[\s\S]*?line-height:\s*1;[\s\S]*?display:\s*inline-block;[\s\S]*?text-decoration:\s*none;[\s\S]*?background-image:\s*none;[\s\S]*?vertical-align:\s*baseline;/u,
+  );
+  expect(legacyYobiconSource).toMatch(/\.yobicon-edit-2:before\s*\{\s*content:\s*"\\e51d";/u);
+  expect(legacyYobiconSource).toMatch(/\.yobicon-trash:before\s*\{\s*content:\s*"\\e838";/u);
+  expect(legacyPageSource).toMatch(
+    /\.comment-body\s*\{\s*font-size:\s*1\.1em;\s*padding:\s*5px 20px;/u,
+  );
+  expect(legacyResponsiveSource).toMatch(
+    /@media all and \(max-width:\s*720px\)[\s\S]*?\.comment-body\s*\{\s*padding:\s*10px 10px !important;/u,
+  );
+  expect(legacyMarkdownSource).toMatch(
+    /\.markdown-wrap\s*\{[\s\S]*?padding:\s*15px 20px !important;/u,
+  );
+  expect(legacyYobiSource).toMatch(
+    /@import "less\/_page\.less";[\s\S]*?@import "less\/_responsive\.less";[\s\S]*?@import "less\/_markdown\.less";/u,
+  );
+  for (const styleName of [
+    "commentAuthor",
+    "commentResponsiveAvatar",
+    "commentResponsiveAvatarWrap",
+    "commentAgo",
+    "commentActionButton",
+    "commentActionIcon",
+    "commentEditIcon",
+    "commentBody",
+  ]) {
+    expect(styleSource).toContain(`${styleName}:`);
+  }
+  expect(styleSource).toMatch(
+    /commentAuthor:\s*\{[^}]*color:\s*"#3f3e40"[^}]*fontSize:\s*"13px"[^}]*marginRight:\s*"5px"[^}]*verticalAlign:\s*"middle"/su,
+  );
+  expect(styleSource).toMatch(
+    /commentResponsiveAvatar:\s*\{[^}]*display:\s*"none"[\s\S]*?max-width:\s*720px[^}]*display:\s*"inline-block"/u,
+  );
+  expect(styleSource).toMatch(
+    /commentResponsiveAvatarWrap:\s*\{[^}]*display:\s*"inline-block"[^}]*height:\s*"32px"[^}]*overflow:\s*"hidden"[^}]*verticalAlign:\s*"top"[^}]*width:\s*"32px"[\s\S]*?height:\s*"24px"[^}]*marginTop:\s*"-5px"[^}]*width:\s*"24px"/u,
+  );
+  expect(styleSource).toMatch(/commentAgo:\s*\{\s*color:\s*"#7F8C8D"/u);
+  expect(styleSource).toMatch(
+    /commentActionButton:\s*\{[^}]*backgroundColor:\s*"transparent"[^}]*border:\s*0[^}]*outline:\s*"none"[^}]*padding:\s*0/su,
+  );
+  expect(styleSource).not.toMatch(
+    /commentActionButton:\s*\{[^}]*(?:display|minHeight|minWidth|lineHeight):/su,
+  );
+  expect(styleSource).toMatch(
+    /commentActionIcon:\s*\{[^}]*backgroundImage:\s*"none"[^}]*color:\s*"#000000"[^}]*display:\s*"inline-block"[^}]*fontFamily:\s*"yobicon"[^}]*fontSize:\s*"20px"[^}]*fontStyle:\s*"normal"[^}]*fontVariant:\s*"normal"[^}]*fontWeight:\s*400[^}]*lineHeight:\s*"20px"[^}]*opacity:\s*0\.2[^}]*textDecoration:\s*"none"[^}]*verticalAlign:\s*"baseline"[\s\S]*?":hover":\s*\{\s*color:\s*"#51aacc",\s*opacity:\s*1/u,
+  );
+  expect(styleSource).toMatch(
+    /commentEditIcon:\s*\{\s*marginTop:\s*"2px",\s*"::before":\s*\{\s*content:\s*'"\\\\e51d"'/u,
+  );
+  expect(styleSource).toMatch(
+    /commentDeleteIcon:\s*\{\s*"::before":\s*\{\s*content:\s*'"\\\\e838"'/u,
+  );
+  expect(styleSource).toMatch(
+    /commentBody:\s*\{[^}]*fontSize:\s*"1\.1em"[^}]*padding:\s*"15px 20px"/u,
+  );
+  expect(styleSource).not.toContain("commentBodyResponsiveCascade");
+  for (const owner of [
+    "post-detail-comment-author",
+    "post-detail-comment-responsive-avatar",
+    "post-detail-comment-responsive-avatar-wrap",
+    "post-detail-comment-ago",
+    "post-detail-comment-edit-action",
+    "post-detail-comment-delete-action",
+    "post-detail-comment-edit-icon",
+    "post-detail-comment-delete-icon",
+    "post-detail-comment-body-content",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(routeSource).not.toMatch(
+    /data-stylex-owner="post-detail-comment-(?:author|responsive-avatar|responsive-avatar-wrap|ago|edit-action|delete-action|edit-icon|delete-icon|body-content)"[^>]*style=/su,
+  );
+  expect(routeSource).not.toContain("commentOutdated");
+
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await mockProjectPosts(page, "comment");
+    await page.route("**/api/v1/projects/admin/sample/posts/1", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyMarkdown: "Populated **board post**",
+          commentCount: 1,
+          comments: [
+            {
+              attachments: [],
+              authorId: "2",
+              authorLabel: "Dev Member",
+              authorLoginId: "dev",
+              contentsMarkdown: "First **comment**",
+              createdLabel: "Jul 3, 2026",
+              id: "21",
+              parentCommentId: "",
+              viaEmail: false,
+            },
+          ],
+          createdLabel: "Jul 2, 2026",
+          historyHtml: "",
+          historyMarkdown: "",
+          id: "31",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "admin",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "sample",
+          readme: false,
+          title: "Populated board post",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    });
+    await page.goto(`${basePath}/admin/sample/post/1`);
+
+    const comment = page.locator("#comment-21");
+    const author = comment.locator('[data-stylex-owner="post-detail-comment-author"]');
+    const responsiveAvatar = comment.locator(
+      '[data-stylex-owner="post-detail-comment-responsive-avatar"]',
+    );
+    const responsiveAvatarWrap = comment.locator(
+      '[data-stylex-owner="post-detail-comment-responsive-avatar-wrap"]',
+    );
+    const ago = comment.locator('[data-stylex-owner="post-detail-comment-ago"]');
+    const edit = comment.locator('[data-stylex-owner="post-detail-comment-edit-action"]');
+    const remove = comment.locator('[data-stylex-owner="post-detail-comment-delete-action"]');
+    const editIcon = comment.locator('[data-stylex-owner="post-detail-comment-edit-icon"]');
+    const deleteIcon = comment.locator('[data-stylex-owner="post-detail-comment-delete-icon"]');
+    const body = comment.locator('[data-stylex-owner="post-detail-comment-body-content"]');
+    const metrics = await comment.evaluate((row) => {
+      const get = (owner: string) =>
+        row.querySelector<HTMLElement>(`[data-stylex-owner="${owner}"]`)!;
+      const author = get("post-detail-comment-author");
+      const responsiveAvatar = get("post-detail-comment-responsive-avatar");
+      const responsiveAvatarWrap = get("post-detail-comment-responsive-avatar-wrap");
+      const ago = get("post-detail-comment-ago");
+      const edit = get("post-detail-comment-edit-action");
+      const remove = get("post-detail-comment-delete-action");
+      const editIcon = get("post-detail-comment-edit-icon");
+      const deleteIcon = get("post-detail-comment-delete-icon");
+      const body = get("post-detail-comment-body-content");
+      const meta = get("post-detail-comment-meta");
+      const media = get("post-detail-comment-media");
+      const rect = (element: HTMLElement) => element.getBoundingClientRect();
+      const authorRect = rect(author),
+        agoRect = rect(ago),
+        editRect = rect(edit),
+        removeRect = rect(remove);
+      const bodyRect = rect(body),
+        mediaRect = rect(media),
+        metaRect = rect(meta);
+      const button = getComputedStyle(edit),
+        icon = getComputedStyle(editIcon),
+        bodyStyle = getComputedStyle(body);
+      return {
+        author: {
+          color: getComputedStyle(author).color,
+          fontSize: getComputedStyle(author).fontSize,
+          marginRight: getComputedStyle(author).marginRight,
+          verticalAlign: getComputedStyle(author).verticalAlign,
+        },
+        responsiveAvatarDisplay: getComputedStyle(responsiveAvatar).display,
+        responsiveAvatarWrap: {
+          display: getComputedStyle(responsiveAvatarWrap).display,
+          width: getComputedStyle(responsiveAvatarWrap).width,
+          height: getComputedStyle(responsiveAvatarWrap).height,
+          marginTop: getComputedStyle(responsiveAvatarWrap).marginTop,
+          overflow: getComputedStyle(responsiveAvatarWrap).overflow,
+          verticalAlign: getComputedStyle(responsiveAvatarWrap).verticalAlign,
+        },
+        agoColor: getComputedStyle(ago).color,
+        button: {
+          background: button.backgroundColor,
+          borderStyle: button.borderStyle,
+          borderWidth: button.borderWidth,
+          outlineStyle: button.outlineStyle,
+          padding: button.padding,
+        },
+        icon: {
+          color: icon.color,
+          fontSize: icon.fontSize,
+          lineHeight: icon.lineHeight,
+          marginTop: icon.marginTop,
+          opacity: icon.opacity,
+        },
+        deleteIconClass: deleteIcon.className,
+        editIconClass: editIcon.className,
+        deleteIconStyle: {
+          color: getComputedStyle(deleteIcon).color,
+          fontSize: getComputedStyle(deleteIcon).fontSize,
+          lineHeight: getComputedStyle(deleteIcon).lineHeight,
+          opacity: getComputedStyle(deleteIcon).opacity,
+        },
+        body: { fontSize: bodyStyle.fontSize, padding: bodyStyle.padding },
+        order: authorRect.right <= agoRect.right && editRect.left < removeRect.left,
+        actionsInsideMeta: editRect.top >= metaRect.top && removeRect.bottom <= metaRect.bottom,
+        actionsVisible:
+          editRect.width > 0 &&
+          editRect.height > 0 &&
+          removeRect.width > 0 &&
+          removeRect.height > 0,
+        bodyInsideMedia: bodyRect.left >= mediaRect.left && bodyRect.right <= mediaRect.right,
+        bodyBelowMeta: bodyRect.top >= metaRect.bottom,
+        noActionBodyOverlap: removeRect.bottom <= bodyRect.top,
+      };
+    });
+    expect(metrics.author).toEqual({
+      color: "rgb(63, 62, 64)",
+      fontSize: "13px",
+      marginRight: "5px",
+      verticalAlign: "middle",
+    });
+    expect(metrics.agoColor).toBe("rgb(127, 140, 141)");
+    expect(metrics.button).toEqual({
+      background: "rgba(0, 0, 0, 0)",
+      borderStyle: "none",
+      borderWidth: "0px",
+      outlineStyle: "none",
+      padding: "0px",
+    });
+    expect(metrics.icon).toEqual({
+      color: "rgb(0, 0, 0)",
+      fontSize: "20px",
+      lineHeight: "20px",
+      marginTop: "2px",
+      opacity: "0.2",
+    });
+    expect(metrics.deleteIconStyle).toEqual({
+      color: "rgb(0, 0, 0)",
+      fontSize: "20px",
+      lineHeight: "20px",
+      opacity: "0.2",
+    });
+    expect(metrics.editIconClass).toContain("yobicon-edit-2");
+    expect(metrics.deleteIconClass).toContain("yobicon-trash");
+    expect(metrics.body.fontSize).toBe("14.3px");
+    expect(metrics.body.padding).toBe("15px 20px");
+    expect(metrics).toMatchObject({
+      order: true,
+      actionsInsideMeta: true,
+      actionsVisible: true,
+      bodyInsideMedia: true,
+      bodyBelowMeta: true,
+      noActionBodyOverlap: true,
+    });
+    expect(metrics.responsiveAvatarDisplay).toBe(viewport.width > 720 ? "none" : "inline-block");
+    expect(metrics.responsiveAvatarWrap).toEqual(
+      viewport.width > 720
+        ? {
+            display: "inline-block",
+            width: "32px",
+            height: "32px",
+            marginTop: "0px",
+            overflow: "hidden",
+            verticalAlign: "top",
+          }
+        : {
+            display: "inline-block",
+            width: "24px",
+            height: "24px",
+            marginTop: "-5px",
+            overflow: "hidden",
+            verticalAlign: "top",
+          },
+    );
+
+    if (viewport.width > 720) {
+      await editIcon.hover();
+      await expect(editIcon).toHaveCSS("color", "rgb(81, 170, 204)");
+      await expect(editIcon).toHaveCSS("opacity", "1");
+      await deleteIcon.hover();
+      await expect(deleteIcon).toHaveCSS("color", "rgb(81, 170, 204)");
+      await expect(deleteIcon).toHaveCSS("opacity", "1");
+    }
+    await author.locator(":scope > a").click();
+    await expect(page).toHaveURL(new RegExp(`${basePath}/dev(?:\\?.*)?$`));
+    await page.goBack();
+    await ago.click();
+    await expect(page).toHaveURL(new RegExp(`#comment-21$`));
+    if (viewport.width > 720) {
+      await edit.click();
+      await expect(comment.locator("#comment-editform-21")).toBeVisible();
+      await comment.getByRole("button", { name: /cancel/i }).click();
+      await remove.click();
+      await expect(
+        page.locator('[data-stylex-owner="post-detail-comment-delete-modal"]'),
+      ).toBeVisible();
+    }
+  }
+});
+
 async function mockProjectPosts(
   page: Page,
   state:

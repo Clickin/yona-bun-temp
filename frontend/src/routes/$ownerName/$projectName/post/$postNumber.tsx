@@ -53,8 +53,15 @@ const sx = {
   actions: stylex.props(styles.actions),
   postEditAction: stylex.props(styles.postEditAction),
   postDeleteAction: stylex.props(styles.postDeleteAction),
-  commentEditAction: stylex.props(styles.commentEditAction),
-  commentDeleteAction: stylex.props(styles.commentDeleteAction),
+  commentEditAction: stylex.props(styles.commentActionButton, styles.commentEditAction),
+  commentDeleteAction: stylex.props(styles.commentActionButton, styles.commentDeleteAction),
+  commentAuthor: stylex.props(styles.commentAuthor),
+  commentResponsiveAvatar: stylex.props(styles.commentResponsiveAvatar),
+  commentResponsiveAvatarWrap: stylex.props(styles.commentResponsiveAvatarWrap),
+  commentAgo: stylex.props(styles.commentAgo),
+  commentEditIcon: stylex.props(styles.commentActionIcon, styles.commentEditIcon),
+  commentDeleteIcon: stylex.props(styles.commentActionIcon, styles.commentDeleteIcon),
+  commentBody: stylex.props(styles.commentBody),
   commentActionRow: stylex.props(styles.commentActionRow),
   commentList: stylex.props(styles.commentList),
   commentRow: stylex.props(styles.commentRow),
@@ -1445,14 +1452,24 @@ function PostCommentRow({
           className={`${sx.commentMeta.className} meta-info`}
           data-stylex-owner="post-detail-comment-meta"
         >
-          <span className="comment_author">
-            <span className="resp-comment-avatar">
+          <span
+            {...sx.commentAuthor}
+            className={`${sx.commentAuthor.className} comment_author`}
+            data-stylex-owner="post-detail-comment-author"
+          >
+            <span
+              {...sx.commentResponsiveAvatar}
+              className={`${sx.commentResponsiveAvatar.className} resp-comment-avatar`}
+              data-stylex-owner="post-detail-comment-responsive-avatar"
+            >
               <Link
                 to="/$user"
                 params={{ user: authorLoginId }}
                 search={LEGACY_EMPTY_PROFILE_SEARCH}
                 activeProps={legacyRouteLocalActiveProps}
-                className={"avatar-wrap"}
+                {...sx.commentResponsiveAvatarWrap}
+                className={`${sx.commentResponsiveAvatarWrap.className} avatar-wrap`}
+                data-stylex-owner="post-detail-comment-responsive-avatar-wrap"
               >
                 <img src={avatarUrl} width="32" height="32" alt={authorLabel} />
               </Link>
@@ -1472,7 +1489,9 @@ function PostCommentRow({
               hash={`comment-${commentId}`}
               activeOptions={{ includeHash: true }}
               activeProps={legacyRouteLocalActiveProps}
-              className="ago"
+              {...sx.commentAgo}
+              className={`${sx.commentAgo.className} ago`}
+              data-stylex-owner="post-detail-comment-ago"
               title={comment.createdLabel}
             >
               {legacyRelativeDateLabel(comment.createdLabel, language)}
@@ -1506,7 +1525,11 @@ function PostCommentRow({
                   onCommentEditRequest(commentId);
                 }}
               >
-                <i className="yobicon-edit-2"></i>
+                <i
+                  {...sx.commentEditIcon}
+                  className={`${sx.commentEditIcon.className} yobicon-edit-2`}
+                  data-stylex-owner="post-detail-comment-edit-icon"
+                ></i>
               </button>
             ) : null}
             {canDelete ? (
@@ -1521,7 +1544,11 @@ function PostCommentRow({
                   onCommentDeleteRequest(commentId);
                 }}
               >
-                <i className="yobicon-trash"></i>
+                <i
+                  {...sx.commentDeleteIcon}
+                  className={`${sx.commentDeleteIcon.className} yobicon-trash`}
+                  data-stylex-owner="post-detail-comment-delete-icon"
+                ></i>
               </button>
             ) : null}
           </span>
@@ -1545,7 +1572,9 @@ function PostCommentRow({
         >
           <TasklistBar />
           <div
-            className="comment-body markdown-wrap"
+            {...sx.commentBody}
+            className={`${sx.commentBody.className} comment-body markdown-wrap`}
+            data-stylex-owner="post-detail-comment-body-content"
             data-via-email={String(viaEmail)}
             data-allowed-update={String(canUpdate)}
             data-yobi-original-message-processed={hasRouteOwnedOriginalMessage ? "true" : undefined}
