@@ -330,6 +330,8 @@ export const styles = stylex.create({
     width: "100%",
   },
   commentUpdateClearTemporary: { display: "none", marginLeft: "10px" },
+  commentCreateClearTemporary: { display: "none", marginLeft: "10px" },
+  commentCreateEditorNoticeLabel: { padding: "4px 15px" },
   commentUpdateFileUploadInput: {
     bottom: 0,
     height: 0,

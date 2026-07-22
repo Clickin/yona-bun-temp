@@ -2089,8 +2089,14 @@ function MarkdownEditor({
   const updateChecklistIconStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateChecklistIcon)
     : undefined;
-  const updateClearTemporaryStyle = isCommentUpdateEditor
+  const isCommentCreateEditor = editorMode === "comment-body";
+  const clearTemporaryStyle = isCommentUpdateEditor
     ? stylex.props(styles.commentUpdateClearTemporary)
+    : isCommentCreateEditor
+      ? stylex.props(styles.commentCreateClearTemporary)
+      : undefined;
+  const createEditorNoticeLabelStyle = isCommentCreateEditor
+    ? stylex.props(styles.commentCreateEditorNoticeLabel)
     : undefined;
 
   return (
@@ -2187,10 +2193,14 @@ function MarkdownEditor({
           }
         >
           <div
-            {...updateClearTemporaryStyle}
-            className={`${updateClearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim()}
+            {...clearTemporaryStyle}
+            className={`${clearTemporaryStyle?.className ?? ""} editor-clear-temporary`.trim()}
             data-stylex-owner={
-              isCommentUpdateEditor ? "post-detail-comment-update-clear-temporary" : undefined
+              isCommentUpdateEditor
+                ? "post-detail-comment-update-clear-temporary"
+                : isCommentCreateEditor
+                  ? "post-detail-comment-create-clear-temporary"
+                  : undefined
             }
           >
             <div className="editor-clear-temporary-button">
@@ -2210,7 +2220,13 @@ function MarkdownEditor({
             isCommentUpdateEditor ? "post-detail-comment-update-editor-nav-item" : undefined
           }
         >
-          <div className="editor-notice-label"></div>
+          <div
+            {...createEditorNoticeLabelStyle}
+            className={`${createEditorNoticeLabelStyle?.className ?? ""} editor-notice-label`.trim()}
+            data-stylex-owner={
+              isCommentCreateEditor ? "post-detail-comment-create-editor-notice-label" : undefined
+            }
+          ></div>
         </li>
       </ul>
       <div

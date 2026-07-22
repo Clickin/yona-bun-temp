@@ -2649,11 +2649,65 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     "../yona-original/app/views/common/editor.scala.html",
     "utf8",
   );
+  const legacyBoardSource = readFileSync(
+    "../yona-original/app/views/board/view.scala.html",
+    "utf8",
+  );
+  const legacyCommentFormSource = readFileSync(
+    "../yona-original/app/views/common/commentForm.scala.html",
+    "utf8",
+  );
+  const legacyPageSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_page.less",
+    "utf8",
+  );
+  const legacyYobiUiSource = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_yobiUI.less",
+    "utf8",
+  );
+  const legacyTemporarySaveSource = readFileSync(
+    "../yona-original/public/javascripts/service/yona.temporarySaveHandler.js",
+    "utf8",
+  );
+  const legacyKoreanMessagesSource = readFileSync("../yona-original/conf/messages.ko-KR", "utf8");
   const legacyBootstrapSource = readFileSync(
     "../yona-original/public/bootstrap/css/bootstrap.css",
     "utf8",
   );
 
+  expect(legacyBoardSource).toContain(
+    "@common.commentForm(post.asResource(), ResourceType.NONISSUE_COMMENT,",
+  );
+  expect(legacyCommentFormSource).toContain('@common.editor("contents","","","comment-body")');
+  expect(legacyEditorSource).toMatch(
+    /<li class="active">[\s\S]*?common\.editor\.edit[\s\S]*?<li>[\s\S]*?common\.editor\.preview[\s\S]*?<li>[\s\S]*?task-list-button[\s\S]*?<li>[\s\S]*?editor-clear-temporary[\s\S]*?<li>[\s\S]*?editor-notice-label/u,
+  );
+  expect(legacyPageSource).toMatch(
+    /\.editor-clear-temporary\s*\{\s*margin-left:\s*10px;\s*display:\s*none;\s*\}/u,
+  );
+  expect(legacyYobiUiSource).toMatch(
+    /&\.small\s*\{[\s\S]*?\.editor-notice-label\s*\{\s*padding:4px 15px;[\s\S]*?\.unsaved\s*\{/u,
+  );
+  expect(legacyTemporarySaveSource).toMatch(
+    /var noticePanel = \$\("\.editor-notice-label"\);[\s\S]*?setTimeout\(function \(\) \{[\s\S]*?noticePanel\.html\("<span class=\\"saved\\">Draft saved<\/span>"\);/u,
+  );
+  expect(legacyKoreanMessagesSource).toContain("button.clear.temporary = 복구된 본문 삭제");
+  expect(legacyKoreanMessagesSource).toContain("common.editor.edit = 편집");
+  expect(legacyKoreanMessagesSource).toContain("common.editor.preview = 미리보기");
+  expect(legacyKoreanMessagesSource).toContain("button.add.checklist = 체크리스트 추가");
+  expect(styleSource).toMatch(
+    /commentCreateClearTemporary:\s*\{\s*display:\s*"none",\s*marginLeft:\s*"10px"\s*\}/u,
+  );
+  expect(styleSource).toMatch(/commentCreateEditorNoticeLabel:\s*\{\s*padding:\s*"4px 15px"\s*\}/u);
+  expect(routeSource.match(/post-detail-comment-create-clear-temporary/g)).toHaveLength(1);
+  expect(routeSource.match(/post-detail-comment-create-editor-notice-label/g)).toHaveLength(1);
+  const markdownEditorSource = routeSource.slice(
+    routeSource.indexOf("function MarkdownEditor("),
+    routeSource.indexOf("function MarkdownEditor(") + 9_000,
+  );
+  expect(markdownEditorSource).not.toMatch(
+    /localStorage|setTimeout|setInterval|document\.|querySelector|addEventListener|innerHTML|classList/u,
+  );
   expect(legacyEditorSource).toContain(
     '<div class="tab-content" style="position:relative;overflow: visible;">',
   );
@@ -2693,13 +2747,30 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
         value: ["ko-KR"],
       });
     });
-    await mockProjectPosts(page, "comment");
-    await page.goto(`${basePath}/admin/sample/post/3`);
+    await mockProjectPosts(page, "comment", { __postNumber: "1" });
+    await page.goto(`${basePath}/admin/sample/post/1`);
 
     const commentForm = page.locator("#comment-form:has(#upload)");
     const editPane = commentForm.locator("#edit-contents");
     const previewPane = commentForm.locator("#preview-contents");
     const textarea = commentForm.locator("textarea.editorSeries");
+    const clearTemporary = commentForm.locator(
+      '[data-stylex-owner="post-detail-comment-create-clear-temporary"]',
+    );
+    const noticeLabel = commentForm.locator(
+      '[data-stylex-owner="post-detail-comment-create-editor-notice-label"]',
+    );
+    await expect(clearTemporary).toHaveCount(1);
+    await expect(clearTemporary).toContainText("복구된 본문 삭제");
+    await expect(clearTemporary).toBeHidden();
+    await expect(noticeLabel).toHaveCount(1);
+    await expect(noticeLabel).toBeEmpty();
+    await expect(
+      commentForm.locator('[data-stylex-owner^="post-detail-comment-update-"]'),
+    ).toHaveCount(0);
+    await expect(
+      page.locator('.comment-update-form [data-stylex-owner^="post-detail-comment-create-"]'),
+    ).toHaveCount(0);
     const metrics = await commentForm.evaluate((form) => {
       const measure = (selector: string) => {
         const element = form.querySelector<HTMLElement>(selector);
@@ -2715,12 +2786,20 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
           position: style.position,
           right: rect.right,
           top: rect.top,
+          width: rect.width,
         };
       };
       return {
+        clearTemporary: measure('[data-stylex-owner="post-detail-comment-create-clear-temporary"]'),
         editPane: measure("#edit-contents"),
         editor: measure(".write-comment-box > .mt10"),
         help: measure(".markdown-help"),
+        noticeLabel: measure(
+          '[data-stylex-owner="post-detail-comment-create-editor-notice-label"]',
+        ),
+        order: Array.from(form.querySelectorAll(":scope .nav-tabs > li")).map((item) =>
+          item.textContent?.trim(),
+        ),
         previewPane: measure("#preview-contents"),
         tabContent: measure(".tab-content"),
         textarea: measure("textarea.editorSeries"),
@@ -2729,6 +2808,15 @@ test("project board-post comment editor meets its upload boundary", async ({ pag
     });
 
     expect(metrics.tabContent).toMatchObject({ overflow: "visible", position: "relative" });
+    expect(metrics.clearTemporary).toMatchObject({ display: "none", height: 0 });
+    expect(metrics.clearTemporary.left).toBe(0);
+    expect(metrics.clearTemporary.right).toBe(0);
+    expect(metrics.clearTemporary.top).toBe(0);
+    expect(metrics.noticeLabel.display).toBe("block");
+    await expect(noticeLabel).toHaveCSS("padding", "4px 15px");
+    expect(metrics.noticeLabel.height).toBeGreaterThan(0);
+    expect(metrics.noticeLabel.width).toBeGreaterThanOrEqual(30);
+    expect(metrics.order).toEqual(["편집", "미리보기", "체크리스트 추가", "복구된 본문 삭제", ""]);
     expect(metrics.editPane.display).toBe("block");
     expect(metrics.previewPane.display).toBe("none");
     expect(metrics.previewPane.height).toBe(0);
@@ -6730,6 +6818,7 @@ async function mockProjectPosts(
 ) {
   const ownerName = String(overrides.__ownerName ?? "admin");
   const projectName = String(overrides.__projectName ?? "sample");
+  const detailPostNumber = String(overrides.__postNumber ?? "3");
   const defaultLabelOptions = [
     {
       categoryId: "3",
@@ -6947,129 +7036,132 @@ async function mockProjectPosts(
       }),
     });
   });
-  await page.route(`**/api/v1/projects/${ownerName}/${projectName}/posts/3`, async (route) => {
-    if (route.request().method() === "DELETE") {
-      deleteRequests.push(route.request().method());
-      await route.fulfill({ status: 204 });
-      return;
-    }
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        attachments:
-          state === "attachments"
-            ? [
-                {
-                  id: "31",
-                  mimeType: "text/plain",
-                  name: "post-note.txt",
-                  size: 1024,
-                },
-              ]
-            : [],
-        authorAvatarUrl: "/assets/images/default-avatar-32.png",
-        authorId: "2",
-        authorLabel: "Dev Member",
-        authorLoginId: "dev",
-        bodyHtml: "<p>Server HTML should not render</p>",
-        bodyMarkdown: "Post **markdown**",
-        commentCount:
-          state === "comment" ||
-          state === "commentUpdate" ||
-          state === "viaEmailComment" ||
-          state === "attachments"
-            ? 1
-            : state === "childComment"
-              ? 2
-              : 0,
-        comments:
-          state === "comment" ||
-          state === "commentUpdate" ||
-          state === "viaEmailComment" ||
-          state === "attachments" ||
-          state === "childComment"
-            ? [
-                {
-                  attachments:
-                    state === "attachments"
-                      ? [
-                          {
-                            id: "41",
-                            mimeType: "image/png",
-                            name: "comment-shot.png",
-                            size: 2048,
-                          },
-                        ]
-                      : [],
-                  authorId: "2",
-                  authorLabel: "Dev Member",
-                  authorLoginId: "dev",
-                  contentsHtml: "<p>Server HTML should not render</p>",
-                  contentsMarkdown:
-                    state === "viaEmailComment"
-                      ? "Reply before quoted mail.\n\n---- Original Message ----\nOriginal author wrote:\n\n> Quoted original line"
-                      : "First **comment**",
-                  createdLabel: "Jul 3, 2026",
-                  id: "21",
-                  parentCommentId: "",
-                  viaEmail: state === "viaEmailComment",
-                },
-                ...(state === "childComment"
-                  ? [
-                      {
-                        attachments: [],
-                        authorId: "1",
-                        authorLabel: "Site Admin",
-                        authorLoginId: "admin",
-                        contentsHtml: "<p>Server HTML should not render</p>",
-                        contentsMarkdown: "Nested **reply**",
-                        createdLabel: "Jul 4, 2026",
-                        id: "22",
-                        parentCommentId: "21",
-                        viaEmail: false,
-                      },
-                    ]
-                  : []),
-              ]
-            : [],
-        createdLabel: "Jul 2, 2026",
-        historyHtml: "<p>Server HTML should not render</p>",
-        historyMarkdown: "Edited **body**",
-        id: "33",
-        isWatching: false,
-        labels:
-          state === "readonlyLabel" || state === "editableLabel"
-            ? [
-                {
-                  categoryId: "3",
-                  categoryIsExclusive: false,
-                  categoryName: "type",
-                  color: "#51aacc",
-                  id: "8",
-                  name: "bug",
-                },
-              ]
-            : [],
-        notice: false,
-        ownerName,
-        permissions: {
-          canComment: true,
-          canCreate: true,
-          canDelete: true,
-          canRead: true,
-          canSetNotice: true,
-          canWatch: true,
-          canUpdate: state !== "readonlyLabel",
-        },
-        postNumber: "3",
-        projectName,
-        readme: false,
-        title: "Release note",
-        updatedLabel: "Jul 2, 2026",
-        watcherCount: 0,
-      }),
-    });
-  });
+  await page.route(
+    `**/api/v1/projects/${ownerName}/${projectName}/posts/${detailPostNumber}`,
+    async (route) => {
+      if (route.request().method() === "DELETE") {
+        deleteRequests.push(route.request().method());
+        await route.fulfill({ status: 204 });
+        return;
+      }
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          attachments:
+            state === "attachments"
+              ? [
+                  {
+                    id: "31",
+                    mimeType: "text/plain",
+                    name: "post-note.txt",
+                    size: 1024,
+                  },
+                ]
+              : [],
+          authorAvatarUrl: "/assets/images/default-avatar-32.png",
+          authorId: "2",
+          authorLabel: "Dev Member",
+          authorLoginId: "dev",
+          bodyHtml: "<p>Server HTML should not render</p>",
+          bodyMarkdown: "Post **markdown**",
+          commentCount:
+            state === "comment" ||
+            state === "commentUpdate" ||
+            state === "viaEmailComment" ||
+            state === "attachments"
+              ? 1
+              : state === "childComment"
+                ? 2
+                : 0,
+          comments:
+            state === "comment" ||
+            state === "commentUpdate" ||
+            state === "viaEmailComment" ||
+            state === "attachments" ||
+            state === "childComment"
+              ? [
+                  {
+                    attachments:
+                      state === "attachments"
+                        ? [
+                            {
+                              id: "41",
+                              mimeType: "image/png",
+                              name: "comment-shot.png",
+                              size: 2048,
+                            },
+                          ]
+                        : [],
+                    authorId: "2",
+                    authorLabel: "Dev Member",
+                    authorLoginId: "dev",
+                    contentsHtml: "<p>Server HTML should not render</p>",
+                    contentsMarkdown:
+                      state === "viaEmailComment"
+                        ? "Reply before quoted mail.\n\n---- Original Message ----\nOriginal author wrote:\n\n> Quoted original line"
+                        : "First **comment**",
+                    createdLabel: "Jul 3, 2026",
+                    id: "21",
+                    parentCommentId: "",
+                    viaEmail: state === "viaEmailComment",
+                  },
+                  ...(state === "childComment"
+                    ? [
+                        {
+                          attachments: [],
+                          authorId: "1",
+                          authorLabel: "Site Admin",
+                          authorLoginId: "admin",
+                          contentsHtml: "<p>Server HTML should not render</p>",
+                          contentsMarkdown: "Nested **reply**",
+                          createdLabel: "Jul 4, 2026",
+                          id: "22",
+                          parentCommentId: "21",
+                          viaEmail: false,
+                        },
+                      ]
+                    : []),
+                ]
+              : [],
+          createdLabel: "Jul 2, 2026",
+          historyHtml: "<p>Server HTML should not render</p>",
+          historyMarkdown: "Edited **body**",
+          id: "33",
+          isWatching: false,
+          labels:
+            state === "readonlyLabel" || state === "editableLabel"
+              ? [
+                  {
+                    categoryId: "3",
+                    categoryIsExclusive: false,
+                    categoryName: "type",
+                    color: "#51aacc",
+                    id: "8",
+                    name: "bug",
+                  },
+                ]
+              : [],
+          notice: false,
+          ownerName,
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: true,
+            canWatch: true,
+            canUpdate: state !== "readonlyLabel",
+          },
+          postNumber: detailPostNumber,
+          projectName,
+          readme: false,
+          title: "Release note",
+          updatedLabel: "Jul 2, 2026",
+          watcherCount: 0,
+        }),
+      });
+    },
+  );
   await page.route(
     `**/api/v1/projects/${ownerName}/${projectName}/posts/3/watch`,
     async (route) => {
