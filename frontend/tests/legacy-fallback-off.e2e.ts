@@ -46,6 +46,21 @@ test("pagination fallback bridge is retired while the exact consumer graph remai
   }
 });
 
+test("root Yoram dialog center-txt bridge is retired while legacy fallback remains", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+  const rootSource = readFileSync("src/routes/__root.tsx", "utf8");
+
+  expect(appCss).not.toContain(".center-txt {");
+  expect(generatedFallback).toContain(".center-txt {");
+  expect(rootSource).toContain('data-stylex-owner="root-yoram-dialog-action-row"');
+  expect(rootSource).toContain("center-txt buttons");
+  expect(rootSource).toContain("rootYoramDialogActionRow");
+});
+
 async function expectClassFreeSiteLayout(page: Page, owners: readonly string[]) {
   for (const owner of owners) {
     const locator = page.locator(`[data-stylex-owner="${owner}"]`);

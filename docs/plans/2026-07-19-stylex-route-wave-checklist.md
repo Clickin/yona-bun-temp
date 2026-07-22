@@ -1787,3 +1787,10 @@ desktop/mobile geometry, and filtering.
 - [x] The nine direct route consumers are recorded and retain stable route-local StyleX pagination owners; colocated/shared pagination consumers are not falsely classified as bridge consumers.
 - [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies bridge absence, generated fallback retention, and the complete direct consumer graph in normal and fallback-off modes.
 - [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
+### 2026-07-23 Batch 833 global Yoram dialog center alignment
+
+- [x] `common/scripts.scala.html` and the frozen LESS import chain are mapped; the global `#yobiDialog` confirmation row retains legacy DOM/copy and now has a stable root StyleX owner.
+- [x] Only the React-side `.center-txt` bridge is removed from `frontend/src/app.css`; generated legacy fallback remains for other legacy modal consumers.
+- [x] Root-dialog focused managed system-Chrome normal/fallback-off checks pass 3/3, and the formal fallback bridge contract passes 1/1 with desktop/mobile containment and visible confirm interaction coverage.
+- [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.

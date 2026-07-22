@@ -228,6 +228,12 @@ const styles = stylex.create({
   rootLoginDialogSubmit: {
     width: "100%",
   },
+  // common/scripts.scala.html + frozen _common.less:162.
+  // Keep the legacy classes for the global dialog DOM contract while StyleX
+  // owns the visible confirmation-row alignment.
+  rootYoramDialogActionRow: {
+    textAlign: "center",
+  },
   // common/loginDialog.scala.html + frozen Bootstrap/.modal-backdrop + _override.less
   rootLoginDialogBackdrop: {
     position: "fixed",
@@ -549,7 +555,10 @@ function RootYoramDialog({ isOpen, onDismiss }: RootYoramDialogProps) {
           <p className="msg" />
           <p className="desc" />
         </div>
-        <div className="center-txt buttons">
+        <div
+          className={`${stylex.props(styles.rootYoramDialogActionRow).className} center-txt buttons`}
+          data-stylex-owner="root-yoram-dialog-action-row"
+        >
           <button type="button" className="ybtn ybtn-info" onClick={onDismiss}>
             {t("button.confirm")}
           </button>

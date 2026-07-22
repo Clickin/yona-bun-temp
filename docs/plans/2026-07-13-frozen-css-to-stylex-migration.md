@@ -6631,3 +6631,13 @@ The generated legacy fallback remains intact for the frozen Scala/LESS output;
 the static normal/fallback-off contract verifies all four removed selector arms,
 the nine direct route consumers, and the approved Yoram footer identity
 deviation. This is a shared fallback retirement, not a new route implementation.
+
+## Batch 833
+
+Move the global `#yobiDialog` confirmation-row alignment into the existing
+root StyleX boundary and retire only the React-side `.center-txt` bridge.
+`common/scripts.scala.html` remains the DOM/copy source, generated legacy
+fallback retains the frozen declaration for other legacy modal consumers, and
+the focused root-dialog normal/fallback-off contracts cover the owner,
+interaction, desktop/mobile containment, and centered action row. The approved
+Yoram footer identity deviation remains intentional.
