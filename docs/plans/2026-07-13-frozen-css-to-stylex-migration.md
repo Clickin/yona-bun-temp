@@ -6796,3 +6796,17 @@ desktop and 390px. Fallback-off checks icon DOM/declarations without claiming
 glyph visibility because the icon font remains fallback-owned. Live legacy
 screenshot parity is explicitly unverified; approved Yoram footer/provider/
 developer-contact/repository differences remain intentional.
+
+## Batch 844
+
+Own the member-info overrides in the authenticated organization-home member
+panels. `organization/view.scala.html:141-177` emits the manager/member
+`bubble-wrap gray project-home` panels and their `.inner member-info` shells.
+Frozen `_page.less:2610-2625` defines the shared inner geometry and the
+member-info-specific `margin-right:0` and `height:auto !important` overrides
+through the complete `yobi.less` import chain. React preserves panel order,
+classes, member links/copy, leave behavior, and responsive layout while the
+existing inner StyleX owner carries only those overrides. Focused managed
+system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
+Live legacy screenshot parity is explicitly unverified; approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

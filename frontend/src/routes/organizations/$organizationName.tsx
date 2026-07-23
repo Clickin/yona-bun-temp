@@ -106,6 +106,10 @@ const organizationProjectCardStatsIconStyles = stylex.create({
   rampOff: { color: "#DADADA" },
 });
 
+const organizationMemberPanelMigrationStyles = stylex.create({
+  memberInfo: { height: "auto !important", marginRight: "0" },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -670,17 +674,21 @@ function MemberPanel({
   title: string;
 }) {
   const { t } = useLegacyMessages();
+  const panelKey = className.includes("mt10") ? "member" : "manager";
 
   return (
     <div
       {...stylex.props(styles.memberPanel)}
       className={`${className} ${stylex.props(styles.memberPanel).className ?? ""}`.trim()}
-      data-stylex-owner="organization-home-members-panel"
+      data-stylex-owner={`organization-home-members-panel-${panelKey}`}
     >
       <div
-        {...stylex.props(styles.memberPanelInner)}
-        className={`inner member-info ${stylex.props(styles.memberPanelInner).className ?? ""}`.trim()}
-        data-stylex-owner="organization-home-members-panel-inner"
+        {...stylex.props(
+          styles.memberPanelInner,
+          organizationMemberPanelMigrationStyles.memberInfo,
+        )}
+        className={`inner member-info ${stylex.props(styles.memberPanelInner, organizationMemberPanelMigrationStyles.memberInfo).className ?? ""}`.trim()}
+        data-stylex-owner={`organization-home-members-panel-inner-${panelKey}`}
       >
         <header
           className={stylex.props(styles.memberPanelHeader).className}
