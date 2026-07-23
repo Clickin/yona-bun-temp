@@ -6632,6 +6632,20 @@ the static normal/fallback-off contract verifies all four removed selector arms,
 the nine direct route consumers, and the approved Yoram footer identity
 deviation. This is a shared fallback retirement, not a new route implementation.
 
+## Batch 835
+
+Move the project-members enrollment-request avatar wrapper into the existing
+route-local StyleX boundary. The legacy output is
+`yona-original/app/views/project/members.scala.html` in the enrolled-users
+block; frozen `yobi.less:1-13` imports the complete LESS chain, including
+`_common.less:207` for `.mr10` and Bootstrap `.pull-left`. React preserves the
+legacy avatar/link/details/button order, 65px image dimensions, copy, and
+existing Add behavior. Focused managed dynamic-port system-Chrome
+normal/fallback-off checks pass 1/1 each. Live legacy rendering was
+unavailable, so screenshot parity remains explicitly unverified and no
+compensating geometry was added. The approved Yoram footer/provider/
+developer-contact/repository differences remain intentional.
+
 ## Batch 834
 
 Move the organization-members enrollment-request avatar wrapper into the

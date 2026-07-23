@@ -907,6 +907,11 @@ const styles = stylex.create({
   enrollmentDetails: {
     width: "60px",
   },
+  // Frozen project/members.scala.html enrolled-user avatar wrapper.
+  enrollmentAvatarWrap: {
+    float: "left",
+    marginRight: "10px",
+  },
   // Frozen _common.less `.center-txt` rule for the member delete confirmation actions.
   deleteConfirmActions: {
     textAlign: "center",
@@ -922,10 +927,14 @@ function EnrollmentRequest({
 }) {
   const { t } = useLegacyMessages();
   const loginId = stringField(user.loginId, "");
+  const avatarWrapProps = stylex.props(styles.enrollmentAvatarWrap);
 
   return (
     <div className="span2">
-      <div className="pull-left mr10">
+      <div
+        className={`${avatarWrapProps.className ?? ""} pull-left mr10`.trim()}
+        data-stylex-owner="project-members-enrollment-avatar-wrap"
+      >
         <Link
           activeOptions={legacyLinkActiveOptions}
           activeProps={legacyLinkActiveProps}
