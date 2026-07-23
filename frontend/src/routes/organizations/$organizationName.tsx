@@ -95,6 +95,11 @@ const organizationProjectCardOwnerAvatarImageStyles = stylex.create({
   },
 });
 
+const organizationProjectCardChildPaintStyles = stylex.create({
+  lock: { color: "#7F8C8D" },
+  ownerName: { color: "#999", fontSize: "19px" },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -530,7 +535,12 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
                 </Link>
               </span>
             ) : null}
-            {isPrivate ? <i className="yobicon-lock yobicon-small"></i> : null}
+            {isPrivate ? (
+              <i
+                className={`${stylex.props(organizationProjectCardChildPaintStyles.lock).className} yobicon-lock yobicon-small`}
+                data-stylex-owner="organization-home-project-card-private-lock"
+              ></i>
+            ) : null}
             {isProtected ? (
               <span
                 className={`${stylex.props(styles.projectVisibilityBadge).className} project-protected`}
@@ -564,7 +574,8 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
                 className: undefined,
                 "data-status": undefined,
               }}
-              className="owner-name-small"
+              className={`${stylex.props(organizationProjectCardChildPaintStyles.ownerName).className} owner-name-small`}
+              data-stylex-owner="organization-home-project-card-owner-name"
               params={{ user: ownerName }}
               search={{}}
               to="/$user"

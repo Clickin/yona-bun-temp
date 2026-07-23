@@ -6766,3 +6766,18 @@ inline/intrinsic sizing is intentionally not pixel-normalized and receives no
 compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+
+## Batch 842
+
+Own the remaining authenticated organization-home project-card child paint.
+`organization/view.scala.html:80-110` emits the conditional private lock and
+owner-name-small link in the project-card header. Frozen `_page.less:1862-1870`
+defines the exact lock color `#7F8C8D` and owner-name color `#999`/font-size
+`19px` through the complete `yobi.less` import chain. React preserves the
+legacy elements/classes, private state, Link target/copy, and DOM order while
+route-local StyleX owns only those declarations. Focused managed system-Chrome
+normal/fallback-off checks pass 1/1 each at desktop and 390px. Fallback-off
+checks the icon DOM/color without claiming glyph visibility because the icon
+font remains fallback-owned. Live legacy screenshot parity is explicitly
+unverified; approved Yoram footer/provider/developer-contact/repository
+differences remain intentional.
