@@ -6888,3 +6888,16 @@ saved under `frontend/output/playwright/stylex-authenticated-sidebar-project-lis
 Live legacy rendering was unavailable, so screenshot parity is explicitly
 unverified and no compensating geometry was added. The approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+## Batch 851
+
+Move the organization settings Save footer's exact `.box-wrap.bottom`
+declarations into the existing route-local StyleX boundary. Legacy
+`organization/setting.scala.html` emits the footer and Save button; frozen
+`_page.less:2062-2078` supplies desktop padding, border, and centering, while
+`_responsive.less:126-128` makes the effective mobile padding `10px 0
+!important`. React preserves the footer class, Save DOM/copy/order, mutation
+boundary, and unrelated fallback consumers. Managed system-Chrome
+normal/fallback-off focused checks pass 4/4 each with desktop/mobile
+screenshots under `frontend/output/playwright/visual-sweep/`; live legacy
+screenshot comparison remains explicitly unverified and no compensating
+geometry was added.

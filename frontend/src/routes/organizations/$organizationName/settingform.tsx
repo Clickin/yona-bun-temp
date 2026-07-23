@@ -64,6 +64,7 @@ function OrganizationSettingsBody({
   const descsLastStyleProps = stylex.props(organizationSettingStyles.descsLast);
   const fieldGeometryStyleProps = stylex.props(organizationSettingStyles.fieldGeometry);
   const textareaGeometryStyleProps = stylex.props(organizationSettingStyles.textareaGeometry);
+  const saveFooterStyleProps = stylex.props(organizationSettingStyles.saveFooter);
   const wrongNameStyleProps = wrongNameMessage
     ? undefined
     : stylex.props(organizationSettingFormStyles.wrongNameHidden);
@@ -296,7 +297,10 @@ function OrganizationSettingsBody({
                 </dl>
               </div>
             </div>
-            <div className="box-wrap bottom">
+            <div
+              className={`box-wrap bottom ${saveFooterStyleProps.className ?? ""}`.trim()}
+              data-stylex-owner="organization-setting-save-footer"
+            >
               <button
                 id="save"
                 className={`ybtn ybtn-success ${stylex.props(styles.save).className}`}

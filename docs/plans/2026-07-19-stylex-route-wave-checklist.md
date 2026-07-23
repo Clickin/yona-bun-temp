@@ -1943,3 +1943,11 @@ desktop/mobile geometry, and filtering.
 - [x] Managed dynamic-port system-Chrome normal/fallback-off focused run passes 9/9; the mobile document-edge tolerance is derived from the frozen 5px row boundary, not a CSS compensation.
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified.
 - [x] The approved Yoram footer intentionally keeps its NAVER/provider/developer-contact/repository differences; those are not parity gaps.
+### 2026-07-23 Batch 851 organization settingform Save footer
+
+- [x] `organization/setting.scala.html`, frozen `_page.less:2062-2078`, `_responsive.less:126-128`, and the complete `yobi.less` import chain are recorded as the output/cascade source.
+- [x] The existing organization settings StyleX boundary owns the exact desktop `padding:20px 0`, `padding-bottom:12px`, `border-bottom:0 none`, `text-align:center` and effective mobile `padding:10px 0`, preserving `box-wrap bottom`, Save DOM/copy/order, PATCH behavior, and unrelated fallback consumers.
+- [x] `frontend/tests/stylex-organization-setting-form.e2e.ts` verifies provenance, computed footer declarations, desktop/mobile containment and centering, no inline style, Save PATCH interaction, and deterministic screenshots under `output/playwright/visual-sweep/`.
+- [x] Managed dynamic-port system-Chrome normal/fallback-off focused runs pass 4/4 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
