@@ -505,7 +505,7 @@ function ProjectWebhooksList({
         >
           <div className="span5">
             <h6
-              className={`${stylex.props(webhooksStyles.listItemHeading, webhooksStyles.truncate).className} mr20 truncate`}
+              className={`${stylex.props(webhooksStyles.listItemHeading, webhooksStyles.payloadHeading, webhooksStyles.truncate).className} mr20 truncate`}
               data-stylex-owner="project-webhooks-list-item-heading"
             >
               {stringField(webhook.payloadUrl, "")}

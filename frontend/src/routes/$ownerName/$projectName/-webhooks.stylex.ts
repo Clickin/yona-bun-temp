@@ -30,6 +30,7 @@ export const webhooksStyles = stylex.create({
     margin: "30px 0px",
   },
   listItemHeading: { paddingLeft: "8px" },
+  payloadHeading: { marginRight: "20px" },
   truncate: {
     whiteSpace: "nowrap",
     overflow: "hidden",

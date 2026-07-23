@@ -106,6 +106,7 @@ export const styles = stylex.create({
   },
   cuDesc: { display: "inline-block" },
   cuNote: { color: "#777", fontSize: "12px" },
+  reviewerNote: { marginLeft: "10px" },
   issueTemplateEdit: {
     backgroundColor: projectSettingColors.buttonSurface,
     borderColor: projectSettingColors.buttonBorder,

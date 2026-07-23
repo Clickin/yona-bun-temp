@@ -29,7 +29,7 @@ export const styles = stylex.create({
   },
   browse: { width: "100%" },
   author: { color: pullRequestChangesColors.meta, marginTop: "20px" },
-  commitHash: { color: pullRequestChangesColors.commitHash },
+  commitHash: { color: pullRequestChangesColors.commitHash, marginRight: "10px" },
   diffs: {
     backgroundColor: pullRequestChangesColors.diffSurface,
     color: pullRequestChangesColors.surface,

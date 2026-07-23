@@ -69,6 +69,7 @@ const sx = {
   cuLabel: stylex.props(styles.cuLabel),
   cuDesc: stylex.props(styles.cuDesc),
   cuNote: stylex.props(styles.cuNote),
+  reviewerNote: stylex.props(styles.cuNote, styles.reviewerNote),
 } as const;
 
 const textareaStaticStyles = stylex.create({
@@ -962,8 +963,8 @@ function ProjectSettingBody({
                         </ul>
                       </div>
                       <span
-                        {...sx.cuNote}
-                        className={`${sx.cuNote.className} note ml10`}
+                        {...sx.reviewerNote}
+                        className={`${sx.reviewerNote.className} note ml10`}
                         data-stylex-owner="project-setting-cu-note-reviewer"
                       >
                         {t("project.reviewer.count.description")}

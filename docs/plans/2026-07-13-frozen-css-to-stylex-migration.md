@@ -6779,6 +6779,28 @@ The mobile legacy form shell/text produces a known wider baseline outside this
 owner; no route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+
+## Batch 892
+
+Move three remaining populated-screen utility-margin consumers into their existing
+route-local StyleX owners: the project webhook payload heading's frozen `.mr20`,
+the project-settings reviewer description's frozen `.ml10`, and the pull-request
+changes commit-hash consumers' frozen `.mr10`. Preserve the legacy Scala DOM,
+classes, copy, order, state/navigation behavior, and React/TanStack ownership:
+`payloadHeading` owns `marginRight: "20px"`, `reviewerNote` composes the existing
+note paint with `marginLeft: "10px"`, and `commitHash` owns
+`marginRight: "10px"`. Focused managed external System-Chrome normal,
+explicit fallback-off, and restored-normal runs pass 5/5 each at 1366x900 and
+390x844 across the three focused tests; normal and fallback-off desktop/mobile
+screenshots were visually inspected. Adjacent guards pass 11/15, with four
+pre-existing unchanged guard failures: pull-request changes residual
+fixture/selector assumptions (2), the project-setting owner expectation for the
+old `project-setting-descs` marker, and the webhook heading guard's stale
+`.truncate` app.css expectation. The fallback-off screenshots show existing
+global shell/navigation drift outside these owners; full live legacy/Yoram shell
+parity remains a screen-wide gap and receives no route-specific compensation.
+The approved Yoram footer NAVER Labs/provider, developer-contact, and upstream
+repository differences remain intentional and are not restored.
 ## Batch 887
 
 Move the project code file-view breadcrumb wrapper's exact frozen `.ml10`
