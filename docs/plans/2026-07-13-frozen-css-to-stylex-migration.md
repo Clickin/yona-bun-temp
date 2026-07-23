@@ -7278,3 +7278,23 @@ and mobile `gnbUsermenu` global-shell drift outside this margin owner; the
 remaining select2/seed-content differences also receive no route-specific
 compensation. Approved Yoram footer, provider, developer-contact, and
 upstream-repository differences remain intentional.
+
+## Batch 880
+
+Move the authenticated populated organization-issue screen's exact frozen
+`.mr10` `margin-right:10px` declaration into the existing organization-issues
+`twoColumnAnchor` StyleX owner. Preserve the legacy
+`two-column-icon mr10 hide-in-mobile` wrapper, state-tab order, IDs, title,
+copy, hover/focus popover, keyboard checkbox/localStorage behavior, and mobile
+visibility; keep the shared `.mr10` fallback for unrelated consumers. Managed
+external System-Chrome normal and explicit fallback-off focused runs pass 1/1
+each at 1366x900 and 390x844 with source ownership, computed target/non-target
+margins, interaction, containment/no-overflow, and deterministic screenshots
+under `frontend/output/playwright/stylex-organization-issues-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and
+were visually inspected. Existing global-shell drift (`gnbSearchForm` and
+`leftMenu` overflow on desktop, `gnbUsermenu` on mobile) and unrelated nav,
+select2, and empty-state differences remain documented gaps outside this
+margin owner; no route-specific compensation was added. Approved Yoram footer,
+provider, developer-contact, and upstream-repository differences remain
+intentional.

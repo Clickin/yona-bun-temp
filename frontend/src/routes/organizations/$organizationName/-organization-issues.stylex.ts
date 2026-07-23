@@ -18,6 +18,7 @@ export const styles = stylex.create({
   // Legacy group_issue_list_partial renders each server-provided label color inline.
   // Keep the runtime paint dynamic while geometry remains owned by frozen legacy CSS.
   issueLabelBackground: (backgroundColor) => ({ backgroundColor }),
+  twoColumnAnchor: { marginRight: "10px", position: "relative" },
   twoColumnPopover: {
     display: "block",
     left: "-75px",
