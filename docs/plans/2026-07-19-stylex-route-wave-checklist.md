@@ -1788,6 +1788,15 @@ desktop/mobile geometry, and filtering.
 - [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies bridge absence, generated fallback retention, and the complete direct consumer graph in normal and fallback-off modes.
 - [x] The approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
 
+### 2026-07-23 Batch 839 project-route project-menu navigation
+
+- [x] `projectMenu.scala.html`, frozen `_page.less:627-719`, `_responsive.less:273-289`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
+- [x] Project-route menu item/link/active-pseudo and responsive short-menu/count declarations are owned through route-local StyleX; legacy DOM/classes/order/copy, conditional visibility, Link targets, counts, and organization-route fallback remain.
+- [x] `frontend/tests/stylex-project-menu-nav.e2e.ts` verifies source provenance, seven-item order/hrefs/counts, active/hover state, pseudo colors, responsive declarations, desktop/390px geometry, and project-menu-owned containment.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added. The known shared authenticated shell overflow is outside this menu owner.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries; these identity differences remain intentional.
+
 ### 2026-07-23 Batch 837 project-home member-card avatar wrapper
 
 - [x] `project/home.scala.html:128-135`, frozen `_common.less:140-153`, `_page.less:2677-2702`, Bootstrap `.img-rounded`/`.pull-left`, and the complete `yobi.less` import chain are recorded as the output and geometry source.

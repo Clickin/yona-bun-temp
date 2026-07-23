@@ -68,6 +68,69 @@ const projectHomeMemberAvatarStyles = stylex.create({
   image: { verticalAlign: "top", width: "100%" },
 });
 
+const projectMenuNavStyles = stylex.create({
+  item: {
+    float: "left",
+    fontSize: "14px",
+    fontWeight: "bold",
+    position: "relative",
+  },
+  link: {
+    display: "inline-block",
+    lineHeight: "30px",
+    padding: "5px 20px 4px",
+    ":hover": {
+      backgroundColor: "#dadada",
+      color: "#fc491e",
+      textDecoration: "none",
+    },
+  },
+  mobileLink: {
+    "@media all and (max-width: 720px)": { padding: "5px 12px 4px 12px !important" },
+  },
+  mobileName: {
+    "@media all and (max-width: 720px)": { display: "none" },
+  },
+  mobileShort: {
+    "@media all and (max-width: 720px)": { display: "block" },
+  },
+  mobileCount: {
+    "@media all and (max-width: 720px)": {
+      marginTop: "-36px !important",
+      position: "absolute !important",
+    },
+  },
+  activeItem: {
+    color: "#fc491e",
+    "::before": {
+      border: "8px solid transparent",
+      borderBottomColor: "#ddd",
+      borderStyle: "outset outset solid outset",
+      bottom: "0",
+      content: '" "',
+      height: "0",
+      left: "50%",
+      marginLeft: "-8px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0",
+    },
+    "::after": {
+      border: "8px solid transparent",
+      borderBottomColor: "#fff",
+      borderStyle: "outset outset solid outset",
+      bottom: "-1px",
+      content: '" "',
+      height: "0",
+      left: "50%",
+      marginLeft: "-8px",
+      overflow: "hidden",
+      position: "absolute",
+      width: "0",
+    },
+  },
+});
+
 const projectHeaderStyles = stylex.create({
   background: (backgroundImage: string) => ({ backgroundImage }),
   outer: {
@@ -3173,18 +3236,36 @@ export function ProjectMenu({
             data-stylex-owner="project-menu-setting"
           >
             <ul className="project-menu-nav">
-              <li className={active === "setting" ? "active" : ""}>
+              <li
+                className={`${
+                  stylex.props(
+                    projectMenuNavStyles.item,
+                    active === "setting" && projectMenuNavStyles.activeItem,
+                  ).className
+                } ${active === "setting" ? "active" : ""}`.trim()}
+                data-stylex-owner="project-menu-item-setting"
+              >
                 <Link
                   activeOptions={legacyProjectShellLinkActiveOptions}
                   activeProps={legacyProjectShellLinkActiveProps}
+                  className={
+                    stylex.props(projectMenuNavStyles.link, projectMenuNavStyles.mobileLink)
+                      .className
+                  }
                   to={toRoutePath(
                     basePath,
                     prefixBasePath(basePath, `/${ownerName}/${projectName}/setting`),
                   )}
+                  data-stylex-owner="project-menu-link-setting"
                 >
                   <i className="yobicon-cog"></i>
                   <span className="blind">
-                    <span className="menu-name">{t("menu.admin")}</span>
+                    <span
+                      className={`${stylex.props(projectMenuNavStyles.mobileName).className} menu-name`}
+                      data-stylex-owner="project-menu-name-setting"
+                    >
+                      {t("menu.admin")}
+                    </span>
                   </span>
                   <CountBadge count={arrayField(project.enrolledUsers).length} />
                 </Link>
@@ -3217,15 +3298,35 @@ function ProjectMenuItem({
     : active
       ? "active"
       : "";
+  const menuKey = short.toLowerCase();
   return (
-    <li className={itemClassName}>
+    <li
+      className={`${
+        stylex.props(projectMenuNavStyles.item, active && projectMenuNavStyles.activeItem).className
+      } ${itemClassName}`.trim()}
+      data-stylex-owner={`project-menu-item-${menuKey}`}
+    >
       <Link
         activeOptions={legacyProjectShellLinkActiveOptions}
         activeProps={legacyProjectShellLinkActiveProps}
+        className={
+          stylex.props(projectMenuNavStyles.link, projectMenuNavStyles.mobileLink).className
+        }
         to={to}
+        data-stylex-owner={`project-menu-link-${menuKey}`}
       >
-        <span className="menu-name">{label}</span>
-        <span className="short-menu">{short}</span>
+        <span
+          className={`${stylex.props(projectMenuNavStyles.mobileName).className} menu-name`}
+          data-stylex-owner={`project-menu-name-${menuKey}`}
+        >
+          {label}
+        </span>
+        <span
+          className={`${stylex.props(projectMenuNavStyles.mobileShort).className} short-menu`}
+          data-stylex-owner={`project-menu-short-${menuKey}`}
+        >
+          {short}
+        </span>
         {count > 0 ? (
           <>
             {" "}
@@ -3246,7 +3347,7 @@ function CountBadge({
 }) {
   return count > 0 ? (
     <span
-      className={`${stylex.props(projectHomeStyles.menuCount).className} ${className}`}
+      className={`${stylex.props(projectHomeStyles.menuCount, projectMenuNavStyles.mobileCount).className} ${className}`}
       data-stylex-owner="project-menu-count"
     >
       {count}

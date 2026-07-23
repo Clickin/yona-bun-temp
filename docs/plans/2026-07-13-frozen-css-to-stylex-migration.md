@@ -6714,3 +6714,22 @@ remains explicitly unverified and no compensating geometry was added. The
 Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD,
 upstream Yona repository, and developer-contact entries; this approved identity
 diff must not be restored.
+
+## Batch 839
+
+Move the authenticated project-route project-menu navigation items into the
+existing route-local StyleX boundary. `yona-original/app/views/projectMenu.scala.html`
+emits the conditional item/link/count DOM, active state, and project settings
+item. Frozen `_page.less:627-719` supplies the desktop menu item/link/active
+pseudo declarations and `_responsive.less:273-289` supplies the short-menu,
+mobile padding, and count positioning cascade through the complete `yobi.less`
+import chain; `_common.less`, Bootstrap, and `conf/messages` complete the reset,
+float, and copy evidence. React preserves legacy classes, DOM/order/copy,
+conditional visibility, Link targets, counts, and active/hover behavior while
+project-route StyleX owns only those exact declarations. Organization-route
+consumers and unrelated menu fallback remain excluded. Focused managed
+system-Chrome normal/fallback-off runs pass 1/1 each at 1366px and 390px;
+project-menu-owned containment is clean while a known shared authenticated shell
+document overflow remains outside this slice and receives no compensation. Live
+legacy screenshot parity is explicitly unverified. Approved Yoram footer/
+provider/developer-contact/repository differences remain intentional.
