@@ -6814,6 +6814,23 @@ intentional.
 
 ## Batch 877
 
+## Batch 890
+
+Move the project issue-list due-date wrapper's exact frozen `.mr20` and `.mt10`
+declarations into the existing project-issues StyleX boundary. Preserve the
+`mr20 mt10 pull-right` wrapper, open/upcoming/overdue/closed copy and title
+behavior, clock/icon order, responsive visibility, and the shared fallback for
+unrelated consumers. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 7/7 each at 1366x900 and
+390x844; normal and fallback-off desktop/mobile screenshots were visually
+inspected. Adjacent project-issues guards pass 3/4; the one failure is the
+pre-existing progress-width guard expecting 15px while the unchanged fixture
+renders 30px. Fallback-off global issue shell/navigation drift remains outside
+this due-date owner and receives no route-specific compensation. Approved
+Yoram footer NAVER/provider/developer-contact/upstream-repository differences
+remain intentional.
+
+
 Move the authenticated populated project issue-list mode-control wrappers'
 exact frozen `.mr10` `margin-right:10px` declaration into the existing project
 issue StyleX boundary. Preserve the legacy `two-column-icon mr10

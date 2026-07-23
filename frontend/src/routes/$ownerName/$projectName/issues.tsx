@@ -1597,6 +1597,10 @@ function ProjectIssueItem({
           title: issue.dueDateLabel,
         }
       : {};
+  const dueDateStyleProps = stylex.props(
+    styles.dueDateWrapper,
+    issue.state === "closed" ? styles.dueDateClosed : undefined,
+  );
   const childIssueListVisible = showSubtasksAlways || childIssueListRevealed;
   const revealChildIssueListFromRow = (target: Element | null) => {
     if (target?.closest(".mass-update-check") || target?.closest(".title-wrap > .title")) {
@@ -1910,9 +1914,11 @@ function ProjectIssueItem({
         </div>
         {issue.dueDateLabel ? (
           <div
+            {...dueDateStyleProps}
             className={`mr20 mt10 pull-right${
               issue.dueDateOverdue ? " overdue" : ""
-            } ${stylex.props(issue.state === "closed" ? styles.dueDateClosed : undefined).className ?? ""}`}
+            } ${dueDateStyleProps.className ?? ""}`.trim()}
+            data-stylex-owner="project-issues-due-date"
             {...dueDateAttrs}
           >
             <i
