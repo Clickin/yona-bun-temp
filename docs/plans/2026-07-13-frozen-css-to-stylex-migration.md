@@ -7488,3 +7488,18 @@ full live legacy/Yoram shell screenshot parity remains a screen-wide gap; no
 route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+
+## Batch 891
+
+Move the organization issue-list due-date wrapper's exact frozen `.mr20` and
+`.mt10` declarations into the existing organization-issues StyleX boundary.
+Preserve the `mr20 mt10 pull-right` wrapper, open/upcoming/overdue/closed copy
+and title behavior, clock order, responsive visibility, and the shared fallback
+for unrelated consumers. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 7/7 each at 1366x900 and
+390x844; normal and fallback-off desktop/mobile screenshots were visually
+inspected. Adjacent organization-issues guards pass 2/2. Fallback-off global
+organization shell/navigation drift remains outside this due-date owner and
+receives no route-specific compensation. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.

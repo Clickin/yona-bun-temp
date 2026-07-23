@@ -2154,3 +2154,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 890: focused source/runtime guard checks Scala/LESS/import/messages provenance, computed margins, copy/title/state branches, target containment diagnostics, and no plugin-only attrs.
 - [x] Batch 890: adjacent project-issues guards pass 3/4; the one failure is the pre-existing progress-width guard expecting 15px while the unchanged fixture renders 30px.
 - [x] Batch 890: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored; fallback-off global issue shell/navigation drift remains outside this owner without compensation.
+- [x] Batch 891: organization issues due-date wrappers preserve the legacy `mr20 mt10 pull-right` DOM/state branches and own exact `margin-right:20px` and `margin-top:10px` through the existing organization-issues StyleX boundary.
+- [x] Batch 891: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 7/7 each at 1366x900 and 390x844 for open-overdue, open-upcoming, and closed states; normal/fallback-off screenshots were visually inspected.
+- [x] Batch 891: focused source/runtime guard checks organization Scala/LESS/import/messages provenance, computed margins, copy/title/state branches, target containment diagnostics, and no plugin-only attrs.
+- [x] Batch 891: adjacent organization-issues guards pass 2/2.
+- [x] Batch 891: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored; fallback-off global organization shell/navigation drift remains outside this owner without compensation.

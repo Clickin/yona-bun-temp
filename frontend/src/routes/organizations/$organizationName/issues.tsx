@@ -776,6 +776,7 @@ function OrganizationIssueItem({
   const issueHref = prefixBasePath(basePath, issueRoutePath);
   const createdLabel = stringField(issue.createdLabel, issue.updatedLabel);
   const legacyIssueRowAttrs = { href: issueHref } satisfies LegacyIssueRowAttributes;
+  const dueDateStyleProps = stylex.props(styles.dueDateWrapper);
 
   return (
     <li
@@ -922,7 +923,9 @@ function OrganizationIssueItem({
         </div>
         {issue.dueDateLabel ? (
           <div
-            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""}`}
+            {...dueDateStyleProps}
+            className={`mr20 mt10 pull-right${issue.dueDateOverdue ? " overdue" : ""} ${dueDateStyleProps.className ?? ""}`.trim()}
+            data-stylex-owner="organization-issues-due-date"
             title={issue.dueDateLabel}
           >
             <i className="yobicon-clock2"></i>
