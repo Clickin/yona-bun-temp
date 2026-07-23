@@ -351,11 +351,13 @@ function PullRequestDisabledBranchSelectors({
           {t("pullRequest.from")}
         </label>
         <select
+          {...stylex.props(sx.projectSelect)}
           id="fromProjectId"
           name="fromProjectId"
-          className="mr5"
+          className={`${stylex.props(sx.projectSelect).className} mr5`}
           defaultValue={String(selected.fromProjectId)}
           disabled
+          data-stylex-owner="pull-request-edit-from-project-select"
         >
           {formOptions.fromProjects.map((project) => (
             <option key={project.id} value={project.id}>
@@ -393,11 +395,13 @@ function PullRequestDisabledBranchSelectors({
           {t("pullRequest.to")}
         </label>
         <select
+          {...stylex.props(sx.projectSelect)}
           id="toProjectId"
           name="toProjectId"
-          className="mr5"
+          className={`${stylex.props(sx.projectSelect).className} mr5`}
           defaultValue={String(selected.toProjectId)}
           disabled
+          data-stylex-owner="pull-request-edit-to-project-select"
         >
           {formOptions.toProjects.map((project) => (
             <option key={project.id} value={project.id}>

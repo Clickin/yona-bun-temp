@@ -2064,3 +2064,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 872: shared `.ml5` fallback remains for unrelated consumers; no route-specific geometry compensation or fallback retirement was added.
 - [ ] Batch 872: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 872: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 873: populated pull-request edit forms preserve legacy `.mr5` on disabled `fromProjectId`/`toProjectId` project selects and own exact `margin-right:5px` through the existing edit-form StyleX boundary; branch selects remain excluded.
+- [x] Batch 873: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, with computed target/non-target margins, populated values/hidden inputs, containment/no-overflow, and deterministic screenshots.
+- [x] Batch 873: shared `.mr5` fallback remains for unrelated consumers; no route-specific geometry compensation or fallback retirement was added.
+- [ ] Batch 873: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 873: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

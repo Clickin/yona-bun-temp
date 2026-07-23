@@ -37,6 +37,7 @@ export const styles = stylex.create({
     minHeight: "55px",
     position: "relative",
   },
+  projectSelect: { marginRight: "5px" },
   fieldTitle: { display: "block", fontWeight: "700" },
   arrow: {
     color: "#7e7e7e",

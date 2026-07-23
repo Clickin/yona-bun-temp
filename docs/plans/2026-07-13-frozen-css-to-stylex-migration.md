@@ -7141,3 +7141,20 @@ screenshots under
 Live legacy screenshot comparison remains unverified because
 `127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
 developer-contact, and upstream-repository differences remain intentional.
+
+## Batch 873
+
+Move the populated pull-request edit form's two legacy `.mr5`
+`margin-right:5px` consumers—the disabled `fromProjectId` and `toProjectId`
+project selects—into the existing edit-form StyleX boundary. Preserve the
+legacy select IDs, disabled state, selected values, hidden inputs, labels,
+order, and React behavior; keep `fromBranch` and `toBranch` selects excluded
+from the margin and do not add geometry compensation. The shared `.mr5`
+fallback remains for unrelated consumers. Managed external System-Chrome
+normal and explicit fallback-off focused runs pass 1/1 each at 1366x900 and
+390x844 with source ownership, computed target/non-target margins, populated
+form state, containment/no-overflow, and deterministic screenshots under
+`frontend/output/playwright/stylex-project-pull-request-edit-form-mr5/`.
+Live legacy screenshot comparison remains unverified because
+`127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
+developer-contact, and upstream-repository differences remain intentional.
