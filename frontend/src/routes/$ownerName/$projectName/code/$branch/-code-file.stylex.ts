@@ -79,6 +79,7 @@ export const styles = stylex.create({
     marginLeft: "5px",
   },
   commentCount: {
+    marginLeft: "5px",
     marginRight: "8px",
     color: codeFileColors.commentText,
   },

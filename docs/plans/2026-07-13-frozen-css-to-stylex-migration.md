@@ -6767,6 +6767,19 @@ compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
 
+## Batch 867
+
+Move the populated code-file revision comment-count span's remaining frozen
+`.ml5` `margin-left:5px` declaration into the existing code-file `commentCount`
+StyleX owner. Preserve the `ml5` class, icon/count copy, revision Link
+target/hash, metadata order, and prior comment-count margin/color ownership.
+Managed System-Chrome normal and explicit fallback-off focused runs pass 1/1
+each at desktop/390px with source/computed ownership, revision navigation,
+no-overflow, and deterministic screenshots. Existing mobile metadata flex
+overflow is documented without compensation; live legacy screenshot comparison
+is unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer/
+provider/developer-contact/repository differences remain intentional.
+
 ## Batch 862
 
 Move the project-create public/protected/private visibility labels' exact

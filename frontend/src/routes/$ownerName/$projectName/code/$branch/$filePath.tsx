@@ -578,6 +578,7 @@ function FileView({
   const { t } = useLegacyMessages();
   const [isOpenInBrowserPopoverVisible, setIsOpenInBrowserPopoverVisible] = React.useState(false);
   const openBrowserWrapStyleProps = stylex.props(styles.openBrowserWrap);
+  const commentCountStyleProps = stylex.props(styles.commentCount);
   const commitId = stringField(file.commitId, "");
   const shortCommitId = commitId.slice(0, 7);
   const isGit = project.vcs === "GIT";
@@ -684,8 +685,8 @@ function FileView({
               {isGit ? shortCommitId : `Revision ${commitId}`}
               {numberField(file.commentCount) > 0 ? (
                 <span
-                  {...stylex.props(styles.commentCount)}
-                  className={`${stylex.props(styles.commentCount).className} ml5`}
+                  {...commentCountStyleProps}
+                  className={`${commentCountStyleProps.className} ml5`}
                   data-stylex-owner="project-code-file-comment-count"
                 >
                   <i className="yobicon-comments"></i> {numberField(file.commentCount)}

@@ -2033,3 +2033,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 866: existing list/depth responsive behavior is recorded without compensating geometry or fallback removal.
 - [ ] Batch 866: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 866: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 867: populated code-file revision comment-count preserves the legacy `ml5`/icon/count/revision-Link DOM and owns frozen `.ml5` `margin-left:5px` in the existing `commentCount` StyleX owner; prior right margin/color remain exact.
+- [x] Batch 867: focused System-Chrome normal and explicit fallback-off runs pass 1/1 each at desktop/390px, with computed source ownership, revision-link navigation, metadata containment/no-overflow, and deterministic screenshots.
+- [x] Batch 867: existing mobile metadata flex baseline is recorded without compensating geometry or fallback removal.
+- [ ] Batch 867: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 867: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
