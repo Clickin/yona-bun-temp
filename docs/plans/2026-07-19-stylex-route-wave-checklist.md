@@ -2129,3 +2129,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 885: normal and fallback-off open desktop/mobile screenshots plus normal closed desktop were visually inspected; computed margin/no-overflow and mobile wrapping are covered without compensation.
 - [ ] Batch 885: full live legacy/Yoram shell screenshot parity remains a screen-wide/fallback-owned gap outside the title metadata owner.
 - [x] Batch 885: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 886: project code branch index breadcrumb preserves legacy `code-breadcrumb-wrap ml10 pull-left` order/links and owns exact `margin-left:10px` through the existing `breadcrumbs` StyleX owner.
+- [x] Batch 886: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390px; adjacent code branch index guard passes 3/3.
+- [x] Batch 886: normal and fallback-off desktop/mobile screenshots were visually inspected; computed margin/no-overflow and plugin-only attribute absence pass without route compensation.
+- [ ] Batch 886: full live legacy/Yoram shell screenshot parity and fallback-off branch selector/list shell differences remain gaps outside this breadcrumb owner.
+- [x] Batch 886: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

@@ -7411,3 +7411,18 @@ and full live legacy/Yoram shell screenshot parity remains a screen-wide gap;
 no route-specific compensation was added. Approved Yoram footer
 NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+## Batch 886
+
+Move the project code branch index breadcrumb wrapper's exact frozen `.ml10`
+`margin-left:10px` declaration into the existing route-local StyleX owner.
+Preserve the legacy `code-breadcrumb-wrap ml10 pull-left` DOM/order, branch
+picker, breadcrumb links, and responsive geometry; keep the shared fallback for
+unrelated consumers. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 1/1 each at 1366x900 and
+390x844; the adjacent code-branch index guard passes 3/3. Normal and
+fallback-off desktop/mobile screenshots were visually inspected. Fallback-off
+branch selector/list shell differences remain outside this margin owner, and
+full live legacy/Yoram shell screenshot parity remains a screen-wide gap; no
+route-specific compensation was added. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.

@@ -75,6 +75,7 @@ function ProjectCodeFolderBody({
   const encodedBranch = encodeBranch(selectedBranch);
   const isGit = project.vcs === "GIT";
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
+  const breadcrumbsStyleProps = stylex.props(styles.breadcrumbs);
 
   return (
     <div className="page-wrap-outer" data-stylex-owner="project-code-branch-page">
@@ -251,8 +252,9 @@ function ProjectCodeFolderBody({
               ))}
             </select>
             <div
+              {...breadcrumbsStyleProps}
               id="breadcrumbs"
-              className={`${stylex.props(styles.breadcrumbs).className} code-breadcrumb-wrap ml10 pull-left`}
+              className={`${breadcrumbsStyleProps.className} code-breadcrumb-wrap ml10 pull-left`}
               data-stylex-owner="project-code-branch-breadcrumbs"
             >
               <Link

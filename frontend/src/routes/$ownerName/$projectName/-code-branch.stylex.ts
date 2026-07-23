@@ -33,6 +33,7 @@ export const styles = stylex.create({
     fontSize: "15px",
     fontWeight: "700",
     lineHeight: "30px",
+    marginLeft: "10px",
     padding: "0px 10px 0px 0px",
   },
   list: { overflow: "auto", width: "100%" },
