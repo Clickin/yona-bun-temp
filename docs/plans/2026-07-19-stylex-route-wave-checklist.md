@@ -2054,3 +2054,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 870: fallback-off verifies the three icon DOMs, StyleX source, and computed declarations; the shared Yobicon glyph foundation remains fallback-owned and receives no speculative replacement.
 - [ ] Batch 870: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 870: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 871: populated project issue-label copy-form `owner` and new-label `category` inputs preserve legacy `input-label mr5` and own exact `margin-right:5px` through the route `inputWithTrailingMargin` StyleX variant; non-target inputs remain excluded.
+- [x] Batch 871: focused managed external System-Chrome normal and explicit fallback-off runs pass 2/2 each at 1366x900 and 390x844 with source/computed-margin, interaction, containment/no-overflow, and deterministic screenshot evidence; full typeahead menu parity remains covered by the existing dedicated E2E.
+- [x] Batch 871: no route-specific geometry compensation or fallback retirement was added; non-target color visibility may differ between fallback modes and remains outside this spacing target.
+- [ ] Batch 871: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 871: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

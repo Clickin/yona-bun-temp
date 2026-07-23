@@ -43,6 +43,7 @@ const styles = stylex.create({
     padding: "4px 6px",
     width: "214px",
   },
+  inputWithTrailingMargin: { marginRight: "5px" },
   submitInfo: {
     backgroundColor: labelsFormColors.actionInfo,
     borderColor: labelsFormColors.actionBorder,
@@ -131,6 +132,11 @@ const styles = stylex.create({
     boxShadow: "inset 1px 1px 4px rgba(0, 0, 0, 0.25)",
   },
 });
+
+const inputWithTrailingMarginStyleProps = stylex.props(
+  styles.input,
+  styles.inputWithTrailingMargin,
+);
 
 const NEW_LABEL_COLORS = [
   "#f44336",
@@ -557,8 +563,8 @@ function ProjectLabelsBody({
                   <input
                     type="text"
                     name="owner"
-                    {...stylex.props(styles.input)}
-                    className={`${stylex.props(styles.input).className} mr5`}
+                    {...inputWithTrailingMarginStyleProps}
+                    className={`${inputWithTrailingMarginStyleProps.className} mr5`}
                     placeholder={t("project.owner")}
                   />
                   <input
@@ -616,8 +622,8 @@ function ProjectLabelsBody({
                     <input
                       type="text"
                       name="category"
-                      {...stylex.props(styles.input)}
-                      className={`${stylex.props(styles.input).className} mr5`}
+                      {...inputWithTrailingMarginStyleProps}
+                      className={`${inputWithTrailingMarginStyleProps.className} mr5`}
                       maxLength={250}
                       autoComplete="off"
                       placeholder={t("label.category")}
