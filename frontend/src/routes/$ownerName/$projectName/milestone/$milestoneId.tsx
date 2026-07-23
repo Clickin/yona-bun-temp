@@ -42,6 +42,7 @@ const sx = {
   issueMeta: stylex.props(styles.issueMeta),
   dueDateIcon: stylex.props(styles.dueDateIcon),
   dueDateClosed: stylex.props(styles.dueDateClosed),
+  titleMeta: stylex.props(styles.titleMeta),
   massUpdate: stylex.props(styles.massUpdate),
   search: stylex.props(styles.search),
   deleteModalVisible: stylex.props(styles.deleteModalVisible),
@@ -339,7 +340,11 @@ function ProjectMilestoneDetailBody({
             >
               {stringField(milestone.title)}
             </Link>{" "}
-            <small className="ml10">
+            <small
+              {...sx.titleMeta}
+              className={`${sx.titleMeta.className} ml10`}
+              data-stylex-owner="milestone-detail-title-meta"
+            >
               {stringField(milestone.dueDateLabel) ? (
                 <>
                   <span className="due-date">

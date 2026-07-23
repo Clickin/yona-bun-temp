@@ -7396,3 +7396,18 @@ this owner. Full live legacy/Yoram shell screenshot parity remains a separate
 screen-wide gap, so no route-specific compensation was added. Approved Yoram
 footer NAVER/provider/developer-contact/upstream-repository differences remain
 intentional.
+## Batch 885
+
+Move the populated project milestone detail title metadata's exact frozen
+`.ml10` `margin-left:10px` declaration into the route-local StyleX owner.
+Preserve the legacy `<small class="ml10">` DOM/order, due-date copy, open and
+closed state behavior, and badge separation; keep the shared fallback for
+unrelated consumers. Managed external System-Chrome normal, explicit
+fallback-off, and restored-normal focused runs pass 1/1 each at 1366x900 and
+390x844; adjacent milestone guards pass 3/3. Normal and fallback-off open
+desktop/mobile screenshots plus normal closed desktop were visually inspected.
+Fallback-off global shell/toolbar differences remain outside this margin owner,
+and full live legacy/Yoram shell screenshot parity remains a screen-wide gap;
+no route-specific compensation was added. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.

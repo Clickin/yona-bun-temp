@@ -2124,3 +2124,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 884: fallback-off computed separator margins remain 10px with no inline style or plugin-only attributes; remember-row wrapping outside this owner receives no route-specific compensation.
 - [ ] Batch 884: full live legacy/Yoram shell screenshot parity remains a screen-wide/fallback-owned gap outside the separator owner.
 - [x] Batch 884: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 885: populated project milestone title metadata preserves legacy `<small class="ml10">` order/copy and owns exact `margin-left:10px` through the route-local StyleX owner for open/closed states.
+- [x] Batch 885: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390px; adjacent milestone guards pass 3/3.
+- [x] Batch 885: normal and fallback-off open desktop/mobile screenshots plus normal closed desktop were visually inspected; computed margin/no-overflow and mobile wrapping are covered without compensation.
+- [ ] Batch 885: full live legacy/Yoram shell screenshot parity remains a screen-wide/fallback-owned gap outside the title metadata owner.
+- [x] Batch 885: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

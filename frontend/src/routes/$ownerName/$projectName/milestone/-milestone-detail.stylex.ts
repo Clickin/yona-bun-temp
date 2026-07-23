@@ -43,6 +43,7 @@ export const styles = stylex.create({
   },
   badgeOpen: { backgroundColor: milestoneDetailColors.badgeOpen },
   badgeClosed: { backgroundColor: milestoneDetailColors.badgeClosed },
+  titleMeta: { marginLeft: "10px" },
   labelColor: (backgroundColor: string) => ({ backgroundColor }),
   page: { margin: "20px auto 0px", padding: "0px 10px", width: "100%", boxSizing: "border-box" },
   wrap: { color: milestoneDetailColors.bodyText },
