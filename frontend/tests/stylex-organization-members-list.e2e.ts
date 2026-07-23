@@ -24,6 +24,18 @@ test.use({ locale: "en-US" });
 
 test("organization member list records the exact six-owner legacy boundary", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/members.tsx", "utf8");
+  const legacyTemplate = readFileSync(
+    resolve(repoRoot, "yona-original/app/views/organization/members.scala.html"),
+    "utf8",
+  );
+  const legacyPage = readFileSync(
+    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_page.less"),
+    "utf8",
+  );
+  const legacyYobi = readFileSync(
+    resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
+    "utf8",
+  );
   const theme = readFileSync(
     "src/routes/organizations/$organizationName/-members.stylex.ts",
     "utf8",
@@ -39,6 +51,39 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(route).toContain('[globalBreakpoints.mobile]: "100vw"');
   expect(route).toContain("onAccept={(userId, loginId) =>");
   expect(route).toContain("onAccept(Number(user.userId), loginId)");
+  expect(route).toContain('data-stylex-owner="organization-members-header"');
+  expect(route).toContain('data-stylex-owner="organization-members-add-form-input"');
+  expect(route).toContain('marginBottom: "10px"');
+  expect(route).toContain('position: "relative"');
+  expect(route).toContain('width: "384px"');
+  expect(route).toContain("margin: 0");
+  expect(route).toContain('borderRadius: "2px"');
+  expect(legacyTemplate).toContain('<div class="inner-bubble">');
+  expect(legacyTemplate).toContain('<form class="nm"');
+  expect(legacyTemplate).toContain('class="text uname"');
+  expect(legacyPage).toContain(".inner-bubble {");
+  expect(legacyPage).toContain("margin-bottom: 10px;");
+  expect(legacyPage).toContain("position: relative;");
+  expect(legacyPage).toContain("width: 384px;");
+  expect(legacyPage).toContain("margin: 0;");
+  expect(legacyPage).toContain(".border-radius(2px);");
+  for (const importedStylesheet of [
+    '@import "less/_variables.less";',
+    '@import "less/_mixins.less";',
+    '@import "less/_common.less";',
+    '@import "less/_sprites.less";',
+    '@import "less/_page.less";',
+    '@import "less/_tippy.less";',
+    '@import "less/_scrollbar.less";',
+    '@import "less/_responsive.less";',
+    '@import "less/_yobiUI.less";',
+    '@import "less/_temporary.less";',
+    '@import "less/_markdown.less";',
+    '@import "less/_migration.less";',
+    '@import "less/_override.less";',
+  ]) {
+    expect(legacyYobi).toContain(importedStylesheet);
+  }
   expect(route).not.toContain('className="avatar-wrap mlarge pull-left mr10"');
   expect(route).not.toContain('className="member-name"');
   expect(route).not.toContain('className="member-id"');
@@ -48,6 +93,80 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(theme).toContain('idText: "#cccccc"');
   expect(theme).not.toMatch(/(?:margin|padding|width|height|font|lineHeight)/u);
 });
+
+for (const fallbackOff of [false, true]) {
+  test(`organization member add form StyleX boundary ${fallbackOff ? "fallback-off" : "normal"}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await mockMembers(page, { populated: false });
+    await page.goto(`${basePath}/organizations/weblabs/members`);
+    if (fallbackOff) {
+      await page
+        .locator('link[href*="legacy-fallback.css"]')
+        .evaluate((element) => element.remove());
+    }
+
+    const bubble = page.locator('[data-stylex-owner="organization-members-header"]');
+    const input = page.locator('[data-stylex-owner="organization-members-add-form-input"]');
+    await expect(bubble).toBeVisible();
+    await expect(input).toBeVisible();
+    await expect(input).toHaveClass(/\btext\b.*\buname\b/u);
+    await expect(bubble).toHaveCSS("margin-bottom", "10px");
+    await expect(bubble).toHaveCSS("position", "relative");
+    await expect(input).toHaveCSS("width", "384px");
+    await expect(input).toHaveCSS("margin", "0px");
+    await expect(input).toHaveCSS("border-radius", "2px");
+    await expect(bubble).not.toHaveAttribute("style", /.+/u);
+    await expect(input).not.toHaveAttribute("style", /.+/u);
+
+    const requests = await mockMemberAddFormRoutes(page);
+    await input.fill("car");
+    const menu = page.locator(".inner-bubble .typeahead.dropdown-menu");
+    await expect(menu).toBeVisible();
+    await expect(menu.locator("li")).toHaveCount(1);
+    await menu.locator("button").click();
+    await expect(input).toHaveValue("carol");
+    await expect(menu).toHaveCount(0);
+    await page.locator("#addNewMember").evaluate((form: HTMLFormElement) => form.requestSubmit());
+    await expect.poll(() => requests.addedLoginIds).toEqual(["carol"]);
+
+    const desktop = await bubble.evaluate((element) => {
+      const bubbleBox = element.getBoundingClientRect();
+      const inputBox = element.querySelector<HTMLInputElement>("#loginId")!.getBoundingClientRect();
+      return { bubbleBox, inputBox, scrollWidth: document.documentElement.scrollWidth };
+    });
+    expect(desktop.inputBox.left).toBeGreaterThanOrEqual(desktop.bubbleBox.left);
+    expect(desktop.inputBox.right).toBeLessThanOrEqual(desktop.bubbleBox.right + 2);
+    expect(desktop.scrollWidth).toBeLessThanOrEqual(1366);
+    mkdirSync(screenshotDirectory, { recursive: true });
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(
+        screenshotDirectory,
+        `stylex-organization-members-add-form-${fallbackOff ? "fallback-off" : "normal"}-desktop.png`,
+      ),
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    const mobile = await bubble.evaluate((element) => {
+      const bubbleBox = element.getBoundingClientRect();
+      const inputBox = element.querySelector<HTMLInputElement>("#loginId")!.getBoundingClientRect();
+      return { bubbleBox, inputBox, scrollWidth: document.documentElement.scrollWidth };
+    });
+    expect(mobile.inputBox.left).toBeGreaterThanOrEqual(mobile.bubbleBox.left);
+    expect(mobile.inputBox.right).toBeLessThanOrEqual(mobile.bubbleBox.right + 2);
+    expect(mobile.scrollWidth).toBeLessThanOrEqual(390);
+    await page.screenshot({
+      fullPage: true,
+      path: resolve(
+        screenshotDirectory,
+        `stylex-organization-members-add-form-${fallbackOff ? "fallback-off" : "normal"}-mobile.png`,
+      ),
+    });
+  });
+}
 
 test("organization enrollment avatar owner follows the frozen legacy float boundary", () => {
   const route = readFileSync("src/routes/organizations/$organizationName/members.tsx", "utf8");
@@ -393,6 +512,30 @@ async function mockMembers(
     }),
   );
   return { acceptedEnrollments };
+}
+
+async function mockMemberAddFormRoutes(page: Page) {
+  const addedLoginIds: string[] = [];
+  await page.route("**/-_-api/v1/users?*", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      headers: { "Content-Range": "items 1/1" },
+      json: [
+        {
+          info: '<img class="mention_image" src="/assets/images/default-avatar-32.png"><b class="mention_name">Carol Jones</b><span class="mention_username"> @carol</span>',
+          loginId: "carol",
+        },
+      ],
+    });
+  });
+  await page.route("**/api/v1/organizations/weblabs/members", async (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as { loginId?: string };
+      addedLoginIds.push(body.loginId ?? "");
+    }
+    await route.fulfill({ contentType: "application/json", json: adminPayload(false) });
+  });
+  return { addedLoginIds };
 }
 
 function adminPayload(populated: boolean, enrollment = false) {

@@ -73,6 +73,15 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [x] Existing `frontend/tests/stylex-organization-members-list.e2e.ts` passes 5/5 in managed system Chrome, including accept interaction and desktop/mobile populated/empty states.
 - [x] Full frontend TypeScript check, production build, and StyleX verifier pass; this is a type-only repair with no new screenshot-parity claim.
 
+### 2026-07-23 Batch 849 organization members add-member form
+
+- [x] `organization/members.scala.html:31-39`, frozen `_page.less:2169-2179`, and the complete `yobi.less` import chain are recorded as form/output/cascade sources.
+- [x] Existing route-local StyleX owns only `.inner-bubble` margin/position and `.text.uname` width/margin/radius; legacy classes/DOM, typeahead/submit behavior, copy/order, and fallback remain.
+- [x] `frontend/tests/stylex-organization-members-list.e2e.ts` verifies source/import provenance, both owners' computed declarations, typeahead selection/submit, desktop/mobile containment/no-overflow, and deterministic screenshots.
+- [x] Managed dynamic-port system-Chrome normal/fallback-off runs pass 7/7; screenshots are under `frontend/output/playwright/visual-sweep/`.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.

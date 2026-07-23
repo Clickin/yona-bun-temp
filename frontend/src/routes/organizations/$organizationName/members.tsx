@@ -264,8 +264,9 @@ function OrganizationMembersBody({
             organizationName={organizationName}
           />
 
+          {/* Legacy class contract: className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`} */}
           <div
-            className={`inner-bubble${showTypeaheadSuggestions ? " open" : ""}`}
+            className={`${stylex.props(styles.addFormBubble).className ?? ""} inner-bubble${showTypeaheadSuggestions ? " open" : ""}`.trim()}
             data-stylex-owner="organization-members-header"
           >
             <form
@@ -281,9 +282,10 @@ function OrganizationMembersBody({
             >
               <input
                 type="text"
-                className="text uname"
+                className={`${stylex.props(styles.addFormUsername).className ?? ""} text uname`.trim()}
                 id="loginId"
                 name="loginId"
+                data-stylex-owner="organization-members-add-form-input"
                 required={true}
                 autoComplete="off"
                 ref={loginIdInputRef}
@@ -530,6 +532,17 @@ function OrganizationMember({
 }
 
 const styles = stylex.create({
+  // Frozen organization/members.scala.html + _page.less .inner-bubble boundary.
+  addFormBubble: {
+    marginBottom: "10px",
+    position: "relative",
+  },
+  // Frozen _page.less .inner-bubble .text.uname declarations.
+  addFormUsername: {
+    borderRadius: "2px",
+    margin: 0,
+    width: "384px",
+  },
   deleteModalVisible: {
     display: "block",
   },

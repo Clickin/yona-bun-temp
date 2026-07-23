@@ -6821,6 +6821,19 @@ StyleX, fallback, or screenshot geometry changes. The existing organization
 members focused suite passes 5/5 in managed system Chrome, and the full
 frontend TypeScript check now passes.
 
+## Batch 849
+
+Move the organization members add-member form's exact frozen declarations into
+the existing route-local StyleX boundary. Legacy
+`organization/members.scala.html:31-39` emits the `inner-bubble`/`nm` form
+and `text uname` input; frozen `_page.less:2169-2179` supplies the bubble
+margin/position and input width/margin/radius. React preserves the native
+form/input/button DOM, typeahead state and submit behavior, copy/order, and
+legacy fallback classes. Managed system-Chrome normal/fallback-off checks pass
+7/7 with desktop/mobile screenshots under
+`frontend/output/playwright/visual-sweep/`; live legacy screenshot comparison
+is explicitly unverified and no compensating geometry was added.
+
 ## Batch 845
 
 Own the organization-home member-panel avatar wrapper/image cascade. The
