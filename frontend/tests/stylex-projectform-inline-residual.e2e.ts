@@ -73,6 +73,99 @@ test("project create advanced field labels own legacy right alignment", async ({
   }
 });
 
+test("project create visibility labels own the legacy ml5 margin in StyleX", async ({ page }) => {
+  const routeSource = readFileSync("src/routes/projectform.tsx", "utf8");
+  const styleSource = readFileSync("src/routes/-projectform.stylex.ts", "utf8");
+  const legacySource = readFileSync("../yona-original/app/views/project/create.scala.html", "utf8");
+  const legacyCommon = readFileSync(
+    "../yona-original/app/assets/stylesheets/less/_common.less",
+    "utf8",
+  );
+  expect(legacySource).toContain('id="public" name="projectScope"');
+  expect(legacySource).toContain('id="protected" name="projectScope"');
+  expect(legacySource).toContain('id="private" name="projectScope"');
+  expect(legacySource.match(/<strong class="ml5">/gu)).toHaveLength(3);
+  expect(legacyCommon).toContain(".ml5 { margin-left:5px; }");
+  expect(routeSource).not.toContain('<strong className="ml5">');
+  for (const owner of [
+    "project-form-public-visibility-label",
+    "project-form-protected-visibility-label",
+    "project-form-private-visibility-label",
+  ]) {
+    expect(routeSource).toContain(`data-stylex-owner="${owner}"`);
+  }
+  expect(styleSource).toContain('visibilityLabel: {\n    marginLeft: "5px",\n  },');
+
+  await mockProjectCreate(page);
+  for (const viewport of [
+    { width: 1366, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${basePath}/projectform`, { waitUntil: "domcontentloaded" });
+    const labels = page.locator('[data-stylex-owner$="-visibility-label"]');
+    await expect(labels).toHaveCount(3);
+    for (let index = 0; index < 3; index += 1) {
+      const label = labels.nth(index);
+      await expect(label).toHaveClass(/ml5/u);
+      await expect(label).toHaveCSS("margin-left", "5px");
+      await expect(label).toHaveAttribute("data-style-src", /projectform\.stylex\.ts/u);
+    }
+    for (const id of ["public", "private"]) {
+      const radio = page.locator(`#${id}`);
+      const label = page.locator(`label[for="${id}"]`);
+      await expect(radio).toHaveAttribute("name", "projectScope");
+      await expect(label).toBeVisible();
+      const geometry = await radio.evaluate((input) => {
+        const label = input.nextElementSibling;
+        const text = label?.querySelector("strong");
+        if (!label || !text) return null;
+        const radioBox = input.getBoundingClientRect();
+        const labelBox = label.getBoundingClientRect();
+        const textBox = text.getBoundingClientRect();
+        return {
+          radioRight: radioBox.right,
+          labelLeft: labelBox.left,
+          textLeft: textBox.left,
+          textRight: textBox.right,
+          documentRight: document.documentElement.scrollWidth,
+        };
+      });
+      expect(geometry).not.toBeNull();
+      expect(geometry!.textLeft).toBeGreaterThanOrEqual(geometry!.radioRight - 1);
+      expect(geometry!.textRight).toBeLessThanOrEqual(geometry!.documentRight + 1);
+    }
+    await page.locator("#private").check();
+    await expect(page.locator("#private")).toBeChecked();
+    await page.locator("#public").check();
+    await expect(page.locator("#public")).toBeChecked();
+    await page.locator("#project-owner").selectOption("weblabs");
+    await expect(page.locator("#opt-protected")).toBeVisible();
+    await expect(page.locator('label[for="protected"]')).toBeVisible();
+    const protectedGeometry = await page.locator("#protected").evaluate((input) => {
+      const text = input.nextElementSibling?.querySelector("strong");
+      if (!text) return null;
+      const inputBox = input.getBoundingClientRect();
+      const textBox = text.getBoundingClientRect();
+      return {
+        inputRight: inputBox.right,
+        textLeft: textBox.left,
+        textRight: textBox.right,
+        documentRight: document.documentElement.scrollWidth,
+      };
+    });
+    expect(protectedGeometry).not.toBeNull();
+    expect(protectedGeometry!.textLeft).toBeGreaterThanOrEqual(protectedGeometry!.inputRight - 1);
+    expect(protectedGeometry!.textRight).toBeLessThanOrEqual(protectedGeometry!.documentRight + 1);
+    await page.locator("#protected").check();
+    await expect(page.locator("#protected")).toBeChecked();
+    await page.screenshot({
+      path: `output/playwright/visual-sweep/stylex-projectform-visibility-label-${viewport.width}.png`,
+      fullPage: true,
+    });
+  }
+});
+
 async function mockProjectCreate(page: Page) {
   await page.addInitScript((runtimeBasePath) => {
     (window as Window & { __YONA_RUNTIME_CONFIG__?: object }).__YONA_RUNTIME_CONFIG__ = {

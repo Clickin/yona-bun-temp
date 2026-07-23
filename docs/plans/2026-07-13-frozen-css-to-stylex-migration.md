@@ -6767,6 +6767,17 @@ compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
 
+## Batch 862
+
+Move the project-create public/protected/private visibility labels' exact
+frozen `.ml5` `margin-left:5px` declaration into the existing projectform
+StyleX boundary. Preserve the Scala radio/label DOM, copy, selection behavior,
+and conditional protected visibility; keep the shared `ml5` fallback for
+unrelated consumers. Managed System-Chrome normal and explicit fallback-off
+focused runs pass 1/1 each with desktop/mobile evidence. Live legacy screenshot
+comparison remains unverified. Approved Yoram footer/provider/developer-contact/
+repository differences remain intentional.
+
 ## Batch 842
 
 Own the remaining authenticated organization-home project-card child paint.

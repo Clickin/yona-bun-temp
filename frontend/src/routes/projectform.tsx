@@ -345,7 +345,13 @@ function ProjectCreateScreen({
                           onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
-                          <strong className="ml5">{t("project.public")}</strong>
+                          <strong
+                            {...stylex.props(projectFormLayout.visibilityLabel)}
+                            className="ml5"
+                            data-stylex-owner="project-form-public-visibility-label"
+                          >
+                            {t("project.public")}
+                          </strong>
                           <p
                             className={`${stylex.props(styles.scopeNote).className} note`}
                             data-stylex-owner="project-form-scope-note"
@@ -371,7 +377,13 @@ function ProjectCreateScreen({
                           onChange={() => setProjectScope("PROTECTED")}
                         />
                         <label htmlFor="protected">
-                          <strong className="ml5">{t("project.protected")}</strong>
+                          <strong
+                            {...stylex.props(projectFormLayout.visibilityLabel)}
+                            className="ml5"
+                            data-stylex-owner="project-form-protected-visibility-label"
+                          >
+                            {t("project.protected")}
+                          </strong>
                           <p
                             className={`${stylex.props(styles.scopeNote).className} note`}
                             data-stylex-owner="project-form-scope-note"
@@ -392,7 +404,13 @@ function ProjectCreateScreen({
                           onChange={() => setProjectScope("PRIVATE")}
                         />
                         <label htmlFor="private">
-                          <strong className="ml5">{t("project.private")}</strong>
+                          <strong
+                            {...stylex.props(projectFormLayout.visibilityLabel)}
+                            className="ml5"
+                            data-stylex-owner="project-form-private-visibility-label"
+                          >
+                            {t("project.private")}
+                          </strong>
                           <p
                             className={`${stylex.props(styles.scopeNote).className} note`}
                             data-stylex-owner="project-form-scope-note"

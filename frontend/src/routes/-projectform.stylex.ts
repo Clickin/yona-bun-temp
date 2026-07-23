@@ -15,6 +15,9 @@ export const projectFormLayout = stylex.create({
   fieldLabel: {
     textAlign: "right",
   },
+  visibilityLabel: {
+    marginLeft: "5px",
+  },
   select: {
     minWidth: "220px",
   },

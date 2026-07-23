@@ -2010,3 +2010,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 861: populated/empty README DOM, `ybtn vmiddle ml5` contract, desktop/390px geometry, screenshots, and Edit navigation are covered by the focused E2E; normal and explicit fallback-off runs pass 1/1 each.
 - [ ] Batch 861: live legacy screenshot comparison remains unavailable; no compensating geometry was added.
 - [x] Batch 861: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 862: project-create visibility labels preserve the legacy Scala radio/label structure and own frozen `.ml5` `margin-left:5px` through route-local StyleX; shared fallback remains for unrelated consumers.
+- [x] Batch 862: focused System-Chrome normal and explicit fallback-off runs pass 1/1 each at desktop/390px, including computed margin, containment, selection, and conditional protected visibility.
+- [ ] Batch 862: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified and no compensating geometry was added.
+- [x] Batch 862: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
