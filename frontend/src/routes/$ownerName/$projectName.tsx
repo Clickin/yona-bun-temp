@@ -13,6 +13,10 @@ import { styles as projectHomeStyles } from "./$projectName/-project-home.stylex
 
 const projectHistoryStyles = stylex.create({
   stream: { marginBottom: "15px", width: "100%" },
+  avatarWrap: {
+    float: "left",
+    marginRight: "10px",
+  },
   activityStreams: { margin: "0" },
   activityItem: {
     borderBottom: "1px solid #f1f1f1",
@@ -1885,7 +1889,8 @@ function HistoryPane({ basePath, project }: { basePath: string; project: Project
                 <HistoryLink
                   basePath={basePath}
                   href={actorUrl}
-                  className="avatar-wrap pull-left mr10"
+                  className={`${stylex.props(projectHistoryStyles.avatarWrap).className} avatar-wrap pull-left mr10`}
+                  stylexOwner="project-history-avatar-wrap"
                 >
                   <img
                     src={
