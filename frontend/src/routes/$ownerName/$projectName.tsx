@@ -55,6 +55,7 @@ const projectHistoryStyles = stylex.create({
 
 const projectHomeMemberAvatarStyles = stylex.create({
   avatar: {
+    backgroundColor: "#ddd",
     border: "1px solid #ccc",
     borderRadius: "3px",
     display: "inline-block",
@@ -64,6 +65,7 @@ const projectHomeMemberAvatarStyles = stylex.create({
     verticalAlign: "top",
     width: "24px",
   },
+  image: { verticalAlign: "top", width: "100%" },
 });
 
 const projectHeaderStyles = stylex.create({
@@ -2536,11 +2538,13 @@ function ProjectMember({
         data-stylex-owner="project-home-member-avatar"
       >
         <img
+          {...stylex.props(projectHomeMemberAvatarStyles.image)}
           src={
             stringField(member.avatarUrl, "") ||
             prefixBasePath(basePath, "/assets/images/default-avatar-32.png")
           }
           alt={loginId}
+          data-stylex-owner="project-home-member-avatar-image"
           width="24"
           height="24"
         />

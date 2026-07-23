@@ -1797,6 +1797,15 @@ desktop/mobile geometry, and filtering.
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
 - [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries; these identity differences remain intentional.
 
+### 2026-07-23 Batch 838 project-home member-card avatar image/surface
+
+- [x] `project/home.scala.html:128-135`, frozen `_yobiUI.less:439-466` avatar surface/image rules, `_common.less:140-153`, `_page.less:2677-2702`, Bootstrap, and all 13 `yobi.less` imports are recorded as the output/cascade source.
+- [x] `frontend/src/routes/$ownerName/$projectName.tsx` owns only the member-card avatar `background:#ddd`, image `width:100%`, and image `vertical-align:top` declarations through route-local StyleX; legacy classes, DOM/order/copy, link/image attributes, and overflow clipping remain.
+- [x] `frontend/tests/stylex-project-home-member-avatar-image.e2e.ts` verifies source provenance, owner/class/attributes, computed surface/image declarations, clipping, desktop/mobile containment, and no document overflow.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries; these identity differences remain intentional.
+
 ### 2026-07-23 Batch 836 project-home History avatar wrapper
 
 - [x] `project/partial_history.scala.html:49-55` and the complete frozen `yobi.less` import chain, `_common.less:207` `.mr10`, and Bootstrap `.pull-left` are recorded as the output and geometry source.

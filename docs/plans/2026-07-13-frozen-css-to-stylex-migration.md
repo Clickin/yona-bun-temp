@@ -6697,3 +6697,20 @@ screenshot parity remains explicitly unverified and no compensating geometry
 was added. The Yoram footer intentionally omits unrelated NAVER/NAVER LABS/
 NAVER CLOUD, upstream Yona repository, and developer-contact entries; this is
 an approved identity diff and must not be restored.
+
+## Batch 838
+
+Move the project-home member-card avatar surface and image declarations into
+the existing route-local StyleX boundary. Legacy output is
+`yona-original/app/views/project/home.scala.html:128-135`; frozen
+`_yobiUI.less:439-466` supplies the avatar `background:#ddd` and nested image
+`width:100%`/`vertical-align:top`, while `_common.less:140-153`,
+`_page.less:2677-2702`, Bootstrap, and the complete `yobi.less` import chain
+establish the surrounding wrapper and member-row cascade. React preserves the
+legacy classes, link/image attributes, member copy/order, and overflow clipping.
+Managed system-Chrome normal/fallback-off focused checks pass 1/1 each at
+1366px and 390px. Live legacy rendering was unavailable, so screenshot parity
+remains explicitly unverified and no compensating geometry was added. The
+Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD,
+upstream Yona repository, and developer-contact entries; this approved identity
+diff must not be restored.
