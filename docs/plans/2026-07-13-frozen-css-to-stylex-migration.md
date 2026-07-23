@@ -6767,6 +6767,26 @@ compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
 
+## Batch 877
+
+Move the authenticated populated project issue-list mode-control wrappers'
+exact frozen `.mr10` `margin-right:10px` declaration into the existing project
+issue StyleX boundary. Preserve the legacy `two-column-icon mr10
+hide-in-mobile` and `show-subtasks mr10` DOM/classes, IDs, order, copy,
+React-owned hover/focus popovers, checkbox behavior, and responsive visibility;
+leave the shared `.mr10` fallback and other issue-route consumers unchanged.
+Managed external System-Chrome normal and explicit fallback-off focused runs
+pass 1/1 each at 1366x900 and 390x844 with source provenance, computed target
+margins, non-target exclusion, interaction, containment/no-overflow, and
+deterministic screenshots under
+`frontend/output/playwright/stylex-project-issues-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and
+were visually inspected. The comparison reports existing desktop
+`gnbSearchForm` and mobile `gnbUsermenu` shell drift outside this margin owner;
+screen-wide screenshot parity remains a documented gap and no route-specific
+compensation was added. Approved Yoram footer, provider, developer-contact,
+and upstream-repository differences remain intentional.
+
 ## Batch 867
 
 Move the populated code-file revision comment-count span's remaining frozen

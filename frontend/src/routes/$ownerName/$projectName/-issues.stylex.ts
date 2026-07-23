@@ -46,6 +46,7 @@ export const styles = stylex.create({
   childIssueListVisible: { display: "block" },
   progressBar: (width: string) => ({ width }),
   relativeAnchor: { position: "relative" },
+  modeControl: { marginRight: "10px" },
   labelsWrap: { position: "relative" },
   searchAdvanced: { marginTop: "10px" },
   results: { backgroundColor: issuesTheme.resultsSurface },

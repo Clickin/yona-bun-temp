@@ -3151,7 +3151,7 @@ function TwoColumnModeCheckbox({
 
   return (
     <div
-      className={`${stylex.props(styles.relativeAnchor).className} two-column-icon mr10 hide-in-mobile`}
+      className={`${stylex.props(styles.relativeAnchor, styles.modeControl).className} two-column-icon mr10 hide-in-mobile`}
       id="two-column-mode-checkbox"
       title={popoverTitle}
       data-stylex-owner="project-issues-two-column-anchor"
@@ -3224,7 +3224,7 @@ function ShowSubtasksCheckbox({
 
   return (
     <div
-      className={`${stylex.props(styles.relativeAnchor).className} show-subtasks mr10`}
+      className={`${stylex.props(styles.relativeAnchor, styles.modeControl).className} show-subtasks mr10`}
       id="two-column-mode-checkbox"
       title={popoverTitle}
       data-stylex-owner="project-issues-subtasks-anchor"
