@@ -2139,3 +2139,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 887: adjacent code-file guards pass 7/7; full live legacy/Yoram screenshot parity and fallback-off global shell/list differences remain screen-wide/fallback-owned gaps outside this breadcrumb owner, with no route-specific compensation.
 - [x] Batch 887: the focused source/runtime guard checks frozen legacy evidence, computed 10px margin, link order, no inline/plugin-only attributes, and no horizontal overflow.
 - [x] Batch 887: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 888: projectform #svn preserves legacy ml10 notice DOM/copy and owns exact margin-left:10px through route-local StyleX while retaining Git/Subversion visibility state.
+- [x] Batch 888: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390x844; deterministic screenshots were visually inspected.
+- [x] Batch 888: adjacent projectform guards pass 3/3; the known 390px form-shell/warning text width baseline is outside this owner and receives no compensation.
+- [x] Batch 888: focused source/runtime guard checks Scala/LESS/page/messages provenance, computed margin/color/copy, no inline/plugin-only attrs, target diagnostics, and Git/Subversion interaction.
+- [x] Batch 888: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

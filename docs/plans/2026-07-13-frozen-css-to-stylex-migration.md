@@ -6766,6 +6766,19 @@ inline/intrinsic sizing is intentionally not pixel-normalized and receives no
 compensating geometry. Live legacy screenshot parity is explicitly unverified.
 Approved Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+## Batch 888
+
+Move the project-create form's exact frozen `.ml10` `margin-left:10px`
+declaration for the Subversion warning into the existing route-local StyleX
+owner. Preserve `#svn.ml10.notice`, warning copy, Git-hidden/Subversion-visible
+React state, and the shared fallback for unrelated consumers. Managed external
+System-Chrome normal, explicit fallback-off, and restored-normal focused runs
+pass 1/1 each at 1366x900 and 390x844; adjacent projectform guards pass 3/3.
+Normal and fallback-off desktop/mobile screenshots were visually inspected.
+The mobile legacy form shell/text produces a known wider baseline outside this
+owner; no route-specific compensation was added. Approved Yoram footer
+NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.
 ## Batch 887
 
 Move the project code file-view breadcrumb wrapper's exact frozen `.ml10`

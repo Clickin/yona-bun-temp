@@ -21,6 +21,9 @@ export const projectFormLayout = stylex.create({
   select: {
     minWidth: "220px",
   },
+  svnWarning: {
+    marginLeft: "10px",
+  },
   requiredMarker: { color: projectFormTheme.requiredMarker },
 });
 

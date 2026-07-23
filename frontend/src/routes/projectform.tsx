@@ -116,8 +116,10 @@ function ProjectCreateScreen({
   const protectedScopeStyleProps = isSelectedOwnerGroup
     ? undefined
     : stylex.props(projectFormConditionalStyles.hidden);
-  const svnWarningStyleProps =
-    vcs === "GIT" ? stylex.props(projectFormConditionalStyles.hidden) : undefined;
+  const svnWarningStyleProps = stylex.props(
+    projectFormLayout.svnWarning,
+    vcs === "GIT" && projectFormConditionalStyles.hidden,
+  );
   React.useEffect(() => {
     if (!ownerName && selectedOwner) {
       setOwnerName(selectedOwner);
