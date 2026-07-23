@@ -2014,3 +2014,7 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 862: focused System-Chrome normal and explicit fallback-off runs pass 1/1 each at desktop/390px, including computed margin, containment, selection, and conditional protected visibility.
 - [ ] Batch 862: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified and no compensating geometry was added.
 - [x] Batch 862: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 863: project-import visibility labels preserve the legacy Scala scope DOM and own frozen `.ml5` `margin-left:5px` through route-local StyleX; shared fallback remains for unrelated consumers.
+- [x] Batch 863: focused System-Chrome normal and explicit fallback-off runs pass 2/2 each at desktop/390px, including computed margin, containment, public/private selection, and conditional protected visibility.
+- [ ] Batch 863: live legacy screenshot comparison remains unavailable, so direct screenshot parity is explicitly unverified and no compensating geometry was added.
+- [x] Batch 863: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

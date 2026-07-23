@@ -7002,3 +7002,14 @@ fallback-off focused runs pass 1/1 each with desktop/mobile geometry and
 screenshots. Live legacy screenshot comparison remains unverified. Approved
 Yoram footer/provider/developer-contact/repository differences remain
 intentional.
+
+## Batch 863
+
+Move the project-import public/protected/private visibility labels' exact
+frozen `.ml5` `margin-left:5px` declaration into the existing project-import
+StyleX boundary. Preserve the legacy Scala scope DOM, copy, selection behavior,
+and owner-dependent protected visibility; keep the shared `ml5` fallback for
+unrelated consumers. Managed System-Chrome normal and explicit fallback-off
+focused runs pass 2/2 each with desktop/mobile geometry and interaction
+evidence. Live legacy screenshot comparison remains unverified. Approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

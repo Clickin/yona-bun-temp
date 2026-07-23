@@ -527,7 +527,13 @@ function ProjectImportScreen({
                           onChange={() => setProjectScope("PUBLIC")}
                         />
                         <label htmlFor="public">
-                          <strong className="ml5">{t("project.public")}</strong>
+                          <strong
+                            {...stylex.props(styles.visibilityLabel)}
+                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
+                            data-stylex-owner="project-import-public-scope-label"
+                          >
+                            {t("project.public")}
+                          </strong>
                           <p className="note">{t("project.public.notice")}</p>
                         </label>
                       </li>
@@ -547,7 +553,13 @@ function ProjectImportScreen({
                           onChange={() => setProjectScope("PROTECTED")}
                         />
                         <label htmlFor="protected">
-                          <strong className="ml5">{t("project.protected")}</strong>
+                          <strong
+                            {...stylex.props(styles.visibilityLabel)}
+                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
+                            data-stylex-owner="project-import-protected-scope-label"
+                          >
+                            {t("project.protected")}
+                          </strong>
                           <p className="note">{t("project.protected.notice")}</p>
                         </label>
                       </li>
@@ -563,7 +575,13 @@ function ProjectImportScreen({
                           onChange={() => setProjectScope("PRIVATE")}
                         />
                         <label htmlFor="private">
-                          <strong className="ml5">{t("project.private")}</strong>
+                          <strong
+                            {...stylex.props(styles.visibilityLabel)}
+                            className={`ml5 ${stylex.props(styles.visibilityLabel).className}`}
+                            data-stylex-owner="project-import-private-scope-label"
+                          >
+                            {t("project.private")}
+                          </strong>
                           <p className="note">{t("project.private.notice")}</p>
                         </label>
                       </li>

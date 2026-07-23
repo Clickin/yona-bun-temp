@@ -24,6 +24,7 @@ export const styles = stylex.create({
   },
   repoAuthVisible: { display: "block" },
   protectedScopeHidden: { display: "none" },
+  visibilityLabel: { marginLeft: "5px" },
   selectContainer: { width: "220px" },
   requiredMarker: { color: projectImportColors.warningText },
   selectButton: {
