@@ -61,14 +61,14 @@ test("project search StyleX owners preserve populated and empty result contracts
     expect(less).toContain(declaration);
   }
   expect(appCss).not.toMatch(/(?:^|\n)\.empty-result\s*\{/u);
-  for (const retainedSelector of [
+  for (const retiredSelector of [
     ".search-box-wrap {",
     ".search-result-title {",
     ".search-list-wrap {",
     ".search-content-body {",
     ".search-meta-info {",
   ]) {
-    expect(appCss).toContain(retainedSelector);
+    expect(appCss).not.toContain(retiredSelector);
   }
   for (const declaration of [
     ".empty-result {",

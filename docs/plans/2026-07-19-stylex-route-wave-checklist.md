@@ -1969,6 +1969,14 @@ desktop/mobile geometry, and filtering.
 - [ ] Live legacy screenshot comparison is unavailable, so direct legacy screenshot parity remains unverified; no compensating geometry was added.
 - [x] Shared `app.css`/generated fallback remain unchanged; the approved Yoram footer/provider/developer-contact/repository differences remain intentional.
 
+### 2026-07-23 Batch 857 search-result fallback bridge retirement
+
+- [x] Global, project, and organization populated/empty result owners have focused computed-geometry and screenshot evidence in normal and fallback-off modes.
+- [x] React-side `app.css` arms for `.search-box-wrap`, `.search-result-title`, `.search-list-wrap`, `.search-content-body`, and `.search-meta-info` are removed; `title-wrap`, `post-id`, search form ids, frozen source, and generated fallback remain outside the retirement boundary.
+- [x] `frontend/tests/legacy-fallback-off.e2e.ts` verifies the retired selector set and retained generated frozen declarations.
+- [x] Dated fallback-off report, StyleX ledger, canonical plan, and three route-focused evidence suites record the consumer graph and retained Yoram footer identity differences.
+- [ ] Live legacy screenshot comparison remains unavailable; no compensating geometry was added.
+
 ### 2026-07-23 Batch 855 project search populated/empty result states
 
 - [x] `search/result.scala.html`, `search/partial_search.scala.html`, all eight search result partials, frozen `_page.less:6375-6519`/empty-result rules, Bootstrap responsive rules, messages, and the complete `yobi.less` import chain are recorded.

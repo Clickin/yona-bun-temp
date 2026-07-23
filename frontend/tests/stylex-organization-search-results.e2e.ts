@@ -92,7 +92,6 @@ test("organization search result wave records frozen issue/empty ownership", () 
     expect(style).toContain(`${styleName}:`);
   }
   for (const declaration of [
-    ".search-list-wrap",
     ".search-list-item",
     "position: relative",
     "padding:15px",
@@ -101,7 +100,6 @@ test("organization search result wave records frozen issue/empty ownership", () 
     "font-size: 16px",
     ".search-content",
     "font-size: 14px",
-    ".search-meta-info",
     "margin-top:10px",
     "font-size: 13px",
     "strong.keyword",

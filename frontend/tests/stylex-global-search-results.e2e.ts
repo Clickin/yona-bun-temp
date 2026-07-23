@@ -123,7 +123,6 @@ test("global search result wave records the frozen populated and empty boundarie
     expect(style).toContain(`${styleName}:`);
   }
   for (const declaration of [
-    ".search-list-wrap",
     ".search-list-item",
     "padding:15px 15px 15px 60px",
     ".avatar-wrap",
@@ -132,7 +131,6 @@ test("global search result wave records the frozen populated and empty boundarie
     "margin-left:-55px",
     ".title-wrap",
     ".search-content",
-    ".search-meta-info",
     "strong.keyword",
     ".empty-result",
   ]) {

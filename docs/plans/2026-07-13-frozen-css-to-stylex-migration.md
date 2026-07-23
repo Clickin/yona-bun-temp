@@ -6937,6 +6937,17 @@ fallback-off mobile retains the documented 8px authenticated shell baseline
 without CSS compensation. Live legacy screenshot comparison remains unverified.
 The approved Yoram footer identity differences remain intentional.
 
+## Batch 857
+
+Retire the proven React-side search-result fallback bridge arms for
+`.search-box-wrap`, `.search-result-title`, `.search-list-wrap`,
+`.search-content-body`, and `.search-meta-info` after global, project, and
+organization populated/empty states passed computed geometry and screenshot
+evidence. Keep the generated frozen fallback and unrelated form/title utility
+selectors. Normal and fallback-off system-Chrome focused suites pass 5/5 for
+each route; live legacy screenshot comparison remains unverified. The approved
+Yoram footer identity differences remain intentional.
+
 ## Batch 855
 
 Port the project `/$ownerName/$projectName/search` populated issue and empty

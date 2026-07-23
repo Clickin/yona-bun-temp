@@ -806,7 +806,7 @@ test("source-less mt4 utility bridge has no app.css arm", () => {
 test("source-less vtop utility bridge has no app.css arm", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".vtop");
-  expect(appCss).toContain(".vertical-top {");
+  expect(appCss).not.toContain(".vertical-top {");
   const runtimeSources = globSync("src/**/*.{ts,tsx}", { nodir: true });
   expect(runtimeSources.some((file) => readFileSync(file, "utf8").includes("vtop"))).toBe(false);
 });
@@ -845,11 +845,15 @@ test("search category owners have no app.css bridge arms", () => {
 test("search result owners have no shared app.css bridge arms", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-list-item {");
-  expect(appCss).toContain(".search-list-wrap {");
-  expect(appCss).toContain(".search-content-body {");
-  expect(appCss).toContain(".search-meta-info {");
-  expect(appCss).toContain(".search-box-wrap {");
-  expect(appCss).toContain(".search-result-title {");
+  for (const retiredSelector of [
+    ".search-list-wrap {",
+    ".search-content-body {",
+    ".search-meta-info {",
+    ".search-box-wrap {",
+    ".search-result-title {",
+  ]) {
+    expect(appCss).not.toContain(retiredSelector);
+  }
   expect(appCss).toContain(".title-wrap {");
   expect(appCss).toContain(".post-id {");
   const sourceContracts = [
@@ -878,14 +882,14 @@ test("search empty-result fallback arm is retired while legacy declarations rema
   );
 
   expect(appCss).not.toMatch(/(?:^|\n)\.empty-result\s*\{/u);
-  for (const retainedSelector of [
+  for (const retiredSelector of [
     ".search-box-wrap {",
     ".search-result-title {",
     ".search-list-wrap {",
     ".search-content-body {",
     ".search-meta-info {",
   ]) {
-    expect(appCss).toContain(retainedSelector);
+    expect(appCss).not.toContain(retiredSelector);
   }
 
   for (const declaration of [
@@ -1045,7 +1049,7 @@ test("experimental-help action bridge has no current producer", () => {
 test("search-layout fallback bridge has no remaining selector", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   expect(appCss).not.toContain(".search-layout");
-  expect(appCss).toContain(".search-category-wrap {");
+  expect(appCss).not.toContain(".search-category-wrap {");
   expect(appCss).toContain("#searchInnerForm {");
 });
 
@@ -1086,8 +1090,8 @@ test("project-issues left-menu scoped search bridge is retired", () => {
   ]) {
     expect(appCss).not.toContain(selector);
   }
-  expect(appCss).toContain(".search-box-wrap {");
-  expect(appCss).toContain(".search-category-wrap li.empty a,");
+  expect(appCss).not.toContain(".search-box-wrap {");
+  expect(appCss).not.toContain(".search-category-wrap li.empty a,");
 });
 
 test("project-issues dead row and mass-update ancestor bridge is retired", () => {
