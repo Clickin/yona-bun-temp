@@ -6806,26 +6806,6 @@ font remains fallback-owned. Live legacy screenshot parity is explicitly
 unverified; approved Yoram footer/provider/developer-contact/repository
 differences remain intentional.
 
-## Batch 871
-
-Move the populated project issue-label form's two legacy `.mr5` consumers—the
-copy-form `owner` input and new-label `category` input—to the existing route
-StyleX boundary as an `inputWithTrailingMargin` variant with the exact frozen
-`margin-right:5px` declaration. Preserve the legacy `input-label mr5` DOM,
-form order, copy, React-owned category input behavior, and non-target
-`projectName`, `name`, and color inputs; the color input's visibility remains
-mode-dependent fallback-owned behavior and receives no geometry compensation.
-Managed external System-Chrome normal and explicit fallback-off focused runs
-pass 2/2 each at 1366x900 and 390x844 with source provenance, computed target
-and non-target margins, containment/no-overflow, input interaction, and
-deterministic screenshots under
-`frontend/output/playwright/stylex-project-labelsform-mr5-inputs/`. Full
-typeahead menu/keyboard parity remains covered by the existing dedicated
-`project-labels-form.e2e.ts` test. Live legacy screenshot comparison remains
-unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
-provider, developer-contact, and upstream-repository differences remain
-intentional.
-
 ## Batch 865
 
 Move the populated code-branch folder/file commit-message wrappers' exact
@@ -7124,3 +7104,23 @@ and StyleX declarations without claiming glyph visibility. Live legacy
 screenshot comparison remains unverified because `127.0.0.1:9000` is
 unavailable. Approved Yoram footer/provider/developer-contact/repository
 differences remain intentional.
+
+## Batch 871
+
+Move the populated project issue-label form's two legacy `.mr5` consumers—the
+copy-form `owner` input and new-label `category` input—to the existing route
+StyleX boundary as an `inputWithTrailingMargin` variant with the exact frozen
+`margin-right:5px` declaration. Preserve the legacy `input-label mr5` DOM,
+form order, copy, React-owned category input behavior, and non-target
+`projectName`, `name`, and color inputs; the color input's visibility remains
+mode-dependent fallback-owned behavior and receives no geometry compensation.
+Managed external System-Chrome normal and explicit fallback-off focused runs
+pass 2/2 each at 1366x900 and 390x844 with source provenance, computed target
+and non-target margins, containment/no-overflow, input interaction, and
+deterministic screenshots under
+`frontend/output/playwright/stylex-project-labelsform-mr5-inputs/`. Full
+typeahead menu/keyboard parity remains covered by the existing dedicated
+`project-labels-form.e2e.ts` test. Live legacy screenshot comparison remains
+unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
+provider, developer-contact, and upstream-repository differences remain
+intentional.
