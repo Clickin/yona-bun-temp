@@ -7258,3 +7258,23 @@ screen-wide screenshot parity remains an explicit gap outside this margin
 owner; no route-specific compensation was added. Approved Yoram footer,
 provider, developer-contact, and upstream-repository differences remain
 intentional.
+
+## Batch 879
+
+Move the authenticated populated organization board's exact frozen `.mr10`
+`margin-right:10px` declaration into the existing organization-board
+`twoColumnAnchor` StyleX owner. Preserve the legacy
+`two-column-icon mr10 hide-in-mobile` DOM/classes, `#two-column-mode` control,
+title/copy, hover/focus popover, keyboard checkbox and localStorage behavior,
+and mobile visibility; keep the shared `.mr10` fallback for unrelated
+consumers. Managed external System-Chrome normal and explicit fallback-off
+focused runs pass 1/1 each at 1366x900 and 390x844 with source ownership,
+computed target/non-target margins, interaction, containment/no-overflow, and
+deterministic screenshots under
+`frontend/output/playwright/stylex-organization-boards-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and were
+visually inspected. The comparison reports existing desktop `gnbSearchForm`
+and mobile `gnbUsermenu` global-shell drift outside this margin owner; the
+remaining select2/seed-content differences also receive no route-specific
+compensation. Approved Yoram footer, provider, developer-contact, and
+upstream-repository differences remain intentional.

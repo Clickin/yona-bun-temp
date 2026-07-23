@@ -52,7 +52,7 @@ const styles = stylex.create({
     fontWeight: "bold",
     marginRight: "5px",
   },
-  twoColumnAnchor: { position: "relative" },
+  twoColumnAnchor: { marginRight: "10px", position: "relative" },
   twoColumnPopover: {
     bottom: "100%",
     display: "block",
@@ -662,14 +662,15 @@ function TwoColumnModeCheckbox() {
     },
     [],
   );
+  const twoColumnAnchorStyleProps = stylex.props(styles.twoColumnAnchor);
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
+      {...twoColumnAnchorStyleProps}
+      className={`${twoColumnAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
       data-stylex-owner="organization-boards-two-column-anchor"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}
-      {...stylex.props(styles.twoColumnAnchor)}
       onBlur={hideDelayedPopover}
       onFocus={showDelayedPopover}
       onMouseEnter={showDelayedPopover}
