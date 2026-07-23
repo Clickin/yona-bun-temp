@@ -6901,3 +6901,14 @@ normal/fallback-off focused checks pass 4/4 each with desktop/mobile
 screenshots under `frontend/output/playwright/visual-sweep/`; live legacy
 screenshot comparison remains explicitly unverified and no compensating
 geometry was added.
+## Batch 852
+
+Record the global, project, and organization search-result consumer graph. All
+three routes already have direct StyleX owners for their route-specific result
+structure, but `frontend/src/app.css` retains a shared search bridge with
+source-unexplained effective values (including the 18px heading and
+`margin-bottom:16px`). Keep the bridge and generated fallback until one route's
+populated/empty states have paired computed-geometry and screenshot evidence,
+then verify the remaining consumers. This C/R batch changes documentation only;
+it has no Scala audit row and makes no screenshot-parity claim. Approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

@@ -1951,3 +1951,12 @@ desktop/mobile geometry, and filtering.
 - [x] Managed dynamic-port system-Chrome normal/fallback-off focused runs pass 4/4 each.
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; no compensating geometry was added.
 - [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional and are not restored.
+### 2026-07-23 Batch 852 search-result consumer graph
+
+- [x] Global, project, and organization search result routes and their direct StyleX owners are recorded.
+- [x] Frozen `partial_search.scala.html`, `_page.less:6375-6495`, and the complete `yobi.less` import chain are recorded as the source boundary.
+- [x] Normal managed system-Chrome category checks pass 7/7.
+- [x] Managed dynamic-port system-Chrome normal and sequential fallback-off category runs pass 7/7 each; the initial concurrent attempt was discarded as infrastructure noise.
+- [x] Shared `app.css` search bridge and generated fallback are retained pending populated/empty-state computed geometry and screenshot proof.
+- [ ] Live legacy screenshot parity for the full search-result family remains unverified; no compensating geometry was added.
+- [x] Approved Yoram footer/provider/developer-contact/repository differences remain intentional.
