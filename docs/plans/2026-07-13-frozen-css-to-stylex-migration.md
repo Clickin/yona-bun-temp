@@ -7145,6 +7145,25 @@ unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
 provider, developer-contact, and upstream-repository differences remain
 intentional.
 
+## Batch 878
+
+Move the authenticated populated project board's two-column mode wrapper's
+exact frozen `.mr10` `margin-right:10px` declaration into the existing project
+posts StyleX owner. Preserve the legacy
+`two-column-icon mr10 hide-in-mobile` DOM/classes, `#two-column-mode` control,
+copy, hover/focus popover, checkbox and localStorage behavior, and responsive
+visibility; keep the shared `.mr10` fallback for unrelated consumers. Managed
+external System-Chrome normal and explicit fallback-off focused runs pass 1/1
+each at 1366x900 and 390x844 with source ownership, computed target/non-target
+margins, interaction, containment/no-overflow, and deterministic screenshots
+under `frontend/output/playwright/stylex-project-posts-two-column-margin/`.
+Live legacy/local paired desktop and mobile captures both returned 200 and were
+visually inspected. The comparison reports existing desktop `gnbSearchForm`
+and mobile `gnbUsermenu` global-shell drift outside this margin owner, so
+screen-wide screenshot parity remains an explicit gap without compensation.
+Approved Yoram footer, provider, developer-contact, and upstream-repository
+differences remain intentional.
+
 ## Batch 872
 
 Move the populated all-state project milestone list's closed due-date span's

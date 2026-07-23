@@ -2089,3 +2089,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 877: live legacy/local paired desktop and mobile captures both return 200 and are visually inspected; the comparison records existing desktop `gnbSearchForm` and mobile `gnbUsermenu` shell drift outside this owner.
 - [ ] Batch 877: screen-wide legacy screenshot parity remains a gap for the recorded global-shell drift; no route-specific compensation was added.
 - [x] Batch 877: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 878: authenticated populated project-board two-column mode wrapper preserves legacy `two-column-icon mr10 hide-in-mobile` and owns exact `margin-right:10px` through the existing project-posts StyleX owner; the shared `.mr10` fallback remains for unrelated consumers.
+- [x] Batch 878: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, including source ownership, computed target/non-target margins, hover/focus popovers, checkbox/localStorage behavior, containment/no-overflow, and deterministic screenshots.
+- [x] Batch 878: live legacy/local paired desktop and mobile captures both returned 200 and were visually inspected; the comparison records existing desktop `gnbSearchForm` and mobile `gnbUsermenu` shell drift outside this owner.
+- [ ] Batch 878: screen-wide legacy screenshot parity remains a gap for the recorded global-shell drift; no route-specific compensation was added.
+- [x] Batch 878: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.

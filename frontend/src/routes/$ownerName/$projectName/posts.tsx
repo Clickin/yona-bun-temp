@@ -798,6 +798,8 @@ function TwoColumnModeCheckbox() {
     hideTimerRef.current = setTimeout(() => setShowPopover(false), 100);
   };
 
+  const twoColumnModeProps = stylex.props(styles.twoColumnMode);
+
   useEffect(
     () => () => {
       if (showTimerRef.current) {
@@ -812,7 +814,8 @@ function TwoColumnModeCheckbox() {
 
   return (
     <div
-      className={`${stylex.props(styles.twoColumnMode).className} two-column-icon mr10 hide-in-mobile`}
+      {...twoColumnModeProps}
+      className={`${twoColumnModeProps.className} two-column-icon mr10 hide-in-mobile`}
       data-stylex-owner="project-posts-two-column-mode"
       id="two-column-mode-checkbox"
       title={t("common.two.column.mode")}

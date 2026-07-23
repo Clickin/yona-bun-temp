@@ -84,7 +84,7 @@ export const styles = stylex.create({
   filterLast: { marginRight: 0 },
   filterActive: { color: postsTheme.filterActive, fontWeight: "700" },
   filterIcon: { marginRight: "5px" },
-  twoColumnMode: { position: "relative" },
+  twoColumnMode: { marginRight: "10px", position: "relative" },
   twoColumnModeLabel: {
     display: "inline-block",
     margin: "2px !important",
