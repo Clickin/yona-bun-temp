@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const basePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
 const repoRoot = resolve("..");
-const screenshotDirectory = resolve("frontend/output/playwright/stylex-project-search-results");
+const screenshotDirectory = resolve("../output/playwright/stylex-project-search-results");
 const screenshotMode = process.env.VITE_DISABLE_LEGACY_FALLBACK === "1" ? "fallback-off" : "normal";
 
 test("project search result wave records frozen Scala, LESS, and import provenance", () => {
@@ -62,6 +62,8 @@ test("project search result wave records frozen Scala, LESS, and import provenan
     "project-search-meta",
     "project-search-keyword",
     "project-search-empty-result",
+    "project-search-result-item-title",
+    "project-search-result-item-content-body",
   ]) {
     expect(route).toContain(`data-stylex-owner="${owner}"`);
   }
@@ -162,8 +164,12 @@ for (const viewport of [
     await expect(item).toHaveClass(/\bsearch-list-item\b/u);
     await expect(titleWrap).toContainText("#11");
     await expect(title).toHaveText("Fix flaky issue");
+    await expect(title).toHaveAttribute("data-stylex-owner", "project-search-result-item-title");
     await expect(title).toHaveAttribute("href", `${basePath}/admin/sample/issue/11`);
     await expect(content).toContainText("A flaky issue body");
+    await expect(
+      content.locator('[data-stylex-owner="project-search-result-item-content-body"]'),
+    ).toBeVisible();
     await expect(meta.locator(".meta-item")).toHaveText(["Admin", "today"]);
     await expect(keywords).toHaveCount(2);
     await expect(keywords.nth(0)).toHaveText(/flaky/iu);

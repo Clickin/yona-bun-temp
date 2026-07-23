@@ -665,6 +665,7 @@ function ProjectSearchResultList({
             const snippets = item.snippets.map((snippet) => (
               <p
                 className={`${sx.contentBody.className} search-content-body`}
+                data-stylex-owner="project-search-result-item-content-body"
                 key={`${item.id}-${snippet.text}-${snippet.truncated ? "truncated" : "full"}`}
               >
                 <HighlightedProjectSearchText text={snippet.text} keyword={result.keyword} />
@@ -690,6 +691,7 @@ function ProjectSearchResultList({
                     <Link
                       to={itemLink.to}
                       hash={itemLink.hash || undefined}
+                      data-stylex-owner="project-search-result-item-title"
                       className={
                         titleClassName ? `${sx.title.className} ${titleClassName}` : undefined
                       }
