@@ -214,6 +214,7 @@ function BranchRow({
       queryClient.setQueryData(queryKey, data);
     },
   });
+  const defaultBadgeStyleProps = stylex.props(styles.defaultBadge);
 
   return (
     <tr
@@ -245,7 +246,8 @@ function BranchRow({
         </Link>
         {isHead ? (
           <span
-            className={`${stylex.props(styles.defaultBadge).className} headBranch ml10`}
+            {...defaultBadgeStyleProps}
+            className={`${defaultBadgeStyleProps.className} headBranch ml10`}
             data-stylex-owner="project-branches-default-badge"
           >
             {t("code.branches.defaultBranch")}
@@ -429,6 +431,7 @@ const styles = stylex.create({
     borderWidth: "1px",
     color: projectBranchesTheme.defaultBadgeText,
     display: "inline-block",
+    marginLeft: "10px",
     padding: "3px 5px",
   },
   commitCell: {

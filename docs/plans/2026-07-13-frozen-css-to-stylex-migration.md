@@ -7180,3 +7180,21 @@ screenshots under
 Live legacy screenshot comparison remains unverified because
 `127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
 developer-contact, and upstream-repository differences remain intentional.
+
+## Batch 875
+
+Move the populated project-branches default badge's exact frozen `.ml10`
+`margin-left:10px` declaration into the existing branches route StyleX owner.
+Preserve the legacy `headBranch ml10` span, Default branch copy, branch-row
+order, default/non-default behavior, branch navigation, and badge geometry;
+do not add responsive compensation. Managed external System-Chrome normal and
+explicit fallback-off focused runs pass 1/1 each at 1366x900 and 390x844 with
+source ownership, computed 10px margin, containment/no-overflow, interaction,
+and deterministic screenshots under
+`frontend/output/playwright/stylex-project-branches-default-badge-ml10/`.
+Fallback-off retains the existing shell baseline differences because the
+remaining frozen fallback CSS is outside this single `.ml10` target; no
+compensating geometry was added. Live legacy screenshot comparison remains
+unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
+provider, developer-contact, and upstream-repository differences remain
+intentional.

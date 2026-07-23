@@ -2074,3 +2074,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 874: normal fallback mode intentionally computes original project-select margin as `0px` because frozen `.select2-offscreen` uses `margin:0 !important`; fallback-off exposes StyleX `5px`. Fallback-owned Select2 height differences receive no compensation.
 - [ ] Batch 874: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 874: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 875: populated project-branches default badge preserves legacy `headBranch ml10` and owns exact `margin-left:10px` through the existing branches StyleX owner; non-default rows remain excluded.
+- [x] Batch 875: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, with source ownership, computed margin, copy/order, branch navigation, containment/no-overflow, and deterministic screenshots.
+- [x] Batch 875: existing fallback-off shell differences remain recorded without route-specific compensation or fallback retirement.
+- [ ] Batch 875: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 875: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
