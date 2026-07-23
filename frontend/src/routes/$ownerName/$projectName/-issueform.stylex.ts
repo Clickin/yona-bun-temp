@@ -209,7 +209,7 @@ export const issueFormStyles = stylex.create({
     borderRadius: "3px",
   },
   editorTabContent: { position: "relative", overflow: "visible" },
-  issueMarkdownEditor: { position: "relative" },
+  issueMarkdownEditor: { position: "relative", marginTop: "10px" },
   issueMarkdownEditorTabs: { marginBottom: "0" },
   markdownPreview: { minHeight: "280px" },
   markdownPreviewVideo: { maxWidth: "100%" },

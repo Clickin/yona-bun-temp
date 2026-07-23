@@ -15,6 +15,7 @@ export const milestoneEditFormStyles = stylex.create({
   pasteHelpVisible: { display: "block" },
   uploadSaveHelp: { textAlign: "right" },
   editorWrapper: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorContent: {
     backgroundColor: milestoneEditFormTheme.editorSurface,
     overflow: "visible",

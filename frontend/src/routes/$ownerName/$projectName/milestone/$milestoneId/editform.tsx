@@ -321,7 +321,10 @@ function MilestoneMarkdownEditor({
     }
   }, [focusRequest]);
   return (
-    <div className="mt10">
+    <div
+      className={`mt10 ${stylex.props(milestoneEditFormStyles.markdownEditorWrapper).className ?? ""}`.trim()}
+      data-stylex-owner="milestone-edit-form-markdown-editor-wrapper"
+    >
       <ul
         className={`${stylex.props(styles.editorTabs).className} nav nav-tabs nm small`}
         data-stylex-owner="milestone-edit-form-editor-tabs"

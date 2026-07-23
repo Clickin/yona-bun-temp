@@ -77,6 +77,7 @@ const saveStyleProps = stylex.props(styles.save);
 const cancelStyleProps = stylex.props(styles.cancel);
 const dueDateStyleProps = stylex.props(styles.dueDate);
 const actionStyleProps = stylex.props(newMilestoneFormStyles.actions);
+const markdownEditorWrapperStyleProps = stylex.props(newMilestoneFormStyles.markdownEditorWrapper);
 
 export const Route = createFileRoute("/$ownerName/$projectName/newMilestoneForm")({
   component: ProjectMilestoneCreateFormRoute,
@@ -362,7 +363,11 @@ function MilestoneMarkdownEditor({
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit");
   return (
-    <div className="mt10">
+    /* Legacy common.editor.scala.html wrapper: <div className="mt10"> */
+    <div
+      className={`mt10 ${markdownEditorWrapperStyleProps.className ?? ""}`.trim()}
+      data-stylex-owner="project-milestone-markdown-editor-wrapper"
+    >
       <ul className="nav nav-tabs nm small">
         <li className={activeTab === "edit" ? "active" : undefined}>
           <button type="button" onClick={() => setActiveTab("edit")}>

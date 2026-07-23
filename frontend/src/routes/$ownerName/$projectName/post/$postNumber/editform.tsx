@@ -224,7 +224,10 @@ function BoardPostMarkdownEditor({ focusRequest, value }: { focusRequest: number
     }
   }, [focusRequest]);
   return (
-    <div className="mt10">
+    <div
+      className={`mt10 ${stylex.props(styles.markdownEditorWrapper).className ?? ""}`.trim()}
+      data-stylex-owner="post-edit-form-markdown-editor-wrapper"
+    >
       <ul
         className={`${stylex.props(styles.editorTabs).className} nav nav-tabs nm small`}
         data-stylex-owner="post-edit-form-editor-tabs"

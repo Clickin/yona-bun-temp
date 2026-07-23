@@ -10,6 +10,7 @@ export const styles = stylex.create({
   actions: { textAlign: "right" },
   options: { textAlign: "right" },
   editorWrapper: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabs: { position: "relative" },
   editorContent: { overflow: "visible", position: "relative" },
   notificationReceiver: { color: postEditFormTheme.notificationText },

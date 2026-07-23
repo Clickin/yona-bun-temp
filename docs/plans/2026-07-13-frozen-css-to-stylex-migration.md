@@ -6895,6 +6895,36 @@ focused runs pass 1/1 each with desktop/mobile evidence. Live legacy screenshot
 comparison remains unverified. Approved Yoram footer/provider/developer-contact/
 repository differences remain intentional.
 
+## Batch 895
+
+Move the exact frozen `.mt10 { margin-top:10px; }` declaration from the
+shared markdown-editor wrapper into four route-local StyleX owners: project
+issue create, project board post edit, project milestone create, and project
+milestone edit. Preserve the legacy `data-toggle="markdown-editor"` / `mt10`
+DOM contract where present, editor tab order and copy, textarea/form fields,
+upload/action order, and React-owned tab behavior. The legacy sources are
+`yona-original/app/views/issue/create.scala.html`,
+`yona-original/app/views/board/edit.scala.html`,
+`yona-original/app/views/milestone/create.scala.html`,
+`yona-original/app/views/milestone/edit.scala.html`, and
+`yona-original/app/views/common/editor.scala.html`; the frozen cascade is
+`_common.less` through `yobi.less` and the relevant page/responsive/UI/
+markdown imports plus `conf/messages`.
+
+The four focused managed external System-Chrome runs pass 4/4 each in normal,
+explicit fallback-off, and restored-normal modes at 1366x900 and 390x844.
+Computed `margin-top:10px`, no inline style, editor interaction, responsive
+containment, and screenshots were checked; normal and fallback-off screenshots
+were directly inspected. Adjacent guards pass 35/52. The 17 unchanged
+failures are existing board uploader `help-pastable` fixture assumptions,
+issue-form fixture/toast/asset/login/markdown-help assumptions, milestone
+create/edit core DOM or source-fixture assumptions, and one new-milestone
+owner-load fixture assumption. Fallback-off screenshots still show global
+shell/Bootstrap/date-picker/file-input fallback drift outside these owners;
+full live legacy/Yoram shell parity remains a separate gap. No route-specific
+compensation was added. Approved Yoram footer NAVER/provider/developer-contact/
+upstream-repository differences remain intentional.
+
 ## Batch 842
 
 Own the remaining authenticated organization-home project-card child paint.

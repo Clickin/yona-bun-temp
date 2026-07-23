@@ -15,6 +15,7 @@ export const newMilestoneColors = stylex.defineVars({
 export const newMilestoneFormStyles = stylex.create({
   actions: { textAlign: "right" },
   editorPositioned: { position: "relative" },
+  markdownEditorWrapper: { marginTop: "10px" },
   editorTabContent: { overflow: "visible", position: "relative" },
   pasteHelpVisible: { display: "block" },
   uploadSaveHelp: { textAlign: "right" },
