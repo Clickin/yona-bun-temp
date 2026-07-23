@@ -65,9 +65,9 @@ export const styles = stylex.create({
   progressBar: (width: string) => ({ width }),
   // Legacy user/partial_issues.scala.html paints each API-provided label color.
   issueLabelBackground: (backgroundColor: string) => ({ backgroundColor }),
-  // Legacy common/twoColumnModeCheckboxArea.scala.html and showSubtasksCheckbox.scala.html
-  // require a positioned anchor for the React-owned popover.
-  popoverAnchor: { position: "relative" },
+  // Frozen less/_common.less .mr10 plus the positioned anchor required by the
+  // React-owned popovers for the legacy two-column and show-subtasks wrappers.
+  popoverAnchor: { marginRight: "10px", position: "relative" },
   // Legacy less/_page.less .my-issues .post-item.
   issueRow: { color: "#999999", padding: "0px 10px" },
   // Legacy less/_page.less .my-issues .post-item .title-wrap.

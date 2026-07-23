@@ -7181,6 +7181,38 @@ Live legacy screenshot comparison remains unverified because
 `127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
 developer-contact, and upstream-repository differences remain intentional.
 
+## Batch 882
+
+Move the public user profile's two legacy `.mr10` mode-control consumers—the
+top-level two-column checkbox and the issues-tab show-subtasks checkbox—into
+the existing user-profile `popoverAnchor` StyleX owner. Preserve both legacy
+wrapper classes/IDs, control order, copy, React-owned hover/focus popovers,
+checkbox/localStorage behavior, child-issue visibility behavior, and the
+desktop/mobile `hide-in-mobile` rule; keep the shared `.mr10` fallback for
+unrelated consumers. The legacy evidence is
+`yona-original/app/views/user/view.scala.html`,
+`yona-original/app/views/common/twoColumnModeCheckboxArea.scala.html`,
+`yona-original/app/views/common/showSubtasksCheckbox.scala.html`,
+`yona-original/public/javascripts/service/yona.twoColumnMode.js`,
+`yona-original/public/javascripts/service/yona.showSubtask.js`, the frozen
+`_common.less`/`_page.less`/`_responsive.less` and Bootstrap cascade, the full
+`yobi.less` import chain, and `conf/messages`.
+
+Managed external System-Chrome normal and explicit fallback-off focused runs
+pass 1/1 each at 1366x900 and 390x844; the restored normal run also passes
+1/1. Adjacent user-profile guards pass 2/2. Screenshots are captured under
+`frontend/output/playwright/stylex-user-profile-two-column-margin/`, with live
+paired captures under `output/playwright/visual-sweep/` for legacy and Yoram
+`/admin` at desktop/mobile. The visual comparison records desktop global
+`gnbSearchForm` placement, shell/content wrapper and post-row geometry, and
+mobile header/content wrapping as existing screen-wide or fallback-owned
+drift. The sweep's `userProfile` heuristic does not recognize the React-owned
+profile marker and reports a false `missing public user profile` warning even
+though the live page and screenshot render the profile; this is documented
+evidence, not a route-specific compensation trigger. Seed-content/date and
+the Yoram footer versus legacy NAVER Labs/developer-contact/upstream-repository
+footer remain intentional or fixture differences.
+
 ## Batch 873
 
 Move the populated pull-request edit form's two legacy `.mr5`

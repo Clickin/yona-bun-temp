@@ -314,6 +314,10 @@ function PublicProfileBody({
   const { t } = useLegacyMessages();
   const [activeTab, setActiveTab] = useState(selected);
   const [activeIssueTab, setActiveIssueTab] = useState<"closedIssues" | "openIssues">("openIssues");
+  const [showSubtasksAlways, setShowSubtasksAlways] = useState(
+    () =>
+      typeof localStorage !== "undefined" && localStorage.getItem("showSubtasksAlways") === "true",
+  );
   const profile = profileResponse.profile;
   if (!profile) {
     return null;
@@ -473,7 +477,10 @@ function PublicProfileBody({
                         </button>
                       </li>
                       <li>
-                        <ShowSubtasksCheckbox />
+                        <ShowSubtasksCheckbox
+                          checked={showSubtasksAlways}
+                          onChange={setShowSubtasksAlways}
+                        />
                       </li>
                     </ul>
                     <div className="tab-content">
@@ -500,6 +507,7 @@ function PublicProfileBody({
                               basePath={runtimeConfig.basePath}
                               issue={issue}
                               key={issueKey(issue)}
+                              showSubtasks={showSubtasksAlways}
                             />
                           ))}
                         </ul>
@@ -527,6 +535,7 @@ function PublicProfileBody({
                               basePath={runtimeConfig.basePath}
                               issue={issue}
                               key={issueKey(issue)}
+                              showSubtasks={showSubtasksAlways}
                             />
                           ))}
                         </ul>
@@ -664,7 +673,15 @@ function ConnectedSocialProviderLogo({
   return null;
 }
 
-function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: WorkspaceIssueItem }) {
+function ProfileIssueRow({
+  basePath,
+  issue,
+  showSubtasks,
+}: {
+  basePath: string;
+  issue: WorkspaceIssueItem;
+  showSubtasks: boolean;
+}) {
   const { t } = useLegacyMessages();
   const ownerName = stringField(issue, "ownerName");
   const projectName = stringField(issue, "projectName");
@@ -749,7 +766,7 @@ function ProfileIssueRow({ basePath, issue }: { basePath: string; issue: Workspa
                 {label.name}
               </Link>
             ))}
-            <div className="child-issue-list hide">
+            <div className={`child-issue-list${showSubtasks ? "" : " hide"}`}>
               <ProfileIssueChildRows
                 issues={issue.childIssues ?? []}
                 ownerName={ownerName}
@@ -1275,13 +1292,14 @@ function TwoColumnModeCheckbox() {
     setIsChecked(nextChecked);
     globalThis.localStorage?.setItem("useTwoColumnMode", String(nextChecked));
   }, []);
+  const popoverAnchorStyleProps = stylex.props(styles.popoverAnchor);
 
   return (
     <div
-      className="two-column-icon mr10 hide-in-mobile"
+      {...popoverAnchorStyleProps}
+      className={`${popoverAnchorStyleProps.className ?? ""} two-column-icon mr10 hide-in-mobile`.trim()}
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(styles.popoverAnchor)}
       data-stylex-owner="user-profile-two-column-popover-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
@@ -1315,7 +1333,13 @@ function TwoColumnModeCheckbox() {
   );
 }
 
-function ShowSubtasksCheckbox() {
+function ShowSubtasksCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
   const { t } = useLegacyMessages();
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
   const popoverTimer = React.useRef<number | null>(null);
@@ -1346,13 +1370,22 @@ function ShowSubtasksCheckbox() {
       popoverTimer.current = null;
     }, 100);
   }, [clearPopoverTimer]);
+  const storeShowSubtasks = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const nextChecked = event.currentTarget.checked;
+      onChange(nextChecked);
+      globalThis.localStorage?.setItem("showSubtasksAlways", String(nextChecked));
+    },
+    [onChange],
+  );
+  const popoverAnchorStyleProps = stylex.props(styles.popoverAnchor);
 
   return (
     <div
-      className="show-subtasks mr10"
+      {...popoverAnchorStyleProps}
+      className={`${popoverAnchorStyleProps.className ?? ""} show-subtasks mr10`.trim()}
       id="two-column-mode-checkbox"
       title={popoverTitle}
-      {...stylex.props(styles.popoverAnchor)}
       data-stylex-owner="user-profile-show-subtasks-popover-anchor"
       onBlur={hidePopover}
       onFocus={showPopover}
@@ -1362,7 +1395,12 @@ function ShowSubtasksCheckbox() {
       {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- legacy template keeps this checkbox wrapper. */}
       <label className="checkbox">
         <div className="show-subtasks-button-border">
-          <input id="toggle-show-subtasks" type="checkbox" />
+          <input
+            id="toggle-show-subtasks"
+            type="checkbox"
+            checked={checked}
+            onChange={storeShowSubtasks}
+          />
           <span className="show-subtasks-text">{popoverTitle}</span>
         </div>
       </label>

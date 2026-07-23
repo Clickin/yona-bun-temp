@@ -37,7 +37,7 @@ test("public user profile renders legacy info and stream owners", async ({ page 
   expect(source).toContain('data-stylex-owner="user-profile-two-column-popover-anchor"');
   expect(source).toContain('data-stylex-owner="user-profile-show-subtasks-popover-anchor"');
   expect(source).not.toContain('style={{ position: "relative" }}');
-  expect(styleSource).toContain('popoverAnchor: { position: "relative" }');
+  expect(styleSource).toContain('popoverAnchor: { marginRight: "10px", position: "relative" }');
 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.route("**/api/v1/session", (route) =>

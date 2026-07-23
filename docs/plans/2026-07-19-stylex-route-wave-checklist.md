@@ -2109,3 +2109,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 881: live legacy/local paired desktop and mobile captures both returned 200 and were visually inspected; the comparison records desktop `gnbSearchForm`/missing `pageWrap`/`projectPageWrap`/`leftMenu`/`postListWrap` drift and mobile `gnbUsermenu`/shell-wrapper drift outside this owner.
 - [ ] Batch 881: screen-wide legacy screenshot parity remains a gap for the recorded shell-wrapper and fallback-owned route differences; no route-specific compensation was added.
 - [x] Batch 881: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 882: public user profile two-column and show-subtasks wrappers preserve legacy `mr10` classes and own exact `margin-right:10px` through the existing `popoverAnchor` StyleX owner; React preserves checkbox/localStorage and child-issue visibility behavior.
+- [x] Batch 882: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390px; adjacent user-profile guards pass 2/2 with source ownership, computed margins, popovers, responsive visibility, and screenshots.
+- [x] Batch 882: live legacy/Yoram `/admin` desktop and mobile captures both returned 200 and were visually inspected; the sweep reports a known React-owner selector false negative plus existing shell/content geometry drift.
+- [ ] Batch 882: screen-wide legacy screenshot parity remains a gap for the recorded global shell/header/content drift and fixture differences; no route-specific compensation was added.
+- [x] Batch 882: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
