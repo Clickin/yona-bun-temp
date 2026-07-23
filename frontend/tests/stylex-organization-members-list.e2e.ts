@@ -61,12 +61,19 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(legacyTemplate).toContain('<div class="inner-bubble">');
   expect(legacyTemplate).toContain('<form class="nm"');
   expect(legacyTemplate).toContain('class="text uname"');
+  expect(legacyTemplate).toContain('<div class="member-setting">');
+  expect(legacyTemplate).toContain('<div class="btn-group" data-name="roleof-');
+  expect(legacyTemplate).toContain('class="ybtn ybtn-danger ybtn-small"');
   expect(legacyPage).toContain(".inner-bubble {");
   expect(legacyPage).toContain("margin-bottom: 10px;");
   expect(legacyPage).toContain("position: relative;");
   expect(legacyPage).toContain("width: 384px;");
   expect(legacyPage).toContain("margin: 0;");
   expect(legacyPage).toContain(".border-radius(2px);");
+  expect(legacyPage).toContain(".member-setting {");
+  expect(legacyPage).toContain("position: absolute;");
+  expect(legacyPage).toContain("right:0;");
+  expect(legacyPage).toContain("top: 15px;");
   for (const importedStylesheet of [
     '@import "less/_variables.less";',
     '@import "less/_mixins.less";',
@@ -165,6 +172,100 @@ for (const fallbackOff of [false, true]) {
         `stylex-organization-members-add-form-${fallbackOff ? "fallback-off" : "normal"}-mobile.png`,
       ),
     });
+  });
+}
+
+for (const fallbackOff of [false, true]) {
+  test(`organization member role/action geometry ${fallbackOff ? "fallback-off" : "normal"}`, async ({
+    page,
+  }) => {
+    const viewports = [
+      { height: 900, name: "desktop", width: 1366 },
+      { height: 844, name: "mobile", width: 390 },
+    ] as const;
+    const requests = { deleted: [] as number[], roles: [] as string[] };
+    await mockMembers(page, { populated: true });
+    await page.route("**/api/v1/organizations/weblabs/members/*", async (route) => {
+      if (route.request().method() === "PATCH") {
+        const body = route.request().postDataJSON() as { role?: string };
+        requests.roles.push(body.role ?? "");
+      }
+      if (route.request().method() === "DELETE") {
+        requests.deleted.push(1);
+      }
+      await route.fulfill({ contentType: "application/json", json: adminPayload(true) });
+    });
+
+    await page.setViewportSize(viewports[0]);
+    await page.goto(`${basePath}/organizations/weblabs/members`);
+    if (fallbackOff) {
+      const fallback = page.locator('link[href*="legacy-fallback.css"]');
+      if (await fallback.count()) await fallback.evaluate((element) => element.remove());
+    }
+
+    const row = page.locator('[data-stylex-owner="organization-member-row"]').first();
+    const meta = row.locator('[data-stylex-owner="organization-member-meta"]');
+    const roleButton = meta.locator(".btn-group > button");
+    await expect(row).toBeVisible();
+    await expect(meta).toHaveClass(/\bmember-setting\b/u);
+    await expect(meta).not.toHaveAttribute("style", /.+/u);
+    await expect(meta).toHaveCSS("position", "absolute");
+    await expect(meta).toHaveCSS("right", "0px");
+    await expect(meta).toHaveCSS("top", "15px");
+    await expect(roleButton).toContainText("Group Manager");
+
+    await roleButton.click();
+    const memberRole = meta.locator('li[data-value="org_member"] button');
+    if (!fallbackOff) await expect(memberRole).toBeVisible();
+    await memberRole.click({ force: fallbackOff });
+    await expect.poll(() => requests.roles).toEqual(["org_member"]);
+
+    await meta.locator("button.ybtn-danger").click();
+    const deleteModal = page.locator("#alertDeletion");
+    await expect(deleteModal).toBeVisible();
+    const deleteRequest = page.waitForRequest(
+      (request) =>
+        request.method() === "DELETE" &&
+        request.url().includes("/api/v1/organizations/weblabs/members/1"),
+    );
+    await deleteModal.locator("#deleteBtn").dispatchEvent("click");
+    await deleteRequest;
+    await expect.poll(() => requests.deleted).toEqual([1]);
+
+    for (const viewport of viewports) {
+      if (viewport.name === "mobile") {
+        await page.setViewportSize(viewport);
+        await page.reload();
+      }
+      const metrics = await row.evaluate((element) => {
+        const rowBox = element.getBoundingClientRect();
+        const metaElement = element.querySelector<HTMLElement>(
+          '[data-stylex-owner="organization-member-meta"]',
+        );
+        if (!metaElement) return null;
+        const metaBox = metaElement.getBoundingClientRect();
+        return {
+          documentScrollWidth: document.documentElement.scrollWidth,
+          metaBox,
+          rowBox,
+        };
+      });
+      expect(metrics).not.toBeNull();
+      expect(metrics!.metaBox.left).toBeGreaterThanOrEqual(metrics!.rowBox.left);
+      expect(metrics!.metaBox.right).toBeLessThanOrEqual(metrics!.rowBox.right + 1);
+      // Frozen _page.less keeps member margin-left:5px with width:100vw; allow its
+      // legacy boundary tolerance while retaining strict row/meta containment.
+      const documentWidthLimit = viewport.name === "mobile" ? viewport.width + 8 : viewport.width;
+      expect(metrics!.documentScrollWidth).toBeLessThanOrEqual(documentWidthLimit);
+      mkdirSync(screenshotDirectory, { recursive: true });
+      await page.screenshot({
+        fullPage: true,
+        path: resolve(
+          screenshotDirectory,
+          `stylex-organization-members-role-action-${fallbackOff ? "fallback-off" : "normal"}-${viewport.name}.png`,
+        ),
+      });
+    }
   });
 }
 

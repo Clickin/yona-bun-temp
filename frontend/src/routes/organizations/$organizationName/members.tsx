@@ -476,7 +476,10 @@ function OrganizationMember({
       <div {...stylex.props(styles.memberId)} data-stylex-owner="organization-member-id">
         @{loginId}
       </div>
-      <div className="member-setting" data-stylex-owner="organization-member-meta">
+      <div
+        className={`${stylex.props(styles.memberMeta).className ?? ""} member-setting`.trim()}
+        data-stylex-owner="organization-member-meta"
+      >
         <div className={roleDropdownOpen ? "btn-group open" : "btn-group"}>
           <button
             className="btn dropdown-toggle large"
@@ -572,6 +575,12 @@ const styles = stylex.create({
     width: "100%",
     "::before": { content: '""', display: "table", lineHeight: "0px" },
     "::after": { clear: "both", content: '""', display: "table", lineHeight: "0px" },
+  },
+  // Frozen _page.less .members.project .member .member-setting declarations.
+  memberMeta: {
+    position: "absolute",
+    right: 0,
+    top: "15px",
   },
   memberRow: {
     borderBottomColor: organizationMemberColors.rowBorder,

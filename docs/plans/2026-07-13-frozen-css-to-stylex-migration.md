@@ -6834,6 +6834,19 @@ legacy fallback classes. Managed system-Chrome normal/fallback-off checks pass
 `frontend/output/playwright/visual-sweep/`; live legacy screenshot comparison
 is explicitly unverified and no compensating geometry was added.
 
+## Batch 850
+
+Move the organization members `.member-setting` meta geometry into its
+existing route-local StyleX owner. Legacy
+`organization/members.scala.html:45-65` emits the role/action block and frozen
+`_page.less:2185-2212` supplies only `position:absolute`, `right:0`, and
+`top:15px`. React preserves role dropdown/delete state and behavior, DOM,
+classes, copy/order, and fallback. Managed system-Chrome normal/fallback-off
+checks pass 9/9 with desktop/mobile screenshots under
+`frontend/output/playwright/visual-sweep/`; the 5px mobile document edge is
+derived from the frozen member row boundary and receives no compensation.
+Live legacy screenshot comparison is explicitly unverified.
+
 ## Batch 845
 
 Own the organization-home member-panel avatar wrapper/image cascade. The
