@@ -6810,3 +6810,17 @@ existing inner StyleX owner carries only those overrides. Focused managed
 system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
 Live legacy screenshot parity is explicitly unverified; approved Yoram
 footer/provider/developer-contact/repository differences remain intentional.
+
+## Batch 845
+
+Own the organization-home member-panel avatar wrapper/image cascade. The
+legacy `makeUser` output in `organization/view.scala.html:34-41` is rendered
+inside both panel lists at `141-177`, with `avatar-wrap` links and 45px image
+attributes. Frozen `_yobiUI.less:439-466` defines the 32px inline-block,
+middle-aligned, clipped gray rounded wrapper and nested image width/top
+alignment through the complete `yobi.less` import chain. React preserves the
+legacy classes, links/titles, attributes, copy/order, and responsive behavior
+while route-local StyleX owns only those declarations. Focused managed
+system-Chrome normal/fallback-off checks pass 1/1 each at desktop and 390px.
+Live legacy screenshot parity is explicitly unverified; approved Yoram
+footer/provider/developer-contact/repository differences remain intentional.

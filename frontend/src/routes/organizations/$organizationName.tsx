@@ -110,6 +110,19 @@ const organizationMemberPanelMigrationStyles = stylex.create({
   memberInfo: { height: "auto !important", marginRight: "0" },
 });
 
+const organizationMemberAvatarMigrationStyles = stylex.create({
+  image: { verticalAlign: "top", width: "100%" },
+  wrapper: {
+    backgroundColor: "#ddd",
+    borderRadius: "3px !important",
+    display: "inline-block",
+    height: "32px",
+    overflow: "hidden",
+    verticalAlign: "middle",
+    width: "32px",
+  },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -746,17 +759,20 @@ function MemberPanel({
                     className: undefined,
                     "data-status": undefined,
                   }}
-                  className="avatar-wrap"
+                  className={`${stylex.props(organizationMemberAvatarMigrationStyles.wrapper).className} avatar-wrap`}
                   params={{ user: stringField(member.loginId, "") }}
                   search={{}}
                   title={stringField(member.loginId, "")}
                   to="/$user"
+                  data-stylex-owner="organization-home-member-avatar"
                 >
                   <img
+                    {...stylex.props(organizationMemberAvatarMigrationStyles.image)}
                     src={stringField(member.avatarUrl, "/assets/images/default-avatar-45.png")}
                     height="45"
                     width="45"
                     alt=""
+                    data-stylex-owner="organization-home-member-avatar-image"
                   />
                 </Link>
                 <Link

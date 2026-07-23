@@ -40,6 +40,15 @@ Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110
 - [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified and no compensating geometry was added.
 - [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
 
+### 2026-07-23 Batch 845 organization-home member-panel avatar wrapper/image
+
+- [x] `organization/view.scala.html:34-41,141-177`, frozen `_yobiUI.less:439-466`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
+- [x] Route-local StyleX owns only the panel avatar wrapper and nested image declarations; `avatar-wrap`, links/titles, 45px attributes, copy/order, and responsive behavior remain.
+- [x] `frontend/tests/stylex-organization-member-panel-avatar.e2e.ts` verifies source provenance, both panel owners/classes/links/titles/attributes/copy/order, computed declarations, desktop/mobile containment, no overflow, and no inline style.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified and no compensating geometry was added.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.
