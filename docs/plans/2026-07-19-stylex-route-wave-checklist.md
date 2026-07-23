@@ -2059,3 +2059,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 871: no route-specific geometry compensation or fallback retirement was added; non-target color visibility may differ between fallback modes and remains outside this spacing target.
 - [ ] Batch 871: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
 - [x] Batch 871: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 872: populated all-state project milestone lists preserve the legacy closed `due-date ml5` span and own exact `margin-left:5px` through the existing milestone route StyleX boundary; open and overdue due-date spans remain excluded from the margin.
+- [x] Batch 872: focused managed external System-Chrome normal and explicit fallback-off runs pass 1/1 each at 1366x900 and 390px, with computed source ownership, closed/open margin checks, tab interaction, containment/no-overflow, and deterministic screenshots.
+- [x] Batch 872: shared `.ml5` fallback remains for unrelated consumers; no route-specific geometry compensation or fallback retirement was added.
+- [ ] Batch 872: live legacy screenshot comparison remains unavailable because `127.0.0.1:9000` is not running, so direct screenshot parity is explicitly unverified.
+- [x] Batch 872: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

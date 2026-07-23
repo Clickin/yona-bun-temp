@@ -7124,3 +7124,20 @@ typeahead menu/keyboard parity remains covered by the existing dedicated
 unverified because `127.0.0.1:9000` is unavailable. Approved Yoram footer,
 provider, developer-contact, and upstream-repository differences remain
 intentional.
+
+## Batch 872
+
+Move the populated all-state project milestone list's closed due-date span's
+exact frozen `.ml5` `margin-left:5px` declaration into the existing milestone
+route StyleX boundary. Preserve the legacy `due-date ml5` DOM, open/overdue
+branch behavior, closed/open state copy, ordering, filtering, and milestone
+navigation; do not apply the left margin to open or overdue due dates. The
+shared `.ml5` fallback remains for unrelated consumers. Managed external
+System-Chrome normal and explicit fallback-off focused runs pass 1/1 each at
+1366x900 and 390x844 with source ownership, computed margin/exclusion checks,
+desktop/mobile containment and no-overflow, tab interaction, and deterministic
+screenshots under
+`frontend/output/playwright/stylex-project-milestones-closed-due-margin/`.
+Live legacy screenshot comparison remains unverified because
+`127.0.0.1:9000` is unavailable. Approved Yoram footer, provider,
+developer-contact, and upstream-repository differences remain intentional.

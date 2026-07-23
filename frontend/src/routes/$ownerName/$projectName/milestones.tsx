@@ -15,7 +15,10 @@ import { useLegacyMessages } from "../../../i18n";
 import type { RuntimeConfig } from "../../../runtime-config";
 import { styles } from "./-milestones.stylex";
 
-const milestoneListStyles = stylex.create({ hiddenIssueLink: { display: "none" } });
+const milestoneListStyles = stylex.create({
+  closedDueDate: { marginLeft: "5px" },
+  hiddenIssueLink: { display: "none" },
+});
 
 const sx = {
   errorWrap: stylex.props(styles.errorWrap),
@@ -46,6 +49,7 @@ const sx = {
   issue: stylex.props(styles.issue),
   due: stylex.props(styles.due),
   dueOver: stylex.props(styles.due, styles.dueOver),
+  dueClosed: stylex.props(styles.due, milestoneListStyles.closedDueDate),
   completion: stylex.props(styles.completion),
   completionNumber: stylex.props(styles.completionNumber),
   progressWrap: stylex.props(styles.progressWrap),
@@ -411,9 +415,18 @@ function MilestoneRow({
                 |
               </span>
               <span
-                {...(booleanField(milestone.dueDateOverdue) ? sx.dueOver : sx.due)}
+                {...(isClosed
+                  ? sx.dueClosed
+                  : booleanField(milestone.dueDateOverdue)
+                    ? sx.dueOver
+                    : sx.due)}
                 className={`${
-                  (booleanField(milestone.dueDateOverdue) ? sx.dueOver : sx.due).className
+                  (isClosed
+                    ? sx.dueClosed
+                    : booleanField(milestone.dueDateOverdue)
+                      ? sx.dueOver
+                      : sx.due
+                  ).className
                 } ${isClosed ? "due-date ml5" : booleanField(milestone.dueDateOverdue) ? "due-date over" : "due-date"}`}
               >
                 {t("label.dueDate")}
