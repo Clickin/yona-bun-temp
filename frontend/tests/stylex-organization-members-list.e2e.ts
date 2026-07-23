@@ -32,6 +32,10 @@ test("organization member list records the exact six-owner legacy boundary", () 
     resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_page.less"),
     "utf8",
   );
+  const legacyResponsive = readFileSync(
+    resolve(repoRoot, "yona-original/app/assets/stylesheets/less/_responsive.less"),
+    "utf8",
+  );
   const legacyYobi = readFileSync(
     resolve(repoRoot, "yona-original/app/assets/stylesheets/yobi.less"),
     "utf8",
@@ -55,7 +59,8 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(route).toContain('data-stylex-owner="organization-members-add-form-input"');
   expect(route).toContain('marginBottom: "10px"');
   expect(route).toContain('position: "relative"');
-  expect(route).toContain('width: "384px"');
+  expect(route).toContain('default: "384px"');
+  expect(route).toContain('[globalBreakpoints.mobile]: "inherit !important"');
   expect(route).toContain("margin: 0");
   expect(route).toContain('borderRadius: "2px"');
   expect(legacyTemplate).toContain('<div class="inner-bubble">');
@@ -70,6 +75,8 @@ test("organization member list records the exact six-owner legacy boundary", () 
   expect(legacyPage).toContain("width: 384px;");
   expect(legacyPage).toContain("margin: 0;");
   expect(legacyPage).toContain(".border-radius(2px);");
+  expect(legacyResponsive).toContain(".inner-bubble .text.uname {");
+  expect(legacyResponsive).toContain("width: inherit !important;");
   expect(legacyPage).toContain(".member-setting {");
   expect(legacyPage).toContain("position: absolute;");
   expect(legacyPage).toContain("right:0;");
@@ -109,9 +116,8 @@ for (const fallbackOff of [false, true]) {
     await mockMembers(page, { populated: false });
     await page.goto(`${basePath}/organizations/weblabs/members`);
     if (fallbackOff) {
-      await page
-        .locator('link[href*="legacy-fallback.css"]')
-        .evaluate((element) => element.remove());
+      const fallback = page.locator('link[href*="legacy-fallback.css"]');
+      if (await fallback.count()) await fallback.evaluate((element) => element.remove());
     }
 
     const bubble = page.locator('[data-stylex-owner="organization-members-header"]');
@@ -164,6 +170,8 @@ for (const fallbackOff of [false, true]) {
     });
     expect(mobile.inputBox.left).toBeGreaterThanOrEqual(mobile.bubbleBox.left);
     expect(mobile.inputBox.right).toBeLessThanOrEqual(mobile.bubbleBox.right + 2);
+    expect(mobile.inputBox.width).toBeLessThan(384);
+    expect(mobile.inputBox.width).toBeLessThanOrEqual(mobile.bubbleBox.width);
     expect(mobile.scrollWidth).toBeLessThanOrEqual(390);
     await page.screenshot({
       fullPage: true,

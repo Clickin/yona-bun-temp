@@ -1998,3 +1998,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 858: managed system-Chrome normal and fallback-off focused add-member checks pass 1/1 each; screenshots are saved under `output/playwright/visual-sweep/`.
 - [ ] Batch 858: live legacy rendering is unavailable, so direct screenshot parity remains explicitly unverified; no compensating geometry was added.
 - [x] Batch 858: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.
+- [x] Batch 859: organization members add-form owns the frozen desktop/mobile `inner-bubble .text.uname` declarations, including mobile `width: inherit !important`, with source and computed-geometry evidence.
+- [x] Batch 859: current React consumers are project members and organization members; user email emits no `inner-bubble`; only the React-side app.css bridge was retired and generated frozen fallback remains.
+- [x] Batch 859: managed dynamic-port system-Chrome organization add-form/fallback checks pass 3/3 and project fallback-off passes 1/1.
+- [ ] Batch 859: live legacy rendering is unavailable, so direct screenshot parity remains explicitly unverified; no compensating geometry was added.
+- [x] Batch 859: approved Yoram footer NAVER/provider/developer-contact/repository differences are intentional and are not restored.

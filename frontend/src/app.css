@@ -1016,17 +1016,6 @@ pre code {
   margin: 10px 0;
 }
 
-.inner-bubble {
-  position: relative;
-  margin-bottom: 10px;
-}
-
-.inner-bubble .text.uname {
-  width: 384px;
-  margin: 0;
-  border-radius: 2px;
-}
-
 .members.project {
   margin: 0;
   list-style: none;

@@ -6959,3 +6959,15 @@ normal/fallback-off focused runs pass 5/5 each with desktop/mobile screenshots;
 the fallback-off shell allowance is documented without compensating geometry.
 Live legacy screenshot comparison remains unverified. The approved Yoram
 footer identity differences remain intentional.
+## Batch 859
+
+Complete the organization members add-member input's responsive StyleX owner
+using the frozen `_responsive.less` `width: inherit !important` cascade, then
+retire the proven React-side `.inner-bubble` and `.inner-bubble .text.uname`
+arms from `frontend/src/app.css`. The complete current React emitter graph is
+project members and organization members, both route-owned; the user email
+React form no longer emits the class. Keep generated frozen fallback unchanged.
+Managed system-Chrome normal/fallback-off organization checks pass 3/3 and
+project fallback-off passes 1/1; live legacy screenshot comparison remains
+unverified. Approved Yoram footer/provider/developer-contact/repository
+differences remain intentional.

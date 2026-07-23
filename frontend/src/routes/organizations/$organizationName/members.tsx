@@ -544,7 +544,10 @@ const styles = stylex.create({
   addFormUsername: {
     borderRadius: "2px",
     margin: 0,
-    width: "384px",
+    width: {
+      default: "384px",
+      [globalBreakpoints.mobile]: "inherit !important",
+    },
   },
   deleteModalVisible: {
     display: "block",

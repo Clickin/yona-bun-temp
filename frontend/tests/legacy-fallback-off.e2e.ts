@@ -46,6 +46,37 @@ test("pagination fallback bridge is retired while the exact consumer graph remai
   }
 });
 
+test("inner-bubble fallback bridge is retired while frozen legacy output remains", () => {
+  const appCss = readFileSync("src/app.css", "utf8");
+  const generatedFallback = readFileSync(
+    "public/legacy-assets/stylesheets/legacy-fallback.css",
+    "utf8",
+  );
+  expect(appCss).not.toContain(".inner-bubble {");
+  expect(appCss).not.toContain(".inner-bubble .text.uname {");
+  expect(generatedFallback).toContain(".inner-bubble {");
+  expect(generatedFallback).toContain(".inner-bubble .text.uname {");
+  expect(generatedFallback).toContain("width: inherit !important;");
+
+  const projectMembers = readFileSync("src/routes/$ownerName/$projectName/members.tsx", "utf8");
+  const projectStyles = readFileSync(
+    "src/routes/$ownerName/$projectName/-members.stylex.ts",
+    "utf8",
+  );
+  const organizationMembers = readFileSync(
+    "src/routes/organizations/$organizationName/members.tsx",
+    "utf8",
+  );
+  const emailSettings = readFileSync("src/routes/user/editform/emails.tsx", "utf8");
+
+  expect(projectMembers).toContain('data-stylex-owner="project-members-add-member-bubble"');
+  expect(projectMembers).toContain('data-stylex-owner="project-members-add-member-input"');
+  expect(projectStyles).toContain('[globalBreakpoints.mobile]: "inherit"');
+  expect(organizationMembers).toContain('data-stylex-owner="organization-members-header"');
+  expect(organizationMembers).toContain('data-stylex-owner="organization-members-add-form-input"');
+  expect(emailSettings).not.toContain("inner-bubble");
+});
+
 test("root Yoram dialog center-txt bridge is retired while legacy fallback remains", () => {
   const appCss = readFileSync("src/app.css", "utf8");
   const generatedFallback = readFileSync(
