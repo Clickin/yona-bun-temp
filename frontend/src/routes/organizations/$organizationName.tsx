@@ -87,6 +87,14 @@ const organizationProjectCardMigrationStyles = stylex.create({
   },
 });
 
+const organizationProjectCardOwnerAvatarImageStyles = stylex.create({
+  image: {
+    height: "100%",
+    verticalAlign: "top",
+    width: "100%",
+  },
+});
+
 export const Route = createFileRoute("/organizations/$organizationName")({
   component: OrganizationHomeRoute,
 });
@@ -458,7 +466,14 @@ function OrganizationProject({ filter, project }: { filter: string; project: Yor
             search={{}}
             to="/$ownerName/$projectName"
           >
-            {projectLogoUrl ? <img src={projectLogoUrl} alt={`${projectName}.name`} /> : null}
+            {projectLogoUrl ? (
+              <img
+                {...stylex.props(organizationProjectCardOwnerAvatarImageStyles.image)}
+                src={projectLogoUrl}
+                alt={`${projectName}.name`}
+                data-stylex-owner="organization-home-project-card-owner-avatar-image"
+              />
+            ) : null}
           </Link>
         </div>
         <div

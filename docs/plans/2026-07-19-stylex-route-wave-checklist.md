@@ -4,6 +4,15 @@ Status: **active canonical target inventory**
 Parent plan: `docs/plans/2026-07-13-frozen-css-to-stylex-migration.md`  
 Snapshot: 2026-07-19 (`frontend/src/routes/**/*.tsx`: 116; routable entries: 110; legacy Scala templates: 242)
 
+### 2026-07-23 Batch 841 organization-home project-card owner avatar image
+
+- [x] `organization/view.scala.html`, frozen `_page.less:1837-1910`, and the complete `yobi.less` import chain are recorded as output/cascade sources.
+- [x] The existing project-card avatar wrapper remains intact; route-local StyleX owns only nested image `height:100%`, `width:100%`, and `vertical-align:top`.
+- [x] `frontend/tests/stylex-organization-project-card-avatar-image.e2e.ts` verifies declarations, owner/attrs, blank-logo branch, filter interaction, desktop/mobile containment, and no inline style.
+- [x] Managed dynamic-port system-Chrome normal and fallback-off focused runs pass 1/1 each.
+- [ ] Live legacy rendering is unavailable, so screenshot parity is explicitly unverified; frozen inline/intrinsic sizing receives no compensating geometry.
+- [x] The approved Yoram footer intentionally omits unrelated NAVER/NAVER LABS/NAVER CLOUD, upstream Yona repository, and developer-contact entries.
+
 ### 2026-07-23 Batch 840 organization-home project-menu active pseudo
 
 - [x] `organization/menu.scala.html`, frozen `_page.less:627-686`, `_responsive.less:281-283`, `_common.less`, Bootstrap, `messages`, and the complete `yobi.less` import chain are recorded as output/cascade/copy sources.

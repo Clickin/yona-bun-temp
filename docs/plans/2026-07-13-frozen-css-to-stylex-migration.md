@@ -6750,3 +6750,19 @@ project-menu-owned containment is clean while a known shared authenticated shell
 document overflow remains outside this slice and receives no compensation. Live
 legacy screenshot parity is explicitly unverified. Approved Yoram footer/
 provider/developer-contact/repository differences remain intentional.
+
+## Batch 841
+
+Own the authenticated organization-home project-card owner avatar image
+declarations from the frozen legacy cascade. `organization/view.scala.html`
+emits the conditional project logo branch inside the existing
+`owner-avatar-wrap`; `_page.less:1837-1910` defines the nested image
+`vertical-align:top`, `width:100%`, and `height:100%` declarations through the
+complete `yobi.less` import chain. React preserves the wrapper, Link, classes,
+attributes, filter behavior, and blank-logo branch while route-local StyleX
+owns only those exact image declarations. Focused managed system-Chrome
+normal/fallback-off checks pass 1/1 each at desktop and 390px. Frozen
+inline/intrinsic sizing is intentionally not pixel-normalized and receives no
+compensating geometry. Live legacy screenshot parity is explicitly unverified.
+Approved Yoram footer/provider/developer-contact/repository differences remain
+intentional.
