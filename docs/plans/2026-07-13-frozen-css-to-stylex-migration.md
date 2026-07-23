@@ -7381,3 +7381,18 @@ visually inspected. The comparison records existing desktop
 drift; these are screen-wide or fallback-owned gaps outside this margin owner
 and receive no route-specific compensation. Approved Yoram footer, provider,
 developer-contact, and upstream-repository differences remain intentional.
+## Batch 884
+
+Move the root login dialog reset-password/signup separator's exact frozen
+`.ml10` and `.mr10` declarations into the route-local StyleX owner. Preserve
+the legacy `gray-txt ml10 mr10` DOM/classes, separator copy, link order, and
+React-owned login dialog behavior; keep the shared fallback for unrelated
+consumers. Managed external System-Chrome normal, explicit fallback-off, and
+restored-normal focused runs pass 1/1 each at 1366x900 and 390x844. The
+normal and fallback-off desktop/mobile screenshots were visually inspected;
+the separator remains visible with computed 10px margins, while fallback-off
+remember-row wrapping is an existing fallback-owned shell difference outside
+this owner. Full live legacy/Yoram shell screenshot parity remains a separate
+screen-wide gap, so no route-specific compensation was added. Approved Yoram
+footer NAVER/provider/developer-contact/upstream-repository differences remain
+intentional.

@@ -2119,3 +2119,8 @@ desktop/mobile geometry, and filtering.
 - [x] Batch 883: adjacent PR detail guards pass 4/5; the one failure is the pre-existing detail test's stale mock API path, not the header wrapper.
 - [ ] Batch 883: live populated legacy screenshot parity remains a fixture gap because `/admin/sample/pullRequest/1` compares legacy 404 error state to Yoram 200 empty/detail shell (`404→200`), despite no geometry diff being reported.
 - [x] Batch 883: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
+- [x] Batch 884: root login dialog reset-password/signup separator preserves legacy `gray-txt ml10 mr10` DOM/copy/order and owns exact 10px left/right spacing through the route-local StyleX owner.
+- [x] Batch 884: focused managed external System-Chrome normal, explicit fallback-off, and restored-normal runs pass 1/1 each at 1366x900 and 390px; desktop/mobile screenshots for normal and fallback-off were visually inspected.
+- [x] Batch 884: fallback-off computed separator margins remain 10px with no inline style or plugin-only attributes; remember-row wrapping outside this owner receives no route-specific compensation.
+- [ ] Batch 884: full live legacy/Yoram shell screenshot parity remains a screen-wide/fallback-owned gap outside the separator owner.
+- [x] Batch 884: approved Yoram footer NAVER/provider/developer-contact/upstream-repository differences are intentional and are not restored.
